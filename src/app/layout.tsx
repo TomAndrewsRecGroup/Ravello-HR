@@ -6,6 +6,7 @@ import { ClarityScript } from '@/components/ClarityScript';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import ChatWidget from '@/components/ChatWidget';
+import QuickActions from '@/components/QuickActions';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -67,6 +68,7 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
+        <QuickActions />
         <ChatWidget />
       </body>
     </html>
