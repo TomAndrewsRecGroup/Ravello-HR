@@ -1,48 +1,45 @@
 import Link from 'next/link';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const posts = [
-  { cat: 'Hiring',      catColor: 'text-brand-violet', title: 'Why your best candidates drop off between offer and start date' },
-  { cat: 'Compliance',  catColor: 'text-brand-pink',   title: 'The 6 things your employment contracts are probably missing' },
-  { cat: 'Scripts',     catColor: 'text-brand-cyan',   title: 'Word-for-word: how to open a performance conversation' },
-  { cat: 'Change & M&A',catColor: 'text-brand-violet', title: 'What TUPE actually means for your acquisition (plain English)' },
+  { cat: 'Hiring',       catStyle: 'pill-purple', title: 'Why your best candidates drop off between offer and start date' },
+  { cat: 'Compliance',   catStyle: 'pill-blue',   title: 'The 6 things your employment contracts are probably missing' },
+  { cat: 'Scripts',      catStyle: 'pill-navy',   title: 'Word-for-word: how to open a performance conversation' },
+  { cat: 'Change & M&A', catStyle: 'pill-purple', title: 'What TUPE actually means for your acquisition (plain English)' },
 ];
 
 export default function PlaybookTeaser() {
   return (
-    <section className="section-padding bg-brand-void relative overflow-hidden">
-      <div className="absolute inset-0 cyber-grid opacity-30" />
-
-      <div className="relative z-10 container-wide">
+    <section className="section-padding" style={{ background: 'var(--bg)' }}>
+      <div className="container-wide">
         <div className="flex items-end justify-between mb-12">
           <div>
-            <p className="font-mono text-brand-violet text-xs uppercase tracking-widest mb-3">// People ops playbook</p>
-            <h2 className="font-display text-4xl lg:text-5xl font-bold text-white">No-fluff HR guides.</h2>
+            <p className="eyebrow mb-4">People Ops Playbook</p>
+            <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+              No-fluff HR guides.
+            </h2>
           </div>
-          <Link href="/playbook" className="hidden sm:flex items-center gap-2 font-mono text-xs text-brand-slate hover:text-white transition-colors">
-            View all <ArrowRight size={12} />
+          <Link href="/playbook" className="hidden sm:flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-70" style={{ color: 'var(--ink-soft)' }}>
+            View all <ArrowRight size={14} />
           </Link>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {posts.map((p) => (
-            <Link key={p.title} href="/playbook"
-              className="bg-brand-panel border border-brand-muted/30 p-5 flex flex-col gap-3 group hover:border-brand-violet/40 transition-all"
-              style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' }}
-            >
-              <span className={`font-mono text-xs uppercase tracking-widest ${p.catColor}`}>{p.cat}</span>
-              <p className="text-white/80 text-sm font-semibold leading-snug group-hover:text-white transition-colors flex-1">{p.title}</p>
-              <span className="flex items-center gap-1 text-brand-violet text-xs font-mono mt-auto group-hover:gap-2 transition-all">
-                Read <ArrowRight size={10} />
+            <Link key={p.title} href="/playbook" className="card flex flex-col gap-4 group">
+              <span className={p.catStyle}>{p.cat}</span>
+              <p className="text-sm font-semibold leading-snug flex-1 group-hover:text-[var(--brand-purple)] transition-colors"
+                style={{ color: 'var(--ink)' }}
+              >
+                {p.title}
+              </p>
+              <span className="flex items-center gap-1 text-xs font-medium transition-all group-hover:gap-2"
+                style={{ color: 'var(--brand-purple)' }}
+              >
+                Read <ArrowRight size={11} />
               </span>
             </Link>
           ))}
-        </div>
-
-        <div className="mt-8 text-center sm:hidden">
-          <Link href="/playbook" className="btn-outline text-sm">
-            View all guides <ArrowRight size={14} />
-          </Link>
         </div>
       </div>
     </section>

@@ -3,110 +3,78 @@ import { ArrowRight } from 'lucide-react';
 
 const funnels = [
   {
-    id: 'A',
-    tag: 'Smart Hiring System™',
-    headline: 'Hiring is broken.',
-    sub: 'Stop reopening roles. Cut agency spend. Build a process that works.',
-    pain: ['Roles filled then reopened in 12 months', 'Agency fees creeping back every year', 'Candidates dropping off at offer stage'],
+    pill: 'Hiring',
+    pillStyle: 'pill-purple',
+    headline: 'Stop reopening roles.',
+    body: 'Hiring that looks fine on paper keeps breaking down. The Smart Hiring System fixes the root cause — not just the symptoms.',
+    pains: ['Roles filled, then vacant again in 6 months', 'Agency bills that keep returning', 'Candidates dropping off at offer stage'],
     cta: { label: 'Get Your Hiring Score', href: '/tools/hiring-score' },
-    page: { label: 'See the System', href: '/smart-hiring-system' },
-    accent: '#6B21FF',
-    glow: 'rgba(107,33,255,0.15)',
-    tagColor: 'text-brand-violet border-brand-violet/40',
+    link: { label: 'See the system', href: '/smart-hiring-system' },
+    accent: 'var(--brand-purple)',
   },
   {
-    id: 'B',
-    tag: 'PolicySafe™',
-    headline: 'Compliant HR. Fast.',
-    sub: 'Contracts, handbooks and policies built properly — before a gap costs you.',
-    pain: ['Contracts that haven’t been updated in years', 'Managers applying different rules', 'No clear disciplinary framework'],
+    pill: 'Compliance',
+    pillStyle: 'pill-blue',
+    headline: 'Close the gaps before they cost you.',
+    body: 'Most HR compliance issues are invisible until they’re not. PolicySafe™ builds a clean, watertight foundation.',
+    pains: ['Contracts that haven’t been updated in years', 'Managers applying different rules', 'No structured disciplinary process'],
     cta: { label: 'Run Policy Healthcheck', href: '/tools/policy-healthcheck' },
-    page: { label: 'See PolicySafe™', href: '/policysafe' },
-    accent: '#E040FB',
-    glow: 'rgba(224,64,251,0.15)',
-    tagColor: 'text-brand-pink border-brand-pink/40',
+    link: { label: 'See PolicySafe™', href: '/policysafe' },
+    accent: 'var(--brand-blue)',
   },
   {
-    id: 'C',
-    tag: 'DealReady People™',
+    pill: 'M&A & Change',
+    pillStyle: 'pill-navy',
     headline: 'Deals fail on people.',
-    sub: 'People due diligence, TUPE, restructuring and integration — managed properly.',
-    pain: ['Hidden employment liabilities post-close', 'TUPE mismanaged — tribunal exposure', 'Key people leave before integration starts'],
+    body: 'The numbers look right. The people risk doesn’t show up until after you’ve signed. DealReady People™ changes that.',
+    pains: ['Hidden liabilities only visible post-close', 'TUPE mismanaged — tribunal exposure', 'Key talent leaving before integration'],
     cta: { label: 'Get DD Checklist', href: '/tools/due-diligence-checklist' },
-    page: { label: 'See DealReady People™', href: '/dealready-people' },
-    accent: '#4DB8FF',
-    glow: 'rgba(77,184,255,0.15)',
-    tagColor: 'text-brand-cyan border-brand-cyan/40',
+    link: { label: 'See DealReady People™', href: '/dealready-people' },
+    accent: 'var(--brand-navy)',
   },
 ];
 
 export default function FunnelCards() {
   return (
-    <section className="section-padding bg-brand-void relative">
-      {/* Grid bg */}
-      <div className="absolute inset-0 cyber-grid opacity-50" />
+    <section className="section-padding" style={{ background: 'var(--surface-alt)' }}>
+      <div className="container-wide">
 
-      <div className="relative z-10 container-wide">
-        <div className="text-center mb-14">
-          <p className="font-mono text-brand-violet text-xs uppercase tracking-widest mb-3">// Three systems. One firm.</p>
-          <h2 className="font-display text-4xl lg:text-5xl font-bold text-white">
+        <div className="mb-14">
+          <p className="eyebrow mb-4">Three systems. One firm.</p>
+          <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.75rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}>
             Which problem are you solving?
           </h2>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {funnels.map((f) => (
-            <div
-              key={f.id}
-              className="relative bg-brand-panel border border-brand-muted/30 p-7 flex flex-col transition-all duration-300 group hover:border-opacity-80"
-              style={{
-                clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
-                boxShadow: `0 0 0 1px rgba(255,255,255,0.04), inset 0 0 40px ${f.glow}`,
-              }}
-            >
-              {/* Corner accent */}
-              <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2" style={{ borderColor: f.accent }} />
-              <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2" style={{ borderColor: f.accent, opacity: 0.4 }} />
+            <div key={f.headline} className="card flex flex-col">
 
-              {/* Tag */}
-              <div className={`inline-flex items-center gap-2 mb-5 self-start border px-3 py-1 font-mono text-xs tracking-widest ${f.tagColor}`}
-                style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))' }}
-              >
-                <span className="opacity-50">[{f.id}]</span>
-                {f.tag}
-              </div>
+              <span className={f.pillStyle + ' mb-5 self-start'}>{f.pill}</span>
 
-              {/* Headline */}
-              <h3 className="font-display text-2xl font-bold text-white mb-2">{f.headline}</h3>
-              <p className="text-white/50 text-sm mb-6 leading-relaxed">{f.sub}</p>
+              <h3 className="font-display font-bold text-[1.35rem] mb-3 leading-snug" style={{ color: 'var(--ink)' }}>
+                {f.headline}
+              </h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>{f.body}</p>
 
-              {/* Pain points */}
               <ul className="space-y-2 mb-8 flex-1">
-                {f.pain.map((p) => (
-                  <li key={p} className="flex items-start gap-2 text-xs text-white/40">
+                {f.pains.map((p) => (
+                  <li key={p} className="flex items-start gap-2.5 text-xs" style={{ color: 'var(--ink-faint)' }}>
                     <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0" style={{ background: f.accent }} />
                     {p}
                   </li>
                 ))}
               </ul>
 
-              {/* CTAs */}
-              <div className="space-y-2 mt-auto">
-                <Link href={f.cta.href}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold text-white transition-all"
-                  style={{
-                    background: `linear-gradient(135deg, ${f.accent}33, ${f.accent}22)`,
-                    border: `1px solid ${f.accent}66`,
-                    clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
-                  }}
-                >
+              <div className="mt-auto space-y-2">
+                <Link href={f.cta.href} className="btn-primary w-full justify-center text-sm">
                   {f.cta.label} <ArrowRight size={14} />
                 </Link>
-                <Link href={f.page.href}
-                  className="flex items-center justify-center gap-2 w-full py-2 text-xs font-mono tracking-wider transition-colors"
-                  style={{ color: f.accent, opacity: 0.7 }}
+                <Link href={f.link.href}
+                  className="flex items-center justify-center gap-1.5 text-xs font-medium py-2 transition-colors hover:opacity-80"
+                  style={{ color: 'var(--ink-soft)' }}
                 >
-                  {f.page.label} <ArrowRight size={11} />
+                  {f.link.label} <ArrowRight size={11} />
                 </Link>
               </div>
             </div>

@@ -2,209 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
-    --font-inter: 'Inter', sans-serif;
+    --bg:           #FCFBFF;
+    --surface:      #FFFFFF;
+    --surface-alt:  #F5F4FA;
+    --ink:          #171A24;
+    --ink-soft:     #4A5268;
+    --ink-faint:    #8892A4;
+    --brand-navy:   #0E1633;
+    --brand-blue:   #93B8FF;
+    --brand-purple: #8F72F6;
+    --brand-pink:   #E8B6D9;
+    --brand-line:   rgba(20, 27, 52, 0.08);
+    --gradient:     linear-gradient(135deg, #93B8FF 0%, #8F72F6 50%, #E8B6D9 100%);
+    --gradient-soft:linear-gradient(135deg, rgba(147,184,255,0.15) 0%, rgba(143,114,246,0.12) 50%, rgba(232,182,217,0.1) 100%);
   }
 
-  html {
-    scroll-behavior: smooth;
+  html  { scroll-behavior: smooth; }
+  body  {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-
-  body {
-    @apply bg-brand-void text-brand-offwhite;
-    font-family: 'Inter', sans-serif;
+  h1,h2,h3,h4,h5 {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    color: var(--ink);
   }
-
-  h1, h2, h3, h4 {
-    font-family: 'Rajdhani', 'Inter', sans-serif;
-    @apply font-bold tracking-wide;
-  }
-
   ::selection {
-    background: rgba(107, 33, 255, 0.4);
-    color: #fff;
+    background: rgba(143,114,246,0.18);
   }
-
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0A0A14;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #6B21FF;
-    border-radius: 3px;
-  }
+  ::-webkit-scrollbar       { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--brand-purple); border-radius: 99px; }
 }
 
 @layer components {
 
-  /* ── Buttons ─────────────────────────────── */
+  /* ── Layout ─────────────────────────────── */
+  .container-wide   { @apply max-w-[1280px] mx-auto; }
+  .container-narrow { @apply max-w-[760px]  mx-auto; }
+  .section-padding  { @apply px-6 lg:px-10 py-24 lg:py-32; }
+  .section-sm       { @apply px-6 lg:px-10 py-14 lg:py-20; }
+
+  /* ── Typography ─────────────────────────── */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em];
+    color: var(--brand-purple);
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient);
+  }
+
+  /* ── Buttons ────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 transition-all duration-200;
-    background: linear-gradient(135deg, #6B21FF 0%, #E040FB 100%);
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-    box-shadow: 0 0 20px rgba(107,33,255,0.4);
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-[10px] font-semibold text-sm text-white
+           transition-all duration-200;
+    background: var(--brand-navy);
+    box-shadow: 0 1px 3px rgba(14,22,51,0.2), 0 4px 12px rgba(14,22,51,0.12);
   }
   .btn-primary:hover {
-    box-shadow: 0 0 30px rgba(224,64,251,0.6), 0 0 60px rgba(107,33,255,0.3);
+    background: #162050;
+    box-shadow: 0 2px 8px rgba(14,22,51,0.28), 0 8px 24px rgba(14,22,51,0.16);
     transform: translateY(-1px);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 bg-brand-panel text-white transition-all duration-200;
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-    border: 1px solid rgba(107,33,255,0.4);
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-[10px] font-semibold text-sm
+           transition-all duration-200 bg-white;
+    color: var(--ink);
+    border: 1px solid var(--brand-line);
+    box-shadow: 0 1px 3px rgba(14,22,51,0.06);
   }
   .btn-secondary:hover {
-    border-color: #6B21FF;
-    box-shadow: 0 0 20px rgba(107,33,255,0.3);
-  }
-
-  .btn-outline {
-    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 text-brand-offwhite transition-all duration-200;
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-    border: 1px solid rgba(107,33,255,0.5);
-    background: transparent;
-  }
-  .btn-outline:hover {
-    background: rgba(107,33,255,0.15);
-    border-color: #E040FB;
-    box-shadow: 0 0 20px rgba(224,64,251,0.3);
-  }
-
-  .btn-cyan {
-    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 text-brand-void transition-all duration-200;
-    background: linear-gradient(135deg, #4DB8FF 0%, #A5F3FC 100%);
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-    box-shadow: 0 0 20px rgba(77,184,255,0.4);
-  }
-  .btn-cyan:hover {
-    box-shadow: 0 0 30px rgba(77,184,255,0.7);
+    border-color: rgba(143,114,246,0.3);
+    background: var(--surface-alt);
     transform: translateY(-1px);
   }
 
-  /* ── Layout ──────────────────────────────── */
-  .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] font-medium text-sm
+           transition-all duration-200;
+    color: var(--ink-soft);
+  }
+  .btn-ghost:hover {
+    background: var(--surface-alt);
+    color: var(--ink);
   }
 
-  .container-wide {
-    @apply max-w-7xl mx-auto;
-  }
-
-  .container-narrow {
-    @apply max-w-3xl mx-auto;
-  }
-
-  /* ── Cyber panels ────────────────────────── */
-  .panel {
-    @apply bg-brand-panel border border-brand-muted/40 transition-all duration-200;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-  }
-  .panel:hover {
-    border-color: rgba(107,33,255,0.5);
-    box-shadow: 0 0 20px rgba(107,33,255,0.15);
-  }
-
-  .panel-glow {
-    @apply panel;
-    box-shadow: 0 0 0 1px rgba(107,33,255,0.3), inset 0 0 30px rgba(107,33,255,0.05);
-  }
-
-  /* ── Legacy .card alias ──────────────────── */
+  /* ── Cards ──────────────────────────────── */
   .card {
-    @apply panel p-6;
+    @apply bg-white rounded-[20px] p-7 transition-all duration-200;
+    border: 1px solid var(--brand-line);
+    box-shadow: 0 1px 3px rgba(14,22,51,0.05), 0 8px 32px rgba(14,22,51,0.06);
+  }
+  .card:hover {
+    box-shadow: 0 2px 8px rgba(14,22,51,0.08), 0 16px 48px rgba(14,22,51,0.1);
+    transform: translateY(-2px);
   }
 
-  /* ── Grid overlay ────────────────────────── */
-  .cyber-grid {
-    background-image: linear-gradient(rgba(107,33,255,0.06) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(107,33,255,0.06) 1px, transparent 1px);
-    background-size: 40px 40px;
+  .card-alt {
+    @apply rounded-[20px] p-7 transition-all duration-200;
+    background: var(--surface-alt);
+    border: 1px solid var(--brand-line);
   }
 
-  /* ── Gradient text ───────────────────────── */
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #6B21FF 0%, #E040FB 100%);
+  /* ── Gradient accent line ───────────────── */
+  .accent-line {
+    @apply block h-px w-12;
+    background: var(--gradient);
   }
 
-  .text-gradient-cyan {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #4DB8FF 0%, #A5F3FC 100%);
+  /* ── Pill / tag ─────────────────────────── */
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  }
+  .pill-purple {
+    @apply pill;
+    background: rgba(143,114,246,0.1);
+    color: #6B52D6;
+  }
+  .pill-navy {
+    @apply pill;
+    background: rgba(14,22,51,0.07);
+    color: var(--brand-navy);
+  }
+  .pill-blue {
+    @apply pill;
+    background: rgba(147,184,255,0.15);
+    color: #3B72CC;
   }
 
-  /* ── Scanline glow bar ───────────────────── */
-  .scanline {
-    @apply pointer-events-none absolute inset-0 overflow-hidden opacity-10;
-  }
-  .scanline::after {
-    content: '';
-    @apply absolute left-0 right-0 h-px;
-    background: linear-gradient(90deg, transparent, #6B21FF, #E040FB, transparent);
-    animation: scan 4s linear infinite;
-  }
-
-  /* ── Tag / badge ─────────────────────────── */
-  .funnel-tag {
-    @apply inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-  }
-
-  /* ── Step circle ─────────────────────────── */
-  .step-circle {
-    @apply w-10 h-10 flex items-center justify-center font-bold text-sm flex-shrink-0;
-    background: linear-gradient(135deg, #6B21FF, #E040FB);
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-  }
-
-  /* ── Risk bar ────────────────────────────── */
-  .risk-bar {
-    @apply h-2 bg-brand-light overflow-hidden;
-  }
-  .risk-bar-fill {
-    @apply h-full transition-all duration-700;
-    background: linear-gradient(90deg, #6B21FF, #E040FB);
-  }
-
-  /* ── Divider line ────────────────────────── */
-  .cyber-divider {
+  /* ── Divider ────────────────────────────── */
+  .brand-divider {
     @apply w-full h-px;
-    background: linear-gradient(90deg, transparent, rgba(107,33,255,0.5), rgba(224,64,251,0.5), transparent);
+    background: var(--brand-line);
+  }
+  .brand-divider-gradient {
+    @apply w-full h-px;
+    background: linear-gradient(90deg, transparent, rgba(143,114,246,0.3), transparent);
   }
 
-  /* ── Glow dot ────────────────────────────── */
-  .glow-dot {
-    @apply w-2 h-2 rounded-full;
-    background: #6B21FF;
-    box-shadow: 0 0 8px #6B21FF, 0 0 16px rgba(107,33,255,0.5);
+  /* ── Quick Actions sidebar ──────────────── */
+  .qa-panel {
+    background: var(--surface);
+    border: 1px solid var(--brand-line);
+    box-shadow: -4px 0 32px rgba(14,22,51,0.1);
   }
-
-  /* ── Prose override ──────────────────────── */
-  .prose-brand {
-    @apply prose prose-invert prose-lg prose-headings:text-brand-offwhite prose-a:text-brand-violet;
-  }
-}
-
-/* Scanline keyframe */
-@keyframes scan {
-  0%   { top: -2px; }
-  100% { top: 100%; }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(107,33,255,0.4); }
-  50%       { box-shadow: 0 0 40px rgba(224,64,251,0.6); }
-}
-
-@keyframes flicker {
-  0%, 95%, 100% { opacity: 1; }
-  96%            { opacity: 0.8; }
-  97%            { opacity: 1; }
-  98%            { opacity: 0.6; }
-  99%            { opacity: 1; }
 }
