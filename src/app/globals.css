@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @layer base {
   :root {
     --font-inter: 'Inter', sans-serif;
@@ -12,31 +14,80 @@
   }
 
   body {
-    @apply text-brand-navy;
+    @apply bg-brand-void text-brand-offwhite;
+    font-family: 'Inter', sans-serif;
   }
 
   h1, h2, h3, h4 {
-    @apply font-display;
+    font-family: 'Rajdhani', 'Inter', sans-serif;
+    @apply font-bold tracking-wide;
+  }
+
+  ::selection {
+    background: rgba(107, 33, 255, 0.4);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0A0A14;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #6B21FF;
+    border-radius: 3px;
   }
 }
 
 @layer components {
+
+  /* ── Buttons ─────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 bg-brand-teal text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 transition-all duration-200;
+    background: linear-gradient(135deg, #6B21FF 0%, #E040FB 100%);
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    box-shadow: 0 0 20px rgba(107,33,255,0.4);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 30px rgba(224,64,251,0.6), 0 0 60px rgba(107,33,255,0.3);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 bg-brand-navy text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200;
+    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 bg-brand-panel text-white transition-all duration-200;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    border: 1px solid rgba(107,33,255,0.4);
+  }
+  .btn-secondary:hover {
+    border-color: #6B21FF;
+    box-shadow: 0 0 20px rgba(107,33,255,0.3);
   }
 
   .btn-outline {
-    @apply inline-flex items-center gap-2 border-2 border-brand-teal text-brand-teal font-semibold px-6 py-3 rounded-lg hover:bg-brand-teal hover:text-white transition-all duration-200;
+    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 text-brand-offwhite transition-all duration-200;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    border: 1px solid rgba(107,33,255,0.5);
+    background: transparent;
+  }
+  .btn-outline:hover {
+    background: rgba(107,33,255,0.15);
+    border-color: #E040FB;
+    box-shadow: 0 0 20px rgba(224,64,251,0.3);
   }
 
-  .btn-gold {
-    @apply inline-flex items-center gap-2 bg-brand-gold text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+  .btn-cyan {
+    @apply inline-flex items-center gap-2 font-semibold px-6 py-3 text-brand-void transition-all duration-200;
+    background: linear-gradient(135deg, #4DB8FF 0%, #A5F3FC 100%);
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    box-shadow: 0 0 20px rgba(77,184,255,0.4);
+  }
+  .btn-cyan:hover {
+    box-shadow: 0 0 30px rgba(77,184,255,0.7);
+    transform: translateY(-1px);
   }
 
+  /* ── Layout ──────────────────────────────── */
   .section-padding {
     @apply px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
   }
@@ -49,47 +100,111 @@
     @apply max-w-3xl mx-auto;
   }
 
+  /* ── Cyber panels ────────────────────────── */
+  .panel {
+    @apply bg-brand-panel border border-brand-muted/40 transition-all duration-200;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .panel:hover {
+    border-color: rgba(107,33,255,0.5);
+    box-shadow: 0 0 20px rgba(107,33,255,0.15);
+  }
+
+  .panel-glow {
+    @apply panel;
+    box-shadow: 0 0 0 1px rgba(107,33,255,0.3), inset 0 0 30px rgba(107,33,255,0.05);
+  }
+
+  /* ── Legacy .card alias ──────────────────── */
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow;
+    @apply panel p-6;
   }
 
-  .gradient-hero {
-    background: linear-gradient(135deg, #1A2B4A 0%, #2D4A6B 50%, #1A2B4A 100%);
+  /* ── Grid overlay ────────────────────────── */
+  .cyber-grid {
+    background-image: linear-gradient(rgba(107,33,255,0.06) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(107,33,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
-  .gradient-teal {
-    background: linear-gradient(135deg, #2D9E9E 0%, #1E7A7A 100%);
-  }
-
+  /* ── Gradient text ───────────────────────── */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-teal to-brand-gold;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #6B21FF 0%, #E040FB 100%);
   }
 
-  .prose-brand {
-    @apply prose prose-lg prose-headings:text-brand-navy prose-a:text-brand-teal;
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #4DB8FF 0%, #A5F3FC 100%);
   }
 
+  /* ── Scanline glow bar ───────────────────── */
+  .scanline {
+    @apply pointer-events-none absolute inset-0 overflow-hidden opacity-10;
+  }
+  .scanline::after {
+    content: '';
+    @apply absolute left-0 right-0 h-px;
+    background: linear-gradient(90deg, transparent, #6B21FF, #E040FB, transparent);
+    animation: scan 4s linear infinite;
+  }
+
+  /* ── Tag / badge ─────────────────────────── */
   .funnel-tag {
-    @apply inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full;
+    @apply inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
   }
 
-  .risk-bar {
-    @apply h-3 rounded-full bg-gray-200 overflow-hidden;
-  }
-
-  .risk-bar-fill {
-    @apply h-full rounded-full transition-all duration-700;
-  }
-
+  /* ── Step circle ─────────────────────────── */
   .step-circle {
-    @apply w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0;
+    @apply w-10 h-10 flex items-center justify-center font-bold text-sm flex-shrink-0;
+    background: linear-gradient(135deg, #6B21FF, #E040FB);
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  }
+
+  /* ── Risk bar ────────────────────────────── */
+  .risk-bar {
+    @apply h-2 bg-brand-light overflow-hidden;
+  }
+  .risk-bar-fill {
+    @apply h-full transition-all duration-700;
+    background: linear-gradient(90deg, #6B21FF, #E040FB);
+  }
+
+  /* ── Divider line ────────────────────────── */
+  .cyber-divider {
+    @apply w-full h-px;
+    background: linear-gradient(90deg, transparent, rgba(107,33,255,0.5), rgba(224,64,251,0.5), transparent);
+  }
+
+  /* ── Glow dot ────────────────────────────── */
+  .glow-dot {
+    @apply w-2 h-2 rounded-full;
+    background: #6B21FF;
+    box-shadow: 0 0 8px #6B21FF, 0 0 16px rgba(107,33,255,0.5);
+  }
+
+  /* ── Prose override ──────────────────────── */
+  .prose-brand {
+    @apply prose prose-invert prose-lg prose-headings:text-brand-offwhite prose-a:text-brand-violet;
   }
 }
 
-/* Progress indicator animation */
-@keyframes progress-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* Scanline keyframe */
+@keyframes scan {
+  0%   { top: -2px; }
+  100% { top: 100%; }
 }
 
-.animate-progress { animation: progress-pulse 1.5s ease-in-out infinite; }
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(107,33,255,0.4); }
+  50%       { box-shadow: 0 0 40px rgba(224,64,251,0.6); }
+}
+
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%            { opacity: 0.8; }
+  97%            { opacity: 1; }
+  98%            { opacity: 0.6; }
+  99%            { opacity: 1; }
+}
