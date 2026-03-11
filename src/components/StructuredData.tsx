@@ -6,7 +6,7 @@ export default function StructuredData() {
     url: 'https://ravellohr.co.uk',
     logo: 'https://ravellohr.co.uk/logo.png',
     description:
-      'Ravello HR delivers named HR systems for ambitious businesses — Smart Hiring System™, PolicySafe™ and DealReady People™.',
+      'Ravello HR delivers named HR systems for ambitious businesses \u2014 Smart Hiring System\u2122, PolicySafe\u2122 and DealReady People\u2122.',
     founder: {
       '@type': 'Person',
       name: 'Lucinda Reader',
@@ -40,17 +40,15 @@ export default function StructuredData() {
         name: 'What is the Smart Hiring System?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text:
-            'The Smart Hiring System is Ravello HR's proprietary methodology to fix hiring drift — reducing time-to-hire, cutting agency spend, and stopping roles from being reopened within months.',
+          text: 'The Smart Hiring System is Ravello HR\u2019s proprietary methodology to fix hiring drift \u2014 reducing time-to-hire, cutting agency spend, and stopping roles from being reopened within months.',
         },
       },
       {
         '@type': 'Question',
-        name: 'What is PolicySafe™?',
+        name: 'What is PolicySafe\u2122?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text:
-            'PolicySafe™ is Ravello HR's compliance and documentation system for small and growing businesses — covering contracts, handbooks, and manager enablement.',
+          text: 'PolicySafe\u2122 is Ravello HR\u2019s compliance and documentation system for small and growing businesses \u2014 covering contracts, handbooks, and manager enablement.',
         },
       },
       {
@@ -58,8 +56,7 @@ export default function StructuredData() {
         name: 'What HR support is available for M&A?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text:
-            'DealReady People™ supports businesses pre- and post-acquisition with people due diligence, TUPE, restructuring risk, and culture integration.',
+          text: 'DealReady People\u2122 supports businesses pre- and post-acquisition with people due diligence, TUPE, restructuring risk, and culture integration.',
         },
       },
       {
@@ -67,8 +64,7 @@ export default function StructuredData() {
         name: 'How do I book a free consultation with Ravello HR?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text:
-            'You can book a free 15-minute clarity call directly at ravellohr.co.uk/book — no forms, no fluff.',
+          text: 'You can book a free 15-minute clarity call directly at ravellohr.co.uk/book \u2014 no forms, no fluff.',
         },
       },
     ],
