@@ -4,24 +4,29 @@ import HRRiskScoreTool from '@/components/tools/HRRiskScoreTool';
 export const metadata: Metadata = {
   title: 'HR Risk & Compliance Score | Ravello HR',
   description:
-    'A 2-minute diagnostic that scores your HR risk exposure across policies, contracts, management practices and absence management.',
+    'Get your free HR Risk & Compliance Score. A 2-minute diagnostic that surfaces your top 3 people risks — before they cost you.',
+  alternates: { canonical: 'https://ravellohr.co.uk/tools/hr-risk-score' },
 };
 
 export default function HRRiskScorePage() {
   return (
-    <div className="min-h-screen bg-brand-offwhite pt-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-10">
-          <span className="funnel-tag bg-brand-gold text-white text-xs mb-4 inline-block">PolicySafe™</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-brand-navy mb-4">
+    <div className="pt-20">
+      <section className="gradient-hero text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <span className="funnel-tag bg-brand-gold text-white mb-4 inline-block">Funnel B · PolicySafe™</span>
+          <h1 className="font-display text-4xl lg:text-5xl font-bold mb-4">
             HR Risk & Compliance Score
           </h1>
-          <p className="text-brand-slate text-lg max-w-xl mx-auto">
-            Answer 10 questions. Get your compliance risk score, top 3 exposures, and recommended next steps.
+          <p className="text-white/80 text-lg">
+            Do you have the right policies in place? Are managers actually following them? Find out in 2 minutes.
           </p>
         </div>
-        <HRRiskScoreTool />
-      </div>
+      </section>
+      <section className="section-padding bg-brand-offwhite">
+        <div className="container-narrow">
+          <HRRiskScoreTool />
+        </div>
+      </section>
     </div>
   );
 }

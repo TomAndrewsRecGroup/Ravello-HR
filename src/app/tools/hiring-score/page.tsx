@@ -2,26 +2,31 @@ import { Metadata } from 'next';
 import HiringScoreTool from '@/components/tools/HiringScoreTool';
 
 export const metadata: Metadata = {
-  title: 'Smart Hiring Score | Find Your Hiring Leaks Free',
+  title: 'Smart Hiring Score | Ravello HR',
   description:
-    'Answer 12 questions and get your personalised Smart Hiring Score — discover exactly where your hiring is leaking and get a 7/30/90 day fix plan.',
+    'Find out exactly where your hiring is leaking. Get your Smart Hiring Score in under 3 minutes — instant results, no fluff.',
+  alternates: { canonical: 'https://ravellohr.co.uk/tools/hiring-score' },
 };
 
 export default function HiringScorePage() {
   return (
-    <div className="min-h-screen bg-brand-offwhite pt-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-10">
-          <span className="funnel-tag bg-brand-teal text-white text-xs mb-4 inline-block">Smart Hiring System™</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-brand-navy mb-4">
+    <div className="pt-20">
+      <section className="gradient-hero text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <span className="funnel-tag bg-brand-teal text-white mb-4 inline-block">Funnel A · Smart Hiring System™</span>
+          <h1 className="font-display text-4xl lg:text-5xl font-bold mb-4">
             Your Smart Hiring Score
           </h1>
-          <p className="text-brand-slate text-lg max-w-xl mx-auto">
-            12 questions. 3 minutes. Find out exactly where your hiring is leaking — and get a personalised fix plan.
+          <p className="text-white/80 text-lg">
+            Answer 10 questions. Find out exactly where roles stall, candidates drop off, and agency spend creeps back in.
           </p>
         </div>
-        <HiringScoreTool />
-      </div>
+      </section>
+      <section className="section-padding bg-brand-offwhite">
+        <div className="container-narrow">
+          <HiringScoreTool />
+        </div>
+      </section>
     </div>
   );
 }

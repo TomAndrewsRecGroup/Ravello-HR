@@ -2,26 +2,31 @@ import { Metadata } from 'next';
 import PolicyHealthcheckTool from '@/components/tools/PolicyHealthcheckTool';
 
 export const metadata: Metadata = {
-  title: 'Policy & Contract Healthcheck | PolicySafe™ by Ravello HR',
+  title: 'Policy & Contract Healthcheck | Ravello HR',
   description:
-    'A free policy gap scan for small and growing businesses. See which HR documents you\'re missing and the risk each gap creates.',
+    'Run a free Policy & Contract Healthcheck. Get a personalised gap list you can take straight to your board or leadership team.',
+  alternates: { canonical: 'https://ravellohr.co.uk/tools/policy-healthcheck' },
 };
 
 export default function PolicyHealthcheckPage() {
   return (
-    <div className="min-h-screen bg-brand-offwhite pt-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-10">
-          <span className="funnel-tag bg-brand-gold text-white text-xs mb-4 inline-block">PolicySafe™</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-brand-navy mb-4">
+    <div className="pt-20">
+      <section className="gradient-hero text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <span className="funnel-tag bg-brand-gold text-white mb-4 inline-block">Funnel B · PolicySafe™</span>
+          <h1 className="font-display text-4xl lg:text-5xl font-bold mb-4">
             Policy & Contract Healthcheck
           </h1>
-          <p className="text-brand-slate text-lg max-w-xl mx-auto">
-            Tell us which documents you have. We\'ll output a gap list with the legal risk of each gap — and the fix.
+          <p className="text-white/80 text-lg">
+            A quick scan of your HR documents. Walk away with a clear gap list and the language to brief your board.
           </p>
         </div>
-        <PolicyHealthcheckTool />
-      </div>
+      </section>
+      <section className="section-padding bg-brand-offwhite">
+        <div className="container-narrow">
+          <PolicyHealthcheckTool />
+        </div>
+      </section>
     </div>
   );
 }
