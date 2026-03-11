@@ -1,112 +1,116 @@
 import Link from 'next/link';
-import { ArrowRight, Users, Shield, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const funnels = [
   {
+    id: 'A',
     tag: 'Smart Hiring System™',
-    tagBg: 'bg-brand-teal',
-    icon: Users,
-    headline: 'Hiring broken? Fix the leak before it costs you again.',
-    body: 'Stop reopening roles. Stop agency dependency. The Smart Hiring System gives your managers the framework they\'re missing — scored, structured, and results-proven.',
-    pain: 'You\'ve hired the wrong person — twice. Your last agency invoice was eye-watering. Your managers interview by gut feel.',
-    cta: 'Get My Hiring Score',
-    ctaHref: '/tools/hiring-score',
-    learnHref: '/smart-hiring-system',
-    color: 'from-brand-teal/10 to-transparent',
-    borderColor: 'border-brand-teal/30',
+    headline: 'Hiring is broken.',
+    sub: 'Stop reopening roles. Cut agency spend. Build a process that works.',
+    pain: ['Roles filled then reopened in 12 months', 'Agency fees creeping back every year', 'Candidates dropping off at offer stage'],
+    cta: { label: 'Get Your Hiring Score', href: '/tools/hiring-score' },
+    page: { label: 'See the System', href: '/smart-hiring-system' },
+    accent: '#6B21FF',
+    glow: 'rgba(107,33,255,0.15)',
+    tagColor: 'text-brand-violet border-brand-violet/40',
   },
   {
+    id: 'B',
     tag: 'PolicySafe™',
-    tagBg: 'bg-brand-gold',
-    icon: Shield,
-    headline: 'Compliant HR docs. In days, not months.',
-    body: 'Outdated contracts. Missing handbooks. Policies that open you to claims. PolicySafe™ gives small and growing businesses the compliance foundation they need — built properly.',
-    pain: 'Your employment contracts are from 2019. You\'re not sure if your handbook covers hybrid work. One tribunal claim could cost more than a year of consultancy.',
-    cta: 'Get My Policy Healthcheck',
-    ctaHref: '/tools/policy-healthcheck',
-    learnHref: '/policysafe',
-    color: 'from-brand-gold/10 to-transparent',
-    borderColor: 'border-brand-gold/30',
+    headline: 'Compliant HR. Fast.',
+    sub: 'Contracts, handbooks and policies built properly — before a gap costs you.',
+    pain: ['Contracts that haven’t been updated in years', 'Managers applying different rules', 'No clear disciplinary framework'],
+    cta: { label: 'Run Policy Healthcheck', href: '/tools/policy-healthcheck' },
+    page: { label: 'See PolicySafe™', href: '/policysafe' },
+    accent: '#E040FB',
+    glow: 'rgba(224,64,251,0.15)',
+    tagColor: 'text-brand-pink border-brand-pink/40',
   },
   {
+    id: 'C',
     tag: 'DealReady People™',
-    tagBg: 'bg-brand-navy',
-    icon: TrendingUp,
-    headline: 'Transforming or acquiring? Don\'t let people kill the deal.',
-    body: 'TUPE exposure. Culture clash. Key person risk. DealReady People™ is the pre/post acquisition HR advisory that protects your investment and accelerates integration.',
-    pain: 'Your deal team is focused on financials. The people risks are being discovered — after close. That\'s where value leaks.',
-    cta: 'Get the Due Diligence Checklist',
-    ctaHref: '/tools/due-diligence-checklist',
-    learnHref: '/dealready-people',
-    color: 'from-brand-navy/10 to-transparent',
-    borderColor: 'border-brand-navy/20',
+    headline: 'Deals fail on people.',
+    sub: 'People due diligence, TUPE, restructuring and integration — managed properly.',
+    pain: ['Hidden employment liabilities post-close', 'TUPE mismanaged — tribunal exposure', 'Key people leave before integration starts'],
+    cta: { label: 'Get DD Checklist', href: '/tools/due-diligence-checklist' },
+    page: { label: 'See DealReady People™', href: '/dealready-people' },
+    accent: '#4DB8FF',
+    glow: 'rgba(77,184,255,0.15)',
+    tagColor: 'text-brand-cyan border-brand-cyan/40',
   },
 ];
 
 export default function FunnelCards() {
   return (
-    <section className="section-padding bg-brand-offwhite">
-      <div className="container-wide">
+    <section className="section-padding bg-brand-void relative">
+      {/* Grid bg */}
+      <div className="absolute inset-0 cyber-grid opacity-50" />
+
+      <div className="relative z-10 container-wide">
         <div className="text-center mb-14">
-          <p className="text-brand-teal text-sm font-semibold uppercase tracking-widest mb-3">
-            Three systems. One expert.
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-brand-navy mb-4">
-            Which challenge fits you right now?
+          <p className="font-mono text-brand-violet text-xs uppercase tracking-widest mb-3">// Three systems. One firm.</p>
+          <h2 className="font-display text-4xl lg:text-5xl font-bold text-white">
+            Which problem are you solving?
           </h2>
-          <p className="text-brand-slate text-lg max-w-2xl mx-auto">
-            Most businesses have all three. Start where the pain is loudest.
-          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {funnels.map((f) => {
-            const Icon = f.icon;
-            return (
-              <div
-                key={f.tag}
-                className={`relative bg-white rounded-2xl border-2 ${f.borderColor} p-8 flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {funnels.map((f) => (
+            <div
+              key={f.id}
+              className="relative bg-brand-panel border border-brand-muted/30 p-7 flex flex-col transition-all duration-300 group hover:border-opacity-80"
+              style={{
+                clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))',
+                boxShadow: `0 0 0 1px rgba(255,255,255,0.04), inset 0 0 40px ${f.glow}`,
+              }}
+            >
+              {/* Corner accent */}
+              <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2" style={{ borderColor: f.accent }} />
+              <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2" style={{ borderColor: f.accent, opacity: 0.4 }} />
+
+              {/* Tag */}
+              <div className={`inline-flex items-center gap-2 mb-5 self-start border px-3 py-1 font-mono text-xs tracking-widest ${f.tagColor}`}
+                style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))' }}
               >
-                {/* Tag */}
-                <span className={`funnel-tag text-white text-xs mb-4 self-start ${f.tagBg}`}>
-                  {f.tag}
-                </span>
-
-                {/* Icon */}
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 border ${f.borderColor}`}>
-                  <Icon size={24} className="text-brand-navy" />
-                </div>
-
-                {/* Headline */}
-                <h3 className="font-display text-xl font-bold text-brand-navy mb-3">
-                  {f.headline}
-                </h3>
-
-                {/* Pain (in italics — mirror their words) */}
-                <p className="text-brand-slate/70 text-sm italic border-l-2 border-gray-200 pl-3 mb-4">
-                  "{f.pain}"
-                </p>
-
-                {/* Body */}
-                <p className="text-brand-slate text-sm leading-relaxed mb-6 flex-1">
-                  {f.body}
-                </p>
-
-                {/* CTAs */}
-                <div className="space-y-2">
-                  <Link href={f.ctaHref} className="btn-primary w-full justify-center text-sm">
-                    {f.cta} <ArrowRight size={15} />
-                  </Link>
-                  <Link
-                    href={f.learnHref}
-                    className="flex items-center justify-center gap-1 text-brand-teal text-sm font-medium hover:gap-2 transition-all"
-                  >
-                    Learn more <ArrowRight size={14} />
-                  </Link>
-                </div>
+                <span className="opacity-50">[{f.id}]</span>
+                {f.tag}
               </div>
-            );
-          })}
+
+              {/* Headline */}
+              <h3 className="font-display text-2xl font-bold text-white mb-2">{f.headline}</h3>
+              <p className="text-white/50 text-sm mb-6 leading-relaxed">{f.sub}</p>
+
+              {/* Pain points */}
+              <ul className="space-y-2 mb-8 flex-1">
+                {f.pain.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-xs text-white/40">
+                    <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0" style={{ background: f.accent }} />
+                    {p}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTAs */}
+              <div className="space-y-2 mt-auto">
+                <Link href={f.cta.href}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold text-white transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${f.accent}33, ${f.accent}22)`,
+                    border: `1px solid ${f.accent}66`,
+                    clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
+                  }}
+                >
+                  {f.cta.label} <ArrowRight size={14} />
+                </Link>
+                <Link href={f.page.href}
+                  className="flex items-center justify-center gap-2 w-full py-2 text-xs font-mono tracking-wider transition-colors"
+                  style={{ color: f.accent, opacity: 0.7 }}
+                >
+                  {f.page.label} <ArrowRight size={11} />
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
