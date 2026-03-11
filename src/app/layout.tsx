@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ravello HR | Strategic HR for Growing Businesses',
+    default: 'Ravello HR | Hire. Lead. Protect.',
     template: '%s | Ravello HR',
   },
   description:
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: 'https://ravellohr.co.uk',
     siteName: 'Ravello HR',
-    title: 'Ravello HR | Strategic HR for Growing Businesses',
+    title: 'Ravello HR | Hire. Lead. Protect.',
     description:
       'Fix hiring. Build compliance. Navigate change. Ravello HR delivers named HR systems — not generic consultancy.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
@@ -57,12 +57,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
         <ClarityScript />
       </head>
-      <body className="bg-brand-offwhite font-sans antialiased">
+      <body className="bg-brand-void font-sans antialiased">
         <Analytics />
         <Nav />
         <main>{children}</main>
