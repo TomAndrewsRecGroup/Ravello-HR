@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-brand-navy;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-brand-teal text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 bg-brand-navy text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 border-2 border-brand-teal text-brand-teal font-semibold px-6 py-3 rounded-lg hover:bg-brand-teal hover:text-white transition-all duration-200;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center gap-2 bg-brand-gold text-white font-semibold px-6 py-3 rounded-lg hover:bg-opacity-90 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
+  }
+
+  .container-wide {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .container-narrow {
+    @apply max-w-3xl mx-auto;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #1A2B4A 0%, #2D4A6B 50%, #1A2B4A 100%);
+  }
+
+  .gradient-teal {
+    background: linear-gradient(135deg, #2D9E9E 0%, #1E7A7A 100%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-teal to-brand-gold;
+  }
+
+  .prose-brand {
+    @apply prose prose-lg prose-headings:text-brand-navy prose-a:text-brand-teal;
+  }
+
+  .funnel-tag {
+    @apply inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full;
+  }
+
+  .risk-bar {
+    @apply h-3 rounded-full bg-gray-200 overflow-hidden;
+  }
+
+  .risk-bar-fill {
+    @apply h-full rounded-full transition-all duration-700;
+  }
+
+  .step-circle {
+    @apply w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0;
+  }
+}
+
+/* Progress indicator animation */
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-progress { animation: progress-pulse 1.5s ease-in-out infinite; }
