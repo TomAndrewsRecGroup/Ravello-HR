@@ -7,17 +7,41 @@ const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-4
 export default function Footer() {
   return (
     <footer style={{ background: 'var(--brand-navy)' }}>
+      <style>{`
+        .footer-icon-link {
+          width: 36px; height: 36px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.6);
+          transition: background 0.2s;
+        }
+        .footer-icon-link:hover { background: rgba(143,114,246,0.3); }
+        .footer-link {
+          font-size: 0.875rem;
+          color: rgba(255,255,255,0.55);
+          transition: color 0.2s;
+        }
+        .footer-link:hover { color: #fff; }
+        .footer-tiny {
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.3);
+          transition: color 0.2s;
+        }
+        .footer-tiny:hover { color: rgba(255,255,255,0.7); }
+      `}</style>
+
       <div className="container-wide section-padding">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
 
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-3 mb-5 group">
+            <Link href="/" className="flex items-center mb-5">
               <Image
                 src={LOGO}
                 alt="Ravello HR"
-                width={120}
-                height={40}
+                width={140}
+                height={48}
                 className="object-contain h-10 w-auto brightness-[1.1]"
               />
             </Link>
@@ -25,20 +49,10 @@ export default function Footer() {
               Strategic HR systems for ambitious businesses. Named systems, not generic advice.
             </p>
             <div className="flex gap-3">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors"
-                style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
-                onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(143,114,246,0.3)')}
-                onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-              >
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="footer-icon-link">
                 <Linkedin size={15} />
               </a>
-              <a href="mailto:hello@ravellohr.co.uk"
-                className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors"
-                style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
-                onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(143,114,246,0.3)')}
-                onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-              >
+              <a href="mailto:hello@ravellohr.co.uk" className="footer-icon-link">
                 <Mail size={15} />
               </a>
             </div>
@@ -55,12 +69,7 @@ export default function Footer() {
                 ['Change Management',      '/dealready-people#change'],
               ].map(([label, href]) => (
                 <li key={href}>
-                  <Link href={href}
-                    className="text-sm transition-colors hover:text-white"
-                    style={{ color: 'rgba(255,255,255,0.55)' }}
-                  >
-                    {label}
-                  </Link>
+                  <Link href={href} className="footer-link">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -71,19 +80,14 @@ export default function Footer() {
             <h4 className="text-xs font-semibold uppercase tracking-[0.18em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>Free Tools</h4>
             <ul className="space-y-3">
               {[
-                ['Smart Hiring Score',       '/tools/hiring-score'],
-                ['HR Risk Score',            '/tools/hr-risk-score'],
-                ['Policy Healthcheck',       '/tools/policy-healthcheck'],
-                ['DD Checklist',             '/tools/due-diligence-checklist'],
-                ['People Ops Playbook',      '/playbook'],
+                ['Smart Hiring Score',  '/tools/hiring-score'],
+                ['HR Risk Score',       '/tools/hr-risk-score'],
+                ['Policy Healthcheck',  '/tools/policy-healthcheck'],
+                ['DD Checklist',        '/tools/due-diligence-checklist'],
+                ['People Ops Playbook', '/playbook'],
               ].map(([label, href]) => (
                 <li key={href}>
-                  <Link href={href}
-                    className="text-sm transition-colors hover:text-white"
-                    style={{ color: 'rgba(255,255,255,0.55)' }}
-                  >
-                    {label}
-                  </Link>
+                  <Link href={href} className="footer-link">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -94,28 +98,21 @@ export default function Footer() {
             <h4 className="text-xs font-semibold uppercase tracking-[0.18em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>Get Started</h4>
             <ul className="space-y-3 mb-6">
               <li>
-                <Link href="/book"
-                  className="flex items-center gap-2 text-sm transition-colors hover:text-white"
-                  style={{ color: 'rgba(255,255,255,0.55)' }}
-                >
+                <Link href="/book" className="footer-link flex items-center gap-2">
                   <Phone size={13} /> Book a Free Call
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@ravellohr.co.uk"
-                  className="flex items-center gap-2 text-sm transition-colors hover:text-white"
-                  style={{ color: 'rgba(255,255,255,0.55)' }}
-                >
+                <a href="mailto:hello@ravellohr.co.uk" className="footer-link flex items-center gap-2">
                   <Mail size={13} /> hello@ravellohr.co.uk
                 </a>
               </li>
             </ul>
-
-            {/* Hotline card */}
             <div className="rounded-[14px] p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>No-Fluff HR Hotline</p>
               <p className="text-sm font-semibold text-white mb-3">15 mins. Bring your mess. Leave with clarity.</p>
-              <Link href="/book"
+              <Link
+                href="/book"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-xs font-semibold text-white transition-all"
                 style={{ background: 'var(--brand-purple)', boxShadow: '0 2px 12px rgba(143,114,246,0.3)' }}
               >
@@ -126,7 +123,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-14 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4"
+        <div
+          className="mt-14 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
@@ -134,12 +132,7 @@ export default function Footer() {
           </p>
           <div className="flex gap-6">
             {[['Privacy Policy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (
-              <Link key={href} href={href}
-                className="text-xs transition-colors hover:text-white"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
-              >
-                {label}
-              </Link>
+              <Link key={href} href={href} className="footer-tiny">{label}</Link>
             ))}
           </div>
         </div>
