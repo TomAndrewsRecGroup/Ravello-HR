@@ -8,7 +8,22 @@ const withMDX = createMDX({
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
   images: {
-    domains: ['images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        // Vercel Blob storage — used for Ravello HR logo
+        protocol: 'https',
+        hostname: 'haaqtnq6favvrbuh.public.blob.vercel-storage.com',
+      },
+      {
+        // Wildcard for any future Vercel Blob stores
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+      },
+    ],
   },
 };
 
