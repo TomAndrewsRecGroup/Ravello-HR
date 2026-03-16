@@ -88,9 +88,7 @@ export default function Nav() {
                     <Link
                       key={s.href}
                       href={s.href}
-                      className="flex items-center gap-3 px-4 py-3 rounded-[12px] transition-colors"
-                      onMouseOver={(e) => (e.currentTarget.style.background = 'var(--surface-alt)')}
-                      onMouseOut={(e)  => (e.currentTarget.style.background = 'transparent')}
+                      className="flex items-center gap-3 px-4 py-3 rounded-[12px] transition-colors hover:bg-[var(--surface-alt)]"
                     >
                       <span
                         className="w-2 h-2 rounded-full flex-shrink-0"
@@ -136,16 +134,8 @@ export default function Nav() {
                     <Link
                       key={t.href}
                       href={t.href}
-                      className="block px-4 py-3 rounded-[12px] text-sm transition-colors"
+                      className="block px-4 py-3 rounded-[12px] text-sm transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--ink)]"
                       style={{ color: 'var(--ink-soft)' }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'var(--surface-alt)';
-                        e.currentTarget.style.color = 'var(--ink)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--ink-soft)';
-                      }}
                     >
                       {t.label}
                     </Link>
@@ -198,17 +188,14 @@ export default function Nav() {
               animation: 'slideDown 0.2s ease forwards',
             }}
           >
-            {/* Solutions group */}
             <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: 'var(--ink-faint)' }}>Solutions</p>
             {solutions.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-[var(--surface-alt)]"
                 style={{ color: 'var(--ink-soft)' }}
                 onClick={() => setOpen(false)}
-                onMouseOver={(e) => (e.currentTarget.style.background = 'var(--surface-alt)')}
-                onMouseOut={(e)  => (e.currentTarget.style.background = 'transparent')}
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: item.dot }} />
                 {item.label}
@@ -217,13 +204,12 @@ export default function Nav() {
 
             <div className="my-3" style={{ borderTop: '1px solid var(--brand-line)' }} />
 
-            {/* Tools group */}
             <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: 'var(--ink-faint)' }}>Free Tools</p>
             {tools.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="block px-3 py-2.5 rounded-xl text-sm transition-colors"
+                className="block px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-[var(--surface-alt)]"
                 style={{ color: 'var(--ink-soft)' }}
                 onClick={() => setOpen(false)}
               >
@@ -237,11 +223,7 @@ export default function Nav() {
             <Link href="/about"    className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
 
             <div className="pt-4">
-              <Link
-                href="/book"
-                className="btn-gradient w-full justify-center"
-                onClick={() => setOpen(false)}
-              >
+              <Link href="/book" className="btn-gradient w-full justify-center" onClick={() => setOpen(false)}>
                 <CalendarCheck size={15} />
                 Book Free Call
               </Link>

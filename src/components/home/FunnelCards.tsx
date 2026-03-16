@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import { ArrowRight, Users, Shield, Briefcase } from 'lucide-react';
 
@@ -16,7 +17,6 @@ const funnels = [
     cta: { label: 'Get Your Hiring Score', href: '/tools/hiring-score' },
     link: { label: 'See the system', href: '/smart-hiring-system' },
     accent: 'var(--brand-purple)',
-    accentBg: 'rgba(143,114,246,0.08)',
     accentBorder: 'rgba(143,114,246,0.2)',
     iconBg: 'rgba(143,114,246,0.12)',
     iconColor: '#8F72F6',
@@ -26,16 +26,15 @@ const funnels = [
     pill: 'Compliance',
     pillStyle: 'pill-blue',
     headline: 'Close the gaps before they cost you.',
-    body: 'Most HR compliance issues are invisible until they\'re not. PolicySafe™ builds a clean, watertight foundation.',
+    body: "Most HR compliance issues are invisible until they're not. PolicySafe™ builds a clean, watertight foundation.",
     pains: [
-      'Contracts that haven\'t been updated in years',
+      "Contracts that haven't been updated in years",
       'Managers applying different rules',
       'No structured disciplinary process',
     ],
     cta: { label: 'Run Policy Healthcheck', href: '/tools/policy-healthcheck' },
     link: { label: 'See PolicySafe™', href: '/policysafe' },
     accent: 'var(--brand-blue)',
-    accentBg: 'rgba(147,184,255,0.08)',
     accentBorder: 'rgba(147,184,255,0.25)',
     iconBg: 'rgba(147,184,255,0.12)',
     iconColor: '#3B72CC',
@@ -45,7 +44,7 @@ const funnels = [
     pill: 'M&A & Change',
     pillStyle: 'pill-navy',
     headline: 'Deals fail on people.',
-    body: 'The numbers look right. The people risk doesn\'t show up until after you\'ve signed. DealReady People™ changes that.',
+    body: "The numbers look right. The people risk doesn't show up until after you've signed. DealReady People™ changes that.",
     pains: [
       'Hidden liabilities only visible post-close',
       'TUPE mismanaged — tribunal exposure',
@@ -54,7 +53,6 @@ const funnels = [
     cta: { label: 'Get DD Checklist', href: '/tools/due-diligence-checklist' },
     link: { label: 'See DealReady People™', href: '/dealready-people' },
     accent: 'var(--brand-navy)',
-    accentBg: 'rgba(14,22,51,0.04)',
     accentBorder: 'rgba(14,22,51,0.15)',
     iconBg: 'rgba(14,22,51,0.07)',
     iconColor: 'var(--brand-navy)',
@@ -66,7 +64,6 @@ export default function FunnelCards() {
     <section className="section-padding" style={{ background: 'var(--bg)' }}>
       <div className="container-wide">
 
-        {/* Section header */}
         <div className="max-w-[560px] mb-16">
           <p className="eyebrow mb-4">Three systems. One firm.</p>
           <h2
@@ -76,7 +73,7 @@ export default function FunnelCards() {
             Which problem are you solving?
           </h2>
           <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-            Each system is purpose-built for a distinct people challenge. Pick yours and we'll show you exactly where to start.
+            Each system is purpose-built for a distinct people challenge. Pick yours and we’ll show you exactly where to start.
           </p>
         </div>
 
@@ -86,20 +83,10 @@ export default function FunnelCards() {
             return (
               <div
                 key={f.headline}
-                className="relative flex flex-col rounded-[20px] p-8 transition-all duration-300 bg-white group"
+                className="funnel-card relative flex flex-col rounded-[20px] p-8 bg-white group transition-all duration-300"
                 style={{
                   border: '1px solid var(--brand-line)',
                   boxShadow: '0 1px 4px rgba(14,22,51,0.05), 0 8px 32px rgba(14,22,51,0.06)',
-                }}
-                onMouseOver={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(14,22,51,0.08), 0 20px 60px rgba(14,22,51,0.1)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-                  (e.currentTarget as HTMLElement).style.borderColor = f.accentBorder;
-                }}
-                onMouseOut={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(14,22,51,0.05), 0 8px 32px rgba(14,22,51,0.06)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-line)';
                 }}
               >
                 {/* Top accent bar */}
@@ -128,7 +115,6 @@ export default function FunnelCards() {
                   {f.body}
                 </p>
 
-                {/* Pain points */}
                 <ul className="space-y-2.5 mb-8 flex-1">
                   {f.pains.map((p) => (
                     <li key={p} className="flex items-start gap-3 text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -141,20 +127,14 @@ export default function FunnelCards() {
                   ))}
                 </ul>
 
-                {/* CTAs */}
                 <div className="mt-auto space-y-2.5">
-                  <Link
-                    href={f.cta.href}
-                    className="btn-gradient w-full justify-center text-sm"
-                  >
+                  <Link href={f.cta.href} className="btn-gradient w-full justify-center text-sm">
                     {f.cta.label} <ArrowRight size={14} />
                   </Link>
                   <Link
                     href={f.link.href}
-                    className="flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-[8px] transition-colors"
+                    className="flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-[8px] transition-colors hover:text-ink"
                     style={{ color: 'var(--ink-soft)' }}
-                    onMouseOver={(e) => (e.currentTarget.style.color = 'var(--ink)')}
-                    onMouseOut={(e)  => (e.currentTarget.style.color = 'var(--ink-soft)')}
                   >
                     {f.link.label} <ArrowRight size={11} />
                   </Link>

@@ -6,7 +6,7 @@ const RESOURCES = [
     icon: BookOpen,
     tag: 'Guide',
     title: 'The Hiring Drift Framework',
-    desc: 'Why roles keep coming back — and how to fix the pattern permanently.',
+    desc: "Why roles keep coming back — and how to fix the pattern permanently.",
     color: 'var(--brand-purple)',
     bg: 'rgba(143,114,246,0.08)',
   },
@@ -14,7 +14,7 @@ const RESOURCES = [
     icon: Zap,
     tag: 'Checklist',
     title: 'Policy Audit in 20 Minutes',
-    desc: 'The 12 gaps most businesses don\'t know they have until it\'s too late.',
+    desc: "The 12 gaps most businesses don't know they have until it's too late.",
     color: 'var(--brand-blue)',
     bg: 'rgba(147,184,255,0.1)',
   },
@@ -56,10 +56,7 @@ export default function PlaybookTeaser() {
           {RESOURCES.map((r) => {
             const Icon = r.icon;
             return (
-              <div
-                key={r.title}
-                className="card group cursor-pointer"
-              >
+              <div key={r.title} className="card group cursor-pointer">
                 <div
                   className="w-10 h-10 rounded-[10px] flex items-center justify-center mb-5"
                   style={{ background: r.bg }}
