@@ -3,6 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
+// Full logo — shown large above the badge in hero copy column
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
+// Brand mark — shown on the right decorative panel
 const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const SYSTEMS = [
@@ -26,7 +29,7 @@ export default function Hero() {
       {/* Animated mesh */}
       <div className="hero-mesh" />
 
-      {/* Subtle dot grid */}
+      {/* Dot grid */}
       <div
         className="absolute inset-0 pointer-events-none opacity-40"
         style={{
@@ -41,13 +44,27 @@ export default function Hero() {
         style={{ background: 'linear-gradient(to bottom, transparent, rgba(13,21,53,0.6))' }}
       />
 
-      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-28">
-        <div className="grid lg:grid-cols-[1fr_380px] gap-16 xl:gap-24 items-center">
+      <div className="relative z-10 container-wide section-padding w-full pt-44 pb-28">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-16 xl:gap-24 items-center">
 
-          {/* Left — copy */}
+          {/* ── Left column ── */}
           <div>
+
+            {/* Full logo — large, above the badge */}
+            <div className="mb-10">
+              <Image
+                src={LOGO_FULL}
+                alt="Ravello HR"
+                width={480}
+                height={160}
+                className="object-contain w-auto"
+                style={{ maxHeight: '120px' }}
+                priority
+              />
+            </div>
+
             {/* Badge */}
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-9">
               <span
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
                 style={{
@@ -66,7 +83,7 @@ export default function Hero() {
             {/* Headline */}
             <h1
               className="font-extrabold text-white mb-7"
-              style={{ fontSize: 'clamp(2.9rem, 6vw, 5.2rem)', lineHeight: 1.03, letterSpacing: '-0.03em' }}
+              style={{ fontSize: 'clamp(2.6rem, 5.5vw, 4.8rem)', lineHeight: 1.04, letterSpacing: '-0.03em' }}
             >
               The HR expertise<br />
               your business{' '}
@@ -79,10 +96,10 @@ export default function Hero() {
             </h1>
 
             {/* Sub copy */}
-            <p className="text-lg leading-relaxed mb-3 max-w-[560px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p className="text-lg leading-relaxed mb-3 max-w-[540px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
               Three named systems. One senior expert. No generic consultancy.
             </p>
-            <p className="text-base leading-relaxed mb-12 max-w-[520px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p className="text-base leading-relaxed mb-12 max-w-[500px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Ravello HR permanently fixes the hiring, compliance and transformation
               challenges that slow ambitious UK businesses down.
             </p>
@@ -131,25 +148,25 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right — large logo mark */}
+          {/* ── Right column — brand mark ── */}
           <div className="hidden lg:flex flex-col items-center justify-center relative">
-            {/* Glow ring */}
+            {/* Glow rings */}
             <div
-              className="absolute w-[340px] h-[340px] rounded-full pointer-events-none"
+              className="absolute w-[360px] h-[360px] rounded-full pointer-events-none"
               style={{ background: 'radial-gradient(circle, rgba(124,92,246,0.18) 0%, rgba(91,155,255,0.08) 40%, transparent 70%)', border: '1px solid rgba(124,92,246,0.12)' }}
             />
             <div
-              className="absolute w-[250px] h-[250px] rounded-full pointer-events-none"
+              className="absolute w-[260px] h-[260px] rounded-full pointer-events-none"
               style={{ border: '1px solid rgba(91,155,255,0.1)' }}
             />
 
-            {/* Logo mark — large */}
+            {/* Brand mark */}
             <div className="relative z-10 p-8">
               <Image
                 src={LOGO_MARK}
-                alt="Ravello HR"
-                width={320}
-                height={140}
+                alt="Ravello HR mark"
+                width={340}
+                height={150}
                 className="object-contain drop-shadow-2xl"
                 priority
               />
@@ -158,14 +175,15 @@ export default function Hero() {
             {/* Floating system pills */}
             {[
               { label: 'Smart Hiring System™', pos: { top: '4%',  left: '-14%' }, dot: '#9B7FF8' },
-              { label: 'PolicySafe™',           pos: { top: '44%', right: '-16%' }, dot: '#5B9BFF' },
-              { label: 'DealReady People™',     pos: { top: '80%', left: '-8%'  }, dot: '#E07FC0' },
+              { label: 'PolicySafe™',           pos: { top: '46%', right: '-16%' }, dot: '#5B9BFF' },
+              { label: 'DealReady People™',     pos: { top: '82%', left: '-8%'  }, dot: '#E07FC0' },
             ].map((p) => (
               <div
                 key={p.label}
-                className="absolute flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-sm"
+                className="absolute flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-sm"
                 style={{
                   ...p.pos,
+                  background: 'rgba(255,255,255,0.09)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   color: 'rgba(255,255,255,0.85)',
                   whiteSpace: 'nowrap',
@@ -177,6 +195,7 @@ export default function Hero() {
               </div>
             ))}
           </div>
+
         </div>
       </div>
 

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X, ChevronDown, CalendarCheck } from 'lucide-react';
 
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
+// Same logo mark as hero — tripled size
+const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const solutions = [
   { href: '/smart-hiring-system', label: 'Smart Hiring System™', sub: 'Fix hiring drift',   dot: 'var(--brand-purple)' },
@@ -35,25 +36,27 @@ export default function Nav() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/96 backdrop-blur-lg shadow-[0_1px_0_rgba(13,21,53,0.08)]' : 'bg-transparent'
+        scrolled
+          ? 'bg-white/96 backdrop-blur-lg shadow-[0_1px_0_rgba(13,21,53,0.08)]'
+          : 'bg-transparent'
       }`}
     >
       <nav className="container-wide px-6 lg:px-10">
-        <div className="flex items-center justify-between h-[76px]">
+        <div className="flex items-center justify-between h-[88px]">
 
-          {/* Logo — full brand logo, larger */}
+          {/* Logo — brand mark, triple the previous size */}
           <Link href="/" className="flex items-center flex-shrink-0">
             <Image
-              src={LOGO_FULL}
+              src={LOGO_MARK}
               alt="Ravello HR"
-              width={200}
-              height={56}
-              className="h-12 w-auto object-contain"
+              width={360}
+              height={120}
+              className="h-[72px] w-auto object-contain"
               priority
             />
           </Link>
 
-          {/* Desktop */}
+          {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-0.5">
 
             {/* Solutions */}
