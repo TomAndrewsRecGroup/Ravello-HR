@@ -137,16 +137,16 @@ export default function Hero() {
               }}
             >
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#9B7FF8' }} />
-              Smart Hiring System\u2122
+              Smart Hiring System™
             </div>
 
-            {/* Logo — explicit large height, no padding squishing it */}
+            {/* Logo — doubled: 320px → 640px */}
             <div
               className="relative w-full flex items-center justify-center"
               style={{
                 background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.2) 0%, rgba(91,155,255,0.08) 50%, transparent 75%)',
                 borderRadius: '40px',
-                minHeight: '320px',
+                minHeight: '640px',
               }}
             >
               <Image
@@ -155,7 +155,7 @@ export default function Hero() {
                 width={1200}
                 height={600}
                 className="object-contain drop-shadow-2xl"
-                style={{ width: '100%', height: '320px' }}
+                style={{ width: '100%', height: '640px' }}
                 priority
               />
             </div>
@@ -173,7 +173,7 @@ export default function Hero() {
                 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#5B9BFF' }} />
-                PolicySafe\u2122
+                PolicySafe™
               </div>
               <div
                 className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
@@ -186,7 +186,7 @@ export default function Hero() {
                 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#E07FC0' }} />
-                DealReady People\u2122
+                DealReady People™
               </div>
             </div>
 
