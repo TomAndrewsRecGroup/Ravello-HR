@@ -1,124 +1,150 @@
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
+const SYSTEMS = [
+  { label: 'Smart Hiring System™', color: 'var(--brand-purple)' },
+  { label: 'PolicySafe™',          color: 'var(--brand-blue)' },
+  { label: 'DealReady People™',    color: 'var(--brand-pink)' },
+];
+
+const STATS = [
+  { val: '10+',  lab: 'Years senior HR expertise' },
+  { val: '40%+', lab: 'Agency cost reduction' },
+  { val: '0',    lab: 'Tribunal outcomes' },
+];
+
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden" style={{ background: 'var(--bg)' }}>
+    <section
+      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
+      style={{ background: 'var(--brand-navy)' }}
+    >
+      {/* Animated mesh glows */}
+      <div className="hero-mesh" />
 
-      {/* Soft radial glows */}
-      <div className="absolute right-0 top-0 w-[700px] h-[700px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 80% 30%, rgba(143,114,246,0.1) 0%, rgba(147,184,255,0.07) 40%, transparent 70%)' }}
+      {/* Subtle grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+        }}
       />
-      <div className="absolute left-0 bottom-0 w-[500px] h-[500px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 20% 80%, rgba(232,182,217,0.08) 0%, transparent 60%)' }}
+
+      {/* Gradient fade to bg at bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, var(--brand-navy))' }}
       />
 
-      <div className="relative z-10 container-wide section-padding w-full">
-        <div className="grid lg:grid-cols-[1fr_440px] gap-16 xl:gap-24 items-center">
+      {/* Content */}
+      <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
+        <div className="max-w-[820px]">
 
-          {/* Left — copy */}
-          <div>
-            <div className="flex items-center gap-3 mb-8">
-              <span className="eyebrow">Ravello HR</span>
-              <span className="w-8 h-px" style={{ background: 'var(--gradient)' }} />
-              <span className="text-xs font-medium uppercase tracking-[0.15em]" style={{ color: 'var(--ink-faint)' }}>UK People Consultancy</span>
-            </div>
-
-            <h1
-              className="font-display font-bold mb-6 leading-[1.04] tracking-[-0.02em]"
-              style={{ fontSize: 'clamp(2.8rem, 6vw, 4.75rem)', color: 'var(--ink)' }}
+          {/* Eyebrow badge */}
+          <div className="flex items-center gap-3 mb-8">
+            <span
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
+              style={{
+                background: 'rgba(143,114,246,0.15)',
+                border: '1px solid rgba(143,114,246,0.3)',
+                color: 'rgba(200,185,255,0.95)',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
             >
-              The HR expertise your business{' '}
-              <span className="text-gradient">actually needs.</span>
-            </h1>
-
-            <p className="text-lg leading-relaxed mb-3 max-w-[520px]" style={{ color: 'var(--ink-soft)' }}>
-              Three named systems. One senior expert. No generic consultancy.
-            </p>
-            <p className="text-base leading-relaxed mb-10 max-w-[480px]" style={{ color: 'var(--ink-faint)' }}>
-              Ravello HR fixes the hiring, compliance and transformation challenges that slow ambitious businesses down — permanently.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Link href="/book" className="btn-primary">
-                Book a Free Call <ArrowRight size={16} />
-              </Link>
-              <Link href="/tools/hiring-score" className="btn-secondary">
-                Get Your Hiring Score
-              </Link>
-            </div>
-
-            {/* Micro metrics */}
-            <div className="flex flex-wrap items-center gap-8 mt-10 pt-8"
-              style={{ borderTop: '1px solid var(--brand-line)' }}
-            >
-              {[
-                { val: '10+',  lab: 'Years experience' },
-                { val: '40%+', lab: 'Agency cost reduction' },
-                { val: '0',    lab: 'Tribunal outcomes' },
-              ].map((m) => (
-                <div key={m.lab}>
-                  <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{m.val}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{m.lab}</p>
-                </div>
-              ))}
-            </div>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand-purple)' }} />
+              UK HR Consultancy
+            </span>
           </div>
 
-          {/* Right — logo composition */}
-          <div className="hidden lg:flex items-center justify-center relative">
-            {/* Outer ring */}
-            <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle, rgba(143,114,246,0.07) 0%, transparent 70%)',
-                border: '1px solid rgba(143,114,246,0.1)',
-              }}
-            />
-            {/* Inner ring */}
-            <div className="absolute w-[290px] h-[290px] rounded-full pointer-events-none"
-              style={{ border: '1px solid rgba(147,184,255,0.12)' }}
-            />
+          {/* Headline */}
+          <h1
+            className="font-display font-extrabold mb-7 leading-[1.03] tracking-[-0.025em] text-white"
+            style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)' }}
+          >
+            The HR expertise<br />
+            your business{' '}
+            <span className="text-gradient">actually needs.</span>
+          </h1>
 
-            {/* Logo mark centred */}
-            <div className="relative z-10">
-              <Image
-                src={LOGO}
-                alt="Ravello HR"
-                width={280}
-                height={120}
-                className="object-contain"
-                priority
-              />
-            </div>
+          {/* Sub copy */}
+          <p
+            className="text-lg leading-relaxed mb-4 max-w-[600px]"
+            style={{ color: 'rgba(255,255,255,0.7)' }}
+          >
+            Three named systems. One senior expert. No generic consultancy.
+          </p>
+          <p
+            className="text-base leading-relaxed mb-12 max-w-[560px]"
+            style={{ color: 'rgba(255,255,255,0.42)' }}
+          >
+            Ravello HR permanently fixes the hiring, compliance and transformation
+            challenges that slow ambitious UK businesses down.
+          </p>
 
-            {/* Floating system pills */}
-            {[
-              { label: 'Smart Hiring System™', top: '6%',  left: '-5%',  dot: 'var(--brand-purple)' },
-              { label: 'PolicySafe™',           top: '42%', right: '-8%', dot: 'var(--brand-blue)' },
-              { label: 'DealReady People™',     top: '74%', left: '-2%',  dot: 'var(--brand-pink)' },
-            ].map((p) => (
-              <div
-                key={p.label}
-                className="absolute flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold bg-white"
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-4 mb-16">
+            <Link href="/book" className="btn-gradient">
+              <CalendarCheck size={16} />
+              Book a Free Call
+            </Link>
+            <Link href="/tools/hiring-score" className="btn-outline-white">
+              Get Your Hiring Score <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          {/* System pills */}
+          <div className="flex flex-wrap gap-2.5 mb-16">
+            {SYSTEMS.map((s) => (
+              <span
+                key={s.label}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold"
                 style={{
-                  top: p.top,
-                  left: (p as any).left,
-                  right: (p as any).right,
-                  border: '1px solid var(--brand-line)',
-                  boxShadow: '0 2px 16px rgba(14,22,51,0.08)',
-                  color: 'var(--ink)',
-                  whiteSpace: 'nowrap',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'rgba(255,255,255,0.75)',
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.dot }} />
-                {p.label}
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                {s.label}
+              </span>
+            ))}
+          </div>
+
+          {/* Micro stats row */}
+          <div
+            className="flex flex-wrap gap-10 pt-8"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            {STATS.map((m) => (
+              <div key={m.lab}>
+                <p
+                  className="font-display font-extrabold text-3xl mb-1"
+                  style={{
+                    background: 'var(--gradient)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {m.val}
+                </p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{m.lab}</p>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Scroll nudge */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-10">
+        <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>Scroll</span>
+        <ChevronDown size={16} style={{ color: 'rgba(255,255,255,0.3)' }} className="animate-bounce" />
       </div>
     </section>
   );
