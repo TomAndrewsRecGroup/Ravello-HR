@@ -125,7 +125,7 @@ export default function Hero() {
           {/* Right column */}
           <div className="hidden lg:flex flex-col items-center justify-center gap-6">
 
-            {/* Pill — above logo */}
+            {/* Pill — above */}
             <div
               className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold self-start ml-2"
               style={{
@@ -140,27 +140,34 @@ export default function Hero() {
               Smart Hiring System™
             </div>
 
-            {/* Logo — doubled: 320px → 640px */}
+            {/*
+              Container has a FIXED height of 280px — this is what the pills respond to.
+              The image is rendered at full width/height inside it, then scaled up
+              visually with transform: scale(). CSS transform does NOT affect layout,
+              so the pills never move regardless of scale value.
+            */}
             <div
-              className="relative w-full flex items-center justify-center"
               style={{
+                position: 'relative',
+                width: '100%',
+                height: '280px',
+                flexShrink: 0,
                 background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.2) 0%, rgba(91,155,255,0.08) 50%, transparent 75%)',
-                borderRadius: '10px',
-                minHeight: '980px',
+                borderRadius: '40px',
+                overflow: 'visible',
               }}
             >
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={1800}
-                height={720}
+                fill
                 className="object-contain drop-shadow-2xl"
-                style={{ width: '100%', height: '980px' }}
+                style={{ transform: 'scale(1.75)', transformOrigin: 'center center' }}
                 priority
               />
             </div>
 
-            {/* Pills — below logo, side by side */}
+            {/* Pills — below */}
             <div className="flex items-center justify-between w-full px-2 gap-3">
               <div
                 className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
