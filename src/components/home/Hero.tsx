@@ -3,10 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-// Full logo — shown large above the badge in hero copy column
+// Full logo — right panel
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
-// Brand mark — shown on the right decorative panel
-const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const SYSTEMS = [
   { label: 'Smart Hiring System™', color: '#9B7FF8' },
@@ -45,24 +43,10 @@ export default function Hero() {
       />
 
       <div className="relative z-10 container-wide section-padding w-full pt-44 pb-28">
-        <div className="grid lg:grid-cols-[1fr_400px] gap-16 xl:gap-24 items-center">
+        <div className="grid lg:grid-cols-[1fr_420px] gap-16 xl:gap-24 items-center">
 
-          {/* ── Left column ── */}
+          {/* Left column */}
           <div>
-
-            {/* Full logo — large, above the badge */}
-            <div className="mb-10">
-              <Image
-                src={LOGO_FULL}
-                alt="Ravello HR"
-                width={480}
-                height={160}
-                className="object-contain w-auto"
-                style={{ maxHeight: '120px' }}
-                priority
-              />
-            </div>
-
             {/* Badge */}
             <div className="flex items-center gap-3 mb-9">
               <span
@@ -95,7 +79,6 @@ export default function Hero() {
               </span>
             </h1>
 
-            {/* Sub copy */}
             <p className="text-lg leading-relaxed mb-3 max-w-[540px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
               Three named systems. One senior expert. No generic consultancy.
             </p>
@@ -148,35 +131,40 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* ── Right column — brand mark ── */}
-          <div className="hidden lg:flex flex-col items-center justify-center relative">
-            {/* Glow rings */}
+          {/* Right column — full logo + floating system pills */}
+          <div className="hidden lg:flex flex-col items-center justify-center relative min-h-[420px]">
+
+            {/* Glow rings behind logo */}
             <div
-              className="absolute w-[360px] h-[360px] rounded-full pointer-events-none"
-              style={{ background: 'radial-gradient(circle, rgba(124,92,246,0.18) 0%, rgba(91,155,255,0.08) 40%, transparent 70%)', border: '1px solid rgba(124,92,246,0.12)' }}
+              className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(124,92,246,0.16) 0%, rgba(91,155,255,0.07) 40%, transparent 70%)',
+                border: '1px solid rgba(124,92,246,0.1)',
+              }}
             />
             <div
-              className="absolute w-[260px] h-[260px] rounded-full pointer-events-none"
-              style={{ border: '1px solid rgba(91,155,255,0.1)' }}
+              className="absolute w-[290px] h-[290px] rounded-full pointer-events-none"
+              style={{ border: '1px solid rgba(91,155,255,0.08)' }}
             />
 
-            {/* Brand mark */}
-            <div className="relative z-10 p-8">
+            {/* Full logo — centred, large */}
+            <div className="relative z-10 px-10 py-8">
               <Image
-                src={LOGO_MARK}
-                alt="Ravello HR mark"
-                width={340}
-                height={150}
-                className="object-contain drop-shadow-2xl"
+                src={LOGO_FULL}
+                alt="Ravello HR"
+                width={400}
+                height={180}
+                className="object-contain drop-shadow-2xl w-full"
+                style={{ maxWidth: '380px' }}
                 priority
               />
             </div>
 
             {/* Floating system pills */}
             {[
-              { label: 'Smart Hiring System™', pos: { top: '4%',  left: '-14%' }, dot: '#9B7FF8' },
-              { label: 'PolicySafe™',           pos: { top: '46%', right: '-16%' }, dot: '#5B9BFF' },
-              { label: 'DealReady People™',     pos: { top: '82%', left: '-8%'  }, dot: '#E07FC0' },
+              { label: 'Smart Hiring System™', pos: { top: '6%',  left: '-10%' }, dot: '#9B7FF8' },
+              { label: 'PolicySafe™',           pos: { top: '48%', right: '-14%' }, dot: '#5B9BFF' },
+              { label: 'DealReady People™',     pos: { bottom: '6%', left: '-6%' }, dot: '#E07FC0' },
             ].map((p) => (
               <div
                 key={p.label}
@@ -184,13 +172,13 @@ export default function Hero() {
                 style={{
                   ...p.pos,
                   background: 'rgba(255,255,255,0.09)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.16)',
                   color: 'rgba(255,255,255,0.85)',
                   whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+                  boxShadow: '0 2px 14px rgba(0,0,0,0.22)',
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.dot }} />
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.dot }} />
                 {p.label}
               </div>
             ))}
