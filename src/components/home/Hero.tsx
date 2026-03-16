@@ -6,9 +6,9 @@ import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
 
 const SYSTEMS = [
-  { label: 'Smart Hiring System™', color: '#9B7FF8' },
-  { label: 'PolicySafe™',          color: '#5B9BFF' },
-  { label: 'DealReady People™',    color: '#E07FC0' },
+  { label: 'Smart Hiring System\u2122', color: '#9B7FF8' },
+  { label: 'PolicySafe\u2122',          color: '#5B9BFF' },
+  { label: 'DealReady People\u2122',    color: '#E07FC0' },
 ];
 
 const STATS = [
@@ -39,7 +39,7 @@ export default function Hero() {
       />
 
       <div className="relative z-10 container-wide section-padding w-full pt-44 pb-28">
-        <div className="grid lg:grid-cols-[1fr_520px] gap-12 xl:gap-20 items-center">
+        <div className="grid lg:grid-cols-[1fr_560px] gap-12 xl:gap-16 items-center">
 
           {/* Left column */}
           <div>
@@ -122,57 +122,97 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right column — full logo tripled in size + floating pills */}
-          <div className="hidden lg:flex flex-col items-center justify-center relative min-h-[520px]">
+          {/* Right column — logo doubled in size, pills hugging edges */}
+          <div className="hidden lg:flex flex-col items-center justify-center relative" style={{ minHeight: '480px' }}>
 
-            {/* Glow rings — scaled up to match larger logo */}
+            {/* Glow rings scaled to match */}
             <div
-              className="absolute w-[580px] h-[580px] rounded-full pointer-events-none"
+              className="absolute rounded-full pointer-events-none"
               style={{
-                background: 'radial-gradient(circle, rgba(124,92,246,0.16) 0%, rgba(91,155,255,0.07) 40%, transparent 70%)',
-                border: '1px solid rgba(124,92,246,0.1)',
+                width: '520px', height: '520px',
+                background: 'radial-gradient(circle, rgba(124,92,246,0.15) 0%, rgba(91,155,255,0.06) 40%, transparent 70%)',
+                border: '1px solid rgba(124,92,246,0.09)',
               }}
             />
             <div
-              className="absolute w-[420px] h-[420px] rounded-full pointer-events-none"
-              style={{ border: '1px solid rgba(91,155,255,0.08)' }}
+              className="absolute rounded-full pointer-events-none"
+              style={{ width: '370px', height: '370px', border: '1px solid rgba(91,155,255,0.07)' }}
             />
 
-            {/* Full logo — tripled: was ~380px wide, now 1140px capped to column */}
-            <div className="relative z-10 px-4 py-6 w-full flex items-center justify-center">
+            {/* Full logo — doubled: was ~100% of 520px col, now fills full 560px column */}
+            <div className="relative z-10 w-full px-2">
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={1140}
+                width={1120}
                 height={420}
-                className="object-contain drop-shadow-2xl w-full"
-                style={{ maxWidth: '100%' }}
+                className="object-contain w-full drop-shadow-2xl"
                 priority
               />
             </div>
 
-            {/* Floating system pills */}
-            {[
-              { label: 'Smart Hiring System™', pos: { top: '4%',   left: '-8%'  }, dot: '#9B7FF8' },
-              { label: 'PolicySafe™',           pos: { top: '48%',  right: '-10%' }, dot: '#5B9BFF' },
-              { label: 'DealReady People™',     pos: { bottom: '4%', left: '-4%' },  dot: '#E07FC0' },
-            ].map((p) => (
-              <div
-                key={p.label}
-                className="absolute flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-sm"
-                style={{
-                  ...p.pos,
-                  background: 'rgba(255,255,255,0.09)',
-                  border: '1px solid rgba(255,255,255,0.16)',
-                  color: 'rgba(255,255,255,0.85)',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 14px rgba(0,0,0,0.22)',
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: p.dot }} />
-                {p.label}
-              </div>
-            ))}
+            {/*
+              Pills hug the logo:
+              Logo aspect ratio ~1120:420 = 2.67:1
+              At 560px column width, logo renders ~560 x 210px
+              Centre is at y=240px of 480px container
+              Logo top edge ≈ 240 - 105 = 135px  → pill sits just above: top ~108px
+              Logo bottom edge ≈ 240 + 105 = 345px → pill sits just below: bottom ~108px
+              Left/right edges flush with column, pills offset inward
+            */}
+
+            {/* Smart Hiring System — top-left, just above logo */}
+            <div
+              className="absolute z-20 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-sm"
+              style={{
+                top: '14%',
+                left: '2%',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.9)',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#9B7FF8' }} />
+              Smart Hiring System\u2122
+            </div>
+
+            {/* PolicySafe — right, vertically centred with logo */}
+            <div
+              className="absolute z-20 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-sm"
+              style={{
+                top: '50%',
+                right: '0%',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.9)',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#5B9BFF' }} />
+              PolicySafe\u2122
+            </div>
+
+            {/* DealReady People — bottom-left, just below logo */}
+            <div
+              className="absolute z-20 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-sm"
+              style={{
+                bottom: '14%',
+                left: '2%',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.9)',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#E07FC0' }} />
+              DealReady People\u2122
+            </div>
+
           </div>
 
         </div>
