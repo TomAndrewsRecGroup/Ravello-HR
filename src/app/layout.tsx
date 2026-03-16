@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
 import './globals.css';
 import { Analytics } from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
@@ -8,9 +8,15 @@ import Footer from '@/components/Footer';
 import ChatWidget from '@/components/ChatWidget';
 import QuickActions from '@/components/QuickActions';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
     default: 'Ravello HR | Hire. Lead. Protect.',
     template: '%s | Ravello HR',
@@ -47,23 +53,13 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://ravellohr.co.uk' },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={dmSans.variable}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
         <ClarityScript />
       </head>
-      <body className="bg-brand-void font-sans antialiased">
+      <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <Analytics />
         <Nav />
         <main>{children}</main>
