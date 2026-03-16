@@ -145,17 +145,17 @@ export default function Hero() {
               className="relative w-full flex items-center justify-center"
               style={{
                 background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.2) 0%, rgba(91,155,255,0.08) 50%, transparent 75%)',
-                borderRadius: '40px',
-                minHeight: '640px',
+                borderRadius: '10px',
+                minHeight: '980px',
               }}
             >
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={1200}
-                height={600}
+                width={1800}
+                height={720}
                 className="object-contain drop-shadow-2xl"
-                style={{ width: '100%', height: '640px' }}
+                style={{ width: '100%', height: '980px' }}
                 priority
               />
             </div>
