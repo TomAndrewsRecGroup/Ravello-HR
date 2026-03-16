@@ -8,66 +8,66 @@ export const metadata: Metadata = {
 };
 
 const COMPARISON = [
-  {
-    feature: 'Named, outcome-led system',
-    ravello: true,  agency: false, inhouse: false, generic: false,
-  },
-  {
-    feature: 'Senior expert on your account (day 1 → end)',
-    ravello: true,  agency: false, inhouse: 'maybe', generic: false,
-  },
-  {
-    feature: 'Fixed scope — no billing surprises',
-    ravello: true,  agency: false, inhouse: true, generic: false,
-  },
-  {
-    feature: 'Embeds within 48 hours',
-    ravello: true,  agency: false, inhouse: false, generic: false,
-  },
-  {
-    feature: 'Covers hiring, compliance AND transformation',
-    ravello: true,  agency: false, inhouse: 'maybe', generic: false,
-  },
-  {
-    feature: 'No long-term retainer required',
-    ravello: true,  agency: false, inhouse: false, generic: false,
-  },
-  {
-    feature: 'CIPD qualified & TUPE specialist',
-    ravello: true,  agency: false, inhouse: 'maybe', generic: 'maybe',
-  },
-  {
-    feature: 'Proven 0 tribunal outcomes track record',
-    ravello: true,  agency: false, inhouse: false, generic: false,
-  },
+  { feature: 'Named, outcome-led system',                          ravello: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Senior expert on your account (day 1 to end)',       ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
+  { feature: 'Fixed scope — no billing surprises',                 ravello: true,  agency: false,   inhouse: true,    generic: false },
+  { feature: 'Embeds within 48 hours',                             ravello: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Covers hiring, compliance AND transformation',        ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
+  { feature: 'No long-term retainer required',                     ravello: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'CIPD qualified & TUPE specialist',                   ravello: true,  agency: false,   inhouse: 'maybe', generic: 'maybe' },
+  { feature: '0 tribunal outcomes track record',                   ravello: true,  agency: false,   inhouse: false,   generic: false },
 ];
 
 const OBJECTIONS = [
   {
-    q: "We already use a recruitment agency.",
-    a: "Agencies fill roles — they don't fix why roles keep reopening. The Smart Hiring System does. Most clients cut their agency spend by 40%+ within a year.",
+    q: 'We already use a recruitment agency.',
+    a: 'Agencies fill roles — they don\u2019t fix why roles keep reopening. The Smart Hiring System does. Most clients cut their agency spend by 40%+ within a year.',
   },
   {
-    q: "We have an in-house HR person.",
-    a: "Great. We work alongside them — not over them. Ravello HR brings specialist depth in areas (TUPE, M&A, compliance architecture) that most generalists don't cover day-to-day.",
+    q: 'We have an in-house HR person.',
+    a: 'Great. We work alongside them — not over them. Ravello HR brings specialist depth in areas (TUPE, M&A, compliance architecture) that most generalists don\u2019t cover day-to-day.',
   },
   {
-    q: "We've used HR consultants before and it didn't work.",
-    a: "That's usually because you got junior delivery on a senior pitch, or vague advice with no clear deliverable. Every Ravello engagement has a named system, a fixed scope, and a senior lead.",
+    q: 'We\u2019ve used HR consultants before and it didn\u2019t work.',
+    a: 'That\u2019s usually because you got junior delivery on a senior pitch, or vague advice with no clear deliverable. Every Ravello engagement has a named system, a fixed scope, and a senior lead.',
   },
   {
-    q: "We can't afford a consultant right now.",
-    a: "One tribunal claim costs an average of £8,500–£30,000+. One bad hire costs 3x salary. PolicySafe™ and the Smart Hiring System typically pay for themselves inside 6 months.",
+    q: 'We can\u2019t afford a consultant right now.',
+    a: 'One tribunal claim costs an average of \u00a38,500\u2013\u00a330,000+. One bad hire costs 3x salary. PolicySafe\u2122 and the Smart Hiring System typically pay for themselves inside 6 months.',
   },
 ];
 
 const REASONS = [
-  { icon: '🎯', title: 'A system, not a service', body: 'Every engagement is built around one of three named systems. You always know what you're getting, why, and when it ends.' },
-  { icon: '👤', title: 'One senior expert, start to finish', body: 'You get Lucinda — not a junior who was briefed by someone you met once. Senior thinking on every call, every deliverable.' },
-  { icon: '⚡', title: 'Embedded fast', body: 'Typically active within 48 hours of engagement. No lengthy onboarding, no 6-week discovery phase — we learn your business by working in it.' },
-  { icon: '📋', title: 'Fixed scope', body: 'You know the cost before we start. No open-ended retainers, no scope creep, no surprise invoices.' },
-  { icon: '🔒', title: 'Fully confidential', body: 'All engagements are handled under strict confidentiality. Names never appear in case studies without explicit permission.' },
-  { icon: '🏆', title: '0 tribunal outcomes', body: 'Across every restructure, TUPE transfer and disciplinary process we\'ve led. That\'s not luck — it\'s process.' },
+  {
+    icon: '\uD83C\uDFAF',
+    title: 'A system, not a service',
+    body: 'Every engagement is built around one of three named systems. You always know what you\u2019re getting, why, and when it ends.',
+  },
+  {
+    icon: '\uD83D\uDC64',
+    title: 'One senior expert, start to finish',
+    body: 'You get the same senior lead — not a junior who was briefed by someone you met once. Senior thinking on every call, every deliverable.',
+  },
+  {
+    icon: '\u26A1',
+    title: 'Embedded fast',
+    body: 'Typically active within 48 hours of engagement. No lengthy onboarding, no 6-week discovery phase — we learn your business by working in it.',
+  },
+  {
+    icon: '\uD83D\uDCCB',
+    title: 'Fixed scope',
+    body: 'You know the cost before we start. No open-ended retainers, no scope creep, no surprise invoices.',
+  },
+  {
+    icon: '\uD83D\uDD12',
+    title: 'Fully confidential',
+    body: 'All engagements are handled under strict confidentiality. Names never appear in case studies without explicit permission.',
+  },
+  {
+    icon: '\uD83C\uDFC6',
+    title: '0 tribunal outcomes',
+    body: 'Across every restructure, TUPE transfer and disciplinary process handled. That\u2019s not luck — it\u2019s process.',
+  },
 ];
 
 function Cell({ val }: { val: boolean | string }) {
@@ -93,12 +93,15 @@ export default function WhyRavelloPage() {
             style={{ fontSize: 'clamp(2.5rem,5vw,4.2rem)', letterSpacing: '-0.03em', lineHeight: 1.05 }}
           >
             Senior HR expertise.<br />
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg,#9B7FF8 0%,#5B9BFF 60%,#E07FC0 100%)' }}>
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(135deg,#9B7FF8 0%,#5B9BFF 60%,#E07FC0 100%)' }}
+            >
               Built differently.
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            We\'re not a recruitment agency. We\'re not a retainer consultancy. We\'re a named-system HR practice that fixes real problems — fast.
+            We&rsquo;re not a recruitment agency. We&rsquo;re not a retainer consultancy. We&rsquo;re a named-system HR practice that fixes real problems &mdash; fast.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
@@ -138,7 +141,7 @@ export default function WhyRavelloPage() {
               Why not an agency
             </p>
             <h2 className="section-title">How we compare.</h2>
-            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>Side by side — Ravello HR vs. the alternatives.</p>
+            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>Side by side &mdash; Ravello HR vs. the alternatives.</p>
           </div>
 
           <div className="overflow-x-auto rounded-[22px]" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 20px rgba(13,21,53,0.05)' }}>
@@ -179,7 +182,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Common questions
             </p>
-            <h2 className="section-title">We\'ve heard it before.</h2>
+            <h2 className="section-title">We&rsquo;ve heard it before.</h2>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {OBJECTIONS.map((o) => (
@@ -198,7 +201,7 @@ export default function WhyRavelloPage() {
         <div className="relative z-10 container-narrow text-center">
           <h2 className="section-title mb-6">Ready to talk?</h2>
           <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
-            30 minutes. No pitch. Just an honest conversation about what\'s slowing your business down.
+            30 minutes. No pitch. Just an honest conversation about what&rsquo;s slowing your business down.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
