@@ -123,11 +123,11 @@ export default function Hero() {
           </div>
 
           {/* Right column */}
-          <div className="hidden lg:flex flex-col items-center justify-center gap-5">
+          <div className="hidden lg:flex flex-col items-center justify-center gap-6">
 
-            {/* Pill — top */}
+            {/* Pill — above logo */}
             <div
-              className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold backdrop-blur-sm self-start ml-4"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold self-start ml-2"
               style={{
                 background: 'rgba(255,255,255,0.1)',
                 border: '1px solid rgba(255,255,255,0.18)',
@@ -140,29 +140,30 @@ export default function Hero() {
               Smart Hiring System\u2122
             </div>
 
-            {/* Logo — massive, full column width */}
+            {/* Logo — explicit large height, no padding squishing it */}
             <div
-              className="relative w-full"
+              className="relative w-full flex items-center justify-center"
               style={{
-                background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.18) 0%, rgba(91,155,255,0.08) 45%, transparent 72%)',
-                borderRadius: '32px',
-                padding: '32px 16px',
+                background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.2) 0%, rgba(91,155,255,0.08) 50%, transparent 75%)',
+                borderRadius: '40px',
+                minHeight: '320px',
               }}
             >
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={1800}
-                height={680}
-                className="object-contain w-full drop-shadow-2xl"
+                width={1200}
+                height={600}
+                className="object-contain drop-shadow-2xl"
+                style={{ width: '100%', height: '320px' }}
                 priority
               />
             </div>
 
             {/* Pills — below logo, side by side */}
-            <div className="flex items-center justify-between w-full px-4 gap-3">
+            <div className="flex items-center justify-between w-full px-2 gap-3">
               <div
-                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold backdrop-blur-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(255,255,255,0.1)',
                   border: '1px solid rgba(255,255,255,0.18)',
@@ -175,7 +176,7 @@ export default function Hero() {
                 PolicySafe\u2122
               </div>
               <div
-                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold backdrop-blur-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(255,255,255,0.1)',
                   border: '1px solid rgba(255,255,255,0.18)',
