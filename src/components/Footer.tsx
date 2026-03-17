@@ -1,161 +1,176 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Linkedin } from 'lucide-react';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO_URL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 export default function Footer() {
   return (
-    <footer style={{ background: 'var(--brand-navy)' }}>
-      <style>{`
-        .footer-link  { font-size: 0.875rem; color: rgba(255,255,255,0.5); transition: color 0.2s; }
-        .footer-link:hover { color: #fff; }
-        .footer-icon  {
-          width:36px;height:36px;border-radius:8px;
-          display:flex;align-items:center;justify-content:center;
-          background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);
-          transition:background 0.2s;
-        }
-        .footer-icon:hover { background:rgba(143,114,246,0.3); }
-        .footer-tiny  { font-size:0.75rem;color:rgba(255,255,255,0.28);transition:color 0.2s; }
-        .footer-tiny:hover { color:rgba(255,255,255,0.7); }
-      `}</style>
-
-      <div className="container-wide section-padding">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-
-          {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center mb-5">
-              <Image
-                src={LOGO}
-                alt="Ravello"
-                width={140}
-                height={48}
-                className="object-contain h-10 w-auto brightness-[1.1]"
-              />
-            </Link>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              HR support, structured hiring, and a client portal for growing businesses of 10–250 people.
+    <footer style={{
+      background: 'var(--color-deep)',
+      borderTop: '1px solid var(--color-border)',
+    }}>
+      <div style={{
+        maxWidth: '1280px', margin: '0 auto',
+        padding: '5rem 2rem 3rem',
+      }}>
+        {/* Main grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '3rem',
+          marginBottom: '4rem',
+        }}>
+          {/* Column 1 — Products */}
+          <div>
+            <p style={{
+              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)',
+              letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase',
+              color: 'var(--color-purple-light)', marginBottom: '1.25rem',
+            }}>
+              Products
             </p>
-            <div className="flex gap-3">
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                ['Smart Hiring System™', '/smart-hiring-system'],
+                ['PolicySafe™',          '/policysafe'],
+                ['DealReady People™',    '/dealready-people'],
+              ].map(([label, href]) => (
+                <Link key={href} href={href} style={{
+                  color: 'var(--color-text-secondary)', textDecoration: 'none',
+                  fontSize: 'var(--text-small)', transition: 'color 0.2s ease',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Column 2 — Company */}
+          <div>
+            <p style={{
+              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)',
+              letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase',
+              color: 'var(--color-purple-light)', marginBottom: '1.25rem',
+            }}>
+              Company
+            </p>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                ['About',    '/about'],
+                ['Services', '/services'],
+                ['Partners', '/partners'],
+                ['Contact',  '/contact'],
+              ].map(([label, href]) => (
+                <Link key={href} href={href} style={{
+                  color: 'var(--color-text-secondary)', textDecoration: 'none',
+                  fontSize: 'var(--text-small)', transition: 'color 0.2s ease',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Column 3 — Legal */}
+          <div>
+            <p style={{
+              fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)',
+              letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase',
+              color: 'var(--color-purple-light)', marginBottom: '1.25rem',
+            }}>
+              Legal
+            </p>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                ['Privacy Policy', '/privacy-policy'],
+                ['Terms',          '/terms'],
+              ].map(([label, href]) => (
+                <Link key={href} href={href} style={{
+                  color: 'var(--color-text-secondary)', textDecoration: 'none',
+                  fontSize: 'var(--text-small)', transition: 'color 0.2s ease',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Column 4 — Brand */}
+          <div>
+            <Image
+              src={LOGO_URL}
+              alt="Ravello HR"
+              width={120}
+              height={34}
+              style={{ objectFit: 'contain', height: '30px', width: 'auto', marginBottom: '1rem' }}
+            />
+            <p style={{
+              fontSize: 'var(--text-small)',
+              color: 'var(--color-text-muted)',
+              lineHeight: 'var(--leading-relaxed)',
+              marginBottom: '1.25rem',
+            }}>
+              HR strategy, diagnostics,<br />and project delivery for growing UK businesses.
+            </p>
+            {/* Social links */}
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
               <a
                 href="https://linkedin.com/company/ravellohr"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="footer-icon"
-                aria-label="LinkedIn"
-              >
-                <Linkedin size={15} />
-              </a>
-              <a href="mailto:hello@ravellohr.co.uk" className="footer-icon" aria-label="Email">
-                <Mail size={15} />
-              </a>
-            </div>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h4
-              className="text-xs font-semibold uppercase tracking-[0.18em] mb-5"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-            >
-              Services
-            </h4>
-            <ul className="space-y-3">
-              {[
-                ['HR Support',         '/services'],
-                ['Hiring Capability',  '/services#hiring'],
-                ['Client Portal',      '/how-it-works#portal'],
-                ['How It Works',       '/how-it-works'],
-              ].map(([label, href]) => (
-                <li key={href}>
-                  <Link href={href} className="footer-link">{label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h4
-              className="text-xs font-semibold uppercase tracking-[0.18em] mb-5"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-            >
-              Company
-            </h4>
-            <ul className="space-y-3">
-              {[
-                ['About',       '/about'],
-                ['Contact',     '/contact'],
-                ['Privacy',     '/privacy'],
-                ['Terms',       '/terms'],
-              ].map(([label, href]) => (
-                <li key={href}>
-                  <Link href={href} className="footer-link">{label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Get Started */}
-          <div>
-            <h4
-              className="text-xs font-semibold uppercase tracking-[0.18em] mb-5"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-            >
-              Get Started
-            </h4>
-            <div
-              className="rounded-[16px] p-5"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-              }}
-            >
-              <p className="text-sm font-semibold text-white mb-2">
-                Ready to talk?
-              </p>
-              <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Book a free consultation. We&apos;ll map out what Ravello looks like for your business.
-              </p>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-xs font-semibold text-white transition-all"
+                aria-label="Ravello HR on LinkedIn"
                 style={{
-                  background: 'var(--brand-purple)',
-                  boxShadow: '0 2px 12px rgba(143,114,246,0.3)',
+                  width: 34, height: 34,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--color-text-muted)',
+                  transition: 'border-color 0.2s ease, color 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(123,47,190,0.5)';
+                  e.currentTarget.style.color = 'var(--color-purple-light)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--color-border)';
+                  e.currentTarget.style.color = 'var(--color-text-muted)';
                 }}
               >
-                Book a consultation
-              </Link>
-            </div>
-            <div className="mt-4">
-              <a href="mailto:hello@ravellohr.co.uk" className="footer-link flex items-center gap-2 text-xs">
-                <Mail size={12} /> hello@ravellohr.co.uk
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
               </a>
             </div>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div
-          className="mt-14 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            &copy; {new Date().getFullYear()} Ravello. All rights reserved. Registered in England &amp; Wales.
+        <div style={{
+          borderTop: '1px solid var(--color-border)',
+          paddingTop: '2rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: '1rem',
+        }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+            © {new Date().getFullYear()} Ravello HR. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            {[
-              ['Privacy Policy', '/privacy'],
-              ['Terms of Use', '/terms'],
-            ].map(([label, href]) => (
-              <Link key={href} href={href} className="footer-tiny">
-                {label}
-              </Link>
-            ))}
-          </div>
+          <a
+            href="https://www.perplexity.ai/computer"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', textDecoration: 'none' }}
+          >
+            Created with Perplexity Computer
+          </a>
         </div>
       </div>
     </footer>

@@ -1,220 +1,155 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
+import RevealScript from '@/components/RevealScript';
 
 export const metadata: Metadata = {
-  title: 'DealReady People™ | M&A HR & Change Management | Ravello HR',
-  description:
-    'People risk is the #1 reason acquisitions fail. DealReady People™ by Ravello HR manages people due diligence, TUPE, restructuring and culture integration.',
-  alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
+  title: 'DealReady People™ | Pre-Acquisition People Due Diligence | Ravello HR',
+  description: 'People risk is the most underpriced risk in any acquisition. DealReady People™ identifies key person dependencies, hidden liabilities, and culture collision points before the deal closes.',
 };
 
-const preDealItems = [
-  'People due diligence — culture, contracts, liabilities',
-  'Hidden cost identification (holiday accrual, tribunal risk, informal agreements)',
-  'TUPE applicability assessment',
-  'Key person dependency mapping',
-  'Org structure comparison and gap analysis',
-  'People risk summary for deal team / board',
-];
-
-const postDealItems = [
-  'TUPE transfer management and communications',
-  'Redundancy and restructure process design',
-  'New contract and handbook rollout',
-  'Culture integration planning',
-  'Manager briefing and change comms support',
-  'HR policy harmonisation across entities',
-];
-
-const risks = [
-  {
-    icon: FileText,
-    title: 'Undisclosed employment liabilities',
-    description: 'Informal pay arrangements, verbal agreements and undocumented practices become your liabilities the moment the deal closes.',
-    color: 'text-red-500',
-  },
-  {
-    icon: Users,
-    title: 'Key person flight risk',
-    description: 'The people the target business runs on may not stay. Without early identification and retention planning, you can lose them before integration starts.',
-    color: 'text-orange-500',
-  },
-  {
-    icon: AlertTriangle,
-    title: 'TUPE mismanagement',
-    description: 'TUPE is complex and unforgiving. Misstep the consultation or misclassify a transfer and you inherit a tribunal queue.',
-    color: 'text-yellow-600',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Culture collision',
-    description: 'Two businesses with different management styles, values and expectations will clash. Without a managed integration plan, you lose the people you paid for.',
-    color: 'text-purple-500',
-  },
-  {
-    icon: Clock,
-    title: 'Restructure delay',
-    description: 'Post-deal restructures drag when there’s no clear process. Uncertainty leaks. Good people leave before you’ve decided who to keep.',
-    color: 'text-red-600',
-  },
-  {
-    icon: FileText,
-    title: 'Non-compliant inherited contracts',
-    description: 'Many SME targets have contracts that wouldn’t survive scrutiny. You inherit exposure unless you identify it in due diligence.',
-    color: 'text-brand-slate',
-  },
-];
-
-const decisionTree = [
-  { question: 'Are you acquiring a business with existing staff?', answer: 'TUPE almost certainly applies. Get advice before heads of terms.' },
-  { question: 'Is the target business founder-led with informal practices?', answer: 'High risk of undocumented agreements. Needs people due diligence.' },
-  { question: 'Will roles be duplicated post-deal?', answer: 'Redundancy risk. Process design needed before day one.' },
-  { question: 'Are you merging two distinct cultures?', answer: 'Integration planning required. Day one comms strategy is critical.' },
+const THEMES = [
+  { id: '01', stage: 'Pre-deal', title: 'Employment liabilities', desc: 'Undisclosed claims, tribunal history, TUPE obligations, and contracts that don\'t reflect actual terms. These become the buyer\'s problem at completion.' },
+  { id: '02', stage: 'Pre-deal', title: 'Key person dependency', desc: 'Businesses where two or three people hold all the client relationships, institutional knowledge, or delivery capability are high risk. Identify who they are and what happens if they leave.' },
+  { id: '03', stage: 'Pre-deal', title: 'Culture collision risk', desc: 'Two businesses with fundamentally different management styles, values, or operational cultures will struggle post-deal. The damage is predictable — and usually ignored.' },
+  { id: '04', stage: 'Post-deal', title: 'Integration planning', desc: 'The decisions made in the first 90 days post-acquisition determine retention, morale, and productivity. Most integrations are under-planned.' },
+  { id: '05', stage: 'Post-deal', title: 'Compliance alignment', desc: 'Bringing the acquired business\'s HR practices up to the acquirer\'s standards requires a systematic review, not an assumption that they\'ll figure it out.' },
 ];
 
 export default function DealReadyPeoplePage() {
   return (
-    <div className="pt-20">
+    <>
+      <RevealScript />
 
       {/* Hero */}
-      <section className="gradient-hero text-white py-20 lg:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <span className="funnel-tag bg-white/20 border border-white/30 text-white mb-6 inline-block">DealReady People™</span>
-          <h1 className="font-display text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-            People risk is the #1 reason<br />
-            <span className="text-gradient">acquisitions fail.</span>
-          </h1>
-          <p className="text-white/80 text-xl mb-4 max-w-2xl">
-            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one — and pay for it after the deal closes.
-          </p>
-          <p className="text-white/70 text-lg mb-10 max-w-2xl">
-            DealReady People™ supports your transaction from pre-deal people risk through to post-deal integration — so your investment performs the way it should.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/due-diligence-checklist" className="btn-primary text-base">
-              Get the People DD Checklist <ArrowRight size={18} />
-            </Link>
-            <Link href="/book" className="btn-outline text-base border-white text-white hover:bg-white hover:text-brand-navy">
-              Talk to Lucinda
-            </Link>
+      <section style={{ background: 'var(--color-void)', position: 'relative', overflow: 'hidden', paddingTop: '6rem', paddingBottom: '6rem' }}>
+        <div className="hero-orb" style={{ width: 500, height: 500, bottom: '-10%', right: '-5%', background: 'radial-gradient(circle, rgba(224,64,160,0.16) 0%, transparent 70%)' }} />
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '4rem 2rem', position: 'relative', zIndex: 1 }}>
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <span>›</span>
+            <span>DealReady People™</span>
+          </nav>
+
+          <div style={{ maxWidth: 720 }}>
+            <span className="section-label">DEALREADY PEOPLE™</span>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 900,
+              fontSize: 'var(--text-display)', letterSpacing: '-0.03em', lineHeight: 1.05,
+              color: 'var(--color-text-primary)', marginBottom: '1.5rem',
+            }}>
+              People risk is the most<br />
+              <span className="gradient-text">underpriced risk in any acquisition</span>
+            </h1>
+            <p style={{ fontSize: 'var(--text-large)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', marginBottom: '2.5rem', maxWidth: 580 }}>
+              DealReady People™ identifies employment liabilities, key person dependencies, and culture collision points before the deal closes — so you know exactly what you&apos;re buying.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link href="/dealready-people/pre-check" className="btn-primary">Run the pre-check →</Link>
+              <Link href="/dealready-people/checklist" className="btn-secondary">Download the DD checklist</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Risk grid */}
-      <section className="section-padding bg-white">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              The 6 people risks that derail deals
-            </h2>
-            <p className="text-brand-slate text-lg max-w-2xl mx-auto">
-              Most of these are invisible until after the deal completes. By then they’re your problem.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {risks.map((risk) => (
-              <div key={risk.title} className="card">
-                <risk.icon className={`${risk.color} mb-3`} size={26} />
-                <h3 className="font-display font-bold text-lg text-brand-navy mb-2">{risk.title}</h3>
-                <p className="text-brand-slate text-sm leading-relaxed">{risk.description}</p>
+      {/* Five risk themes */}
+      <section style={{ background: 'var(--color-deep)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label" data-reveal>THE FIVE PEOPLE-RISK THEMES</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 600,
+          }}>
+            Where people risk hides — and why most acquirers miss it
+          </h2>
+
+          <div data-reveal-stagger style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {THEMES.map(t => (
+              <div key={t.id} className="feature-tile" style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', gap: '1.5rem', alignItems: 'start' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-purple-light)', minWidth: 20 }}>{t.id}</span>
+                <span style={{
+                  fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                  background: t.stage === 'Pre-deal' ? 'rgba(239,68,68,0.12)' : 'rgba(75,110,245,0.12)',
+                  color: t.stage === 'Pre-deal' ? '#FCA5A5' : '#818CF8',
+                  border: `1px solid ${t.stage === 'Pre-deal' ? 'rgba(239,68,68,0.25)' : 'rgba(75,110,245,0.25)'}`,
+                  whiteSpace: 'nowrap', height: 'fit-content',
+                }}>
+                  {t.stage}
+                </span>
+                <div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>{t.title}</h3>
+                  <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{t.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pre vs Post deal */}
-      <section className="section-padding bg-brand-offwhite">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              What we do at each stage
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Pre-deal */}
-            <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-brand-teal flex items-center justify-center text-white font-bold text-sm">Pre</div>
-                <h3 className="font-display font-bold text-xl text-brand-navy">Before the deal closes</h3>
-              </div>
-              <ul className="space-y-3">
-                {preDealItems.map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <CheckCircle className="text-brand-teal flex-shrink-0 mt-0.5" size={18} />
-                    <span className="text-brand-slate text-sm">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Post-deal */}
-            <div className="bg-brand-navy rounded-2xl p-8 text-white shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center text-white font-bold text-sm">Post</div>
-                <h3 className="font-display font-bold text-xl">After the deal closes</h3>
-              </div>
-              <ul className="space-y-3">
-                {postDealItems.map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <CheckCircle className="text-brand-gold flex-shrink-0 mt-0.5" size={18} />
-                    <span className="text-white/80 text-sm">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Who this is for */}
+      <section style={{ background: 'var(--color-light-bg)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label-dark section-label" data-reveal style={{ color: 'var(--color-purple)' }}>WHO THIS IS FOR</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-dark)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 560,
+          }}>
+            Anyone transacting on a business with people in it
+          </h2>
 
-      {/* Restructure decision tree */}
-      <section className="section-padding bg-white">
-        <div className="container-narrow">
-          <div className="text-center mb-10">
-            <h2 className="font-display text-3xl font-bold text-brand-navy mb-4">
-              Quick risk pre-check
-            </h2>
-            <p className="text-brand-slate text-lg">
-              Answer these four questions. If any apply, you need people advisory before you proceed.
-            </p>
-          </div>
-          <div className="space-y-4">
-            {decisionTree.map((item, i) => (
-              <div key={i} className="bg-brand-offwhite rounded-xl p-5 border border-gray-200">
-                <p className="font-semibold text-brand-navy mb-2">❓ {item.question}</p>
-                <p className="text-brand-teal text-sm font-medium">→ {item.answer}</p>
+          <div data-reveal-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            {[
+              { who: 'PE firms and acquirers', what: 'Pre-completion people due diligence to surface liabilities before they become the acquirer\'s problem at signing.' },
+              { who: 'Owner-managed businesses', what: 'Preparing for an exit requires knowing where the people risk sits — because buyers will find it during their own DD.' },
+              { who: 'Management buy-out teams', what: 'Understanding key person risk, compensation structure, and culture fit before the team commits to the transaction.' },
+              { who: 'Corporate HR teams', what: 'Integration support for incoming acquisitions — from first 90 days planning to compliance alignment across entities.' },
+            ].map(a => (
+              <div key={a.who} className="card-light">
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-text-dark)', marginBottom: '0.75rem' }}>{a.who}</h3>
+                <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-dark-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{a.what}</p>
               </div>
             ))}
-          </div>
-          <div className="mt-10 text-center">
-            <Link href="/tools/due-diligence-checklist" className="btn-primary">
-              Run the Full DD Checklist <ArrowRight size={18} />
-            </Link>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="section-padding bg-brand-navy text-white">
-        <div className="container-narrow text-center">
-          <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">
-            In a deal or planning one?
+      <section style={{ background: 'var(--color-void)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto', padding: '5rem 2rem', textAlign: 'center' }} data-reveal>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', marginBottom: '1.5rem',
+          }}>
+            Know your people risk before the deal closes
           </h2>
-          <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">
-            The best time to bring in people advisory is before heads of terms. The second best time is right now.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/book" className="btn-primary">
-              Book a Confidential Call <ArrowRight size={18} />
-            </Link>
-            <Link href="/tools/due-diligence-checklist" className="btn-outline border-white text-white hover:bg-white hover:text-brand-navy">
-              Download DD Checklist
-            </Link>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/dealready-people/pre-check" className="btn-primary">Run the 5-minute pre-check →</Link>
+            <Link href="/dealready-people/checklist" className="btn-secondary">Download the DD checklist</Link>
+            <Link href="/contact" className="btn-secondary">Confidential consultation</Link>
           </div>
         </div>
       </section>
 
-    </div>
+      {/* Cross-sell */}
+      <section style={{ background: 'var(--color-deep)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '5rem 2rem' }}>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Also from Ravello HR</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <Link href="/smart-hiring-system" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>SMART HIRING SYSTEM™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Score your hiring process</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Find your hiring failure points →</p>
+            </Link>
+            <Link href="/policysafe" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>POLICYSAFE™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Check your compliance gaps</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Run a people document healthcheck →</p>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

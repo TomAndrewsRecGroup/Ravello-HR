@@ -1,72 +1,54 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Analytics }    from '@/components/Analytics';
-import { ClarityScript } from '@/components/ClarityScript';
-import Nav              from '@/components/Nav';
-import Footer           from '@/components/Footer';
-import ChatWidget       from '@/components/ChatWidget';
-import QuickActions     from '@/components/QuickActions';
+import Nav from '@/components/Nav';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ravello | HR & Hiring for Growing Businesses',
-    template: '%s | Ravello',
+    default:  'Ravello HR — HR Diagnostics, Strategy & Project Delivery',
+    template: '%s | Ravello HR',
   },
-  description:
-    'Ravello gives SMEs of 10–250 people the HR support, structured hiring, and operational visibility they need — without building an in-house HR team. Expert support, vetted recruiter network, client portal.',
-  keywords: [
-    'HR support for SMEs',
-    'outsourced HR UK',
-    'HR and recruitment platform',
-    'small business HR',
-    'hiring support UK',
-    'HR portal for businesses',
-    'vetted recruiters UK',
-    'people operations platform',
-  ],
+  description: 'Ravello HR is a UK HR consultancy offering diagnostic tools, strategic HR delivery, and people project management for growing businesses.',
+  metadataBase: new URL('https://ravellohr.co.uk'),
   openGraph: {
-    type: 'website',
-    locale: 'en_GB',
-    url: 'https://ravellohr.co.uk',
-    siteName: 'Ravello',
-    title: 'Ravello | HR & Hiring for Growing Businesses',
-    description:
-      'HR support, structured hiring, and a client portal for businesses of 10–250 people.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    type:      'website',
+    locale:    'en_GB',
+    url:       'https://ravellohr.co.uk',
+    siteName:  'Ravello HR',
+    images: [{
+      url:    '/og-default.png',
+      width:  1200,
+      height: 630,
+      alt:    'Ravello HR — HR Diagnostics, Strategy & Project Delivery',
+    }],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Ravello | HR & Hiring for Growing Businesses',
-    description: 'HR support, hiring, and visibility for growing businesses.',
-    images: ['/og-image.png'],
+    card:  'summary_large_image',
+    title: 'Ravello HR — HR Diagnostics, Strategy & Project Delivery',
   },
-  robots: { index: true, follow: true },
-  alternates: { canonical: 'https://ravellohr.co.uk' },
+  robots: {
+    index:  true,
+    follow: true,
+  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en-GB">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
-        <ClarityScript />
       </head>
       <body>
-        <Analytics />
         <Nav />
-        <main>{children}</main>
+        <main style={{ paddingTop: '68px' }}>
+          {children}
+        </main>
         <Footer />
-        <QuickActions />
-        <ChatWidget />
       </body>
     </html>
   );

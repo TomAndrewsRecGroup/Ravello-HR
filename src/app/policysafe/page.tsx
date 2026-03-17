@@ -1,219 +1,173 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
+import RevealScript from '@/components/RevealScript';
 
 export const metadata: Metadata = {
-  title: 'PolicySafe™ | HR Compliance & Documents | Ravello HR',
-  description:
-    'Get compliant, fast. PolicySafe™ by Ravello HR covers contracts, handbooks, policies and manager enablement for growing businesses.',
-  alternates: { canonical: 'https://ravellohr.co.uk/policysafe' },
+  title: 'PolicySafe™ | HR Compliance & People Document Review | Ravello HR',
+  description: 'Most businesses are one HR dispute away from a costly mistake. PolicySafe™ checks your people documents against legal requirements and delivers a prioritised gap report.',
 };
 
-const risks = [
-  {
-    icon: AlertTriangle,
-    title: 'No written contracts',
-    description: 'Employment without a written statement is a legal risk from day one. Tribunals are expensive. Prevention is not.',
-  },
-  {
-    icon: FileText,
-    title: 'Outdated handbook',
-    description: 'A handbook written in 2019 doesn’t cover remote work, AI use, mental health leave or the Carer’s Leave Act. Gaps become grievances.',
-  },
-  {
-    icon: Users,
-    title: 'Managers making it up',
-    description: 'Without clear policies, managers apply their own rules. Inconsistency breeds resentment — and discrimination claims.',
-  },
-  {
-    icon: Shield,
-    title: 'No disciplinary framework',
-    description: 'One poorly handled disciplinary can cost £10k+ at tribunal. A clear, followed process is your only defence.',
-  },
+const RISK_AREAS = [
+  { id: '01', title: 'Missing or outdated contracts', desc: 'Employment contracts that don\'t reflect the current role, don\'t cover modern working arrangements, or simply don\'t exist for some employees are a tribunal waiting to happen.' },
+  { id: '02', title: 'Unfit employee handbooks', desc: 'A handbook written before hybrid working or the latest Employment Rights Act changes is worse than no handbook — it sets expectations the business can\'t legally meet.' },
+  { id: '03', title: 'No disciplinary or grievance framework', desc: 'When managers handle performance issues without a documented procedure, the business has no defence if a dismissal is challenged. Every informal conversation that should have been formal becomes evidence against you.' },
+  { id: '04', title: 'Managers operating without guidance', desc: 'HR risk most often comes from well-meaning managers making it up as they go. Without a clear decision framework, every people conversation is a potential liability.' },
 ];
 
-const packages = [
+const PACKAGES = [
   {
     name: 'Starter',
-    tag: 'For businesses under 10 people',
+    tagline: 'Benchmark your documents',
     price: 'From £495',
-    color: 'border-gray-200',
-    tagColor: 'bg-brand-light text-brand-slate',
-    items: [
-      'Employment contract template',
-      'Offer letter template',
-      'Basic disciplinary & grievance procedure',
-      'Holiday & absence policy',
-      '1-hour implementation call',
+    includes: [
+      'PolicySafe™ healthcheck',
+      'Prioritised gap report (HIGH/MED/LOW)',
+      'Free starter handbook template',
+      'Written recommendations',
     ],
-    cta: { label: 'Get Started', href: '/book' },
-    highlight: false,
+    cta: 'Book a call',
+    href: '/contact',
   },
   {
-    name: 'PolicySafe™ Core',
-    tag: 'Most popular · 10–50 people',
-    price: 'From £1,200',
-    color: 'border-brand-teal',
-    tagColor: 'bg-brand-teal text-white',
-    items: [
-      'Full employment contract suite',
-      'Staff handbook (bespoke)',
-      'Core policy set (12 policies)',
-      'Manager guide & FAQ document',
-      'Gap analysis against current docs',
-      '2 x review sessions',
+    name: 'Core',
+    tagline: 'Fix the critical gaps',
+    price: 'From £1,800',
+    includes: [
+      'Everything in Starter',
+      'Full contract and handbook review',
+      'Bespoke policy drafting (up to 3 docs)',
+      'Manager guidance notes',
+      '30-day email support',
     ],
-    cta: { label: 'Book a Scoping Call', href: '/book' },
-    highlight: true,
+    cta: 'Book a call',
+    href: '/contact',
+    featured: true,
   },
   {
-    name: 'PolicySafe™ Gold',
-    tag: 'Growing fast · 50+ people',
-    price: 'Bespoke',
-    color: 'border-brand-gold',
-    tagColor: 'bg-brand-gold text-white',
-    items: [
+    name: 'Gold',
+    tagline: 'Complete people document suite',
+    price: 'From £4,200',
+    includes: [
       'Everything in Core',
-      'Full bespoke policy library',
-      'TUPE & restructure templates',
+      'Full employment document suite',
       'Manager training session',
-      'Ongoing review & update retainer',
-      'Priority response SLA',
+      'Quarterly review included',
+      'Direct access to Ravello HR',
     ],
-    cta: { label: 'Talk to Lucinda', href: '/book' },
-    highlight: false,
+    cta: 'Book a call',
+    href: '/contact',
   },
-];
-
-const included = [
-  'Written by an experienced HR professional — not an AI',
-  'UK employment law compliant as of current legislation',
-  'Plain English — your managers will actually read it',
-  'Branded and formatted to your business',
-  'Delivered with implementation guidance',
-  'Not off-the-shelf — built around your specific risks',
 ];
 
 export default function PolicySafePage() {
   return (
-    <div className="pt-20">
+    <>
+      <RevealScript />
 
       {/* Hero */}
-      <section className="gradient-hero text-white py-20 lg:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <span className="funnel-tag bg-brand-gold text-white mb-6 inline-block">PolicySafe™</span>
-          <h1 className="font-display text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-            We need compliant HR.<br />
-            <span className="text-gradient">Yesterday.</span>
-          </h1>
-          <p className="text-white/80 text-xl mb-4 max-w-2xl">
-            Growing businesses get caught out by the same thing: they move fast, hire people, and forget to build the paperwork foundation underneath.
-          </p>
-          <p className="text-white/70 text-lg mb-10 max-w-2xl">
-            PolicySafe™ gives you the contracts, handbook and policies your business actually needs — written properly, not copy-pasted from a template site.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/policy-healthcheck" className="btn-gold text-base">
-              Run Your Free Policy Healthcheck <ArrowRight size={18} />
-            </Link>
-            <Link href="/book" className="btn-outline text-base border-white text-white hover:bg-white hover:text-brand-navy">
-              Book a Scoping Call
-            </Link>
+      <section style={{ background: 'var(--color-void)', position: 'relative', overflow: 'hidden', paddingTop: '6rem', paddingBottom: '6rem' }}>
+        <div className="hero-orb" style={{ width: 500, height: 500, top: '-10%', right: '-5%', background: 'radial-gradient(circle, rgba(75,110,245,0.18) 0%, transparent 70%)' }} />
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '4rem 2rem', position: 'relative', zIndex: 1 }}>
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <span aria-hidden>›</span>
+            <span>PolicySafe™</span>
+          </nav>
+
+          <div style={{ maxWidth: 720 }}>
+            <span className="section-label">POLICYSAFE™</span>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 900,
+              fontSize: 'var(--text-display)', letterSpacing: '-0.03em', lineHeight: 1.05,
+              color: 'var(--color-text-primary)', marginBottom: '1.5rem',
+            }}>
+              Most businesses are<br />
+              <span className="gradient-text">one HR dispute away from a costly mistake</span>
+            </h1>
+            <p style={{ fontSize: 'var(--text-large)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', marginBottom: '2.5rem', maxWidth: 580 }}>
+              PolicySafe™ checks your people documents against current legal requirements and delivers a prioritised gap report — so you know exactly what&apos;s at risk and what to fix first.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link href="/policysafe/healthcheck" className="btn-primary">Run the healthcheck →</Link>
+              <Link href="/policysafe/templates" className="btn-secondary">Download a free template</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Risk section */}
-      <section className="section-padding bg-white">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              What gaps look like in practice
-            </h2>
-            <p className="text-brand-slate text-lg max-w-2xl mx-auto">
-              Most businesses only discover their policy gaps when something goes wrong. By then it’s too late to fix cheaply.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {risks.map((risk) => (
-              <div key={risk.title} className="card flex gap-4">
-                <risk.icon className="text-brand-gold flex-shrink-0 mt-1" size={24} />
-                <div>
-                  <h3 className="font-display font-bold text-lg text-brand-navy mb-1">{risk.title}</h3>
-                  <p className="text-brand-slate text-sm leading-relaxed">{risk.description}</p>
-                </div>
+      {/* Four risk areas */}
+      <section style={{ background: 'var(--color-deep)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label" data-reveal>THE FOUR RISK AREAS</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 600,
+          }}>
+            Most compliance problems come from the same four places
+          </h2>
+
+          <div data-reveal-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            {RISK_AREAS.map(ra => (
+              <div key={ra.id} className="feature-tile">
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-purple-light)', display: 'block', marginBottom: '0.75rem' }}>{ra.id}</span>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-text-primary)', marginBottom: '0.75rem', lineHeight: 1.3 }}>{ra.title}</h3>
+                <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{ra.desc}</p>
               </div>
             ))}
           </div>
-          <div className="mt-10 text-center">
-            <Link href="/tools/policy-healthcheck" className="btn-outline">
-              Check Your Policy Gaps Free <ArrowRight size={18} />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Free handbook capture */}
-      <section className="section-padding bg-brand-offwhite">
-        <div className="container-narrow">
-          <div className="bg-brand-navy rounded-2xl p-8 lg:p-12 text-white text-center">
-            <BookOpen className="mx-auto mb-4 text-brand-gold" size={40} />
-            <h2 className="font-display text-2xl lg:text-3xl font-bold mb-3">
-              Free Starter Handbook Template
-            </h2>
-            <p className="text-white/70 mb-6 max-w-lg mx-auto">
-              A lightweight staff handbook template covering the essentials. Download it, adapt it, use it. No strings — but if you want the full bespoke version, we’re here.
-            </p>
-            <a
-              href="https://tally.so/r/ravello-handbook"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-gold"
-            >
-              Download Free Template <ArrowRight size={18} />
-            </a>
-            <p className="text-white/40 text-xs mt-3">We’ll email it to you. No spam, unsubscribe any time.</p>
-          </div>
-        </div>
-      </section>
+      {/* Package comparison */}
+      <section style={{ background: 'var(--color-light-bg)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label-dark section-label" data-reveal style={{ color: 'var(--color-purple)' }}>PACKAGES</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-dark)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 560,
+          }}>
+            Choose the level of fix you need
+          </h2>
 
-      {/* Packages */}
-      <section className="section-padding bg-white">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              PolicySafe™ packages
-            </h2>
-            <p className="text-brand-slate text-lg max-w-xl mx-auto">
-              Fixed scope. Clear deliverables. Done properly.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.name}
-                className={`rounded-2xl border-2 ${pkg.color} p-6 flex flex-col ${
-                  pkg.highlight ? 'shadow-xl scale-[1.02]' : 'shadow-sm'
-                }`}
-              >
-                <div className="mb-4">
-                  <span className={`funnel-tag text-xs ${pkg.tagColor} mb-2 inline-block`}>{pkg.tag}</span>
-                  <h3 className="font-display font-bold text-xl text-brand-navy">{pkg.name}</h3>
-                  <p className="text-brand-teal font-semibold text-lg mt-1">{pkg.price}</p>
-                </div>
-                <ul className="space-y-2 flex-1 mb-6">
-                  {pkg.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-brand-slate">
-                      <CheckCircle className="text-brand-teal flex-shrink-0 mt-0.5" size={16} />
+          <div data-reveal-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            {PACKAGES.map(pkg => (
+              <div key={pkg.name} style={{
+                background: pkg.featured ? 'var(--color-deep)' : 'var(--color-light-surface)',
+                border: `1px solid ${pkg.featured ? 'rgba(123,47,190,0.4)' : 'var(--color-light-border)'}`,
+                borderRadius: 12, padding: '2rem', position: 'relative',
+                transition: 'transform 0.3s ease',
+              }}>
+                {pkg.featured && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+                    background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5, #E040A0)',
+                    borderRadius: '12px 12px 0 0',
+                  }} />
+                )}
+                {pkg.featured && (
+                  <div style={{
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: 'white',
+                    fontSize: 10, fontWeight: 700, padding: '2px 12px', borderRadius: 99,
+                  }}>Most Popular</div>
+                )}
+                <p style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: pkg.featured ? 'var(--color-text-primary)' : 'var(--color-text-dark)', marginBottom: '0.25rem' }}>{pkg.name}</p>
+                <p style={{ fontSize: 'var(--text-small)', color: pkg.featured ? 'var(--color-text-secondary)' : 'var(--color-text-dark-secondary)', marginBottom: '1.5rem' }}>{pkg.tagline}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 700, color: pkg.featured ? 'var(--color-purple-light)' : 'var(--color-purple)', marginBottom: '1.5rem' }}>{pkg.price}</p>
+
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  {pkg.includes.map(item => (
+                    <li key={item} style={{ display: 'flex', gap: '0.625rem', fontSize: 'var(--text-small)', color: pkg.featured ? 'var(--color-text-secondary)' : 'var(--color-text-dark-secondary)' }}>
+                      <span style={{ color: '#10B981', flexShrink: 0 }}>✓</span>
                       {item}
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={pkg.cta.href}
-                  className={pkg.highlight ? 'btn-primary justify-center' : 'btn-outline justify-center'}
-                >
-                  {pkg.cta.label} <ArrowRight size={16} />
+
+                <Link href={pkg.href} className={pkg.featured ? 'btn-primary' : 'btn-secondary-dark'} style={{ display: 'block', textAlign: 'center', justifyContent: 'center' }}>
+                  {pkg.cta}
                 </Link>
               </div>
             ))}
@@ -221,36 +175,42 @@ export default function PolicySafePage() {
         </div>
       </section>
 
-      {/* What’s included */}
-      <section className="section-padding bg-brand-offwhite">
-        <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="font-display text-3xl font-bold text-brand-navy mb-6">
-                What makes PolicySafe™ different
-              </h2>
-              <ul className="space-y-3">
-                {included.map((item) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <CheckCircle className="text-brand-teal flex-shrink-0 mt-0.5" size={20} />
-                    <span className="text-brand-slate">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="card bg-brand-teal border-brand-teal text-white">
-              <h3 className="font-display text-2xl font-bold mb-3">Not sure where your gaps are?</h3>
-              <p className="text-white/80 mb-6">
-                Run the free Policy & Contract Healthcheck. Takes 3 minutes. Outputs a prioritised gap list you can take straight to your board.
-              </p>
-              <Link href="/tools/policy-healthcheck" className="btn-secondary justify-center w-full">
-                Start the Healthcheck <ArrowRight size={18} />
-              </Link>
-            </div>
+      {/* CTA strip */}
+      <section style={{ background: 'var(--color-void)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto', padding: '5rem 2rem', textAlign: 'center' }} data-reveal>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', marginBottom: '1.5rem',
+          }}>
+            Find out where your compliance gaps are
+          </h2>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/policysafe/healthcheck" className="btn-primary">Run the healthcheck →</Link>
+            <Link href="/policysafe/templates" className="btn-secondary">Download a free template</Link>
+            <Link href="/contact" className="btn-secondary">Book a call</Link>
           </div>
         </div>
       </section>
 
-    </div>
+      {/* Cross-sell */}
+      <section style={{ background: 'var(--color-deep)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '5rem 2rem' }}>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Also from Ravello HR</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <Link href="/smart-hiring-system" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>SMART HIRING SYSTEM™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Score your hiring process</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Find your hiring failure points →</p>
+            </Link>
+            <Link href="/dealready-people" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>DEALREADY PEOPLE™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Pre-acquisition people due diligence</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Check your deal readiness →</p>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

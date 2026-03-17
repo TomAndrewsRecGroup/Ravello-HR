@@ -1,164 +1,84 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
+import RevealScript from '@/components/RevealScript';
 
 export const metadata: Metadata = {
-  title: 'Smart Hiring System™ | Fix Hiring Drift | Ravello HR',
-  description:
-    'Stop reopening roles. Cut agency spend. The Smart Hiring System™ by Ravello HR fixes the 5 failure points where most hiring falls apart.',
-  alternates: { canonical: 'https://ravellohr.co.uk/smart-hiring-system' },
+  title: 'Smart Hiring System™ | Score Your Hiring Process | Ravello HR',
+  description: 'Most hiring fails before the first interview. Use the Smart Hiring System™ diagnostic to score your process against five proven failure points.',
 };
 
-const failurePoints = [
-  {
-    icon: XCircle,
-    title: 'Vague role definitions',
-    description: 'Hiring managers describe the person they last worked with, not the role they actually need. You interview the wrong people for months.',
-    color: 'text-red-500',
-  },
-  {
-    icon: TrendingDown,
-    title: 'Inconsistent assessment',
-    description: 'No scorecard. No structure. Three interviewers, three different opinions. The best candidate loses to the most confident one.',
-    color: 'text-orange-500',
-  },
-  {
-    icon: Clock,
-    title: 'Decision speed',
-    description: 'Good candidates are gone in 7 days. Your process takes 6 weeks. You wonder why offers keep getting declined.',
-    color: 'text-yellow-600',
-  },
-  {
-    icon: PoundSterling,
-    title: 'Agency dependency',
-    description: 'Every hard role goes straight to an agency. No internal capability built. The fee bill grows every year.',
-    color: 'text-red-600',
-  },
-  {
-    icon: Users,
-    title: 'Offer drop-off',
-    description: 'Candidates accept then ghost. Or join and leave within 90 days. The root cause is always earlier in the process.',
-    color: 'text-purple-500',
-  },
-];
-
-const systemSteps = [
-  {
-    step: '01',
-    title: 'Role Architecture',
-    description: 'Define the role around outcomes, not a wish list. We build a role brief that attracts the right people and filters the wrong ones before you spend a minute interviewing.',
-  },
-  {
-    step: '02',
-    title: 'Assessment Design',
-    description: 'A structured scorecard for every stage. Every interviewer scores the same criteria. Gut feel becomes a tiebreaker, not the deciding vote.',
-  },
-  {
-    step: '03',
-    title: 'Process Velocity',
-    description: 'Map your hiring timeline against where candidates drop. We cut steps that add delay without adding signal — typically halving time-to-offer.',
-  },
-  {
-    step: '04',
-    title: 'Manager Enablement',
-    description: 'Train hiring managers to interview with intent. Scripts, red flags, scoring guidance. One session. Permanent improvement.',
-  },
-  {
-    step: '05',
-    title: 'Offer & Onboarding Bridge',
-    description: 'The gap between offer and day one is where candidates change their minds. We close it with structured pre-boarding that makes joining a no-brainer.',
-  },
-];
-
-const outcomes = [
-  'Roles filled in fewer attempts',
-  'Agency spend reduced or eliminated on repeatable roles',
-  'Hiring manager confidence measurably improved',
-  'Offer acceptance rate increases',
-  'New hire retention at 12 months improves',
-  'A reusable system — not a one-time fix',
+const FAILURE_POINTS = [
+  { id: 'A', title: 'Brief quality', desc: 'Most roles go to market without a brief that means anything. Vague job descriptions attract the wrong candidates and waste everyone\'s time from the start.' },
+  { id: 'B', title: 'Interview consistency', desc: 'When every interviewer asks different questions and uses different criteria, the decision defaults to gut feel. Good candidates get lost. Poor fits get through.' },
+  { id: 'C', title: 'Process speed', desc: 'The best candidates are in multiple processes simultaneously. A slow-moving hiring process doesn\'t just lose candidates — it signals how the business runs.' },
+  { id: 'D', title: 'Offer management', desc: 'Offers that arrive late, underprepared, or inconsistent with what was discussed during interviews are the most preventable cause of candidate drop-off.' },
+  { id: 'E', title: 'Onboarding', desc: 'Hiring doesn\'t end at an accepted offer. The first 90 days determine whether the investment in finding someone actually pays off.' },
 ];
 
 export default function SmartHiringSystemPage() {
   return (
-    <div className="pt-20">
+    <>
+      <RevealScript />
 
       {/* Hero */}
-      <section className="gradient-hero text-white py-20 lg:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <span className="funnel-tag bg-brand-teal text-white mb-6 inline-block">Smart Hiring System™</span>
-          <h1 className="font-display text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-            Hiring is broken.<br />
-            <span className="text-gradient">Here’s how to fix it.</span>
-          </h1>
-          <p className="text-white/80 text-xl mb-4 max-w-2xl">
-            Most businesses reopen the same roles every 12–18 months. They pay agency fees on repeat. They promote managers into hiring without training them. The problem isn’t the talent market — it’s the system.
-          </p>
-          <p className="text-white/70 text-lg mb-10 max-w-2xl">
-            The Smart Hiring System™ fixes the five points where hiring falls apart — and builds an internal capability that compounds over time.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/hiring-score" className="btn-primary text-base">
-              Get Your Smart Hiring Score <ArrowRight size={18} />
-            </Link>
-            <Link href="/book" className="btn-outline text-base border-white text-white hover:bg-white hover:text-brand-navy">
-              Book a Scoping Call
-            </Link>
-          </div>
-        </div>
-      </section>
+      <section style={{ background: 'var(--color-void)', position: 'relative', overflow: 'hidden', paddingTop: '6rem', paddingBottom: '6rem' }}>
+        <div className="hero-orb" style={{ width: 500, height: 500, top: '-10%', left: '-5%', background: 'radial-gradient(circle, rgba(123,47,190,0.18) 0%, transparent 70%)' }} />
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '4rem 2rem', position: 'relative', zIndex: 1 }}>
+          {/* Breadcrumb */}
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <span aria-hidden>›</span>
+            <span>Smart Hiring System™</span>
+          </nav>
 
-      {/* Pain Agitation */}
-      <section className="section-padding bg-white">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              The 5 places your hiring is leaking
-            </h2>
-            <p className="text-brand-slate text-lg max-w-2xl mx-auto">
-              Every business has at least two of these. Most have four.
+          <div style={{ maxWidth: 720 }}>
+            <span className="section-label">SMART HIRING SYSTEM™</span>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 900,
+              fontSize: 'var(--text-display)', letterSpacing: '-0.03em', lineHeight: 1.05,
+              color: 'var(--color-text-primary)', marginBottom: '1.5rem',
+            }}>
+              Most hiring fails<br />
+              <span className="gradient-text">before the first interview</span>
+            </h1>
+            <p style={{ fontSize: 'var(--text-large)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', marginBottom: '2.5rem', maxWidth: 580 }}>
+              The Smart Hiring System™ scores your hiring process against five proven failure points — so you can see exactly where you&apos;re losing candidates, wasting budget, and making the same mistakes.
             </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {failurePoints.map((point) => (
-              <div key={point.title} className="card">
-                <point.icon className={`${point.color} mb-3`} size={28} />
-                <h3 className="font-display font-bold text-lg text-brand-navy mb-2">{point.title}</h3>
-                <p className="text-brand-slate text-sm leading-relaxed">{point.description}</p>
-              </div>
-            ))}
-            {/* CTA card */}
-            <div className="card bg-brand-teal border-brand-teal text-white flex flex-col justify-between">
-              <div>
-                <h3 className="font-display font-bold text-lg mb-2">Which ones apply to you?</h3>
-                <p className="text-white/80 text-sm mb-4">Take the 3-minute Hiring Score diagnostic and find out exactly where you’re losing candidates and cost.</p>
-              </div>
-              <Link href="/tools/hiring-score" className="btn-secondary text-sm mt-2 justify-center">
-                Get My Score <ArrowRight size={16} />
-              </Link>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link href="/smart-hiring-system/score" className="btn-primary">Score your hiring process →</Link>
+              <Link href="/contact" className="btn-secondary">Talk to Ravello HR</Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* The System */}
-      <section className="section-padding bg-brand-offwhite">
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-brand-navy mb-4">
-              What the Smart Hiring System™ does
-            </h2>
-            <p className="text-brand-slate text-lg max-w-xl mx-auto">
-              A five-stage methodology. Not a recruitment agency. Not a retainer. A system you own.
-            </p>
-          </div>
-          <div className="space-y-6 max-w-3xl mx-auto">
-            {systemSteps.map((step) => (
-              <div key={step.step} className="flex gap-6 items-start bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div className="step-circle bg-brand-teal text-white flex-shrink-0">{step.step}</div>
+      {/* Five failure points */}
+      <section style={{ background: 'var(--color-deep)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label" data-reveal>THE FIVE FAILURE POINTS</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 600,
+          }}>
+            Five places where hiring breaks — most businesses have problems with all of them
+          </h2>
+
+          <div data-reveal-stagger style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {FAILURE_POINTS.map(fp => (
+              <div key={fp.id} className="feature-tile" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2rem', alignItems: 'start' }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 8, flexShrink: 0,
+                  background: 'rgba(123,47,190,0.15)', border: '1px solid rgba(123,47,190,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-purple-light)',
+                  fontSize: '0.875rem',
+                }}>
+                  {fp.id}
+                </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-brand-navy mb-1">{step.title}</h3>
-                  <p className="text-brand-slate text-sm leading-relaxed">{step.description}</p>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>{fp.title}</h3>
+                  <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{fp.desc}</p>
                 </div>
               </div>
             ))}
@@ -166,55 +86,110 @@ export default function SmartHiringSystemPage() {
         </div>
       </section>
 
-      {/* Outcomes */}
-      <section className="section-padding bg-brand-navy text-white">
-        <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="font-display text-3xl lg:text-4xl font-bold mb-6">
-                What you walk away with
-              </h2>
-              <ul className="space-y-3">
-                {outcomes.map((o) => (
-                  <li key={o} className="flex items-start gap-3">
-                    <CheckCircle className="text-brand-teal flex-shrink-0 mt-0.5" size={20} />
-                    <span className="text-white/85">{o}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-white/10 rounded-2xl p-8 border border-white/20">
-              <p className="text-brand-gold font-semibold text-sm uppercase tracking-widest mb-3">Next step</p>
-              <h3 className="font-display text-2xl font-bold mb-4">
-                Find out where your hiring is leaking — in 3 minutes.
-              </h3>
-              <p className="text-white/70 mb-6">
-                The Smart Hiring Score gives you an instant breakdown of which of the 5 failure points are active in your business right now.
-              </p>
-              <Link href="/tools/hiring-score" className="btn-primary w-full justify-center">
-                Get Your Free Score <ArrowRight size={18} />
-              </Link>
-              <p className="text-center text-white/50 text-xs mt-3">No email required to see your score</p>
-            </div>
+      {/* How the diagnostic works */}
+      <section style={{ background: 'var(--color-light-bg)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label-dark section-label" data-reveal style={{ color: 'var(--color-purple)' }}>HOW IT WORKS</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-dark)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '4rem', maxWidth: 560,
+          }}>
+            A score in 3 minutes, a clear action plan to act on
+          </h2>
+
+          <div data-reveal-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}>
+            {[
+              { step: '01', title: 'Answer five questions', desc: 'One focused question per failure point. No ambiguity, no HR jargon. Just a direct diagnostic of what\'s working and what isn\'t.' },
+              { step: '02', title: 'Get your score', desc: 'Your hiring process is scored across all five failure points. You\'ll see exactly where you\'re strong and where you\'re haemorrhaging candidates.' },
+              { step: '03', title: 'See your gaps', desc: 'A personalised summary of your three highest-priority fixes, with a clear recommendation for each. Actionable from day one.' },
+            ].map(s => (
+              <div key={s.step} className="card-light">
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '2rem', fontWeight: 700, color: 'var(--color-purple-light)', display: 'block', marginBottom: '1rem', opacity: 0.4 }}>{s.step}</span>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-text-dark)', marginBottom: '0.75rem' }}>{s.title}</h3>
+                <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-dark-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{s.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Hotline CTA */}
-      <section className="section-padding bg-brand-offwhite">
-        <div className="container-narrow text-center">
-          <h2 className="font-display text-3xl font-bold text-brand-navy mb-4">
-            Already know you have a hiring problem?
+      {/* Mock results preview */}
+      <section style={{ background: 'var(--color-void)' }}>
+        <div style={{ maxWidth: '860px', margin: '0 auto', padding: '7rem 2rem' }}>
+          <span className="section-label" data-reveal>WHAT YOU GET</span>
+          <h2 data-reveal style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 'var(--text-h2)', color: 'var(--color-text-primary)',
+            letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '3rem',
+          }}>
+            Your hiring score report looks like this
           </h2>
-          <p className="text-brand-slate text-lg mb-8">
-            Skip the diagnostic. Book 15 minutes with Lucinda. Bring the mess — leave with a plan.
-          </p>
-          <Link href="/book" className="btn-secondary">
-            Book the HR Hotline <ArrowRight size={18} />
-          </Link>
+
+          <div data-reveal style={{
+            background: 'var(--color-deep)', border: '1px solid rgba(123,47,190,0.3)',
+            borderRadius: 16, padding: '2.5rem', position: 'relative',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5, #E040A0)', borderRadius: '16px 16px 0 0' }} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2.5rem', alignItems: 'start', marginBottom: '2rem' }}>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', marginBottom: 8 }}>OVERALL SCORE</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: '4rem', fontFamily: 'var(--font-mono)', fontWeight: 700, background: 'linear-gradient(135deg, #A855F7, #6366F1, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>34</span>
+                  <span style={{ fontSize: 18, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>/100</span>
+                </div>
+                <span className="badge-risk-high" style={{ marginTop: 8 }}>High risk</span>
+              </div>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', marginTop: '0.5rem' }}>
+                Your hiring process has critical gaps in three of the five failure points. The biggest losses are happening at brief quality and onboarding — both are fixable within 30 days.
+              </p>
+            </div>
+
+            {FAILURE_POINTS.map((fp, i) => {
+              const scores = [20, 45, 65, 55, 18];
+              const score = scores[i];
+              const color = score < 35 ? '#EF4444' : score < 60 ? '#F59E0B' : '#10B981';
+              return (
+                <div key={fp.id} style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>{fp.title}</span>
+                    <span style={{ fontSize: 'var(--text-small)', fontFamily: 'var(--font-mono)', color }}>{score}/100</span>
+                  </div>
+                  <div className="score-bar-track">
+                    <div style={{ height: '100%', width: `${score}%`, background: color, borderRadius: 4, opacity: 0.8 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div data-reveal style={{ textAlign: 'center', marginTop: '3rem' }}>
+            <Link href="/smart-hiring-system/score" className="btn-primary" style={{ fontSize: '1rem', padding: '1rem 2.5rem' }}>
+              Take the score check — 3 minutes →
+            </Link>
+          </div>
         </div>
       </section>
 
-    </div>
+      {/* Cross-sell */}
+      <section style={{ background: 'var(--color-deep)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '5rem 2rem' }}>
+          <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Also from Ravello HR</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <Link href="/policysafe" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>POLICYSAFE™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Check your compliance gaps</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Run a people document healthcheck →</p>
+            </Link>
+            <Link href="/dealready-people" className="cross-sell-card">
+              <span className="section-label" style={{ marginBottom: '0.5rem' }}>DEALREADY PEOPLE™</span>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)' }}>Pre-acquisition people due diligence</p>
+              <p style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Check your deal readiness →</p>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
