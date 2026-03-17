@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --bg:           #F1F2F7;
+    --surface:      #FFFFFF;
+    --surface-alt:  #E9EAF0;
+    --ink:          #171A24;
+    --ink-soft:     #4A5268;
+    --ink-faint:    #8892A4;
+    --navy:         #0E1633;
+    --purple:       #8F72F6;
+    --blue:         #93B8FF;
+    --teal:         #5BC4BF;
+    --line:         rgba(20,27,52,0.08);
+    --sidebar-w:    256px;
+    --topbar-h:     60px;
+    --gradient-cta: linear-gradient(135deg,#8F72F6 0%,#6B52D6 100%);
+    --red:          #E05555;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4,h5 { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+  ::selection { background: rgba(143,114,246,0.18); }
+  ::-webkit-scrollbar       { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(143,114,246,0.3); border-radius:99px; }
+}
+
+@layer components {
+  .admin-page { @apply p-6 lg:p-8 max-w-[1280px]; }
+
+  .card { @apply bg-white rounded-[14px]; border: 1px solid var(--line); box-shadow: 0 1px 3px rgba(14,22,51,0.04), 0 4px 12px rgba(14,22,51,0.04); }
+  .stat-card { @apply card p-5 flex flex-col gap-1; }
+
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-sm font-semibold transition-all duration-150 cursor-pointer; }
+  .btn-primary { @apply btn text-white; background: var(--navy); }
+  .btn-primary:hover { background: #162050; }
+  .btn-cta { @apply btn text-white; background: var(--gradient-cta); box-shadow: 0 2px 10px rgba(143,114,246,0.3); }
+  .btn-cta:hover { box-shadow: 0 4px 18px rgba(143,114,246,0.45); transform: translateY(-1px); }
+  .btn-secondary { @apply btn bg-white; color: var(--ink); border: 1px solid var(--line); }
+  .btn-secondary:hover { background: var(--surface-alt); }
+  .btn-ghost { @apply btn; color: var(--ink-soft); }
+  .btn-ghost:hover { background: var(--surface-alt); color: var(--ink); }
+  .btn-danger { @apply btn text-white; background: var(--red); }
+  .btn-sm { @apply px-3 py-1.5 text-xs rounded-[6px]; }
+  .btn-icon { @apply w-8 h-8 flex items-center justify-center rounded-[8px] transition-all duration-150 cursor-pointer; color: var(--ink-soft); }
+  .btn-icon:hover { background: var(--surface-alt); color: var(--ink); }
+
+  .input { @apply w-full px-3 py-2.5 rounded-[8px] text-sm outline-none transition-all duration-150; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+  .input::placeholder { color: var(--ink-faint); }
+  .input:focus { border-color: rgba(143,114,246,0.5); box-shadow: 0 0 0 3px rgba(143,114,246,0.08); }
+  .label { @apply block text-xs font-semibold mb-1.5; color: var(--ink-soft); letter-spacing: 0.02em; }
+  .form-group { @apply flex flex-col gap-1; }
+
+  .badge { @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold; }
+  .badge-active   { background:rgba(52,211,153,0.14); color:#047857; }
+  .badge-inactive { background:rgba(239,68,68,0.1);   color:#B91C1C; }
+  .badge-admin    { background:rgba(143,114,246,0.14); color:#6040C8; }
+  .badge-staff    { background:rgba(147,184,255,0.18); color:#2D60B0; }
+  .badge-client   { background:rgba(20,27,52,0.07);   color:#4A5268; }
+  .badge-on  { background:rgba(52,211,153,0.14); color:#047857; }
+  .badge-off { background:rgba(239,68,68,0.1);   color:#B91C1C; }
+  .badge-submitted  { background:rgba(147,184,255,0.18); color:#2D60B0; }
+  .badge-inprogress { background:rgba(143,114,246,0.14); color:#6040C8; }
+  .badge-shortlist  { background:rgba(91,196,191,0.14);  color:#1F8580; }
+  .badge-interview  { background:rgba(251,191,36,0.18);  color:#92580A; }
+  .badge-offer      { background:rgba(52,211,153,0.14);  color:#047857; }
+  .badge-filled     { background:rgba(52,211,153,0.25);  color:#065F46; }
+  .badge-open       { background:rgba(147,184,255,0.18); color:#2D60B0; }
+  .badge-resolved   { background:rgba(52,211,153,0.14);  color:#047857; }
+  .badge-urgent     { background:rgba(239,68,68,0.1);    color:#B91C1C; }
+  .badge-high       { background:rgba(251,191,36,0.18);  color:#92580A; }
+  .badge-normal     { background:rgba(20,27,52,0.07);    color:#4A5268; }
+
+  .nav-link { @apply flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-150 cursor-pointer; color: rgba(255,255,255,0.5); }
+  .nav-link:hover  { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+  .nav-link.active { background: rgba(143,114,246,0.2); color: #fff; }
+  .nav-section-label { @apply text-[10px] font-semibold uppercase tracking-[0.16em] px-3 mt-5 mb-1; color: rgba(255,255,255,0.2); }
+
+  .table-wrapper { @apply overflow-x-auto rounded-[12px]; border: 1px solid var(--line); }
+  .table { @apply w-full text-sm; }
+  .table th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.1em] whitespace-nowrap; color: var(--ink-faint); background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+  .table td { @apply px-4 py-3 align-middle; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .table tr:last-child td { border-bottom: none; }
+  .table tbody tr { transition: background 0.12s; }
+  .table tbody tr:hover { background: var(--surface-alt); }
+
+  .divider { @apply w-full h-px; background: var(--line); }
+  .eyebrow { @apply text-[10px] font-semibold uppercase tracking-[0.18em]; color: var(--purple); }
+  .empty-state { @apply flex flex-col items-center justify-center gap-3 py-14 text-center; color: var(--ink-faint); }
+
+  /* Toggle */
+  .toggle { @apply relative inline-flex items-center w-10 h-6 rounded-full transition-colors duration-200 cursor-pointer; }
+  .toggle-on  { background: var(--purple); }
+  .toggle-off { background: var(--line); }
+  .toggle-knob { @apply absolute w-4 h-4 bg-white rounded-full shadow transition-transform duration-200; }
+  .toggle-knob-on  { transform: translateX(20px); }
+  .toggle-knob-off { transform: translateX(4px); }
+}
