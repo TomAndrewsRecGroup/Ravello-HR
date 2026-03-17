@@ -1,71 +1,61 @@
 import type { Metadata } from 'next';
+import { DM_Sans } from 'next/font/google';
 import './globals.css';
 import { Analytics }    from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
-import Nav              from '@/components/Nav';
-import Footer           from '@/components/Footer';
-import ChatWidget       from '@/components/ChatWidget';
-import QuickActions     from '@/components/QuickActions';
+import Nav from '@/components/Nav';
+import Footer from '@/components/Footer';
+import ChatWidget from '@/components/ChatWidget';
+import QuickActions from '@/components/QuickActions';
+import ExitIntentPopup from '@/components/ExitIntentPopup';
+import CalendlyWidget from '@/components/CalendlyWidget';
+import SocialProofTicker from '@/components/SocialProofTicker';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
     default: 'Ravello | HR & Hiring for Growing Businesses',
     template: '%s | Ravello',
   },
   description:
-    'Ravello gives SMEs of 10–250 people the HR support, structured hiring, and operational visibility they need — without building an in-house HR team. Expert support, vetted recruiter network, client portal.',
-  keywords: [
-    'HR support for SMEs',
-    'outsourced HR UK',
-    'HR and recruitment platform',
-    'small business HR',
-    'hiring support UK',
-    'HR portal for businesses',
-    'vetted recruiters UK',
-    'people operations platform',
-  ],
+    'Ravello HR helps ambitious businesses fix hiring, protect compliance and navigate transformation — with a named system, not generic advice.',
+  keywords: ['HR consultancy UK', 'Smart Hiring System', 'HR compliance', 'people strategy', 'M&A HR support', 'PolicySafe', 'recruitment turnaround'],
+  authors: [{ name: 'Lucinda Reader', url: 'https://ravellohr.co.uk' }],
   openGraph: {
-    type: 'website',
-    locale: 'en_GB',
-    url: 'https://ravellohr.co.uk',
-    siteName: 'Ravello',
-    title: 'Ravello | HR & Hiring for Growing Businesses',
-    description:
-      'HR support, structured hiring, and a client portal for businesses of 10–250 people.',
+    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'Ravello HR',
+    title: 'Ravello HR | Hire. Lead. Protect.',
+    description: 'Fix hiring. Build compliance. Navigate change. Ravello HR delivers named HR systems — not generic consultancy.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Ravello | HR & Hiring for Growing Businesses',
-    description: 'HR support, hiring, and visibility for growing businesses.',
+    card: 'summary_large_image', title: 'Ravello HR',
+    description: 'Strategic HR systems for ambitious businesses.',
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://ravellohr.co.uk' },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        <ClarityScript />
-      </head>
-      <body>
+    <html lang="en" className={dmSans.variable}>
+      <head><ClarityScript /></head>
+      <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <Analytics />
         <Nav />
         <main>{children}</main>
+        <SocialProofTicker />
         <Footer />
         <QuickActions />
+        <CalendlyWidget />
+        <ExitIntentPopup />
         <ChatWidget />
       </body>
     </html>

@@ -1,42 +1,30 @@
-export default function TrustBar() {
-  const sectors = [
-    'Retail & Hospitality',
-    'Technology & SaaS',
-    'Professional Services',
-    'Finance & Accounting',
-    'Manufacturing & Engineering',
-    'Healthcare & Allied',
-    'Logistics & Operations',
-  ];
+const SIGNALS = [
+  { icon: '🏆', text: 'Senior HR expertise, not junior consultants' },
+  { icon: '⚡',    text: 'Embedded fast — typically within 48 hours' },
+  { icon: '🔒', text: '100% confidential engagements' },
+  { icon: '📋', text: 'Fixed-scope, no surprise invoices' },
+  { icon: '✅', text: '0 tribunal outcomes across all restructure work' },
+];
 
+export default function TrustBar() {
   return (
-    <section className="section-xs section-dark">
-      <div className="container-wide">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-10">
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.18em] whitespace-nowrap"
-            style={{ color: 'rgba(147,184,255,0.65)' }}
-          >
-            Sectors served
-          </p>
-          <div className="w-px h-5 hidden sm:block" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          <div className="flex flex-wrap gap-x-7 gap-y-3">
-            {sectors.map((s) => (
-              <span
-                key={s}
-                className="flex items-center gap-2 text-sm"
-                style={{ color: 'rgba(255,255,255,0.45)' }}
-              >
-                <span
-                  className="w-1 h-1 rounded-full"
-                  style={{ background: 'rgba(143,114,246,0.6)' }}
-                />
-                {s}
-              </span>
-            ))}
-          </div>
+    <div
+      className="relative overflow-hidden"
+      style={{ background: 'var(--brand-navy)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+    >
+      {/* Gradient top line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'var(--gradient)' }} />
+
+      <div className="container-wide px-6 lg:px-10 py-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2.5">
+          {SIGNALS.map((s) => (
+            <div key={s.text} className="flex items-center gap-2 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <span className="text-sm">{s.icon}</span>
+              {s.text}
+            </div>
+          ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

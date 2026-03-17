@@ -1,167 +1,211 @@
+'use client';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-const proof = [
-  'HR support on demand — no retainers',
-  'Hiring via a network of vetted recruiters',
-  'Client portal: visibility across all your people activity',
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
+
+const SYSTEMS = [
+  { label: 'Smart Hiring System\u2122', color: '#9B7FF8' },
+  { label: 'PolicySafe\u2122',          color: '#5B9BFF' },
+  { label: 'DealReady People\u2122',    color: '#E07FC0' },
+];
+
+const STATS = [
+  { val: '10+',  lab: 'Years senior HR expertise' },
+  { val: '40%+', lab: 'Agency cost reduction' },
+  { val: '0',    lab: 'Tribunal outcomes' },
 ];
 
 export default function Hero() {
   return (
     <section
-      className="relative min-h-screen flex items-center overflow-hidden"
-      style={{ background: 'var(--bg)' }}
+      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
+      style={{ background: 'var(--gradient-hero)' }}
     >
-      {/* Background glows */}
+      <div className="hero-mesh" />
+
       <div
-        className="absolute right-0 top-0 w-[800px] h-[800px] pointer-events-none"
+        className="absolute inset-0 pointer-events-none opacity-40"
         style={{
-          background:
-            'radial-gradient(ellipse at 80% 20%, rgba(143,114,246,0.1) 0%, rgba(147,184,255,0.07) 40%, transparent 70%)',
-        }}
-      />
-      <div
-        className="absolute left-0 bottom-0 w-[600px] h-[600px] pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse at 10% 90%, rgba(232,182,217,0.07) 0%, transparent 60%)',
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
         }}
       />
 
-      <div className="relative z-10 container-wide section-padding w-full">
-        <div className="grid lg:grid-cols-[1fr_460px] gap-16 xl:gap-28 items-center">
+      <div
+        className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, rgba(13,21,53,0.6))' }}
+      />
 
-          {/* Left — copy */}
+      <div className="relative z-10 container-wide section-padding w-full pt-44 pb-28">
+        <div className="grid lg:grid-cols-[1fr_600px] gap-10 xl:gap-14 items-center">
+
+          {/* Left column */}
           <div>
-            <div className="flex items-center gap-3 mb-8">
-              <span className="eyebrow">Ravello</span>
-              <span className="w-8 h-px" style={{ background: 'var(--gradient)' }} />
+            <div className="flex items-center gap-3 mb-9">
               <span
-                className="text-xs font-medium uppercase tracking-[0.15em]"
-                style={{ color: 'var(--ink-faint)' }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
+                style={{
+                  background: 'rgba(124,92,246,0.18)',
+                  border: '1px solid rgba(124,92,246,0.35)',
+                  color: 'rgba(210,195,255,0.95)',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
               >
-                HR &amp; Hiring for Growing Businesses
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#9B7FF8' }} />
+                UK HR Consultancy
               </span>
             </div>
 
-            <h1 className="display-xl font-display mb-6" style={{ color: 'var(--ink)' }}>
-              You don&apos;t need a full HR team.{' '}
-              <span className="text-gradient">You need Ravello.</span>
+            <h1
+              className="font-extrabold text-white mb-7"
+              style={{ fontSize: 'clamp(2.6rem, 5.5vw, 4.8rem)', lineHeight: 1.04, letterSpacing: '-0.03em' }}
+            >
+              The HR expertise<br />
+              your business{' '}
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: 'linear-gradient(135deg, #9B7FF8 0%, #5B9BFF 60%, #E07FC0 100%)' }}
+              >
+                actually needs.
+              </span>
             </h1>
 
-            <p
-              className="text-lg leading-relaxed mb-3 max-w-[540px]"
-              style={{ color: 'var(--ink-soft)' }}
-            >
-              Ravello gives businesses of 10–250 people the HR support, structured hiring, and
-              operational visibility they need — without the overhead of building it in-house.
+            <p className="text-lg leading-relaxed mb-3 max-w-[540px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              Three named systems. One senior expert. No generic consultancy.
             </p>
-            <p
-              className="text-base leading-relaxed mb-10 max-w-[500px]"
-              style={{ color: 'var(--ink-faint)' }}
-            >
-              One platform. Expert support. A recruiter network that works for you.
+            <p className="text-base leading-relaxed mb-12 max-w-[500px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Ravello HR permanently fixes the hiring, compliance and transformation
+              challenges that slow ambitious UK businesses down.
             </p>
 
-            <div className="flex flex-wrap gap-3 mb-10">
-              <Link href="/contact" className="btn-cta">
-                Talk to Ravello <ArrowRight size={16} />
+            <div className="flex flex-wrap gap-4 mb-14">
+              <Link href="/book" className="btn-gradient">
+                <CalendarCheck size={16} /> Book a Free Call
               </Link>
-              <Link href="/how-it-works" className="btn-secondary">
-                How it works
+              <Link href="/tools/hiring-score" className="btn-outline-white">
+                Get Your Hiring Score <ArrowRight size={15} />
               </Link>
             </div>
 
-            <ul className="space-y-3">
-              {proof.map((p) => (
-                <li key={p} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink-soft)' }}>
-                  <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--brand-purple)' }} />
-                  {p}
-                </li>
+            <div className="flex flex-wrap gap-2.5 mb-14">
+              {SYSTEMS.map((s) => (
+                <span
+                  key={s.label}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold"
+                  style={{
+                    background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.72)',
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-10 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.09)' }}>
+              {STATS.map((m) => (
+                <div key={m.lab}>
+                  <p
+                    className="font-extrabold text-3xl mb-1"
+                    style={{ background: 'linear-gradient(135deg,#9B7FF8,#5B9BFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                  >
+                    {m.val}
+                  </p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>{m.lab}</p>
+                </div>
               ))}
             </ul>
           </div>
 
-          {/* Right — visual system diagram */}
-          <div className="hidden lg:block relative">
-            {/* Outer glow ring */}
-            <div
-              className="absolute inset-0 rounded-[28px] pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle at 50% 40%, rgba(143,114,246,0.08) 0%, transparent 70%)',
-                border: '1px solid rgba(143,114,246,0.1)',
-              }}
-            />
+          {/* Right column */}
+          <div className="hidden lg:flex flex-col items-center justify-center gap-6">
 
+            {/* Pill — above */}
             <div
-              className="relative rounded-[28px] p-8 overflow-hidden"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold self-start ml-2"
               style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--brand-line)',
-                boxShadow: '0 4px 40px rgba(14,22,51,0.09)',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.9)',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+                whiteSpace: 'nowrap',
               }}
             >
-              {/* Header chip */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-semibold" style={{ color: 'var(--ink-soft)' }}>
-                  Ravello Client Portal
-                </span>
-              </div>
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#9B7FF8' }} />
+              Smart Hiring System™
+            </div>
 
-              {/* Mock portal rows */}
-              {[
-                { label: 'Hiring Activity',  val: '3 active roles',      dot: 'var(--brand-purple)', badge: 'In Progress' },
-                { label: 'HR Support',       val: '1 open request',      dot: 'var(--brand-blue)',   badge: 'Active' },
-                { label: 'Documents',        val: '12 docs stored',      dot: 'var(--brand-pink)',   badge: 'Up to date' },
-                { label: 'Compliance',       val: 'Next review in 14d',  dot: 'var(--brand-teal)',   badge: 'On track' },
-              ].map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between px-4 py-3 rounded-[12px] mb-2"
-                  style={{ background: 'var(--surface-alt)', border: '1px solid var(--brand-line)' }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: row.dot }}
-                    />
-                    <div>
-                      <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{row.label}</p>
-                      <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{row.val}</p>
-                    </div>
-                  </div>
-                  <span className="pill-purple text-[10px]">{row.badge}</span>
-                </div>
-              ))}
+            {/*
+              Container has a FIXED height of 280px — this is what the pills respond to.
+              The image is rendered at full width/height inside it, then scaled up
+              visually with transform: scale(). CSS transform does NOT affect layout,
+              so the pills never move regardless of scale value.
+            */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '280px',
+                flexShrink: 0,
+                background: 'radial-gradient(ellipse at center, rgba(124,92,246,0.2) 0%, rgba(91,155,255,0.08) 50%, transparent 75%)',
+                borderRadius: '40px',
+                overflow: 'visible',
+              }}
+            >
+              <Image
+                src={LOGO_FULL}
+                alt="Ravello HR"
+                fill
+                className="object-contain drop-shadow-2xl"
+                style={{ transform: 'scale(1.75)', transformOrigin: 'center center' }}
+                priority
+              />
+            </div>
 
-              {/* Shortlist ready banner */}
+            {/* Pills — below */}
+            <div className="flex items-center justify-between w-full px-2 gap-3">
               <div
-                className="mt-4 rounded-[12px] px-4 py-3 flex items-center gap-3"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(143,114,246,0.12) 0%, rgba(147,184,255,0.1) 100%)',
-                  border: '1px solid rgba(143,114,246,0.15)',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.9)',
+                  boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(143,114,246,0.15)' }}
-                >
-                  <span className="text-sm">✓</span>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>
-                    Shortlist ready — Senior Finance Manager
-                  </p>
-                  <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-                    3 candidates to review
-                  </p>
-                </div>
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#5B9BFF' }} />
+                PolicySafe™
+              </div>
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.9)',
+                  boxShadow: '0 2px 14px rgba(0,0,0,0.25)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#E07FC0' }} />
+                DealReady People™
               </div>
             </div>
+
           </div>
+
         </div>
+      </div>
+
+      {/* Scroll nudge */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10">
+        <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.28)' }}>Scroll</span>
+        <ChevronDown size={15} style={{ color: 'rgba(255,255,255,0.28)' }} className="animate-bounce" />
       </div>
     </section>
   );

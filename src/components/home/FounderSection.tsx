@@ -1,71 +1,67 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Quote } from 'lucide-react';
 
-const credentials = [
-  { label: 'Experience', value: '10+ years in senior HR leadership' },
-  { label: 'Sectors',    value: 'FTSE-listed, PE-backed, retail, tech, manufacturing' },
-  { label: 'Outcomes',   value: '0 tribunal outcomes across all structured work' },
-  { label: 'Systems',    value: '3 named HR systems built from real-world practice' },
+const CREDENTIALS = [
+  '10+ years senior in-house HR',
+  'CIPD qualified practitioner',
+  'TUPE & restructure specialist',
+  'M&A people due diligence',
 ];
 
 export default function FounderSection() {
   return (
-    <section className="section-padding" style={{ background: 'var(--bg)' }}>
+    <section className="section-padding" style={{ background: 'var(--surface-alt)' }}>
       <div className="container-wide">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
 
-          {/* Left — credentials block */}
-          <div
-            className="rounded-[24px] p-8 lg:p-10 relative overflow-hidden"
-            style={{ background: 'var(--surface-alt)', border: '1px solid var(--brand-line)' }}
-          >
-            {/* Soft gradient top-right */}
-            <div className="absolute top-0 right-0 w-48 h-48 pointer-events-none"
-              style={{ background: 'radial-gradient(circle at 100% 0%, rgba(143,114,246,0.1) 0%, transparent 60%)' }}
-            />
-            <p className="eyebrow mb-6">Lucinda Reader</p>
-            <div className="space-y-5">
-              {credentials.map((c) => (
-                <div key={c.label} className="flex gap-5">
-                  <div className="w-px self-stretch" style={{ background: 'var(--gradient)' }} />
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--ink-faint)' }}>{c.label}</p>
-                    <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.value}</p>
-                  </div>
-                </div>
-              ))}
+          {/* Left — quote card */}
+          <div className="relative rounded-[28px] overflow-hidden p-10" style={{ background: 'var(--brand-navy)', minHeight: '440px' }}>
+            <div className="absolute top-0 right-0 w-72 h-72 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 20%, rgba(124,92,246,0.22) 0%, transparent 60%)' }} />
+
+            <div className="w-12 h-12 rounded-[14px] flex items-center justify-center mb-8" style={{ background: 'rgba(124,92,246,0.16)', border: '1px solid rgba(124,92,246,0.28)' }}>
+              <Quote size={20} style={{ color: '#9B7FF8' }} />
             </div>
-            <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--brand-line)' }}>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-medium" style={{ color: 'var(--ink-soft)' }}>Currently taking new engagements</span>
+
+            <blockquote className="font-semibold text-white leading-relaxed mb-8" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'rgba(255,255,255,0.92)' }}>
+              &ldquo;Most HR problems aren’t HR problems — they’re process gaps dressed up as people issues. We fix the process.&rdquo;
+            </blockquote>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ background: 'var(--gradient)' }}>R</div>
+              <div>
+                <p className="text-sm font-semibold text-white">Ravello HR</p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Founder & Lead Consultant</p>
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              {CREDENTIALS.map((c) => (
+                <span key={c} className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.58)' }}>
+                  {c}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* Right — copy */}
           <div>
-            <p className="eyebrow mb-5">The founder</p>
-            <h2 className="font-display font-bold mb-6 leading-tight"
-              style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}
-            >
-              Senior HR expertise, delivered personally.
-            </h2>
-            <div className="space-y-4 mb-8" style={{ color: 'var(--ink-soft)' }}>
-              <p className="text-base leading-relaxed">
-                Lucinda spent over a decade leading HR inside large, complex organisations — through acquisitions, rapid growth and the kind of people challenges that textbooks don’t cover.
+            <p className="eyebrow mb-5">
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              Why Ravello HR
+            </p>
+            <h2 className="section-title mb-5">Senior expertise.<br />No junior hand-offs.</h2>
+            <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
+            <div className="space-y-5 mb-10">
+              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                Most consultancies give you a senior pitch, then hand the work to a junior. Ravello HR is different — you get one senior expert who knows your business from day one.
               </p>
-              <p className="text-base leading-relaxed">
-                She built Ravello HR because brilliant businesses kept being held back by the same three problems: hiring that didn’t stick, compliance built on hope, and transformation that lost the people it needed most.
+              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                Every engagement is built around a named system with clear deliverables. You always know exactly what you’re getting — and when.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/book" className="btn-primary">
-                Work with Lucinda <ArrowRight size={15} />
-              </Link>
-              <Link href="/about" className="btn-secondary">
-                Full story
-              </Link>
+              <Link href="/about" className="btn-primary">About Ravello HR <ArrowRight size={15} /></Link>
+              <Link href="/book"  className="btn-secondary">Book a Free Call</Link>
             </div>
           </div>
         </div>
