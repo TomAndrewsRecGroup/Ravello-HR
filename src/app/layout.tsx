@@ -1,46 +1,43 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-import { Analytics } from '@/components/Analytics';
+import { Analytics }    from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
-import Nav from '@/components/Nav';
-import Footer from '@/components/Footer';
-import ChatWidget from '@/components/ChatWidget';
-import QuickActions from '@/components/QuickActions';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+import Nav              from '@/components/Nav';
+import Footer           from '@/components/Footer';
+import ChatWidget       from '@/components/ChatWidget';
+import QuickActions     from '@/components/QuickActions';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ravello HR | Hire. Lead. Protect.',
-    template: '%s | Ravello HR',
+    default: 'Ravello | HR & Hiring for Growing Businesses',
+    template: '%s | Ravello',
   },
   description:
-    'Ravello HR helps ambitious businesses fix hiring, protect compliance and navigate transformation — with a named system, not generic advice.',
+    'Ravello gives SMEs of 10–250 people the HR support, structured hiring, and operational visibility they need — without building an in-house HR team. Expert support, vetted recruiter network, client portal.',
   keywords: [
-    'HR consultancy UK',
-    'Smart Hiring System',
-    'HR compliance',
-    'people strategy',
-    'M&A HR support',
-    'PolicySafe',
-    'recruitment turnaround',
+    'HR support for SMEs',
+    'outsourced HR UK',
+    'HR and recruitment platform',
+    'small business HR',
+    'hiring support UK',
+    'HR portal for businesses',
+    'vetted recruiters UK',
+    'people operations platform',
   ],
-  authors: [{ name: 'Lucinda Reader', url: 'https://ravellohr.co.uk' }],
   openGraph: {
     type: 'website',
     locale: 'en_GB',
     url: 'https://ravellohr.co.uk',
-    siteName: 'Ravello HR',
-    title: 'Ravello HR | Hire. Lead. Protect.',
+    siteName: 'Ravello',
+    title: 'Ravello | HR & Hiring for Growing Businesses',
     description:
-      'Fix hiring. Build compliance. Navigate change. Ravello HR delivers named HR systems — not generic consultancy.',
+      'HR support, structured hiring, and a client portal for businesses of 10–250 people.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ravello HR',
-    description: 'Strategic HR systems for ambitious businesses.',
+    title: 'Ravello | HR & Hiring for Growing Businesses',
+    description: 'HR support, hiring, and visibility for growing businesses.',
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
@@ -53,17 +50,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
           rel="stylesheet"
         />
         <ClarityScript />
       </head>
-      <body className="bg-brand-void font-sans antialiased">
+      <body>
         <Analytics />
         <Nav />
         <main>{children}</main>

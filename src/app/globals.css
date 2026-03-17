@@ -6,19 +6,39 @@
 
 @layer base {
   :root {
-    --bg:           #FCFBFF;
-    --surface:      #FFFFFF;
-    --surface-alt:  #F5F4FA;
-    --ink:          #171A24;
-    --ink-soft:     #4A5268;
-    --ink-faint:    #8892A4;
-    --brand-navy:   #0E1633;
-    --brand-blue:   #93B8FF;
-    --brand-purple: #8F72F6;
-    --brand-pink:   #E8B6D9;
-    --brand-line:   rgba(20, 27, 52, 0.08);
-    --gradient:     linear-gradient(135deg, #93B8FF 0%, #8F72F6 50%, #E8B6D9 100%);
-    --gradient-soft:linear-gradient(135deg, rgba(147,184,255,0.15) 0%, rgba(143,114,246,0.12) 50%, rgba(232,182,217,0.1) 100%);
+    /* ── Colour tokens ───────────────────── */
+    --bg:            #FCFBFF;
+    --surface:       #FFFFFF;
+    --surface-alt:   #F5F4FA;
+    --surface-dark:  #0E1633;
+    --ink:           #171A24;
+    --ink-soft:      #4A5268;
+    --ink-faint:     #8892A4;
+
+    --brand-navy:    #0E1633;
+    --brand-blue:    #93B8FF;
+    --brand-purple:  #8F72F6;
+    --brand-pink:    #E8B6D9;
+    --brand-teal:    #5BC4BF;
+    --brand-line:    rgba(20, 27, 52, 0.08);
+    --brand-line-dark: rgba(255,255,255,0.08);
+
+    --gradient:      linear-gradient(135deg, #93B8FF 0%, #8F72F6 50%, #E8B6D9 100%);
+    --gradient-soft: linear-gradient(135deg,
+                       rgba(147,184,255,0.15) 0%,
+                       rgba(143,114,246,0.12) 50%,
+                       rgba(232,182,217,0.1) 100%);
+    --gradient-cta:  linear-gradient(135deg, #8F72F6 0%, #6B52D6 100%);
+
+    /* ── Spacing tokens ──────────────────── */
+    --space-section:    7rem;
+    --space-section-sm: 4rem;
+
+    /* ── Radius tokens ───────────────────── */
+    --radius-card:    20px;
+    --radius-card-sm: 14px;
+    --radius-btn:     10px;
+    --radius-pill:    999px;
   }
 
   html  { scroll-behavior: smooth; }
@@ -32,9 +52,7 @@
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     color: var(--ink);
   }
-  ::selection {
-    background: rgba(143,114,246,0.18);
-  }
+  ::selection  { background: rgba(143,114,246,0.18); }
   ::-webkit-scrollbar       { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--brand-purple); border-radius: 99px; }
@@ -42,26 +60,60 @@
 
 @layer components {
 
-  /* ── Layout ─────────────────────────────── */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     LAYOUT
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .container-wide   { @apply max-w-[1280px] mx-auto; }
+  .container-mid    { @apply max-w-[960px]  mx-auto; }
   .container-narrow { @apply max-w-[760px]  mx-auto; }
+
   .section-padding  { @apply px-6 lg:px-10 py-24 lg:py-32; }
   .section-sm       { @apply px-6 lg:px-10 py-14 lg:py-20; }
+  .section-xs       { @apply px-6 lg:px-10 py-10 lg:py-14; }
 
-  /* ── Typography ─────────────────────────── */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     TYPOGRAPHY
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.18em];
     color: var(--brand-purple);
+  }
+  .eyebrow-light {
+    @apply text-xs font-semibold uppercase tracking-[0.18em];
+    color: rgba(147,184,255,0.8);
   }
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient);
   }
+  .display-xl {
+    font-size: clamp(2.8rem, 6vw, 4.75rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+  }
+  .display-lg {
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+  }
+  .display-md {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+  }
 
-  /* ── Buttons ────────────────────────────── */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     BUTTONS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .btn-primary {
     @apply inline-flex items-center gap-2 px-6 py-3 rounded-[10px] font-semibold text-sm text-white
-           transition-all duration-200;
+           transition-all duration-200 cursor-pointer;
     background: var(--brand-navy);
     box-shadow: 0 1px 3px rgba(14,22,51,0.2), 0 4px 12px rgba(14,22,51,0.12);
   }
@@ -71,9 +123,20 @@
     transform: translateY(-1px);
   }
 
+  .btn-cta {
+    @apply inline-flex items-center gap-2 px-7 py-3.5 rounded-[10px] font-semibold text-sm text-white
+           transition-all duration-200 cursor-pointer;
+    background: var(--gradient-cta);
+    box-shadow: 0 2px 12px rgba(143,114,246,0.35), 0 4px 24px rgba(143,114,246,0.2);
+  }
+  .btn-cta:hover {
+    box-shadow: 0 4px 20px rgba(143,114,246,0.5), 0 8px 32px rgba(143,114,246,0.25);
+    transform: translateY(-1px);
+  }
+
   .btn-secondary {
     @apply inline-flex items-center gap-2 px-6 py-3 rounded-[10px] font-semibold text-sm
-           transition-all duration-200 bg-white;
+           transition-all duration-200 bg-white cursor-pointer;
     color: var(--ink);
     border: 1px solid var(--brand-line);
     box-shadow: 0 1px 3px rgba(14,22,51,0.06);
@@ -86,7 +149,7 @@
 
   .btn-ghost {
     @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] font-medium text-sm
-           transition-all duration-200;
+           transition-all duration-200 cursor-pointer;
     color: var(--ink-soft);
   }
   .btn-ghost:hover {
@@ -94,7 +157,22 @@
     color: var(--ink);
   }
 
-  /* ── Cards ──────────────────────────────── */
+  .btn-outline-light {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-[10px] font-semibold text-sm
+           transition-all duration-200 cursor-pointer;
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.05);
+  }
+  .btn-outline-light:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.3);
+    color: #fff;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     CARDS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .card {
     @apply bg-white rounded-[20px] p-7 transition-all duration-200;
     border: 1px solid var(--brand-line);
@@ -111,13 +189,50 @@
     border: 1px solid var(--brand-line);
   }
 
-  /* ── Gradient accent line ───────────────── */
-  .accent-line {
-    @apply block h-px w-12;
-    background: var(--gradient);
+  .card-dark {
+    @apply rounded-[20px] p-7 transition-all duration-200;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .card-dark:hover {
+    background: rgba(255,255,255,0.07);
   }
 
-  /* ── Pill / tag ─────────────────────────── */
+  .card-feature {
+    @apply rounded-[20px] p-7 flex flex-col gap-4 transition-all duration-200 cursor-default;
+    background: var(--surface);
+    border: 1px solid var(--brand-line);
+    box-shadow: 0 1px 3px rgba(14,22,51,0.04), 0 6px 24px rgba(14,22,51,0.05);
+  }
+  .card-feature:hover {
+    border-color: rgba(143,114,246,0.2);
+    box-shadow: 0 2px 8px rgba(14,22,51,0.06), 0 12px 40px rgba(143,114,246,0.08);
+    transform: translateY(-2px);
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FORM INPUTS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .input {
+    @apply w-full px-4 py-3 rounded-[10px] text-sm outline-none transition-all duration-200;
+    background: var(--surface);
+    border: 1px solid var(--brand-line);
+    color: var(--ink);
+  }
+  .input::placeholder { color: var(--ink-faint); }
+  .input:focus {
+    border-color: rgba(143,114,246,0.4);
+    box-shadow: 0 0 0 3px rgba(143,114,246,0.1);
+  }
+  .input-label {
+    @apply block text-xs font-semibold mb-1.5;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     PILLS / TAGS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .pill {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
   }
@@ -136,8 +251,20 @@
     background: rgba(147,184,255,0.15);
     color: #3B72CC;
   }
+  .pill-teal {
+    @apply pill;
+    background: rgba(91,196,191,0.12);
+    color: #2A9490;
+  }
+  .pill-green {
+    @apply pill;
+    background: rgba(52,211,153,0.12);
+    color: #059669;
+  }
 
-  /* ── Divider ────────────────────────────── */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     DIVIDERS / LINES
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .brand-divider {
     @apply w-full h-px;
     background: var(--brand-line);
@@ -146,8 +273,42 @@
     @apply w-full h-px;
     background: linear-gradient(90deg, transparent, rgba(143,114,246,0.3), transparent);
   }
+  .accent-line {
+    @apply block h-px w-12;
+    background: var(--gradient);
+  }
 
-  /* ── Quick Actions sidebar ──────────────── */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     SECTION BLOCKS — alternating rhythm
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .section-light { background: var(--bg); }
+  .section-alt   { background: var(--surface-alt); }
+  .section-dark  { background: var(--brand-navy); }
+  .section-white { background: var(--surface); }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     PORTAL / ADMIN UTILITIES
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-150 cursor-pointer;
+    color: rgba(255,255,255,0.55);
+  }
+  .sidebar-link:hover   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+  .sidebar-link.active  { background: rgba(143,114,246,0.18); color: #fff; }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+  .status-submitted  { background: rgba(147,184,255,0.15); color: #3B72CC; }
+  .status-inprogress { background: rgba(143,114,246,0.12); color: #6B52D6; }
+  .status-shortlist  { background: rgba(91,196,191,0.12);  color: #2A9490; }
+  .status-interview  { background: rgba(251,191,36,0.15);  color: #B45309; }
+  .status-offer      { background: rgba(52,211,153,0.12);  color: #059669; }
+  .status-filled     { background: rgba(14,22,51,0.08);    color: #0E1633; }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     QUICK ACTIONS SIDEBAR
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .qa-panel {
     background: var(--surface);
     border: 1px solid var(--brand-line);
