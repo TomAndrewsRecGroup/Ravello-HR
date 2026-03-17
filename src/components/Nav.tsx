@@ -89,6 +89,7 @@ export default function Nav() {
             <Link href="/book" className="btn-gradient"><CalendarCheck size={15} /> Book Free Call</Link>
           </div>
 
+          {/* Mobile toggle */}
           <button
             className="lg:hidden p-2 rounded-xl transition-colors"
             style={{ color: scrolled ? 'var(--ink)' : 'rgba(255,255,255,0.9)' }}

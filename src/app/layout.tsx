@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { DM_Sans } from 'next/font/google';
 import './globals.css';
-import { Analytics } from '@/components/Analytics';
+import { Analytics }    from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
@@ -21,8 +21,8 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
-    default: 'Ravello HR | Hire. Lead. Protect.',
-    template: '%s | Ravello HR',
+    default: 'Ravello | HR & Hiring for Growing Businesses',
+    template: '%s | Ravello',
   },
   description:
     'Ravello HR helps ambitious businesses fix hiring, protect compliance and navigate transformation — with a named system, not generic advice.',

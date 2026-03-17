@@ -119,7 +119,7 @@ export default function Hero() {
                   <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>{m.lab}</p>
                 </div>
               ))}
-            </div>
+            </ul>
           </div>
 
           {/* Right column */}
