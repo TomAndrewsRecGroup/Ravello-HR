@@ -54,6 +54,17 @@ export default function DealReadyPreCheckPage() {
     <section style={{ background: 'var(--color-void)', minHeight: '100vh', paddingTop: '4rem', paddingBottom: '6rem' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 2rem' }}>
 
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" style={{ marginBottom: '2rem' }}>
+          <ol style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', listStyle: 'none', padding: 0, margin: 0 }}>
+            <li><Link href="/" style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Home</Link></li>
+            <li style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-small)' }}>›</li>
+            <li><Link href="/dealready-people" style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', textDecoration: 'none' }}>DealReady People™</Link></li>
+            <li style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-small)' }}>›</li>
+            <li style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>People Risk Pre-Check</li>
+          </ol>
+        </nav>
+
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <span className="section-label" style={{ justifyContent: 'center', display: 'flex' }}>DEALREADY PEOPLE™</span>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.75rem', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>

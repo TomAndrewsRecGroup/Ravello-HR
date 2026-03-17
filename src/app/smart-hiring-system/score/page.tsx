@@ -97,6 +97,17 @@ export default function SmartHiringScorePage() {
     <section style={{ background: 'var(--color-void)', minHeight: '100vh', paddingTop: '4rem', paddingBottom: '6rem' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 2rem' }}>
 
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" style={{ marginBottom: '2rem' }}>
+          <ol style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', listStyle: 'none', padding: 0, margin: 0 }}>
+            <li><Link href="/" style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Home</Link></li>
+            <li style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-small)' }}>›</li>
+            <li><Link href="/smart-hiring-system" style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-muted)', textDecoration: 'none' }}>Smart Hiring System™</Link></li>
+            <li style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-small)' }}>›</li>
+            <li style={{ fontSize: 'var(--text-small)', color: 'var(--color-text-secondary)' }}>Take the Score Check</li>
+          </ol>
+        </nav>
+
         {/* Progress pips */}
         {!isResults && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: '3rem' }}>
