@@ -41,7 +41,7 @@ export default function Hero() {
                 width={600}
                 height={220}
                 className="object-contain w-auto"
-                style={{ height: '64px' }}
+                style={{ height: '220px' }}
                 priority
               />
             </div>
