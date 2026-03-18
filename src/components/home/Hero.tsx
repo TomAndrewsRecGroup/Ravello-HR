@@ -27,14 +27,14 @@ export default function Hero() {
     >
       <div className="hero-mesh" />
 
-      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-24">
+      <div className="relative z-10 container-wide section-padding w-full pb-24" style={{ paddingTop: '112px' }}>
         <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
 
           {/* Left column */}
           <div>
 
             {/* Logo — replaces the eyebrow tag */}
-            <div className="mb-8">
+            <div style={{ marginBottom: '26px' }}>
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
