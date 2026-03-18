@@ -46,8 +46,7 @@ export default function BookPage() {
         <div className="max-w-3xl mx-auto">
           <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>No-Fluff HR Hotline</span>
           <h1
-            style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
-            style={{ fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
+            style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
           >
             Book 15 mins.<br />
             <span style={{ background: 'linear-gradient(135deg,var(--brand-blue),var(--brand-purple),var(--brand-pink))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
