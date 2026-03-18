@@ -105,6 +105,7 @@ export default function WhyRavelloPage() {
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
             <Link href="#comparison" className="btn-outline-white">See the comparison <ArrowRight size={15} /></Link>
           </div>
+        </div>
       </section>
 
       {/* 6 Reasons */}

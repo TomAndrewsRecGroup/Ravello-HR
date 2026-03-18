@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function PolicyHealthcheckPage() {
   return (
     <div className="pt-20">
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '4rem', paddingBottom: '3rem' }}">
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '4rem', paddingBottom: '3rem' }}>
         <div className="max-w-3xl mx-auto text-center">
           <span className="pill pill-purple bg-[var(--brand-purple)] text-white mb-4 inline-block">Funnel B · PolicySafe™</span>
           <h1 className=" text-4xl lg:text-5xl font-bold mb-4">
