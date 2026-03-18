@@ -52,8 +52,8 @@ export default function PolicyHealthcheckTool() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-8">
-          <p className="text-brand-slate text-sm mb-1">Your policy gap report</p>
-          <h2 className="font-display text-2xl font-bold text-brand-navy">You\'re missing <span className="text-red-500">{missing.length}</span> of {policies.length} documents</h2>
+          <p className="text-[var(--ink-soft)] text-sm mb-1">Your policy gap report</p>
+          <h2 className=" text-2xl font-bold text-[var(--ink)]">You\'re missing <span className="text-red-500">{missing.length}</span> of {policies.length} documents</h2>
           {critical.length > 0 && <p className="text-red-600 font-semibold mt-2">{critical.length} critical gaps with immediate legal risk</p>}
         </div>
 
@@ -85,10 +85,10 @@ export default function PolicyHealthcheckTool() {
           </div>
         )}
 
-        <div className="bg-brand-navy rounded-xl p-6 text-center mt-6">
+        <div className="bg-[var(--brand-navy)] rounded-xl p-6 text-center mt-6">
           <p className="text-white font-semibold mb-2">PolicySafe™ fixes all of this.</p>
           <p className="text-white/70 text-sm mb-4">Our Gold package covers every document on this list, tailored to your business, ready in 5 working days.</p>
-          <a href="/policysafe" className="btn-gold">Explore PolicySafe™ <ArrowRight size={16} /></a>
+          <a href="/policysafe" className="btn-gradient">Explore PolicySafe™ <ArrowRight size={16} /></a>
         </div>
       </div>
     );
@@ -98,16 +98,16 @@ export default function PolicyHealthcheckTool() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-      <p className="text-sm text-brand-slate mb-6">Tick every policy or document you currently have in place (up to date and accessible to staff):</p>
+      <p className="text-sm text-[var(--ink-soft)] mb-6">Tick every policy or document you currently have in place (up to date and accessible to staff):</p>
       <div className="space-y-2 mb-8">
         {policies.map((p) => (
-          <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${ checked[p.id] ? 'border-brand-teal bg-brand-teal/5' : 'border-gray-100 hover:border-gray-200' }`}>
-            <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${ checked[p.id] ? 'bg-brand-teal' : 'border-2 border-gray-300' }`}>
+          <label key={p.id} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${ checked[p.id] ? 'border-[var(--brand-purple)] bg-purple-50' : 'border-gray-100 hover:border-gray-200' }`}>
+            <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${ checked[p.id] ? 'bg-[var(--brand-purple)]' : 'border-2 border-gray-300' }`}>
               {checked[p.id] && <CheckCircle size={12} className="text-white" />}
             </div>
             <input type="checkbox" checked={!!checked[p.id]} onChange={() => toggle(p.id)} className="sr-only" />
             <div className="flex-1">
-              <span className="text-sm font-medium text-brand-navy">{p.label}</span>
+              <span className="text-sm font-medium text-[var(--ink)]">{p.label}</span>
               <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${ p.priority === 'Critical' ? 'bg-red-100 text-red-700' : p.priority === 'High' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500' }`}>{p.priority}</span>
             </div>
           </label>
@@ -115,10 +115,10 @@ export default function PolicyHealthcheckTool() {
       </div>
 
       <div className="border-t border-gray-100 pt-6">
-        <p className="font-semibold text-brand-navy mb-4 flex items-center gap-2"><FileText size={18} className="text-brand-teal" /> Get your personalised gap report</p>
+        <p className="font-semibold text-[var(--ink)] mb-4 flex items-center gap-2"><FileText size={18} className="text-[var(--brand-purple)]" /> Get your personalised gap report</p>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy" />
-          <input type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy" />
+          <input type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
+          <input type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Generating…' : 'Generate My Gap Report'} <ArrowRight size={16} />
           </button>

@@ -81,33 +81,30 @@ export default function WhyRavelloPage() {
     <main>
 
       {/* Hero */}
-      <section className="relative overflow-hidden" style={{ background: 'var(--gradient-hero)', paddingTop: '140px', paddingBottom: '100px' }}>
-        <div className="absolute inset-0 hero-mesh pointer-events-none" />
-        <div className="relative z-10 container-narrow section-padding py-0 text-center px-6">
-          <p className="eyebrow-light justify-center mb-6">
+      <section className="relative overflow-hidden" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+        <div className="container-narrow section-padding py-0 text-center px-6" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
+          <p className="eyebrow justify-center mb-6">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#9B7FF8' }} />
             Why Ravello HR
           </p>
           <h1
-            className="font-extrabold text-white mb-7"
-            style={{ fontSize: 'clamp(2.5rem,5vw,4.2rem)', letterSpacing: '-0.03em', lineHeight: 1.05 }}
+            style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.5rem,5vw,4.2rem)', fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.05, color: 'var(--ink)', marginBottom: '1.25rem' }}
           >
             Senior HR expertise.<br />
             <span
               className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(135deg,#9B7FF8 0%,#5B9BFF 60%,#E07FC0 100%)' }}
+              style={{ backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 600 }}
             >
               Built differently.
             </span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.6)' }}>
+          <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
             We&rsquo;re not a recruitment agency. We&rsquo;re not a retainer consultancy. We&rsquo;re a named-system HR practice that fixes real problems &mdash; fast.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
             <Link href="#comparison" className="btn-outline-white">See the comparison <ArrowRight size={15} /></Link>
           </div>
-        </div>
       </section>
 
       {/* 6 Reasons */}

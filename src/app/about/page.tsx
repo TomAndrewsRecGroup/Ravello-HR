@@ -1,142 +1,171 @@
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle, Award, Building2, TrendingUp } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About',
-  description:
-    'Ravello was built to give growing businesses the HR infrastructure and hiring capability they need — without building it in-house.',
+  title: 'About Ravello HR | Lucinda Reader | Strategic HR Consultancy',
+  description: 'Lucinda Reader is a senior HR professional with experience across major UK and global brands. Ravello HR delivers strategic HR — not generic consultancy.',
+  alternates: { canonical: 'https://ravellohr.co.uk/about' },
 };
 
-const principles = [
-  {
-    headline: 'Built for the gap',
-    body: 'Most HR services are designed for enterprise. Most DIY HR is too risky for a business of 50 people. Ravello is built specifically for the businesses caught in between — those who have outgrown doing it alone, but don\'t yet need (or can\'t justify) a full-time HR team.',
-  },
-  {
-    headline: 'Systems over advice',
-    body: 'A call with an HR consultant gives you a recommendation. Ravello gives you a running system — ongoing support, structured hiring coordination, documented processes, and a portal to manage it all. The difference is continuity.',
-  },
-  {
-    headline: 'No hidden complexity',
-    body: 'We don\'t believe in retainer structures designed to maximise billing or agency fees that incentivise volume over quality. Ravello is clear about what it covers, what it costs, and what you get. If something isn\'t a fit, we\'ll tell you.',
-  },
-  {
-    headline: 'Partner network, not one-size approach',
-    body: 'For hiring, we work with a network of specialist recruiters rather than a single generalist approach. That means the right expertise for your specific role — whether that\'s a finance director, an operations lead, or a senior engineer.',
-  },
+const credentials = [
+  'Senior HR leadership across FTSE-listed and high-growth businesses',
+  'Managed people programmes through acquisitions, restructures and rapid scale',
+  'Built hiring systems that reduced agency spend by 40–60% in 12 months',
+  'Designed HR frameworks adopted across multi-site, multi-country operations',
+  'Advised leadership teams on change management affecting 100s of employees',
+  'Delivered TUPE and redundancy processes with zero tribunal outcomes',
+];
+
+const brands = [
+  { label: 'Retail & Consumer',          desc: 'Multi-site HR transformation, manager capability programme' },
+  { label: 'Professional Services',       desc: 'Hiring system redesign, reduced time-to-hire by 8 weeks' },
+  { label: 'Private Equity-backed SME',   desc: 'Pre-acquisition people DD, post-deal integration' },
+  { label: 'Technology Scale-up',         desc: 'Full HR infrastructure build from 12 to 80 people' },
+  { label: 'Manufacturing & Industrial',  desc: 'Restructure and redundancy programme, TUPE transfer' },
+  { label: 'Healthcare & Services',       desc: 'Compliance overhaul, policy library and manager training' },
+];
+
+const values = [
+  { icon: Award,     title: 'Named systems, not vague advice',              description: 'Every engagement produces something tangible — a scorecard, a process, a framework. Not a slide deck that gathers dust.' },
+  { icon: TrendingUp, title: 'Commercial first',                            description: 'Good HR reduces cost, improves performance and protects the business. That\'s how Lucinda frames every piece of work.' },
+  { icon: Building2, title: 'Built for how businesses actually work',        description: 'No off-the-shelf solutions. No generic templates. Everything is shaped around your size, sector and specific risk.' },
 ];
 
 export default function AboutPage() {
   return (
-    <main className="pt-[70px]">
+    <div className="pt-20">
 
-      {/* Hero */}
-      <section className="section-padding section-light">
-        <div className="container-mid text-center">
-          <p className="eyebrow mb-4">About Ravello</p>
-          <h1 className="display-xl mb-6" style={{ color: 'var(--ink)' }}>
-            HR infrastructure for businesses<br className="hidden sm:block" /> that have outgrown winging it.
+      {/* Hero — light */}
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+        <div className="container-narrow">
+          <p className="eyebrow mb-5">
+            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+            About Ravello HR
+          </p>
+          <h1
+            style={{
+              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+              fontWeight: 300,
+              lineHeight: 1.05,
+              letterSpacing: '-0.02em',
+              color: 'var(--ink)',
+              marginBottom: '1.25rem',
+            }}
+          >
+            Senior HR expertise.<br />
+            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Without the corporate overhead.
+            </span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-[560px] mx-auto" style={{ color: 'var(--ink-soft)' }}>
-            Ravello was built to solve a specific problem: growing businesses — typically 10 to 250
-            people — need real HR and hiring capability, but the in-house model doesn&apos;t make sense yet.
+          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+            Ravello HR is Lucinda Reader — a senior HR professional who has led people programmes inside major brands and now brings that capability directly to ambitious businesses that need it most.
           </p>
         </div>
       </section>
 
-      {/* The problem we were built to solve */}
-      <section className="section-padding section-dark">
+      {/* Founder section */}
+      <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="eyebrow-light mb-4">Why Ravello exists</p>
-              <h2 className="display-lg text-white mb-6">
-                The businesses that need HR the most are the ones left to figure it out alone.
-              </h2>
-              <div className="space-y-4" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                <p className="text-base leading-relaxed">
-                  Enterprise businesses have HR directors. Startups have lawyers on speed dial. But the
-                  business scaling from 20 to 80 people — making its first senior hires, dealing with its
-                  first serious employee issue, trying to build a people function without a budget for
-                  one — often has no structured support at all.
+              <p className="eyebrow mb-3">The Founder</p>
+              <h2 className="section-title mb-6">Lucinda Reader</h2>
+              <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                <p>
+                  Lucinda spent over a decade inside large, complex organisations — leading HR through acquisitions, rapid growth, restructures and the kind of people challenges that textbooks don&rsquo;t cover.
                 </p>
-                <p className="text-base leading-relaxed">
-                  They run on reactive decisions, ad hoc contracts, and whoever in the business happens
-                  to have handled HR before. That works, until it doesn&apos;t.
+                <p>
+                  She built Ravello HR because she kept seeing the same thing: brilliant businesses held back by hiring that didn&rsquo;t work, compliance that was one tribunal away from disaster, and people decisions made on instinct rather than process.
                 </p>
-                <p className="text-base leading-relaxed">
-                  Ravello was built to give those businesses what they actually need: expert support
-                  when situations arise, a structured hiring process that doesn&apos;t rely on a single
-                  agency relationship, and a portal that gives the leadership team visibility across it all.
+                <p>
+                  The result is three named systems — Smart Hiring System™, PolicySafe™ and DealReady People™ — each built from real-world experience, not theory.
                 </p>
               </div>
+              <div className="mt-8">
+                <Link href="/book" className="btn-gradient">
+                  Work with Lucinda <ArrowRight size={16} />
+                </Link>
+              </div>
             </div>
-            <div className="space-y-4">
-              {[
-                { val: '10–250', label: 'People — the Ravello sweet spot' },
-                { val: '3',      label: 'Core capabilities — HR, hiring, portal' },
-                { val: '1',      label: 'Point of contact for your business' },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className="card-dark p-7"
-                >
-                  <p className="font-display font-bold text-[3rem] text-white leading-none mb-2">
-                    {s.val}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</p>
-                </div>
-              ))}
+            <div>
+              <div className="rounded-[18px] p-6" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
+                <p className="eyebrow mb-4">Credentials</p>
+                <ul className="space-y-2">
+                  {credentials.map((c) => (
+                    <li key={c} className="flex items-start gap-3">
+                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
+                      <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Principles */}
-      <section className="section-padding section-alt">
+      {/* Proof of work */}
+      <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
-          <div className="mb-14">
-            <p className="eyebrow mb-3">How we operate</p>
-            <h2 className="display-lg" style={{ color: 'var(--ink)' }}>
-              The principles behind Ravello.
-            </h2>
+          <div className="text-center mb-12">
+            <p className="eyebrow justify-center mb-3">Proof of Work</p>
+            <h2 className="section-title mb-4">Work led across sectors</h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
+              Lucinda has worked inside and alongside businesses across retail, professional services, technology, manufacturing and healthcare. The names stay confidential. The results don&rsquo;t.
+            </p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {principles.map((p) => (
-              <div key={p.headline} className="card-feature">
-                <h3 className="font-display font-bold text-[1.1rem]" style={{ color: 'var(--ink)' }}>
-                  {p.headline}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                  {p.body}
-                </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {brands.map((b) => (
+              <div key={b.label} className="card">
+                <Building2 className="mb-3" size={22} style={{ color: 'var(--brand-purple)' }} />
+                <h3 className="font-bold mb-1" style={{ color: 'var(--ink)' }}>{b.label}</h3>
+                <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>{b.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section-padding section-light">
+      {/* Values */}
+      <section className="section-padding" style={{ background: 'var(--surface)' }}>
+        <div className="container-wide">
+          <div className="text-center mb-12">
+            <h2 className="section-title mb-4">How Ravello HR works</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {values.map((v) => (
+              <div key={v.title} className="text-center">
+                <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--bg)' }}>
+                  <v.icon size={26} style={{ color: 'var(--brand-purple)' }} />
+                </div>
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)', letterSpacing: '-0.015em' }}>{v.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{v.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA — dark */}
+      <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
-          <h2 className="display-md mb-5" style={{ color: 'var(--ink)' }}>
-            Want to see how Ravello works<br className="hidden sm:block" /> for your business?
-          </h2>
-          <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--ink-soft)' }}>
-            Book a free 30-minute consultation. No pitch, no obligation — just a clear picture of
-            what Ravello covers for your size and situation.
+          <h2 className="section-title-light mb-4">Ready to work together?</h2>
+          <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            Book a free 15-minute call. Bring your current HR challenge and leave with a clear next step.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/contact" className="btn-cta">
-              Book a consultation <ArrowRight size={15} />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/book" className="btn-gradient">
+              Book a Free Call <ArrowRight size={16} />
             </Link>
-            <Link href="/how-it-works" className="btn-secondary">
-              How it works
+            <Link href="/tools/hr-risk-score" className="btn-outline-white">
+              Check Your HR Risk Score
             </Link>
           </div>
         </div>
       </section>
-    </main>
+
+    </div>
   );
 }
