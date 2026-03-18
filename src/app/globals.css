@@ -232,6 +232,64 @@
   }
 }
 
+/* ── Phase 2/3: Hero entrance stagger ── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-anim {
+  opacity: 0;
+  animation: heroFadeUp 0.72s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* ── Phase 1: Animated underline grow ── */
+@keyframes underlineGrow {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Phase 2: Logo pulsing glow ── */
+@keyframes logoPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.05); }
+}
+
+/* ── Phase 5: Pillar dot pulse ── */
+@keyframes pillDotPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(155,111,216, 0.55); }
+  50%  { box-shadow: 0 0 0 6px rgba(155,111,216, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(155,111,216, 0); }
+}
+
+/* ── Phase 5: Pillar badge hover lift ── */
+.pillar-badge:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 20px rgba(123,47,190,0.18);
+}
+
+/* ── Phase 5: Button shimmer sweep ── */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.28) 50%, transparent 80%);
+  transform: skewX(-18deg);
+  transition: none;
+}
+.btn-shimmer:hover::after {
+  animation: shimmerSweep 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes shimmerSweep {
+  from { left: -120%; }
+  to   { left: 140%; }
+}
+
 @keyframes meshDrift {
   0%   { transform: translate(0,0)        scale(1); }
   50%  { transform: translate(30px,-20px) scale(1.04); }
