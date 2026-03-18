@@ -38,8 +38,8 @@ export default function Hero() {
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={220}
-                height={74}
+                width={600}
+                height={220}
                 className="object-contain w-auto"
                 style={{ height: '64px' }}
                 priority
