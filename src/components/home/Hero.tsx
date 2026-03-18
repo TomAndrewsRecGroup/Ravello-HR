@@ -22,13 +22,13 @@ const STATS = [
 export default function Hero() {
   return (
     <section
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
+      className="relative overflow-hidden"
       style={{ background: 'var(--gradient-hero)' }}
     >
       <div className="hero-mesh" />
 
-      <div className="relative z-10 container-wide section-padding w-full pb-24" style={{ paddingTop: '112px' }}>
-        <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
+      <div className="relative z-10 container-wide section-padding w-full pb-16" style={{ paddingTop: '96px' }}>
+        <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-start">
 
           {/* Left column */}
           <div>
