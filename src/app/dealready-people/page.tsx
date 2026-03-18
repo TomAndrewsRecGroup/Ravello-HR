@@ -79,7 +79,7 @@ export default function DealReadyPeoplePage() {
             <Link href="/tools/due-diligence-checklist" className="btn-gradient">
               Get the People DD Checklist <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-outline-white">
+            <Link href="/book" className="btn-secondary">
               Talk to Lucinda
             </Link>
           </div>

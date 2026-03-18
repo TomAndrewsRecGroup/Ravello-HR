@@ -111,7 +111,7 @@ export default function PlaybookPage() {
           <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.2rem,4vw,3.5rem)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: '1rem' }}>
             No-fluff HR for leaders
           </h1>
-          <p className="text-white/80 text-xl max-w-2xl">
+          <p className="text-xl max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Scripts, frameworks and straight answers on the people challenges that actually slow businesses down.
           </p>
         </div>

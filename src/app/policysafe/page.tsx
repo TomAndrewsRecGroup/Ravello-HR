@@ -88,7 +88,7 @@ export default function PolicySafePage() {
             <Link href="/tools/policy-healthcheck" className="btn-gradient">
               Run Your Free Policy Healthcheck <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-outline-white">
+            <Link href="/book" className="btn-secondary">
               Book a Scoping Call
             </Link>
           </div>

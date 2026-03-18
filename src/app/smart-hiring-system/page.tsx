@@ -70,7 +70,7 @@ export default function SmartHiringSystemPage() {
             <Link href="/tools/hiring-score" className="btn-gradient">
               Get Your Smart Hiring Score <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-outline-white">
+            <Link href="/book" className="btn-secondary">
               Book a Scoping Call
             </Link>
           </div>
