@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { DM_Sans } from 'next/font/google';
+import { DM_Sans, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
-import { Analytics }    from '@/components/Analytics';
+import { Analytics } from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
@@ -10,6 +10,14 @@ import QuickActions from '@/components/QuickActions';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import CalendlyWidget from '@/components/CalendlyWidget';
 import SocialProofTicker from '@/components/SocialProofTicker';
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -21,8 +29,8 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
-    default: 'Ravello | HR & Hiring for Growing Businesses',
-    template: '%s | Ravello',
+    default: 'Ravello HR | Hire. Lead. Protect.',
+    template: '%s | Ravello HR',
   },
   description:
     'Ravello HR helps ambitious businesses fix hiring, protect compliance and navigate transformation — with a named system, not generic advice.',
@@ -45,7 +53,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={dmSans.variable}>
+    <html lang="en" className={`${dmSans.variable} ${cormorant.variable}`}>
       <head><ClarityScript /></head>
       <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <Analytics />

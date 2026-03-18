@@ -163,13 +163,13 @@ export default function HRRiskScoreTool() {
         <div className={`p-6 rounded-xl border ${riskInfo.bg} ${riskInfo.border} mb-8 text-center`}>
           <Icon size={40} className={`mx-auto mb-3 ${riskInfo.color}`} />
           <p className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-1">Your HR Risk Level</p>
-          <p className={`font-display text-5xl font-bold ${riskInfo.color} mb-1`}>{percentage}%</p>
+          <p className={` text-5xl font-bold ${riskInfo.color} mb-1`}>{percentage}%</p>
           <p className={`font-bold text-xl ${riskInfo.color}`}>{riskInfo.label}</p>
         </div>
 
         {topRisks.length > 0 && (
           <div className="mb-8">
-            <h3 className="font-bold text-brand-navy mb-4">Your Top 3 Compliance Exposures:</h3>
+            <h3 className="font-bold text-[var(--ink)] mb-4">Your Top 3 Compliance Exposures:</h3>
             <div className="space-y-3">
               {topRisks.map((r) => (
                 <div key={r.area} className="p-4 bg-red-50 border border-red-100 rounded-xl">
@@ -181,10 +181,10 @@ export default function HRRiskScoreTool() {
           </div>
         )}
 
-        <div className="bg-brand-navy rounded-xl p-6 text-center">
+        <div className="bg-[var(--brand-navy)] rounded-xl p-6 text-center">
           <p className="text-white font-semibold mb-2">Want a full compliance gap report?</p>
           <p className="text-white/70 text-sm mb-4">We\'ll review your top exposures and give you a prioritised fix list in one call.</p>
-          <a href="/policysafe" className="btn-gold">
+          <a href="/policysafe" className="btn-gradient">
             Explore PolicySafe™ <ArrowRight size={16} />
           </a>
         </div>
@@ -196,13 +196,13 @@ export default function HRRiskScoreTool() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-6">
-          <Shield size={40} className="text-brand-teal mx-auto mb-3" />
-          <h2 className="font-display text-2xl font-bold text-brand-navy mb-2">Your risk score is ready.</h2>
-          <p className="text-brand-slate">Unlock your full risk report with your top 3 compliance exposures and recommended actions.</p>
+          <Shield size={40} className="text-[var(--brand-purple)] mx-auto mb-3" />
+          <h2 className=" text-2xl font-bold text-[var(--ink)] mb-2">Your risk score is ready.</h2>
+          <p className="text-[var(--ink-soft)]">Unlock your full risk report with your top 3 compliance exposures and recommended actions.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" placeholder="Your first name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy" />
-          <input type="email" placeholder="Your work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy" />
+          <input type="text" placeholder="Your first name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
+          <input type="email" placeholder="Your work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Unlocking…' : 'Unlock My Risk Report'} <ArrowRight size={16} />
           </button>
@@ -219,24 +219,24 @@ export default function HRRiskScoreTool() {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-brand-teal uppercase tracking-widest">{q.area}</span>
-          <span className="text-xs text-brand-slate">{step + 1} of {totalQuestions}</span>
+          <span className="text-xs font-semibold text-[var(--brand-purple)] uppercase tracking-widest">{q.area}</span>
+          <span className="text-xs text-[var(--ink-soft)]">{step + 1} of {totalQuestions}</span>
         </div>
-        <div className="risk-bar"><div className="risk-bar-fill bg-brand-gold" style={{ width: `${progress}%` }} /></div>
+        <div className="risk-bar"><div className="risk-bar-fill bg-[var(--brand-purple)]" style={{ width: `${progress}%` }} /></div>
       </div>
       <div className="mb-4 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
         ⚠️ Risk if unaddressed: <span className="font-semibold">{q.risk}</span>
       </div>
-      <h2 className="font-display text-xl font-bold text-brand-navy mb-6">{q.q}</h2>
+      <h2 className=" text-xl font-bold text-[var(--ink)] mb-6">{q.q}</h2>
       <div className="space-y-3 mb-8">
         {q.options.map((opt, i) => (
-          <button key={i} onClick={() => setCurrentChoice(i)} className={`w-full text-left p-4 rounded-xl border-2 transition-all ${ currentChoice === i ? 'border-brand-teal bg-brand-teal/5 text-brand-navy' : 'border-gray-100 hover:border-brand-teal/30 text-brand-slate' }`}>
+          <button key={i} onClick={() => setCurrentChoice(i)} className={`w-full text-left p-4 rounded-xl border-2 transition-all ${ currentChoice === i ? 'border-[var(--brand-purple)] bg-purple-50 text-[var(--ink)]' : 'border-gray-100 hover:border-[var(--brand-purple)]/30 text-[var(--ink-soft)]' }`}>
             <span className="text-sm font-medium">{opt.label}</span>
           </button>
         ))}
       </div>
       <div className="flex items-center justify-between">
-        <button onClick={() => { setStep(step - 1); setCurrentChoice(null); }} disabled={step === 0} className="flex items-center gap-2 text-brand-slate text-sm hover:text-brand-navy disabled:opacity-30">
+        <button onClick={() => { setStep(step - 1); setCurrentChoice(null); }} disabled={step === 0} className="flex items-center gap-2 text-[var(--ink-soft)] text-sm hover:text-[var(--ink)] disabled:opacity-30">
           <ArrowLeft size={16} /> Back
         </button>
         <button onClick={handleNext} disabled={currentChoice === null} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">

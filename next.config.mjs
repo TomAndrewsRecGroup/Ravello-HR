@@ -25,6 +25,16 @@ const nextConfig = {
       },
     ],
   },
+  typescript: {
+    tsconfigPath: './tsconfig.json',
+  },
+  webpack: (config) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/admin/**', '**/portal/**', '**/node_modules/**'],
+    };
+    return config;
+  },
 };
 
 export default withMDX(nextConfig);

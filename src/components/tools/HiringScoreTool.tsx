@@ -164,13 +164,13 @@ export default function HiringScoreTool() {
         <div className={`p-6 rounded-xl border ${scoreInfo.bg} ${scoreInfo.border} mb-8 text-center`}>
           <Icon size={40} className={`mx-auto mb-3 ${scoreInfo.color}`} />
           <p className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-1">Your Smart Hiring Score</p>
-          <p className={`font-display text-5xl font-bold ${scoreInfo.color} mb-1`}>{percentage}%</p>
+          <p className={` text-5xl font-bold ${scoreInfo.color} mb-1`}>{percentage}%</p>
           <p className={`font-bold text-xl ${scoreInfo.color}`}>Hiring is: {scoreInfo.label}</p>
         </div>
 
         {weakAreas.length > 0 && (
           <div className="mb-8">
-            <h3 className="font-bold text-brand-navy mb-4">Your Hiring is Leaking At:</h3>
+            <h3 className="font-bold text-[var(--ink)] mb-4">Your Hiring is Leaking At:</h3>
             <div className="space-y-2">
               {weakAreas.map((area) => (
                 <div key={area} className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
@@ -183,7 +183,7 @@ export default function HiringScoreTool() {
         )}
 
         <div className="mb-8">
-          <h3 className="font-bold text-brand-navy mb-4">Your Fix Plan:</h3>
+          <h3 className="font-bold text-[var(--ink)] mb-4">Your Fix Plan:</h3>
           <div className="space-y-3">
             {[
               { period: '7 Days', action: 'Audit your last 3 hire failures and identify the common point of breakdown.' },
@@ -191,17 +191,17 @@ export default function HiringScoreTool() {
               { period: '90 Days', action: 'Run hiring manager training, reduce agency spend by 30% through direct sourcing.' },
             ].map((f) => (
               <div key={f.period} className="flex gap-4 p-4 bg-brand-light rounded-xl">
-                <span className="bg-brand-teal text-white text-xs font-bold px-2.5 py-1 rounded-full h-fit whitespace-nowrap">{f.period}</span>
-                <p className="text-brand-slate text-sm">{f.action}</p>
+                <span className="bg-[var(--brand-purple)] text-white text-xs font-bold px-2.5 py-1 rounded-full h-fit whitespace-nowrap">{f.period}</span>
+                <p className="text-[var(--ink-soft)] text-sm">{f.action}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-brand-navy rounded-xl p-6 text-center">
+        <div className="bg-[var(--brand-navy)] rounded-xl p-6 text-center">
           <p className="text-white font-semibold mb-2">Want us to implement this with you?</p>
           <p className="text-white/70 text-sm mb-4">Book a 20-min scoping call and we’ll walk through your specific results.</p>
-          <a href="/book" className="btn-gold">
+          <a href="/book" className="btn-gradient">
             Book Your Scoping Call <ArrowRight size={16} />
           </a>
         </div>
@@ -213,11 +213,11 @@ export default function HiringScoreTool() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-brand-teal/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle size={32} className="text-brand-teal" />
+          <div className="w-16 h-16 bg-[var(--brand-purple)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle size={32} className="text-[var(--brand-purple)]" />
           </div>
-          <h2 className="font-display text-2xl font-bold text-brand-navy mb-2">Your score is ready.</h2>
-          <p className="text-brand-slate">Enter your details to unlock your full Hiring Score report and personalised fix plan.</p>
+          <h2 className=" text-2xl font-bold text-[var(--ink)] mb-2">Your score is ready.</h2>
+          <p className="text-[var(--ink-soft)]">Enter your details to unlock your full Hiring Score report and personalised fix plan.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -226,7 +226,7 @@ export default function HiringScoreTool() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]"
           />
           <input
             type="email"
@@ -234,7 +234,7 @@ export default function HiringScoreTool() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-brand-teal text-brand-navy"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]"
           />
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Unlocking…' : 'Unlock My Hiring Score'} <ArrowRight size={16} />
@@ -253,16 +253,16 @@ export default function HiringScoreTool() {
       {/* Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-brand-teal uppercase tracking-widest">{q.area}</span>
-          <span className="text-xs text-brand-slate">{step + 1} of {totalQuestions}</span>
+          <span className="text-xs font-semibold text-[var(--brand-purple)] uppercase tracking-widest">{q.area}</span>
+          <span className="text-xs text-[var(--ink-soft)]">{step + 1} of {totalQuestions}</span>
         </div>
         <div className="risk-bar">
-          <div className="risk-bar-fill bg-brand-teal" style={{ width: `${progress}%` }} />
+          <div className="risk-bar-fill bg-[var(--brand-purple)]" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Question */}
-      <h2 className="font-display text-xl font-bold text-brand-navy mb-6">{q.q}</h2>
+      <h2 className=" text-xl font-bold text-[var(--ink)] mb-6">{q.q}</h2>
 
       {/* Options */}
       <div className="space-y-3 mb-8">
@@ -272,8 +272,8 @@ export default function HiringScoreTool() {
             onClick={() => setCurrentChoice(i)}
             className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
               currentChoice === i
-                ? 'border-brand-teal bg-brand-teal/5 text-brand-navy'
-                : 'border-gray-100 hover:border-brand-teal/30 text-brand-slate'
+                ? 'border-[var(--brand-purple)] bg-purple-50 text-[var(--ink)]'
+                : 'border-gray-100 hover:border-[var(--brand-purple)]/30 text-[var(--ink-soft)]'
             }`}
           >
             <span className="text-sm font-medium">{opt.label}</span>
@@ -286,7 +286,7 @@ export default function HiringScoreTool() {
         <button
           onClick={() => { setStep(step - 1); setCurrentChoice(null); }}
           disabled={step === 0}
-          className="flex items-center gap-2 text-brand-slate text-sm hover:text-brand-navy disabled:opacity-30"
+          className="flex items-center gap-2 text-[var(--ink-soft)] text-sm hover:text-[var(--ink)] disabled:opacity-30"
         >
           <ArrowLeft size={16} /> Back
         </button>

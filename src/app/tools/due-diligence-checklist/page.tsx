@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default function DDChecklistPage() {
   return (
     <div className="pt-20">
-      <section className="gradient-hero text-white py-16 px-4 sm:px-6 lg:px-8">
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '4rem', paddingBottom: '3rem' }}>
         <div className="max-w-3xl mx-auto text-center">
-          <span className="funnel-tag bg-brand-navy border border-white/30 text-white mb-4 inline-block">Funnel C · DealReady People™</span>
-          <h1 className="font-display text-4xl lg:text-5xl font-bold mb-4">
+          <span className="pill pill-purple bg-[var(--brand-navy)] border border-white/30 text-white mb-4 inline-block">Funnel C · DealReady People™</span>
+          <h1 className=" text-4xl lg:text-5xl font-bold mb-4">
             People Due Diligence Checklist
           </h1>
           <p className="text-white/80 text-lg">
@@ -22,7 +22,7 @@ export default function DDChecklistPage() {
           </p>
         </div>
       </section>
-      <section className="section-padding bg-brand-offwhite">
+      <section className="section-padding ">
         <div className="container-narrow">
           <DDChecklistTool />
         </div>

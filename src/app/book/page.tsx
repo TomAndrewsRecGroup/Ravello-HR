@@ -46,8 +46,7 @@ export default function BookPage() {
         <div className="max-w-3xl mx-auto">
           <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>No-Fluff HR Hotline</span>
           <h1
-            className="font-display font-bold mb-5 leading-[1.05] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
+            style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
           >
             Book 15 mins.<br />
             <span style={{ background: 'linear-gradient(135deg,var(--brand-blue),var(--brand-purple),var(--brand-pink))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -71,7 +70,7 @@ export default function BookPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Clock size={20} style={{ color: 'var(--brand-purple)' }} />
-                  <h2 className="font-display text-2xl font-bold" style={{ color: 'var(--ink)' }}>What happens in 15 minutes</h2>
+                  <h2 className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>What happens in 15 minutes</h2>
                 </div>
                 <ul className="space-y-3">
                   {whatToExpect.map((item) => (
@@ -86,7 +85,7 @@ export default function BookPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <MessageSquare size={20} style={{ color: 'var(--brand-purple)' }} />
-                  <h2 className="font-display text-2xl font-bold" style={{ color: 'var(--ink)' }}>This call is right for you if…</h2>
+                  <h2 className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>This call is right for you if…</h2>
                 </div>
                 <div className="space-y-3">
                   {goodFor.map((item) => (
@@ -118,7 +117,7 @@ export default function BookPage() {
 
             {/* Right: booking */}
             <div className="bg-white rounded-[20px] p-6 lg:p-8" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 4px 24px rgba(14,22,51,0.06)' }}>
-              <h2 className="font-display text-2xl font-bold mb-1" style={{ color: 'var(--ink)' }}>Pick a time</h2>
+              <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--ink)' }}>Pick a time</h2>
               <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>All times shown in UK time (GMT/BST). Video call link sent on confirmation.</p>
 
               {BOOKING_READY ? (
