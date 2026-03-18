@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Your%20paragraph%20text.png';
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
 
 const BARS = [
   { label: 'Role brief quality',     val: 20, pct: '20%',  color: '#D94444' },
