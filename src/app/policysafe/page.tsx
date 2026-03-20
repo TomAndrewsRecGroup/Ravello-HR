@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
 
@@ -210,6 +211,16 @@ export default function PolicySafePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <FaqBlock items={[
+          { q: 'What is PolicySafe?', a: 'A structured HR documentation service that builds contracts, handbooks, and policies tailored to how your business operates.' },
+          { q: 'Who is it for?', a: 'Businesses at any growth stage that need compliant, practical HR documentation.' },
+          { q: 'What is included?', a: 'Depending on the package: employment contracts, staff handbook, core policy set, manager guides, and a gap analysis.' },
+          { q: 'How long does it take?', a: 'Most PolicySafe engagements complete within two to four weeks.' },
+          { q: 'Is it UK employment law compliant?', a: 'Yes. All documents are written by an experienced HR professional and aligned to current UK legislation.' },
+        ]} />
+
+    
     </div>
   );
 }

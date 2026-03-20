@@ -75,7 +75,7 @@ export default function Hero() {
             </h1>
 
             <p className="text-base leading-relaxed mb-2 max-w-[500px] font-medium" style={{ color: 'var(--ink-soft)' }}>
-              Three named systems. One senior expert. No generic consultancy.
+              Most businesses do not fail because of strategy. They stall because hiring is inconsistent, leadership is stretched, and processes are unclear. Ravello fixes that.
             </p>
             <p className="text-sm leading-relaxed mb-10 max-w-[480px]" style={{ color: 'var(--ink-faint)' }}>
               Ravello HR permanently fixes the hiring, compliance and transformation

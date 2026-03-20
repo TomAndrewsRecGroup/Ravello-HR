@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import {
   Briefcase, FolderOpen, LifeBuoy, AlertTriangle,
-  TrendingUp, CheckCircle2, Clock,
+  TrendingUp, CheckCircle2, Clock, Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -230,6 +230,31 @@ export default async function DashboardPage() {
             )}
           </section>
         </div>
+        {/* Locked feature tiles */}
+        <section className="mt-6">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--ink-faint)' }}>Available with your plan</p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Leadership Development', desc: 'Structured support to improve team performance and decision-making.' },
+              { label: 'Metrics & Analytics', desc: 'People data, attrition trends, and hiring performance in one view.' },
+              { label: 'Compliance Calendar', desc: 'Upcoming compliance actions, review dates, and legal deadlines.' },
+            ].map((f) => (
+              <div
+                key={f.label}
+                className="rounded-[14px] p-5 flex flex-col gap-3 opacity-60"
+                style={{ border: '1px dashed var(--line)', background: 'var(--surface-alt)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <Lock size={13} style={{ color: 'var(--ink-faint)' }} />
+                  <span className="text-xs font-semibold" style={{ color: 'var(--ink-soft)' }}>{f.label}</span>
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{f.desc}</p>
+                <a href="mailto:hello@ravellohr.co.uk?subject=Unlock: {f.label}" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>Speak to your account manager</a>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </main>
     </>
   );

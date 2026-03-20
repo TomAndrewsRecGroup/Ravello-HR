@@ -44,8 +44,11 @@ export default function CalendlyWidget() {
 
       {/* Calendly panel */}
       {open && (
-        <div
-          className="fixed bottom-28 right-6 z-[149] rounded-[24px] overflow-hidden"
+        <a
+          href={CALENDLY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-28 right-6 z-[149] rounded-[24px] overflow-hidden flex flex-col items-center justify-center"
           style={{
             width: '380px',
             height: '560px',
@@ -53,38 +56,28 @@ export default function CalendlyWidget() {
             boxShadow: '0 20px 60px rgba(13,21,53,0.22)',
             border: '1px solid var(--brand-line)',
             animation: 'fadeUp 0.25s ease',
+            textDecoration: 'none',
           }}
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-5 py-4"
+            className="flex items-center justify-between w-full px-5 py-4"
             style={{ background: 'var(--brand-navy)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
           >
             <div>
               <p className="text-sm font-semibold text-white">Book a Free 30-Min Call</p>
               <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>No pitch. No obligation.</p>
             </div>
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-70"
-              style={{ color: 'rgba(255,255,255,0.45)' }}
-            >
-              Open full page <ExternalLink size={11} />
-            </a>
+            <ExternalLink size={16} style={{ color: 'rgba(255,255,255,0.45)' }} />
           </div>
 
-          {/* Calendly embed */}
-          <iframe
-            src={`${CALENDLY_URL}?hide_gdpr_banner=1&hide_event_type_details=0&background_color=ffffff&text_color=0F1320&primary_color=7C5CF6`}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            title="Book a call with Ravello HR"
-            style={{ display: 'block', border: 'none' }}
-          />
-        </div>
+          {/* CTA state */}
+          <div className="flex flex-col items-center justify-center flex-1 text-center px-8">
+            <CalendarCheck size={48} style={{ color: 'var(--brand-purple)', marginBottom: '16px' }} />
+            <p className="text-sm font-semibold mb-2" style={{ color: 'var(--ink)' }}>Open Calendly in a new window</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Find a time that works for you</p>
+          </div>
+        </a>
       )}
     </>
   );
