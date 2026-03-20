@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
+import ProductHeroElevated from '@/components/ProductHeroElevated';
+import SystemStepsElevated from '@/components/SystemStepsElevated';
 
 export const metadata: Metadata = {
   title: 'Smart Hiring System™ | Fix Hiring Drift | Ravello HR',
@@ -36,47 +38,15 @@ const outcomes = [
 
 export default function SmartHiringSystemPage() {
   return (
-    <div className="pt-20">
-
-      {/* Hero — light */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            Smart Hiring System™
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            Hiring is broken.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Here&rsquo;s how to fix it.
-            </span>
-          </h1>
-          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Most businesses reopen the same roles every 12–18 months. They pay agency fees on repeat. They promote managers into hiring without training them. The problem isn't the talent market — it's the system.
-          </p>
-          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            The Smart Hiring System™ fixes the five points where hiring falls apart — and builds an internal capability that compounds over time.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/hiring-score" className="btn-gradient">
-              Get Your Smart Hiring Score <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div>
+      {/* Elevated hero */}
+      <ProductHeroElevated
+        eyebrow="Smart Hiring System™"
+        title="Stop reopening the same roles."
+        subtitle="Cut agency spend. Build internal capability. Make better hires."
+        description="Most businesses rely on instinct when hiring. The Smart Hiring System™ fixes the 5 failure points where hiring falls apart — giving you a structure that works, every time."
+        ctaText="Schedule a consultation"
+      />
 
       {/* Failure points */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
@@ -106,33 +76,8 @@ export default function SmartHiringSystemPage() {
         </div>
       </section>
 
-      {/* The System steps */}
-      <section className="section-padding" style={{ background: 'var(--bg)' }}>
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="section-title mb-4">What the Smart Hiring System™ does</h2>
-            <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              A five-stage methodology. Not a recruitment agency. Not a retainer. A system you own.
-            </p>
-          </div>
-          <div className="space-y-5 max-w-3xl mx-auto">
-            {systemSteps.map((step) => (
-              <div key={step.step} className="flex gap-6 items-start bg-white rounded-[18px] p-6" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 8px rgba(13,21,53,0.04)' }}>
-                <div
-                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)' }}
-                >
-                  {step.step}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--ink)', letterSpacing: '-0.015em' }}>{step.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{step.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* The System steps — elevated */}
+      <SystemStepsElevated steps={systemSteps} />
 
       {/* Outcomes — dark section, intentional anchor */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
@@ -151,7 +96,7 @@ export default function SmartHiringSystemPage() {
             </div>
             <div className="rounded-[18px] p-8" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(155,111,216,0.9)' }}>Next step</p>
-              <h3 className="font-bold text-xl mb-4 text-white" style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem' }}>
+              <h3 className="font-bold text-xl mb-4 text-white" style={{ fontFamily: 'var(--font-playfair), serif', fontWeight: 700, fontSize: '1.6rem' }}>
                 Find out where your hiring is leaking — in 3 minutes.
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -173,12 +118,11 @@ export default function SmartHiringSystemPage() {
           <p className="text-lg mb-8" style={{ color: 'var(--ink-soft)' }}>
             Skip the diagnostic. Book 15 minutes with Lucinda. Bring the mess — leave with a plan.
           </p>
-          <Link href="/book" className="btn-gradient">
+          <Link href="https://calendly.com/ravellohr/free-consultation" target="_blank" rel="noopener noreferrer" className="btn-gradient">
             Book the HR Hotline <ArrowRight size={16} />
           </Link>
         </div>
       </section>
-
 
       {/* FAQ */}
       <FaqBlock
@@ -190,7 +134,6 @@ export default function SmartHiringSystemPage() {
           { q: 'Do we need to use a recruitment agency?', a: 'No. The system is designed to reduce agency dependency by building internal sourcing capability over time.' },
         ]}
       />
-
     </div>
   );
 }

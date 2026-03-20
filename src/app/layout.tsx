@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Cormorant_Garamond } from 'next/font/google';
+import { Playfair_Display, Work_Sans } from 'next/font/google';
 import './globals.css';
 import { Analytics } from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
@@ -11,18 +11,18 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import CalendlyWidget from '@/components/CalendlyWidget';
 import SocialProofTicker from '@/components/SocialProofTicker';
 
-const cormorant = Cormorant_Garamond({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
+  weight: ["600", "700", "800"],
+  style: ["normal"],
+  variable: "--font-playfair",
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const workSans = Work_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-dm-sans',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-work-sans',
   display: 'swap',
 });
 
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${cormorant.variable}`}>
+    <html lang="en" className={`${playfair.variable} ${workSans.variable}`}>
       <head><ClarityScript /></head>
       <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <Analytics />

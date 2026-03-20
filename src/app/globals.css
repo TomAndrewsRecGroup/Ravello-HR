@@ -20,12 +20,14 @@
     --brand-purple:   #7B2FBE;
     --brand-purple-lt:#9B6FD8;
     --brand-pink:     #C026A0;
+    --brand-gold:     #D4AF37;
     --brand-line:     rgba(15, 19, 32, 0.09);
 
     /* Gradients */
     --gradient:       linear-gradient(135deg, #7B2FBE 0%, #4B6EF5 55%, #C026A0 100%);
     --gradient-soft:  linear-gradient(135deg, rgba(123,47,190,0.10) 0%, rgba(75,110,245,0.08) 55%, rgba(192,38,160,0.06) 100%);
     --gradient-hero:  #F2F3F5;
+    --gradient-gold:  linear-gradient(135deg, #D4AF37 0%, #E8CA7E 100%);
   }
 
   html { scroll-behavior: smooth; }
@@ -33,18 +35,35 @@
   body {
     background: var(--bg);
     color: var(--ink);
-    font-family: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-work-sans), 'Work Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     font-size: 16px;
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
     color: var(--ink);
-    font-weight: 300;
+    font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.02em;
+  }
+
+  /* Signature angled line accent */
+  .accent-line {
+    position: relative;
+    display: inline-block;
+  }
+  .accent-line::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -12px;
+    width: 3px;
+    height: 100%;
+    background: var(--brand-gold);
+    transform: skewX(-15deg);
+    opacity: 0.8;
   }
 
   ::selection { background: rgba(123,47,190,0.12); }
