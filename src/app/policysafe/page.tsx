@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
+import ProductHeroElevated from '@/components/ProductHeroElevated';
 
 export const metadata: Metadata = {
   title: 'PolicySafe™ | HR Compliance & Documents | Ravello HR',
@@ -54,47 +55,14 @@ const included = [
 
 export default function PolicySafePage() {
   return (
-    <div className="pt-20">
-
-      {/* Hero — light */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-            PolicySafe™
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            We need compliant HR.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Yesterday.
-            </span>
-          </h1>
-          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Growing businesses get caught out by the same thing: they move fast, hire people, and forget to build the paperwork foundation underneath.
-          </p>
-          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            PolicySafe™ gives you the contracts, handbook and policies your business actually needs — written properly, not copy-pasted from a template site.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/policy-healthcheck" className="btn-gradient">
-              Run Your Free Policy Healthcheck <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div>
+      <ProductHeroElevated
+        eyebrow="PolicySafe™"
+        title="We need compliant HR. Yesterday."
+        subtitle="Get compliant. Stay compliant. Sleep better."
+        description="Growing businesses get caught out by the same thing: they move fast, hire people, and forget to build the paperwork foundation underneath. PolicySafe™ gives you the contracts, handbook and policies your business actually needs — written properly, not copy-pasted from a template site."
+        ctaText="Book a Scoping Call"
+      />
 
       {/* Risk section */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>

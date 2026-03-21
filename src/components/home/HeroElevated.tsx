@@ -48,7 +48,7 @@ export default function HeroElevated() {
                 width={1280}
                 height={440}
                 className="object-contain w-auto"
-                style={{ height: '48px', width: 'auto' }}
+                style={{ height: '384px', width: 'auto' }}
                 priority
               />
             </div>

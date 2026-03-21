@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
+import ProductHeroElevated from '@/components/ProductHeroElevated';
 
 export const metadata: Metadata = {
   title: 'DealReady People™ | M&A HR & Change Management | Ravello HR',
@@ -45,47 +46,14 @@ const decisionTree = [
 
 export default function DealReadyPeoplePage() {
   return (
-    <div className="pt-20">
-
-      {/* Hero — light */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-pink)', verticalAlign: 'middle' }} />
-            DealReady People™
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            People risk is the #1 reason<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              acquisitions fail.
-            </span>
-          </h1>
-          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one — and pay for it after the deal closes.
-          </p>
-          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            DealReady People™ supports your transaction from pre-deal people risk through to post-deal integration — so your investment performs the way it should.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/due-diligence-checklist" className="btn-gradient">
-              Get the People DD Checklist <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Talk to Lucinda
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div>
+      <ProductHeroElevated
+        eyebrow="DealReady People™"
+        title="People risk is the #1 reason acquisitions fail."
+        subtitle="Get people advisory before heads of terms."
+        description="Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one — and pay for it after the deal closes. DealReady People™ supports your transaction from pre-deal risk through to post-deal integration."
+        ctaText="Book a Confidential Call"
+      />
 
       {/* Risk grid */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
