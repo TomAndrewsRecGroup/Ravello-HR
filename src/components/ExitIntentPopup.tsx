@@ -85,10 +85,10 @@ export default function ExitIntentPopup() {
                 className="font-bold mb-4"
                 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}
               >
-                Before you go — grab the Hiring Drift Framework
+                Before you go, grab the Hiring Drift Framework
               </h2>
               <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--ink-soft)' }}>
-                The free guide that explains why roles keep reopening — and the exact 4-step process to stop it permanently. Used by 100+ UK businesses.
+                The free guide that explains why roles keep coming back and the exact 4-step process to stop it for good. Already used by 100+ UK businesses.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-3">
@@ -124,9 +124,9 @@ export default function ExitIntentPopup() {
               >
                 <span className="text-3xl">✓</span>
               </div>
-              <h3 className="font-bold text-xl mb-3" style={{ color: 'var(--ink)' }}>On its way!</h3>
+              <h3 className="font-bold text-xl mb-3" style={{ color: 'var(--ink)' }}>It is on its way.</h3>
               <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-                Check your inbox — the Hiring Drift Framework is heading to you now.
+                Check your inbox. The Hiring Drift Framework will be with you shortly.
               </p>
             </div>
           )}

@@ -4,24 +4,24 @@ import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, U
 
 export const metadata: Metadata = {
   title: 'Smart Hiring System™ | Fix Hiring Drift | Ravello HR',
-  description: 'Stop reopening roles. Cut agency spend. The Smart Hiring System™ by Ravello HR fixes the 5 failure points where most hiring falls apart.',
+  description: 'Stop reopening the same roles. Reduce agency spend. The Smart Hiring System™ by Ravello HR fixes the five failure points where most hiring falls apart.',
   alternates: { canonical: 'https://ravellohr.co.uk/smart-hiring-system' },
 };
 
 const failurePoints = [
-  { icon: XCircle,       title: 'Vague role definitions',   description: 'Hiring managers describe the person they last worked with, not the role they actually need. You interview the wrong people for months.',          colorClass: 'text-red-500'    },
-  { icon: TrendingDown,  title: 'Inconsistent assessment',  description: 'No scorecard. No structure. Three interviewers, three different opinions. The best candidate loses to the most confident one.',                  colorClass: 'text-orange-500' },
-  { icon: Clock,         title: 'Decision speed',           description: 'Good candidates are gone in 7 days. Your process takes 6 weeks. You wonder why offers keep getting declined.',                                   colorClass: 'text-yellow-600' },
-  { icon: PoundSterling, title: 'Agency dependency',        description: 'Every hard role goes straight to an agency. No internal capability built. The fee bill grows every year.',                                       colorClass: 'text-red-600'    },
-  { icon: Users,         title: 'Offer drop-off',           description: 'Candidates accept then ghost. Or join and leave within 90 days. The root cause is always earlier in the process.',                              colorClass: 'text-purple-500' },
+  { icon: XCircle,       title: 'Vague role definitions',   description: 'Hiring managers describe the person they last worked with, not the role they actually need. You end up interviewing the wrong people for months.',          colorClass: 'text-red-500'    },
+  { icon: TrendingDown,  title: 'Inconsistent assessment',  description: 'No scorecard. No structure. Three interviewers with three different opinions. The best candidate loses out to the most confident one.',                  colorClass: 'text-orange-500' },
+  { icon: Clock,         title: 'A process that moves too slowly', description: 'Good candidates are gone within seven days. Your process takes six weeks. This is why offers keep getting declined.',                                   colorClass: 'text-yellow-600' },
+  { icon: PoundSterling, title: 'Agency dependency',        description: 'Every difficult role goes straight to an agency. No internal capability ever gets built. The fee bill just grows.',                                       colorClass: 'text-red-600'    },
+  { icon: Users,         title: 'Offer drop-off',           description: 'Candidates accept and then go quiet. Or they join and leave within 90 days. The root cause is always earlier in the process than people think.',                              colorClass: 'text-purple-500' },
 ];
 
 const systemSteps = [
-  { step: '01', title: 'Role Architecture',       description: 'Define the role around outcomes, not a wish list. We build a role brief that attracts the right people and filters the wrong ones before you spend a minute interviewing.' },
-  { step: '02', title: 'Assessment Design',        description: 'A structured scorecard for every stage. Every interviewer scores the same criteria. Gut feel becomes a tiebreaker, not the deciding vote.' },
-  { step: '03', title: 'Process Velocity',         description: 'Map your hiring timeline against where candidates drop. We cut steps that add delay without adding signal — typically halving time-to-offer.' },
-  { step: '04', title: 'Manager Enablement',       description: 'Train hiring managers to interview with intent. Scripts, red flags, scoring guidance. One session. Permanent improvement.' },
-  { step: '05', title: 'Offer & Onboarding Bridge',description: 'The gap between offer and day one is where candidates change their minds. We close it with structured pre-boarding that makes joining a no-brainer.' },
+  { step: '01', title: 'Role Architecture',       description: 'Define the role around outcomes, not a wish list. We build a role brief that attracts the right people and filters out the wrong ones before you spend a single hour interviewing.' },
+  { step: '02', title: 'Assessment Design',        description: 'A structured scorecard for every stage. Every interviewer scores the same criteria. Gut feel becomes a useful tiebreaker rather than the deciding vote.' },
+  { step: '03', title: 'Process Velocity',         description: 'We map your hiring timeline against where candidates actually drop off. Then we cut the steps that add delay without adding useful signal, typically cutting time-to-offer in half.' },
+  { step: '04', title: 'Manager Enablement',       description: 'We train your hiring managers to interview with intention. Scripts, red flags, scoring guidance. One focused session. Improvement that sticks.' },
+  { step: '05', title: 'Offer and Onboarding Bridge', description: 'The gap between offer and day one is where minds change. We close it with structured pre-boarding that makes joining feel like the obvious next step.' },
 ];
 
 const outcomes = [
@@ -55,16 +55,16 @@ export default function SmartHiringSystemPage() {
               marginBottom: '1.25rem',
             }}
           >
-            Hiring is broken.<br />
+            Your hiring is leaking.<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Here&rsquo;s how to fix it.
+              Here is exactly how to stop it.
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Most businesses reopen the same roles every 12–18 months. They pay agency fees on repeat. They promote managers into hiring without training them. The problem isn't the talent market — it's the system.
+            Most businesses reopen the same roles every 12 to 18 months. They pay agency fees on repeat. They put managers in charge of hiring without ever training them. The problem is not the talent market. It is the system.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            The Smart Hiring System™ fixes the five points where hiring falls apart — and builds an internal capability that compounds over time.
+            The Smart Hiring System™ closes the five points where hiring falls apart and builds an internal capability that gets stronger with every hire you make.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/tools/hiring-score" className="btn-gradient">
@@ -95,7 +95,7 @@ export default function SmartHiringSystemPage() {
             <div className="rounded-[18px] p-7 flex flex-col justify-between" style={{ background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff' }}>
               <div>
                 <h3 className="font-bold text-lg mb-2">Which ones apply to you?</h3>
-                <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.8)' }}>Take the 3-minute Hiring Score diagnostic and find out exactly where you're losing candidates and cost.</p>
+                <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.8)' }}>Take the 3-minute Hiring Score diagnostic. Find out exactly where you are losing candidates and where the cost is leaking.</p>
               </div>
               <Link href="/tools/hiring-score" className="btn-outline-white text-sm mt-2 justify-center">
                 Get My Score <ArrowRight size={14} />
@@ -111,7 +111,7 @@ export default function SmartHiringSystemPage() {
           <div className="text-center mb-12">
             <h2 className="section-title mb-4">What the Smart Hiring System™ does</h2>
             <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              A five-stage methodology. Not a recruitment agency. Not a retainer. A system you own.
+              A five-stage methodology you own and keep. Not an agency. Not a retainer. A system that gets stronger every time you use it.
             </p>
           </div>
           <div className="space-y-5 max-w-3xl mx-auto">
@@ -151,10 +151,10 @@ export default function SmartHiringSystemPage() {
             <div className="rounded-[18px] p-8" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(155,111,216,0.9)' }}>Next step</p>
               <h3 className="font-bold text-xl mb-4 text-white" style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem' }}>
-                Find out where your hiring is leaking — in 3 minutes.
+                Find out where your hiring is leaking in under 3 minutes.
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                The Smart Hiring Score gives you an instant breakdown of which of the 5 failure points are active in your business right now.
+                The Smart Hiring Score gives you an instant breakdown of which failure points are active in your business right now, with a clear plan to fix them.
               </p>
               <Link href="/tools/hiring-score" className="btn-gradient w-full justify-center">
                 Get Your Free Score <ArrowRight size={16} />
@@ -168,9 +168,9 @@ export default function SmartHiringSystemPage() {
       {/* Hotline CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Already know you have a hiring problem?</h2>
+          <h2 className="section-title mb-4">Already know your hiring needs fixing?</h2>
           <p className="text-lg mb-8" style={{ color: 'var(--ink-soft)' }}>
-            Skip the diagnostic. Book 15 minutes with Lucinda. Bring the mess — leave with a plan.
+            Skip the diagnostic. Book 15 minutes with Lucinda. Bring the challenge and leave with a clear plan.
           </p>
           <Link href="/book" className="btn-gradient">
             Book the HR Hotline <ArrowRight size={16} />

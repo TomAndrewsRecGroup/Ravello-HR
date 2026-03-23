@@ -49,8 +49,8 @@ export default function FounderSection() {
               className="relative z-10 font-semibold text-white leading-relaxed mb-8"
               style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'rgba(255,255,255,0.92)' }}
             >
-              &ldquo;Most HR problems aren&apos;t HR problems — they&apos;re process gaps dressed up as people issues.
-              We fix the process.&rdquo;
+              &ldquo;Most HR problems are not really HR problems. They are process gaps dressed up as people issues.
+              We fix the process. Everything else follows.&rdquo;
             </blockquote>
 
             {/* Attribution */}
@@ -100,18 +100,18 @@ export default function FounderSection() {
               Why Ravello HR
             </p>
             <h2 className="section-title mb-5">
-              Senior expertise.<br />No junior hand-offs.
+              Senior expertise.<br />No junior handoffs. Ever.
             </h2>
             <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Most consultancies give you a senior pitch, then hand the work to a junior.
-                Ravello HR is different — you get one senior expert who knows your business
-                from day one.
+                Most consultancies win the pitch, then hand the work to someone junior.
+                Ravello HR works differently. You get one senior expert who knows your business
+                from day one to delivery.
               </p>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Every engagement is built around a named system with clear deliverables.
-                You always know exactly what you&apos;re getting — and when.
+                Every engagement runs through a named system with clear deliverables.
+                You always know exactly what you are getting, what it covers, and when it is done.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

@@ -8,7 +8,7 @@ const funnels = [
     pill: 'Hiring',
     pillStyle: 'pill-purple',
     headline: 'Stop reopening roles.',
-    body: 'Hiring that looks fine on paper keeps breaking down. The Smart Hiring System fixes the root cause — not just the symptoms.',
+    body: 'Hiring that looks fine on paper keeps breaking down. The Smart Hiring System fixes the root cause, not just the symptoms.',
     pains: [
       'Roles filled, then vacant again in 6 months',
       'Agency bills that keep returning',
@@ -27,7 +27,7 @@ const funnels = [
     pill: 'Compliance',
     pillStyle: 'pill-blue',
     headline: 'Close the gaps before they cost you.',
-    body: "Most HR compliance issues are invisible until they're not. PolicySafe™ builds a clean, watertight foundation.",
+    body: "Most HR compliance gaps stay hidden until something breaks. PolicySafe™ builds a clean, watertight foundation before that happens.",
     pains: [
       "Contracts that haven't been updated in years",
       'Managers applying different rules',
@@ -46,7 +46,7 @@ const funnels = [
     pill: 'M&A & Change',
     pillStyle: 'pill-navy',
     headline: 'Deals fail on people.',
-    body: "The numbers look right. The people risk doesn't show up until after you've signed. DealReady People™ changes that.",
+    body: "The numbers add up. The people risk never makes it into the spreadsheet. DealReady People™ makes sure it does.",
     pains: [
       'Hidden liabilities only visible post-close',
       'TUPE mismanaged — tribunal exposure',
@@ -76,9 +76,9 @@ export default function FunnelCards() {
             />
             Three systems. One firm.
           </p>
-          <h2 className="section-title mb-5">Which problem are you solving?</h2>
+          <h2 className="section-title mb-5">Where do you need to start?</h2>
           <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-            Each system is purpose-built for a distinct people challenge.
+            Each system is built around a specific people challenge. Pick the one that fits your situation right now.
           </p>
         </div>
 

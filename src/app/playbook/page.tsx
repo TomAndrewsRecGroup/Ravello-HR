@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Clock } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'People Ops Playbook | No-Fluff HR Guides | Ravello HR',
   description:
-    'Practical HR guides, scripts and frameworks for leaders and managers. No theory. No filler. Just what works.',
+    'Practical HR guides, scripts and frameworks for leaders and managers. No theory, no filler. Just the things that actually work.',
   alternates: { canonical: 'https://ravellohr.co.uk/playbook' },
 };
 
@@ -24,7 +24,7 @@ const posts = [
     categoryColor: 'pill-purple',
     title: 'Why your best candidates drop off between offer and start date',
     excerpt:
-      'The gap between signing and starting is where most hiring damage happens. Here\'s what to do in those 2\u20134 weeks to make sure they actually show up.',
+      'The gap between signing and starting is where most hiring damage happens. Here is what to do in those two to four weeks to make sure your new hire actually shows up and stays.',
     readTime: '4 min read',
     tool: { label: 'Get Your Smart Hiring Score', href: '/tools/hiring-score' },
   },
@@ -44,7 +44,7 @@ const posts = [
     categoryColor: 'pill-purple',
     title: 'The 6 things your employment contracts are probably missing',
     excerpt:
-      'Most SME contracts were written once and never updated. Here are the clauses that create the most tribunal exposure \u2014 and how to close them.',
+      'Most SME contracts were written once and never updated. Here are the clauses that create the most tribunal exposure and exactly how to close each gap.',
     readTime: '6 min read',
     tool: { label: 'Run Your Policy Healthcheck', href: '/tools/policy-healthcheck' },
   },
@@ -64,7 +64,7 @@ const posts = [
     categoryColor: 'pill-navy',
     title: 'Word-for-word: how to open a performance conversation',
     excerpt:
-      'Most managers delay difficult conversations because they don\'t know how to start. Here\'s the exact opening that works \u2014 professional, direct and fair.',
+      'Most managers delay difficult conversations because they do not know how to open them. Here is the exact wording that works: professional, direct and genuinely fair.',
     readTime: '3 min read',
     tool: { label: 'Check Your HR Risk Score', href: '/tools/hr-risk-score' },
   },
@@ -84,7 +84,7 @@ const posts = [
     categoryColor: 'pill-navy',
     title: 'What TUPE actually means for your acquisition (plain English)',
     excerpt:
-      'TUPE is one of the most misunderstood areas of employment law. This is the non-lawyer version \u2014 what transfers, what doesn\'t, and when you need help.',
+      'TUPE is one of the most misunderstood areas of employment law. This is the plain-English version: what transfers, what does not and when you genuinely need specialist advice.',
     readTime: '8 min read',
     tool: { label: 'Get the People DD Checklist', href: '/tools/due-diligence-checklist' },
   },
@@ -109,10 +109,10 @@ export default function PlaybookPage() {
         <div className="max-w-4xl mx-auto">
           <span className="eyebrow mb-5">People Ops Playbook</span>
           <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.2rem,4vw,3.5rem)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: '1rem' }}>
-            No-fluff HR for leaders
+            Straight-talking HR for leaders
           </h1>
-          <p className="text-white/80 text-xl max-w-2xl">
-            Scripts, frameworks and straight answers on the people challenges that actually slow businesses down.
+          <p className="text-xl max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+            Scripts, frameworks and honest answers on the people challenges that actually slow businesses down.
           </p>
         </div>
       </section>
@@ -163,8 +163,8 @@ export default function PlaybookPage() {
             {/* Coming soon card */}
             <div className="card flex flex-col items-center justify-center text-center border-dashed border-2 border-gray-200 bg-transparent shadow-none">
               <BookOpen className="text-[var(--ink-soft)]/40 mb-3" size={32} />
-              <p className="font-semibold text-[var(--ink-soft)] text-sm mb-1">More guides coming weekly</p>
-              <p className="text-[var(--ink-soft)]/60 text-xs mb-4">Get them in your inbox — no noise, just useful.</p>
+              <p className="font-semibold text-[var(--ink-soft)] text-sm mb-1">More guides dropping weekly</p>
+              <p className="text-[var(--ink-soft)]/60 text-xs mb-4">Get them straight to your inbox. No noise, just genuinely useful content.</p>
               <a
                 href="https://tally.so/r/ravello-playbook"
                 target="_blank"
@@ -182,10 +182,10 @@ export default function PlaybookPage() {
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
           <h2 className=" text-3xl font-bold mb-4">
-            Read enough? Let’s talk.
+            Read enough? Good. Let&apos;s talk.
           </h2>
           <p className="text-white/70 text-lg mb-8 max-w-lg mx-auto">
-            If something in the Playbook has landed, book 15 minutes. Bring the specific situation and leave with a clear path.
+            If something in the Playbook has resonated, book 15 minutes with Lucinda. Bring your specific situation and leave with a clear, practical path forward.
           </p>
           <Link href="/book" className="btn-primary">
             Book the HR Hotline <ArrowRight size={18} />

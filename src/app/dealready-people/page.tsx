@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DealReady People™ | M&A HR & Change Management | Ravello HR',
-  description: 'People risk is the #1 reason acquisitions fail. DealReady People™ by Ravello HR manages people due diligence, TUPE, restructuring and culture integration.',
+  title: 'DealReady People™ | M&A HR and Change Management | Ravello HR',
+  description: 'People risk is the leading reason acquisitions fail. DealReady People™ by Ravello HR handles people due diligence, TUPE, restructuring and culture integration.',
   alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
 };
 
@@ -27,19 +27,19 @@ const postDealItems = [
 ];
 
 const risks = [
-  { icon: FileText,      title: 'Undisclosed employment liabilities', description: 'Informal pay arrangements, verbal agreements and undocumented practices become your liabilities the moment the deal closes.',                                        colorClass: 'text-red-500'    },
-  { icon: Users,         title: 'Key person flight risk',              description: 'The people the target business runs on may not stay. Without early identification and retention planning, you can lose them before integration starts.',           colorClass: 'text-orange-500' },
-  { icon: AlertTriangle, title: 'TUPE mismanagement',                  description: 'TUPE is complex and unforgiving. Misstep the consultation or misclassify a transfer and you inherit a tribunal queue.',                                          colorClass: 'text-yellow-600' },
-  { icon: TrendingUp,    title: 'Culture collision',                   description: 'Two businesses with different management styles, values and expectations will clash. Without a managed integration plan, you lose the people you paid for.',      colorClass: 'text-purple-500' },
-  { icon: Clock,         title: 'Restructure delay',                   description: 'Post-deal restructures drag when there\'s no clear process. Uncertainty leaks. Good people leave before you\'ve decided who to keep.',                          colorClass: 'text-red-600'    },
-  { icon: FileText,      title: 'Non-compliant inherited contracts',   description: 'Many SME targets have contracts that wouldn\'t survive scrutiny. You inherit exposure unless you identify it in due diligence.',                                  colorClass: 'text-blue-500'   },
+  { icon: FileText,      title: 'Undisclosed employment liabilities', description: 'Informal pay arrangements, verbal agreements and undocumented practices all become your liabilities the moment the deal completes.',                                        colorClass: 'text-red-500'    },
+  { icon: Users,         title: 'Key person flight risk',              description: 'The people the business actually runs on may not stay. Without early identification and a proper retention plan, you can lose them before integration even begins.',           colorClass: 'text-orange-500' },
+  { icon: AlertTriangle, title: 'TUPE mismanagement',                  description: 'TUPE is complex and unforgiving. Misstep the consultation or misclassify a transfer and you inherit a queue of tribunal claims.',                                          colorClass: 'text-yellow-600' },
+  { icon: TrendingUp,    title: 'Culture collision',                   description: 'Two businesses with different management styles, values and expectations will clash. Without a managed integration plan, you lose the very people you paid for.',      colorClass: 'text-purple-500' },
+  { icon: Clock,         title: 'Restructure delay',                   description: 'Post-deal restructures drag when there is no clear process in place. Uncertainty spreads quickly. Good people leave before you have decided who you want to keep.',                          colorClass: 'text-red-600'    },
+  { icon: FileText,      title: 'Non-compliant inherited contracts',   description: 'Many SME targets have contracts that would not survive proper scrutiny. You inherit the exposure unless you identify it during due diligence.',                                  colorClass: 'text-blue-500'   },
 ];
 
 const decisionTree = [
-  { question: 'Are you acquiring a business with existing staff?',          answer: 'TUPE almost certainly applies. Get advice before heads of terms.' },
-  { question: 'Is the target business founder-led with informal practices?', answer: 'High risk of undocumented agreements. Needs people due diligence.' },
-  { question: 'Will roles be duplicated post-deal?',                         answer: 'Redundancy risk. Process design needed before day one.' },
-  { question: 'Are you merging two distinct cultures?',                      answer: 'Integration planning required. Day one comms strategy is critical.' },
+  { question: 'Are you acquiring a business with existing staff?',          answer: 'TUPE almost certainly applies. Get specialist advice before heads of terms are signed.' },
+  { question: 'Is the target business founder-led with informal practices?', answer: 'High risk of undocumented agreements and verbal commitments. People due diligence is essential.' },
+  { question: 'Will roles be duplicated post-deal?',                         answer: 'Redundancy risk. A clear process needs to be designed before day one, not after.' },
+  { question: 'Are you bringing two distinct cultures together?',            answer: 'Integration planning is non-negotiable. Your day one communications strategy can make or break the whole thing.' },
 ];
 
 export default function DealReadyPeoplePage() {
@@ -70,10 +70,10 @@ export default function DealReadyPeoplePage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one — and pay for it after the deal closes.
+            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one and pay for it after the deal closes.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            DealReady People™ supports your transaction from pre-deal people risk through to post-deal integration — so your investment performs the way it should.
+            DealReady People™ covers your transaction from pre-deal people risk all the way through to post-deal integration, so your investment performs the way it should.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/tools/due-diligence-checklist" className="btn-gradient">
@@ -90,9 +90,9 @@ export default function DealReadyPeoplePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">The 6 people risks that derail deals</h2>
+            <h2 className="section-title mb-4">The six people risks that derail deals</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Most of these are invisible until after the deal completes. By then they&rsquo;re your problem.
+              Most of these stay completely invisible until after completion. By then they belong to you.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -176,7 +176,7 @@ export default function DealReadyPeoplePage() {
         <div className="container-narrow text-center">
           <h2 className="section-title-light mb-4">In a deal or planning one?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            The best time to bring in people advisory is before heads of terms. The second best time is right now.
+            The right time to bring in people advisory is before heads of terms are signed. If you are already past that point, the second best time is today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/book" className="btn-gradient">

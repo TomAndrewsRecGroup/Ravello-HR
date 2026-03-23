@@ -36,16 +36,16 @@ export default function HotlineSection() {
         </p>
 
         <h2 className="section-title mb-6">
-          Let&apos;s talk about your<br />
-          <span className="text-gradient">biggest people challenge.</span>
+          Ready to talk about<br />
+          <span className="text-gradient">what is holding you back?</span>
         </h2>
 
         <p
           className="text-lg leading-relaxed mb-10 max-w-[500px] mx-auto"
           style={{ color: 'var(--ink-soft)' }}
         >
-          No pitch. No hard sell. A 30-minute call to understand your situation
-          and tell you honestly whether we can help.
+          No pitch. No pressure. Just an honest 30-minute conversation about your situation
+          and a clear answer on whether we can help.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -58,7 +58,7 @@ export default function HotlineSection() {
         </div>
 
         <p className="mt-8 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-          Free 30-min virtual meeting · No obligation · Typically responds within 4 hours
+          Free 30-minute virtual call · No obligation · We typically respond within 4 hours
         </p>
       </div>
     </section>

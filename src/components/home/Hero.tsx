@@ -14,9 +14,9 @@ const BARS = [
 ];
 
 const STATS = [
-  { val: '10+',  lab: 'Years senior HR expertise',  gold: true },
-  { val: '40%+', lab: 'Agency cost reduction',       gold: false },
-  { val: '0',    lab: 'Tribunal outcomes',            gold: true },
+  { val: '10+',  lab: 'Years of senior HR expertise',  gold: true },
+  { val: '40%+', lab: 'Average agency cost reduction', gold: false },
+  { val: '0',    lab: 'Tribunal outcomes on record',   gold: true },
 ];
 
 export default function Hero() {
@@ -89,14 +89,14 @@ export default function Hero() {
               className="text-base leading-relaxed mb-2 max-w-[500px] font-medium"
               style={{ color: 'var(--ink-soft)' }}
             >
-              Three named systems. One senior expert. No generic consultancy.
+              Three proven systems. One dedicated expert. Outcomes you can measure.
             </p>
             <p
               className="text-sm leading-relaxed mb-10 max-w-[480px]"
               style={{ color: 'var(--ink-faint)' }}
             >
-              Ravello HR permanently fixes the hiring, compliance and transformation
-              challenges that slow ambitious UK businesses down.
+              Ravello HR permanently solves the hiring, compliance and people transformation
+              challenges holding ambitious UK businesses back.
             </p>
 
             {/* CTAs */}
@@ -213,7 +213,7 @@ export default function Hero() {
                   className="w-[6px] h-[6px] rounded-full flex-shrink-0"
                   style={{ background: '#C04444' }}
                 />
-                High risk — action needed
+                High risk. Immediate action needed.
               </div>
 
               {/* Bars */}
@@ -244,7 +244,7 @@ export default function Hero() {
                   className="flex items-center justify-between w-full text-sm font-semibold transition-colors group"
                   style={{ color: 'var(--brand-purple)' }}
                 >
-                  Fix these gaps — start free
+                  Fix these gaps. Start free.
                   <ArrowRight
                     size={14}
                     className="transition-transform duration-200 group-hover:translate-x-1"

@@ -13,8 +13,8 @@ const stats = [
   {
     icon: Clock,
     value: '8 weeks',
-    label: 'Time-to-hire saved',
-    sub: 'by removing low-signal process steps',
+    label: 'Time-to-hire reduction',
+    sub: 'by cutting low-signal steps from the process',
     color: '#7AADFF',
     glow: 'rgba(59,111,255,0.18)',
     gold: false,
@@ -23,7 +23,7 @@ const stats = [
     icon: ShieldCheck,
     value: '0',
     label: 'Tribunal outcomes',
-    sub: 'across all restructure & TUPE work',
+    sub: 'across every restructure and TUPE engagement',
     color: 'var(--brand-gold)',
     glow: 'rgba(191,143,40,0.18)',
     gold: true,  /* Gold — highest quality signal */
@@ -65,16 +65,16 @@ export default function ProofSection() {
               />
               Proof of work
             </p>
-            <h2 className="section-title-light mb-5">Results, not promises.</h2>
+            <h2 className="section-title-light mb-5">Results you can point to.</h2>
             <span className="accent-line-lg mb-6" style={{ display: 'block' }} />
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              Names stay confidential. Outcomes don&apos;t.
+              Names stay confidential. The numbers speak for themselves.
             </p>
           </div>
           <div className="flex items-center">
             <p className="text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              Every engagement we take on is measured against real outcomes — not activity.
-              These numbers reflect client work across hiring, compliance and people transformation.
+              Every engagement is measured against real outcomes, not activity.
+              These figures come from client work across hiring, compliance and people transformation.
             </p>
           </div>
         </div>

@@ -9,22 +9,22 @@ const BookingEmbed = dynamic(() => import('@/components/BookingEmbed'), { ssr: f
 export const metadata: Metadata = {
   title: 'Book a Free Call | No-Fluff HR Hotline | Ravello HR',
   description:
-    'Book 15 minutes with Lucinda. Bring your HR mess. Leave with clarity and a clear next step — no sales pitch, no obligation.',
+    'Book 15 minutes with Lucinda. Bring your biggest HR challenge. Leave with clarity and a clear next step. No sales pitch, no obligation.',
   alternates: { canonical: 'https://ravellohr.co.uk/book' },
 };
 
 const whatToExpect = [
-  'You talk, Lucinda listens — no scripted discovery process',
-  'You get a clear read on whether the problem is hiring, compliance or people risk',
-  'You leave with 1–3 specific next steps you can act on immediately',
-  'No pitch deck. No follow-up pressure. No obligation.',
+  'You talk, Lucinda listens. No scripted discovery process, no agenda to push.',
+  'You get a straight read on whether the problem is hiring, compliance or people risk',
+  'You leave with one to three specific next steps you can act on straight away',
+  'No pitch deck. No follow-up pressure. Absolutely no obligation.',
 ];
 
 const goodFor = [
-  { label: 'A hiring problem',        desc: 'Role that keeps getting reopened, process that’s too slow, agency bill that’s out of control' },
-  { label: 'A compliance concern',    desc: 'Contracts you’re not sure about, a policy gap you’ve spotted, a manager doing something inconsistent' },
-  { label: 'A deal or restructure',   desc: 'Acquisition in progress, redundancies being considered, integration you need to get right' },
-  { label: 'A people situation',      desc: 'Grievance, performance issue, or a conversation you’re not sure how to handle' },
+  { label: ‘A hiring problem’,        desc: ‘A role that keeps reopening, a process that moves too slowly or an agency bill that has spiralled’ },
+  { label: ‘A compliance concern’,    desc: ‘Contracts you are not confident in, a policy gap you have noticed or a manager applying rules inconsistently’ },
+  { label: ‘A deal or restructure’,   desc: ‘An acquisition in progress, redundancies under consideration or an integration you need to get right first time’ },
+  { label: ‘A people situation’,      desc: ‘A grievance, a performance issue or a difficult conversation you are not quite sure how to approach’ },
 ];
 
 const notFor = [
@@ -48,14 +48,14 @@ export default function BookPage() {
           <h1
             style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
           >
-            Book 15 mins.<br />
+            Fifteen minutes.<br />
             <span style={{ background: 'linear-gradient(135deg,var(--brand-blue),var(--brand-purple),var(--brand-pink))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Bring your mess.
+              Bring your challenge.
             </span><br />
-            Leave with clarity.
+            Leave with a clear path.
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem' }}>
-            One conversation. No slides. No pitch. Just a straight answer on what your people problem is and what to do about it.
+            One honest conversation. No slides. No pitch. Just a straight answer on what your people problem is and exactly what to do about it.
           </p>
         </div>
       </section>
@@ -102,7 +102,7 @@ export default function BookPage() {
               <div className="rounded-[14px] p-4" style={{ background: 'rgba(143,114,246,0.06)', border: '1px solid rgba(143,114,246,0.15)' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Zap size={16} style={{ color: 'var(--ink-soft)' }} />
-                  <p className="font-semibold text-sm" style={{ color: 'var(--ink-soft)' }}>This call is not the right fit for…</p>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--ink-soft)' }}>This call is not the right fit if you need…</p>
                 </div>
                 <ul className="space-y-1.5">
                   {notFor.map((item) => (
@@ -125,8 +125,8 @@ export default function BookPage() {
               ) : (
                 /* Placeholder shown until the real Google Calendar URL is configured */
                 <div className="rounded-[14px] p-8 text-center" style={{ background: 'var(--surface-alt)', border: '1px dashed var(--brand-line)' }}>
-                  <p className="font-semibold mb-2" style={{ color: 'var(--ink)' }}>Booking calendar coming soon</p>
-                  <p className="text-sm mb-5" style={{ color: 'var(--ink-soft)' }}>While we set up the scheduler, drop us a line directly:</p>
+                  <p className="font-semibold mb-2" style={{ color: 'var(--ink)' }}>Booking calendar coming very soon</p>
+                  <p className="text-sm mb-5" style={{ color: 'var(--ink-soft)' }}>While the scheduler gets set up, drop us a direct message:</p>
                   <a
                     href="mailto:hello@ravellohr.co.uk?subject=Book a Free Call"
                     className="btn-primary inline-flex"
@@ -148,7 +148,7 @@ export default function BookPage() {
       {/* Not ready yet */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-narrow text-center">
-          <p className="eyebrow mb-8">Not ready to book yet?</p>
+          <p className="eyebrow mb-8">Not quite ready to book? Start here instead.</p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { href: '/tools/hiring-score',         label: 'Smart Hiring Score',  sub: '3 mins · Free · Instant results' },

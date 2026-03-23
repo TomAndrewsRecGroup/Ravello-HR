@@ -53,7 +53,7 @@ export default function SocialProofTicker() {
             >
               {w.sector}
             </span>
-            <span className="text-[11px] mx-0.5" style={{ color: 'rgba(255,255,255,0.18)' }}>—</span>
+            <span className="text-[11px] mx-0.5" style={{ color: 'rgba(255,255,255,0.18)' }}>·</span>
             <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.62)' }}>
               {w.win}
             </span>

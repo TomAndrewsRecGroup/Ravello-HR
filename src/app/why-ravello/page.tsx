@@ -4,7 +4,7 @@ import { ArrowRight, CalendarCheck, CheckCircle2, XCircle, Minus } from 'lucide-
 
 export const metadata: Metadata = {
   title: 'Why Ravello HR',
-  description: 'Why ambitious UK businesses choose Ravello HR over traditional agencies, in-house HR, and generic consultants.',
+  description: 'Why ambitious UK businesses choose Ravello HR over traditional agencies, in-house HR and generic consultants.',
 };
 
 const COMPARISON = [
@@ -21,19 +21,19 @@ const COMPARISON = [
 const OBJECTIONS = [
   {
     q: 'We already use a recruitment agency.',
-    a: 'Agencies fill roles — they don\u2019t fix why roles keep reopening. The Smart Hiring System does. Most clients cut their agency spend by 40%+ within a year.',
+    a: 'Agencies fill roles. They do not fix why roles keep reopening. The Smart Hiring System addresses the root cause. Most clients reduce their agency spend by 40% or more within a year.',
   },
   {
     q: 'We have an in-house HR person.',
-    a: 'Great. We work alongside them — not over them. Ravello HR brings specialist depth in areas (TUPE, M&A, compliance architecture) that most generalists don\u2019t cover day-to-day.',
+    a: 'We work alongside them, not over them. Ravello HR brings specialist depth in areas like TUPE, M&A and compliance architecture that most generalist HR professionals do not cover day-to-day.',
   },
   {
     q: 'We\u2019ve used HR consultants before and it didn\u2019t work.',
-    a: 'That\u2019s usually because you got junior delivery on a senior pitch, or vague advice with no clear deliverable. Every Ravello engagement has a named system, a fixed scope, and a senior lead.',
+    a: 'That is usually because you got junior delivery on a senior pitch, or vague advice with nothing concrete attached. Every Ravello engagement has a named system, a fixed scope and a senior lead throughout.',
   },
   {
     q: 'We can\u2019t afford a consultant right now.',
-    a: 'One tribunal claim costs an average of \u00a38,500\u2013\u00a330,000+. One bad hire costs 3x salary. PolicySafe\u2122 and the Smart Hiring System typically pay for themselves inside 6 months.',
+    a: 'A single tribunal claim costs an average of \u00a38,500 to \u00a330,000 or more. One bad hire costs three times the annual salary. PolicySafe\u2122 and the Smart Hiring System typically pay for themselves within six months.',
   },
 ];
 
@@ -41,32 +41,32 @@ const REASONS = [
   {
     icon: '\uD83C\uDFAF',
     title: 'A system, not a service',
-    body: 'Every engagement is built around one of three named systems. You always know what you\u2019re getting, why, and when it ends.',
+    body: 'Every engagement is built around one of three named systems. You always know exactly what you are getting, why it matters and when it is done.',
   },
   {
     icon: '\uD83D\uDC64',
     title: 'One senior expert, start to finish',
-    body: 'You get the same senior lead — not a junior who was briefed by someone you met once. Senior thinking on every call, every deliverable.',
+    body: 'You get the same senior lead throughout, not a junior who was briefed by someone you met once. Senior thinking on every call and every deliverable.',
   },
   {
     icon: '\u26A1',
     title: 'Embedded fast',
-    body: 'Typically active within 48 hours of engagement. No lengthy onboarding, no 6-week discovery phase — we learn your business by working in it.',
+    body: 'Typically active within 48 hours. No lengthy onboarding and no six-week discovery phase. We learn your business by working inside it.',
   },
   {
     icon: '\uD83D\uDCCB',
-    title: 'Fixed scope',
-    body: 'You know the cost before we start. No open-ended retainers, no scope creep, no surprise invoices.',
+    title: 'Fixed scope, clear cost',
+    body: 'You know the investment before we start. No open-ended retainers, no scope creep and no invoices that catch you off guard.',
   },
   {
     icon: '\uD83D\uDD12',
     title: 'Fully confidential',
-    body: 'All engagements are handled under strict confidentiality. Names never appear in case studies without explicit permission.',
+    body: 'All engagements are handled with complete discretion. Client names never appear in case studies without explicit consent.',
   },
   {
     icon: '\uD83C\uDFC6',
     title: '0 tribunal outcomes',
-    body: 'Across every restructure, TUPE transfer and disciplinary process handled. That\u2019s not luck — it\u2019s process.',
+    body: 'Across every restructure, TUPE transfer and disciplinary process ever handled. That is not luck. It is the result of doing things properly.',
   },
 ];
 
@@ -99,7 +99,7 @@ export default function WhyRavelloPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
-            We&rsquo;re not a recruitment agency. We&rsquo;re not a retainer consultancy. We&rsquo;re a named-system HR practice that fixes real problems &mdash; fast.
+            Not a recruitment agency. Not a retainer consultancy. A named-system HR practice built to fix real problems at the root, not paper over them.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
@@ -116,7 +116,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               What makes us different
             </p>
-            <h2 className="section-title">Six reasons clients choose Ravello.</h2>
+            <h2 className="section-title">Six reasons businesses choose Ravello.</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {REASONS.map((r) => (
@@ -139,7 +139,7 @@ export default function WhyRavelloPage() {
               Why not an agency
             </p>
             <h2 className="section-title">How we compare.</h2>
-            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>Side by side &mdash; Ravello HR vs. the alternatives.</p>
+            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at Ravello HR versus the alternatives.</p>
           </div>
 
           <div className="overflow-x-auto rounded-[22px]" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 20px rgba(13,21,53,0.05)' }}>
@@ -180,7 +180,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Common questions
             </p>
-            <h2 className="section-title">We&rsquo;ve heard it before.</h2>
+            <h2 className="section-title">We hear these a lot. Here are the honest answers.</h2>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {OBJECTIONS.map((o) => (
@@ -197,9 +197,9 @@ export default function WhyRavelloPage() {
       <section className="section-padding relative overflow-hidden" style={{ background: 'var(--surface-alt)' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(124,92,246,0.08) 0%, transparent 65%)' }} />
         <div className="relative z-10 container-narrow text-center">
-          <h2 className="section-title mb-6">Ready to talk?</h2>
+          <h2 className="section-title mb-6">Ready to have an honest conversation?</h2>
           <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
-            30 minutes. No pitch. Just an honest conversation about what&rsquo;s slowing your business down.
+            Thirty minutes. No pitch. Just a straight conversation about what is holding your business back and what to do about it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>

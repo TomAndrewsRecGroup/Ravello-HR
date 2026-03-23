@@ -35,8 +35,8 @@ export default function Footer() {
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Strategic HR systems for ambitious businesses.<br />
-              Named systems, not generic advice.
+              Strategic HR for ambitious businesses.<br />
+              Named systems. Real outcomes. No generic advice.
             </p>
             <div className="flex gap-3">
               <a
@@ -150,7 +150,7 @@ export default function Footer() {
                 HR Hotline
               </p>
               <p className="text-sm font-semibold text-white mb-3 leading-snug">
-                15 mins. Bring your mess.<br />Leave with clarity.
+                Bring your biggest challenge.<br />Leave with a clear plan.
               </p>
               <Link
                 href="/book"
