@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
 
@@ -79,7 +80,7 @@ export default function DealReadyPeoplePage() {
             <Link href="/tools/due-diligence-checklist" className="btn-gradient">
               Get the People DD Checklist <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-outline-white">
+            <Link href="/book" className="btn-secondary">
               Talk to Lucinda
             </Link>
           </div>
@@ -189,6 +190,16 @@ export default function DealReadyPeoplePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <FaqBlock items={[
+          { q: 'What is DealReady People?', a: 'A people advisory service that manages HR risk before and after acquisitions.' },
+          { q: 'When should we engage?', a: 'The best time is before heads of terms. The second best time is right now.' },
+          { q: 'What does TUPE mean for our deal?', a: 'TUPE transfers employment contracts automatically when a business changes hands. Mismanaging it creates tribunal risk.' },
+          { q: 'Do you work with investors and deal teams?', a: 'Yes. Ravello provides people risk summaries suitable for board and investor use.' },
+          { q: 'What happens post-close?', a: 'Ravello supports TUPE transfer management, redundancy process design, contract harmonisation, and culture integration planning.' },
+        ]} />
+
+    
     </div>
   );
 }

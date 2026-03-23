@@ -54,6 +54,7 @@ export default function CalendlyWidget() {
             boxShadow: '0 24px 64px rgba(7,11,29,0.22), 0 4px 16px rgba(7,11,29,0.10)',
             border: '1px solid var(--brand-line)',
             animation: 'fadeUp 0.25s ease',
+            textDecoration: 'none',
           }}
         >
           {/* Header */}

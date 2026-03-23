@@ -103,7 +103,7 @@ export default function WhyRavelloPage() {
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
-            <Link href="#comparison" className="btn-outline-white">See the comparison <ArrowRight size={15} /></Link>
+            <Link href="#comparison" className="btn-secondary">See the comparison <ArrowRight size={15} /></Link>
           </div>
         </div>
       </section>

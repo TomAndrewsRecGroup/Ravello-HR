@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(cmd /c \"cd /d \"\"C:\\\\Users\\\\TomAndrews\\\\OneDrive - andrews-recruitment.com\\\\Desktop\\\\Ravello HR\"\" && rmdir /s /q .next && npm run build\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm:*)",
+      "Bash(node -e \"const {spawnSync} = require\\(''child_process''\\); const r = spawnSync\\(''npm.cmd'', [''run'', ''dev''], {cwd: ''C:/Users/TomAndrews/OneDrive - andrews-recruitment.com/Desktop/Ravello HR'', timeout: 3000}\\); console.log\\(r.error?.message, r.stderr?.toString\\(\\).slice\\(0,200\\)\\);\")",
+      "Bash(node -e \"const {spawnSync} = require\\(''child_process''\\); const r = spawnSync\\(''cmd'', [''/c'', ''npm run dev''], {cwd: ''C:/Users/TomAndrews/OneDrive - andrews-recruitment.com/Desktop/Ravello HR'', timeout: 3000}\\); console.log\\(r.error?.message, r.stderr?.toString\\(\\).slice\\(0,200\\)\\);\")",
+      "Bash(netstat -ano)",
+      "Bash(tasklist /fi \"PID eq 7588\")",
+      "Bash(cmd /c \"tasklist /fi \"\"PID eq 7588\"\"\")",
+      "Bash(cmd /c \"tasklist\")",
+      "Bash(curl -s http://localhost:63530/)",
+      "Bash(\"C:/Users/TomAndrews/OneDrive -:*)",
+      "Bash(ls \"C:/Users/TomAndrews/OneDrive - andrews-recruitment.com/Desktop/Ravello HR/node_modules/.bin/next\"*)",
+      "Bash(curl -s http://localhost:56790/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:56790/)"
+    ]
+  }
+}

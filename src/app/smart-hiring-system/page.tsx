@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
 
@@ -70,7 +71,7 @@ export default function SmartHiringSystemPage() {
             <Link href="/tools/hiring-score" className="btn-gradient">
               Get Your Smart Hiring Score <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-outline-white">
+            <Link href="/book" className="btn-secondary">
               Book a Scoping Call
             </Link>
           </div>
@@ -177,6 +178,18 @@ export default function SmartHiringSystemPage() {
           </Link>
         </div>
       </section>
+
+
+      {/* FAQ */}
+      <FaqBlock
+        items={[
+          { q: 'What is the Smart Hiring System?', a: 'A structured five-stage methodology that fixes the root causes of hiring failure — vague role definitions, inconsistent assessment, slow decisions, agency dependency, and offer drop-off.' },
+          { q: 'Who is it for?', a: 'Businesses that reopen the same roles repeatedly, overspend on agencies, or struggle to get consistent hiring decisions from their management team.' },
+          { q: 'How long does it take?', a: 'Most engagements take four to eight weeks depending on the number of roles and complexity of the existing process.' },
+          { q: 'What do we walk away with?', a: 'A reusable system — role brief templates, assessment scorecards, interview guides, and onboarding frameworks — that your team owns and can run independently.' },
+          { q: 'Do we need to use a recruitment agency?', a: 'No. The system is designed to reduce agency dependency by building internal sourcing capability over time.' },
+        ]}
+      />
 
     </div>
   );
