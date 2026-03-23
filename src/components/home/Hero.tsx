@@ -6,42 +6,53 @@ import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
 
 const BARS = [
-  { label: 'Role brief quality',     val: 20, pct: '20%',  color: '#D94444' },
-  { label: 'Interview consistency',  val: 45, pct: '45%',  color: '#E8954A' },
-  { label: 'Decision speed',         val: 55, pct: '55%',  color: '#E8B84A' },
-  { label: 'Offer management',       val: 72, pct: '72%',  color: '#5A9E6F' },
-  { label: 'Retention signals',      val: 18, pct: '18%',  color: '#D94444' },
+  { label: 'Role brief quality',    val: 20, pct: '20%',  color: '#D94444' },
+  { label: 'Interview consistency', val: 45, pct: '45%',  color: '#E8954A' },
+  { label: 'Decision speed',        val: 55, pct: '55%',  color: '#E8B84A' },
+  { label: 'Offer management',      val: 72, pct: '72%',  color: '#5A9E6F' },
+  { label: 'Retention signals',     val: 18, pct: '18%',  color: '#D94444' },
 ];
 
 const STATS = [
-  { val: '10+',  lab: 'Years senior HR expertise' },
-  { val: '40%+', lab: 'Agency cost reduction' },
-  { val: '0',    lab: 'Tribunal outcomes' },
+  { val: '10+',  lab: 'Years of senior HR expertise',  gold: true },
+  { val: '40%+', lab: 'Average agency cost reduction', gold: false },
+  { val: '0',    lab: 'Tribunal outcomes on record',   gold: true },
 ];
 
 export default function Hero() {
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative min-h-screen flex flex-col justify-center overflow-hidden data-grid"
       style={{ background: 'var(--gradient-hero)' }}
     >
       <div className="hero-mesh" />
 
-      <div className="relative z-10 container-wide section-padding w-full pb-16" style={{ paddingTop: '96px' }}>
-        <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-start">
+      {/* Extra ambient orbs */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          width: '500px', height: '500px',
+          top: '20%', left: '40%',
+          borderRadius: '50%',
+          background: 'radial-gradient(ellipse, rgba(234,61,196,0.05) 0%, transparent 65%)',
+          animation: 'meshDrift 22s ease-in-out infinite',
+        }}
+      />
+
+      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-24">
+        <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
 
           {/* Left column */}
           <div>
-
-            {/* Logo — replaces the eyebrow tag */}
-            <div style={{ marginBottom: '26px' }}>
+            {/* Logo */}
+            <div className="mb-8">
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={1280}
-                height={440}
+                width={700}
+                height={320}
                 className="object-contain w-auto"
-                style={{ height: '440px' }}
+                style={{ height: '320px' }}
                 priority
               />
             </div>
@@ -52,7 +63,7 @@ export default function Hero() {
                 fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
                 fontWeight: 300,
                 lineHeight: 1.05,
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.025em',
                 color: 'var(--ink)',
                 marginBottom: '1.5rem',
               }}
@@ -61,7 +72,7 @@ export default function Hero() {
               <span
                 style={{
                   fontWeight: 600,
-                  backgroundImage: 'linear-gradient(135deg, #7B2FBE 0%, #4B6EF5 55%, #C026A0 100%)',
+                  backgroundImage: 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -74,14 +85,21 @@ export default function Hero() {
               </em>
             </h1>
 
-            <p className="text-base leading-relaxed mb-2 max-w-[500px] font-medium" style={{ color: 'var(--ink-soft)' }}>
-              Most businesses do not fail because of strategy. They stall because hiring is inconsistent, leadership is stretched, and processes are unclear. Ravello fixes that.
+            <p
+              className="text-base leading-relaxed mb-2 max-w-[500px] font-medium"
+              style={{ color: 'var(--ink-soft)' }}
+            >
+              Three proven systems. One dedicated expert. Outcomes you can measure.
             </p>
-            <p className="text-sm leading-relaxed mb-10 max-w-[480px]" style={{ color: 'var(--ink-faint)' }}>
-              Ravello HR permanently fixes the hiring, compliance and transformation
-              challenges that slow ambitious UK businesses down.
+            <p
+              className="text-sm leading-relaxed mb-10 max-w-[480px]"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              Ravello HR permanently solves the hiring, compliance and people transformation
+              challenges holding ambitious UK businesses back.
             </p>
 
+            {/* CTAs */}
             <div className="flex flex-wrap gap-4 mb-12">
               <Link href="/book" className="btn-gradient">
                 <CalendarCheck size={16} /> Book a Free Call
@@ -91,23 +109,49 @@ export default function Hero() {
               </Link>
             </div>
 
-            <div className="flex flex-wrap gap-10 pt-8" style={{ borderTop: '1px solid var(--brand-line)' }}>
+            {/* Stats */}
+            <div
+              className="flex flex-wrap gap-8 pt-8"
+              style={{ borderTop: '1px solid var(--brand-line)' }}
+            >
               {STATS.map((m) => (
-                <div key={m.lab}>
-                  <p
-                    className="font-bold text-3xl mb-1"
-                    style={{
-                      fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                      backgroundImage: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {m.val}
+                <div key={m.lab} className="group">
+                  {m.gold ? (
+                    /* Gold stat — quality signal */
+                    <p
+                      className="font-bold text-[2rem] mb-1"
+                      style={{
+                        fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                        background: 'var(--gold-gloss)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-0.025em',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {m.val}
+                    </p>
+                  ) : (
+                    /* Gradient stat */
+                    <p
+                      className="font-bold text-[2rem] mb-1"
+                      style={{
+                        fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                        backgroundImage: 'linear-gradient(135deg, #EA3DC4, #7C3AED)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-0.025em',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {m.val}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>
+                    {m.lab}
                   </p>
-                  <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{m.lab}</p>
                 </div>
               ))}
             </div>
@@ -116,22 +160,28 @@ export default function Hero() {
           {/* Right column — score card */}
           <div className="hidden lg:block">
             <div
-              className="bg-white rounded-[18px] p-6"
+              className="bg-white rounded-[22px] p-6 relative"
               style={{
-                border: '0.5px solid rgba(15,19,32,0.09)',
-                boxShadow: '0 4px 32px rgba(13,21,53,0.08), 0 1px 4px rgba(13,21,53,0.04)',
+                border: '0.5px solid rgba(7,11,29,0.09)',
+                boxShadow: '0 6px 40px rgba(7,11,29,0.09), 0 1px 4px rgba(7,11,29,0.04)',
               }}
             >
+              {/* Card top gradient line */}
+              <div
+                className="absolute top-0 left-6 right-6 h-[1.5px] rounded-b-full"
+                style={{ background: 'var(--gradient)' }}
+              />
+
               {/* Card header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 mt-2">
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+                  className="text-[10px] font-bold uppercase tracking-[0.16em]"
                   style={{ color: 'var(--ink-faint)' }}
                 >
                   Smart Hiring System™
                 </span>
                 <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{ background: 'rgba(217,68,68,0.09)', color: '#B03030' }}
                 >
                   Sample score
@@ -143,7 +193,7 @@ export default function Hero() {
                 <span
                   style={{
                     fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                    fontSize: '56px',
+                    fontSize: '60px',
                     fontWeight: 600,
                     lineHeight: 1,
                     letterSpacing: '-0.03em',
@@ -156,26 +206,26 @@ export default function Hero() {
               </div>
 
               <div
-                className="flex items-center gap-2 text-xs font-medium mb-5"
+                className="flex items-center gap-2 text-xs font-semibold mb-5"
                 style={{ color: '#C04444' }}
               >
                 <span
                   className="w-[6px] h-[6px] rounded-full flex-shrink-0"
                   style={{ background: '#C04444' }}
                 />
-                High risk — action needed
+                High risk. Immediate action needed.
               </div>
 
               {/* Bars */}
-              <div className="space-y-3 mb-5">
+              <div className="space-y-3.5 mb-5">
                 {BARS.map((b) => (
                   <div key={b.label}>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{b.label}</span>
-                      <span className="text-xs font-medium" style={{ color: 'var(--ink)' }}>{b.val}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--ink-soft)' }}>{b.label}</span>
+                      <span className="text-[11px] font-semibold" style={{ color: 'var(--ink)' }}>{b.val}</span>
                     </div>
                     <div
-                      className="h-[5px] rounded-full overflow-hidden"
+                      className="h-[4px] rounded-full overflow-hidden"
                       style={{ background: 'var(--surface-alt)' }}
                     >
                       <div
@@ -188,23 +238,22 @@ export default function Hero() {
               </div>
 
               {/* Card CTA */}
-              <div
-                className="pt-4"
-                style={{ borderTop: '0.5px solid var(--brand-line)' }}
-              >
+              <div className="pt-4" style={{ borderTop: '0.5px solid var(--brand-line)' }}>
                 <Link
                   href="/tools/hiring-score"
-                  className="flex items-center justify-between w-full text-sm font-medium transition-colors"
+                  className="flex items-center justify-between w-full text-sm font-semibold transition-colors group"
                   style={{ color: 'var(--brand-purple)' }}
                 >
-                  Book a call to fix these gaps
-                  <ArrowRight size={14} />
+                  Fix these gaps. Start free.
+                  <ArrowRight
+                    size={14}
+                    className="transition-transform duration-200 group-hover:translate-x-1"
+                  />
                 </Link>
               </div>
             </div>
 
-            {/* Below card — subtle reassurance */}
-            <p className="text-center text-xs mt-4" style={{ color: 'var(--ink-faint)' }}>
+            <p className="text-center text-[11px] mt-4" style={{ color: 'var(--ink-faint)' }}>
               Free · Takes 3 minutes · No obligation
             </p>
           </div>
@@ -214,8 +263,13 @@ export default function Hero() {
 
       {/* Scroll nudge */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10">
-        <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: 'var(--ink-faint)' }}>Scroll</span>
-        <ChevronDown size={15} style={{ color: 'var(--ink-faint)' }} className="animate-bounce" />
+        <span
+          className="text-[10px] font-bold uppercase tracking-[0.18em]"
+          style={{ color: 'var(--ink-faint)' }}
+        >
+          Scroll
+        </span>
+        <ChevronDown size={14} style={{ color: 'var(--ink-faint)' }} className="animate-bounce" />
       </div>
     </section>
   );

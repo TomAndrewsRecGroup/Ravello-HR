@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle, Award, Building2, TrendingUp } from 'lucide-re
 
 export const metadata: Metadata = {
   title: 'About Ravello HR | Lucinda Reader | Strategic HR Consultancy',
-  description: 'Lucinda Reader is a senior HR professional with experience across major UK and global brands. Ravello HR delivers strategic HR — not generic consultancy.',
+  description: 'Lucinda Reader is a senior HR professional with experience across major UK and global brands. Ravello HR delivers strategic HR built around your business, not generic consultancy.',
   alternates: { canonical: 'https://ravellohr.co.uk/about' },
 };
 
@@ -27,9 +27,9 @@ const brands = [
 ];
 
 const values = [
-  { icon: Award,     title: 'Named systems, not vague advice',              description: 'Every engagement produces something tangible — a scorecard, a process, a framework. Not a slide deck that gathers dust.' },
-  { icon: TrendingUp, title: 'Commercial first',                            description: 'Good HR reduces cost, improves performance and protects the business. That\'s how Lucinda frames every piece of work.' },
-  { icon: Building2, title: 'Built for how businesses actually work',        description: 'No off-the-shelf solutions. No generic templates. Everything is shaped around your size, sector and specific risk.' },
+  { icon: Award,     title: 'Named systems, not vague advice',              description: 'Every engagement produces something tangible: a scorecard, a process, a framework. Not a slide deck that collects dust.' },
+  { icon: TrendingUp, title: 'Commercial first, always',                    description: 'Good HR reduces cost, improves performance and protects the business. That is how Lucinda frames every single piece of work.' },
+  { icon: Building2, title: 'Built for how businesses actually work',        description: 'No off-the-shelf solutions. No generic templates. Everything is shaped around your size, sector and the specific risks you face.' },
 ];
 
 export default function AboutPage() {
@@ -56,11 +56,11 @@ export default function AboutPage() {
           >
             Senior HR expertise.<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Without the corporate overhead.
+              Delivered without the corporate overhead.
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Ravello HR is Lucinda Reader — a senior HR professional who has led people programmes inside major brands and now brings that capability directly to ambitious businesses that need it most.
+            Ravello HR is Lucinda Reader. A senior HR professional who built her career inside some of the UK&rsquo;s most demanding organisations and now brings that same capability directly to the ambitious businesses that need it most.
           </p>
         </div>
       </section>
@@ -74,13 +74,13 @@ export default function AboutPage() {
               <h2 className="section-title mb-6">Lucinda Reader</h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Lucinda spent over a decade inside large, complex organisations — leading HR through acquisitions, rapid growth, restructures and the kind of people challenges that textbooks don&rsquo;t cover.
+                  Lucinda spent over a decade inside large, complex organisations, leading HR through acquisitions, rapid growth, restructures and the kind of people challenges that no textbook ever quite covers.
                 </p>
                 <p>
-                  She built Ravello HR because she kept seeing the same thing: brilliant businesses held back by hiring that didn&rsquo;t work, compliance that was one tribunal away from disaster, and people decisions made on instinct rather than process.
+                  She built Ravello HR because she kept seeing the same pattern: brilliant businesses held back by hiring that kept breaking, compliance that was one tribunal away from disaster, and people decisions made on gut feel rather than solid process.
                 </p>
                 <p>
-                  The result is three named systems — Smart Hiring System™, PolicySafe™ and DealReady People™ — each built from real-world experience, not theory.
+                  The result is three named systems, Smart Hiring System™, PolicySafe™ and DealReady People™, each built from real-world experience and designed to produce outcomes you can actually measure.
                 </p>
               </div>
               <div className="mt-8">
@@ -111,9 +111,9 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="text-center mb-12">
             <p className="eyebrow justify-center mb-3">Proof of Work</p>
-            <h2 className="section-title mb-4">Work led across sectors</h2>
+            <h2 className="section-title mb-4">Experience across every sector</h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              Lucinda has worked inside and alongside businesses across retail, professional services, technology, manufacturing and healthcare. The names stay confidential. The results don&rsquo;t.
+              Lucinda has worked inside and alongside businesses across retail, professional services, technology, manufacturing and healthcare. Client names stay confidential. The outcomes do not.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -153,7 +153,7 @@ export default function AboutPage() {
         <div className="container-narrow text-center">
           <h2 className="section-title-light mb-4">Ready to work together?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            Book a free 15-minute call. Bring your current HR challenge and leave with a clear next step.
+            Book a free 15-minute call. Bring your current HR challenge and leave with a clear, actionable next step.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/book" className="btn-gradient">

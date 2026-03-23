@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'PolicySafe™ | HR Compliance & Documents | Ravello HR',
-  description: 'Get compliant, fast. PolicySafe™ by Ravello HR covers contracts, handbooks, policies and manager enablement for growing businesses.',
+  title: 'PolicySafe™ | HR Compliance and Documents | Ravello HR',
+  description: 'Get your HR in order, fast. PolicySafe™ by Ravello HR covers contracts, handbooks, policies and manager guidance for growing UK businesses.',
   alternates: { canonical: 'https://ravellohr.co.uk/policysafe' },
 };
 
 const risks = [
-  { icon: AlertTriangle, title: 'No written contracts',      description: 'Employment without a written statement is a legal risk from day one. Tribunals are expensive. Prevention is not.' },
-  { icon: FileText,      title: 'Outdated handbook',          description: 'A handbook written in 2019 doesn\'t cover remote work, AI use, mental health leave or the Carer\'s Leave Act. Gaps become grievances.' },
-  { icon: Users,         title: 'Managers making it up',      description: 'Without clear policies, managers apply their own rules. Inconsistency breeds resentment — and discrimination claims.' },
-  { icon: Shield,        title: 'No disciplinary framework',  description: 'One poorly handled disciplinary can cost £10k+ at tribunal. A clear, followed process is your only defence.' },
+  { icon: AlertTriangle, title: 'No written contracts',      description: 'Employing someone without a written statement is a legal risk from the very first day. Tribunal claims are expensive to defend. Prevention costs a fraction of that.' },
+  { icon: FileText,      title: 'Outdated handbook',          description: 'A handbook written in 2019 does not cover remote working, AI use, mental health leave or the Carer\'s Leave Act. Those gaps quietly become grievances.' },
+  { icon: Users,         title: 'Managers making it up',      description: 'Without clear policies, managers apply their own version of the rules. Inconsistency creates resentment and opens the door to discrimination claims.' },
+  { icon: Shield,        title: 'No disciplinary framework',  description: 'One poorly handled disciplinary can cost over £10,000 at tribunal. A clear process that is followed properly is your most reliable protection.' },
 ];
 
 const packages = [
@@ -44,12 +44,12 @@ const packages = [
 ];
 
 const included = [
-  'Written by an experienced HR professional — not an AI',
-  'UK employment law compliant as of current legislation',
-  'Plain English — your managers will actually read it',
-  'Branded and formatted to your business',
-  'Delivered with implementation guidance',
-  'Not off-the-shelf — built around your specific risks',
+  'Written by an experienced senior HR professional, not an AI or template service',
+  'Fully compliant with current UK employment legislation',
+  'Written in plain English your managers will actually read and follow',
+  'Branded and formatted to match your business',
+  'Delivered with clear implementation guidance',
+  'Built around your specific risks and workforce, not off-the-shelf',
 ];
 
 export default function PolicySafePage() {
@@ -74,16 +74,16 @@ export default function PolicySafePage() {
               marginBottom: '1.25rem',
             }}
           >
-            We need compliant HR.<br />
+            Your HR compliance needs fixing.<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Yesterday.
+              The time to act is now.
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Growing businesses get caught out by the same thing: they move fast, hire people, and forget to build the paperwork foundation underneath.
+            Growing businesses get caught out by the same pattern: they move fast, hire quickly and never quite build the proper foundation underneath. The gaps sit quietly until they do not.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            PolicySafe™ gives you the contracts, handbook and policies your business actually needs — written properly, not copy-pasted from a template site.
+            PolicySafe™ gives you the contracts, handbook and policies your business genuinely needs, written properly by a senior HR professional rather than copy-pasted from a template site.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/tools/policy-healthcheck" className="btn-gradient">
@@ -100,9 +100,9 @@ export default function PolicySafePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">What gaps look like in practice</h2>
+            <h2 className="section-title mb-4">What compliance gaps look like in practice</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Most businesses only discover their policy gaps when something goes wrong. By then it&rsquo;s too late to fix cheaply.
+              Most businesses only find their policy gaps when something breaks. By that point, the cost of fixing it is far higher than the cost of building it right the first time.
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -133,7 +133,7 @@ export default function PolicySafePage() {
               Free Starter Handbook Template
             </h2>
             <p className="text-sm leading-relaxed mb-6 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              A lightweight staff handbook template covering the essentials. Download it, adapt it, use it. No strings — but if you want the full bespoke version, we&rsquo;re here.
+              A lightweight staff handbook template that covers the essentials. Download it, adapt it, use it. Completely free, no strings attached. When you are ready for the full bespoke version, we are here.
             </p>
             <a href="https://tally.so/r/ravello-handbook" target="_blank" rel="noopener noreferrer" className="btn-gradient">
               Download Free Template <ArrowRight size={16} />
@@ -199,9 +199,9 @@ export default function PolicySafePage() {
               </ul>
             </div>
             <div className="rounded-[18px] p-8" style={{ background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff' }}>
-              <h3 style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem', marginBottom: '0.75rem' }}>Not sure where your gaps are?</h3>
+              <h3 style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem', marginBottom: '0.75rem' }}>Not sure where your gaps are sitting?</h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                Run the free Policy &amp; Contract Healthcheck. Takes 3 minutes. Outputs a prioritised gap list you can take straight to your board.
+                Run the free Policy and Contract Healthcheck. It takes 3 minutes and gives you a prioritised gap report you can take straight to your leadership team.
               </p>
               <Link href="/tools/policy-healthcheck" className="btn-outline-white justify-center w-full">
                 Start the Healthcheck <ArrowRight size={16} />

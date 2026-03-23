@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { CalendarCheck, X, ExternalLink } from 'lucide-react';
 
-// Replace with your actual Calendly URL
 const CALENDLY_URL = 'https://calendly.com/ravellohr/free-consultation';
 
 export default function CalendlyWidget() {
@@ -10,31 +9,33 @@ export default function CalendlyWidget() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating action */}
       <div className="fixed bottom-6 right-6 z-[150] flex flex-col items-end gap-3">
-        {/* Tooltip label — shows when not open */}
+
+        {/* Label pill — shows when closed */}
         {!open && (
           <div
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold text-white shadow-lg"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-semibold text-white"
             style={{
-              background: 'var(--gradient-hero)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              boxShadow: '0 4px 20px rgba(124,92,246,0.4)',
+              background: 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
+              boxShadow: '0 4px 22px rgba(124,58,237,0.45)',
               animation: 'fadeIn 0.3s ease',
             }}
           >
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
             Book a free call
           </div>
         )}
 
-        {/* Main FAB */}
+        {/* FAB button */}
         <button
           onClick={() => setOpen(!open)}
-          className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-200 hover:scale-105"
+          className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-105"
           style={{
-            background: open ? 'var(--brand-navy)' : 'linear-gradient(135deg, #7C5CF6 0%, #5B9BFF 100%)',
-            boxShadow: '0 4px 24px rgba(124,92,246,0.45)',
+            background: open
+              ? 'var(--brand-navy)'
+              : 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
+            boxShadow: '0 4px 26px rgba(124,58,237,0.48)',
           }}
           aria-label={open ? 'Close booking' : 'Book a free call'}
         >
@@ -44,16 +45,13 @@ export default function CalendlyWidget() {
 
       {/* Calendly panel */}
       {open && (
-        <a
-          href={CALENDLY_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-28 right-6 z-[149] rounded-[24px] overflow-hidden flex flex-col items-center justify-center"
+        <div
+          className="fixed bottom-28 right-6 z-[149] rounded-[22px] overflow-hidden"
           style={{
             width: '380px',
             height: '560px',
             background: 'var(--bg)',
-            boxShadow: '0 20px 60px rgba(13,21,53,0.22)',
+            boxShadow: '0 24px 64px rgba(7,11,29,0.22), 0 4px 16px rgba(7,11,29,0.10)',
             border: '1px solid var(--brand-line)',
             animation: 'fadeUp 0.25s ease',
             textDecoration: 'none',
@@ -61,23 +59,44 @@ export default function CalendlyWidget() {
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between w-full px-5 py-4"
-            style={{ background: 'var(--brand-navy)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+            className="flex items-center justify-between px-5 py-4 relative"
+            style={{
+              background: 'var(--brand-navy)',
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
+            }}
           >
+            {/* Gradient top line */}
+            <div
+              className="absolute top-0 left-0 right-0 h-[1.5px]"
+              style={{ background: 'var(--gradient)' }}
+            />
             <div>
               <p className="text-sm font-semibold text-white">Book a Free 30-Min Call</p>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>No pitch. No obligation.</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.42)' }}>
+                No pitch. No obligation.
+              </p>
             </div>
-            <ExternalLink size={16} style={{ color: 'rgba(255,255,255,0.45)' }} />
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-[11px] font-medium transition-opacity hover:opacity-70"
+              style={{ color: 'rgba(255,255,255,0.42)' }}
+            >
+              Open full page <ExternalLink size={11} />
+            </a>
           </div>
 
-          {/* CTA state */}
-          <div className="flex flex-col items-center justify-center flex-1 text-center px-8">
-            <CalendarCheck size={48} style={{ color: 'var(--brand-purple)', marginBottom: '16px' }} />
-            <p className="text-sm font-semibold mb-2" style={{ color: 'var(--ink)' }}>Open Calendly in a new window</p>
-            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Find a time that works for you</p>
-          </div>
-        </a>
+          {/* Calendly embed */}
+          <iframe
+            src={`${CALENDLY_URL}?hide_gdpr_banner=1&hide_event_type_details=0&background_color=eff0f7&text_color=070B1D&primary_color=7C3AED`}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            title="Book a call with Ravello HR"
+            style={{ display: 'block', border: 'none' }}
+          />
+        </div>
       )}
     </>
   );
