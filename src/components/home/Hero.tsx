@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/7f6a1a0d-2e4a-43c4-9da9-81b6a4ffe695.png';
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
 
 const BARS = [
   { label: 'Role brief quality',    val: 20, pct: '20%',  color: '#D94444' },
@@ -49,10 +49,10 @@ export default function Hero() {
               <Image
                 src={LOGO_FULL}
                 alt="Ravello HR"
-                width={600}
-                height={220}
+                width={700}
+                height={320}
                 className="object-contain w-auto"
-                style={{ height: '220px' }}
+                style={{ height: '320px' }}
                 priority
               />
             </div>
