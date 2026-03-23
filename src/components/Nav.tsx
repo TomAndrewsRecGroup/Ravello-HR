@@ -34,21 +34,27 @@ export default function Nav() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/96 backdrop-blur-lg shadow-[0_1px_0_rgba(15,19,32,0.08)]'
-          : 'bg-[rgba(242,243,245,0.85)] backdrop-blur-md'
+          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
+          : 'bg-[rgba(239,240,247,0.82)] backdrop-blur-md'
       }`}
     >
-      <nav className="container-wide px-6 lg:px-10">
-        <div className="flex items-center justify-between h-[80px]">
+      {/* Top gradient line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[1.5px]"
+        style={{ background: 'var(--gradient)' }}
+      />
 
-          {/* Logo — favicon only in header as requested */}
-          <Link href="/" className="flex items-center flex-shrink-0">
+      <nav className="container-wide px-6 lg:px-10">
+        <div className="flex items-center justify-between h-[76px]">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center flex-shrink-0 focus-ring">
             <Image
               src={LOGO_MARK}
               alt="Ravello HR"
               width={48}
               height={48}
-              className="h-[44px] w-auto object-contain"
+              className="h-[42px] w-auto object-contain"
               priority
             />
           </Link>
@@ -56,21 +62,43 @@ export default function Nav() {
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-0.5">
 
+            {/* Solutions dropdown */}
             <div className="relative" onMouseEnter={() => setSol(true)} onMouseLeave={() => setSol(false)}>
               <button className="btn-ghost flex items-center gap-1.5">
-                Solutions <ChevronDown size={13} className={`transition-transform duration-200 ${solOpen ? 'rotate-180' : ''}`} />
+                Solutions
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${solOpen ? 'rotate-180' : ''}`}
+                />
               </button>
               {solOpen && (
                 <div
-                  className="absolute top-full left-0 mt-1.5 bg-white rounded-[16px] p-2"
-                  style={{ minWidth: '268px', boxShadow: '0 8px 40px rgba(13,21,53,0.12)', border: '1px solid var(--brand-line)', animation: 'slideDown 0.16s ease forwards' }}
+                  className="absolute top-full left-0 mt-2 bg-white/98 rounded-[16px] p-2"
+                  style={{
+                    minWidth: '272px',
+                    boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
+                    border: '1px solid var(--brand-line)',
+                    backdropFilter: 'blur(20px)',
+                    animation: 'slideDown 0.16s ease forwards',
+                  }}
                 >
                   {solutions.map((s) => (
-                    <Link key={s.href} href={s.href} className="flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors hover:bg-[var(--surface-alt)]">
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+                    <Link
+                      key={s.href}
+                      href={s.href}
+                      className="flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all duration-150 hover:bg-[var(--surface-alt)] group"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0 transition-transform duration-150 group-hover:scale-125"
+                        style={{ background: s.dot }}
+                      />
                       <div>
-                        <span className="block text-sm font-semibold" style={{ color: 'var(--ink)' }}>{s.label}</span>
-                        <span className="block text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{s.sub}</span>
+                        <span className="block text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                          {s.label}
+                        </span>
+                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                          {s.sub}
+                        </span>
                       </div>
                     </Link>
                   ))}
@@ -78,17 +106,33 @@ export default function Nav() {
               )}
             </div>
 
+            {/* Free Tools dropdown */}
             <div className="relative" onMouseEnter={() => setTool(true)} onMouseLeave={() => setTool(false)}>
               <button className="btn-ghost flex items-center gap-1.5">
-                Free Tools <ChevronDown size={13} className={`transition-transform duration-200 ${toolOpen ? 'rotate-180' : ''}`} />
+                Free Tools
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform duration-200 ${toolOpen ? 'rotate-180' : ''}`}
+                />
               </button>
               {toolOpen && (
                 <div
-                  className="absolute top-full left-0 mt-1.5 bg-white rounded-[16px] p-2"
-                  style={{ minWidth: '224px', boxShadow: '0 8px 40px rgba(13,21,53,0.12)', border: '1px solid var(--brand-line)', animation: 'slideDown 0.16s ease forwards' }}
+                  className="absolute top-full left-0 mt-2 bg-white/98 rounded-[16px] p-2"
+                  style={{
+                    minWidth: '228px',
+                    boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
+                    border: '1px solid var(--brand-line)',
+                    backdropFilter: 'blur(20px)',
+                    animation: 'slideDown 0.16s ease forwards',
+                  }}
                 >
                   {tools.map((t) => (
-                    <Link key={t.href} href={t.href} className="block px-4 py-3 rounded-[10px] text-sm font-medium transition-colors hover:bg-[var(--surface-alt)]" style={{ color: 'var(--ink-soft)' }}>
+                    <Link
+                      key={t.href}
+                      href={t.href}
+                      className="block px-4 py-3 rounded-[10px] text-[13px] font-medium transition-colors hover:bg-[var(--surface-alt)]"
+                      style={{ color: 'var(--ink-soft)' }}
+                    >
                       {t.label}
                     </Link>
                   ))}
@@ -103,9 +147,9 @@ export default function Nav() {
             {/* Divider */}
             <div className="w-px h-5 mx-2" style={{ background: 'var(--brand-line)' }} />
 
-            {/* Client Portal — subtle purple tint */}
+            {/* Client Portal */}
             <a
-              href="https://portal.ravellohr.co.uk"
+              href="https://portal.ravello-hr.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-portal"
@@ -117,6 +161,7 @@ export default function Nav() {
             {/* Divider */}
             <div className="w-px h-5 mx-2" style={{ background: 'var(--brand-line)' }} />
 
+            {/* Primary CTA */}
             <Link href="/book" className="btn-gradient">
               <CalendarCheck size={15} /> Book Free Call
             </Link>
@@ -124,7 +169,7 @@ export default function Nav() {
 
           {/* Mobile hamburger */}
           <button
-            className="lg:hidden p-2 rounded-xl transition-colors"
+            className="lg:hidden p-2 rounded-xl transition-colors hover:bg-[var(--surface-alt)]"
             style={{ color: 'var(--ink)' }}
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
@@ -136,10 +181,20 @@ export default function Nav() {
         {/* Mobile menu */}
         {open && (
           <div
-            className="lg:hidden bg-white rounded-[18px] p-5 mb-4"
-            style={{ border: '1px solid var(--brand-line)', boxShadow: '0 10px 40px rgba(13,21,53,0.12)', animation: 'slideDown 0.2s ease forwards' }}
+            className="lg:hidden bg-white/98 rounded-[18px] p-5 mb-4"
+            style={{
+              border: '1px solid var(--brand-line)',
+              boxShadow: '0 12px 48px rgba(7,11,29,0.12)',
+              backdropFilter: 'blur(20px)',
+              animation: 'slideDown 0.2s ease forwards',
+            }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2" style={{ color: 'var(--ink-faint)' }}>Solutions</p>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              Solutions
+            </p>
             {solutions.map((s) => (
               <Link
                 key={s.href}
@@ -153,7 +208,12 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2" style={{ color: 'var(--ink-faint)' }}>Free Tools</p>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              Free Tools
+            </p>
             {tools.map((t) => (
               <Link
                 key={t.href}
@@ -171,7 +231,7 @@ export default function Nav() {
             <Link href="/about"       className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />
             <a
-              href="https://portal.ravellohr.co.uk"
+              href="https://portal.ravello-hr.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium"

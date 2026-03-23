@@ -50,7 +50,7 @@ export default function ExitIntentPopup() {
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ background: 'rgba(13,21,53,0.72)', backdropFilter: 'blur(6px)', animation: 'fadeIn 0.25s ease' }}
+      style={{ background: 'rgba(7,11,29,0.75)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.25s ease' }}
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
     >
       <div
@@ -75,7 +75,7 @@ export default function ExitIntentPopup() {
               {/* Icon */}
               <div
                 className="w-14 h-14 rounded-[16px] flex items-center justify-center mb-7"
-                style={{ background: 'rgba(124,92,246,0.1)', border: '1px solid rgba(124,92,246,0.2)' }}
+                style={{ background: 'rgba(124,58,237,0.09)', border: '1px solid rgba(124,58,237,0.20)' }}
               >
                 <Download size={24} style={{ color: 'var(--brand-purple)' }} />
               </div>
@@ -120,7 +120,7 @@ export default function ExitIntentPopup() {
             <div className="text-center py-6">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-                style={{ background: 'rgba(124,92,246,0.1)' }}
+                style={{ background: 'rgba(124,58,237,0.09)' }}
               >
                 <span className="text-3xl">✓</span>
               </div>

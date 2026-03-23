@@ -1,40 +1,29 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Phone, Linkedin } from 'lucide-react';
+import { Mail, Phone, Linkedin, ExternalLink } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 export default function Footer() {
   return (
-    <footer style={{ background: 'var(--brand-navy)' }}>
-      <style>{`
-        .footer-icon-link {
-          width: 36px; height: 36px;
-          border-radius: 8px;
-          display: flex; align-items: center; justify-content: center;
-          background: rgba(255,255,255,0.07);
-          color: rgba(255,255,255,0.6);
-          transition: background 0.2s;
-        }
-        .footer-icon-link:hover { background: rgba(143,114,246,0.3); }
-        .footer-link {
-          font-size: 0.875rem;
-          color: rgba(255,255,255,0.55);
-          transition: color 0.2s;
-        }
-        .footer-link:hover { color: #fff; }
-        .footer-tiny {
-          font-size: 0.75rem;
-          color: rgba(255,255,255,0.3);
-          transition: color 0.2s;
-        }
-        .footer-tiny:hover { color: rgba(255,255,255,0.7); }
-      `}</style>
+    <footer className="relative overflow-hidden scan-lines" style={{ background: 'var(--brand-navy)' }}>
+      {/* Gradient top line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'var(--gradient)' }} />
 
-      <div className="container-wide section-padding">
+      {/* Ambient glows */}
+      <div
+        className="absolute top-0 right-0 w-[600px] h-[500px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 80% 10%, rgba(124,58,237,0.12) 0%, transparent 60%)' }}
+      />
+      <div
+        className="absolute bottom-0 left-0 w-[400px] h-[400px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at 10% 90%, rgba(59,111,255,0.08) 0%, transparent 60%)' }}
+      />
+
+      <div className="relative z-10 container-wide section-padding">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
 
-          {/* Brand */}
+          {/* Brand column */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center mb-5">
               <Image
@@ -45,31 +34,47 @@ export default function Footer() {
                 className="object-contain h-10 w-auto brightness-[1.1]"
               />
             </Link>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Strategic HR systems for ambitious businesses. Named systems, not generic advice.
+            <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Strategic HR systems for ambitious businesses.<br />
+              Named systems, not generic advice.
             </p>
             <div className="flex gap-3">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="footer-icon-link">
-                <Linkedin size={15} />
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-icon-link"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={14} />
               </a>
-              <a href="mailto:hello@ravellohr.co.uk" className="footer-icon-link">
-                <Mail size={15} />
+              <a
+                href="mailto:hello@ravellohr.co.uk"
+                className="footer-icon-link"
+                aria-label="Email"
+              >
+                <Mail size={14} />
               </a>
             </div>
           </div>
 
           {/* Solutions */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.18em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>Solutions</h4>
+            <h4
+              className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            >
+              Solutions
+            </h4>
             <ul className="space-y-3">
               {[
                 ['Smart Hiring System™', '/smart-hiring-system'],
-                ['PolicySafe™',           '/policysafe'],
-                ['DealReady People™',     '/dealready-people'],
-                ['Change Management',      '/dealready-people#change'],
+                ['PolicySafe™',          '/policysafe'],
+                ['DealReady People™',    '/dealready-people'],
+                ['Change Management',    '/dealready-people#change'],
               ].map(([label, href]) => (
                 <li key={href}>
-                  <Link href={href} className="footer-link">{label}</Link>
+                  <Link href={href} className="footer-link text-sm">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -77,17 +82,22 @@ export default function Footer() {
 
           {/* Free Tools */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.18em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>Free Tools</h4>
+            <h4
+              className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            >
+              Free Tools
+            </h4>
             <ul className="space-y-3">
               {[
-                ['Smart Hiring Score',  '/tools/hiring-score'],
-                ['HR Risk Score',       '/tools/hr-risk-score'],
-                ['Policy Healthcheck',  '/tools/policy-healthcheck'],
-                ['DD Checklist',        '/tools/due-diligence-checklist'],
-                ['People Ops Playbook', '/playbook'],
+                ['Smart Hiring Score',   '/tools/hiring-score'],
+                ['HR Risk Score',        '/tools/hr-risk-score'],
+                ['Policy Healthcheck',   '/tools/policy-healthcheck'],
+                ['DD Checklist',         '/tools/due-diligence-checklist'],
+                ['People Ops Playbook',  '/playbook'],
               ].map(([label, href]) => (
                 <li key={href}>
-                  <Link href={href} className="footer-link">{label}</Link>
+                  <Link href={href} className="footer-link text-sm">{label}</Link>
                 </li>
               ))}
             </ul>
@@ -95,26 +105,60 @@ export default function Footer() {
 
           {/* Get Started */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.18em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>Get Started</h4>
+            <h4
+              className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            >
+              Get Started
+            </h4>
             <ul className="space-y-3 mb-6">
               <li>
-                <Link href="/book" className="footer-link flex items-center gap-2">
-                  <Phone size={13} /> Book a Free Call
+                <Link href="/book" className="footer-link text-sm flex items-center gap-2">
+                  <Phone size={12} /> Book a Free Call
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@ravellohr.co.uk" className="footer-link flex items-center gap-2">
-                  <Mail size={13} /> hello@ravellohr.co.uk
+                <a href="mailto:hello@ravellohr.co.uk" className="footer-link text-sm flex items-center gap-2">
+                  <Mail size={12} /> hello@ravellohr.co.uk
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://portal.ravello-hr.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer-link text-sm flex items-center gap-2"
+                >
+                  <ExternalLink size={12} /> Client Portal
                 </a>
               </li>
             </ul>
-            <div className="rounded-[14px] p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>No-Fluff HR Hotline</p>
-              <p className="text-sm font-semibold text-white mb-3">15 mins. Bring your mess. Leave with clarity.</p>
+
+            {/* HR Hotline card */}
+            <div
+              className="rounded-[14px] p-4 relative overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(124,58,237,0.20)',
+              }}
+            >
+              <div
+                className="absolute top-0 left-0 right-0 h-[1.5px]"
+                style={{ background: 'var(--gradient)' }}
+              />
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5" style={{ color: 'rgba(166,125,255,0.7)' }}>
+                HR Hotline
+              </p>
+              <p className="text-sm font-semibold text-white mb-3 leading-snug">
+                15 mins. Bring your mess.<br />Leave with clarity.
+              </p>
               <Link
                 href="/book"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-xs font-semibold text-white transition-all"
-                style={{ background: 'var(--brand-purple)', boxShadow: '0 2px 12px rgba(143,114,246,0.3)' }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-xs font-semibold text-white transition-all duration-200"
+                style={{
+                  background: 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
+                  boxShadow: '0 2px 14px rgba(124,58,237,0.35)',
+                }}
               >
                 Book Now
               </Link>
@@ -127,16 +171,47 @@ export default function Footer() {
           className="mt-14 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            &copy; {new Date().getFullYear()} Ravello HR. All rights reserved. Registered in England & Wales.
+          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+            &copy; {new Date().getFullYear()} Ravello HR. All rights reserved. Registered in England &amp; Wales.
           </p>
           <div className="flex gap-6">
             {[['Privacy Policy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (
-              <Link key={href} href={href} className="footer-tiny">{label}</Link>
+              <Link
+                key={href}
+                href={href}
+                className="text-[11px] transition-colors duration-150"
+                style={{ color: 'rgba(255,255,255,0.28)' }}
+                onMouseOver={(e) => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.65)')}
+                onMouseOut={(e) => ((e.target as HTMLElement).style.color = 'rgba(255,255,255,0.28)')}
+              >
+                {label}
+              </Link>
             ))}
           </div>
         </div>
       </div>
+
+      <style>{`
+        .footer-icon-link {
+          width: 34px; height: 34px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.06);
+          color: rgba(255,255,255,0.5);
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .footer-icon-link:hover {
+          background: rgba(124,58,237,0.25);
+          color: rgba(166,125,255,0.9);
+          border-color: rgba(124,58,237,0.3);
+        }
+        .footer-link {
+          color: rgba(255,255,255,0.48);
+          transition: color 0.15s;
+        }
+        .footer-link:hover { color: rgba(255,255,255,0.85); }
+      `}</style>
     </footer>
   );
 }
