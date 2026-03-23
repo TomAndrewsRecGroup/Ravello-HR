@@ -21,10 +21,10 @@ const whatToExpect = [
 ];
 
 const goodFor = [
-  { label: ‘A hiring problem’,        desc: ‘A role that keeps reopening, a process that moves too slowly or an agency bill that has spiralled’ },
-  { label: ‘A compliance concern’,    desc: ‘Contracts you are not confident in, a policy gap you have noticed or a manager applying rules inconsistently’ },
-  { label: ‘A deal or restructure’,   desc: ‘An acquisition in progress, redundancies under consideration or an integration you need to get right first time’ },
-  { label: ‘A people situation’,      desc: ‘A grievance, a performance issue or a difficult conversation you are not quite sure how to approach’ },
+  { label: "A hiring problem",        desc: "A role that keeps reopening, a process that moves too slowly or an agency bill that has spiralled" },
+  { label: "A compliance concern",    desc: "Contracts you are not confident in, a policy gap you have noticed or a manager applying rules inconsistently" },
+  { label: "A deal or restructure",   desc: "An acquisition in progress, redundancies under consideration or an integration you need to get right first time" },
+  { label: "A people situation",      desc: "A grievance, a performance issue or a difficult conversation you are not quite sure how to approach" },
 ];
 
 const notFor = [
