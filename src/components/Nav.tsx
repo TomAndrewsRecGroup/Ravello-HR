@@ -52,9 +52,9 @@ export default function Nav() {
             <Image
               src={LOGO_MARK}
               alt="Ravello HR"
-              width={48}
-              height={48}
-              className="h-[42px] w-auto object-contain"
+              width={58}
+              height={58}
+              className="h-[52px] w-auto object-contain"
               priority
             />
           </Link>
@@ -73,12 +73,13 @@ export default function Nav() {
               </button>
               {solOpen && (
                 <div
-                  className="absolute top-full left-0 mt-2 bg-white/98 rounded-[16px] p-2"
+                  className="absolute top-full left-0 mt-2 rounded-[16px] p-2"
                   style={{
                     minWidth: '272px',
                     boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
                     border: '1px solid var(--brand-line)',
-                    backdropFilter: 'blur(20px)',
+                    background: 'var(--bg)',    // solid light background
+                    zIndex: 60,                 // ensure it sits on top
                     animation: 'slideDown 0.16s ease forwards',
                   }}
                 >
@@ -117,12 +118,13 @@ export default function Nav() {
               </button>
               {toolOpen && (
                 <div
-                  className="absolute top-full left-0 mt-2 bg-white/98 rounded-[16px] p-2"
+                  className="absolute top-full left-0 mt-2 rounded-[16px] p-2"
                   style={{
                     minWidth: '228px',
                     boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
                     border: '1px solid var(--brand-line)',
-                    backdropFilter: 'blur(20px)',
+                    background: 'var(--bg)',
+                    zIndex: 60,
                     animation: 'slideDown 0.16s ease forwards',
                   }}
                 >
@@ -181,11 +183,12 @@ export default function Nav() {
         {/* Mobile menu */}
         {open && (
           <div
-            className="lg:hidden bg-white/98 rounded-[18px] p-5 mb-4"
+            className="lg:hidden rounded-[18px] p-5 mb-4"
             style={{
               border: '1px solid var(--brand-line)',
               boxShadow: '0 12px 48px rgba(7,11,29,0.12)',
-              backdropFilter: 'blur(20px)',
+              background: 'var(--bg)',
+              zIndex: 60,
               animation: 'slideDown 0.2s ease forwards',
             }}
           >
