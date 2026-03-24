@@ -29,22 +29,22 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
-    default: 'Ravello HR | Hire. Lead. Protect.',
-    template: '%s | Ravello HR',
+    default: 'The People Office | Hire. Lead. Protect.',
+    template: '%s',
   },
   description:
-    'Ravello HR helps ambitious businesses fix hiring, protect compliance and navigate transformation — with a named system, not generic advice.',
-  keywords: ['HR consultancy UK', 'Smart Hiring System', 'HR compliance', 'people strategy', 'M&A HR support', 'PolicySafe', 'recruitment turnaround'],
-  authors: [{ name: 'Lucinda Reader', url: 'https://ravellohr.co.uk' }],
+    'The People Office helps ambitious businesses fix hiring, build HR foundations, and lead their people function — one partner, total control.',
+  keywords: ['HR consultancy UK', 'fractional HR', 'embedded recruitment', 'Friction Lens', 'HR compliance', 'people strategy', 'Employment Rights Bill', 'M&A HR support'],
+  authors: [{ name: 'The People Office', url: 'https://ravellohr.co.uk' }],
   openGraph: {
-    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'Ravello HR',
-    title: 'Ravello HR | Hire. Lead. Protect.',
-    description: 'Fix hiring. Build compliance. Navigate change. Ravello HR delivers named HR systems — not generic consultancy.',
+    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'The People Office',
+    title: 'The People Office | Hire. Lead. Protect.',
+    description: 'One partner. Total control of your people function. HIRE, LEAD, and PROTECT — delivered by Lucy and Tom.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
-    card: 'summary_large_image', title: 'Ravello HR',
-    description: 'Strategic HR systems for ambitious businesses.',
+    card: 'summary_large_image', title: 'The People Office',
+    description: 'Hire. Lead. Protect. One partner. Total control of your people function.',
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },

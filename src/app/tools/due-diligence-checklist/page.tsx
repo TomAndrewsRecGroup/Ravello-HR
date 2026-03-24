@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import DDChecklistTool from '@/components/tools/DDChecklistTool';
 
 export const metadata: Metadata = {
-  title: 'People Due Diligence Checklist | Ravello HR',
+  title: 'People Due Diligence Checklist | M&A People Risk | The People Office',
   description:
-    'Free People Due Diligence Checklist for M&A. Identify people risk before and after acquisition — interactive and downloadable.',
+    'Free People Due Diligence Checklist for M&A and restructures. Identify people risk before and after acquisition. Interactive and downloadable. From The People Office.',
   alternates: { canonical: 'https://ravellohr.co.uk/tools/due-diligence-checklist' },
 };
 

@@ -48,7 +48,7 @@ export default function Hero() {
             <div className="mb-8">
               <Image
                 src={LOGO_FULL}
-                alt="Ravello HR"
+                alt="The People Office"
                 width={700}
                 height={320}
                 className="object-contain w-auto"

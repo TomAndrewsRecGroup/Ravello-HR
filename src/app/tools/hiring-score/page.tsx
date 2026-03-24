@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import HiringScoreTool from '@/components/tools/HiringScoreTool';
 
 export const metadata: Metadata = {
-  title: 'Smart Hiring Score | Ravello HR',
+  title: 'Hiring Score | Diagnose Your Hiring Problems | The People Office',
   description:
-    'Find out exactly where your hiring is leaking. Get your Smart Hiring Score in under 3 minutes — instant results, no fluff.',
+    'Find out exactly where your hiring is breaking down. Get your Hiring Score in under 3 minutes — instant results, no fluff. Free diagnostic from The People Office.',
   alternates: { canonical: 'https://ravellohr.co.uk/tools/hiring-score' },
 };
 

@@ -93,7 +93,7 @@ export default function CalendlyWidget() {
             width="100%"
             height="100%"
             frameBorder="0"
-            title="Book a call with Ravello HR"
+            title="Book a call with The People Office"
             style={{ display: 'block', border: 'none' }}
           />
         </div>
