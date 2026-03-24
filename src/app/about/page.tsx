@@ -1,47 +1,50 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, Award, Building2, TrendingUp } from 'lucide-react';
+import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About Ravello HR | Lucinda Reader | Strategic HR Consultancy',
-  description: 'Lucinda Reader is a senior HR professional with experience across major UK and global brands. Ravello HR delivers strategic HR built around your business, not generic consultancy.',
+  title: 'About | Lucy and Tom | The People Office',
+  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People Office is Lucy and Tom — 18+ years HR leadership and 10+ years talent expertise, working together.',
   alternates: { canonical: 'https://ravellohr.co.uk/about' },
 };
 
-const credentials = [
-  'Senior HR leadership across FTSE-listed and high-growth businesses',
-  'Managed people programmes through acquisitions, restructures and rapid scale',
-  'Built hiring systems that reduced agency spend by 40–60% in 12 months',
-  'Designed HR frameworks adopted across multi-site, multi-country operations',
-  'Advised leadership teams on change management affecting 100s of employees',
-  'Delivered TUPE and redundancy processes with zero tribunal outcomes',
+const lucyCredentials = [
+  '18+ years senior HR and People leadership',
+  'Managed HR through acquisitions, restructures, and rapid scale-ups',
+  'Built hiring frameworks that reduced agency spend by 40–60% in 12 months',
+  'Designed HR infrastructure adopted across multi-site, multi-country operations',
+  'Advised leadership teams on change affecting hundreds of employees',
+  'Zero tribunal outcomes across every disciplinary, redundancy, and TUPE process',
 ];
 
-const brands = [
-  { label: 'Retail & Consumer',          desc: 'Multi-site HR transformation, manager capability programme' },
-  { label: 'Professional Services',       desc: 'Hiring system redesign, reduced time-to-hire by 8 weeks' },
-  { label: 'Private Equity-backed SME',   desc: 'Pre-acquisition people DD, post-deal integration' },
-  { label: 'Technology Scale-up',         desc: 'Full HR infrastructure build from 12 to 80 people' },
-  { label: 'Manufacturing & Industrial',  desc: 'Restructure and redundancy programme, TUPE transfer' },
-  { label: 'Healthcare & Services',       desc: 'Compliance overhaul, policy library and manager training' },
+const tomCredentials = [
+  '10+ years in talent and recruitment leadership',
+  'Founder of Andrews Recruitment Group',
+  'Built Friction Lens — a proprietary role scoring system for SMEs',
+  'Built IvyLens — a talent intelligence browser extension',
+  'Embedded talent delivery across founder-led and PE-backed businesses',
+  'Reduced agency dependency and time-to-hire on every long-term engagement',
 ];
 
-const values = [
-  { icon: Award,     title: 'Named systems, not vague advice',              description: 'Every engagement produces something tangible: a scorecard, a process, a framework. Not a slide deck that collects dust.' },
-  { icon: TrendingUp, title: 'Commercial first, always',                    description: 'Good HR reduces cost, improves performance and protects the business. That is how Lucinda frames every single piece of work.' },
-  { icon: Building2, title: 'Built for how businesses actually work',        description: 'No off-the-shelf solutions. No generic templates. Everything is shaped around your size, sector and the specific risks you face.' },
+const sectorExperience = [
+  { label: 'Retail and Consumer',         desc: 'Multi-site HR transformation, manager capability programme, hiring system redesign' },
+  { label: 'Professional Services',        desc: 'Hiring process rebuild, agency dependency reduced, time-to-hire cut by 8 weeks' },
+  { label: 'PE-backed SME',                desc: 'Pre-acquisition people DD, post-deal integration, contract harmonisation' },
+  { label: 'Technology Scale-up',          desc: 'Full people function build from 12 to 80 people, Friction Lens embedded throughout' },
+  { label: 'Manufacturing and Industrial', desc: 'Restructure and redundancy programme, TUPE transfer, policy overhaul' },
+  { label: 'Healthcare and Services',      desc: 'Compliance overhaul, full policy library, manager training programme' },
 ];
 
 export default function AboutPage() {
   return (
     <div className="pt-20">
 
-      {/* Hero — light */}
+      {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            About Ravello HR
+            About The People Office
           </p>
           <h1
             style={{
@@ -54,70 +57,177 @@ export default function AboutPage() {
               marginBottom: '1.25rem',
             }}
           >
-            Senior HR expertise.<br />
+            Not HR with a bit of recruitment.<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Delivered without the corporate overhead.
+              Not recruitment pretending to do HR.
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Ravello HR is Lucinda Reader. A senior HR professional who built her career inside some of the UK&rsquo;s most demanding organisations and now brings that same capability directly to the ambitious businesses that need it most.
+            The People Office is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, two proprietary tools built from scratch, and a track record across every sector a founder-led business is likely to sit in.
+          </p>
+          <p className="text-base leading-relaxed mt-4 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+            A proper blend. One partner. Total control of your people function.
           </p>
         </div>
       </section>
 
-      {/* Founder section */}
+      {/* Lucy */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="eyebrow mb-3">The Founder</p>
-              <h2 className="section-title mb-6">Lucinda Reader</h2>
+              <p className="eyebrow mb-3">Co-Founder — HR and People</p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-cormorant), serif',
+                  fontWeight: 600,
+                  fontSize: '2.25rem',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--ink)',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                Lucy
+              </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Lucinda spent over a decade inside large, complex organisations, leading HR through acquisitions, rapid growth, restructures and the kind of people challenges that no textbook ever quite covers.
+                  Lucy spent over 18 years inside large, complex organisations — leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
                 </p>
                 <p>
-                  She built Ravello HR because she kept seeing the same pattern: brilliant businesses held back by hiring that kept breaking, compliance that was one tribunal away from disaster, and people decisions made on gut feel rather than solid process.
+                  She founded Ravello HR because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated — but it required someone senior enough to do it properly.
                 </p>
                 <p>
-                  The result is three named systems, Smart Hiring System™, PolicySafe™ and DealReady People™, each built from real-world experience and designed to produce outcomes you can actually measure.
+                  Lucy leads PROTECT and LEAD at The People Office. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
                 </p>
               </div>
               <div className="mt-8">
                 <Link href="/book" className="btn-gradient">
-                  Work with Lucinda <ArrowRight size={16} />
+                  Work with Lucy <ArrowRight size={16} />
                 </Link>
               </div>
             </div>
             <div>
               <div className="rounded-[18px] p-6" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
-                <p className="eyebrow mb-4">Credentials</p>
+                <p className="eyebrow mb-4">Lucy&rsquo;s credentials</p>
                 <ul className="space-y-2">
-                  {credentials.map((c) => (
+                  {lucyCredentials.map((c) => (
                     <li key={c} className="flex items-start gap-3">
                       <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
                       <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
                     </li>
                   ))}
                 </ul>
+                <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['PROTECT', 'LEAD', 'DealReady People'].map((tag) => (
+                      <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Proof of work */}
+      {/* Tom */}
+      <section className="section-padding" style={{ background: 'var(--bg)' }}>
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            <div>
+              <p className="eyebrow mb-3">Co-Founder — Talent and Recruitment</p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-cormorant), serif',
+                  fontWeight: 600,
+                  fontSize: '2.25rem',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--ink)',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                Tom
+              </h2>
+              <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                <p>
+                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses, and building the two tools that underpin The People Office&rsquo;s hiring work: Friction Lens and IvyLens.
+                </p>
+                <p>
+                  Friction Lens is Tom&rsquo;s answer to the same problem he kept encountering: businesses launching roles blind, spending weeks discovering what a quick pre-market check would have caught in an hour. Roles scored across five dimensions. Specific recommendations. No more guesswork.
+                </p>
+                <p>
+                  Tom leads HIRE at The People Office. Role definition, embedded recruitment delivery, process design, Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
+                </p>
+              </div>
+              <div className="mt-8">
+                <Link href="/book" className="btn-gradient">
+                  Work with Tom <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+            <div>
+              <div className="rounded-[18px] p-6" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
+                <p className="eyebrow mb-4">Tom&rsquo;s credentials</p>
+                <ul className="space-y-2">
+                  {tomCredentials.map((c) => (
+                    <li key={c} className="flex items-start gap-3">
+                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
+                      <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['HIRE', 'Friction Lens', 'IvyLens'].map((tag) => (
+                      <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Combined positioning */}
+      <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
+        <div className="container-narrow text-center">
+          <h2
+            style={{
+              fontFamily: 'var(--font-cormorant), serif',
+              fontWeight: 300,
+              fontSize: 'clamp(1.75rem, 4vw, 3rem)',
+              lineHeight: 1.1,
+              letterSpacing: '-0.02em',
+              color: '#fff',
+              marginBottom: '1.5rem',
+            }}
+          >
+            &ldquo;Hire. Lead. Protect.&rdquo;
+          </h2>
+          <p className="text-lg leading-relaxed max-w-2xl mx-auto mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People Office is built around the idea that a great people function needs both — working together, from the same starting point, towards the same business outcome.
+          </p>
+          <p className="text-base leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Tom and Lucy talk. They share context. When a client comes through HIRE and needs documentation built, PROTECT is already briefed. When a LEAD engagement surfaces a hiring challenge, HIRE is already on it. One partner. Total control of your people function.
+          </p>
+        </div>
+      </section>
+
+      {/* Sector experience */}
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="text-center mb-12">
             <p className="eyebrow justify-center mb-3">Proof of Work</p>
             <h2 className="section-title mb-4">Experience across every sector</h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              Lucinda has worked inside and alongside businesses across retail, professional services, technology, manufacturing and healthcare. Client names stay confidential. The outcomes do not.
+              Client names stay confidential. The outcomes do not.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {brands.map((b) => (
+            {sectorExperience.map((b) => (
               <div key={b.label} className="card">
                 <Building2 className="mb-3" size={22} style={{ color: 'var(--brand-purple)' }} />
                 <h3 className="font-bold mb-1" style={{ color: 'var(--ink)' }}>{b.label}</h3>
@@ -128,41 +238,16 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Values */}
-      <section className="section-padding" style={{ background: 'var(--surface)' }}>
-        <div className="container-wide">
-          <div className="text-center mb-12">
-            <h2 className="section-title mb-4">How Ravello HR works</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {values.map((v) => (
-              <div key={v.title} className="text-center">
-                <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--bg)' }}>
-                  <v.icon size={26} style={{ color: 'var(--brand-purple)' }} />
-                </div>
-                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)', letterSpacing: '-0.015em' }}>{v.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{v.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA — dark */}
-      <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
+      {/* CTA */}
+      <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title-light mb-4">Ready to work together?</h2>
-          <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            Book a free 15-minute call. Bring your current HR challenge and leave with a clear, actionable next step.
+          <h2 className="section-title mb-4">Ready to work together?</h2>
+          <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
+            Book a free call. Bring your current people challenge — whether it is hiring, compliance, or leadership — and leave with a clear, actionable next step.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">
-              Book a Free Call <ArrowRight size={16} />
-            </Link>
-            <Link href="/tools/hr-risk-score" className="btn-outline-white">
-              Check Your HR Risk Score
-            </Link>
-          </div>
+          <Link href="/book" className="btn-gradient">
+            Book a Free Call <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 
