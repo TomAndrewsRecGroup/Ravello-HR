@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DealReady People™ | M&A HR and Change Management | Ravello HR',
-  description: 'People risk is the leading reason acquisitions fail. DealReady People™ by Ravello HR handles people due diligence, TUPE, restructuring and culture integration.',
+  title: 'DealReady People™ | M&A and Restructure People Advisory | The People Office',
+  description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People Office — not a retainer product.',
   alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
 };
 
@@ -52,7 +52,7 @@ export default function DealReadyPeoplePage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-pink)', verticalAlign: 'middle' }} />
-            DealReady People™
+            DealReady People™ — Specialist Project Service
           </p>
           <h1
             style={{
@@ -65,23 +65,23 @@ export default function DealReadyPeoplePage() {
               marginBottom: '1.25rem',
             }}
           >
-            People risk is the #1 reason<br />
+            People due diligence and integration support<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              acquisitions fail.
+              for M&A and restructures.
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one and pay for it after the deal closes.
+            For acquirers, founders going through deals, and PE-backed businesses managing integration or restructure. This is a specialist project service — not a retainer product.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            DealReady People™ covers your transaction from pre-deal people risk all the way through to post-deal integration, so your investment performs the way it should.
+            Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one and pay for it after the deal closes. Lucy handles this from pre-deal risk through to post-deal integration.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/tools/due-diligence-checklist" className="btn-gradient">
-              Get the People DD Checklist <ArrowRight size={16} />
+            <Link href="/book" className="btn-gradient">
+              Talk to us about your deal <ArrowRight size={16} />
             </Link>
-            <Link href="/book" className="btn-secondary">
-              Talk to Lucinda
+            <Link href="/tools/due-diligence-checklist" className="btn-secondary">
+              Get the People DD Checklist
             </Link>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function DealReadyPeoplePage() {
           <div className="max-w-[600px] mb-12">
             <h2 className="section-title mb-4">The six people risks that derail deals</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Most of these stay completely invisible until after completion. By then they belong to you.
+              Most of these are invisible until after completion. By then they belong to you.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -164,9 +164,12 @@ export default function DealReadyPeoplePage() {
               </div>
             ))}
           </div>
-          <div className="mt-10 text-center">
-            <Link href="/tools/due-diligence-checklist" className="btn-gradient">
-              Run the Full DD Checklist <ArrowRight size={16} />
+          <div className="mt-10 text-center flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/book" className="btn-gradient">
+              Talk to us about your deal <ArrowRight size={16} />
+            </Link>
+            <Link href="/tools/due-diligence-checklist" className="btn-secondary">
+              Run the Full DD Checklist
             </Link>
           </div>
         </div>
@@ -177,11 +180,11 @@ export default function DealReadyPeoplePage() {
         <div className="container-narrow text-center">
           <h2 className="section-title-light mb-4">In a deal or planning one?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            The right time to bring in people advisory is before heads of terms are signed. If you are already past that point, the second best time is today.
+            The right time to bring in people advisory is before heads of terms are signed. If you are already past that point, the second best time is right now.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/book" className="btn-gradient">
-              Book a Confidential Call <ArrowRight size={16} />
+              Talk to us about your deal <ArrowRight size={16} />
             </Link>
             <Link href="/tools/due-diligence-checklist" className="btn-outline-white">
               Download DD Checklist
@@ -192,11 +195,12 @@ export default function DealReadyPeoplePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-          { q: 'What is DealReady People?', a: 'A people advisory service that manages HR risk before and after acquisitions.' },
-          { q: 'When should we engage?', a: 'The best time is before heads of terms. The second best time is right now.' },
-          { q: 'What does TUPE mean for our deal?', a: 'TUPE transfers employment contracts automatically when a business changes hands. Mismanaging it creates tribunal risk.' },
-          { q: 'Do you work with investors and deal teams?', a: 'Yes. Ravello provides people risk summaries suitable for board and investor use.' },
-          { q: 'What happens post-close?', a: 'Ravello supports TUPE transfer management, redundancy process design, contract harmonisation, and culture integration planning.' },
+          { q: 'What is DealReady People?', a: 'A specialist project service from The People Office covering people due diligence, TUPE, restructure, and post-deal integration. This is not a retainer product — it is engaged for a specific transaction or restructure.' },
+          { q: 'Who is this for?', a: 'Acquirers, founders going through a sale or acquisition, PE-backed businesses managing post-deal integration, and any business facing redundancy or significant restructure.' },
+          { q: 'When should we engage?', a: 'The best time is before heads of terms are signed. If you are already past that point, the second best time is right now — before completion.' },
+          { q: 'What does TUPE mean for our deal?', a: 'TUPE transfers employment contracts automatically when a business changes hands. Misclassifying a transfer or mismanaging the consultation creates tribunal exposure that belongs to you post-close.' },
+          { q: 'Do you work with deal teams and investors?', a: 'Yes. Lucy provides people risk summaries written for board and investor use — not internal HR documents. Clear, commercial, usable in a deal context.' },
+          { q: 'What is the pricing?', a: 'DealReady People is priced as a project: from £3,500 for standalone due diligence work, through to full pre-deal and post-deal advisory. Scope and price agreed at the outset — no billing surprises.' },
         ]} />
 
     
