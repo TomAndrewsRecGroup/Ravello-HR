@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { ArrowRight, Quote } from 'lucide-react';
 
 const CREDENTIALS = [
-  '10+ years senior in-house HR',
-  'CIPD qualified practitioner',
-  'TUPE & restructure specialist',
-  'M&A people due diligence',
+  'Lucy: 18+ years senior HR and People leadership',
+  'Tom: 10+ years in Talent and Recruitment',
+  'CIPD qualified — Lucy',
+  'Friction Lens and IvyLens built by Tom',
+  'TUPE and restructure specialist — Lucy',
+  '0 tribunal outcomes across all restructure work',
 ];
 
 export default function FounderSection() {
@@ -49,8 +51,8 @@ export default function FounderSection() {
               className="relative z-10 font-semibold text-white leading-relaxed mb-8"
               style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'rgba(255,255,255,0.92)' }}
             >
-              &ldquo;Most HR problems are not really HR problems. They are process gaps dressed up as people issues.
-              We fix the process. Everything else follows.&rdquo;
+              &ldquo;Not HR with a bit of recruitment. Not recruitment pretending to do HR.
+              A proper blend. One partner who can do all of it.&rdquo;
             </blockquote>
 
             {/* Attribution */}
@@ -59,12 +61,12 @@ export default function FounderSection() {
                 className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white"
                 style={{ background: 'var(--gradient)' }}
               >
-                R
+                TPO
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Ravello HR</p>
+                <p className="text-sm font-semibold text-white">Lucy &amp; Tom</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>
-                  Founder &amp; Lead Consultant
+                  Co-founders, The People Office
                 </p>
               </div>
             </div>
@@ -97,26 +99,26 @@ export default function FounderSection() {
                 className="w-1.5 h-1.5 rounded-full inline-block mr-2"
                 style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }}
               />
-              Why Ravello HR
+              Why The People Office
             </p>
             <h2 className="section-title mb-5">
-              Senior expertise.<br />No junior handoffs. Ever.
+              Two specialists.<br />One partner. No handoffs.
             </h2>
             <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Most consultancies win the pitch, then hand the work to someone junior.
-                Ravello HR works differently. You get one senior expert who knows your business
-                from day one to delivery.
+                Lucy brings 18+ years of senior HR and People leadership. Tom brings 10+ years
+                in Talent and Recruitment, plus the technology behind Friction Lens and IvyLens.
+                You get both — on your account, from day one.
               </p>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Every engagement runs through a named system with clear deliverables.
-                You always know exactly what you are getting, what it covers, and when it is done.
+                No junior handoffs. No vague advice. Fixed scope, clear deliverables, and a
+                partner who understands the commercial reality of building a business.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/about" className="btn-primary">
-                About Ravello HR <ArrowRight size={15} />
+                About The People Office <ArrowRight size={15} />
               </Link>
               <Link href="/book" className="btn-secondary">
                 Book a Free Call

@@ -1,11 +1,11 @@
 import { AlertCircle } from 'lucide-react';
 
 const COSTS = [
-  'Hiring decisions made without structure lead to repeated mistakes',
-  'Weak leadership creates inconsistent performance across teams',
-  'Missing or outdated documents increase risk and slow decisions',
-  'Growth exposes gaps that were never properly fixed',
-  'The same issues keep resurfacing because nothing has been systemised',
+  'Hiring without structure means the same roles keep coming back — and the agency bill keeps growing',
+  'No People leader means managers make it up as they go — and you pay for the inconsistency',
+  'Missing or outdated HR documents are a liability waiting to be triggered',
+  'Growth exposes every people gap you papered over on the way up',
+  'Without the right foundations, you cannot scale — you just accumulate more risk',
 ];
 
 export default function CostOfProblem() {
@@ -23,7 +23,7 @@ export default function CostOfProblem() {
           </p>
 
           <h2 className="section-title mb-10">
-            Where businesses lose time,<br />money, and momentum
+            Where founder-led businesses<br />lose time, money, and momentum
           </h2>
 
           <ul className="space-y-4">
