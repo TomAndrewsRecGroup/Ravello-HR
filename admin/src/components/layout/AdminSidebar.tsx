@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, Briefcase,
   FolderOpen, LifeBuoy, ToggleLeft, LogOut, ChevronRight,
-  TrendingUp, Inbox, Map,
+  TrendingUp, Inbox, Map, BarChart3,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
@@ -18,6 +18,7 @@ const nav = [
   { href: '/requests',        label: 'Service Requests', icon: Inbox },
   { href: '/roadmap',         label: 'Roadmap',          icon: Map },
   { href: '/documents',       label: 'Documents',        icon: FolderOpen },
+  { href: '/reports',         label: 'Reports',          icon: BarChart3 },
   { href: '/support',         label: 'Support',          icon: LifeBuoy },
   { href: '/users',           label: 'Users',            icon: Users },
   { href: '/feature-flags',   label: 'Feature Flags',    icon: ToggleLeft },

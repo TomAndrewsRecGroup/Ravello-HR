@@ -10,17 +10,22 @@ import {
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const nav = [
-  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/hiring',     label: 'Hiring',       icon: Briefcase },
-  { href: '/documents',  label: 'Documents',    icon: FolderOpen },
-  { href: '/actions',    label: 'Actions',      icon: Bell },
-  { href: '/roadmap',    label: 'Roadmap',      icon: Map },
-  { href: '/reports',    label: 'Reports',      icon: BarChart3 },
-  { href: '/support',    label: 'Support',      icon: LifeBuoy },
+  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
+  { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring' },
+  { href: '/documents',  label: 'Documents',    icon: FolderOpen,      flag: 'documents' },
+  { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
+  { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
+  { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
+  { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
 
-export default function Sidebar() {
+interface Props {
+  flags?: Record<string, boolean>;
+}
+
+export default function Sidebar({ flags = {} }: Props) {
   const path = usePathname();
+  const visibleNav = nav.filter(item => item.flag === null || flags[item.flag] !== false);
 
   return (
     <aside
@@ -58,7 +63,7 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 pt-4">
         <p className="nav-section-label">Workspace</p>
         <div className="space-y-0.5">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const active = path.startsWith(item.href);
             return (
               <Link
