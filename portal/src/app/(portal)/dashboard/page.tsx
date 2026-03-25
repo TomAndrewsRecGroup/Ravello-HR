@@ -443,23 +443,25 @@ export default async function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--ink-faint)' }}>Available with your plan</p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { label: 'Leadership Development', desc: 'Structured support to improve team performance and decision-making.' },
-              { label: 'Metrics & Analytics',    desc: 'People data, attrition trends, and hiring performance in one view.' },
-              { label: 'Compliance Calendar',    desc: 'Upcoming compliance actions, review dates, and legal deadlines.' },
+              { label: 'Leadership Development', desc: 'Structured support to improve team performance and decision-making.', href: null },
+              { label: 'Metrics & Analytics',    desc: 'People data, attrition trends, and hiring performance in one view.',   href: '/metrics' },
+              { label: 'Compliance Tracker',     desc: 'Manage upcoming compliance obligations, review dates, and deadlines.', href: '/compliance' },
             ].map((f) => (
               <div
                 key={f.label}
-                className="rounded-[14px] p-5 flex flex-col gap-3 opacity-60"
-                style={{ border: '1px dashed var(--line)', background: 'var(--surface-alt)' }}
+                className="rounded-[14px] p-5 flex flex-col gap-3"
+                style={{ border: `1px ${f.href ? 'solid' : 'dashed'} var(--line)`, background: 'var(--surface-alt)', opacity: f.href ? 1 : 0.6 }}
               >
                 <div className="flex items-center gap-2">
-                  <Lock size={13} style={{ color: 'var(--ink-faint)' }} />
-                  <span className="text-xs font-semibold" style={{ color: 'var(--ink-soft)' }}>{f.label}</span>
+                  {f.href
+                    ? <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--purple)' }} />
+                    : <Lock size={13} style={{ color: 'var(--ink-faint)' }} />}
+                  <span className="text-xs font-semibold" style={{ color: f.href ? 'var(--ink)' : 'var(--ink-soft)' }}>{f.label}</span>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{f.desc}</p>
-                <a href={`mailto:hello@thepeopleoffice.co.uk?subject=Unlock: ${f.label}`} className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                  Speak to your account manager
-                </a>
+                {f.href
+                  ? <a href={f.href} className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View {f.label} →</a>
+                  : <a href={`mailto:hello@thepeopleoffice.co.uk?subject=Unlock: ${f.label}`} className="text-xs font-medium" style={{ color: 'var(--purple)' }}>Speak to your account manager</a>}
               </div>
             ))}
           </div>

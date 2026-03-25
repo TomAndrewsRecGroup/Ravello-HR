@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
-  LifeBuoy, LogOut, Settings, ChevronRight, Bell, Map, ShieldCheck,
+  LifeBuoy, LogOut, Settings, ChevronRight, Bell, Map, ShieldCheck, TrendingUp,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
@@ -24,6 +24,7 @@ const nav = [
   { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
   { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
   { href: '/compliance', label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
+  { href: '/metrics',    label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
   { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
   { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
