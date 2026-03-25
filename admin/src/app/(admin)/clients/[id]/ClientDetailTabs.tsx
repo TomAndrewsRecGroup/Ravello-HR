@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
+import InviteUserPanel from '@/components/modules/InviteUserPanel';
 
 /* ─── Helpers ─────────────────────────────────────── */
 
@@ -374,11 +375,14 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
 
             {/* Users */}
             <div className="card p-6">
-              <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>Users ({users.length})</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Users ({users.length})</h2>
+                <InviteUserPanel companyId={company.id} />
+              </div>
               {users.length === 0 ? (
-                <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No users assigned.</p>
+                <p className="text-sm mb-4" style={{ color: 'var(--ink-faint)' }}>No users assigned yet.</p>
               ) : (
-                <div className="table-wrapper">
+                <div className="table-wrapper mb-4">
                   <table className="table">
                     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
                     <tbody>
@@ -386,7 +390,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                         <tr key={u.id}>
                           <td className="font-medium">{u.full_name ?? '—'}</td>
                           <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
-                          <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{u.role}</span></td>
+                          <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{u.role?.replace(/_/g,' ')}</span></td>
                           <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
                         </tr>
                       ))}

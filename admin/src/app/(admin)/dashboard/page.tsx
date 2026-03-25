@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
             {reqs.length === 0 ? <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No active roles</p> : (
               <div className="space-y-2">
                 {reqs.slice(0,8).map((r: any) => (
-                  <Link key={r.id} href={`/hiring?role=${r.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
+                  <Link key={r.id} href={`/hiring/${r.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
                       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.companies?.name}</p>
