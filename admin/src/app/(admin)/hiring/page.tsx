@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import HiringClient from './HiringClient';
+import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Hiring Overview' };
 
@@ -31,6 +32,7 @@ export default async function AdminHiringPage() {
       <AdminTopbar
         title="Hiring Overview"
         subtitle="All active roles across all clients"
+        actions={<Link href="/hiring/new" className="btn-cta btn-sm">+ New Role</Link>}
       />
       <main className="admin-page flex-1">
         <HiringClient reqs={reqs} companies={companies} />

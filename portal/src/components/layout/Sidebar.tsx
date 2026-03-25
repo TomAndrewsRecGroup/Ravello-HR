@@ -9,6 +9,14 @@ import {
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
+/* Map nav href → counts key */
+const COUNT_KEY: Record<string, string> = {
+  '/actions':    'actions',
+  '/support':    'tickets',
+  '/hiring':     'candidates',
+  '/compliance': 'compliance',
+};
+
 const nav = [
   { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
   { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring' },
@@ -21,10 +29,11 @@ const nav = [
 ];
 
 interface Props {
-  flags?: Record<string, boolean>;
+  flags?:  Record<string, boolean>;
+  counts?: Record<string, number>;
 }
 
-export default function Sidebar({ flags = {} }: Props) {
+export default function Sidebar({ flags = {}, counts = {} }: Props) {
   const path = usePathname();
   const visibleNav = nav.filter(item => item.flag === null || flags[item.flag] !== false);
 
@@ -65,7 +74,10 @@ export default function Sidebar({ flags = {} }: Props) {
         <p className="nav-section-label">Workspace</p>
         <div className="space-y-0.5">
           {visibleNav.map((item) => {
-            const active = path.startsWith(item.href);
+            const active    = path.startsWith(item.href);
+            const countKey  = COUNT_KEY[item.href];
+            const count     = countKey ? (counts[countKey] ?? 0) : 0;
+
             return (
               <Link
                 key={item.href}
@@ -74,7 +86,20 @@ export default function Sidebar({ flags = {} }: Props) {
               >
                 <item.icon size={16} />
                 <span>{item.label}</span>
-                {active && (
+                {count > 0 && (
+                  <span
+                    className="ml-auto text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                    style={{
+                      background: item.href === '/actions' || item.href === '/compliance'
+                        ? 'rgba(239,68,68,0.85)'
+                        : 'rgba(245,158,11,0.85)',
+                      color: '#fff',
+                    }}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
+                {active && count === 0 && (
                   <ChevronRight
                     size={12}
                     className="ml-auto"
