@@ -122,7 +122,7 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
 
 /* ─── Main tabs component ────────────────────────── */
 
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Services'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'Services'] as const;
 type Tab = typeof TABS[number];
 
 const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
@@ -132,6 +132,16 @@ const MS_STATUSES = ['Not Started', 'In Progress', 'Complete', 'Blocked'];
 
 const PRIORITIES = ['high', 'medium', 'low'] as const;
 const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
+
+const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'data_protection', 'employment_law', 'other'];
+const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
+
+const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },
+  in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
+  complete:  { background: 'rgba(22,163,74,0.12)',   color: '#166534' },
+  overdue:   { background: 'rgba(220,38,38,0.12)',   color: '#991B1B' },
+};
 
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
   high:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
@@ -155,10 +165,11 @@ interface Props {
   services: any[];
   actions: any[];
   candidates: any[];
+  compliance: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
 }
 
-export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, stats }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, compliance: initCompliance, stats }: Props) {
   const supabase = createClient();
   const router   = useRouter();
   const [tab, setTab] = useState<Tab>('Overview');
@@ -214,6 +225,31 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
     await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
     setTogglingCand(null);
+  }
+
+  /* ── Compliance state ── */
+  const [compliance,    setCompliance]   = useState<any[]>(initCompliance);
+  const [showCompForm,  setShowCompForm] = useState(false);
+  const [compForm,      setCompForm]     = useState({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+  const [savingComp,    setSavingComp]   = useState(false);
+
+  async function saveCompliance() {
+    if (!compForm.title || !compForm.due_date) return;
+    setSavingComp(true);
+    const { data } = await supabase
+      .from('compliance_items')
+      .insert({ ...compForm, company_id: company.id })
+      .select()
+      .single();
+    if (data) setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+    setSavingComp(false);
+    setShowCompForm(false);
+    setCompForm({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+  }
+
+  async function updateComplianceStatus(id: string, status: string) {
+    await supabase.from('compliance_items').update({ status }).eq('id', id);
+    setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   }
 
   /* ── Roadmap state ── */
@@ -831,6 +867,110 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── COMPLIANCE ───────────────────────────────── */}
+      {tab === 'Compliance' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Compliance Items ({compliance.length})
+            </h2>
+            <button onClick={() => setShowCompForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Item
+            </button>
+          </div>
+
+          {/* Add compliance form */}
+          {showCompForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Title *</label>
+                  <input className="input" placeholder="e.g. Renew employer liability insurance" value={compForm.title} onChange={e => setCompForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input h-16 resize-none" placeholder="Additional context…" value={compForm.description} onChange={e => setCompForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Category</label>
+                  <select className="input" value={compForm.category} onChange={e => setCompForm(f => ({ ...f, category: e.target.value }))}>
+                    {COMP_CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Due Date *</label>
+                  <input type="date" className="input" value={compForm.due_date} onChange={e => setCompForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Initial Status</label>
+                  <select className="input" value={compForm.status} onChange={e => setCompForm(f => ({ ...f, status: e.target.value }))}>
+                    {COMP_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveCompliance} disabled={savingComp || !compForm.title || !compForm.due_date} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingComp ? <Loader2 size={12} className="animate-spin" /> : null} Save Item
+                </button>
+                <button onClick={() => setShowCompForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Compliance list */}
+          {compliance.length === 0 && !showCompForm ? (
+            <div className="card empty-state">No compliance items for this client.</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compliance.map((ci: any) => {
+                    const isOverdue = ci.status !== 'complete' && new Date(ci.due_date) < new Date();
+                    return (
+                      <tr key={ci.id}>
+                        <td>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{ci.title}</p>
+                          {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{ci.category?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: isOverdue ? '#991B1B' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
+                          {new Date(ci.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {isOverdue && <span className="ml-1 text-[10px]">OVERDUE</span>}
+                        </td>
+                        <td>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={COMP_STATUS_STYLE[ci.status] ?? COMP_STATUS_STYLE.pending}>
+                            {ci.status?.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            className="text-xs rounded-[6px] px-2 py-1 border"
+                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
+                            value={ci.status ?? 'pending'}
+                            onChange={e => updateComplianceStatus(ci.id, e.target.value)}
+                          >
+                            {COMP_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

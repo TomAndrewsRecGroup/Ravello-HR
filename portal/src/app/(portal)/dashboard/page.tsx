@@ -127,7 +127,7 @@ export default async function DashboardPage() {
             { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hiring',    color: 'var(--purple)' },
             { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/documents', color: 'var(--blue)' },
             { icon: LifeBuoy,      label: 'Open Tickets',     val: tickets.length,         href: '/support',   color: 'var(--teal)' },
-            { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '#compliance',color: '#F59E0B' },
+            { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/compliance',color: '#F59E0B' },
           ].map((s) => (
             <Link key={s.label} href={s.href} className="stat-card card-hover card">
               <div className="flex items-center justify-between mb-2">
