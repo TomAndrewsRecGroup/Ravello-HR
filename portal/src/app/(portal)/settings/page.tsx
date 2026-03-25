@@ -1,81 +1,93 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
+import {
+  CompanyProfileForm,
+  YourProfileForm,
+  TeamMembers,
+  NotificationPrefs,
+} from '@/components/modules/SettingsForm';
 
 export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
-  const supabase  = createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile }  = await supabase
+
+  const { data: profileData } = await supabase
     .from('profiles')
     .select('*, companies(*)')
     .eq('id', user?.id ?? '')
     .single();
 
-  const p = profile as any;
+  const p = profileData as any;
+  const company    = p?.companies ?? null;
+  const companyId  = p?.company_id ?? '';
+
+  // Fetch all profiles for the same company
+  const { data: teamData } = await supabase
+    .from('profiles')
+    .select('id, full_name, email, role')
+    .eq('company_id', companyId)
+    .order('role')
+    .order('full_name');
+
+  const teamMembers = (teamData ?? []) as {
+    id: string;
+    full_name: string | null;
+    email: string;
+    role: string;
+  }[];
 
   return (
     <>
-      <Topbar title="Settings" />
-      <main className="portal-page flex-1 max-w-[640px]">
+      <Topbar title="Settings" subtitle="Manage your account and company" />
+      <main className="portal-page flex-1 max-w-[720px] space-y-6">
 
-        <div className="card p-7 space-y-6">
-          <div>
-            <p className="eyebrow mb-3">Your account</p>
-            <div className="space-y-4">
-              <div className="form-group">
-                <label className="label">Full name</label>
-                <input className="input" defaultValue={p?.full_name ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-              <div className="form-group">
-                <label className="label">Email</label>
-                <input className="input" defaultValue={user?.email ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-              <div className="form-group">
-                <label className="label">Role</label>
-                <input className="input" defaultValue={p?.role ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          <div>
-            <p className="eyebrow mb-3">Company</p>
-            <div className="space-y-4">
-              <div className="form-group">
-                <label className="label">Company name</label>
-                <input className="input" defaultValue={p?.companies?.name ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-              <div className="form-group">
-                <label className="label">Sector</label>
-                <input className="input" defaultValue={p?.companies?.sector ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-              <div className="form-group">
-                <label className="label">Team size</label>
-                <input className="input" defaultValue={p?.companies?.size_band ?? ''} readOnly style={{ cursor: 'default', background: 'var(--surface-alt)' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          <div>
-            <p className="eyebrow mb-3">Password</p>
-            <p className="text-sm mb-4" style={{ color: 'var(--ink-faint)' }}>
-              Use the link below to receive a password reset email.
+        {/* Company Profile */}
+        <div className="card p-7">
+          <p className="eyebrow mb-5">Company Profile</p>
+          {company ? (
+            <CompanyProfileForm company={company} />
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
+              No company profile found.
             </p>
-            <a href="/auth/reset-password" className="btn-secondary btn-sm">Send reset link</a>
-          </div>
+          )}
         </div>
 
-        <p className="text-xs mt-6 text-center" style={{ color: 'var(--ink-faint)' }}>
-          To update your name, company details, or access level — contact{' '}
-          <a href="mailto:hello@ravellohr.co.uk" className="underline" style={{ color: 'var(--purple)' }}>
-            hello@ravellohr.co.uk
+        {/* Your Profile */}
+        <div className="card p-7">
+          <p className="eyebrow mb-5">Your Profile</p>
+          <YourProfileForm
+            profile={{ id: user?.id ?? '', full_name: p?.full_name ?? null }}
+            email={user?.email ?? ''}
+          />
+        </div>
+
+        {/* Team Members */}
+        <div className="card p-7">
+          <p className="eyebrow mb-5">Team Members</p>
+          <TeamMembers members={teamMembers} currentUserId={user?.id ?? ''} />
+        </div>
+
+        {/* Notification Preferences */}
+        <div className="card p-7">
+          <p className="eyebrow mb-5">Notification Preferences</p>
+          <NotificationPrefs />
+        </div>
+
+        {/* Password reset */}
+        <div className="card p-7">
+          <p className="eyebrow mb-2">Password</p>
+          <p className="text-sm mb-4" style={{ color: 'var(--ink-faint)' }}>
+            Use the link below to receive a password reset email.
+          </p>
+          <a href="/auth/reset-password" className="btn-secondary btn-sm">
+            Send reset link
           </a>
-        </p>
+        </div>
+
       </main>
     </>
   );

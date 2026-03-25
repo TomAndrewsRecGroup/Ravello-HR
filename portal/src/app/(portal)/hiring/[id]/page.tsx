@@ -1,18 +1,28 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
+import FrictionScoreCard from '@/components/FrictionScoreCard';
+import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButton';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
-import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButton';
+import { CheckCircle2, MessageSquare, Info } from 'lucide-react';
+import type { FrictionScore } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'Role Detail' };
 
 const stageBadge: Record<string, string> = {
-  submitted: 'badge-submitted', in_progress: 'badge-inprogress',
-  shortlist_ready: 'badge-shortlist', interview: 'badge-interview',
-  offer: 'badge-offer', filled: 'badge-filled', cancelled: 'badge-cancelled',
+  submitted:       'badge-submitted',
+  in_progress:     'badge-inprogress',
+  shortlist_ready: 'badge-shortlist',
+  interview:       'badge-interview',
+  offer:           'badge-offer',
+  filled:          'badge-filled',
+  cancelled:       'badge-cancelled',
 };
+
+function stageLabel(s: string) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default async function RequisitionDetailPage({
   params,
@@ -32,10 +42,20 @@ export default async function RequisitionDetailPage({
     .eq('approved_for_client', true)
     .order('created_at', { ascending: false });
 
-  const r    = req as any;
+  const r = req as any;
   const cands = candidates ?? [];
 
-  function stageLabel(s: string) { return s.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+  // Parse friction_score — may be stored as stringified JSON or as an object
+  let frictionScore: FrictionScore | null = null;
+  if (r.friction_score) {
+    try {
+      frictionScore = typeof r.friction_score === 'string'
+        ? JSON.parse(r.friction_score)
+        : r.friction_score as FrictionScore;
+    } catch {
+      frictionScore = null;
+    }
+  }
 
   return (
     <>
@@ -47,21 +67,48 @@ export default async function RequisitionDetailPage({
         }
       />
       <main className="portal-page flex-1">
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_340px] gap-6">
 
-          {/* Left */}
+          {/* ── Left column ─────────────────────────────────────────── */}
           <div className="space-y-6">
-            {/* Role details */}
+
+            {/* 1. Friction Score Card */}
+            {frictionScore ? (
+              <FrictionScoreCard score={frictionScore} />
+            ) : (
+              <div
+                className="rounded-[16px] p-5 flex items-start gap-4"
+                style={{ background: 'rgba(148,163,184,0.06)', border: '1px dashed rgba(148,163,184,0.3)' }}
+              >
+                <Info size={18} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--ink-faint)' }} />
+                <div>
+                  <p className="text-sm font-semibold mb-1" style={{ color: 'var(--ink-soft)' }}>
+                    Friction Lens not yet scored
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
+                    Contact your consultant at The People Office to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 2. Role Details */}
             <div className="card p-6">
               <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>Role Details</h2>
-              <dl className="grid sm:grid-cols-2 gap-4">
+              <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
                 {[
-                  ['Department',      r.department],
-                  ['Seniority',       r.seniority],
-                  ['Salary Range',    r.salary_range],
-                  ['Location',        r.location],
-                  ['Employment Type', r.employment_type],
-                  ['Submitted',       new Date(r.created_at).toLocaleDateString('en-GB')],
+                  ['Department',       r.department],
+                  ['Seniority',        r.seniority],
+                  ['Working Model',    r.working_model ? r.working_model.charAt(0).toUpperCase() + r.working_model.slice(1) : null],
+                  ['Location',         r.location],
+                  ['Employment Type',  r.employment_type],
+                  ['Salary Min',       r.salary_min != null ? `£${r.salary_min.toLocaleString()}` : null],
+                  ['Salary Max',       r.salary_max != null ? `£${r.salary_max.toLocaleString()}` : null],
+                  ['Urgency',          r.urgency],
+                  ['Reason for Hire',  r.reason_for_hire],
+                  ['Interview Stages', r.interview_stages != null ? String(r.interview_stages) : null],
+                  ['Reporting Line',   r.reporting_line],
+                  ['Submitted',        new Date(r.created_at).toLocaleDateString('en-GB')],
                 ].map(([label, val]) => (
                   <div key={label as string}>
                     <dt className="text-xs" style={{ color: 'var(--ink-faint)' }}>{label}</dt>
@@ -71,13 +118,15 @@ export default async function RequisitionDetailPage({
                   </div>
                 ))}
               </dl>
+
               {r.description && (
                 <>
                   <div className="divider my-5" />
-                  <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Overview</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Role Description</p>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{r.description}</p>
                 </>
               )}
+
               {r.must_haves?.length > 0 && (
                 <>
                   <div className="divider my-5" />
@@ -92,19 +141,34 @@ export default async function RequisitionDetailPage({
                   </ul>
                 </>
               )}
+
+              {r.nice_to_haves?.length > 0 && (
+                <>
+                  <div className="divider my-5" />
+                  <p className="text-xs mb-3" style={{ color: 'var(--ink-faint)' }}>Nice-to-haves</p>
+                  <ul className="space-y-1.5">
+                    {r.nice_to_haves.map((m: string) => (
+                      <li key={m} className="flex items-start gap-2 text-sm" style={{ color: 'var(--ink-soft)' }}>
+                        <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--ink-faint)' }} />
+                        {m}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
-            {/* Candidates */}
+            {/* 3. Candidates */}
             <div className="card p-6">
               <h2 className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>
                 Candidates ({cands.length})
               </h2>
               <p className="text-xs mb-5" style={{ color: 'var(--ink-faint)' }}>
-                Only candidates approved by Ravello are shown here.
+                Only candidates approved by The People Office are shown here.
               </p>
               {cands.length === 0 ? (
                 <div className="empty-state py-10">
-                  <p className="text-sm">No candidates yet — Ravello will add them as sourcing progresses.</p>
+                  <p className="text-sm">No candidates yet — The People Office will add them as sourcing progresses.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -119,7 +183,7 @@ export default async function RequisitionDetailPage({
                           <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
                           {c.email && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
                         </div>
-                        <span className={`badge badge-${c.client_status}`}>{c.client_status.replace(/_/g,' ')}</span>
+                        <span className={`badge badge-${c.client_status}`}>{c.client_status.replace(/_/g, ' ')}</span>
                       </div>
                       {c.summary && (
                         <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>
@@ -151,44 +215,79 @@ export default async function RequisitionDetailPage({
             </div>
           </div>
 
-          {/* Right — stage tracker */}
-          <div className="card p-6 h-fit">
-            <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Pipeline Stage</h2>
-            <div className="space-y-2">
-              {['submitted','in_progress','shortlist_ready','interview','offer','filled'].map((s) => {
-                const stages = ['submitted','in_progress','shortlist_ready','interview','offer','filled'];
-                const idx    = stages.indexOf(s);
-                const cur    = stages.indexOf(r.stage);
-                const done   = idx < cur;
-                const active = idx === cur;
-                return (
-                  <div key={s} className="flex items-center gap-3 py-2">
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                      style={{
-                        background: active ? 'var(--purple)' : done ? 'rgba(52,211,153,0.2)' : 'var(--surface-alt)',
-                        color: active ? '#fff' : done ? '#059669' : 'var(--ink-faint)',
-                        border: `1px solid ${active ? 'var(--purple)' : done ? 'rgba(52,211,153,0.3)' : 'var(--line)'}`,
-                      }}
-                    >
-                      {done ? '✓' : idx + 1}
+          {/* ── Right column (sticky) ────────────────────────────────── */}
+          <div className="space-y-4 lg:sticky lg:top-6 h-fit">
+
+            {/* Pipeline Stage tracker */}
+            <div className="card p-6">
+              <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Pipeline Stage</h2>
+              <div className="space-y-2">
+                {['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled'].map((s) => {
+                  const stages = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled'];
+                  const idx    = stages.indexOf(s);
+                  const cur    = stages.indexOf(r.stage);
+                  const done   = idx < cur;
+                  const active = idx === cur;
+                  return (
+                    <div key={s} className="flex items-center gap-3 py-2">
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                        style={{
+                          background: active ? 'var(--purple)' : done ? 'rgba(52,211,153,0.2)' : 'var(--surface-alt)',
+                          color:      active ? '#fff' : done ? '#059669' : 'var(--ink-faint)',
+                          border:     `1px solid ${active ? 'var(--purple)' : done ? 'rgba(52,211,153,0.3)' : 'var(--line)'}`,
+                        }}
+                      >
+                        {done ? '✓' : idx + 1}
+                      </div>
+                      <span
+                        className="text-sm"
+                        style={{
+                          color:      active ? 'var(--ink)' : done ? 'var(--ink-soft)' : 'var(--ink-faint)',
+                          fontWeight: active ? 600 : 400,
+                        }}
+                      >
+                        {stageLabel(s)}
+                      </span>
+                      {active && (
+                        <span className={`badge ${stageBadge[s]} ml-auto text-[10px]`}>Current</span>
+                      )}
                     </div>
-                    <span
-                      className="text-sm"
-                      style={{
-                        color: active ? 'var(--ink)' : done ? 'var(--ink-soft)' : 'var(--ink-faint)',
-                        fontWeight: active ? 600 : 400,
-                      }}
-                    >
-                      {stageLabel(s)}
-                    </span>
-                    {active && (
-                      <span className={`badge ${stageBadge[s]} ml-auto text-[10px]`}>Current</span>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Role actions card */}
+            <div className="card p-5">
+              <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>Friction Lens</h2>
+              {r.friction_scored_at ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Last scored</p>
+                    <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink)' }}>
+                      {new Date(r.friction_scored_at).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  <div
+                    className="rounded-[8px] p-3 text-xs leading-relaxed"
+                    style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
+                  >
+                    To re-score this role against updated market data, contact your consultant at The People Office.
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="rounded-[8px] p-3 text-xs leading-relaxed"
+                  style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
+                >
+                  This role has not yet been scored. Contact your consultant at The People Office to run Friction Lens.
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </main>
