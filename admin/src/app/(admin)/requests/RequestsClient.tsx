@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Save } from 'lucide-react';
 
 interface Props {
   requests: any[];
@@ -60,16 +60,46 @@ const STATUS_FILTERS = ['All', 'New', 'In Progress', 'Complete'] as const;
 
 export default function RequestsClient({ requests }: Props) {
   const supabase = createClient();
-  const [filter,       setFilter]       = useState<string>('All');
-  const [expanded,     setExpanded]     = useState<string | null>(null);
-  const [localStatus,  setLocalStatus]  = useState<Record<string, string>>({});
-  const [updating,     setUpdating]     = useState<string | null>(null);
+  const [filter,        setFilter]        = useState<string>('All');
+  const [expanded,      setExpanded]      = useState<string | null>(null);
+  const [localStatus,   setLocalStatus]   = useState<Record<string, string>>({});
+  const [updating,      setUpdating]      = useState<string | null>(null);
+  const [responseNotes, setResponseNotes] = useState<Record<string, string>>({});
+  const [savingNotes,   setSavingNotes]   = useState<string | null>(null);
+  const [savedNotes,    setSavedNotes]    = useState<Record<string, boolean>>({});
 
   async function updateStatus(id: string, newStatus: string) {
     setUpdating(id);
-    await supabase.from('service_requests').update({ status: newStatus }).eq('id', id);
+    const update: Record<string, any> = { status: newStatus };
+    if (newStatus === 'complete') update.responded_at = new Date().toISOString();
+    await supabase.from('service_requests').update(update).eq('id', id);
     setLocalStatus(prev => ({ ...prev, [id]: newStatus }));
     setUpdating(null);
+  }
+
+  async function saveResponse(id: string) {
+    setSavingNotes(id);
+    await supabase
+      .from('service_requests')
+      .update({ response_notes: responseNotes[id] ?? '' })
+      .eq('id', id);
+    setSavedNotes(prev => ({ ...prev, [id]: true }));
+    setTimeout(() => setSavedNotes(prev => ({ ...prev, [id]: false })), 2000);
+    setSavingNotes(null);
+  }
+
+  async function completeWithResponse(id: string) {
+    setSavingNotes(id);
+    await supabase
+      .from('service_requests')
+      .update({
+        response_notes: responseNotes[id] ?? '',
+        status:         'complete',
+        responded_at:   new Date().toISOString(),
+      })
+      .eq('id', id);
+    setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+    setSavingNotes(null);
   }
 
   const filtered = useMemo(() => {
@@ -122,6 +152,8 @@ export default function RequestsClient({ requests }: Props) {
                 const currentStatus = localStatus[r.id] ?? r.status ?? 'new';
                 const isExpanded    = expanded === r.id;
                 const details       = r.details ?? r.request_details ?? null;
+                const isComplete    = currentStatus.toLowerCase() === 'complete' || currentStatus.toLowerCase() === 'completed';
+                const notesVal      = responseNotes[r.id] ?? r.response_notes ?? '';
 
                 return (
                   <React.Fragment key={r.id}>
@@ -153,7 +185,7 @@ export default function RequestsClient({ requests }: Props) {
                       <td style={{ color: 'var(--ink-faint)' }}>{fmtDate(r.created_at)}</td>
                       <td onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1.5">
-                          {currentStatus.toLowerCase() !== 'in_progress' && currentStatus.toLowerCase() !== 'in progress' && currentStatus.toLowerCase() !== 'complete' && (
+                          {!isComplete && currentStatus.toLowerCase() !== 'in_progress' && currentStatus.toLowerCase() !== 'in progress' && (
                             <button
                               onClick={() => updateStatus(r.id, 'in_progress')}
                               disabled={updating === r.id}
@@ -162,7 +194,7 @@ export default function RequestsClient({ requests }: Props) {
                               {updating === r.id ? <Loader2 size={11} className="animate-spin" /> : 'Mark In Progress'}
                             </button>
                           )}
-                          {currentStatus.toLowerCase() !== 'complete' && (
+                          {!isComplete && (
                             <button
                               onClick={() => updateStatus(r.id, 'complete')}
                               disabled={updating === r.id}
@@ -179,39 +211,88 @@ export default function RequestsClient({ requests }: Props) {
                     {isExpanded && (
                       <tr>
                         <td colSpan={8} style={{ background: 'var(--surface-soft)', padding: 0 }}>
-                          <div className="px-6 py-4">
-                            <h4 className="font-display font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>
-                              Request Details
-                            </h4>
-                            {details ? (
-                              typeof details === 'object' ? (
-                                <div className="grid sm:grid-cols-2 gap-3">
-                                  {Object.entries(details).map(([key, val]) => (
-                                    <div key={key} className="p-3 rounded-[8px] bg-white border" style={{ borderColor: 'var(--line)' }}>
-                                      <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink-faint)' }}>
-                                        {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                                      </p>
-                                      <p className="text-sm" style={{ color: 'var(--ink)' }}>
-                                        {typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val)}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <pre className="text-sm p-4 rounded-[8px] bg-white border overflow-auto" style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)' }}>
-                                  {String(details)}
-                                </pre>
-                              )
-                            ) : (
-                              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No additional details provided.</p>
-                            )}
+                          <div className="px-6 py-4 space-y-5">
 
-                            {r.message && (
-                              <div className="mt-4">
-                                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink-faint)' }}>Message</p>
-                                <p className="text-sm p-3 rounded-[8px] bg-white border" style={{ borderColor: 'var(--line)', color: 'var(--ink)' }}>{r.message}</p>
-                              </div>
-                            )}
+                            {/* Request details */}
+                            <div>
+                              <h4 className="font-display font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>
+                                Request Details
+                              </h4>
+                              {details ? (
+                                typeof details === 'object' ? (
+                                  <div className="grid sm:grid-cols-2 gap-3">
+                                    {Object.entries(details).map(([key, val]) => (
+                                      <div key={key} className="p-3 rounded-[8px] bg-white border" style={{ borderColor: 'var(--line)' }}>
+                                        <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink-faint)' }}>
+                                          {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                        </p>
+                                        <p className="text-sm" style={{ color: 'var(--ink)' }}>
+                                          {typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val)}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <pre className="text-sm p-4 rounded-[8px] bg-white border overflow-auto" style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)' }}>
+                                    {String(details)}
+                                  </pre>
+                                )
+                              ) : (
+                                <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No additional details provided.</p>
+                              )}
+
+                              {r.message && (
+                                <div className="mt-4">
+                                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink-faint)' }}>Message</p>
+                                  <p className="text-sm p-3 rounded-[8px] bg-white border" style={{ borderColor: 'var(--line)', color: 'var(--ink)' }}>{r.message}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Response notes */}
+                            <div className="border-t pt-4" style={{ borderColor: 'var(--line)' }}>
+                              <h4 className="font-display font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>
+                                Response / Notes for Client
+                              </h4>
+                              <textarea
+                                className="input h-24 resize-none"
+                                placeholder="Add a response or internal notes visible to the client once shared…"
+                                value={notesVal}
+                                onChange={e => setResponseNotes(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                disabled={isComplete}
+                              />
+                              {!isComplete && (
+                                <div className="flex items-center gap-2 mt-2" onClick={e => e.stopPropagation()}>
+                                  <button
+                                    onClick={() => saveResponse(r.id)}
+                                    disabled={savingNotes === r.id}
+                                    className="btn-secondary btn-sm flex items-center gap-1.5"
+                                  >
+                                    {savingNotes === r.id
+                                      ? <Loader2 size={11} className="animate-spin" />
+                                      : <Save size={11} />
+                                    }
+                                    {savedNotes[r.id] ? 'Saved!' : 'Save Notes'}
+                                  </button>
+                                  <button
+                                    onClick={() => completeWithResponse(r.id)}
+                                    disabled={savingNotes === r.id}
+                                    className="btn-cta btn-sm"
+                                  >
+                                    {savingNotes === r.id
+                                      ? <Loader2 size={11} className="animate-spin" />
+                                      : 'Save & Mark Complete'
+                                    }
+                                  </button>
+                                </div>
+                              )}
+                              {isComplete && notesVal && (
+                                <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+                                  Response sent to client. Mark a new request to add further notes.
+                                </p>
+                              )}
+                            </div>
+
                           </div>
                         </td>
                       </tr>
