@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--navy)' }}>
       <div className="w-full max-w-[380px]">
         <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="Ravello" width={120} height={40} className="h-9 w-auto brightness-110" />
+          <Image src={LOGO} alt="The People Office" width={120} height={40} className="h-9 w-auto brightness-110" />
         </div>
         <div className="rounded-[20px] p-8" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <h1 className="font-display font-bold text-xl text-white mb-1">Reset password</h1>

@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
     <>
       <AdminTopbar
         title="Admin Dashboard"
-        subtitle="Ravello internal operations"
+        subtitle="The People Office — internal operations"
         actions={<Link href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
