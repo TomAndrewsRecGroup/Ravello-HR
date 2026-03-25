@@ -429,7 +429,9 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                     const friction = r.friction_level ?? 'Unknown';
                     return (
                       <tr key={r.id}>
-                        <td className="font-medium">{r.title}</td>
+                        <td className="font-medium">
+                          <a href={`/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--purple)' }}>{r.title}</a>
+                        </td>
                         <td>
                           <span className={`badge ${STAGE_BADGE[r.stage] ?? 'badge-normal'}`}>
                             {r.stage?.replace(/_/g, ' ')}

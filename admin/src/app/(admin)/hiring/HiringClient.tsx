@@ -202,11 +202,16 @@ export default function HiringClient({ reqs, companies }: Props) {
                       </span>
                     </td>
                     <td>
-                      {companyId && (
-                        <Link href={`/clients/${companyId}`} className="btn-ghost btn-sm">
-                          View Client →
+                      <div className="flex items-center gap-2">
+                        <Link href={`/hiring/${r.id}`} className="btn-cta btn-sm">
+                          View Role →
                         </Link>
-                      )}
+                        {companyId && (
+                          <Link href={`/clients/${companyId}`} className="btn-ghost btn-sm">
+                            Client
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
