@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Loader2, Download, Check, Plus, X } from 'lucide-react';
+import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 
 /* ─── Helpers ─────────────────────────────────────── */
 
@@ -122,13 +122,29 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
 
 /* ─── Main tabs component ────────────────────────── */
 
-const TABS = ['Overview', 'Roles', 'Documents', 'Roadmap', 'Services'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Services'] as const;
 type Tab = typeof TABS[number];
 
 const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
 const PILLARS  = ['HIRE', 'LEAD', 'PROTECT'];
 const OWNERS   = ['Lucy', 'Tom'];
 const MS_STATUSES = ['Not Started', 'In Progress', 'Complete', 'Blocked'];
+
+const PRIORITIES = ['high', 'medium', 'low'] as const;
+const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
+
+const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
+  high:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
+  medium: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  low:    { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+};
+
+const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  pending:        { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+};
 
 interface Props {
   company: any;
@@ -137,13 +153,68 @@ interface Props {
   documents: any[];
   milestones: any[];
   services: any[];
+  actions: any[];
+  candidates: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
 }
 
-export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, stats }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, stats }: Props) {
   const supabase = createClient();
   const router   = useRouter();
   const [tab, setTab] = useState<Tab>('Overview');
+
+  /* ── Actions state ── */
+  const [actions,      setActions]      = useState<any[]>(initActions);
+  const [showActForm,  setShowActForm]  = useState(false);
+  const [actForm,      setActForm]      = useState({ title: '', description: '', priority: 'medium', due_date: '' });
+  const [savingAct,    setSavingAct]    = useState(false);
+
+  async function saveAction() {
+    if (!actForm.title) return;
+    setSavingAct(true);
+    const { data } = await supabase
+      .from('actions')
+      .insert({ ...actForm, company_id: company.id, status: 'active', due_date: actForm.due_date || null })
+      .select()
+      .single();
+    if (data) setActions(prev => [data, ...prev]);
+    setSavingAct(false);
+    setShowActForm(false);
+    setActForm({ title: '', description: '', priority: 'medium', due_date: '' });
+  }
+
+  async function completeAction(id: string) {
+    await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+  }
+
+  /* ── Candidates state ── */
+  const [candidates,    setCandidates]   = useState<any[]>(initCandidates);
+  const [showCandForm,  setShowCandForm] = useState(false);
+  const [candForm,      setCandForm]     = useState({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
+  const [savingCand,    setSavingCand]   = useState(false);
+  const [togglingCand,  setTogglingCand] = useState<string | null>(null);
+
+  async function saveCandidate() {
+    if (!candForm.full_name || !candForm.requisition_id) return;
+    setSavingCand(true);
+    const { data } = await supabase
+      .from('candidates')
+      .insert({ ...candForm, company_id: company.id })
+      .select()
+      .single();
+    if (data) setCandidates(prev => [data, ...prev]);
+    setSavingCand(false);
+    setShowCandForm(false);
+    setCandForm({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
+  }
+
+  async function toggleApproved(id: string, current: boolean) {
+    setTogglingCand(id);
+    await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+    setTogglingCand(null);
+  }
 
   /* ── Roadmap state ── */
   const [milestones, setMilestones]   = useState<any[]>(initMilestones);
@@ -340,9 +411,9 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                         <td>
                           <button
                             className="btn-ghost btn-sm"
-                            onClick={() => alert('Contact The People Office to manage candidates.')}
+                            onClick={() => { setTab('Candidates'); setCandForm(f => ({ ...f, requisition_id: r.id })); setShowCandForm(true); }}
                           >
-                            Upload Candidate
+                            <Plus size={12} /> Add Candidate
                           </button>
                         </td>
                       </tr>
@@ -350,6 +421,147 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── CANDIDATES ───────────────────────────────── */}
+      {tab === 'Candidates' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Candidates ({candidates.length})
+            </h2>
+            <button onClick={() => setShowCandForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Candidate
+            </button>
+          </div>
+
+          {/* Add candidate form */}
+          {showCandForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Full name *</label>
+                  <input className="input" placeholder="Jane Smith" value={candForm.full_name} onChange={e => setCandForm(f => ({ ...f, full_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Role *</label>
+                  <select className="input" value={candForm.requisition_id} onChange={e => setCandForm(f => ({ ...f, requisition_id: e.target.value }))}>
+                    <option value="">Select role…</option>
+                    {reqs.filter((r: any) => !['filled','cancelled'].includes(r.stage)).map((r: any) => (
+                      <option key={r.id} value={r.id}>{r.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <input type="email" className="input" placeholder="jane@example.com" value={candForm.email} onChange={e => setCandForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Phone</label>
+                  <input className="input" placeholder="+44 7700 000000" value={candForm.phone} onChange={e => setCandForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Summary</label>
+                  <textarea className="input h-20 resize-none" placeholder="Brief candidate overview…" value={candForm.summary} onChange={e => setCandForm(f => ({ ...f, summary: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">CV / LinkedIn URL</label>
+                  <input type="url" className="input" placeholder="https://…" value={candForm.cv_url} onChange={e => setCandForm(f => ({ ...f, cv_url: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Recruiter notes</label>
+                  <input className="input" placeholder="Internal notes (not shown to client)" value={candForm.recruiter_notes} onChange={e => setCandForm(f => ({ ...f, recruiter_notes: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={candForm.approved_for_client} onChange={e => setCandForm(f => ({ ...f, approved_for_client: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
+                    <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Share with client immediately</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveCandidate} disabled={savingCand || !candForm.full_name || !candForm.requisition_id} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingCand ? <Loader2 size={12} className="animate-spin" /> : null} Save Candidate
+                </button>
+                <button onClick={() => setShowCandForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Candidate list grouped by role */}
+          {candidates.length === 0 && !showCandForm ? (
+            <div className="card empty-state">No candidates added yet.</div>
+          ) : (
+            <div className="space-y-6">
+              {reqs.map((r: any) => {
+                const rCands = candidates.filter((c: any) => c.requisition_id === r.id);
+                if (rCands.length === 0) return null;
+                return (
+                  <div key={r.id}>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
+                      {r.title} — {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="card overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
+                            {['Name', 'Summary', 'CV', 'Client Status', 'Feedback', 'Share'].map(h => (
+                              <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rCands.map((c: any) => (
+                            <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                                    <User size={13} style={{ color: 'var(--purple)' }} />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-xs" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
+                                    {c.email && <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 max-w-[200px]">
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '—'}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                {c.cv_url ? (
+                                  <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1 w-fit">
+                                    <ExternalLink size={11} /> CV
+                                  </a>
+                                ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
+                                  {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 max-w-[160px]">
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{c.client_feedback ?? '—'}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => toggleApproved(c.id, c.approved_for_client)}
+                                  disabled={togglingCand === c.id}
+                                  className={`text-[11px] font-semibold px-2 py-1 rounded-full transition-all ${c.approved_for_client ? 'btn-secondary' : 'btn-cta'} btn-sm`}
+                                >
+                                  {togglingCand === c.id ? <Loader2 size={10} className="animate-spin" /> : c.approved_for_client ? 'Unshare' : 'Share'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -521,6 +733,101 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                         );
                       })}
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── ACTIONS ──────────────────────────────────── */}
+      {tab === 'Actions' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Client Actions
+            </h2>
+            <button onClick={() => setShowActForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Action
+            </button>
+          </div>
+
+          {/* Add action form */}
+          {showActForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Title *</label>
+                  <input className="input" placeholder="e.g. Review updated employment contract" value={actForm.title} onChange={e => setActForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input h-20 resize-none" placeholder="Context or instructions for the client…" value={actForm.description} onChange={e => setActForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Priority</label>
+                  <select className="input" value={actForm.priority} onChange={e => setActForm(f => ({ ...f, priority: e.target.value }))}>
+                    {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Due date</label>
+                  <input type="date" className="input" value={actForm.due_date} onChange={e => setActForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveAction} disabled={savingAct || !actForm.title} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingAct ? <Loader2 size={12} className="animate-spin" /> : null} Save Action
+                </button>
+                <button onClick={() => setShowActForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Action list */}
+          {actions.length === 0 && !showActForm ? (
+            <div className="card empty-state">No actions created for this client.</div>
+          ) : (
+            <div className="space-y-2">
+              {actions.map((a: any) => {
+                const isDone = a.status === 'complete';
+                return (
+                  <div
+                    key={a.id}
+                    className="card px-4 py-3 flex items-start justify-between gap-4"
+                    style={{ opacity: isDone ? 0.55 : 1 }}
+                  >
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <Bell size={14} className="flex-shrink-0 mt-0.5" style={{ color: isDone ? 'var(--ink-faint)' : 'var(--purple)' }} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium" style={{ color: 'var(--ink)', textDecoration: isDone ? 'line-through' : undefined }}>{a.title}</p>
+                        {a.description && <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={PRIORITY_STYLE[a.priority] ?? PRIORITY_STYLE.low}>
+                            {a.priority}
+                          </span>
+                          {a.due_date && (
+                            <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                              Due {new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {!isDone && (
+                      <button
+                        onClick={() => completeAction(a.id)}
+                        className="flex-shrink-0 btn-secondary btn-sm flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 size={12} /> Complete
+                      </button>
+                    )}
+                    {isDone && (
+                      <span className="flex-shrink-0 text-[11px] font-medium flex items-center gap-1" style={{ color: 'var(--teal)' }}>
+                        <CheckCircle2 size={12} /> Done
+                      </span>
+                    )}
                   </div>
                 );
               })}

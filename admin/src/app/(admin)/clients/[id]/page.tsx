@@ -18,6 +18,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     { data: milestones },
     { data: services },
     { data: tickets },
+    { data: actions },
+    { data: candidates },
   ] = await Promise.all([
     supabase.from('companies').select('*').eq('id', params.id).single(),
     supabase.from('profiles').select('*').eq('company_id', params.id).order('created_at'),
@@ -26,6 +28,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     supabase.from('milestones').select('*').eq('company_id', params.id).order('due_date', { ascending: true }),
     supabase.from('client_services').select('*').eq('company_id', params.id).order('start_date', { ascending: false }),
     supabase.from('tickets').select('id,subject,status,priority').eq('company_id', params.id).neq('status', 'closed'),
+    supabase.from('actions').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
+    supabase.from('candidates').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
   ]);
 
   if (!company) notFound();
@@ -51,6 +55,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           documents={documents ?? []}
           milestones={milestones ?? []}
           services={services ?? []}
+          actions={actions ?? []}
+          candidates={candidates ?? []}
           stats={{ activeRoles, docsCount, ticketCount }}
         />
       </main>
