@@ -5,17 +5,17 @@ import { ArrowRight, Users, Shield, Briefcase } from 'lucide-react';
 const funnels = [
   {
     icon: Users,
-    pill: 'Hiring',
+    pill: 'HIRE',
     pillStyle: 'pill-purple',
-    headline: 'Stop reopening roles.',
-    body: 'Hiring that looks fine on paper keeps breaking down. The Smart Hiring System fixes the root cause, not just the symptoms.',
+    headline: 'Your hiring is broken. We fix it before it costs you.',
+    body: 'Agency fees on repeat. Bad hires. Inconsistent managers. We fix the root cause. Before a role goes live, Friction Lens scores it against the live market so you know exactly where it will struggle.',
     pains: [
       'Roles filled, then vacant again in 6 months',
-      'Agency bills that keep returning',
-      'Candidates dropping off at offer stage',
+      'Agency bills with nothing to show for them',
+      'Candidates dropping off before offer stage',
     ],
-    cta:  { label: 'Get Your Hiring Score',  href: '/tools/hiring-score' },
-    link: { label: 'See the system',          href: '/smart-hiring-system' },
+    cta:  { label: 'Start with a Hiring Audit', href: '/smart-hiring-system' },
+    link: { label: 'See the HIRE packages',     href: '/smart-hiring-system' },
     accent:       'var(--brand-purple)',
     accentBorder: 'rgba(124,58,237,0.22)',
     iconBg:       'rgba(124,58,237,0.09)',
@@ -23,42 +23,42 @@ const funnels = [
     barColor:     'var(--brand-purple)',
   },
   {
-    icon: Shield,
-    pill: 'Compliance',
-    pillStyle: 'pill-blue',
-    headline: 'Close the gaps before they cost you.',
-    body: "Most HR compliance gaps stay hidden until something breaks. PolicySafe™ builds a clean, watertight foundation before that happens.",
-    pains: [
-      "Contracts that haven't been updated in years",
-      'Managers applying different rules',
-      'No structured disciplinary process',
-    ],
-    cta:  { label: 'Run Policy Healthcheck', href: '/tools/policy-healthcheck' },
-    link: { label: 'See PolicySafe™',        href: '/policysafe' },
-    accent:       'var(--brand-blue)',
-    accentBorder: 'rgba(59,111,255,0.22)',
-    iconBg:       'rgba(59,111,255,0.09)',
-    iconColor:    '#3B6FFF',
-    barColor:     'var(--brand-blue)',
-  },
-  {
     icon: Briefcase,
-    pill: 'M&A & Change',
+    pill: 'LEAD',
     pillStyle: 'pill-navy',
-    headline: 'Deals fail on people.',
-    body: "The numbers add up. The people risk never makes it into the spreadsheet. DealReady People™ makes sure it does.",
+    headline: 'No People lead? Get one without the headcount cost.',
+    body: 'Fractional People leadership for businesses that need proper HR thinking at the top without hiring a full-time People Director. Strategy, manager enablement, and people decisions — handled.',
     pains: [
-      'Hidden liabilities only visible post-close',
-      'TUPE mismanaged — tribunal exposure',
-      'Key talent leaving before integration',
+      'No senior HR thinking driving people decisions',
+      'Managers left to figure it out on their own',
+      'People strategy non-existent or stuck in a drawer',
     ],
-    cta:  { label: 'Get DD Checklist',        href: '/tools/due-diligence-checklist' },
-    link: { label: 'See DealReady People™',   href: '/dealready-people' },
+    cta:  { label: 'Explore Lead',          href: '/book' },
+    link: { label: 'See the LEAD packages', href: '/book' },
     accent:       'var(--brand-navy)',
     accentBorder: 'rgba(7,11,32,0.18)',
     iconBg:       'rgba(7,11,32,0.07)',
     iconColor:    'var(--brand-navy)',
     barColor:     'var(--brand-navy)',
+  },
+  {
+    icon: Shield,
+    pill: 'PROTECT',
+    pillStyle: 'pill-blue',
+    headline: 'Get your HR foundations right. Before something goes wrong.',
+    body: 'Missing contracts, outdated handbooks, compliance gaps the Employment Rights Bill will expose. We build the foundations that protect your business — documented, watertight, ready to scale.',
+    pains: [
+      "Contracts that haven't been reviewed in years",
+      'No handbook managers will actually follow',
+      'Compliance exposure you cannot currently see',
+    ],
+    cta:  { label: 'Get a Free HR Audit',      href: '/policysafe' },
+    link: { label: 'See the PROTECT packages', href: '/policysafe' },
+    accent:       'var(--brand-blue)',
+    accentBorder: 'rgba(59,111,255,0.22)',
+    iconBg:       'rgba(59,111,255,0.09)',
+    iconColor:    '#3B6FFF',
+    barColor:     'var(--brand-blue)',
   },
 ];
 
@@ -74,11 +74,11 @@ export default function FunnelCards() {
               className="w-1.5 h-1.5 rounded-full inline-block mr-2"
               style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }}
             />
-            Three systems. One firm.
+            Three pillars. One partner.
           </p>
-          <h2 className="section-title mb-5">Where do you need to start?</h2>
+          <h2 className="section-title mb-5">Where do you need us most?</h2>
           <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-            Each system is built around a specific people challenge. Pick the one that fits your situation right now.
+            Pick the pillar that fits your situation right now. Most clients start with one and expand as the relationship builds.
           </p>
         </div>
 

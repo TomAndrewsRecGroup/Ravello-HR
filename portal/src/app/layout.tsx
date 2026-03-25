@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Ravello Portal', template: '%s | Ravello Portal' },
-  description: 'Your Ravello client workspace — hiring, HR, documents, and support.',
+  title: { default: 'The People Office Portal', template: '%s | The People Office' },
+  description: 'Your People Office client workspace — hiring, HR, documents, and support.',
   robots: { index: false, follow: false },
 };
 

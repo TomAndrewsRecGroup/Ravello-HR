@@ -37,23 +37,23 @@ export default function HotlineSection() {
 
         <h2 className="section-title mb-6">
           Ready to talk about<br />
-          <span className="text-gradient">what is holding you back?</span>
+          <span className="text-gradient">your people function?</span>
         </h2>
 
         <p
           className="text-lg leading-relaxed mb-10 max-w-[500px] mx-auto"
           style={{ color: 'var(--ink-soft)' }}
         >
-          No pitch. No pressure. Just an honest 30-minute conversation about your situation
-          and a clear answer on whether we can help.
+          No pitch. No pressure. Thirty minutes with Lucy and Tom to understand your
+          situation and give you a straight answer on where to start.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link href="/book" className="btn-gradient">
             <CalendarCheck size={16} /> Book a Free Call
           </Link>
-          <Link href="/tools/hiring-score" className="btn-secondary">
-            Try the Hiring Score first <ArrowRight size={14} />
+          <Link href="/smart-hiring-system" className="btn-secondary">
+            Start with HIRE <ArrowRight size={14} />
           </Link>
         </div>
 

@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { ArrowRight, CalendarCheck, CheckCircle2, XCircle, Minus } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Why Ravello HR',
-  description: 'Why ambitious UK businesses choose Ravello HR over traditional agencies, in-house HR and generic consultants.',
+  title: 'Why The People Office | The People Office',
+  description: 'Why ambitious UK businesses choose The People Office over traditional agencies, in-house HR, and generic consultants. One partner. Total control of your people function.',
+  alternates: { canonical: 'https://ravellohr.co.uk/why-ravello' },
 };
 
 const COMPARISON = [
@@ -21,11 +22,11 @@ const COMPARISON = [
 const OBJECTIONS = [
   {
     q: 'We already use a recruitment agency.',
-    a: 'Agencies fill roles. They do not fix why roles keep reopening. The Smart Hiring System addresses the root cause. Most clients reduce their agency spend by 40% or more within a year.',
+    a: 'Agencies fill roles. They do not fix why roles keep reopening. HIRE addresses the root cause — Friction Lens, better role definition, faster process. Most clients reduce their agency spend by 40% or more within a year.',
   },
   {
     q: 'We have an in-house HR person.',
-    a: 'We work alongside them, not over them. Ravello HR brings specialist depth in areas like TUPE, M&A and compliance architecture that most generalist HR professionals do not cover day-to-day.',
+    a: 'We work alongside them, not over them. The People Office brings specialist depth in areas like TUPE, M&A and compliance architecture that most generalist HR professionals do not cover day-to-day.',
   },
   {
     q: 'We\u2019ve used HR consultants before and it didn\u2019t work.',
@@ -33,7 +34,7 @@ const OBJECTIONS = [
   },
   {
     q: 'We can\u2019t afford a consultant right now.',
-    a: 'A single tribunal claim costs an average of \u00a38,500 to \u00a330,000 or more. One bad hire costs three times the annual salary. PolicySafe\u2122 and the Smart Hiring System typically pay for themselves within six months.',
+    a: 'A single tribunal claim costs an average of \u00a38,500 to \u00a330,000 or more. One bad hire costs three times the annual salary. PROTECT and HIRE typically pay for themselves within six months.',
   },
 ];
 
@@ -85,7 +86,7 @@ export default function WhyRavelloPage() {
         <div className="container-narrow section-padding py-0 text-center px-6" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
           <p className="eyebrow justify-center mb-6">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#9B7FF8' }} />
-            Why Ravello HR
+            Why The People Office
           </p>
           <h1
             style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.5rem,5vw,4.2rem)', fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.05, color: 'var(--ink)', marginBottom: '1.25rem' }}
@@ -99,7 +100,7 @@ export default function WhyRavelloPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Not a recruitment agency. Not a retainer consultancy. A named-system HR practice built to fix real problems at the root, not paper over them.
+            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root — across hiring, HR leadership, and compliance.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
@@ -116,7 +117,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               What makes us different
             </p>
-            <h2 className="section-title">Six reasons businesses choose Ravello.</h2>
+            <h2 className="section-title">Six reasons businesses choose The People Office.</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {REASONS.map((r) => (
@@ -139,7 +140,7 @@ export default function WhyRavelloPage() {
               Why not an agency
             </p>
             <h2 className="section-title">How we compare.</h2>
-            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at Ravello HR versus the alternatives.</p>
+            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at The People Office versus the alternatives.</p>
           </div>
 
           <div className="overflow-x-auto rounded-[22px]" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 20px rgba(13,21,53,0.05)' }}>
@@ -147,7 +148,7 @@ export default function WhyRavelloPage() {
               <thead>
                 <tr style={{ background: 'var(--brand-navy)' }}>
                   <th className="text-left px-8 py-5 font-semibold" style={{ color: 'rgba(255,255,255,0.5)', width: '36%' }}>Feature</th>
-                  <th className="text-center px-6 py-5 font-bold text-white" style={{ background: 'rgba(124,92,246,0.25)' }}>Ravello HR</th>
+                  <th className="text-center px-6 py-5 font-bold text-white" style={{ background: 'rgba(124,92,246,0.25)' }}>The People Office</th>
                   <th className="text-center px-6 py-5 font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>Agency</th>
                   <th className="text-center px-6 py-5 font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>In-house HR</th>
                   <th className="text-center px-6 py-5 font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>Generic consultant</th>
@@ -199,11 +200,11 @@ export default function WhyRavelloPage() {
         <div className="relative z-10 container-narrow text-center">
           <h2 className="section-title mb-6">Ready to have an honest conversation?</h2>
           <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Thirty minutes. No pitch. Just a straight conversation about what is holding your business back and what to do about it.
+            Thirty minutes. No pitch. A straight conversation about what is holding your business back and what to do about it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
-            <Link href="/tools/hiring-score" className="btn-secondary">Try Hiring Score first <ArrowRight size={14} /></Link>
+            <Link href="/about" className="btn-secondary">Meet Lucy and Tom <ArrowRight size={14} /></Link>
           </div>
         </div>
       </section>

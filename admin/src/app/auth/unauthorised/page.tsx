@@ -22,8 +22,8 @@ export default function UnauthorisedPage() {
           </div>
           <h1 className="text-2xl font-semibold text-white mb-3">Access Denied</h1>
           <p className="text-[#8b8fa8] text-sm leading-relaxed">
-            You don&apos;t have permission to access the Ravello admin panel. This area is
-            restricted to Ravello staff members only.
+            You don&apos;t have permission to access the People Office admin panel. This area is
+            restricted to People Office staff members only.
           </p>
         </div>
 
@@ -35,15 +35,15 @@ export default function UnauthorisedPage() {
             Sign in with a different account
           </Link>
           <a
-            href="https://ravellohr.co.uk"
+            href="https://thepeopleoffice.co.uk"
             className="block w-full py-2.5 px-4 bg-[#1e2030] hover:bg-[#252840] text-[#c8cad8] text-sm font-medium rounded-lg transition-colors border border-[#2a2d3e]"
           >
-            Return to Ravello
+            Return to The People Office
           </a>
         </div>
 
         <p className="mt-8 text-xs text-[#555870]">
-          If you believe this is an error, contact your Ravello administrator.
+          If you believe this is an error, contact your People Office administrator.
         </p>
       </div>
     </div>

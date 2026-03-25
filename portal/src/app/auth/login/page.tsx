@@ -25,7 +25,7 @@ export default function LoginPage() {
         <div className="flex justify-center mb-8">
           <Image
             src={LOGO}
-            alt="Ravello"
+            alt="The People Office"
             width={140}
             height={48}
             className="h-10 w-auto object-contain brightness-110"
@@ -44,15 +44,15 @@ export default function LoginPage() {
         >
           <h1 className="font-display font-bold text-xl text-white mb-1">Welcome back</h1>
           <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Sign in to your Ravello portal
+            Sign in to your portal
           </p>
           <LoginForm />
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Need access?{' '}
-          <a href="mailto:hello@ravellohr.co.uk" className="underline" style={{ color: 'rgba(147,184,255,0.7)' }}>
-            Contact Ravello
+          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: 'rgba(147,184,255,0.7)' }}>
+            Contact us
           </a>
         </p>
       </div>

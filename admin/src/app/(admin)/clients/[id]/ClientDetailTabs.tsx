@@ -1,0 +1,1067 @@
+'use client';
+import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
+import InviteUserPanel from '@/components/modules/InviteUserPanel';
+
+/* ─── Helpers ─────────────────────────────────────── */
+
+const FLAG_LABELS: Record<string, string> = {
+  hiring:     'Hiring Module',
+  documents:  'Document Management',
+  reports:    'Reports',
+  support:    'HR Support Requests',
+  metrics:    'Metrics Dashboard',
+  compliance: 'Compliance Tracking',
+};
+
+const STAGE_BADGE: Record<string, string> = {
+  submitted:       'badge-submitted',
+  in_progress:     'badge-inprogress',
+  shortlist_ready: 'badge-shortlist',
+  interview:       'badge-interview',
+  offer:           'badge-offer',
+  filled:          'badge-filled',
+  cancelled:       'badge-cancelled',
+};
+
+function frictionBadgeStyle(level: string): React.CSSProperties {
+  switch (level) {
+    case 'Low':      return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
+    case 'Medium':   return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
+    case 'High':     return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
+    case 'Critical': return { background: 'rgba(127,17,17,0.14)',  color: '#7F1111' };
+    default:         return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+  }
+}
+
+function daysOpen(createdAt: string): number {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+}
+
+function fmtBytes(bytes: number | null): string {
+  if (!bytes) return '—';
+  if (bytes < 1024)       return `${bytes} B`;
+  if (bytes < 1048576)    return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
+/* ─── Sub-components ─────────────────────────────── */
+
+function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Record<string, boolean> }) {
+  const supabase = createClient();
+  const [localFlags, setLocalFlags] = useState<Record<string, boolean>>(flags);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  async function toggle(key: string) {
+    const newVal = !localFlags[key];
+    setSaving(key);
+    setLocalFlags(prev => ({ ...prev, [key]: newVal }));
+    await supabase
+      .from('companies')
+      .update({ feature_flags: { ...localFlags, [key]: newVal } })
+      .eq('id', companyId);
+    setSaving(null);
+  }
+
+  return (
+    <div className="space-y-3">
+      {Object.keys(FLAG_LABELS).map((key) => {
+        const on = !!localFlags[key];
+        return (
+          <div key={key} className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{FLAG_LABELS[key]}</p>
+              <span className={`badge mt-0.5 ${on ? 'badge-on' : 'badge-off'}`}>{on ? 'On' : 'Off'}</span>
+            </div>
+            <button
+              onClick={() => toggle(key)}
+              disabled={saving === key}
+              aria-label={`Toggle ${FLAG_LABELS[key]}`}
+            >
+              {saving === key ? (
+                <Loader2 size={16} className="animate-spin" style={{ color: 'var(--purple)' }} />
+              ) : (
+                <div className={`toggle ${on ? 'toggle-on' : 'toggle-off'}`}>
+                  <div className={`toggle-knob ${on ? 'toggle-knob-on' : 'toggle-knob-off'}`} />
+                </div>
+              )}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
+  const supabase = createClient();
+  const router   = useRouter();
+  const [active,  setActive]  = useState(currentActive);
+  const [loading, setLoading] = useState(false);
+
+  async function toggle() {
+    setLoading(true);
+    const newVal = !active;
+    await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
+    setActive(newVal);
+    setLoading(false);
+    router.refresh();
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={loading}
+      className={`badge ${active ? 'badge-active' : 'badge-inactive'} cursor-pointer hover:opacity-80 transition-opacity`}
+    >
+      {loading ? '…' : active ? 'Active' : 'Inactive'}
+    </button>
+  );
+}
+
+/* ─── Main tabs component ────────────────────────── */
+
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'Services'] as const;
+type Tab = typeof TABS[number];
+
+const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
+const PILLARS  = ['HIRE', 'LEAD', 'PROTECT'];
+const OWNERS   = ['Lucy', 'Tom'];
+const MS_STATUSES = ['Not Started', 'In Progress', 'Complete', 'Blocked'];
+
+const PRIORITIES = ['high', 'medium', 'low'] as const;
+const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
+
+const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'data_protection', 'employment_law', 'other'];
+const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
+
+const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },
+  in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
+  complete:  { background: 'rgba(22,163,74,0.12)',   color: '#166534' },
+  overdue:   { background: 'rgba(220,38,38,0.12)',   color: '#991B1B' },
+};
+
+const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
+  high:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
+  medium: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  low:    { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+};
+
+const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
+  pending:        { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+};
+
+interface Props {
+  company: any;
+  users: any[];
+  reqs: any[];
+  documents: any[];
+  milestones: any[];
+  services: any[];
+  actions: any[];
+  candidates: any[];
+  compliance: any[];
+  stats: { activeRoles: number; docsCount: number; ticketCount: number };
+}
+
+export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, compliance: initCompliance, stats }: Props) {
+  const supabase = createClient();
+  const router   = useRouter();
+  const [tab, setTab] = useState<Tab>('Overview');
+
+  /* ── Actions state ── */
+  const [actions,      setActions]      = useState<any[]>(initActions);
+  const [showActForm,  setShowActForm]  = useState(false);
+  const [actForm,      setActForm]      = useState({ title: '', description: '', priority: 'medium', due_date: '' });
+  const [savingAct,    setSavingAct]    = useState(false);
+
+  async function saveAction() {
+    if (!actForm.title) return;
+    setSavingAct(true);
+    const { data } = await supabase
+      .from('actions')
+      .insert({ ...actForm, company_id: company.id, status: 'active', due_date: actForm.due_date || null })
+      .select()
+      .single();
+    if (data) setActions(prev => [data, ...prev]);
+    setSavingAct(false);
+    setShowActForm(false);
+    setActForm({ title: '', description: '', priority: 'medium', due_date: '' });
+  }
+
+  async function completeAction(id: string) {
+    await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+  }
+
+  /* ── Candidates state ── */
+  const [candidates,    setCandidates]   = useState<any[]>(initCandidates);
+  const [showCandForm,  setShowCandForm] = useState(false);
+  const [candForm,      setCandForm]     = useState({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
+  const [savingCand,    setSavingCand]   = useState(false);
+  const [togglingCand,  setTogglingCand] = useState<string | null>(null);
+
+  async function saveCandidate() {
+    if (!candForm.full_name || !candForm.requisition_id) return;
+    setSavingCand(true);
+    const { data } = await supabase
+      .from('candidates')
+      .insert({ ...candForm, company_id: company.id })
+      .select()
+      .single();
+    if (data) setCandidates(prev => [data, ...prev]);
+    setSavingCand(false);
+    setShowCandForm(false);
+    setCandForm({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
+  }
+
+  async function toggleApproved(id: string, current: boolean) {
+    setTogglingCand(id);
+    await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+    setTogglingCand(null);
+  }
+
+  /* ── Compliance state ── */
+  const [compliance,    setCompliance]   = useState<any[]>(initCompliance);
+  const [showCompForm,  setShowCompForm] = useState(false);
+  const [compForm,      setCompForm]     = useState({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+  const [savingComp,    setSavingComp]   = useState(false);
+
+  async function saveCompliance() {
+    if (!compForm.title || !compForm.due_date) return;
+    setSavingComp(true);
+    const { data } = await supabase
+      .from('compliance_items')
+      .insert({ ...compForm, company_id: company.id })
+      .select()
+      .single();
+    if (data) setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+    setSavingComp(false);
+    setShowCompForm(false);
+    setCompForm({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+  }
+
+  async function updateComplianceStatus(id: string, status: string) {
+    await supabase.from('compliance_items').update({ status }).eq('id', id);
+    setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+  }
+
+  /* ── Roadmap state ── */
+  const [milestones, setMilestones]   = useState<any[]>(initMilestones);
+  const [showMSForm,  setShowMSForm]  = useState(false);
+  const [msForm,      setMSForm]      = useState({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
+  const [savingMS,    setSavingMS]    = useState(false);
+
+  /* ── Services state ── */
+  const [services,      setServices]      = useState<any[]>(initServices);
+  const [showSvcForm,   setShowSvcForm]   = useState(false);
+  const [svcForm,       setSvcForm]       = useState({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
+  const [savingSvc,     setSavingSvc]     = useState(false);
+
+  /* ── Doc approve ── */
+  const [approvingDoc,  setApprovingDoc]  = useState<string | null>(null);
+  const [approvedDocs,  setApprovedDocs]  = useState<Record<string, boolean>>({});
+
+  async function approveDoc(docId: string) {
+    setApprovingDoc(docId);
+    await supabase
+      .from('documents')
+      .update({ approved_at: new Date().toISOString() })
+      .eq('id', docId);
+    setApprovedDocs(prev => ({ ...prev, [docId]: true }));
+    setApprovingDoc(null);
+  }
+
+  async function saveMilestone() {
+    if (!msForm.title) return;
+    setSavingMS(true);
+    const { data } = await supabase
+      .from('milestones')
+      .insert({ ...msForm, company_id: company.id })
+      .select()
+      .single();
+    if (data) setMilestones(prev => [...prev, data]);
+    setSavingMS(false);
+    setShowMSForm(false);
+    setMSForm({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
+  }
+
+  async function updateMilestoneStatus(id: string, status: string) {
+    await supabase.from('milestones').update({ status }).eq('id', id);
+    setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+  }
+
+  async function saveService() {
+    if (!svcForm.service_name) return;
+    setSavingSvc(true);
+    const { data } = await supabase
+      .from('client_services')
+      .insert({ ...svcForm, company_id: company.id, monthly_fee: svcForm.monthly_fee ? parseFloat(svcForm.monthly_fee) : null })
+      .select()
+      .single();
+    if (data) setServices(prev => [data, ...prev]);
+    setSavingSvc(false);
+    setShowSvcForm(false);
+    setSvcForm({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
+  }
+
+  return (
+    <div>
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: 'var(--line)' }}>
+        {TABS.map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className="px-4 py-2.5 text-sm font-semibold transition-all duration-150 relative"
+            style={{
+              color: tab === t ? 'var(--purple)' : 'var(--ink-soft)',
+              borderBottom: tab === t ? '2px solid var(--purple)' : '2px solid transparent',
+              marginBottom: '-1px',
+              fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── OVERVIEW ─────────────────────────────────── */}
+      {tab === 'Overview' && (
+        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+          <div className="space-y-6">
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Active Roles',   value: stats.activeRoles },
+                { label: 'Documents',      value: stats.docsCount },
+                { label: 'Open Tickets',   value: stats.ticketCount },
+              ].map(s => (
+                <div key={s.label} className="stat-card">
+                  <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
+                  <p className="font-display font-bold text-3xl mt-1" style={{ color: 'var(--ink)' }}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Company details */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Company Details</h2>
+                <ClientStatusToggle companyId={company.id} currentActive={company.active} />
+              </div>
+              <dl className="grid sm:grid-cols-2 gap-4">
+                {[
+                  ['Contact email', company.contact_email],
+                  ['Sector',        company.sector],
+                  ['Size',          company.size_band],
+                  ['Created',       new Date(company.created_at).toLocaleDateString('en-GB')],
+                ].map(([l, v]) => (
+                  <div key={l as string}>
+                    <dt className="text-xs" style={{ color: 'var(--ink-faint)' }}>{l}</dt>
+                    <dd className="text-sm font-medium mt-0.5" style={{ color: v ? 'var(--ink)' : 'var(--ink-faint)' }}>{v || '—'}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {/* Users */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Users ({users.length})</h2>
+                <InviteUserPanel companyId={company.id} />
+              </div>
+              {users.length === 0 ? (
+                <p className="text-sm mb-4" style={{ color: 'var(--ink-faint)' }}>No users assigned yet.</p>
+              ) : (
+                <div className="table-wrapper mb-4">
+                  <table className="table">
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+                    <tbody>
+                      {users.map((u: any) => (
+                        <tr key={u.id}>
+                          <td className="font-medium">{u.full_name ?? '—'}</td>
+                          <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
+                          <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{u.role?.replace(/_/g,' ')}</span></td>
+                          <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Feature flags sidebar */}
+          <div className="card p-6 h-fit">
+            <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Feature Flags</h2>
+            <FeatureFlagToggles companyId={company.id} flags={company.feature_flags ?? {}} />
+          </div>
+        </div>
+      )}
+
+      {/* ─── ROLES ────────────────────────────────────── */}
+      {tab === 'Roles' && (
+        <div>
+          {reqs.length === 0 ? (
+            <div className="card empty-state">No roles for this client.</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Role Title</th>
+                    <th>Stage</th>
+                    <th>Friction</th>
+                    <th>Days Open</th>
+                    <th>Portal Link</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reqs.map((r: any) => {
+                    const days     = daysOpen(r.created_at);
+                    const friction = r.friction_level ?? 'Unknown';
+                    return (
+                      <tr key={r.id}>
+                        <td className="font-medium">
+                          <a href={`/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--purple)' }}>{r.title}</a>
+                        </td>
+                        <td>
+                          <span className={`badge ${STAGE_BADGE[r.stage] ?? 'badge-normal'}`}>
+                            {r.stage?.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="badge" style={frictionBadgeStyle(friction)}>{friction}</span>
+                        </td>
+                        <td style={{ color: days >= 30 ? '#B02020' : 'var(--ink-soft)' }}>{days}d</td>
+                        <td>
+                          <span className="text-xs font-mono" style={{ color: 'var(--ink-faint)' }}>
+                            /hiring/{r.id}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-ghost btn-sm"
+                            onClick={() => { setTab('Candidates'); setCandForm(f => ({ ...f, requisition_id: r.id })); setShowCandForm(true); }}
+                          >
+                            <Plus size={12} /> Add Candidate
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── CANDIDATES ───────────────────────────────── */}
+      {tab === 'Candidates' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Candidates ({candidates.length})
+            </h2>
+            <button onClick={() => setShowCandForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Candidate
+            </button>
+          </div>
+
+          {/* Add candidate form */}
+          {showCandForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Full name *</label>
+                  <input className="input" placeholder="Jane Smith" value={candForm.full_name} onChange={e => setCandForm(f => ({ ...f, full_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Role *</label>
+                  <select className="input" value={candForm.requisition_id} onChange={e => setCandForm(f => ({ ...f, requisition_id: e.target.value }))}>
+                    <option value="">Select role…</option>
+                    {reqs.filter((r: any) => !['filled','cancelled'].includes(r.stage)).map((r: any) => (
+                      <option key={r.id} value={r.id}>{r.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Email</label>
+                  <input type="email" className="input" placeholder="jane@example.com" value={candForm.email} onChange={e => setCandForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Phone</label>
+                  <input className="input" placeholder="+44 7700 000000" value={candForm.phone} onChange={e => setCandForm(f => ({ ...f, phone: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Summary</label>
+                  <textarea className="input h-20 resize-none" placeholder="Brief candidate overview…" value={candForm.summary} onChange={e => setCandForm(f => ({ ...f, summary: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">CV / LinkedIn URL</label>
+                  <input type="url" className="input" placeholder="https://…" value={candForm.cv_url} onChange={e => setCandForm(f => ({ ...f, cv_url: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Recruiter notes</label>
+                  <input className="input" placeholder="Internal notes (not shown to client)" value={candForm.recruiter_notes} onChange={e => setCandForm(f => ({ ...f, recruiter_notes: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={candForm.approved_for_client} onChange={e => setCandForm(f => ({ ...f, approved_for_client: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
+                    <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Share with client immediately</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveCandidate} disabled={savingCand || !candForm.full_name || !candForm.requisition_id} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingCand ? <Loader2 size={12} className="animate-spin" /> : null} Save Candidate
+                </button>
+                <button onClick={() => setShowCandForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Candidate list grouped by role */}
+          {candidates.length === 0 && !showCandForm ? (
+            <div className="card empty-state">No candidates added yet.</div>
+          ) : (
+            <div className="space-y-6">
+              {reqs.map((r: any) => {
+                const rCands = candidates.filter((c: any) => c.requisition_id === r.id);
+                if (rCands.length === 0) return null;
+                return (
+                  <div key={r.id}>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
+                      {r.title} — {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="card overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
+                            {['Name', 'Summary', 'CV', 'Client Status', 'Feedback', 'Share'].map(h => (
+                              <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rCands.map((c: any) => (
+                            <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                                    <User size={13} style={{ color: 'var(--purple)' }} />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-xs" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
+                                    {c.email && <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 max-w-[200px]">
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '—'}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                {c.cv_url ? (
+                                  <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1 w-fit">
+                                    <ExternalLink size={11} /> CV
+                                  </a>
+                                ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
+                                  {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 max-w-[160px]">
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{c.client_feedback ?? '—'}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => toggleApproved(c.id, c.approved_for_client)}
+                                  disabled={togglingCand === c.id}
+                                  className={`text-[11px] font-semibold px-2 py-1 rounded-full transition-all ${c.approved_for_client ? 'btn-secondary' : 'btn-cta'} btn-sm`}
+                                >
+                                  {togglingCand === c.id ? <Loader2 size={10} className="animate-spin" /> : c.approved_for_client ? 'Unshare' : 'Share'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── DOCUMENTS ────────────────────────────────── */}
+      {tab === 'Documents' && (
+        <div>
+          {documents.length === 0 ? (
+            <div className="card empty-state">No documents uploaded for this client.</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Version</th>
+                    <th>Size</th>
+                    <th>Uploaded</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((d: any) => {
+                    const isApproved = approvedDocs[d.id] || !!d.approved_at;
+                    return (
+                      <tr key={d.id}>
+                        <td className="font-medium">{d.name ?? d.file_name ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{d.category ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-faint)' }}>{d.version ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-faint)' }}>{fmtBytes(d.file_size)}</td>
+                        <td style={{ color: 'var(--ink-faint)' }}>{new Date(d.created_at).toLocaleDateString('en-GB')}</td>
+                        <td>
+                          <span className={`badge ${isApproved ? 'badge-active' : 'badge-normal'}`}>
+                            {isApproved ? 'Approved' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            {d.file_url && (
+                              <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1">
+                                <Download size={12} /> Download
+                              </a>
+                            )}
+                            {!isApproved && (
+                              <button
+                                onClick={() => approveDoc(d.id)}
+                                disabled={approvingDoc === d.id}
+                                className="btn-cta btn-sm flex items-center gap-1"
+                              >
+                                {approvingDoc === d.id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                Approve
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── ROADMAP ──────────────────────────────────── */}
+      {tab === 'Roadmap' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Milestones</h2>
+            <button onClick={() => setShowMSForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Milestone
+            </button>
+          </div>
+
+          {/* Add milestone form */}
+          {showMSForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Pillar</label>
+                  <select className="input" value={msForm.pillar} onChange={e => setMSForm(f => ({ ...f, pillar: e.target.value }))}>
+                    {PILLARS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Quarter</label>
+                  <select className="input" value={msForm.quarter} onChange={e => setMSForm(f => ({ ...f, quarter: e.target.value }))}>
+                    {QUARTERS.map(q => <option key={q}>{q}</option>)}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Title</label>
+                  <input className="input" placeholder="Milestone title" value={msForm.title} onChange={e => setMSForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input h-20 resize-none" placeholder="Description…" value={msForm.description} onChange={e => setMSForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Owner</label>
+                  <select className="input" value={msForm.owner} onChange={e => setMSForm(f => ({ ...f, owner: e.target.value }))}>
+                    {OWNERS.map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Due Date</label>
+                  <input type="date" className="input" value={msForm.due_date} onChange={e => setMSForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Status</label>
+                  <select className="input" value={msForm.status} onChange={e => setMSForm(f => ({ ...f, status: e.target.value }))}>
+                    {MS_STATUSES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveMilestone} disabled={savingMS || !msForm.title} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingMS ? <Loader2 size={12} className="animate-spin" /> : null} Save Milestone
+                </button>
+                <button onClick={() => setShowMSForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Quarterly view — three columns per quarter */}
+          {milestones.length === 0 ? (
+            <div className="card empty-state">No milestones yet. Add the first one above.</div>
+          ) : (
+            <div className="space-y-8">
+              {[...new Set(milestones.map((m: any) => m.quarter).filter(Boolean))].map((quarter: any) => {
+                const qMs = milestones.filter((m: any) => m.quarter === quarter);
+                return (
+                  <div key={quarter}>
+                    <h3 className="font-display font-bold text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--purple)' }}>{quarter}</h3>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {PILLARS.map(pillar => {
+                        const pMs = qMs.filter((m: any) => m.pillar === pillar);
+                        return (
+                          <div key={pillar} className="card p-4">
+                            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>{pillar}</p>
+                            {pMs.length === 0 ? (
+                              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No milestones</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {pMs.map((m: any) => (
+                                  <div key={m.id} className="p-3 rounded-[8px]" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                                    <p className="text-sm font-semibold mb-1" style={{ color: 'var(--ink)' }}>{m.title}</p>
+                                    {m.description && <p className="text-xs mb-2" style={{ color: 'var(--ink-soft)' }}>{m.description}</p>}
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{m.owner} {m.due_date ? `· ${new Date(m.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}</span>
+                                      <select
+                                        className="text-xs rounded-[6px] px-2 py-1 border"
+                                        style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
+                                        value={m.status ?? 'Not Started'}
+                                        onChange={e => updateMilestoneStatus(m.id, e.target.value)}
+                                      >
+                                        {MS_STATUSES.map(s => <option key={s}>{s}</option>)}
+                                      </select>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── ACTIONS ──────────────────────────────────── */}
+      {tab === 'Actions' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Client Actions
+            </h2>
+            <button onClick={() => setShowActForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Action
+            </button>
+          </div>
+
+          {/* Add action form */}
+          {showActForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Title *</label>
+                  <input className="input" placeholder="e.g. Review updated employment contract" value={actForm.title} onChange={e => setActForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input h-20 resize-none" placeholder="Context or instructions for the client…" value={actForm.description} onChange={e => setActForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Priority</label>
+                  <select className="input" value={actForm.priority} onChange={e => setActForm(f => ({ ...f, priority: e.target.value }))}>
+                    {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Due date</label>
+                  <input type="date" className="input" value={actForm.due_date} onChange={e => setActForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveAction} disabled={savingAct || !actForm.title} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingAct ? <Loader2 size={12} className="animate-spin" /> : null} Save Action
+                </button>
+                <button onClick={() => setShowActForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Action list */}
+          {actions.length === 0 && !showActForm ? (
+            <div className="card empty-state">No actions created for this client.</div>
+          ) : (
+            <div className="space-y-2">
+              {actions.map((a: any) => {
+                const isDone = a.status === 'complete';
+                return (
+                  <div
+                    key={a.id}
+                    className="card px-4 py-3 flex items-start justify-between gap-4"
+                    style={{ opacity: isDone ? 0.55 : 1 }}
+                  >
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <Bell size={14} className="flex-shrink-0 mt-0.5" style={{ color: isDone ? 'var(--ink-faint)' : 'var(--purple)' }} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium" style={{ color: 'var(--ink)', textDecoration: isDone ? 'line-through' : undefined }}>{a.title}</p>
+                        {a.description && <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={PRIORITY_STYLE[a.priority] ?? PRIORITY_STYLE.low}>
+                            {a.priority}
+                          </span>
+                          {a.due_date && (
+                            <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                              Due {new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {!isDone && (
+                      <button
+                        onClick={() => completeAction(a.id)}
+                        className="flex-shrink-0 btn-secondary btn-sm flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 size={12} /> Complete
+                      </button>
+                    )}
+                    {isDone && (
+                      <span className="flex-shrink-0 text-[11px] font-medium flex items-center gap-1" style={{ color: 'var(--teal)' }}>
+                        <CheckCircle2 size={12} /> Done
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── COMPLIANCE ───────────────────────────────── */}
+      {tab === 'Compliance' && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+              Compliance Items ({compliance.length})
+            </h2>
+            <button onClick={() => setShowCompForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Item
+            </button>
+          </div>
+
+          {/* Add compliance form */}
+          {showCompForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Title *</label>
+                  <input className="input" placeholder="e.g. Renew employer liability insurance" value={compForm.title} onChange={e => setCompForm(f => ({ ...f, title: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input h-16 resize-none" placeholder="Additional context…" value={compForm.description} onChange={e => setCompForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Category</label>
+                  <select className="input" value={compForm.category} onChange={e => setCompForm(f => ({ ...f, category: e.target.value }))}>
+                    {COMP_CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Due Date *</label>
+                  <input type="date" className="input" value={compForm.due_date} onChange={e => setCompForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Initial Status</label>
+                  <select className="input" value={compForm.status} onChange={e => setCompForm(f => ({ ...f, status: e.target.value }))}>
+                    {COMP_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveCompliance} disabled={savingComp || !compForm.title || !compForm.due_date} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingComp ? <Loader2 size={12} className="animate-spin" /> : null} Save Item
+                </button>
+                <button onClick={() => setShowCompForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Compliance list */}
+          {compliance.length === 0 && !showCompForm ? (
+            <div className="card empty-state">No compliance items for this client.</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compliance.map((ci: any) => {
+                    const isOverdue = ci.status !== 'complete' && new Date(ci.due_date) < new Date();
+                    return (
+                      <tr key={ci.id}>
+                        <td>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{ci.title}</p>
+                          {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{ci.category?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: isOverdue ? '#991B1B' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
+                          {new Date(ci.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {isOverdue && <span className="ml-1 text-[10px]">OVERDUE</span>}
+                        </td>
+                        <td>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={COMP_STATUS_STYLE[ci.status] ?? COMP_STATUS_STYLE.pending}>
+                            {ci.status?.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            className="text-xs rounded-[6px] px-2 py-1 border"
+                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
+                            value={ci.status ?? 'pending'}
+                            onChange={e => updateComplianceStatus(ci.id, e.target.value)}
+                          >
+                            {COMP_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── SERVICES ─────────────────────────────────── */}
+      {tab === 'Services' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Active Services</h2>
+            <button onClick={() => setShowSvcForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={13} /> Add Service
+            </button>
+          </div>
+
+          {/* Add service form */}
+          {showSvcForm && (
+            <div className="card p-5 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Service Name</label>
+                  <input className="input" placeholder="e.g. HIRE Foundations" value={svcForm.service_name} onChange={e => setSvcForm(f => ({ ...f, service_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Tier</label>
+                  <input className="input" placeholder="e.g. Standard" value={svcForm.service_tier} onChange={e => setSvcForm(f => ({ ...f, service_tier: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Start Date</label>
+                  <input type="date" className="input" value={svcForm.start_date} onChange={e => setSvcForm(f => ({ ...f, start_date: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Monthly Fee (£)</label>
+                  <input type="number" className="input" placeholder="0.00" value={svcForm.monthly_fee} onChange={e => setSvcForm(f => ({ ...f, monthly_fee: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Status</label>
+                  <select className="input" value={svcForm.status} onChange={e => setSvcForm(f => ({ ...f, status: e.target.value }))}>
+                    {['Active', 'Paused', 'Cancelled'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={saveService} disabled={savingSvc || !svcForm.service_name} className="btn-cta btn-sm flex items-center gap-1.5">
+                  {savingSvc ? <Loader2 size={12} className="animate-spin" /> : null} Save Service
+                </button>
+                <button onClick={() => setShowSvcForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {services.length === 0 ? (
+            <div className="card empty-state">No services configured for this client.</div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Tier</th>
+                    <th>Start Date</th>
+                    <th>Status</th>
+                    <th>Monthly Fee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((s: any) => (
+                    <tr key={s.id}>
+                      <td className="font-medium">{s.service_name}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.service_tier ?? '—'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.start_date ? new Date(s.start_date).toLocaleDateString('en-GB') : '—'}</td>
+                      <td>
+                        <span className={`badge ${s.status === 'Active' ? 'badge-active' : s.status === 'Paused' ? 'badge-high' : 'badge-inactive'}`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.monthly_fee != null ? `£${Number(s.monthly_fee).toLocaleString()}` : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Ravello Admin', template: '%s | Ravello Admin' },
-  description: 'Internal Ravello administration panel.',
+  title: { default: 'The People Office Admin', template: '%s | TPO Admin' },
+  description: 'Internal People Office administration panel.',
   robots: { index: false, follow: false },
 };
 

@@ -43,7 +43,7 @@ export default async function SupportPage() {
               <LifeBuoy size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No support tickets</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Raise a query and Ravello will respond within one business day.
+                Raise a query and The People Office will respond within one business day.
               </p>
               <Link href="/support/new" className="btn-cta mt-2">Raise a Query</Link>
             </div>

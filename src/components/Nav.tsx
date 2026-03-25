@@ -7,9 +7,10 @@ import { Menu, X, ChevronDown, CalendarCheck, LogIn } from 'lucide-react';
 const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const solutions = [
-  { href: '/smart-hiring-system', label: 'Smart Hiring System™', sub: 'Fix hiring drift',   dot: 'var(--brand-purple)' },
-  { href: '/policysafe',          label: 'PolicySafe™',           sub: 'Compliance & docs', dot: 'var(--brand-blue)' },
-  { href: '/dealready-people',    label: 'DealReady People™',     sub: 'M&A & restructure', dot: 'var(--brand-pink)' },
+  { href: '/hire',          label: 'HIRE',          sub: 'Recruitment & talent delivery', dot: 'var(--brand-purple)' },
+  { href: '/lead',          label: 'LEAD',          sub: 'Fractional HR leadership',      dot: '#2E8B7A'             },
+  { href: '/protect',       label: 'PROTECT',       sub: 'HR foundations & compliance',   dot: 'var(--brand-blue)'   },
+  { href: '/friction-lens', label: 'Friction Lens', sub: 'Role scoring before you recruit', dot: 'var(--brand-pink)' },
 ];
 const tools = [
   { href: '/tools/hiring-score',            label: 'Smart Hiring Score' },
@@ -51,7 +52,7 @@ export default function Nav() {
           <Link href="/" className="flex items-center flex-shrink-0 focus-ring">
             <Image
               src={LOGO_MARK}
-              alt="Ravello HR"
+              alt="The People Office"
               width={58}
               height={58}
               className="h-[52px] w-auto object-contain"
@@ -143,7 +144,7 @@ export default function Nav() {
             </div>
 
             <Link href="/playbook"    className="btn-ghost">Playbook</Link>
-            <Link href="/why-ravello" className="btn-ghost">Why Ravello</Link>
+            <Link href="/why-ravello" className="btn-ghost">Why TPO</Link>
             <Link href="/about"       className="btn-ghost">About</Link>
 
             {/* Divider */}
@@ -165,7 +166,7 @@ export default function Nav() {
 
             {/* Primary CTA */}
             <Link href="/book" className="btn-gradient">
-              <CalendarCheck size={15} /> Book Free Call
+              <CalendarCheck size={15} /> Get Started
             </Link>
           </div>
 
@@ -230,7 +231,7 @@ export default function Nav() {
             ))}
             <div className="my-3 brand-divider" />
             <Link href="/playbook"    className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Playbook</Link>
-            <Link href="/why-ravello" className="block px-3 py-2.5 rounded-xl text-sm font-semibold" style={{ color: 'var(--brand-purple)' }} onClick={() => setOpen(false)}>Why Ravello</Link>
+            <Link href="/why-ravello" className="block px-3 py-2.5 rounded-xl text-sm font-semibold" style={{ color: 'var(--brand-purple)' }} onClick={() => setOpen(false)}>Why TPO</Link>
             <Link href="/about"       className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />
             <a
@@ -245,7 +246,7 @@ export default function Nav() {
             </a>
             <div className="pt-4">
               <Link href="/book" className="btn-gradient w-full" onClick={() => setOpen(false)}>
-                <CalendarCheck size={15} /> Book Free Call
+                <CalendarCheck size={15} /> Get Started
               </Link>
             </div>
           </div>

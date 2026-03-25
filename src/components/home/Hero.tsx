@@ -6,17 +6,17 @@ import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
 
 const BARS = [
-  { label: 'Role brief quality',    val: 20, pct: '20%',  color: '#D94444' },
-  { label: 'Interview consistency', val: 45, pct: '45%',  color: '#E8954A' },
-  { label: 'Decision speed',        val: 55, pct: '55%',  color: '#E8B84A' },
-  { label: 'Offer management',      val: 72, pct: '72%',  color: '#5A9E6F' },
-  { label: 'Retention signals',     val: 18, pct: '18%',  color: '#D94444' },
+  { label: 'Location',      val: 78, pct: '78%',  color: '#D94444' },
+  { label: 'Salary',        val: 62, pct: '62%',  color: '#E8954A' },
+  { label: 'Skills',        val: 45, pct: '45%',  color: '#E8B84A' },
+  { label: 'Working Model', val: 80, pct: '80%',  color: '#D94444' },
+  { label: 'Process',       val: 22, pct: '22%',  color: '#5A9E6F' },
 ];
 
 const STATS = [
-  { val: '10+',  lab: 'Years of senior HR expertise',  gold: true },
-  { val: '40%+', lab: 'Average agency cost reduction', gold: false },
-  { val: '0',    lab: 'Tribunal outcomes on record',   gold: true },
+  { val: '18+', lab: 'Years of senior HR and People leadership', gold: true },
+  { val: '10+', lab: 'Years in Talent and Recruitment',          gold: false },
+  { val: '0',   lab: 'Tribunal outcomes on record',              gold: true },
 ];
 
 export default function Hero() {
@@ -48,7 +48,7 @@ export default function Hero() {
             <div className="mb-8">
               <Image
                 src={LOGO_FULL}
-                alt="Ravello HR"
+                alt="The People Office"
                 width={700}
                 height={320}
                 className="object-contain w-auto"
@@ -56,6 +56,13 @@ export default function Hero() {
                 priority
               />
             </div>
+
+            <p
+              className="text-[11px] font-bold uppercase tracking-[0.18em] mb-6"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              Hire. Lead. Protect.
+            </p>
 
             <h1
               style={{
@@ -68,7 +75,7 @@ export default function Hero() {
                 marginBottom: '1.5rem',
               }}
             >
-              Your people problems<br />
+              We hire your people.<br />
               <span
                 style={{
                   fontWeight: 600,
@@ -78,10 +85,10 @@ export default function Hero() {
                   backgroundClip: 'text',
                 }}
               >
-                cost more
+                We lead your function.
               </span>{' '}
               <em style={{ fontStyle: 'italic', fontWeight: 300, WebkitTextFillColor: 'var(--ink)' }}>
-                than you think.
+                We protect your business.
               </em>
             </h1>
 
@@ -89,14 +96,14 @@ export default function Hero() {
               className="text-base leading-relaxed mb-2 max-w-[500px] font-medium"
               style={{ color: 'var(--ink-soft)' }}
             >
-              Three proven systems. One dedicated expert. Outcomes you can measure.
+              One partner. Total control of your people function.
             </p>
             <p
               className="text-sm leading-relaxed mb-10 max-w-[480px]"
               style={{ color: 'var(--ink-faint)' }}
             >
-              Ravello HR permanently solves the hiring, compliance and people transformation
-              challenges holding ambitious UK businesses back.
+              Lucy leads on HR, compliance, and people strategy. Tom leads on talent and recruitment.
+              Together: The People Office.
             </p>
 
             {/* CTAs */}
@@ -104,8 +111,8 @@ export default function Hero() {
               <Link href="/book" className="btn-gradient">
                 <CalendarCheck size={16} /> Book a Free Call
               </Link>
-              <Link href="/tools/hiring-score" className="btn-outline-white">
-                Get Your Hiring Score <ArrowRight size={15} />
+              <Link href="/smart-hiring-system" className="btn-outline-white">
+                See how HIRE works <ArrowRight size={15} />
               </Link>
             </div>
 
@@ -178,7 +185,7 @@ export default function Hero() {
                   className="text-[10px] font-bold uppercase tracking-[0.16em]"
                   style={{ color: 'var(--ink-faint)' }}
                 >
-                  Smart Hiring System™
+                  Friction Lens™
                 </span>
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -200,7 +207,7 @@ export default function Hero() {
                     color: 'var(--ink)',
                   }}
                 >
-                  34
+                  67
                 </span>
                 <span className="text-base font-light" style={{ color: 'var(--ink-faint)' }}>/100</span>
               </div>
@@ -213,7 +220,7 @@ export default function Hero() {
                   className="w-[6px] h-[6px] rounded-full flex-shrink-0"
                   style={{ background: '#C04444' }}
                 />
-                High risk. Immediate action needed.
+                High friction. Role needs work before going live.
               </div>
 
               {/* Bars */}
@@ -240,11 +247,11 @@ export default function Hero() {
               {/* Card CTA */}
               <div className="pt-4" style={{ borderTop: '0.5px solid var(--brand-line)' }}>
                 <Link
-                  href="/tools/hiring-score"
+                  href="/smart-hiring-system"
                   className="flex items-center justify-between w-full text-sm font-semibold transition-colors group"
                   style={{ color: 'var(--brand-purple)' }}
                 >
-                  Fix these gaps. Start free.
+                  Raise a role. See the score before you go live.
                   <ArrowRight
                     size={14}
                     className="transition-transform duration-200 group-hover:translate-x-1"
@@ -254,7 +261,7 @@ export default function Hero() {
             </div>
 
             <p className="text-center text-[11px] mt-4" style={{ color: 'var(--ink-faint)' }}>
-              Free · Takes 3 minutes · No obligation
+              Built into every HIRE engagement · No extra cost
             </p>
           </div>
 

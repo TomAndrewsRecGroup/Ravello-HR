@@ -26,7 +26,7 @@ export default function AdminLoginForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="form-group">
         <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Email</label>
-        <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="input" placeholder="you@ravellohr.co.uk"
+        <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="input" placeholder="you@thepeopleoffice.co.uk"
           style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
       </div>
       <div className="form-group">

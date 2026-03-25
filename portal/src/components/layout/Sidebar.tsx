@@ -4,21 +4,39 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
-  LifeBuoy, LogOut, Settings, ChevronRight,
+  LifeBuoy, LogOut, Settings, ChevronRight, Bell, Map, ShieldCheck, TrendingUp,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
+/* Map nav href → counts key */
+const COUNT_KEY: Record<string, string> = {
+  '/actions':    'actions',
+  '/support':    'tickets',
+  '/hiring':     'candidates',
+  '/compliance': 'compliance',
+};
+
 const nav = [
-  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/hiring',     label: 'Hiring',       icon: Briefcase },
-  { href: '/documents',  label: 'Documents',    icon: FolderOpen },
-  { href: '/reports',    label: 'Reports',      icon: BarChart3 },
-  { href: '/support',    label: 'Support',      icon: LifeBuoy },
+  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
+  { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring' },
+  { href: '/documents',  label: 'Documents',    icon: FolderOpen,      flag: 'documents' },
+  { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
+  { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
+  { href: '/compliance', label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
+  { href: '/metrics',    label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
+  { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
+  { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
 
-export default function Sidebar() {
+interface Props {
+  flags?:  Record<string, boolean>;
+  counts?: Record<string, number>;
+}
+
+export default function Sidebar({ flags = {}, counts = {} }: Props) {
   const path = usePathname();
+  const visibleNav = nav.filter(item => item.flag === null || flags[item.flag] !== false);
 
   return (
     <aside
@@ -37,7 +55,7 @@ export default function Sidebar() {
         <Link href="/dashboard">
           <Image
             src={LOGO}
-            alt="Ravello"
+            alt="The People Office"
             width={110}
             height={36}
             className="h-8 w-auto object-contain brightness-110"
@@ -56,8 +74,11 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 pt-4">
         <p className="nav-section-label">Workspace</p>
         <div className="space-y-0.5">
-          {nav.map((item) => {
-            const active = path.startsWith(item.href);
+          {visibleNav.map((item) => {
+            const active    = path.startsWith(item.href);
+            const countKey  = COUNT_KEY[item.href];
+            const count     = countKey ? (counts[countKey] ?? 0) : 0;
+
             return (
               <Link
                 key={item.href}
@@ -66,7 +87,20 @@ export default function Sidebar() {
               >
                 <item.icon size={16} />
                 <span>{item.label}</span>
-                {active && (
+                {count > 0 && (
+                  <span
+                    className="ml-auto text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                    style={{
+                      background: item.href === '/actions' || item.href === '/compliance'
+                        ? 'rgba(239,68,68,0.85)'
+                        : 'rgba(245,158,11,0.85)',
+                      color: '#fff',
+                    }}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
+                {active && count === 0 && (
                   <ChevronRight
                     size={12}
                     className="ml-auto"

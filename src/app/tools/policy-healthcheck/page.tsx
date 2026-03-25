@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import PolicyHealthcheckTool from '@/components/tools/PolicyHealthcheckTool';
 
 export const metadata: Metadata = {
-  title: 'Policy & Contract Healthcheck | Ravello HR',
+  title: 'Policy and Contract Healthcheck | The People Office',
   description:
-    'Run a free Policy & Contract Healthcheck. Get a personalised gap list you can take straight to your board or leadership team.',
+    'Free Policy and Contract Healthcheck. Find your HR documentation gaps and get a prioritised fix list — before something goes wrong. From The People Office.',
   alternates: { canonical: 'https://ravellohr.co.uk/tools/policy-healthcheck' },
 };
 
