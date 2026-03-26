@@ -29,7 +29,7 @@ const empty = {
 };
 
 export default function TemplatesClient({ initialTemplates }: Props) {
-  const supabase = useRouter ? createClient() : createClient();
+  const supabase = createClient();
   const router   = useRouter();
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
   const [showForm, setShowForm]   = useState(false);

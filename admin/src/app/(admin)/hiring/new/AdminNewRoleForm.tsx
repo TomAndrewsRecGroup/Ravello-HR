@@ -73,15 +73,17 @@ export default function AdminNewRoleForm({ companies, adminUserId, template }: P
     setScoring(true);
     let frictionResult;
     try {
-      frictionResult = await scoreFriction({
-        title:            form.title,
-        location:         form.location || 'Unknown',
-        salary_min,
-        salary_max,
-        skills:           must_haves,
-        working_model:    (form.working_model as 'office' | 'hybrid' | 'remote') || 'office',
-        interview_stages,
-      });
+      const jd_text = [
+        `Role: ${form.title}`,
+        form.department  ? `Department: ${form.department}` : '',
+        form.seniority   ? `Seniority: ${form.seniority}` : '',
+        form.location    ? `Location: ${form.location}` : '',
+        form.working_model ? `Working model: ${form.working_model}` : '',
+        salary_min || salary_max ? `Salary: £${salary_min?.toLocaleString()}–£${salary_max?.toLocaleString()}` : '',
+        must_haves.length ? `Requirements:\n${must_haves.map(s => `- ${s}`).join('\n')}` : '',
+        form.description ? `\n${form.description}` : '',
+      ].filter(Boolean).join('\n');
+      frictionResult = await scoreFriction({ jd_text });
     } catch {
       frictionResult = null;
     }
