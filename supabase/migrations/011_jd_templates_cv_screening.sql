@@ -46,3 +46,8 @@ ALTER TABLE candidates ADD COLUMN IF NOT EXISTS pipeline_stage    TEXT NOT NULL 
 CREATE INDEX IF NOT EXISTS idx_jd_templates_department ON jd_templates(department);
 CREATE INDEX IF NOT EXISTS idx_candidates_source        ON candidates(source);
 CREATE INDEX IF NOT EXISTS idx_candidates_pipeline_stage ON candidates(pipeline_stage);
+
+-- ── Actions: broadcast tracking ──────────────────────────────
+-- Adds column to track admin-originated (broadcast) action items
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS created_by_admin BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS due_date DATE;
