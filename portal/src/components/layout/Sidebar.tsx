@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
   LifeBuoy, LogOut, Settings, ChevronRight, Bell, Map, ShieldCheck, TrendingUp,
+  BookOpen, Users,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
@@ -15,17 +16,21 @@ const COUNT_KEY: Record<string, string> = {
   '/support':    'tickets',
   '/hiring':     'candidates',
   '/compliance': 'compliance',
+  '/protect':    'emp_docs_expired',
 };
 
 const nav = [
   { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
-  { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring' },
+  { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring', sub: '/hiring/analytics' },
+  { href: '/lead',       label: 'LEAD',         icon: BookOpen,        flag: 'lead' },
+  { href: '/protect',    label: 'PROTECT',      icon: Users,           flag: 'protect' },
   { href: '/documents',  label: 'Documents',    icon: FolderOpen,      flag: 'documents' },
   { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
   { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
   { href: '/compliance', label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
   { href: '/metrics',    label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
   { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
+  { href: '/learning',   label: 'Learning',     icon: BookOpen,        flag: 'learning' },
   { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
 
@@ -78,36 +83,48 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
             const active    = path.startsWith(item.href);
             const countKey  = COUNT_KEY[item.href];
             const count     = countKey ? (counts[countKey] ?? 0) : 0;
+            const hasSub    = (item as any).sub && active;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-link ${active ? 'active' : ''}`}
-              >
-                <item.icon size={16} />
-                <span>{item.label}</span>
-                {count > 0 && (
-                  <span
-                    className="ml-auto text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
-                    style={{
-                      background: item.href === '/actions' || item.href === '/compliance'
-                        ? 'rgba(239,68,68,0.85)'
-                        : 'rgba(245,158,11,0.85)',
-                      color: '#fff',
-                    }}
+              <div key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`nav-link ${active ? 'active' : ''}`}
+                >
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                  {count > 0 && (
+                    <span
+                      className="ml-auto text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                      style={{
+                        background: item.href === '/actions' || item.href === '/compliance'
+                          ? 'rgba(239,68,68,0.85)'
+                          : 'rgba(245,158,11,0.85)',
+                        color: '#fff',
+                      }}
+                    >
+                      {count > 99 ? '99+' : count}
+                    </span>
+                  )}
+                  {active && count === 0 && (
+                    <ChevronRight
+                      size={12}
+                      className="ml-auto"
+                      style={{ color: 'rgba(255,255,255,0.35)' }}
+                    />
+                  )}
+                </Link>
+                {hasSub && (
+                  <Link
+                    href={(item as any).sub}
+                    className={`nav-link pl-9 text-xs ${path === (item as any).sub ? 'active' : ''}`}
+                    style={{ opacity: 0.8 }}
                   >
-                    {count > 99 ? '99+' : count}
-                  </span>
+                    <BarChart3 size={13} />
+                    <span>Analytics</span>
+                  </Link>
                 )}
-                {active && count === 0 && (
-                  <ChevronRight
-                    size={12}
-                    className="ml-auto"
-                    style={{ color: 'rgba(255,255,255,0.35)' }}
-                  />
-                )}
-              </Link>
+              </div>
             );
           })}
         </div>

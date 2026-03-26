@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import FrictionScoreCard from '@/components/FrictionScoreCard';
 import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButton';
+import OfferTab from './OfferTab';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, MessageSquare, Info } from 'lucide-react';
@@ -35,12 +36,19 @@ export default async function RequisitionDetailPage({
 
   if (!req) notFound();
 
-  const { data: candidates } = await supabase
-    .from('candidates')
-    .select('*')
-    .eq('requisition_id', params.id)
-    .eq('approved_for_client', true)
-    .order('created_at', { ascending: false });
+  const [{ data: candidates }, { data: offers }] = await Promise.all([
+    supabase
+      .from('candidates')
+      .select('*')
+      .eq('requisition_id', params.id)
+      .eq('approved_for_client', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('offers')
+      .select('*, candidates(full_name)')
+      .eq('requisition_id', params.id)
+      .order('created_at', { ascending: false }),
+  ]);
 
   const r = req as any;
   const cands = candidates ?? [];
@@ -158,7 +166,15 @@ export default async function RequisitionDetailPage({
               )}
             </div>
 
-            {/* 3. Candidates */}
+            {/* 3. Offers */}
+            <OfferTab
+              requisitionId={r.id}
+              companyId={r.company_id}
+              candidates={cands.map((c: any) => ({ id: c.id, full_name: c.full_name, client_status: c.client_status }))}
+              initialOffers={(offers ?? []) as any[]}
+            />
+
+            {/* 4. Candidates */}
             <div className="card p-6">
               <h2 className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>
                 Candidates ({cands.length})

@@ -5,23 +5,24 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, Briefcase,
   FolderOpen, LifeBuoy, ToggleLeft, LogOut, ChevronRight,
-  TrendingUp, Inbox, Map, BarChart3,
+  TrendingUp, Inbox, Map, BarChart3, BookOpen,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 
 const nav = [
-  { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/clients',         label: 'Clients',          icon: Building2 },
-  { href: '/hiring',          label: 'Hiring',           icon: Briefcase },
-  { href: '/bd-intelligence', label: 'BD Intelligence',  icon: TrendingUp },
-  { href: '/requests',        label: 'Service Requests', icon: Inbox },
-  { href: '/roadmap',         label: 'Roadmap',          icon: Map },
-  { href: '/documents',       label: 'Documents',        icon: FolderOpen },
-  { href: '/reports',         label: 'Reports',          icon: BarChart3 },
-  { href: '/support',         label: 'Support',          icon: LifeBuoy },
-  { href: '/users',           label: 'Users',            icon: Users },
-  { href: '/feature-flags',   label: 'Feature Flags',    icon: ToggleLeft },
+  { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard, sub: null },
+  { href: '/clients',         label: 'Clients',          icon: Building2,       sub: null },
+  { href: '/hiring',          label: 'Hiring',           icon: Briefcase,       sub: '/hiring/analytics' },
+  { href: '/bd-intelligence', label: 'BD Intelligence',  icon: TrendingUp,      sub: null },
+  { href: '/requests',        label: 'Service Requests', icon: Inbox,           sub: null },
+  { href: '/roadmap',         label: 'Roadmap',          icon: Map,             sub: null },
+  { href: '/documents',       label: 'Documents',        icon: FolderOpen,      sub: null },
+  { href: '/reports',         label: 'Reports',          icon: BarChart3,       sub: null },
+  { href: '/learning',        label: 'Learning',         icon: BookOpen,        sub: null },
+  { href: '/support',         label: 'Support',          icon: LifeBuoy,        sub: null },
+  { href: '/users',           label: 'Users',            icon: Users,           sub: null },
+  { href: '/feature-flags',   label: 'Feature Flags',    icon: ToggleLeft,      sub: null },
 ];
 
 export default function AdminSidebar() {
@@ -45,12 +46,25 @@ export default function AdminSidebar() {
         <div className="space-y-0.5">
           {nav.map((item) => {
             const active = path.startsWith(item.href);
+            const hasSub = item.sub && active;
             return (
-              <Link key={item.href} href={item.href} className={`nav-link ${active ? 'active' : ''}`}>
-                <item.icon size={15} />
-                <span>{item.label}</span>
-                {active && <ChevronRight size={12} className="ml-auto" style={{ color: 'rgba(255,255,255,0.3)' }} />}
-              </Link>
+              <div key={item.href}>
+                <Link href={item.href} className={`nav-link ${active ? 'active' : ''}`}>
+                  <item.icon size={15} />
+                  <span>{item.label}</span>
+                  {active && <ChevronRight size={12} className="ml-auto" style={{ color: 'rgba(255,255,255,0.3)' }} />}
+                </Link>
+                {hasSub && (
+                  <Link
+                    href={item.sub!}
+                    className={`nav-link pl-9 text-xs ${path === item.sub ? 'active' : ''}`}
+                    style={{ opacity: 0.8 }}
+                  >
+                    <BarChart3 size={13} />
+                    <span>Analytics</span>
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>
