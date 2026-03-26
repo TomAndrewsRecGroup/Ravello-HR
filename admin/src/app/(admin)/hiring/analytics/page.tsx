@@ -34,7 +34,7 @@ export default async function AdminHiringAnalyticsPage() {
     supabase.from('requisitions').select('*, companies(id,name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('*'),
     supabase.from('offers').select('*'),
-    supabase.from('companies').select('id, name').eq('status', 'active'),
+    supabase.from('companies').select('id, name').eq('active', true),
   ]);
 
   const allReqs = reqs ?? [];
