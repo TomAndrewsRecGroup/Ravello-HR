@@ -401,6 +401,12 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 29 | Manatal ATS integration — `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
 | 30 | RLS audit fixes — `is_ravello_staff()` corrected to include `ravello_recruiter`; 8 policies rewritten; client insert policies tightened |
 | 31 | Feature flag toggles expanded to include LEAD, PROTECT, Learning, Benchmarks; Manatal ATS pipeline surfaced in portal hiring page |
+| 32 | Admin dashboard enhanced with PROTECT alerts (overdue compliance, expiring docs, pending absences, open service requests) |
+| 33 | Portal dashboard: LEAD/PROTECT module cards when those flags enabled (open training needs, pending absences) |
+| 34 | JD Templates page (admin `/hiring/templates`); All Candidates page (admin `/candidates`) with screening scores and pipeline stage |
+| 35 | New role form pre-fills from JD template when `?template=ID` query param present |
+| 36 | Portal new role form: template selector dropdown (client-side fetch from `jd_templates`) |
+| 37 | Admin Broadcast page — push action items to multiple clients at once; `actions.created_by_admin` + `actions.due_date` columns |
 
 ---
 
