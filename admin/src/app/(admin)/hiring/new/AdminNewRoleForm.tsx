@@ -11,28 +11,39 @@ const EMP_TYPES        = ['Permanent', 'Fixed-term', 'Contract', 'Interim'];
 const STAGE_OPTS       = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer'] as const;
 const OWNERS           = ['Lucy', 'Tom'];
 
+interface Template {
+  id: string;
+  title: string;
+  department: string | null;
+  seniority: string | null;
+  working_model: string | null;
+  description: string | null;
+  must_haves: string[] | null;
+}
+
 interface Props {
   companies: { id: string; name: string }[];
   adminUserId: string;
+  template?: Template | null;
 }
 
-export default function AdminNewRoleForm({ companies, adminUserId }: Props) {
+export default function AdminNewRoleForm({ companies, adminUserId, template }: Props) {
   const router  = useRouter();
   const supabase = createClient();
 
   const [form, setForm] = useState({
     company_id:       '',
-    title:            '',
-    department:       '',
-    seniority:        '',
+    title:            template?.title ?? '',
+    department:       template?.department ?? '',
+    seniority:        template?.seniority ?? '',
     location:         '',
-    working_model:    '' as 'office' | 'hybrid' | 'remote' | '',
+    working_model:    (template?.working_model ?? '') as 'office' | 'hybrid' | 'remote' | '',
     employment_type:  '',
     salary_min:       '',
     salary_max:       '',
     interview_stages: '2',
-    must_haves_raw:   '',
-    description:      '',
+    must_haves_raw:   (template?.must_haves ?? []).join('\n'),
+    description:      template?.description ?? '',
     stage:            'submitted',
     assigned_recruiter: '',
   });
@@ -107,6 +118,16 @@ export default function AdminNewRoleForm({ companies, adminUserId }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-[760px]">
+
+      {template && (
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm"
+          style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)', color: 'var(--purple)' }}
+        >
+          <Zap size={13} />
+          Pre-filled from template: <strong>{template.title}</strong>
+        </div>
+      )}
 
       {scoring && (
         <div className="flex items-center gap-3 rounded-[12px] px-4 py-3"
