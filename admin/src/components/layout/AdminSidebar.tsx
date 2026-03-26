@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Building2, Users, Briefcase,
+  LayoutDashboard, Building2, Users, Users2, Briefcase,
   FolderOpen, LifeBuoy, ToggleLeft, LogOut, ChevronRight,
   TrendingUp, Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling,
 } from 'lucide-react';
@@ -14,6 +14,7 @@ const nav = [
   { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard, sub: null },
   { href: '/clients',         label: 'Clients',          icon: Building2,       sub: null },
   { href: '/hiring',          label: 'Hiring',           icon: Briefcase,       sub: '/hiring/analytics' },
+  { href: '/candidates',      label: 'Candidates',       icon: Users2,          sub: null },
   { href: '/bd-intelligence', label: 'BD Intelligence',  icon: TrendingUp,      sub: null },
   { href: '/requests',        label: 'Service Requests', icon: Inbox,           sub: null },
   { href: '/roadmap',         label: 'Roadmap',          icon: Map,             sub: null },
