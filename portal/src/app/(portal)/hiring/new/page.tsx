@@ -1,12 +1,22 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Topbar from '@/components/layout/Topbar';
 import FrictionScoreCard from '@/components/FrictionScoreCard';
 import { createClient } from '@/lib/supabase/client';
 import type { FrictionScore } from '@/lib/supabase/types';
 import { Loader2, Zap, Upload, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
+
+interface JDTemplate {
+  id: string;
+  title: string;
+  department: string | null;
+  seniority: string | null;
+  working_model: string | null;
+  description: string | null;
+  must_haves: string[] | null;
+}
 
 const WORKING_MODELS = ['Office', 'Hybrid', 'Remote'] as const;
 const SENIORITY      = ['Junior/Graduate', 'Mid-level', 'Senior', 'Head of/Director', 'C-suite/Executive'] as const;
@@ -33,10 +43,33 @@ export default function NewRequisitionPage() {
     interview_stages: '2', reporting_line: '',
     must_haves_raw: '', nice_to_haves_raw: '', description: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState('');
+  const [templates, setTemplates] = useState<JDTemplate[]>([]);
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })); }
+
+  // Fetch JD templates on mount
+  useEffect(() => {
+    const supabaseClient = createClient();
+    supabaseClient.from('jd_templates').select('id,title,department,seniority,working_model,description,must_haves').order('title').then(({ data }) => {
+      if (data) setTemplates(data as JDTemplate[]);
+    });
+  }, []);
+
+  function applyTemplate(id: string) {
+    const t = templates.find(t => t.id === id);
+    if (!t) return;
+    setForm(prev => ({
+      ...prev,
+      title:          t.title,
+      department:     t.department ?? prev.department,
+      seniority:      t.seniority  ?? prev.seniority,
+      working_model:  (t.working_model?.toLowerCase() as typeof prev.working_model) ?? prev.working_model,
+      description:    t.description ?? prev.description,
+      must_haves_raw: (t.must_haves ?? []).join('\n'),
+    }));
+  }
 
   async function analyzeJD() {
     if (jdText.trim().length < 20) { setAnalyzeError('Please paste at least a few lines of the job description.'); return; }
@@ -119,6 +152,24 @@ export default function NewRequisitionPage() {
       <Topbar title="Raise a Role" subtitle="Paste your job description and we'll score it before it goes live" />
       <main className="portal-page flex-1 max-w-[720px]">
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Template selector */}
+          {templates.length > 0 && (
+            <div className="card p-4 flex items-center gap-3">
+              <Wand2 size={15} style={{ color: 'var(--purple)', flexShrink: 0 }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Start from template</p>
+              <select
+                className="input h-8 text-sm flex-1 max-w-[260px]"
+                defaultValue=""
+                onChange={e => applyTemplate(e.target.value)}
+              >
+                <option value="" disabled>Choose a template…</option>
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>{t.title}{t.department ? ` (${t.department})` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Step 1 — JD Import */}
           <div className="card overflow-hidden">
