@@ -11,28 +11,39 @@ const EMP_TYPES        = ['Permanent', 'Fixed-term', 'Contract', 'Interim'];
 const STAGE_OPTS       = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer'] as const;
 const OWNERS           = ['Lucy', 'Tom'];
 
+interface Template {
+  id: string;
+  title: string;
+  department: string | null;
+  seniority: string | null;
+  working_model: string | null;
+  description: string | null;
+  must_haves: string[] | null;
+}
+
 interface Props {
   companies: { id: string; name: string }[];
   adminUserId: string;
+  template?: Template | null;
 }
 
-export default function AdminNewRoleForm({ companies, adminUserId }: Props) {
+export default function AdminNewRoleForm({ companies, adminUserId, template }: Props) {
   const router  = useRouter();
   const supabase = createClient();
 
   const [form, setForm] = useState({
     company_id:       '',
-    title:            '',
-    department:       '',
-    seniority:        '',
+    title:            template?.title ?? '',
+    department:       template?.department ?? '',
+    seniority:        template?.seniority ?? '',
     location:         '',
-    working_model:    '' as 'office' | 'hybrid' | 'remote' | '',
+    working_model:    (template?.working_model ?? '') as 'office' | 'hybrid' | 'remote' | '',
     employment_type:  '',
     salary_min:       '',
     salary_max:       '',
     interview_stages: '2',
-    must_haves_raw:   '',
-    description:      '',
+    must_haves_raw:   (template?.must_haves ?? []).join('\n'),
+    description:      template?.description ?? '',
     stage:            'submitted',
     assigned_recruiter: '',
   });
@@ -62,15 +73,17 @@ export default function AdminNewRoleForm({ companies, adminUserId }: Props) {
     setScoring(true);
     let frictionResult;
     try {
-      frictionResult = await scoreFriction({
-        title:            form.title,
-        location:         form.location || 'Unknown',
-        salary_min,
-        salary_max,
-        skills:           must_haves,
-        working_model:    (form.working_model as 'office' | 'hybrid' | 'remote') || 'office',
-        interview_stages,
-      });
+      const jd_text = [
+        `Role: ${form.title}`,
+        form.department  ? `Department: ${form.department}` : '',
+        form.seniority   ? `Seniority: ${form.seniority}` : '',
+        form.location    ? `Location: ${form.location}` : '',
+        form.working_model ? `Working model: ${form.working_model}` : '',
+        salary_min || salary_max ? `Salary: £${salary_min?.toLocaleString()}–£${salary_max?.toLocaleString()}` : '',
+        must_haves.length ? `Requirements:\n${must_haves.map(s => `- ${s}`).join('\n')}` : '',
+        form.description ? `\n${form.description}` : '',
+      ].filter(Boolean).join('\n');
+      frictionResult = await scoreFriction({ jd_text });
     } catch {
       frictionResult = null;
     }
@@ -107,6 +120,16 @@ export default function AdminNewRoleForm({ companies, adminUserId }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-[760px]">
+
+      {template && (
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm"
+          style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)', color: 'var(--purple)' }}
+        >
+          <Zap size={13} />
+          Pre-filled from template: <strong>{template.title}</strong>
+        </div>
+      )}
 
       {scoring && (
         <div className="flex items-center gap-3 rounded-[12px] px-4 py-3"

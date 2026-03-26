@@ -6,16 +6,21 @@ import AdminNewRoleForm from './AdminNewRoleForm';
 
 export const metadata: Metadata = { title: 'New Role' };
 
-export default async function AdminNewRolePage() {
+export default async function AdminNewRolePage({
+  searchParams,
+}: {
+  searchParams?: { template?: string };
+}) {
   const supabase = createServerSupabaseClient();
 
-  const [{ data: { user } }, { data: companies }] = await Promise.all([
+  const templateId = searchParams?.template ?? null;
+
+  const [{ data: { user } }, { data: companies }, templateResult] = await Promise.all([
     supabase.auth.getUser(),
-    supabase
-      .from('companies')
-      .select('id,name')
-      .eq('active', true)
-      .order('name'),
+    supabase.from('companies').select('id,name').eq('active', true).order('name'),
+    templateId
+      ? supabase.from('jd_templates').select('*').eq('id', templateId).single()
+      : Promise.resolve({ data: null }),
   ]);
 
   return (
@@ -23,12 +28,18 @@ export default async function AdminNewRolePage() {
       <AdminTopbar
         title="New Role"
         subtitle="Create a role on behalf of a client — Friction Lens runs automatically"
-        actions={<Link href="/hiring" className="btn-secondary btn-sm">← All Roles</Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
+            <Link href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
+          </div>
+        }
       />
       <main className="admin-page flex-1">
         <AdminNewRoleForm
           companies={companies ?? []}
           adminUserId={user?.id ?? ''}
+          template={templateResult?.data ?? null}
         />
       </main>
     </>

@@ -112,6 +112,29 @@ export default function BDCompanyModal({ company, onClose }: Props) {
         .eq('id', company.id);
       setStatus('Client');
 
+      // Seed standard onboarding compliance items
+      const today = new Date();
+      const in30  = new Date(today); in30.setDate(today.getDate() + 30);
+      const in60  = new Date(today); in60.setDate(today.getDate() + 60);
+      const in90  = new Date(today); in90.setDate(today.getDate() + 90);
+      await supabase.from('compliance_items').insert([
+        { company_id: newClient.id, title: 'Employment contract audit', category: 'hr', status: 'pending', due_date: in30.toISOString().split('T')[0] },
+        { company_id: newClient.id, title: 'GDPR data audit',           category: 'legal', status: 'pending', due_date: in60.toISOString().split('T')[0] },
+        { company_id: newClient.id, title: 'Health & Safety review',    category: 'health_safety', status: 'pending', due_date: in90.toISOString().split('T')[0] },
+        { company_id: newClient.id, title: 'Data protection policy review', category: 'legal', status: 'pending', due_date: in90.toISOString().split('T')[0] },
+      ]);
+
+      // Seed welcome action
+      await supabase.from('actions').insert({
+        company_id: newClient.id,
+        action_type: 'general',
+        title: 'Welcome to The People Office portal',
+        description: 'Your HR portal is now active. Start by completing the initial compliance checklist and adding your team members.',
+        priority: 'normal',
+        status: 'active',
+        created_by_admin: true,
+      });
+
       // Optionally invite a user
       if (convForm.contact_email) {
         await fetch('/api/invite', {

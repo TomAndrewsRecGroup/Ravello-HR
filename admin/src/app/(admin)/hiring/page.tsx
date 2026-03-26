@@ -32,7 +32,13 @@ export default async function AdminHiringPage() {
       <AdminTopbar
         title="Hiring Overview"
         subtitle="All active roles across all clients"
-        actions={<Link href="/hiring/new" className="btn-cta btn-sm">+ New Role</Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link href="/hiring/analytics" className="btn-ghost btn-sm">Analytics</Link>
+            <Link href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
+            <Link href="/hiring/new" className="btn-cta btn-sm">+ New Role</Link>
+          </div>
+        }
       />
       <main className="admin-page flex-1">
         <HiringClient reqs={reqs} companies={companies} />

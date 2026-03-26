@@ -48,7 +48,7 @@ function statusLabel(status: string): string {
   switch (status?.toLowerCase()) {
     case 'in_progress': return 'In Progress';
     case 'complete':    return 'Complete';
-    default:            return status?.charAt(0).toUpperCase() + status?.slice(1) ?? '—';
+    default:            return status ? status.charAt(0).toUpperCase() + status.slice(1) : '—';
   }
 }
 

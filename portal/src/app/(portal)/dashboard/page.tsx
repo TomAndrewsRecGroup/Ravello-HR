@@ -39,8 +39,10 @@ export default async function DashboardPage() {
 
   const company   = (profile as any)?.companies;
   const companyId: string | undefined = company?.id;
+  const flags: Record<string, boolean> = company?.feature_flags ?? {};
 
-  const [reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes] = await Promise.all([
+  const [reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
+    trainingRes, absenceRes] = await Promise.all([
     supabase
       .from('requisitions')
       .select('id,title,stage,created_at,friction_level,friction_recommendations,working_model,location')
@@ -79,6 +81,14 @@ export default async function DashboardPage() {
       .eq('company_id', companyId ?? '')
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
+    // LEAD module — only fetch if enabled
+    flags.lead !== false
+      ? supabase.from('training_needs').select('id,title,status,employee_name').eq('company_id', companyId ?? '').eq('status', 'open').limit(4)
+      : Promise.resolve({ data: null }),
+    // PROTECT module — only fetch if enabled
+    flags.protect !== false
+      ? supabase.from('absence_records').select('id,employee_name,absence_type,start_date,status').eq('company_id', companyId ?? '').eq('status', 'pending').limit(4)
+      : Promise.resolve({ data: null }),
   ]);
 
   const requisitions    = reqRes.data      ?? [];
@@ -87,6 +97,8 @@ export default async function DashboardPage() {
   const complianceItems = complianceRes.data ?? [];
   const services        = servicesRes.data  ?? [];
   const actions         = actionsRes.data   ?? [];
+  const openTraining    = trainingRes.data  ?? [];
+  const pendingAbsences = absenceRes.data   ?? [];
 
   const firstName = (profile as any)?.full_name?.split(' ')[0] ?? 'there';
 
@@ -398,6 +410,68 @@ export default async function DashboardPage() {
               </div>
             )}
           </section>
+
+          {/* LEAD — open training needs */}
+          {flags.lead !== false && openTraining.length > 0 && (
+            <section className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
+                  Open Training Needs
+                </h2>
+                <Link href="/lead/training" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
+                  View all →
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {openTraining.map((t: any) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between px-4 py-3 rounded-[10px]"
+                    style={{ border: '1px solid var(--line)' }}
+                  >
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{t.title}</p>
+                      {t.employee_name && (
+                        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{t.employee_name}</p>
+                      )}
+                    </div>
+                    <span className="badge" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>open</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* PROTECT — pending absence requests */}
+          {flags.protect !== false && pendingAbsences.length > 0 && (
+            <section className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
+                  Pending Absence Requests
+                </h2>
+                <Link href="/protect/absence" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
+                  View all →
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {pendingAbsences.map((a: any) => (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between px-4 py-3 rounded-[10px]"
+                    style={{ border: '1px solid var(--line)' }}
+                  >
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{a.employee_name}</p>
+                      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                        {a.absence_type} · from {new Date(a.start_date).toLocaleDateString('en-GB')}
+                      </p>
+                    </div>
+                    <span className="badge" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }}>pending</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Recent Documents */}
           <section className="card p-6 lg:col-span-2">

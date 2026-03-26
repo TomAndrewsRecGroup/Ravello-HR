@@ -95,21 +95,38 @@ export default async function MetricsPage() {
   }
 
   /* ── Fetch all data in parallel ── */
-  const [reqRes, candRes, compRes, tickRes, docRes, actRes] = await Promise.all([
+  const [reqRes, candRes, compRes, tickRes, docRes, actRes,
+    trainingRes, reviewsRes, absenceRes, empDocRes] = await Promise.all([
     supabase.from('requisitions').select('id,title,stage,friction_level,created_at').eq('company_id', companyId),
     supabase.from('candidates').select('id,client_status,approved_for_client,requisition_id').eq('company_id', companyId),
     supabase.from('compliance_items').select('id,status,category,due_date').eq('company_id', companyId),
     supabase.from('tickets').select('id,status,priority,created_at,resolved_at').eq('company_id', companyId),
     supabase.from('documents').select('id,category,approved_at').eq('company_id', companyId),
     supabase.from('actions').select('id,status,priority').eq('company_id', companyId),
+    flags.lead !== false
+      ? supabase.from('training_needs').select('id,status').eq('company_id', companyId)
+      : Promise.resolve({ data: null }),
+    flags.lead !== false
+      ? supabase.from('performance_reviews').select('id,status').eq('company_id', companyId)
+      : Promise.resolve({ data: null }),
+    flags.protect !== false
+      ? supabase.from('absence_records').select('id,status,absence_type').eq('company_id', companyId)
+      : Promise.resolve({ data: null }),
+    flags.protect !== false
+      ? supabase.from('employee_documents').select('id,status,expiry_date').eq('company_id', companyId)
+      : Promise.resolve({ data: null }),
   ]);
 
-  const reqs       = reqRes.data  ?? [];
-  const candidates = candRes.data ?? [];
-  const compItems  = compRes.data ?? [];
-  const tickets    = tickRes.data ?? [];
-  const docs       = docRes.data  ?? [];
-  const actions    = actRes.data  ?? [];
+  const reqs        = reqRes.data       ?? [];
+  const candidates  = candRes.data      ?? [];
+  const compItems   = compRes.data      ?? [];
+  const tickets     = tickRes.data      ?? [];
+  const docs        = docRes.data       ?? [];
+  const actions     = actRes.data       ?? [];
+  const trainNeeds  = trainingRes.data  ?? [];
+  const perfReviews = reviewsRes.data   ?? [];
+  const absences    = absenceRes.data   ?? [];
+  const empDocs     = empDocRes.data    ?? [];
 
   /* ── Hiring stats ── */
   const activeReqs     = reqs.filter(r => !['filled','cancelled'].includes(r.stage));
@@ -170,6 +187,20 @@ export default async function MetricsPage() {
   const activeActions   = actions.filter(a => a.status === 'active');
   const completeActions = actions.filter(a => a.status === 'complete');
   const actionRate      = pct(completeActions.length, actions.length);
+
+  /* ── LEAD stats ── */
+  const openTraining      = trainNeeds.filter((t: any) => t.status === 'open').length;
+  const completedTraining = trainNeeds.filter((t: any) => t.status === 'completed').length;
+  const pendingReviews    = perfReviews.filter((r: any) => r.status === 'pending').length;
+  const completedReviews  = perfReviews.filter((r: any) => r.status === 'completed').length;
+
+  /* ── PROTECT stats ── */
+  const pendingAbsences  = absences.filter((a: any) => a.status === 'pending').length;
+  const approvedAbsences = absences.filter((a: any) => a.status === 'approved').length;
+  const today = new Date();
+  const in30  = new Date(today); in30.setDate(today.getDate() + 30);
+  const expiredEmpDocs  = empDocs.filter((d: any) => d.expiry_date && new Date(d.expiry_date) < today).length;
+  const expiringEmpDocs = empDocs.filter((d: any) => d.expiry_date && new Date(d.expiry_date) >= today && new Date(d.expiry_date) <= in30).length;
 
   const highActions   = activeActions.filter(a => a.priority === 'high').length;
   const mediumActions = activeActions.filter(a => a.priority === 'medium').length;
@@ -410,6 +441,39 @@ export default async function MetricsPage() {
           </div>
 
         </div>
+
+        {/* LEAD Module metrics */}
+        {flags.lead !== false && trainNeeds.length + perfReviews.length > 0 && (
+          <div className="card p-6 mt-6">
+            <SectionHeader icon={TrendingUp} title="LEAD — People Development" color="var(--teal)" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard label="Open Training Needs"      value={openTraining}      color="var(--teal)" />
+              <StatCard label="Completed Training"       value={completedTraining} color="var(--teal)" />
+              <StatCard label="Pending Reviews"          value={pendingReviews}    color="var(--purple)" />
+              <StatCard label="Completed Reviews"        value={completedReviews}  color="var(--purple)"
+                sub={`${pct(completedReviews, perfReviews.length)}% complete rate`}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* PROTECT Module metrics */}
+        {flags.protect !== false && absences.length + empDocs.length > 0 && (
+          <div className="card p-6 mt-6">
+            <SectionHeader icon={ShieldCheck} title="PROTECT — HR Risk & Compliance" color="var(--blue)" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Pending Absence Requests"  value={pendingAbsences}  color="var(--blue)" />
+              <StatCard label="Approved Absences"         value={approvedAbsences} color="var(--teal)" />
+              <StatCard label="Expired Employee Docs"     value={expiredEmpDocs}   color="var(--red)"
+                sub={expiredEmpDocs > 0 ? 'Requires action' : 'None expired'}
+              />
+              <StatCard label="Expiring within 30 days"  value={expiringEmpDocs}  color="#D97706"
+                sub={expiringEmpDocs > 0 ? 'Review soon' : 'All current'}
+              />
+            </div>
+          </div>
+        )}
+
       </main>
     </>
   );

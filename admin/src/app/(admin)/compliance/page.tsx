@@ -106,10 +106,10 @@ export default async function AdminComplianceDashboard() {
         {/* ── Summary cards ──────────────────────────────── */}
         <div className="grid sm:grid-cols-4 gap-4">
           {[
-            { label: 'Overdue',    value: compItems.red,      ...RAG_STYLE.red },
-            { label: 'Due ≤30d',   value: compItems.amber,    ...RAG_STYLE.amber },
-            { label: 'On Track',   value: compItems.green,    ...RAG_STYLE.green },
-            { label: 'Complete',   value: compItems.complete, ...RAG_STYLE.complete },
+            { ...RAG_STYLE.red,      label: 'Overdue',    value: compItems.red      },
+            { ...RAG_STYLE.amber,    label: 'Due ≤30d',   value: compItems.amber    },
+            { ...RAG_STYLE.green,    label: 'On Track',   value: compItems.green    },
+            { ...RAG_STYLE.complete, label: 'Complete',   value: compItems.complete },
           ].map(({ label, value, bg, border, badge, icon: Icon }) => (
             <div key={label} className="rounded-[12px] p-5" style={{ background: bg, border: `1px solid ${border}` }}>
               <div className="flex items-center justify-between mb-3">
