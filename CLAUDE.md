@@ -407,6 +407,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 35 | New role form pre-fills from JD template when `?template=ID` query param present |
 | 36 | Portal new role form: template selector dropdown (client-side fetch from `jd_templates`) |
 | 37 | Admin Broadcast page — push action items to multiple clients at once; `actions.created_by_admin` + `actions.due_date` columns |
+| 38 | Auto-seed standard compliance items + welcome action when BD company converted to client |
+| 39 | Portal metrics page — LEAD/PROTECT module analytics sections (training completion, reviews, absences, employee doc expiry) |
+| 40 | Admin clients list — per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
 
 ---
 
