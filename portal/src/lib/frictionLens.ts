@@ -1,71 +1,22 @@
 // ─── Friction Lens API Client ─────────────────────────────────────────────────
-// Calls the IvyLens Rust API to score a role against live market data.
-// If the API is unavailable, returns a graceful fallback.
+// Calls the IvyLens Friction Lens API (Actix-web — public, no auth required).
+// Endpoint: POST /api/role/analyze
+// Request:  { "jd_text": "raw job description text" }
+// Response: { "role": RoleModel, "friction": FrictionOutput }
+//
+// If IVYLENS_API_URL is not set, falls back to local heuristic.
+// Set in Vercel: IVYLENS_API_URL=https://ivy-lens.vercel.app (server-side only)
 
-import type { FrictionScore, FrictionLevel } from '@/lib/supabase/types';
+import type { FrictionScore, FrictionLevel, ExtractedRole } from '@/lib/supabase/types';
 
 export interface RoleInput {
-  title:            string;
-  location:         string;
-  salary_min:       number;
-  salary_max:       number;
-  skills:           string[];
-  working_model:    'office' | 'hybrid' | 'remote';
-  interview_stages: number;
-  sector?:          string;
+  jd_text: string;   // raw job description text — IvyLens extracts structure from this
 }
 
-// Re-export so consumers don't need to import from types
-export type { FrictionScore, FrictionLevel };
+export type { FrictionScore, FrictionLevel, ExtractedRole };
 
-const API_URL = process.env.NEXT_PUBLIC_IVYLENS_API_URL ?? '';
-
-function fallbackScore(message?: string): FrictionScore {
-  const dim = { score: 0, label: 'Unknown' as FrictionLevel, explanation: message ?? 'Score unavailable' };
-  return {
-    overall_level:       'Unknown',
-    overall_score:       0,
-    dimensions: {
-      location:      dim,
-      salary:        dim,
-      skills:        dim,
-      working_model: dim,
-      process:       dim,
-    },
-    recommendations:       message ? [message] : ['Friction Lens scoring is not available right now.'],
-    time_to_fill_estimate: 'Unknown',
-  };
-}
-
-export async function scoreFriction(roleData: RoleInput): Promise<FrictionScore> {
-  if (!API_URL) {
-    // No API configured — run a simple local heuristic instead
-    return localHeuristic(roleData);
-  }
-
-  try {
-    const res = await fetch(`${API_URL}/api/role/analyze`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(roleData),
-      signal:  AbortSignal.timeout(15_000),
-    });
-
-    if (!res.ok) {
-      console.warn('[FrictionLens] API returned', res.status);
-      return localHeuristic(roleData);
-    }
-
-    return (await res.json()) as FrictionScore;
-  } catch (err) {
-    console.warn('[FrictionLens] API unavailable, using local heuristic:', err);
-    return localHeuristic(roleData);
-  }
-}
-
-// ─── Local heuristic fallback ─────────────────────────────────────────────────
-// When the IvyLens API is not reachable, produce a reasonable score
-// based on the role inputs. This keeps the portal functional.
+// Server-side only — not NEXT_PUBLIC_ so never exposed to browser
+const API_URL = process.env.IVYLENS_API_URL ?? '';
 
 function levelFromScore(score: number): FrictionLevel {
   if (score < 25) return 'Low';
@@ -74,81 +25,126 @@ function levelFromScore(score: number): FrictionLevel {
   return 'Critical';
 }
 
-function localHeuristic(role: RoleInput): FrictionScore {
-  let locationScore     = 20;
-  let salaryScore       = 20;
-  let skillsScore       = 20;
-  let workingModelScore = 20;
-  let processScore      = 20;
+function timeToFill(score: number): string {
+  if (score < 25) return '2–4 weeks';
+  if (score < 50) return '4–7 weeks';
+  if (score < 75) return '7–12 weeks';
+  return '12+ weeks';
+}
+
+// ─── Map IvyLens response → our FrictionScore ────────────────────────────────
+// IvyLens friction values are 0–1 floats. We multiply by 100 for display.
+function mapIvyLensResponse(data: any): FrictionScore {
+  const friction = data.friction ?? {};
+  const role     = data.role     ?? {};
+
+  const frictionScore = Math.round((friction.friction_score ?? 0) * 100);
+  const clarityScore  = Math.round((1 - (friction.clarity_score ?? 1)) * 100); // invert: high clarity = low friction
+  const overloadScore = Math.round((friction.overload_score ?? 0) * 100);
+  const skillsCount   = friction.required_skills_count ?? role.required_skills?.length ?? 0;
+
+  // Overall = weighted average: friction 50%, overload 30%, clarity 20%
+  const overall = Math.round(frictionScore * 0.5 + overloadScore * 0.3 + clarityScore * 0.2);
 
   const recommendations: string[] = [];
+  if (frictionScore >= 75) recommendations.push('High market competition for this role type. Consider broadening location or working model flexibility.');
+  if (overloadScore >= 70) recommendations.push(`${skillsCount} required skills is above market norm. Review which are genuine requirements vs. preferences.`);
+  if (clarityScore >= 70)  recommendations.push('The job description lacks clarity on responsibilities or requirements. A clearer brief attracts stronger candidates.');
+  if (recommendations.length === 0) recommendations.push('Role looks well-positioned. Proceed to market with confidence.');
 
-  // Location
-  const loc = role.location.toLowerCase();
-  if (loc.includes('london') && !loc.includes('remote') && !loc.includes('hybrid')) {
-    locationScore = 45;
-    recommendations.push('London office-only roles face strong competition for candidate attention. Consider stating hybrid flexibility.');
-  } else if (loc.includes('remote')) {
-    locationScore = 10;
-  } else if (loc.includes('hybrid')) {
-    locationScore = 18;
-  }
-
-  // Salary
-  const salaryMid = (role.salary_min + role.salary_max) / 2;
-  const spread    = role.salary_max - role.salary_min;
-  if (spread < salaryMid * 0.1) {
-    salaryScore = 55;
-    recommendations.push('Salary range is very narrow. A broader band (15–20%) signals flexibility and attracts more candidates.');
-  } else if (role.salary_min === 0 && role.salary_max === 0) {
-    salaryScore = 60;
-    recommendations.push('No salary range entered. Roles without salary information receive 50–60% fewer applicants.');
-  }
-
-  // Skills
-  const mustHaveCount = role.skills.length;
-  if (mustHaveCount > 6) {
-    skillsScore = 65;
-    recommendations.push(`${mustHaveCount} must-haves is high. Review which are genuine requirements vs. preferences. Aim for ≤5.`);
-  } else if (mustHaveCount > 4) {
-    skillsScore = 40;
-    recommendations.push('Consider moving 1–2 of your must-haves to nice-to-haves to broaden the candidate pool.');
-  }
-
-  // Working model
-  if (role.working_model === 'office') {
-    workingModelScore = 50;
-    recommendations.push('Full office requirement is above market norm for most roles. State clearly if flexibility exists.');
-  } else if (role.working_model === 'hybrid') {
-    workingModelScore = 15;
-  } else {
-    workingModelScore = 5;
-  }
-
-  // Process
-  if (role.interview_stages > 4) {
-    processScore = 65;
-    recommendations.push(`${role.interview_stages} interview stages is above market norm (2–3). Reduce stages or combine steps to reduce candidate drop-off.`);
-  } else if (role.interview_stages > 3) {
-    processScore = 40;
-    recommendations.push('Consider whether all interview stages are necessary. Streamlined processes win strong candidates.');
-  }
-
-  const overall = Math.round((locationScore + salaryScore + skillsScore + workingModelScore + processScore) / 5);
+  const extracted_role: ExtractedRole = {
+    title:           role.title           ?? undefined,
+    location:        role.location        ?? undefined,
+    salary_min:      role.salary_min      ?? undefined,
+    salary_max:      role.salary_max      ?? undefined,
+    required_skills: role.required_skills ?? undefined,
+    working_model:   role.working_model   ?? undefined,
+    seniority:       role.seniority       ?? undefined,
+    employment_type: role.employment_type ?? undefined,
+    department:      role.department      ?? undefined,
+  };
 
   return {
-    overall_level: levelFromScore(overall),
-    overall_score: overall,
-    dimensions: {
-      location:      { score: locationScore,     label: levelFromScore(locationScore),     explanation: 'Based on location and working model combination.' },
-      salary:        { score: salaryScore,        label: levelFromScore(salaryScore),        explanation: 'Based on salary range width and completeness.' },
-      skills:        { score: skillsScore,        label: levelFromScore(skillsScore),        explanation: 'Based on number and specificity of must-have skills.' },
-      working_model: { score: workingModelScore,  label: levelFromScore(workingModelScore),  explanation: 'Based on working model vs. market norm for this role type.' },
-      process:       { score: processScore,       label: levelFromScore(processScore),       explanation: 'Based on interview stage count vs. market norm.' },
-    },
-    recommendations: recommendations.length > 0
-      ? recommendations
-      : ['Role looks well-positioned. Proceed to market with confidence.'],
-    time_to_fill_estimate: overall < 25 ? '3–5 weeks' : overall < 50 ? '5–8 weeks' : overall < 75 ? '8–12 weeks' : '12+ weeks',
+    overall_score:         overall,
+    overall_level:         levelFromScore(overall),
+    friction_score:        frictionScore,
+    clarity_score:         clarityScore,
+    overload_score:        overloadScore,
+    required_skills_count: skillsCount,
+    extracted_role,
+    recommendations,
+    time_to_fill_estimate: timeToFill(overall),
+  };
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+export async function scoreFriction(input: RoleInput): Promise<FrictionScore> {
+  if (!API_URL) {
+    return localHeuristic(input.jd_text);
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/role/analyze`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ jd_text: input.jd_text }),
+      signal:  AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) {
+      console.warn('[IvyLens] API returned', res.status);
+      return localHeuristic(input.jd_text);
+    }
+
+    return mapIvyLensResponse(await res.json());
+  } catch (err) {
+    console.warn('[IvyLens] API unavailable, using local heuristic:', err);
+    return localHeuristic(input.jd_text);
+  }
+}
+
+// ─── Local heuristic fallback ─────────────────────────────────────────────────
+// Parses raw JD text to estimate friction when IvyLens is unreachable.
+export function localHeuristic(jdText: string): FrictionScore {
+  const text  = jdText.toLowerCase();
+  const words = text.split(/\s+/);
+
+  // Clarity — check for presence of key sections
+  const hasResponsibilities = /responsibilit|you will|key duties|role overview/.test(text);
+  const hasRequirements     = /requirements|must.have|essential|you (will|should) have/.test(text);
+  const hasTitle            = words.length > 10;
+  const clarityRaw          = [hasResponsibilities, hasRequirements, hasTitle].filter(Boolean).length;
+  const clarityScore        = Math.round((1 - clarityRaw / 3) * 100);
+
+  // Overload — count bullet-point-like requirement lines
+  const bulletLines      = (jdText.match(/^[\s]*[-•*]\s+.+/gm) ?? []).length;
+  const yearsMatches     = (text.match(/\d+\+?\s+years?/g) ?? []).length;
+  const skillsCount      = bulletLines + yearsMatches;
+  const overloadScore    = skillsCount > 15 ? 90 : skillsCount > 10 ? 70 : skillsCount > 5 ? 45 : 20;
+
+  // Friction — office-only + London is high friction
+  let frictionScore = 30;
+  if (/office.only|fully.on.?site|5 days/.test(text)) frictionScore += 30;
+  if (/london/.test(text) && !/remote|hybrid/.test(text)) frictionScore += 20;
+  if (!/salary|£|\bpay\b|\bcomp\b/.test(text)) frictionScore += 15;
+  frictionScore = Math.min(frictionScore, 95);
+
+  const overall = Math.round(frictionScore * 0.5 + overloadScore * 0.3 + clarityScore * 0.2);
+
+  const recommendations: string[] = [];
+  if (frictionScore >= 70) recommendations.push('Consider stating salary range and working model flexibility to reduce friction.');
+  if (overloadScore >= 70) recommendations.push('The requirements list appears long. Aim for 5–7 must-haves to broaden the candidate pool.');
+  if (clarityScore >= 70)  recommendations.push('Add clear responsibilities and requirements sections to attract better-matched candidates.');
+  if (recommendations.length === 0) recommendations.push('Role looks well-positioned for market. Friction Lens will provide a full score once IvyLens is connected.');
+
+  return {
+    overall_score:         overall,
+    overall_level:         levelFromScore(overall),
+    friction_score:        frictionScore,
+    clarity_score:         clarityScore,
+    overload_score:        overloadScore,
+    required_skills_count: skillsCount,
+    recommendations,
+    time_to_fill_estimate: timeToFill(overall),
   };
 }
