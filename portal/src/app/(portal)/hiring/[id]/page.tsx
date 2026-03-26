@@ -6,7 +6,7 @@ import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButto
 import OfferTab from './OfferTab';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, MessageSquare, Info } from 'lucide-react';
+import { CheckCircle2, MessageSquare, Info, Calendar, Video, Phone, MapPin } from 'lucide-react';
 import type { FrictionScore } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'Role Detail' };
@@ -36,7 +36,7 @@ export default async function RequisitionDetailPage({
 
   if (!req) notFound();
 
-  const [{ data: candidates }, { data: offers }] = await Promise.all([
+  const [{ data: candidates }, { data: offers }, { data: interviews }] = await Promise.all([
     supabase
       .from('candidates')
       .select('*')
@@ -48,10 +48,17 @@ export default async function RequisitionDetailPage({
       .select('*, candidates(full_name)')
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('interview_schedules')
+      .select('candidate_id, stage_number, stage_label, interview_type, scheduled_at, duration_mins, status, outcome')
+      .eq('requisition_id', params.id)
+      .neq('status', 'cancelled')
+      .order('scheduled_at', { ascending: true }),
   ]);
 
   const r = req as any;
   const cands = candidates ?? [];
+  const ivs   = interviews ?? [];
 
   // Parse friction_score — may be stored as stringified JSON or as an object
   let frictionScore: FrictionScore | null = null;
@@ -224,6 +231,38 @@ export default async function RequisitionDetailPage({
                           <span style={{ color: 'var(--ink-soft)' }}>{c.client_feedback}</span>
                         </div>
                       )}
+                      {/* Interviews for this candidate */}
+                      {(() => {
+                        const candIvs = ivs.filter((iv: any) => iv.candidate_id === c.id);
+                        if (!candIvs.length) return null;
+                        return (
+                          <div className="mt-3 rounded-[8px] p-3" style={{ background: 'var(--surface-alt)', border: '1px solid var(--line)' }}>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] mb-2" style={{ color: 'var(--ink-faint)' }}>Interview Schedule</p>
+                            <div className="space-y-1.5">
+                              {candIvs.map((iv: any, idx: number) => {
+                                const TypeIcon = iv.interview_type === 'video' ? Video : iv.interview_type === 'phone' ? Phone : iv.interview_type === 'in_person' ? MapPin : Calendar;
+                                const dt = iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+                                return (
+                                  <div key={idx} className="flex items-center gap-2 text-xs">
+                                    <TypeIcon size={11} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
+                                    <span style={{ color: 'var(--ink-soft)' }}>
+                                      Stage {iv.stage_number}{iv.stage_label ? ` — ${iv.stage_label}` : ''} · {dt}
+                                    </span>
+                                    {iv.outcome && iv.outcome !== 'pending' && (
+                                      <span
+                                        className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                        style={iv.outcome === 'pass' ? { background: 'rgba(22,163,74,0.1)', color: '#166534' } : iv.outcome === 'fail' ? { background: 'rgba(220,38,38,0.1)', color: '#991B1B' } : { background: 'rgba(217,119,6,0.1)', color: '#92400E' }}
+                                      >
+                                        {iv.outcome}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
