@@ -20,23 +20,31 @@ export type DocCategory    = 'contract' | 'policy' | 'letter' | 'report' | 'othe
 export type UserRole       = 'client_admin' | 'client_user' | 'ravello_admin' | 'ravello_staff';
 
 // ─── Friction Lens Types ──────────────────────────────────────────────────────
+// Matches IvyLens API response: POST /api/role/analyze → { role, friction }
 
-export interface FrictionDimension {
-  score:       number;  // 0–100, higher = more friction
-  label:       FrictionLevel;
-  explanation: string;
+export interface ExtractedRole {
+  title?:           string;
+  location?:        string;
+  salary_min?:      number;
+  salary_max?:      number;
+  required_skills?: string[];
+  working_model?:   string;
+  seniority?:       string;
+  employment_type?: string;
+  department?:      string;
 }
 
 export interface FrictionScore {
-  overall_level:       FrictionLevel;
-  overall_score:       number;
-  dimensions: {
-    location:      FrictionDimension;
-    salary:        FrictionDimension;
-    working_model: FrictionDimension;
-    skills:        FrictionDimension;
-    process:       FrictionDimension;
-  };
+  // Overall
+  overall_score:         number;       // 0–100, higher = more friction
+  overall_level:         FrictionLevel;
+  // IvyLens dimensions (0–100)
+  friction_score:        number;       // hiring demand / competition friction
+  clarity_score:         number;       // how clearly the JD is written (inverse — high = poor clarity)
+  overload_score:        number;       // requirement overload
+  required_skills_count: number;
+  // Extracted role data (auto-fill source)
+  extracted_role?:       ExtractedRole;
   recommendations:       string[];
   time_to_fill_estimate: string;
 }

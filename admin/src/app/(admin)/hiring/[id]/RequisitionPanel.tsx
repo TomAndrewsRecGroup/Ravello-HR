@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle,
-         MapPin, PoundSterling, Layers, Monitor, Clock } from 'lucide-react';
+         MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText } from 'lucide-react';
 
 /* ── Friction display helpers ─────────────────────────────── */
 
@@ -97,6 +97,191 @@ function FrictionCard({ frictionScore }: { frictionScore: any }) {
   );
 }
 
+/* ── Admin Offer Panel ────────────────────────────────────── */
+
+const OFFER_STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
+  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
+  verbal_accepted:  { label: 'Verbal Accepted',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
+  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: '#166534' },
+  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
+  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
+  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+};
+const OFFER_STATUSES = Object.keys(OFFER_STATUS_CONFIG);
+const CONTRACT_TYPES = ['permanent', 'fixed_term', 'contract', 'interim'];
+const WORKING_MODELS = ['office', 'hybrid', 'remote'];
+
+function fmtSalary(pence: number | null): string {
+  if (!pence) return '—';
+  return `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 0 })}`;
+}
+
+function AdminOfferPanel({ requisitionId, companyId }: { requisitionId: string; companyId: string }) {
+  const supabase = createClient();
+  const [offers, setOffers] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    candidate_id: '', base_salary: '', bonus: '', benefits: '',
+    start_date: '', notice_period: '', contract_type: 'permanent',
+    working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft',
+  });
+
+  useEffect(() => {
+    async function load() {
+      const [{ data: o }, { data: c }] = await Promise.all([
+        supabase.from('offers').select('*, candidates(full_name)').eq('requisition_id', requisitionId).order('created_at', { ascending: false }),
+        supabase.from('candidates').select('id, full_name').eq('requisition_id', requisitionId),
+      ]);
+      setOffers(o ?? []);
+      setCandidates(c ?? []);
+      setLoading(false);
+    }
+    load();
+  }, [requisitionId]);
+
+  function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function saveOffer() {
+    if (!form.candidate_id) return;
+    setSaving(true);
+    const { data } = await supabase.from('offers').insert({
+      requisition_id: requisitionId, company_id: companyId,
+      candidate_id: form.candidate_id,
+      base_salary: form.base_salary ? Math.round(parseFloat(form.base_salary) * 100) : null,
+      bonus: form.bonus || null, benefits: form.benefits || null,
+      start_date: form.start_date || null, notice_period: form.notice_period || null,
+      contract_type: form.contract_type || null, working_model: form.working_model || null,
+      location: form.location || null, deadline: form.deadline || null,
+      notes: form.notes || null, status: form.status,
+    }).select('*, candidates(full_name)').single();
+    if (data) setOffers(prev => [data, ...prev]);
+    setSaving(false);
+    setShowForm(false);
+    setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
+  }
+
+  async function updateOfferStatus(id: string, status: string) {
+    const now = new Date().toISOString();
+    const extra: Record<string, string> = {};
+    if (status === 'sent')             extra.sent_at = now;
+    if (status === 'verbal_accepted')  extra.verbal_accepted_at = now;
+    if (status === 'written_accepted') extra.written_accepted_at = now;
+    if (status === 'declined')         extra.declined_at = now;
+    await supabase.from('offers').update({ status, ...extra }).eq('id', id);
+    setOffers(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  }
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+          Offers {loading ? '' : `(${offers.length})`}
+        </h3>
+        <button onClick={() => setShowForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
+          <Plus size={12} /> New Offer
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="space-y-3 mb-4 p-4 rounded-[10px]" style={{ background: 'var(--surface-alt)' }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="label">Candidate *</label>
+              <select className="input" value={form.candidate_id} onChange={e => set('candidate_id', e.target.value)}>
+                <option value="">Select…</option>
+                {candidates.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Base Salary (£)</label>
+              <input type="number" className="input" placeholder="55000" value={form.base_salary} onChange={e => set('base_salary', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Contract Type</label>
+              <select className="input" value={form.contract_type} onChange={e => set('contract_type', e.target.value)}>
+                {CONTRACT_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Working Model</label>
+              <select className="input" value={form.working_model} onChange={e => set('working_model', e.target.value)}>
+                {WORKING_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Start Date</label>
+              <input type="date" className="input" value={form.start_date} onChange={e => set('start_date', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Deadline</label>
+              <input type="date" className="input" value={form.deadline} onChange={e => set('deadline', e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Status</label>
+              <select className="input" value={form.status} onChange={e => set('status', e.target.value)}>
+                {OFFER_STATUSES.map(s => <option key={s} value={s}>{OFFER_STATUS_CONFIG[s].label}</option>)}
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="label">Notes</label>
+              <textarea className="input h-14 resize-none" value={form.notes} onChange={e => set('notes', e.target.value)} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={saveOffer} disabled={saving || !form.candidate_id} className="btn-cta btn-sm flex items-center gap-1.5">
+              {saving && <Loader2 size={12} className="animate-spin" />} Save
+            </button>
+            <button onClick={() => setShowForm(false)} className="btn-ghost btn-sm">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 size={16} className="animate-spin" style={{ color: 'var(--purple)' }} />
+        </div>
+      ) : offers.length === 0 ? (
+        <div className="text-center py-6">
+          <FileText size={18} className="mx-auto mb-2" style={{ color: 'var(--ink-faint)' }} />
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No offers yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {offers.map(o => {
+            const cfg = OFFER_STATUS_CONFIG[o.status] ?? OFFER_STATUS_CONFIG.draft;
+            return (
+              <div key={o.id} className="rounded-[10px] p-3" style={{ border: '1px solid var(--line)', borderLeft: `3px solid ${cfg.color}` }}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{o.candidates?.full_name ?? '—'}</p>
+                    {o.base_salary && <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{fmtSalary(o.base_salary)}</p>}
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: cfg.bg, color: cfg.color }}>
+                    {cfg.label}
+                  </span>
+                </div>
+                {!['written_accepted', 'declined', 'withdrawn'].includes(o.status) && (
+                  <select
+                    className="input text-xs py-1"
+                    defaultValue={o.status}
+                    onChange={e => updateOfferStatus(o.id, e.target.value)}
+                  >
+                    {OFFER_STATUSES.map(s => <option key={s} value={s}>{OFFER_STATUS_CONFIG[s].label}</option>)}
+                  </select>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main panel ───────────────────────────────────────────── */
 
 const STAGES = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled', 'cancelled'] as const;
@@ -181,6 +366,9 @@ export default function RequisitionPanel({ req }: Props) {
 
       {/* Friction score */}
       {req.friction_score && <FrictionCard frictionScore={req.friction_score} />}
+
+      {/* Offers panel */}
+      <AdminOfferPanel requisitionId={req.id} companyId={req.company_id} />
     </div>
   );
 }
