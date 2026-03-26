@@ -95,6 +95,41 @@ function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Re
   );
 }
 
+function ManatalIdField({ companyId, currentId }: { companyId: string; currentId: string }) {
+  const supabase = createClient();
+  const [value,  setValue]  = useState(currentId);
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)' }}>Manatal Client ID</p>
+      <div className="flex gap-2">
+        <input
+          className="input flex-1 text-sm"
+          placeholder="e.g. 12345"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+        />
+        <button onClick={save} disabled={saving} className="btn-secondary btn-sm flex-shrink-0">
+          {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <Check size={12} /> : 'Save'}
+        </button>
+      </div>
+      <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+        Link this client to their Manatal department/account to enable live pipeline in the portal.
+      </p>
+    </div>
+  );
+}
+
 function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
   const supabase = createClient();
   const router   = useRouter();
@@ -400,6 +435,9 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                   </div>
                 ))}
               </dl>
+              <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
+                <ManatalIdField companyId={company.id} currentId={company.manatal_client_id ?? ''} />
+              </div>
             </div>
 
             {/* Users */}
