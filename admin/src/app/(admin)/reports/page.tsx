@@ -146,7 +146,6 @@ export default async function AdminReportsPage() {
 
         </div>
 
-        </div>
       </main>
     </>
   );
