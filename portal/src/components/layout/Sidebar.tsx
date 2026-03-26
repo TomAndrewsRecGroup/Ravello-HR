@@ -42,7 +42,6 @@ interface Props {
 
 export default function Sidebar({ flags = {}, counts = {} }: Props) {
   const path = usePathname();
-  const visibleNav = nav.filter(item => item.flag === null || flags[item.flag] !== false);
 
   return (
     <aside
@@ -80,11 +79,27 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
       <nav className="flex-1 overflow-y-auto px-3 pt-4">
         <p className="nav-section-label">Workspace</p>
         <div className="space-y-0.5">
-          {visibleNav.map((item) => {
-            const active    = path.startsWith(item.href);
+          {nav.map((item) => {
+            const disabled  = item.flag !== null && flags[item.flag] === false;
+            const active    = !disabled && path.startsWith(item.href);
             const countKey  = COUNT_KEY[item.href];
             const count     = countKey ? (counts[countKey] ?? 0) : 0;
             const hasSub    = (item as any).sub && active;
+
+            if (disabled) {
+              return (
+                <div
+                  key={item.href}
+                  className="nav-link cursor-not-allowed select-none"
+                  style={{ opacity: 0.35 }}
+                  title="This module is not enabled for your account"
+                >
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                  <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Off</span>
+                </div>
+              );
+            }
 
             return (
               <div key={item.href}>
