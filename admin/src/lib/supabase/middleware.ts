@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
   // ── Dev bypass ─────────────────────────────────────────────────────────────
-  // Set AUTH_BYPASS=true when running `next dev` locally to skip all auth checks.
-  if (process.env.AUTH_BYPASS === 'true') {
+  // Set DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD in .env.local (or Vercel preview
+  // env vars) to bypass authentication for local / staging testing.
+  // Never set these in the production Vercel environment.
+  if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
     return NextResponse.next({ request });
   }
 
