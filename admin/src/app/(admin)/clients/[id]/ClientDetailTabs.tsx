@@ -9,11 +9,15 @@ import InviteUserPanel from '@/components/modules/InviteUserPanel';
 
 const FLAG_LABELS: Record<string, string> = {
   hiring:     'Hiring Module',
+  lead:       'LEAD Module',
+  protect:    'PROTECT Module',
   documents:  'Document Management',
   reports:    'Reports',
   support:    'HR Support Requests',
   metrics:    'Metrics Dashboard',
   compliance: 'Compliance Tracking',
+  learning:   'E-Learning Marketplace',
+  benchmarks: 'Salary Benchmarks',
 };
 
 const STAGE_BADGE: Record<string, string> = {
