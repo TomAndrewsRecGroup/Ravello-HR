@@ -350,10 +350,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 # Admin only
 SUPABASE_SERVICE_ROLE_KEY=    # for auth admin operations
 
-# To be added
-STRIPE_SECRET_KEY=            # Phase 22 — e-learning purchases
-STRIPE_WEBHOOK_SECRET=        # Phase 22
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 22
+# Portal only — IvyLens Friction Lens
+IVYLENS_API_URL=              # Phase 21 — e.g. https://ivylens.yourdomain.com
+
+# Portal only — Manatal ATS integration
+MANATAL_API_KEY=              # Phase 29 — set in Vercel env vars
+MANATAL_API_URL=              # Phase 29 — defaults to https://api.manatal.com/open/v1
+
+# Portal only — Stripe (e-learning payments)
+STRIPE_SECRET_KEY=            # Phase 18 — e-learning purchases
+STRIPE_WEBHOOK_SECRET=        # Phase 18
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 ```
 
 ---
@@ -367,7 +374,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 22
 
 ---
 
-## What Has Been Built (Phases 1–14)
+## What Has Been Built (Phases 1–31)
 
 | Phase | What |
 |-------|------|
@@ -382,6 +389,18 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 22
 | 12 | User invite panel (admin); Users management page with inline role editing; Dashboard link fix |
 | 13 | Portal `/metrics` analytics page — 6 stat cards, hiring/candidate/compliance/support/documents/actions breakdowns |
 | 14 | BD "Convert to Client" full flow in BDCompanyModal; service request response notes in admin; portal support page shows service requests with response notes |
+| 15 | Hire phase enhancements: offer management, interview scheduling DB, hiring analytics, `interview_schedules` + `offers` migration |
+| 16–18 | LEAD module (training needs, performance reviews, skills matrix); PROTECT module (absence records, employee docs, HR dashboard); E-learning marketplace with Stripe |
+| 21 | IvyLens Friction Lens integration — proxy route `/api/friction/analyze`, updated `FrictionScoreCard`, JD text column in requisitions |
+| 22 | Admin LEAD + PROTECT tabs in client detail; `ManatalIdField` in Overview tab |
+| 23 | Interview scheduling UI in admin `RequisitionPanel` — full CRUD for `interview_schedules` |
+| 24 | Admin `/compliance` cross-client RAG dashboard — overdue/amber/on-track cards + employee doc expiry alerts |
+| 25 | Salary benchmarks — `salary_benchmarks` migration, admin CRUD page `/salary-benchmarks`, portal `/benchmarks` comparison page |
+| 26 | BD pipeline Kanban view — HTML5 drag-and-drop, 4 status columns, inline status update |
+| 28 | Reporting CSV exports — portal `/reports` with 4 export cards; admin `/reports` with cross-client exports |
+| 29 | Manatal ATS integration — `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
+| 30 | RLS audit fixes — `is_ravello_staff()` corrected to include `ravello_recruiter`; 8 policies rewritten; client insert policies tightened |
+| 31 | Feature flag toggles expanded to include LEAD, PROTECT, Learning, Benchmarks; Manatal ATS pipeline surfaced in portal hiring page |
 
 ---
 
