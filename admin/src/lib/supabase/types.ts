@@ -18,6 +18,34 @@ export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type DocCategory   = 'contract' | 'policy' | 'letter' | 'report' | 'other';
 export type UserRole      = 'client_admin' | 'client_user' | 'ravello_admin' | 'ravello_staff';
 
+export type FrictionLevel = 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
+
+// ─── Friction Lens Types ──────────────────────────────────────────────────────
+
+export interface ExtractedRole {
+  title?:           string;
+  location?:        string;
+  salary_min?:      number;
+  salary_max?:      number;
+  required_skills?: string[];
+  working_model?:   string;
+  seniority?:       string;
+  employment_type?: string;
+  department?:      string;
+}
+
+export interface FrictionScore {
+  overall_score:         number;
+  overall_level:         FrictionLevel;
+  friction_score:        number;
+  clarity_score:         number;
+  overload_score:        number;
+  required_skills_count: number;
+  extracted_role?:       ExtractedRole;
+  recommendations:       string[];
+  time_to_fill_estimate: string;
+}
+
 // ─── Table Row Types ──────────────────────────────────────────────────────────
 
 export interface Company {

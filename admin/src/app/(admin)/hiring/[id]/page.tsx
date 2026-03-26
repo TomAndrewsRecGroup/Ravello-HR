@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import RequisitionPanel from './RequisitionPanel';
+import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Requisition Detail' };
@@ -39,7 +40,7 @@ function daysOpen(createdAt: string) {
 export default async function RequisitionDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
 
-  const [{ data: req }, { data: candidates }] = await Promise.all([
+  const [{ data: req }, { data: candidates }, { data: interviews }] = await Promise.all([
     supabase
       .from('requisitions')
       .select('*, companies(id,name)')
@@ -50,6 +51,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
       .select('*')
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('interview_schedules')
+      .select('*')
+      .eq('requisition_id', params.id)
+      .order('scheduled_at', { ascending: true }),
   ]);
 
   if (!req) notFound();
@@ -221,6 +227,14 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                 </Link>
               </div>
             </div>
+
+            {/* Interview Schedule */}
+            <InterviewSchedulePanel
+              requisitionId={r.id}
+              companyId={r.company_id}
+              candidates={cands.map((c: any) => ({ id: c.id, full_name: c.full_name }))}
+              initialInterviews={(interviews ?? []) as any[]}
+            />
           </div>
 
           {/* ── Right: updater + friction ─────────────────── */}

@@ -50,11 +50,19 @@ export default async function PortalLayout({ children }: { children: React.React
           .in('status', ['pending', 'overdue']),
       ]);
 
+      // Separate queries for new tables (may not exist yet in all envs)
+      const [empDocRes, absenceRes] = await Promise.all([
+        supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'expired'),
+        supabase.from('absence_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),
+      ]);
+
       counts = {
         actions:    actRes.count  ?? 0,
         tickets:    tickRes.count ?? 0,
         candidates: candRes.count ?? 0,
         compliance: compRes.count ?? 0,
+        emp_docs_expired: empDocRes.count ?? 0,
+        absence_pending:  absenceRes.count ?? 0,
       };
     }
   }

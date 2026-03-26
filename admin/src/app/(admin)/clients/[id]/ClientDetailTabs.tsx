@@ -95,6 +95,41 @@ function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Re
   );
 }
 
+function ManatalIdField({ companyId, currentId }: { companyId: string; currentId: string }) {
+  const supabase = createClient();
+  const [value,  setValue]  = useState(currentId);
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)' }}>Manatal Client ID</p>
+      <div className="flex gap-2">
+        <input
+          className="input flex-1 text-sm"
+          placeholder="e.g. 12345"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+        />
+        <button onClick={save} disabled={saving} className="btn-secondary btn-sm flex-shrink-0">
+          {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <Check size={12} /> : 'Save'}
+        </button>
+      </div>
+      <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+        Link this client to their Manatal department/account to enable live pipeline in the portal.
+      </p>
+    </div>
+  );
+}
+
 function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
   const supabase = createClient();
   const router   = useRouter();
@@ -123,7 +158,7 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
 
 /* ─── Main tabs component ────────────────────────── */
 
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'Services'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Services'] as const;
 type Tab = typeof TABS[number];
 
 const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
@@ -167,10 +202,14 @@ interface Props {
   actions: any[];
   candidates: any[];
   compliance: any[];
+  trainingNeeds: any[];
+  perfReviews: any[];
+  absenceRecords: any[];
+  empDocs: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
 }
 
-export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, compliance: initCompliance, stats }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, compliance: initCompliance, trainingNeeds: initTrainingNeeds, perfReviews: initPerfReviews, absenceRecords: initAbsenceRecords, empDocs: initEmpDocs, stats }: Props) {
   const supabase = createClient();
   const router   = useRouter();
   const [tab, setTab] = useState<Tab>('Overview');
@@ -264,6 +303,31 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
   const [showSvcForm,   setShowSvcForm]   = useState(false);
   const [svcForm,       setSvcForm]       = useState({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
   const [savingSvc,     setSavingSvc]     = useState(false);
+
+  /* ── LEAD state ── */
+  const [trainingNeeds, setTrainingNeeds] = useState<any[]>(initTrainingNeeds);
+  const [perfReviews,   setPerfReviews]   = useState<any[]>(initPerfReviews);
+
+  async function updateTrainingStatus(id: string, status: string) {
+    await supabase.from('training_needs').update({ status }).eq('id', id);
+    setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+  }
+
+  async function updateReviewStatus(id: string, status: string) {
+    const extra: Record<string, string> = {};
+    if (status === 'completed') extra.completed_at = new Date().toISOString();
+    await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
+    setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+  }
+
+  /* ── PROTECT state ── */
+  const [absenceRecords, setAbsenceRecords] = useState<any[]>(initAbsenceRecords);
+  const [empDocs,        setEmpDocs]        = useState<any[]>(initEmpDocs);
+
+  async function updateAbsenceStatus(id: string, status: string) {
+    await supabase.from('absence_records').update({ status }).eq('id', id);
+    setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  }
 
   /* ── Doc approve ── */
   const [approvingDoc,  setApprovingDoc]  = useState<string | null>(null);
@@ -371,6 +435,9 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                   </div>
                 ))}
               </dl>
+              <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
+                <ManatalIdField companyId={company.id} currentId={company.manatal_client_id ?? ''} />
+              </div>
             </div>
 
             {/* Users */}
@@ -979,6 +1046,268 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── LEAD ─────────────────────────────────────── */}
+      {tab === 'LEAD' && (
+        <div className="space-y-8">
+          {/* Training Needs */}
+          <div>
+            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
+              Training Needs
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+                {trainingNeeds.filter(n => n.status === 'open').length} open
+              </span>
+            </h2>
+            {trainingNeeds.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No training needs flagged.</p>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Skill Gap</th>
+                      <th>Employee</th>
+                      <th>Priority</th>
+                      <th>Target Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trainingNeeds.map((n: any) => (
+                      <tr key={n.id}>
+                        <td>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{n.skill_gap}</p>
+                          {n.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{n.notes}</p>}
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{[n.employee_name, n.department].filter(Boolean).join(' · ') || '—'}</td>
+                        <td>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={PRIORITY_STYLE[n.priority] ?? PRIORITY_STYLE.medium}>
+                            {n.priority}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{n.target_date ? new Date(n.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                        <td>
+                          <select
+                            className="text-xs rounded-[6px] px-2 py-1 border"
+                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
+                            value={n.status}
+                            onChange={e => updateTrainingStatus(n.id, e.target.value)}
+                          >
+                            {['open', 'in_progress', 'resolved', 'deferred'].map(s => (
+                              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Performance Reviews */}
+          <div>
+            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
+              Performance Reviews
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: '#5B21B6' }}>
+                {perfReviews.filter(r => ['pending', 'in_progress'].includes(r.status)).length} pending
+              </span>
+            </h2>
+            {perfReviews.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No performance reviews recorded.</p>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Period</th>
+                      <th>Type</th>
+                      <th>Due Date</th>
+                      <th>Rating</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perfReviews.map((r: any) => (
+                      <tr key={r.id}>
+                        <td>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{r.employee_name}</p>
+                          {r.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.department}</p>}
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.review_period}</td>
+                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{r.review_type?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.overall_rating ?? '—'}</td>
+                        <td>
+                          <select
+                            className="text-xs rounded-[6px] px-2 py-1 border"
+                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
+                            value={r.status}
+                            onChange={e => updateReviewStatus(r.id, e.target.value)}
+                          >
+                            {['pending', 'in_progress', 'completed', 'cancelled'].map(s => (
+                              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── PROTECT ───────────────────────────────────── */}
+      {tab === 'PROTECT' && (
+        <div className="space-y-8">
+          {/* Absence Records */}
+          <div>
+            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
+              Absence Records
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+                {absenceRecords.filter(a => a.status === 'pending').length} pending approval
+              </span>
+            </h2>
+            {absenceRecords.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No absence records.</p>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Type</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>Days</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {absenceRecords.map((a: any) => (
+                      <tr key={a.id}>
+                        <td>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{a.employee_name}</p>
+                          {a.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{a.department}</p>}
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{a.absence_type?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.start_date ? new Date(a.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.end_date ? new Date(a.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.days ?? '—'}</td>
+                        <td>
+                          {a.status === 'pending' ? (
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => updateAbsenceStatus(a.id, 'approved')}
+                                className="btn-sm btn-secondary text-[11px] flex items-center gap-1"
+                                style={{ color: '#166534' }}
+                              >
+                                <Check size={11} /> Approve
+                              </button>
+                              <button
+                                onClick={() => updateAbsenceStatus(a.id, 'rejected')}
+                                className="btn-sm btn-ghost text-[11px]"
+                                style={{ color: '#991B1B' }}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span
+                              className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                              style={
+                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: '#166534' } :
+                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: '#991B1B' } :
+                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                              }
+                            >
+                              {a.status}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Employee Documents */}
+          <div>
+            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
+              Employee Documents
+              {empDocs.filter(d => d.status === 'expired').length > 0 && (
+                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#991B1B' }}>
+                  {empDocs.filter(d => d.status === 'expired').length} expired
+                </span>
+              )}
+            </h2>
+            {empDocs.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No employee documents uploaded.</p>
+            ) : (
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Document</th>
+                      <th>Type</th>
+                      <th>Expiry</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {empDocs.map((d: any) => {
+                      const isExpired = d.status === 'expired' || (d.expiry_date && new Date(d.expiry_date) < new Date());
+                      return (
+                        <tr key={d.id}>
+                          <td>
+                            <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
+                            {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
+                          </td>
+                          <td>
+                            {d.file_url ? (
+                              <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
+                                {d.title} <ExternalLink size={11} />
+                              </a>
+                            ) : (
+                              <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
+                            )}
+                          </td>
+                          <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
+                          <td style={{ color: isExpired ? '#991B1B' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
+                            {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
+                          </td>
+                          <td>
+                            <span
+                              className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                              style={
+                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: '#166534' } :
+                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' } :
+                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: '#92400E' } :
+                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                              }
+                            >
+                              {d.status?.replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
