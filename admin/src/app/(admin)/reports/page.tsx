@@ -4,26 +4,44 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { BarChart3, ExternalLink } from 'lucide-react';
 import ReportUploadForm from './ReportUploadForm';
+import ExportCSVButton from '@/components/modules/ExportCSVButton';
 
 export const metadata: Metadata = { title: 'Reports' };
 
 export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
-  const [reportsRes, companiesRes] = await Promise.all([
-    supabase
-      .from('reports')
-      .select('*, companies(id,name)')
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('companies')
-      .select('id,name')
-      .eq('active', true)
-      .order('name'),
+  const [reportsRes, companiesRes, reqsRes, candsRes] = await Promise.all([
+    supabase.from('reports').select('*, companies(id,name)').order('created_at', { ascending: false }),
+    supabase.from('companies').select('id,name').eq('active', true).order('name'),
+    supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }),
+    supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }),
   ]);
 
   const reports   = reportsRes.data   ?? [];
   const companies = companiesRes.data ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const reqsCSV = (reqsRes.data ?? []).map((r: any) => ({
+    Client:      (r.companies as any)?.name ?? '',
+    Title:       r.title,
+    Department:  r.department ?? '',
+    Seniority:   r.seniority ?? '',
+    Location:    r.location ?? '',
+    Stage:       r.stage,
+    Recruiter:   r.assigned_recruiter ?? '',
+    Created:     new Date(r.created_at).toLocaleDateString('en-GB'),
+  }));
+
+  const candsCSV = (candsRes.data ?? []).map((c: any) => ({
+    Client:          (c.companies as any)?.name ?? '',
+    Name:            c.full_name,
+    Email:           c.email ?? '',
+    Role:            (c.requisitions as any)?.title ?? '',
+    'Client Status': c.client_status,
+    Approved:        c.approved_for_client ? 'Yes' : 'No',
+    Submitted:       new Date(c.created_at).toLocaleDateString('en-GB'),
+  }));
 
   return (
     <>
@@ -31,7 +49,17 @@ export default async function AdminReportsPage() {
         title="Reports"
         subtitle="Upload and manage client reports"
       />
-      <main className="admin-page flex-1">
+      <main className="admin-page flex-1 space-y-6">
+
+        {/* CSV Exports */}
+        <div>
+          <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--ink)' }}>Quick CSV Exports</h2>
+          <div className="flex flex-wrap gap-3">
+            <ExportCSVButton data={reqsCSV} filename={`all-requisitions-${today}`} label="All Requisitions" />
+            <ExportCSVButton data={candsCSV} filename={`all-candidates-${today}`} label="All Candidates" />
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-[1fr_360px] gap-6">
 
           {/* Report list */}
@@ -94,6 +122,8 @@ export default async function AdminReportsPage() {
           <aside>
             <ReportUploadForm companies={companies} />
           </aside>
+
+        </div>
 
         </div>
       </main>
