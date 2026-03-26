@@ -11,11 +11,13 @@ export const metadata: Metadata = { title: 'Reports' };
 export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
-  const [reportsRes, companiesRes, reqsRes, candsRes] = await Promise.all([
+  const [reportsRes, companiesRes, reqsRes, candsRes, compRes, ticketsRes] = await Promise.all([
     supabase.from('reports').select('*, companies(id,name)').order('created_at', { ascending: false }),
     supabase.from('companies').select('id,name').eq('active', true).order('name'),
     supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }),
+    supabase.from('compliance_items').select('title,category,status,due_date,companies(name)').order('due_date'),
+    supabase.from('tickets').select('subject,status,priority,created_at,resolved_at,companies(name)').order('created_at', { ascending: false }),
   ]);
 
   const reports   = reportsRes.data   ?? [];
@@ -43,6 +45,23 @@ export default async function AdminReportsPage() {
     Submitted:       new Date(c.created_at).toLocaleDateString('en-GB'),
   }));
 
+  const compCSV = (compRes.data ?? []).map((c: any) => ({
+    Client:   (c.companies as any)?.name ?? '',
+    Title:    c.title,
+    Category: c.category ?? '',
+    Status:   c.status,
+    'Due Date': c.due_date ? new Date(c.due_date).toLocaleDateString('en-GB') : '',
+  }));
+
+  const ticketsCSV = (ticketsRes.data ?? []).map((t: any) => ({
+    Client:     (t.companies as any)?.name ?? '',
+    Subject:    t.subject,
+    Status:     t.status,
+    Priority:   t.priority,
+    Raised:     new Date(t.created_at).toLocaleDateString('en-GB'),
+    Resolved:   t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '',
+  }));
+
   return (
     <>
       <AdminTopbar
@@ -55,8 +74,10 @@ export default async function AdminReportsPage() {
         <div>
           <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--ink)' }}>Quick CSV Exports</h2>
           <div className="flex flex-wrap gap-3">
-            <ExportCSVButton data={reqsCSV} filename={`all-requisitions-${today}`} label="All Requisitions" />
-            <ExportCSVButton data={candsCSV} filename={`all-candidates-${today}`} label="All Candidates" />
+            <ExportCSVButton data={reqsCSV}    filename={`all-requisitions-${today}`} label="All Requisitions" />
+            <ExportCSVButton data={candsCSV}  filename={`all-candidates-${today}`}   label="All Candidates" />
+            <ExportCSVButton data={compCSV}   filename={`compliance-items-${today}`}  label="Compliance Items" />
+            <ExportCSVButton data={ticketsCSV} filename={`support-tickets-${today}`}  label="Support Tickets" />
           </div>
         </div>
 
