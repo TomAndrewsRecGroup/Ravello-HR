@@ -12,6 +12,20 @@ const PAIN_POINTS = [
   'HR documents that haven\'t been touched in years',
 ];
 
+const BARS = [
+  { label: 'Location',      val: 78, pct: '78%',  color: '#D94444' },
+  { label: 'Salary',        val: 62, pct: '62%',  color: '#E8954A' },
+  { label: 'Skills',        val: 45, pct: '45%',  color: '#E8B84A' },
+  { label: 'Working Model', val: 80, pct: '80%',  color: '#D94444' },
+  { label: 'Process',       val: 22, pct: '22%',  color: '#5A9E6F' },
+];
+
+const STATS = [
+  { val: '18+', lab: 'Years of senior HR and People leadership', gold: true },
+  { val: '10+', lab: 'Years in Talent and Recruitment',          gold: false },
+  { val: '0',   lab: 'Tribunal outcomes on record',              gold: true },
+];
+
 export default function Hero() {
   return (
     <section
