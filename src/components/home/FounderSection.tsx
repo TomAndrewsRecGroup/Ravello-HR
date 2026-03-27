@@ -4,9 +4,9 @@ import { ArrowRight, Quote } from 'lucide-react';
 const CREDENTIALS = [
   'Lucy: 18+ years senior HR and People leadership',
   'Tom: 10+ years in Talent and Recruitment',
-  'CIPD qualified — Lucy',
-  'Tom: Founder — Andrews Recruitment Group, RecXchange, IvyLens Technology, AMIVY Designs',
-  'TUPE and restructure specialist — Lucy',
+  'CIPD qualified (Lucy)',
+  'Tom: Founder of Andrews Recruitment Group, RecXchange, IvyLens Technology, AMIVY Designs',
+  'TUPE and restructure specialist (Lucy)',
   '0 tribunal outcomes across all restructure work',
 ];
 
@@ -116,12 +116,12 @@ export default function FounderSection() {
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 Lucy brings 18+ years of senior HR and People leadership. Tom brings 10+ years
-                in Talent and Recruitment — founder of Andrews Recruitment Group, RecXchange,
-                IvyLens Technology, and AMIVY Designs. You get both — on your account, from day one.
+                in Talent and Recruitment, and the track record to back it up. You get both,
+                working on your account, from day one.
               </p>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                No junior handoffs. No vague advice. Fixed scope, clear deliverables, and a
-                partner who understands the commercial reality of building a business.
+                No junior handoffs. No vague advice. Fixed scope, clear deliverables, and partners
+                who understand what it actually takes to build a business.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

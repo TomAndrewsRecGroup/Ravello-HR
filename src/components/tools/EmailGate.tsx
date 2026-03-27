@@ -63,7 +63,7 @@ export default function EmailGate({ toolName, teaserScore, teaserLabel, onUnlock
           Get your full {toolName} results
         </h3>
         <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
-          Enter your email and we\'ll send you the complete breakdown — plus tailored next steps based on your answers.
+          Enter your email and we\'ll send you the complete breakdown, plus tailored next steps based on your answers.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">

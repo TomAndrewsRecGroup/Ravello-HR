@@ -73,11 +73,11 @@ export default function ToolsHub() {
               Free tools
             </p>
             <h2 className="section-title">
-              Start with a clear view<br />of what is not working
+              Know exactly<br />where the gaps are
             </h2>
           </div>
           <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-            Each tool takes under 3 minutes. No account needed. Instant results.
+            Under 3 minutes each. No account needed. Instant results.
           </p>
         </div>
 

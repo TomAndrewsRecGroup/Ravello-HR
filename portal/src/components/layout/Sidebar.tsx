@@ -4,11 +4,11 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
-  LifeBuoy, LogOut, Settings, ChevronRight, Bell, Map, ShieldCheck, TrendingUp,
-  BookOpen, Users, PoundSterling,
+  LifeBuoy, LogOut, Settings, Bell, Map, ShieldCheck, TrendingUp,
+  BookOpen, Users, PoundSterling, Lock,
 } from 'lucide-react';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 /* Map nav href → counts key */
 const COUNT_KEY: Record<string, string> = {
@@ -28,9 +28,9 @@ const nav = [
   { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
   { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
   { href: '/compliance', label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
-  { href: '/metrics',     label: 'Metrics',     icon: TrendingUp,    flag: 'metrics'     },
-  { href: '/benchmarks', label: 'Benchmarks',  icon: PoundSterling,  flag: 'benchmarks'  },
-  { href: '/reports',    label: 'Reports',     icon: BarChart3,      flag: 'reports'     },
+  { href: '/metrics',    label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
+  { href: '/benchmarks', label: 'Benchmarks',   icon: PoundSterling,   flag: 'benchmarks' },
+  { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
   { href: '/learning',   label: 'Learning',     icon: BookOpen,        flag: 'learning' },
   { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
@@ -49,34 +49,46 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
       style={{
         width: 'var(--sidebar-w)',
         background: 'var(--navy)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
       }}
     >
-      {/* Logo */}
+      {/* Subtle gradient wash at top */}
       <div
-        className="flex items-center gap-2 px-5 h-[var(--topbar-h)]"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        className="absolute top-0 left-0 right-0 h-40 pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(124,58,237,0.06) 0%, transparent 100%)',
+        }}
+      />
+
+      {/* Logo — more breathing room */}
+      <div
+        className="relative flex items-center gap-3 px-5 py-5"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
-        <Link href="/dashboard">
+        <Link href="/dashboard" className="flex items-center">
           <Image
             src={LOGO}
-            alt="The People Office"
-            width={110}
-            height={36}
-            className="h-8 w-auto object-contain brightness-110"
+            alt="The People System"
+            width={160}
+            height={52}
+            className="h-9 w-auto object-contain"
+            style={{ filter: 'brightness(0) invert(1)' }}
             priority
           />
         </Link>
         <span
-          className="text-[9px] font-bold uppercase tracking-[0.15em] ml-auto px-1.5 py-0.5 rounded"
-          style={{ background: 'rgba(143,114,246,0.25)', color: 'rgba(147,184,255,0.9)' }}
+          className="text-[9px] font-bold uppercase tracking-[0.16em] ml-auto px-2 py-0.5 rounded-[6px]"
+          style={{
+            background: 'rgba(124,58,237,0.20)',
+            color: 'rgba(166,125,255,0.85)',
+          }}
         >
           Portal
         </span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-4">
+      <nav className="relative flex-1 overflow-y-auto px-3 pt-5">
         <p className="nav-section-label">Workspace</p>
         <div className="space-y-0.5">
           {nav.map((item) => {
@@ -91,12 +103,12 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
                 <div
                   key={item.href}
                   className="nav-link cursor-not-allowed select-none"
-                  style={{ opacity: 0.35 }}
+                  style={{ opacity: 0.25 }}
                   title="This module is not enabled for your account"
                 >
-                  <item.icon size={16} />
+                  <item.icon size={15} />
                   <span>{item.label}</span>
-                  <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Off</span>
+                  <Lock size={11} className="ml-auto" style={{ color: 'rgba(255,255,255,0.30)' }} />
                 </div>
               );
             }
@@ -107,26 +119,17 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
                   href={item.href}
                   className={`nav-link ${active ? 'active' : ''}`}
                 >
-                  <item.icon size={16} />
+                  <item.icon size={15} />
                   <span>{item.label}</span>
                   {count > 0 && (
                     <span
-                      className="ml-auto text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                      className="ml-auto w-2 h-2 rounded-full flex-shrink-0"
                       style={{
                         background: item.href === '/actions' || item.href === '/compliance'
-                          ? 'rgba(239,68,68,0.85)'
+                          ? 'var(--gradient)'
                           : 'rgba(245,158,11,0.85)',
-                        color: '#fff',
                       }}
-                    >
-                      {count > 99 ? '99+' : count}
-                    </span>
-                  )}
-                  {active && count === 0 && (
-                    <ChevronRight
-                      size={12}
-                      className="ml-auto"
-                      style={{ color: 'rgba(255,255,255,0.35)' }}
+                      title={`${count} pending`}
                     />
                   )}
                 </Link>
@@ -148,7 +151,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
         <p className="nav-section-label">Account</p>
         <div className="space-y-0.5">
           <Link href="/settings" className={`nav-link ${path === '/settings' ? 'active' : ''}`}>
-            <Settings size={16} />
+            <Settings size={15} />
             <span>Settings</span>
           </Link>
         </div>
@@ -156,15 +159,12 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
 
       {/* Footer */}
       <div
-        className="p-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        className="relative p-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
       >
         <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="nav-link w-full text-left"
-          >
-            <LogOut size={15} />
+          <button type="submit" className="nav-link w-full text-left">
+            <LogOut size={14} />
             <span className="text-sm">Sign out</span>
           </button>
         </form>

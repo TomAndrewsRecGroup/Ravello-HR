@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, U
 
 export const metadata: Metadata = {
   title: 'HIRE | Fix Your Hiring Before It Costs You | The People System',
-  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and Friction Lens role scoring — The People System.',
+  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and pre-market role scoring built into every engagement.',
   alternates: { canonical: 'https://ravellohr.co.uk/smart-hiring-system' },
 };
 

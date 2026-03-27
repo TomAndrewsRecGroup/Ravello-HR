@@ -6,7 +6,7 @@ export default function StructuredData() {
     url: 'https://ravellohr.co.uk',
     logo: 'https://ravellohr.co.uk/logo.png',
     description:
-      'The People System delivers HIRE, LEAD, and PROTECT — embedded recruitment, fractional HR leadership, and compliance foundations for founder-led and PE-backed businesses.',
+      'The People System delivers HIRE, LEAD, and PROTECT: embedded recruitment, fractional HR leadership, and compliance foundations for founder-led and PE-backed businesses.',
     founders: [
       { '@type': 'Person', name: 'Lucy' },
       { '@type': 'Person', name: 'Tom Andrews' },
@@ -40,7 +40,7 @@ export default function StructuredData() {
         name: 'What is Friction Lens?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Friction Lens is a role scoring technology built by Tom Andrews through IvyLens Technology. It scores every active role across five dimensions — Location, Salary, Skills, Working Model, and Process — before it goes to market, and provides specific recommendations to reduce friction before you recruit. The People System integrates Friction Lens into every HIRE engagement as standard.',
+          text: 'Friction Lens is a role scoring technology built by Tom Andrews through IvyLens Technology. It scores every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) before it goes to market, and provides specific recommendations to reduce friction before you recruit. The People System integrates Friction Lens into every HIRE engagement as standard.',
         },
       },
       {
@@ -48,7 +48,7 @@ export default function StructuredData() {
         name: 'What is PROTECT?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'PROTECT is the HR foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs — compliant with current UK legislation including the Employment Rights Bill.',
+          text: 'PROTECT is the HR foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs, compliant with current UK legislation including the Employment Rights Bill.',
         },
       },
       {

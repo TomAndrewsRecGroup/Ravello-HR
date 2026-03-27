@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Cormorant_Garamond } from 'next/font/google';
+import { Cormorant_Garamond, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { Analytics } from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
@@ -19,10 +20,20 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const satoshi = localFont({
+  src: [
+    { path: '../fonts/Satoshi-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../fonts/Satoshi-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../fonts/Satoshi-Bold.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-satoshi',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '700'],
+  variable: '--font-mono',
   display: 'swap',
 });
 
@@ -53,7 +64,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${cormorant.variable}`}>
+    <html lang="en" className={`${satoshi.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}>
       <head><ClarityScript /></head>
       <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <Analytics />

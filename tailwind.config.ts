@@ -24,6 +24,7 @@ const config: Config = {
         'gold-lt':     'var(--brand-gold-lt)',
         'gold-dk':     'var(--brand-gold-dk)',
         line:          'var(--brand-line)',
+        proof:         'var(--proof-bg)',
       },
       fontFamily: {
         display: [
@@ -33,44 +34,45 @@ const config: Config = {
           'serif',
         ],
         sans: [
-          'var(--font-dm-sans)',
-          'DM Sans',
+          'var(--font-satoshi)',
+          'Satoshi',
           'system-ui',
           'sans-serif',
         ],
+        mono: [
+          'var(--font-mono)',
+          'JetBrains Mono',
+          'monospace',
+        ],
       },
       fontSize: {
-        /* Fluid display scale */
-        'display-2xl': ['clamp(3.5rem, 7vw, 6rem)',   { lineHeight: '1.03', letterSpacing: '-0.03em' }],
-        'display-xl':  ['clamp(2.8rem, 5.5vw, 5rem)', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
-        'display-lg':  ['clamp(2.1rem, 4vw, 3.5rem)', { lineHeight: '1.08', letterSpacing: '-0.02em' }],
-        'display-md':  ['clamp(1.6rem, 3vw, 2.4rem)', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
-        'display-sm':  ['clamp(1.2rem, 2.5vw, 1.8rem)',{ lineHeight: '1.2',  letterSpacing: '-0.01em' }],
+        /* Fluid display scale — editorial luxury */
+        'display-hero': ['clamp(3.5rem, 7vw, 7rem)',    { lineHeight: '1.03', letterSpacing: '-0.035em' }],
+        'display-2xl':  ['clamp(3rem, 6vw, 5.5rem)',    { lineHeight: '1.04', letterSpacing: '-0.03em' }],
+        'display-xl':   ['clamp(2.6rem, 5vw, 4.5rem)',  { lineHeight: '1.05', letterSpacing: '-0.03em' }],
+        'display-lg':   ['clamp(2rem, 4vw, 3.2rem)',    { lineHeight: '1.06', letterSpacing: '-0.025em' }],
+        'display-md':   ['clamp(1.6rem, 3vw, 2.4rem)',  { lineHeight: '1.12', letterSpacing: '-0.02em' }],
+        'display-sm':   ['clamp(1.2rem, 2.5vw, 1.8rem)',{ lineHeight: '1.2',  letterSpacing: '-0.015em' }],
       },
       spacing: {
-        section:    '7rem',
-        'section-sm': '4rem',
+        section:    '8rem',
+        'section-sm': '5rem',
       },
       borderRadius: {
-        card:    '20px',
-        'card-sm': '14px',
-        'card-lg': '28px',
+        card:    '24px',
+        'card-sm': '16px',
+        'card-lg': '32px',
       },
       boxShadow: {
-        /* Cards */
-        card:        '0 1px 3px rgba(7,11,29,0.04), 0 6px 28px rgba(7,11,29,0.05)',
-        'card-hover':'0 4px 20px rgba(7,11,29,0.07), 0 20px 56px rgba(7,11,29,0.09)',
-        /* Buttons */
-        btn:         '0 1px 4px rgba(7,11,29,0.20), 0 4px 14px rgba(7,11,29,0.10)',
-        'btn-hover': '0 2px 10px rgba(7,11,29,0.26), 0 8px 26px rgba(7,11,29,0.14)',
-        /* Purple glow */
-        glow:        '0 0 60px rgba(124,58,237,0.16), 0 0 120px rgba(124,58,237,0.08)',
-        'glow-sm':   '0 0 30px rgba(124,58,237,0.22)',
-        'glow-lg':   '0 0 80px rgba(124,58,237,0.24), 0 0 160px rgba(59,111,255,0.12)',
-        /* Gold glow — quality signals */
-        'gold-glow': '0 2px 20px rgba(191,143,40,0.36), 0 1px 6px rgba(191,143,40,0.22)',
-        /* Glass */
-        glass:       '0 4px 24px rgba(7,11,29,0.06), inset 0 1px 0 rgba(255,255,255,0.85)',
+        card:        '0 1px 2px rgba(10,15,30,0.03), 0 8px 32px rgba(10,15,30,0.04)',
+        'card-hover':'0 4px 20px rgba(10,15,30,0.06), 0 24px 64px rgba(10,15,30,0.08)',
+        btn:         '0 1px 4px rgba(10,15,30,0.18), 0 4px 14px rgba(10,15,30,0.08)',
+        'btn-hover': '0 2px 10px rgba(10,15,30,0.22), 0 8px 26px rgba(10,15,30,0.12)',
+        glow:        '0 0 60px rgba(124,58,237,0.14), 0 0 120px rgba(124,58,237,0.07)',
+        'glow-sm':   '0 0 30px rgba(124,58,237,0.18)',
+        'glow-lg':   '0 0 80px rgba(124,58,237,0.20), 0 0 160px rgba(59,111,255,0.10)',
+        'gold-glow': '0 2px 20px rgba(191,143,40,0.30), 0 1px 6px rgba(191,143,40,0.18)',
+        glass:       '0 4px 24px rgba(10,15,30,0.05), inset 0 1px 0 rgba(255,255,255,0.80)',
       },
       animation: {
         'fade-up':       'fadeUp 0.6s ease forwards',
@@ -83,7 +85,7 @@ const config: Config = {
       },
       keyframes: {
         fadeUp: {
-          from: { opacity: '0', transform: 'translateY(20px)' },
+          from: { opacity: '0', transform: 'translateY(24px)' },
           to:   { opacity: '1', transform: 'translateY(0)' },
         },
         fadeIn: {
@@ -96,10 +98,10 @@ const config: Config = {
         },
         glowPulse: {
           '0%, 100%': {
-            boxShadow: '0 0 20px rgba(124,58,237,0.18), 0 2px 12px rgba(124,58,237,0.12)',
+            boxShadow: '0 0 20px rgba(124,58,237,0.16), 0 2px 12px rgba(124,58,237,0.10)',
           },
           '50%': {
-            boxShadow: '0 0 44px rgba(124,58,237,0.44), 0 0 80px rgba(59,111,255,0.18)',
+            boxShadow: '0 0 44px rgba(124,58,237,0.40), 0 0 80px rgba(59,111,255,0.15)',
           },
         },
         goldSweep: {

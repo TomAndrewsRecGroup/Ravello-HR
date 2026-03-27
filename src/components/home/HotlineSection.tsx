@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { CalendarCheck, ArrowRight } from 'lucide-react';
 
 export default function HotlineSection() {
@@ -32,20 +33,20 @@ export default function HotlineSection() {
             className="w-1.5 h-1.5 rounded-full inline-block"
             style={{ background: 'var(--brand-purple)' }}
           />
-          Ready to start?
+          Let&rsquo;s talk
         </p>
 
         <h2 className="section-title mb-6">
-          Ready to talk about<br />
-          <span className="text-gradient">your people function?</span>
+          One conversation.<br />
+          <span className="text-gradient">A clear plan.</span>
         </h2>
 
         <p
           className="text-lg leading-relaxed mb-10 max-w-[500px] mx-auto"
           style={{ color: 'var(--ink-soft)' }}
         >
-          No pitch. No pressure. Thirty minutes with Lucy and Tom to understand your
-          situation and give you a straight answer on where to start.
+          Thirty minutes with Lucy and Tom. No pitch. A straight answer on where to start
+          and what it would take to fix it.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">

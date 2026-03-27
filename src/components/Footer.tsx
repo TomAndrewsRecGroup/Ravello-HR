@@ -36,8 +36,8 @@ export default function Footer() {
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Strategic HR for ambitious businesses.<br />
-              Named systems. Real outcomes. No generic advice.
+              Your People Department.<br />
+              Proper HR. Real outcomes. No generic advice.
             </p>
             <div className="flex gap-3">
               <a
@@ -125,7 +125,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://portal.ravello-hr.vercel.app"
+                  href="https://www.portal.thepeoplesystem.co.uk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="footer-link text-sm flex items-center gap-2"

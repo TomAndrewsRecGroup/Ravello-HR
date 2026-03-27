@@ -10,7 +10,7 @@ const solutions = [
   { href: '/hire',          label: 'HIRE',          sub: 'Recruitment & talent delivery', dot: 'var(--brand-purple)' },
   { href: '/lead',          label: 'LEAD',          sub: 'Fractional HR leadership',      dot: '#2E8B7A'             },
   { href: '/protect',       label: 'PROTECT',       sub: 'HR foundations & compliance',   dot: 'var(--brand-blue)'   },
-  { href: '/friction-lens', label: 'Friction Lens', sub: 'Role scoring before you recruit', dot: 'var(--brand-pink)' },
+  { href: '/insights',      label: 'Insights',       sub: 'All your documents and insights in one place', dot: 'var(--brand-pink)' },
 ];
 const tools = [
   { href: '/tools/hiring-score',            label: 'Smart Hiring Score' },
@@ -35,27 +35,32 @@ export default function Nav() {
   const closeTool = () => { toolTimer.current = setTimeout(() => setTool(false), 150); };
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 32);
+    const h = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', h);
     return () => window.removeEventListener('scroll', h);
   }, []);
 
+  /* Text stays ink-toned — hero is light now */
+  const textColor = 'var(--ink-soft)';
+  const textHover = 'var(--ink)';
+  const logoFilter = 'none';
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? 'bg-white/96 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
-          : 'bg-white/75 backdrop-blur-md'
+          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_0_rgba(10,15,30,0.06),0_4px_24px_rgba(10,15,30,0.04)]'
+          : 'bg-white/70 backdrop-blur-md'
       }`}
     >
-      {/* Top gradient line */}
+      {/* Top gradient line — only visible when scrolled */}
       <div
-        className="absolute top-0 left-0 right-0 h-[1.5px]"
-        style={{ background: 'var(--gradient)' }}
+        className="absolute top-0 left-0 right-0 h-[1.5px] transition-opacity duration-500"
+        style={{ background: 'var(--gradient)', opacity: scrolled ? 1 : 0 }}
       />
 
       <nav className="container-wide px-6 lg:px-10">
-        <div className="flex items-center justify-between h-[76px]">
+        <div className="flex items-center justify-between h-[80px]">
 
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 focus-ring">
@@ -64,17 +69,23 @@ export default function Nav() {
               alt="The People System"
               width={200}
               height={64}
-              className="h-[48px] w-auto object-contain"
+              className="h-[44px] w-auto object-contain transition-all duration-500"
+              style={{ filter: logoFilter }}
               priority
             />
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-0.5">
+          <div className="hidden lg:flex items-center gap-1">
 
             {/* Solutions dropdown */}
             <div className="relative" onMouseEnter={openSol} onMouseLeave={closeSol}>
-              <button className="btn-ghost flex items-center gap-1.5">
+              <button
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 hover:bg-[var(--surface-alt)]"
+                style={{ color: textColor }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+              >
                 Solutions
                 <ChevronDown
                   size={12}
@@ -83,12 +94,12 @@ export default function Nav() {
               </button>
               {solOpen && (
                 <div
-                  className="absolute top-full left-0 mt-2 rounded-[16px] p-2"
+                  className="absolute top-full left-0 mt-2 rounded-[18px] p-2.5"
                   style={{
-                    minWidth: '272px',
-                    boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
+                    minWidth: '280px',
+                    boxShadow: '0 8px 48px rgba(10,15,30,0.14), 0 2px 8px rgba(10,15,30,0.06)',
                     border: '1px solid var(--brand-line)',
-                    background: 'var(--bg)',
+                    background: '#fff',
                     zIndex: 60,
                     animation: 'slideDown 0.16s ease forwards',
                   }}
@@ -97,14 +108,14 @@ export default function Nav() {
                     <Link
                       key={s.href}
                       href={s.href}
-                      className="flex items-center gap-3 px-4 py-3 rounded-[10px] transition-all duration-150 hover:bg-[var(--surface-alt)] group"
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-[12px] transition-all duration-150 hover:bg-[var(--surface-soft)] group"
                     >
                       <span
                         className="w-2 h-2 rounded-full flex-shrink-0 transition-transform duration-150 group-hover:scale-125"
                         style={{ background: s.dot }}
                       />
                       <div>
-                        <span className="block text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
+                        <span className="block text-[13px] font-bold" style={{ color: 'var(--ink)' }}>
                           {s.label}
                         </span>
                         <span className="block text-[11px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>
@@ -119,7 +130,12 @@ export default function Nav() {
 
             {/* Free Tools dropdown */}
             <div className="relative" onMouseEnter={openTool} onMouseLeave={closeTool}>
-              <button className="btn-ghost flex items-center gap-1.5">
+              <button
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 hover:bg-[var(--surface-alt)]"
+                style={{ color: textColor }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+              >
                 Free Tools
                 <ChevronDown
                   size={12}
@@ -128,12 +144,12 @@ export default function Nav() {
               </button>
               {toolOpen && (
                 <div
-                  className="absolute top-full left-0 mt-2 rounded-[16px] p-2"
+                  className="absolute top-full left-0 mt-2 rounded-[18px] p-2.5"
                   style={{
-                    minWidth: '228px',
-                    boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
+                    minWidth: '236px',
+                    boxShadow: '0 8px 48px rgba(10,15,30,0.14), 0 2px 8px rgba(10,15,30,0.06)',
                     border: '1px solid var(--brand-line)',
-                    background: 'var(--bg)',
+                    background: '#fff',
                     zIndex: 60,
                     animation: 'slideDown 0.16s ease forwards',
                   }}
@@ -142,7 +158,7 @@ export default function Nav() {
                     <Link
                       key={t.href}
                       href={t.href}
-                      className="block px-4 py-3 rounded-[10px] text-[13px] font-medium transition-colors hover:bg-[var(--surface-alt)]"
+                      className="block px-4 py-3 rounded-[12px] text-[13px] font-medium transition-colors hover:bg-[var(--surface-soft)]"
                       style={{ color: 'var(--ink-soft)' }}
                     >
                       {t.label}
@@ -152,22 +168,31 @@ export default function Nav() {
               )}
             </div>
 
-            <Link href="/playbook"    className="btn-ghost">Playbook</Link>
-            <Link href="/why-ravello" className="btn-ghost">Why TPO</Link>
-            <Link href="/about"       className="btn-ghost">About</Link>
+            {['Playbook', 'About'].map((label) => (
+              <Link
+                key={label}
+                href={`/${label.toLowerCase().replace(' ', '-')}`}
+                className="px-4 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 hover:bg-[var(--surface-alt)]"
+                style={{ color: textColor }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+              >
+                {label}
+              </Link>
+            ))}
 
             {/* Divider */}
             <div className="w-px h-5 mx-2" style={{ background: 'var(--brand-line)' }} />
 
             {/* Client Portal */}
             <a
-              href="https://portal.ravello-hr.vercel.app"
+              href="https://www.portal.thepeoplesystem.co.uk"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-portal"
+              className="btn-portal flex items-center gap-2 text-sm"
             >
               <LogIn size={13} />
-              Client Portal
+              Portal
             </a>
 
             {/* Divider */}
@@ -181,7 +206,7 @@ export default function Nav() {
 
           {/* Mobile hamburger */}
           <button
-            className="lg:hidden p-2 rounded-xl transition-colors hover:bg-[var(--surface-alt)]"
+            className="lg:hidden p-2 rounded-xl transition-colors"
             style={{ color: 'var(--ink)' }}
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
@@ -193,17 +218,17 @@ export default function Nav() {
         {/* Mobile menu */}
         {open && (
           <div
-            className="lg:hidden rounded-[18px] p-5 mb-4"
+            className="lg:hidden rounded-[20px] p-5 mb-4"
             style={{
               border: '1px solid var(--brand-line)',
-              boxShadow: '0 12px 48px rgba(7,11,29,0.12)',
-              background: 'var(--bg)',
+              boxShadow: '0 12px 48px rgba(10,15,30,0.14)',
+              background: '#fff',
               zIndex: 60,
               animation: 'slideDown 0.2s ease forwards',
             }}
           >
             <p
-              className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
+              className="text-[10px] font-bold uppercase tracking-[0.22em] px-3 mb-2"
               style={{ color: 'var(--ink-faint)' }}
             >
               Solutions
@@ -212,7 +237,7 @@ export default function Nav() {
               <Link
                 key={s.href}
                 href={s.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-[var(--surface-soft)] transition-colors"
                 style={{ color: 'var(--ink-soft)' }}
                 onClick={() => setOpen(false)}
               >
@@ -222,7 +247,7 @@ export default function Nav() {
             ))}
             <div className="my-3 brand-divider" />
             <p
-              className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
+              className="text-[10px] font-bold uppercase tracking-[0.22em] px-3 mb-2"
               style={{ color: 'var(--ink-faint)' }}
             >
               Free Tools
@@ -231,7 +256,7 @@ export default function Nav() {
               <Link
                 key={t.href}
                 href={t.href}
-                className="block px-3 py-2.5 rounded-xl text-sm hover:bg-[var(--surface-alt)] transition-colors"
+                className="block px-3 py-2.5 rounded-xl text-sm hover:bg-[var(--surface-soft)] transition-colors"
                 style={{ color: 'var(--ink-soft)' }}
                 onClick={() => setOpen(false)}
               >
@@ -239,12 +264,11 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <Link href="/playbook"    className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Playbook</Link>
-            <Link href="/why-ravello" className="block px-3 py-2.5 rounded-xl text-sm font-semibold" style={{ color: 'var(--brand-purple)' }} onClick={() => setOpen(false)}>Why TPO</Link>
-            <Link href="/about"       className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
+            <Link href="/playbook" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Playbook</Link>
+            <Link href="/about"    className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />
             <a
-              href="https://portal.ravello-hr.vercel.app"
+              href="https://www.portal.thepeoplesystem.co.uk"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium"

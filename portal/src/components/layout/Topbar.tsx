@@ -13,13 +13,21 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
       className="sticky top-0 z-30 flex items-center justify-between px-6 lg:px-8"
       style={{
         height: 'var(--topbar-h)',
-        background: 'rgba(244,245,249,0.9)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(250,250,248,0.90)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--line)',
       }}
     >
       <div>
-        <h1 className="font-display font-bold text-[1.05rem]" style={{ color: 'var(--ink)' }}>
+        <h1
+          className="font-display text-[1.15rem]"
+          style={{
+            color: 'var(--ink)',
+            fontWeight: 300,
+            letterSpacing: '-0.02em',
+          }}
+        >
           {title}
         </h1>
         {subtitle && (
@@ -38,7 +46,7 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
           <Bell size={15} />
           <span
             className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-            style={{ background: 'var(--purple)' }}
+            style={{ background: 'var(--gradient)' }}
           />
         </button>
       </div>
