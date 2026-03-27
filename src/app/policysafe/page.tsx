@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Use
 
 export const metadata: Metadata = {
   title: 'PROTECT | HR Foundations and Compliance | The People System',
-  description: 'Get your HR foundations right before something goes wrong. Contracts, handbooks, compliance, Employment Rights Bill readiness — The People System.',
+  description: 'Get your HR foundations right before something goes wrong. Contracts, handbooks, compliance, Employment Rights Bill readiness: The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/policysafe' },
 };
 
@@ -39,16 +39,16 @@ const packages = [
     price: '£1,500–£2,500/month',
     highlight: false,
     items: ['Everything in Core', 'Full bespoke policy library', 'Employment Rights Bill compliance review', 'Manager training session', 'Ongoing update retainer included', 'Priority response SLA'],
-    cta: { label: 'Talk to Lucy', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
 ];
 
 const included = [
-  'Written by Lucy — 18+ years senior HR and People leadership, not a template service',
+  'Written by Lucy: 18+ years senior HR and People leadership, not a template service',
   'Fully compliant with current UK employment legislation, including Employment Rights Bill changes',
   'Written in plain English your managers will actually read and apply',
   'Branded and formatted to match your business',
-  'Delivered with clear implementation guidance — not just a document dump',
+  'Delivered with clear implementation guidance: not just a document dump',
   'Built around your specific risks and workforce, not copied from a generic library',
 ];
 
@@ -56,12 +56,12 @@ export default function PolicySafePage() {
   return (
     <div className="pt-28">
 
-      {/* Hero — light */}
+      {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-            PROTECT — The People System
+            PROTECT: The People System
           </p>
           <h1
             style={{
@@ -83,7 +83,7 @@ export default function PolicySafePage() {
             Most HR compliance gaps are invisible until something breaks. Missing contracts. An outdated handbook. No disciplinary process. Managers applying different rules. The Employment Rights Bill is making this more urgent, not less.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            Three outcomes: Documented. Protected. Ready to scale. Lucy builds the foundations your business genuinely needs — written properly, not copy-pasted from a template site.
+            Three outcomes: Documented. Protected. Ready to scale. Lucy builds the foundations your business genuinely needs: written properly, not copy-pasted from a template site.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/book" className="btn-gradient">
@@ -213,9 +213,9 @@ export default function PolicySafePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-          { q: 'What is PROTECT?', a: 'The foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs — compliant, practical, and written in plain English your managers will actually follow.' },
+          { q: 'What is PROTECT?', a: 'The foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs: compliant, practical, and written in plain English your managers will actually follow.' },
           { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500–£750/month), Protect Partner (£1,500–£2,500/month), Protect Enterprise (bespoke, £3,000–£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
-          { q: 'What about the Employment Rights Bill?', a: 'The Employment Rights Bill introduces significant changes for UK employers — particularly around zero-hours contracts, day-one rights, and dismissal processes. Lucy reviews every engagement against current and upcoming legislation so your documentation is ready, not reactive.' },
+          { q: 'What about the Employment Rights Bill?', a: 'The Employment Rights Bill introduces significant changes for UK employers: particularly around zero-hours contracts, day-one rights, and dismissal processes. Lucy reviews every engagement against current and upcoming legislation so your documentation is ready, not reactive.' },
           { q: 'Who is PROTECT for?', a: 'Any business that has been moving fast without building proper HR foundations. This is especially common in founder-led SMEs, VC-backed businesses post-raise, and businesses that have not reviewed their HR documentation in more than two years.' },
           { q: 'How long does it take?', a: 'Most PROTECT engagements complete within two to four weeks depending on the package and the state of your existing documentation.' },
         ]} />

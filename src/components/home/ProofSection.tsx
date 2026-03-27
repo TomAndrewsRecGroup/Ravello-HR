@@ -26,7 +26,7 @@ const stats = [
     sub: 'across every restructure and TUPE engagement',
     color: 'var(--brand-gold)',
     glow: 'rgba(191,143,40,0.18)',
-    gold: true,  /* Gold — highest quality signal */
+    gold: true,  /* Gold: highest quality signal */
   },
   {
     icon: Users,

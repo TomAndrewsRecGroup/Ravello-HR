@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About | Lucy and Tom | The People System',
-  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom — 18+ years HR leadership and 10+ years talent expertise, working together.',
+  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom: 18+ years HR leadership and 10+ years talent expertise, working together.',
   alternates: { canonical: 'https://ravellohr.co.uk/about' },
 };
 
@@ -19,10 +19,10 @@ const lucyCredentials = [
 
 const tomCredentials = [
   '10+ years in talent and recruitment leadership',
-  'Founder — Andrews Recruitment Group',
-  'Founder — RecXchange (15,000+ recruiter network) and RecX Direct',
-  'Founder — IvyLens Technology (role scoring platform and automated outreach tools)',
-  'Founder — AMIVY Designs (lead generation, sales and marketing)',
+  'Founder, Andrews Recruitment Group',
+  'Founder, RecXchange (15,000+ recruiter network) and RecX Direct',
+  'Founder, IvyLens Technology (Friction Lens, automated outreach tools)',
+  'Founder, AMIVY Designs (lead generation, sales and marketing)',
   'Embedded talent delivery across founder-led and PE-backed businesses',
   'Reduced agency dependency and time-to-hire on every long-term engagement',
 ];
@@ -42,7 +42,7 @@ export default function AboutPage() {
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
             About The People System
@@ -77,7 +77,7 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="eyebrow mb-3">Co-Founder — HR and People</p>
+              <p className="eyebrow mb-3">Co-Founder: HR and People</p>
               <h2
                 style={{
                   fontFamily: 'var(--font-cormorant), serif',
@@ -92,10 +92,10 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Lucy spent over 18 years inside large, complex organisations — leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
+                  Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
                 </p>
                 <p>
-                  She founded Ravello HR because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated — but it required someone senior enough to do it properly.
+                  She founded Ravello HR because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
                 </p>
                 <p>
                   Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
@@ -103,7 +103,7 @@ export default function AboutPage() {
               </div>
               <div className="mt-8">
                 <Link href="/book" className="btn-gradient">
-                  Work with Lucy <ArrowRight size={16} />
+                  Work with us <ArrowRight size={16} />
                 </Link>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="eyebrow mb-3">Co-Founder — Talent and Recruitment</p>
+              <p className="eyebrow mb-3">Co-Founder: Talent and Recruitment</p>
               <h2
                 style={{
                   fontFamily: 'var(--font-cormorant), serif',
@@ -152,10 +152,10 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment — built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
+                  Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment: built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
                 </p>
                 <p>
-                  Alongside ARG, Tom built RecXchange — a recruiter networking and collaboration platform with over 15,000 recruiters — and RecX Direct, its business development arm that connects live client roles directly with independent recruiters. He also founded IvyLens Technology, known for the Friction Lens role scoring platform and its automated outreach tools, and AMIVY Designs, a website and lead generation studio focused on sales and marketing.
+                  Alongside ARG, Tom built RecXchange: a recruiter networking and collaboration platform with over 15,000 recruiters: and RecX Direct, its business development arm that connects live client roles directly with independent recruiters. He also founded IvyLens Technology, known for the Friction Lens role scoring platform and its automated outreach tools, and AMIVY Designs, a website and lead generation studio focused on sales and marketing.
                 </p>
                 <p>
                   Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, and Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
@@ -163,7 +163,7 @@ export default function AboutPage() {
               </div>
               <div className="mt-8">
                 <Link href="/book" className="btn-gradient">
-                  Work with Tom <ArrowRight size={16} />
+                  Work with us <ArrowRight size={16} />
                 </Link>
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function AboutPage() {
             &ldquo;Hire. Lead. Protect.&rdquo;
           </h2>
           <p className="text-lg leading-relaxed max-w-2xl mx-auto mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People System is built around the idea that a great people function needs both — working together, from the same starting point, towards the same business outcome.
+            Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People System is built around the idea that a great people function needs both: working together, from the same starting point, towards the same business outcome.
           </p>
           <p className="text-base leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Tom and Lucy talk. They share context. When a client comes through HIRE and needs documentation built, PROTECT is already briefed. When a LEAD engagement surfaces a hiring challenge, HIRE is already on it. One partner. Total control of your people function.
@@ -244,7 +244,7 @@ export default function AboutPage() {
         <div className="container-narrow text-center">
           <h2 className="section-title mb-4">Ready to work together?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-            Book a free call. Bring your current people challenge — whether it is hiring, compliance, or leadership — and leave with a clear, actionable next step.
+            Book a free call. Bring your current people challenge: whether it is hiring, compliance, or leadership: and leave with a clear, actionable next step.
           </p>
           <Link href="/book" className="btn-gradient">
             Book a Free Call <ArrowRight size={16} />

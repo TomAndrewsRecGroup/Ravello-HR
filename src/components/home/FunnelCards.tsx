@@ -27,7 +27,7 @@ const funnels = [
     pill: 'LEAD',
     pillStyle: 'pill-navy',
     headline: 'No People lead? Get one without the headcount cost.',
-    body: 'Fractional People leadership for businesses that need proper HR thinking at the top without hiring a full-time People Director. Strategy, manager enablement, and people decisions. Handled.',
+    body: 'Fractional People leadership for businesses that need proper HR thinking at the top without hiring a full-time People Director. Strategy, manager enablement, and people decisions: handled.',
     pains: [
       'No senior HR thinking driving people decisions',
       'Managers left to figure it out on their own',
@@ -46,7 +46,7 @@ const funnels = [
     pill: 'PROTECT',
     pillStyle: 'pill-blue',
     headline: 'Get your HR foundations right. Before something goes wrong.',
-    body: 'Missing contracts, outdated handbooks, compliance gaps the Employment Rights Bill will expose. We build the foundations that protect your business. Documented, watertight, ready to scale.',
+    body: 'Missing contracts, outdated handbooks, compliance gaps the Employment Rights Bill will expose. We build the foundations that protect your business: documented, watertight, ready to scale.',
     pains: [
       "Contracts that haven't been reviewed in years",
       'No handbook managers will actually follow',

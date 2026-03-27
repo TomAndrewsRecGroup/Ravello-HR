@@ -44,13 +44,13 @@ export const metadata: Metadata = {
     template: '%s',
   },
   description:
-    'The People System helps ambitious businesses fix hiring, build HR foundations, and lead their people function — one partner, total control.',
+    'The People System helps ambitious businesses fix hiring, build HR foundations, and lead their people function: one partner, total control.',
   keywords: ['HR consultancy UK', 'fractional HR', 'embedded recruitment', 'Friction Lens', 'HR compliance', 'people strategy', 'Employment Rights Bill', 'M&A HR support'],
   authors: [{ name: 'The People System', url: 'https://ravellohr.co.uk' }],
   openGraph: {
     type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'The People System',
     title: 'The People System | Hire. Lead. Protect.',
-    description: 'One partner. Total control of your people function. HIRE, LEAD, and PROTECT — delivered by Lucy and Tom.',
+    description: 'One partner. Total control of your people function. HIRE, LEAD, and PROTECT: delivered by Lucy and Tom.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {

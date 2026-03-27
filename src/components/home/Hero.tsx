@@ -26,18 +26,31 @@ export default function Hero() {
         }}
       />
 
-      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-20">
-        <div className="grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
+      <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
+
+        {/* Centred logo + tagline: above the grid */}
+        <div className="flex flex-col items-center text-center mb-14">
+          <Image
+            src={LOGO_FULL}
+            alt="The People System"
+            width={560}
+            height={180}
+            className="object-contain w-auto mb-6"
+            style={{ height: '130px' }}
+            priority
+          />
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'var(--ink-faint)' }}
+          >
+            Hire.&nbsp;&nbsp;Lead.&nbsp;&nbsp;Protect.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
 
           {/* Left column — Company-first messaging */}
           <div>
-            <p className="eyebrow mb-6">
-              <span
-                className="inline-block w-1.5 h-1.5 rounded-full mr-2"
-                style={{ background: 'var(--brand-purple)' }}
-              />
-              Hire &nbsp;&middot;&nbsp; Lead &nbsp;&middot;&nbsp; Protect
-            </p>
 
             <h1
               className="font-display mb-6"
@@ -96,9 +109,56 @@ export default function Hero() {
                 See how it works <ArrowRight size={15} />
               </Link>
             </div>
+
+            {/* Stats */}
+            <div
+              className="flex flex-wrap gap-8 pt-8"
+              style={{ borderTop: '1px solid var(--brand-line)' }}
+            >
+              {STATS.map((m) => (
+                <div key={m.lab} className="group">
+                  {m.gold ? (
+                    /* Gold stat: quality signal */
+                    <p
+                      className="font-bold text-[2rem] mb-1"
+                      style={{
+                        fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                        background: 'var(--gold-gloss)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-0.025em',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {m.val}
+                    </p>
+                  ) : (
+                    /* Gradient stat */
+                    <p
+                      className="font-bold text-[2rem] mb-1"
+                      style={{
+                        fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                        backgroundImage: 'linear-gradient(135deg, #EA3DC4, #7C3AED)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-0.025em',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {m.val}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>
+                    {m.lab}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Right column — Portal screenshot mockup */}
+          {/* Right column: score card */}
           <div className="hidden lg:block">
             <div className="relative">
               {/* Browser window frame */}

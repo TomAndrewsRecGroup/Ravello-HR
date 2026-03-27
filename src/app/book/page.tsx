@@ -3,7 +3,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowRight, CheckCircle, Clock, MessageSquare, Zap } from 'lucide-react';
 
-// Dynamically import the embed — ssr:false prevents the iframe hanging static generation
+// Dynamically import the embed: ssr:false prevents the iframe hanging static generation
 const BookingEmbed = dynamic(() => import('@/components/BookingEmbed'), { ssr: false });
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const whatToExpect = [
   'You describe the situation. We listen. No scripted process, no agenda to push.',
-  'You get a straight read on what the problem actually is — hiring, foundations, or people risk',
+  'You get a straight read on what the problem actually is: hiring, foundations, or people risk',
   'You leave with one to three specific next steps you can act on immediately',
   'No pitch deck. No follow-up pressure. No obligation.',
 ];
@@ -24,19 +24,19 @@ const goodFor = [
   {
     label: 'I need help hiring',
     desc: 'A role that keeps reopening. An agency bill that has spiralled. A process that moves too slowly. Managers who hire inconsistently. Tom will assess the situation and run a Friction Lens score on any active role.',
-    who: 'Talk to Tom',
+    who: 'Book a Call',
     colour: 'var(--brand-purple)',
   },
   {
     label: 'I need HR foundations',
     desc: 'Missing contracts. An outdated handbook. Compliance exposure you have been meaning to fix. Employment Rights Bill changes you are not ready for. Lucy will audit your current position and tell you exactly what needs fixing first.',
-    who: 'Talk to Lucy',
+    who: 'Book a Call',
     colour: 'var(--brand-blue)',
   },
   {
     label: "I'm going through a deal",
     desc: 'An acquisition, a merger, a TUPE transfer, or a restructure. People risk found after completion belongs to you. Lucy will assess what needs reviewing and when to start.',
-    who: 'Talk to Lucy',
+    who: 'Book a Call',
     colour: 'var(--brand-pink)',
   },
 ];
@@ -58,7 +58,7 @@ export default function BookPage() {
       {/* Hero */}
       <section className="py-20 lg:py-24 px-4 sm:px-6 lg:px-8 text-center" style={{ background: 'var(--brand-navy)' }}>
         <div className="max-w-3xl mx-auto">
-          <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>The People System — Free Call</span>
+          <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>The People System: Free Call</span>
           <h1
             style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
           >

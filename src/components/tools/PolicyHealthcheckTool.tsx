@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CheckCircle, XCircle, ArrowRight, FileText } from 'lucide-react';
 
 const policies = [
-  { id: 'contract', label: 'Written Employment Contracts', risk: 'Statutory right breach — up to 4 weeks\u2019 pay per employee', priority: 'Critical' },
+  { id: 'contract', label: 'Written Employment Contracts', risk: 'Statutory right breach: up to 4 weeks\u2019 pay per employee', priority: 'Critical' },
   { id: 'handbook', label: 'Staff Handbook (comprehensive)', risk: 'Inconsistent management, tribunal exposure', priority: 'Critical' },
   { id: 'disciplinary', label: 'Disciplinary & Dismissal Procedure', risk: 'Unfair dismissal claims', priority: 'Critical' },
   { id: 'grievance', label: 'Grievance Procedure', risk: 'Constructive dismissal exposure', priority: 'Critical' },

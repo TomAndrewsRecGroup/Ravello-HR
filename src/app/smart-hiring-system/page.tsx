@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, U
 
 export const metadata: Metadata = {
   title: 'HIRE | Fix Your Hiring Before It Costs You | The People System',
-  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and pre-market role scoring built into every engagement.',
+  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and Friction Lens role scoring: The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/smart-hiring-system' },
 };
 
@@ -14,19 +14,19 @@ const failurePoints = [
   { icon: TrendingDown,  title: 'Inconsistent hiring managers',        description: 'No structure. No scorecard. Three interviewers with three different agendas. The strongest candidate loses out to whoever interviewed best on the day.',                  colorClass: 'text-orange-500' },
   { icon: Clock,         title: 'A process that moves too slowly',     description: 'Strong candidates are gone within seven days. If your process takes six weeks, you are not competing for the same talent pool.',                                   colorClass: 'text-yellow-600' },
   { icon: PoundSterling, title: 'Permanent agency dependency',         description: 'Every role above a certain level goes to an agency. No internal capability is built. The fee bill just keeps growing.',                                       colorClass: 'text-red-600'    },
-  { icon: Users,         title: 'High friction roles go to market blind', description: 'A role with the wrong salary, wrong location requirement, or too many must-haves will fail — but only after weeks of wasted effort. Friction Lens catches this before you go live.',                              colorClass: 'text-purple-500' },
+  { icon: Users,         title: 'High friction roles go to market blind', description: 'A role with the wrong salary, wrong location requirement, or too many must-haves will fail: but only after weeks of wasted effort. Friction Lens catches this before you go live.',                              colorClass: 'text-purple-500' },
 ];
 
 const systemSteps = [
-  { step: '01', title: 'Friction Lens scoring',       description: 'Before any role goes live, we score it. Friction Lens assesses your role across five dimensions — Location, Salary, Skills, Working Model, and Process — against live market data. You see exactly where it will struggle and what to fix before you spend a day recruiting.' },
-  { step: '02', title: 'Role definition',              description: 'Better role definition. We rebuild the brief around what the business actually needs — outcomes, not a wish list. Attracts the right people. Filters the wrong ones before interview stage.' },
+  { step: '01', title: 'Friction Lens scoring',       description: 'Before any role goes live, we score it. Friction Lens assesses your role across five dimensions: Location, Salary, Skills, Working Model, and Process: against live market data. You see exactly where it will struggle and what to fix before you spend a day recruiting.' },
+  { step: '02', title: 'Role definition',              description: 'Better role definition. We rebuild the brief around what the business actually needs: outcomes, not a wish list. Attracts the right people. Filters the wrong ones before interview stage.' },
   { step: '03', title: 'Faster process',               description: 'Faster process. We map your timeline against where candidates drop off and cut the steps that add delay without adding signal. Strong candidates will not wait six weeks.' },
   { step: '04', title: 'Higher quality hires',         description: 'Higher quality hires. Structured scorecards for every interview stage. Every hiring manager scoring the same criteria. Gut feel becomes a tiebreaker, not the deciding vote.' },
-  { step: '05', title: 'Embedded delivery',            description: 'We recruit alongside you, not instead of you. Depending on the package, Tom embeds directly into your hiring process — sourcing, screening, advising — building internal capability as we go.' },
+  { step: '05', title: 'Embedded delivery',            description: 'We recruit alongside you, not instead of you. Depending on the package, Tom embeds directly into your hiring process: sourcing, screening, advising: building internal capability as we go.' },
 ];
 
 const outcomes = [
-  'Roles scored against live market data before they go live — no more blind launches',
+  'Roles scored against live market data before they go live: no more blind launches',
   'Better role definitions that attract the right people from day one',
   'A faster process that keeps strong candidates engaged',
   'Hiring managers who interview with structure, not instinct',
@@ -38,12 +38,12 @@ export default function SmartHiringSystemPage() {
   return (
     <div className="pt-28">
 
-      {/* Hero — light */}
+      {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            HIRE — The People System
+            HIRE: The People System
           </p>
           <h1
             style={{
@@ -62,10 +62,10 @@ export default function SmartHiringSystemPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Agency fees on repeat. Bad hires. Roles that keep coming back. Managers who have never been taught to interview. The problem is not the talent market. It is the process — and the fact that no one has fixed it properly.
+            Agency fees on repeat. Bad hires. Roles that keep coming back. Managers who have never been taught to interview. The problem is not the talent market. It is the process: and the fact that no one has fixed it properly.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            Before any role goes live, we score it. Friction Lens tells you exactly where it will struggle and what to fix. Then we deliver — embedded alongside your team, building capability that lasts beyond the engagement.
+            Before any role goes live, we score it. Friction Lens tells you exactly where it will struggle and what to fix. Then we deliver: embedded alongside your team, building capability that lasts beyond the engagement.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/book" className="btn-gradient">
@@ -134,7 +134,7 @@ export default function SmartHiringSystemPage() {
         </div>
       </section>
 
-      {/* Outcomes — dark section, intentional anchor */}
+      {/* Outcomes: dark section, intentional anchor */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -174,7 +174,7 @@ export default function SmartHiringSystemPage() {
             Skip the audit. Book 30 minutes with Tom. Bring the role or the challenge and leave with a clear plan.
           </p>
           <Link href="/book" className="btn-gradient">
-            Talk to Tom about HIRE <ArrowRight size={16} />
+            Book a Call about HIRE <ArrowRight size={16} />
           </Link>
         </div>
       </section>
@@ -183,11 +183,11 @@ export default function SmartHiringSystemPage() {
       {/* FAQ */}
       <FaqBlock
         items={[
-          { q: 'What is Friction Lens?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It scores every role across five dimensions — Location, Salary, Skills, Working Model, and Process — before it goes live, telling you exactly where the role will struggle and giving you specific recommendations to fix it. Low, Medium, High, or Critical friction. Integrated into every HIRE engagement as standard.' },
+          { q: 'What is Friction Lens?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It scores every role across five dimensions: Location, Salary, Skills, Working Model, and Process: before it goes live, telling you exactly where the role will struggle and giving you specific recommendations to fix it. Low, Medium, High, or Critical friction. Integrated into every HIRE engagement as standard.' },
           { q: 'What HIRE packages do you offer?', a: 'Hire Foundations (£1,000/month + 10% fee, 3-month minimum), Hire Optimiser (£2,500 one-off or £1,500/month x 3), Hire Embedded (£5,000/month, 6-month minimum, fees included), and Hire Build (£6,500–£8,500+/month, 6-month minimum). Full details on the services page.' },
           { q: 'Who is HIRE for?', a: 'Founder-led businesses scaling 20–150 people, VC or PE-backed businesses post-raise, and any business with a history of bad hires, rising agency spend, or inconsistent hiring managers.' },
           { q: 'Do we need to use a recruitment agency?', a: 'No. HIRE is designed to reduce agency dependency by building internal sourcing capability and fixing the process so you do not need to outsource everything.' },
-          { q: 'How quickly can you start?', a: 'Typically within 48 hours of scoping. Tom embeds fast — no lengthy discovery phase. We learn your business by working inside it.' },
+          { q: 'How quickly can you start?', a: 'Typically within 48 hours of scoping. Tom embeds fast: no lengthy discovery phase. We learn your business by working inside it.' },
         ]}
       />
 

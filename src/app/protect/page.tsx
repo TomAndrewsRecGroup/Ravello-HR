@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'PROTECT Services | HR Foundations and Compliance | The People System',
-  description: 'Five PROTECT packages: Essentials, Core, Partner, Enterprise, Transaction. Contracts, handbooks, compliance, Employment Rights Bill readiness — The People System.',
+  description: 'Five PROTECT packages: Essentials, Core, Partner, Enterprise, Transaction. Contracts, handbooks, compliance, Employment Rights Bill readiness: The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/protect' },
 };
 
@@ -15,7 +15,7 @@ const packages = [
     tag: 'Starting point',
     price: 'From £495 · one-off',
     highlight: false,
-    who: 'For businesses under 10 people that need the absolute basics in place — written contracts, a holiday and absence policy, and a basic disciplinary procedure. Fast, clean, done properly.',
+    who: 'For businesses under 10 people that need the absolute basics in place: written contracts, a holiday and absence policy, and a basic disciplinary procedure. Fast, clean, done properly.',
     includes: [
       'Employment contract template (suited to your business)',
       'Offer letter template',
@@ -34,7 +34,7 @@ const packages = [
     includes: [
       'Full employment contract suite (permanent, fixed-term, part-time)',
       'Bespoke staff handbook (written around your business)',
-      'Core policy library — 12 policies including remote working, AI use, mental health',
+      'Core policy library: 12 policies including remote working, AI use, mental health',
       'Manager guide and FAQ document',
       'Gap analysis of existing documentation',
       '2 review and sign-off sessions with Lucy',
@@ -48,7 +48,7 @@ const packages = [
     tag: 'Ongoing · 50+ people',
     price: '£1,500–£2,500/month',
     highlight: false,
-    who: 'For businesses that need ongoing HR documentation support — new policies as the business evolves, regular compliance reviews, manager guidance on live situations, and Employment Rights Bill readiness built in.',
+    who: 'For businesses that need ongoing HR documentation support: new policies as the business evolves, regular compliance reviews, manager guidance on live situations, and Employment Rights Bill readiness built in.',
     includes: [
       'Everything in Protect Core',
       'Full bespoke policy library (ongoing)',
@@ -57,7 +57,7 @@ const packages = [
       'Manager guidance on live HR situations (documentation focus)',
       'Priority turnaround on new policies and contract variations',
     ],
-    cta: { label: 'Talk to Lucy', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Protect Enterprise',
@@ -73,14 +73,14 @@ const packages = [
       'Quarterly board-level people risk summary',
       'Direct access to Lucy throughout',
     ],
-    cta: { label: 'Talk to Lucy', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Protect Transaction',
     tag: 'Project · M&A and TUPE',
     price: 'From £3,500 · one-off project',
     highlight: false,
-    who: 'For businesses going through an acquisition, merger, or TUPE transfer. People documentation and compliance risk needs specific, transaction-aware review. This is a scoped project — not a retainer.',
+    who: 'For businesses going through an acquisition, merger, or TUPE transfer. People documentation and compliance risk needs specific, transaction-aware review. This is a scoped project: not a retainer.',
     includes: [
       'Contract and documentation review against transaction terms',
       'TUPE compliance check and letter suite',
@@ -88,7 +88,7 @@ const packages = [
       'Contract harmonisation post-transfer',
       'People risk summary written for board and legal team use',
     ],
-    cta: { label: 'Talk to Lucy about your deal', href: '/book' },
+    cta: { label: 'Book a Call about your deal', href: '/book' },
   },
 ];
 
@@ -98,10 +98,10 @@ export default function ProtectPage() {
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-            PROTECT — Services and Pricing
+            PROTECT: Services and Pricing
           </p>
           <h1
             style={{
@@ -120,7 +120,7 @@ export default function ProtectPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Documented. Protected. Ready to scale. Every PROTECT engagement is built around what your business genuinely needs — not a copy-paste from a template library. Written by Lucy. Compliant with current UK law, including Employment Rights Bill changes.
+            Documented. Protected. Ready to scale. Every PROTECT engagement is built around what your business genuinely needs: not a copy-paste from a template library. Written by Lucy. Compliant with current UK law, including Employment Rights Bill changes.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             Not sure where to start? A free HR audit takes thirty minutes and gives you a clear, prioritised picture of your compliance exposure and what to fix first.
@@ -142,9 +142,9 @@ export default function ProtectPage() {
           <div className="rounded-[18px] p-8 flex flex-col sm:flex-row gap-5 items-start" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.18)' }}>
             <AlertTriangle size={26} className="flex-shrink-0 mt-0.5" style={{ color: '#DC2626' }} />
             <div>
-              <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)' }}>Employment Rights Bill — compliance pressure is building now</h2>
+              <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)' }}>Employment Rights Bill: compliance pressure is building now</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                The Employment Rights Bill introduces significant changes for UK employers — expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every Protect Core engagement and above includes an Employment Rights Bill compliance check as standard.
+                The Employment Rights Bill introduces significant changes for UK employers: expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every Protect Core engagement and above includes an Employment Rights Bill compliance check as standard.
               </p>
             </div>
           </div>
@@ -251,9 +251,9 @@ export default function ProtectPage() {
       <FaqBlock items={[
         { q: 'How are PROTECT packages priced?', a: 'Protect Essentials is from £495 as a one-off project. Protect Core is from £1,200 one-off with an optional ongoing retainer at £500–£750/month. Protect Partner runs at £1,500–£2,500/month. Protect Enterprise is bespoke, typically £3,000–£5,000+/month. Protect Transaction starts from £3,500 as a scoped project.' },
         { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. Lucy reviews every Protect Core engagement and above against current and upcoming legislation.' },
-        { q: 'How long does a PROTECT engagement take?', a: 'Protect Essentials typically completes within one week. Protect Core takes two to four weeks depending on the state of your existing documentation. Protect Transaction is scoped per deal — typically two to four weeks from kickoff.' },
+        { q: 'How long does a PROTECT engagement take?', a: 'Protect Essentials typically completes within one week. Protect Core takes two to four weeks depending on the state of your existing documentation. Protect Transaction is scoped per deal: typically two to four weeks from kickoff.' },
         { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. Lucy will do a gap analysis as part of Protect Core before any rewriting begins.' },
-        { q: 'Is this legal advice?', a: 'PROTECT covers HR documentation and employment compliance — contracts, handbooks, policies, and procedures. For active litigation or complex legal disputes, we work alongside your employment solicitor rather than replacing them.' },
+        { q: 'Is this legal advice?', a: 'PROTECT covers HR documentation and employment compliance: contracts, handbooks, policies, and procedures. For active litigation or complex legal disputes, we work alongside your employment solicitor rather than replacing them.' },
       ]} />
 
     </div>
