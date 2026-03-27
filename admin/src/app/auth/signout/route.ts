@@ -15,5 +15,7 @@ export async function POST(request: Request) {
     },
   );
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/auth/login', request.url));
+  const res = NextResponse.redirect(new URL('/auth/login', request.url));
+  res.cookies.delete('tpo_admin_role');
+  return res;
 }

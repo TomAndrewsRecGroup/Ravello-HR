@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Dashboard' };
+export const revalidate = 30; // cache page for 30s — revalidates in background
 
 export default async function AdminDashboardPage() {
   const supabase = createServerSupabaseClient();

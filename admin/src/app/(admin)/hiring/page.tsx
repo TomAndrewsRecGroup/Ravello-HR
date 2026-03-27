@@ -5,6 +5,7 @@ import HiringClient from './HiringClient';
 import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Hiring Overview' };
+export const revalidate = 30;
 
 export default async function AdminHiringPage() {
   const supabase = createServerSupabaseClient();

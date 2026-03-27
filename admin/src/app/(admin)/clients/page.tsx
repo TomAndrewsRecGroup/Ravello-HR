@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import ClientsClient from './ClientsClient';
 
 export const metadata: Metadata = { title: 'Clients' };
+export const revalidate = 30;
 
 export default async function ClientsPage() {
   const supabase = createServerSupabaseClient();
