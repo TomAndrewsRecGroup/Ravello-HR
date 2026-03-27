@@ -1,11 +1,11 @@
 import { AlertCircle } from 'lucide-react';
 
 const COSTS = [
-  'Hiring without structure means the same roles keep coming back — and the agency bill keeps growing',
-  'No People leader means managers make it up as they go — and you pay for the inconsistency',
+  'Hiring without structure means the same roles keep coming back: and the agency bill keeps growing',
+  'No People leader means managers make it up as they go: and you pay for the inconsistency',
   'Missing or outdated HR documents are a liability waiting to be triggered',
   'Growth exposes every people gap you papered over on the way up',
-  'Without the right foundations, you cannot scale — you just accumulate more risk',
+  'Without the right foundations, you cannot scale: you just accumulate more risk',
 ];
 
 export default function CostOfProblem() {

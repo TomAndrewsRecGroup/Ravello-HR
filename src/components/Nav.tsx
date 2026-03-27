@@ -72,6 +72,8 @@ export default function Nav() {
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-0.5">
 
+            <Link href="/" className="btn-ghost">Home</Link>
+
             {/* Solutions dropdown */}
             <div className="relative" onMouseEnter={openSol} onMouseLeave={closeSol}>
               <button className="btn-ghost flex items-center gap-1.5">

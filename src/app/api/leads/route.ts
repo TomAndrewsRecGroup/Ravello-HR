@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Generic lead capture — used by tools that don't have their own endpoint
+// Generic lead capture: used by tools that don't have their own endpoint
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

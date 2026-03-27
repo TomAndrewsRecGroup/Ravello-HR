@@ -6,10 +6,10 @@ const WINS = [
   { sector: 'SME in Bristol',          win: '0 tribunal outcomes after full restructure' },
   { sector: 'Professional services',  win: 'Time-to-hire reduced by 6 weeks' },
   { sector: 'Tech scale-up',           win: 'Onboarding compliance score 100% first audit' },
-  { sector: 'Healthcare provider',     win: 'TUPE transfer — 0 grievances raised' },
+  { sector: 'Healthcare provider',     win: 'TUPE transfer: 0 grievances raised' },
   { sector: 'Logistics business',      win: 'Agency dependency eliminated across 3 sites' },
   { sector: 'Financial services firm', win: 'Policy suite rebuilt in under 3 weeks' },
-  { sector: 'Construction group',      win: 'M&A people risk identified — deal restructured' },
+  { sector: 'Construction group',      win: 'M&A people risk identified: deal restructured' },
 ];
 
 export default function SocialProofTicker() {

@@ -5,12 +5,12 @@ import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Cl
 
 export const metadata: Metadata = {
   title: 'DealReady People™ | M&A and Restructure People Advisory | The People System',
-  description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People System — not a retainer product.',
+  description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People System: not a retainer product.',
   alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
 };
 
 const preDealItems = [
-  'People due diligence — culture, contracts, liabilities',
+  'People due diligence: culture, contracts, liabilities',
   'Hidden cost identification (holiday accrual, tribunal risk, informal agreements)',
   'TUPE applicability assessment',
   'Key person dependency mapping',
@@ -47,12 +47,12 @@ export default function DealReadyPeoplePage() {
   return (
     <div className="pt-20">
 
-      {/* Hero — light */}
+      {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-pink)', verticalAlign: 'middle' }} />
-            DealReady People™ — Specialist Project Service
+            DealReady People™: Specialist Project Service
           </p>
           <h1
             style={{
@@ -71,7 +71,7 @@ export default function DealReadyPeoplePage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            For acquirers, founders going through deals, and PE-backed businesses managing integration or restructure. This is a specialist project service — not a retainer product.
+            For acquirers, founders going through deals, and PE-backed businesses managing integration or restructure. This is a specialist project service: not a retainer product.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one and pay for it after the deal closes. Lucy handles this from pre-deal risk through to post-deal integration.
@@ -175,7 +175,7 @@ export default function DealReadyPeoplePage() {
         </div>
       </section>
 
-      {/* CTA — dark */}
+      {/* CTA: dark */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
           <h2 className="section-title-light mb-4">In a deal or planning one?</h2>
@@ -195,12 +195,12 @@ export default function DealReadyPeoplePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-          { q: 'What is DealReady People?', a: 'A specialist project service from The People System covering people due diligence, TUPE, restructure, and post-deal integration. This is not a retainer product — it is engaged for a specific transaction or restructure.' },
+          { q: 'What is DealReady People?', a: 'A specialist project service from The People System covering people due diligence, TUPE, restructure, and post-deal integration. This is not a retainer product: it is engaged for a specific transaction or restructure.' },
           { q: 'Who is this for?', a: 'Acquirers, founders going through a sale or acquisition, PE-backed businesses managing post-deal integration, and any business facing redundancy or significant restructure.' },
-          { q: 'When should we engage?', a: 'The best time is before heads of terms are signed. If you are already past that point, the second best time is right now — before completion.' },
+          { q: 'When should we engage?', a: 'The best time is before heads of terms are signed. If you are already past that point, the second best time is right now: before completion.' },
           { q: 'What does TUPE mean for our deal?', a: 'TUPE transfers employment contracts automatically when a business changes hands. Misclassifying a transfer or mismanaging the consultation creates tribunal exposure that belongs to you post-close.' },
-          { q: 'Do you work with deal teams and investors?', a: 'Yes. Lucy provides people risk summaries written for board and investor use — not internal HR documents. Clear, commercial, usable in a deal context.' },
-          { q: 'What is the pricing?', a: 'DealReady People is priced as a project: from £3,500 for standalone due diligence work, through to full pre-deal and post-deal advisory. Scope and price agreed at the outset — no billing surprises.' },
+          { q: 'Do you work with deal teams and investors?', a: 'Yes. Lucy provides people risk summaries written for board and investor use: not internal HR documents. Clear, commercial, usable in a deal context.' },
+          { q: 'What is the pricing?', a: 'DealReady People is priced as a project: from £3,500 for standalone due diligence work, through to full pre-deal and post-deal advisory. Scope and price agreed at the outset: no billing surprises.' },
         ]} />
 
     

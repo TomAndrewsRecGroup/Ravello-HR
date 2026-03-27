@@ -27,30 +27,31 @@ export default function Hero() {
     >
       <div className="hero-mesh" />
 
-      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-24">
+      <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
+
+        {/* Centred logo + tagline: above the grid */}
+        <div className="flex flex-col items-center text-center mb-14">
+          <Image
+            src={LOGO_FULL}
+            alt="The People System"
+            width={560}
+            height={180}
+            className="object-contain w-auto mb-6"
+            style={{ height: '130px' }}
+            priority
+          />
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'var(--ink-faint)' }}
+          >
+            Hire.&nbsp;&nbsp;Lead.&nbsp;&nbsp;Protect.
+          </p>
+        </div>
+
         <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
 
           {/* Left column */}
           <div>
-            {/* Logo */}
-            <div className="mb-8">
-              <Image
-                src={LOGO_FULL}
-                alt="The People System"
-                width={560}
-                height={180}
-                className="object-contain w-auto"
-                style={{ height: '140px' }}
-                priority
-              />
-            </div>
-
-            <p
-              className="text-[11px] font-bold uppercase tracking-[0.18em] mb-6"
-              style={{ color: 'var(--ink-faint)' }}
-            >
-              Hire. Lead. Protect.
-            </p>
 
             <h1
               style={{
@@ -112,7 +113,7 @@ export default function Hero() {
               {STATS.map((m) => (
                 <div key={m.lab} className="group">
                   {m.gold ? (
-                    /* Gold stat — quality signal */
+                    /* Gold stat: quality signal */
                     <p
                       className="font-bold text-[2rem] mb-1"
                       style={{
@@ -152,7 +153,7 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right column — score card */}
+          {/* Right column: score card */}
           <div className="hidden lg:block">
             <div
               className="bg-white rounded-[22px] p-6 relative"

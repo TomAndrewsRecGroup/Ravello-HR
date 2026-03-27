@@ -1,5 +1,5 @@
 'use client';
-// Tawk.to or Crisp live chat — swap in your widget ID
+// Tawk.to or Crisp live chat: swap in your widget ID
 import Script from 'next/script';
 
 export default function ChatWidget() {

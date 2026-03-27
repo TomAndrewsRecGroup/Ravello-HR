@@ -8,10 +8,10 @@ const questions = [
     area: 'Role Definition',
     q: 'Before advertising a role, do you document a clear success profile (not just a job spec)?',
     options: [
-      { label: 'Yes — always, with structured criteria', score: 3 },
-      { label: 'Sometimes — depends on the role', score: 2 },
-      { label: 'Rarely — we post the old job spec', score: 1 },
-      { label: 'No — we wing it', score: 0 },
+      { label: 'Yes: always, with structured criteria', score: 3 },
+      { label: 'Sometimes: depends on the role', score: 2 },
+      { label: 'Rarely: we post the old job spec', score: 1 },
+      { label: 'No: we wing it', score: 0 },
     ],
   },
   {
@@ -19,9 +19,9 @@ const questions = [
     area: 'Assessment Consistency',
     q: 'Do all candidates for the same role go through an identical assessment process?',
     options: [
-      { label: 'Yes — structured scorecard every time', score: 3 },
-      { label: 'Mostly — but it varies by interviewer', score: 2 },
-      { label: 'No — each manager does it differently', score: 1 },
+      { label: 'Yes: structured scorecard every time', score: 3 },
+      { label: 'Mostly: but it varies by interviewer', score: 2 },
+      { label: 'No: each manager does it differently', score: 1 },
       { label: 'No formal assessment at all', score: 0 },
     ],
   },
@@ -30,7 +30,7 @@ const questions = [
     area: 'Interview Training',
     q: 'Have your hiring managers received structured interview training in the last 2 years?',
     options: [
-      { label: 'Yes — formal training with certification', score: 3 },
+      { label: 'Yes: formal training with certification', score: 3 },
       { label: 'Informal coaching or shadowing', score: 2 },
       { label: 'No formal training but experienced managers', score: 1 },
       { label: 'No training at all', score: 0 },
@@ -63,7 +63,7 @@ const questions = [
     area: 'Agency Reliance',
     q: 'What percentage of hires come through recruitment agencies?',
     options: [
-      { label: 'Under 20% — mostly direct', score: 3 },
+      { label: 'Under 20%: mostly direct', score: 3 },
       { label: '20–40%', score: 2 },
       { label: '40–70%', score: 1 },
       { label: 'Over 70% or all agency-led', score: 0 },
@@ -74,10 +74,10 @@ const questions = [
     area: 'Role Reopening',
     q: 'Have you had to rehire for the same role within 12 months in the last 2 years?',
     options: [
-      { label: 'No — strong retention record', score: 3 },
+      { label: 'No: strong retention record', score: 3 },
       { label: 'Once or twice across the business', score: 2 },
-      { label: 'Yes — 3 or more times', score: 1 },
-      { label: 'Frequently — it\'s a pattern', score: 0 },
+      { label: 'Yes: 3 or more times', score: 1 },
+      { label: 'Frequently: it\'s a pattern', score: 0 },
     ],
   },
   {
@@ -85,9 +85,9 @@ const questions = [
     area: 'Onboarding',
     q: 'Do you have a structured 90-day onboarding plan for new hires?',
     options: [
-      { label: 'Yes — documented and consistently followed', score: 3 },
-      { label: 'Partial — some structure but not formal', score: 2 },
-      { label: 'Ad hoc — manager-dependent', score: 1 },
+      { label: 'Yes: documented and consistently followed', score: 3 },
+      { label: 'Partial: some structure but not formal', score: 2 },
+      { label: 'Ad hoc: manager-dependent', score: 1 },
       { label: 'No onboarding plan', score: 0 },
     ],
   },

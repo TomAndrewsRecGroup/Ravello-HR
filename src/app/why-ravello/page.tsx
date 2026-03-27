@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const COMPARISON = [
   { feature: 'Named, outcome-led system',                          ravello: true,  agency: false,   inhouse: false,   generic: false },
   { feature: 'Senior expert on your account (day 1 to end)',       ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
-  { feature: 'Fixed scope — no billing surprises',                 ravello: true,  agency: false,   inhouse: true,    generic: false },
+  { feature: 'Fixed scope: no billing surprises',                 ravello: true,  agency: false,   inhouse: true,    generic: false },
   { feature: 'Embeds within 48 hours',                             ravello: true,  agency: false,   inhouse: false,   generic: false },
   { feature: 'Covers hiring, compliance AND transformation',        ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
   { feature: 'No long-term retainer required',                     ravello: true,  agency: false,   inhouse: false,   generic: false },
@@ -22,7 +22,7 @@ const COMPARISON = [
 const OBJECTIONS = [
   {
     q: 'We already use a recruitment agency.',
-    a: 'Agencies fill roles. They do not fix why roles keep reopening. HIRE addresses the root cause — Friction Lens, better role definition, faster process. Most clients reduce their agency spend by 40% or more within a year.',
+    a: 'Agencies fill roles. They do not fix why roles keep reopening. HIRE addresses the root cause: Friction Lens, better role definition, faster process. Most clients reduce their agency spend by 40% or more within a year.',
   },
   {
     q: 'We have an in-house HR person.',
@@ -83,7 +83,7 @@ export default function WhyRavelloPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow section-padding py-0 text-center px-6" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
+        <div className="container-wide section-padding py-0 text-center px-6" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
           <p className="eyebrow justify-center mb-6">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#9B7FF8' }} />
             Why The People System
@@ -100,7 +100,7 @@ export default function WhyRavelloPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root — across hiring, HR leadership, and compliance.
+            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root: across hiring, HR leadership, and compliance.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>

@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'HIRE Services | Embedded Recruitment and Talent Strategy | The People System',
-  description: 'Four HIRE packages: Hire Foundations, Hire Optimiser, Hire Embedded, Hire Build. Embedded recruitment delivery with Friction Lens role scoring — The People System.',
+  description: 'Four HIRE packages: Hire Foundations, Hire Optimiser, Hire Embedded, Hire Build. Embedded recruitment delivery with Friction Lens role scoring: The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/hire' },
 };
 
@@ -24,7 +24,7 @@ const packages = [
       'Weekly hiring review (30 min)',
       'Placement fee applies at 10% on successful hires',
     ],
-    cta: { label: 'Talk to Tom', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Hire Optimiser',
@@ -48,7 +48,7 @@ const packages = [
     tag: 'Most popular · 6-month minimum',
     price: '£5,000/month · fees included in scope',
     highlight: true,
-    who: 'For businesses with a consistent hiring need — typically 3–8 roles over the engagement period. Tom works inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
+    who: 'For businesses with a consistent hiring need: typically 3–8 roles over the engagement period. Tom works inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
     includes: [
       'Full embedded recruitment delivery',
       'Friction Lens scoring on every role before launch',
@@ -66,7 +66,7 @@ const packages = [
     tag: 'Scale · 6-month minimum',
     price: '£6,500–£8,500+/month',
     highlight: false,
-    who: 'For businesses scaling rapidly — typically 8+ roles at a time, or preparing to build a people function from scratch. Tom leads the talent function end-to-end, builds the internal infrastructure, and designs the process your in-house team will eventually run independently.',
+    who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. Tom leads the talent function end-to-end, builds the internal infrastructure, and designs the process your in-house team will eventually run independently.',
     includes: [
       'Full talent function leadership',
       'Friction Lens built into every active role',
@@ -77,7 +77,7 @@ const packages = [
       'Talent market intelligence reporting',
       'Direct line to Tom throughout',
     ],
-    cta: { label: 'Talk to Tom', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
 ];
 
@@ -87,10 +87,10 @@ export default function HirePage() {
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-narrow">
+        <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            HIRE — Services and Pricing
+            HIRE: Services and Pricing
           </p>
           <h1
             style={{
@@ -109,7 +109,7 @@ export default function HirePage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Every HIRE engagement starts with Friction Lens — a role scoring system that tells you exactly where each vacancy will struggle before it goes to market. From there, the right package depends on your hiring volume and how broken the current process is.
+            Every HIRE engagement starts with Friction Lens: a role scoring system that tells you exactly where each vacancy will struggle before it goes to market. From there, the right package depends on your hiring volume and how broken the current process is.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             Not sure which one fits? Start with a free hiring audit. Thirty minutes with Tom. You will leave with a clear picture of what is broken and which engagement model makes sense.
@@ -135,7 +135,7 @@ export default function HirePage() {
                 Friction Lens scores every role before it goes live
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Five dimensions — Location, Salary, Skills, Working Model, and Process — scored against live market data. Low, Medium, High, or Critical friction. Specific recommendations attached. No more blind launches.
+                Five dimensions: Location, Salary, Skills, Working Model, and Process: scored against live market data. Low, Medium, High, or Critical friction. Specific recommendations attached. No more blind launches.
               </p>
             </div>
             <Link href="/friction-lens" className="btn-secondary flex-shrink-0 self-start">
@@ -151,7 +151,7 @@ export default function HirePage() {
           <div className="max-w-[600px] mb-12">
             <h2 className="section-title mb-4">HIRE packages</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              All packages include Friction Lens scoring as standard. No tables — here is what each one means in practice.
+              All packages include Friction Lens scoring as standard. No tables: here is what each one means in practice.
             </p>
           </div>
           <div className="space-y-6">
@@ -244,10 +244,10 @@ export default function HirePage() {
       {/* FAQ */}
       <FaqBlock items={[
         { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. For Hire Optimiser, the one-off option (£2,500) has no ongoing commitment.' },
-        { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no — placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
-        { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It assesses every active role across five dimensions — Location, Salary, Skills, Working Model, and Process — against live market data and produces a friction score (Low to Critical) with specific recommendations. It is integrated into every HIRE package as standard.' },
+        { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
+        { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It assesses every active role across five dimensions: Location, Salary, Skills, Working Model, and Process: against live market data and produces a friction score (Low to Critical) with specific recommendations. It is integrated into every HIRE package as standard.' },
         { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
-        { q: 'Do you replace our existing recruiters or agencies?', a: 'Tom typically works alongside your existing setup in the first instance — auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6–12 months of working with Tom.' },
+        { q: 'Do you replace our existing recruiters or agencies?', a: 'Tom typically works alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6–12 months of working with Tom.' },
       ]} />
 
     </div>

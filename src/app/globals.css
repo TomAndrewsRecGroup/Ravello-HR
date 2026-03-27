@@ -186,7 +186,7 @@
 
   /* ── Primary gradient (pink → purple → blue) ── */
   .btn-gradient {
-    @apply inline-flex items-center justify-center gap-2 px-7 py-[14px] rounded-[10px]
+    @apply inline-flex items-center justify-center gap-2 px-5 py-[10px] rounded-[10px]
            font-semibold text-sm text-white transition-all duration-200 relative overflow-hidden;
     background: linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%);
     box-shadow: 0 2px 18px rgba(124,58,237,0.38), 0 1px 4px rgba(234,61,196,0.18);

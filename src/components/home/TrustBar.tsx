@@ -31,7 +31,7 @@ export default function TrustBar() {
             >
               {/* Alternating gradient/gold dots for visual rhythm */}
               {i === 0 || i === 4 ? (
-                /* Gold dot — quality markers */
+                /* Gold dot: quality markers */
                 <span
                   className="w-[6px] h-[6px] rounded-full flex-shrink-0"
                   style={{ background: 'var(--gold-surface)' }}

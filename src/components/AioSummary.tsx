@@ -1,4 +1,4 @@
-// AIO / GEO enrichment block — structured for AI citation and search summarisation
+// AIO / GEO enrichment block: structured for AI citation and search summarisation
 
 interface AioSummaryProps {
   what: string;

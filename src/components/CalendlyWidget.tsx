@@ -12,7 +12,7 @@ export default function CalendlyWidget() {
       {/* Floating action */}
       <div className="fixed bottom-6 right-6 z-[150] flex flex-col items-end gap-3">
 
-        {/* Label pill — shows when closed */}
+        {/* Label pill: shows when closed */}
         {!open && (
           <div
             className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-semibold text-white"
