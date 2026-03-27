@@ -29,21 +29,21 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL('https://ravellohr.co.uk'),
   title: {
-    default: 'The People Office | Hire. Lead. Protect.',
+    default: 'The People System | Hire. Lead. Protect.',
     template: '%s',
   },
   description:
-    'The People Office helps ambitious businesses fix hiring, build HR foundations, and lead their people function — one partner, total control.',
+    'The People System helps ambitious businesses fix hiring, build HR foundations, and lead their people function — one partner, total control.',
   keywords: ['HR consultancy UK', 'fractional HR', 'embedded recruitment', 'Friction Lens', 'HR compliance', 'people strategy', 'Employment Rights Bill', 'M&A HR support'],
-  authors: [{ name: 'The People Office', url: 'https://ravellohr.co.uk' }],
+  authors: [{ name: 'The People System', url: 'https://ravellohr.co.uk' }],
   openGraph: {
-    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'The People Office',
-    title: 'The People Office | Hire. Lead. Protect.',
+    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'The People System',
+    title: 'The People System | Hire. Lead. Protect.',
     description: 'One partner. Total control of your people function. HIRE, LEAD, and PROTECT — delivered by Lucy and Tom.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
-    card: 'summary_large_image', title: 'The People Office',
+    card: 'summary_large_image', title: 'The People System',
     description: 'Hire. Lead. Protect. One partner. Total control of your people function.',
     images: ['/og-image.png'],
   },

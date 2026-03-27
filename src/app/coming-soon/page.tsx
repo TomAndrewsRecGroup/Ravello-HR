@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import ComingSoonForm from './ComingSoonForm';
 
-export const metadata = { title: 'Coming Soon | The People Office' };
+export const metadata = { title: 'Coming Soon | The People System' };
 
 const GLOWS = [
   { top: '-10%', left: '20%',  w: '600px', h: '500px', color: 'rgba(124,58,237,0.22)' },

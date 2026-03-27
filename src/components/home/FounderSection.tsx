@@ -74,7 +74,7 @@ export default function FounderSection() {
               <div>
                 <p className="text-sm font-semibold text-white">Lucy &amp; Tom</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>
-                  Co-founders, The People Office
+                  Co-founders, The People System
                 </p>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function FounderSection() {
                 className="w-1.5 h-1.5 rounded-full inline-block mr-2"
                 style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }}
               />
-              Why The People Office
+              Why The People System
             </p>
             <h2 className="section-title mb-5">
               Two specialists.<br />One partner. No handoffs.
@@ -126,7 +126,7 @@ export default function FounderSection() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/about" className="btn-primary">
-                About The People Office <ArrowRight size={15} />
+                About The People System <ArrowRight size={15} />
               </Link>
               <Link href="/book" className="btn-secondary">
                 Book a Free Call

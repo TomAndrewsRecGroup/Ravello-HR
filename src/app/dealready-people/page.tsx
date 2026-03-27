@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DealReady People™ | M&A and Restructure People Advisory | The People Office',
-  description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People Office — not a retainer product.',
+  title: 'DealReady People™ | M&A and Restructure People Advisory | The People System',
+  description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People System — not a retainer product.',
   alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
 };
 
@@ -195,7 +195,7 @@ export default function DealReadyPeoplePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-          { q: 'What is DealReady People?', a: 'A specialist project service from The People Office covering people due diligence, TUPE, restructure, and post-deal integration. This is not a retainer product — it is engaged for a specific transaction or restructure.' },
+          { q: 'What is DealReady People?', a: 'A specialist project service from The People System covering people due diligence, TUPE, restructure, and post-deal integration. This is not a retainer product — it is engaged for a specific transaction or restructure.' },
           { q: 'Who is this for?', a: 'Acquirers, founders going through a sale or acquisition, PE-backed businesses managing post-deal integration, and any business facing redundancy or significant restructure.' },
           { q: 'When should we engage?', a: 'The best time is before heads of terms are signed. If you are already past that point, the second best time is right now — before completion.' },
           { q: 'What does TUPE mean for our deal?', a: 'TUPE transfers employment contracts automatically when a business changes hands. Misclassifying a transfer or mismanaging the consultation creates tribunal exposure that belongs to you post-close.' },

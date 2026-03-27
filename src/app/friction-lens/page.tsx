@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, MapPin, PoundSterling, Layers, Monitor, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Friction Lens | Role Scoring Before You Go to Market | The People Office',
+  title: 'Friction Lens | Role Scoring Before You Go to Market | The People System',
   description: 'Before a role goes live, you should know where it will struggle. Friction Lens scores every vacancy across five dimensions and tells you exactly what to fix before you recruit.',
   alternates: { canonical: 'https://ravellohr.co.uk/friction-lens' },
 };

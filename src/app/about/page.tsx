@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About | Lucy and Tom | The People Office',
-  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People Office is Lucy and Tom — 18+ years HR leadership and 10+ years talent expertise, working together.',
+  title: 'About | Lucy and Tom | The People System',
+  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom — 18+ years HR leadership and 10+ years talent expertise, working together.',
   alternates: { canonical: 'https://ravellohr.co.uk/about' },
 };
 
@@ -44,7 +44,7 @@ export default function AboutPage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            About The People Office
+            About The People System
           </p>
           <h1
             style={{
@@ -63,7 +63,7 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            The People Office is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, two proprietary tools built from scratch, and a track record across every sector a founder-led business is likely to sit in.
+            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, two proprietary tools built from scratch, and a track record across every sector a founder-led business is likely to sit in.
           </p>
           <p className="text-base leading-relaxed mt-4 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             A proper blend. One partner. Total control of your people function.
@@ -97,7 +97,7 @@ export default function AboutPage() {
                   She founded Ravello HR because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated — but it required someone senior enough to do it properly.
                 </p>
                 <p>
-                  Lucy leads PROTECT and LEAD at The People Office. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
+                  Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
                 </p>
               </div>
               <div className="mt-8">
@@ -151,13 +151,13 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses, and building the two tools that underpin The People Office&rsquo;s hiring work: Friction Lens and IvyLens.
+                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses, and building the two tools that underpin The People System&rsquo;s hiring work: Friction Lens and IvyLens.
                 </p>
                 <p>
                   Friction Lens is Tom&rsquo;s answer to the same problem he kept encountering: businesses launching roles blind, spending weeks discovering what a quick pre-market check would have caught in an hour. Roles scored across five dimensions. Specific recommendations. No more guesswork.
                 </p>
                 <p>
-                  Tom leads HIRE at The People Office. Role definition, embedded recruitment delivery, process design, Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
+                  Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
                 </p>
               </div>
               <div className="mt-8">
@@ -208,7 +208,7 @@ export default function AboutPage() {
             &ldquo;Hire. Lead. Protect.&rdquo;
           </h2>
           <p className="text-lg leading-relaxed max-w-2xl mx-auto mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People Office is built around the idea that a great people function needs both — working together, from the same starting point, towards the same business outcome.
+            Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People System is built around the idea that a great people function needs both — working together, from the same starting point, towards the same business outcome.
           </p>
           <p className="text-base leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Tom and Lucy talk. They share context. When a client comes through HIRE and needs documentation built, PROTECT is already briefed. When a LEAD engagement surfaces a hiring challenge, HIRE is already on it. One partner. Total control of your people function.

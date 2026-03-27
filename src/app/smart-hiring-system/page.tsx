@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'HIRE | Fix Your Hiring Before It Costs You | The People Office',
-  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and Friction Lens role scoring — The People Office.',
+  title: 'HIRE | Fix Your Hiring Before It Costs You | The People System',
+  description: 'Your hiring is broken. We fix it before it costs you. Embedded recruitment delivery, talent strategy, and Friction Lens role scoring — The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/smart-hiring-system' },
 };
 
@@ -43,7 +43,7 @@ export default function SmartHiringSystemPage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            HIRE — The People Office
+            HIRE — The People System
           </p>
           <h1
             style={{

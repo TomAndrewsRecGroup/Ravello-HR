@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import HRRiskScoreTool from '@/components/tools/HRRiskScoreTool';
 
 export const metadata: Metadata = {
-  title: 'HR Risk and Compliance Score | The People Office',
+  title: 'HR Risk and Compliance Score | The People System',
   description:
-    'Free HR Risk and Compliance Score. A 2-minute diagnostic that surfaces your top people risks before they cost you. From The People Office.',
+    'Free HR Risk and Compliance Score. A 2-minute diagnostic that surfaces your top people risks before they cost you. From The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/tools/hr-risk-score' },
 };
 

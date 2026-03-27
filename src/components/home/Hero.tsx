@@ -36,7 +36,7 @@ export default function Hero() {
             <div className="mb-8">
               <Image
                 src={LOGO_FULL}
-                alt="The People Office"
+                alt="The People System"
                 width={480}
                 height={220}
                 className="object-contain w-auto"
@@ -91,7 +91,7 @@ export default function Hero() {
               style={{ color: 'var(--ink-faint)' }}
             >
               Lucy leads on HR, compliance, and people strategy. Tom leads on talent and recruitment.
-              Together: The People Office.
+              Together: The People System.
             </p>
 
             {/* CTAs */}

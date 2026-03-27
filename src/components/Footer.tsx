@@ -29,7 +29,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center mb-5">
               <Image
                 src={LOGO}
-                alt="The People Office"
+                alt="The People System"
                 width={140}
                 height={48}
                 className="object-contain h-10 w-auto brightness-[1.1]"
@@ -173,7 +173,7 @@ export default function Footer() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
           <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
-            &copy; {new Date().getFullYear()} The People Office. All rights reserved. Registered in England &amp; Wales.
+            &copy; {new Date().getFullYear()} The People System. All rights reserved. Registered in England &amp; Wales.
           </p>
           <div className="flex gap-6">
             {[['Privacy Policy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (

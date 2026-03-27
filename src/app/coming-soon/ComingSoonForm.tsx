@@ -41,7 +41,7 @@ export default function ComingSoonForm() {
   return (
     <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px' }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
-        <Image src={LOGO} alt="The People Office" width={150} height={50}
+        <Image src={LOGO} alt="The People System" width={150} height={50}
           style={{ height: '44px', width: 'auto', filter: 'brightness(1.1)' }} priority />
       </div>
 
@@ -149,7 +149,7 @@ export default function ComingSoonForm() {
         textAlign: 'center', marginTop: '24px', fontSize: '0.75rem',
         color: 'rgba(255,255,255,0.2)',
       }}>
-        The People Office · Confidential Preview
+        The People System · Confidential Preview
       </p>
     </div>
   );
