@@ -9,15 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        navy:   '#0E1633',
-        purple: '#8F72F6',
-        blue:   '#93B8FF',
-        pink:   '#E8B6D9',
-        teal:   '#5BC4BF',
+        navy:   'var(--navy)',
+        purple: 'var(--purple)',
+        blue:   'var(--blue)',
+        pink:   'var(--pink)',
+        gold:   'var(--gold)',
       },
       fontFamily: {
-        display: ['Cormorant Garamond', 'Georgia', 'serif'],
-        sans:    ['DM Sans', 'system-ui', 'sans-serif'],
+        display: ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
+        sans:    ['var(--font-satoshi)', 'Satoshi', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
       },
     },
   },

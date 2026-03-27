@@ -9,14 +9,14 @@
     },
     {
       "name": "Client Portal",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["portal/node_modules/next/dist/bin/next", "dev", "-p", "3457"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd portal && node node_modules/next/dist/bin/next dev -p 3457"],
       "port": 3457
     },
     {
       "name": "Admin Portal",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["admin/node_modules/next/dist/bin/next", "dev", "-p", "3458"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd admin && node node_modules/next/dist/bin/next dev -p 3458"],
       "port": 3458
     }
   ]

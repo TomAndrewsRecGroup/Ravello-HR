@@ -2,6 +2,7 @@ import Hero            from '@/components/home/Hero';
 import TrustBar        from '@/components/home/TrustBar';
 import CostOfProblem   from '@/components/home/CostOfProblem';
 import FunnelCards     from '@/components/home/FunnelCards';
+import PortalShowcase  from '@/components/home/PortalShowcase';
 import ToolsHub        from '@/components/home/ToolsHub';
 import ProofSection    from '@/components/home/ProofSection';
 import FounderSection  from '@/components/home/FounderSection';
@@ -15,9 +16,10 @@ export default function HomePage() {
       <TrustBar />
       <CostOfProblem />
       <FunnelCards />
-      <ToolsHub />
+      <PortalShowcase />
       <ProofSection />
       <FounderSection />
+      <ToolsHub />
       <PlaybookTeaser />
       <HotlineSection />
     </main>

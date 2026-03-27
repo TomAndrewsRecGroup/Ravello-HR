@@ -26,18 +26,18 @@ export default function Footer() {
 
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center mb-5">
+            <Link href="/" className="flex items-center mb-3">
               <Image
                 src={LOGO}
                 alt="The People System"
-                width={240}
-                height={80}
-                className="object-contain h-14 w-auto"
+                width={480}
+                height={160}
+                className="object-contain h-[110px] w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Strategic HR for ambitious businesses.<br />
-              Named systems. Real outcomes. No generic advice.
+              Your People Department.<br />
+              Proper HR. Real outcomes. No generic advice.
             </p>
             <div className="flex gap-3">
               <a
@@ -125,7 +125,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://portal.ravello-hr.vercel.app"
+                  href="https://www.portal.thepeoplesystem.co.uk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="footer-link text-sm flex items-center gap-2"

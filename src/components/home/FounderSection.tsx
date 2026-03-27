@@ -120,8 +120,8 @@ export default function FounderSection() {
                 IvyLens Technology, and AMIVY Designs. You get both: on your account, from day one.
               </p>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                No junior handoffs. No vague advice. Fixed scope, clear deliverables, and a
-                partner who understands the commercial reality of building a business.
+                No junior handoffs. No vague advice. Fixed scope, clear deliverables, and partners
+                who understand what it actually takes to build a business.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

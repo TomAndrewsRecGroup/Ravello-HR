@@ -15,7 +15,22 @@
       "Bash(\"C:/Users/TomAndrews/OneDrive -:*)",
       "Bash(ls \"C:/Users/TomAndrews/OneDrive - andrews-recruitment.com/Desktop/Ravello HR/node_modules/.bin/next\"*)",
       "Bash(curl -s http://localhost:56790/)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:56790/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:56790/)",
+      "Bash(find \"D:\\\\Sites\\\\Ravello-HR\\\\portal\\\\src\\\\app\\\\\\(portal\\)\" -name \"*.tsx\" -type f)",
+      "Bash(mkdir -p D:/Sites/Ravello-HR/src/fonts)",
+      "Bash(curl -sL \"https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap\" -o fontshare-check.txt)",
+      "Bash(curl -sL \"https://cdn.fontshare.com/wf/TTX2Z3BF3P6Y5BQT3IV2VNOK6FL22KUT/7QYRJOI3JIMYHGY6CH7SOIFRQLZOLNJ6/KFIAZD4RUMEZIYV6FQ3T3GP5PDBDB6JY.woff2\" -o Satoshi-Regular.woff2)",
+      "Bash(curl -sL \"https://cdn.fontshare.com/wf/P2LQKHE6KA6ZP4AAGN72KDWMHH6ZH3TA/ZC32TK2P7FPS5GFTL46EU6KQJA24ZYDB/7AHDUZ4A7LFLVFUIFSARGIWCRQJHISQP.woff2\" -o Satoshi-Medium.woff2)",
+      "Bash(curl -sL \"https://cdn.fontshare.com/wf/LAFFD4SDUCDVQEXFPDC7C53EQ4ZELWQI/PXCT3G6LO6ICM5I3NTYENYPWJAECAWDD/GHM6WVH6MILNYOOCXHXB5GTSGNTMGXZR.woff2\" -o Satoshi-Bold.woff2)",
+      "Bash(ls -la *.woff2)",
+      "Bash(cp D:/Sites/Ravello-HR/src/fonts/Satoshi-*.woff2 D:/Sites/Ravello-HR/admin/src/fonts/)",
+      "Bash(cp D:/Sites/Ravello-HR/src/fonts/Satoshi-*.woff2 D:/Sites/Ravello-HR/portal/src/fonts/)",
+      "Bash(npm install:*)",
+      "Bash(npx next:*)",
+      "Bash(taskkill /PID 28480 /F)",
+      "Read(//d D:/Sites/**)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''src\\\\app'' -Recurse -Filter ''*.tsx'' | Select-String ''pt-20'' | ForEach-Object { \\(Get-Content $_Path\\) -replace ''\"\"pt-20\"\"'', ''\"\"pt-28\"\"'' | Set-Content $_Path }\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''D:\\\\Sites\\\\Ravello-HR\\\\src\\\\app'' -Recurse -Filter ''*.tsx'' | ForEach-Object { \\(Get-Content $_FullName -Raw\\) -replace ''className=\"\"pt-20\"\"'', ''className=\"\"pt-28\"\"'' | Set-Content $_FullName }\")"
     ]
   }
 }

@@ -1,31 +1,30 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
+import { CalendarCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
-const BARS = [
-  { label: 'Location',      val: 78, pct: '78%',  color: '#D94444' },
-  { label: 'Salary',        val: 62, pct: '62%',  color: '#E8954A' },
-  { label: 'Skills',        val: 45, pct: '45%',  color: '#E8B84A' },
-  { label: 'Working Model', val: 80, pct: '80%',  color: '#D94444' },
-  { label: 'Process',       val: 22, pct: '22%',  color: '#5A9E6F' },
-];
-
-const STATS = [
-  { val: '18+', lab: 'Years of senior HR and People leadership', gold: true },
-  { val: '10+', lab: 'Years in Talent and Recruitment',          gold: false },
-  { val: '0',   lab: 'Tribunal outcomes on record',              gold: true },
+const PAIN_POINTS = [
+  'No dedicated People lead, so managers are winging it',
+  'Hiring on repeat with the same roles and same agency bills',
+  'Compliance gaps you can\'t currently see',
+  'HR documents that haven\'t been touched in years',
 ];
 
 export default function Hero() {
   return (
     <section
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
-      style={{ background: 'var(--gradient-hero)' }}
+      className="relative overflow-hidden"
+      style={{ background: 'var(--bg)' }}
     >
-      <div className="hero-mesh" />
+      {/* Subtle warm gradient wash */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.04) 0%, transparent 60%)',
+        }}
+      />
 
       <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
 
@@ -50,58 +49,64 @@ export default function Hero() {
 
         <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
 
-          {/* Left column */}
+          {/* Left column — Company-first messaging */}
           <div>
 
             <h1
+              className="font-display mb-6"
               style={{
-                fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
-                fontWeight: 300,
-                lineHeight: 1.05,
-                letterSpacing: '-0.025em',
+                fontSize: 'clamp(3.2rem, 6.5vw, 6rem)',
+                fontWeight: 800,
+                lineHeight: 1.0,
+                letterSpacing: '-0.04em',
                 color: 'var(--ink)',
-                marginBottom: '1.5rem',
               }}
             >
-              We hire your people.<br />
-              <span
-                style={{
-                  fontWeight: 600,
-                  backgroundImage: 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                We lead your function.
-              </span>{' '}
-              <em style={{ fontStyle: 'italic', fontWeight: 300, WebkitTextFillColor: 'var(--ink)' }}>
-                We protect your business.
-              </em>
+              <span className="text-gradient">
+                The People System
+              </span>
             </h1>
 
             <p
-              className="text-base leading-relaxed mb-2 max-w-[500px] font-medium"
+              className="text-lg leading-relaxed mb-4 max-w-[520px]"
               style={{ color: 'var(--ink-soft)' }}
             >
-              One partner. Total control of your people function.
-            </p>
-            <p
-              className="text-sm leading-relaxed mb-10 max-w-[480px]"
-              style={{ color: 'var(--ink-faint)' }}
-            >
-              Lucy leads on HR, compliance, and people strategy. Tom leads on talent and recruitment.
-              Together: The People System.
+              Hire the right people. Lead your managers. Protect your business.
+              One partner. The expertise you need. The portal that keeps you in control.
             </p>
 
+            <p
+              className="text-sm leading-relaxed mb-8 max-w-[480px]"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              Built for senior leaders at growing businesses (10&ndash;150 people) who need
+              a proper People function without the full-time headcount cost.
+            </p>
+
+            {/* Pain points */}
+            <div className="space-y-3 mb-10">
+              {PAIN_POINTS.map((p) => (
+                <div key={p} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={18}
+                    className="mt-0.5 flex-shrink-0"
+                    style={{ color: 'var(--brand-purple)' }}
+                  />
+                  <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{p}</span>
+                </div>
+              ))}
+              <p className="text-sm font-bold pl-[30px]" style={{ color: 'var(--ink)' }}>
+                Sound familiar? We fix all of it.
+              </p>
+            </div>
+
             {/* CTAs */}
-            <div className="flex flex-wrap gap-4 mb-12">
+            <div className="flex flex-wrap gap-4">
               <Link href="/book" className="btn-gradient">
                 <CalendarCheck size={16} /> Book a Free Call
               </Link>
-              <Link href="/smart-hiring-system" className="btn-outline-white">
-                See how HIRE works <ArrowRight size={15} />
+              <Link href="/smart-hiring-system" className="btn-secondary">
+                See how it works <ArrowRight size={15} />
               </Link>
             </div>
 
@@ -155,117 +160,195 @@ export default function Hero() {
 
           {/* Right column: score card */}
           <div className="hidden lg:block">
-            <div
-              className="bg-white rounded-[22px] p-6 relative"
-              style={{
-                border: '0.5px solid rgba(7,11,29,0.09)',
-                boxShadow: '0 6px 40px rgba(7,11,29,0.09), 0 1px 4px rgba(7,11,29,0.04)',
-              }}
-            >
-              {/* Card top gradient line */}
+            <div className="relative">
+              {/* Browser window frame */}
               <div
-                className="absolute top-0 left-6 right-6 h-[1.5px] rounded-b-full"
-                style={{ background: 'var(--gradient)' }}
-              />
-
-              {/* Card header */}
-              <div className="flex items-center justify-between mb-4 mt-2">
-                <span
-                  className="text-[10px] font-bold uppercase tracking-[0.16em]"
-                  style={{ color: 'var(--ink-faint)' }}
-                >
-                  Friction Lens™
-                </span>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(217,68,68,0.09)', color: '#B03030' }}
-                >
-                  Sample score
-                </span>
-              </div>
-
-              {/* Score */}
-              <div className="flex items-baseline gap-2 mb-1">
-                <span
-                  style={{
-                    fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                    fontSize: '60px',
-                    fontWeight: 600,
-                    lineHeight: 1,
-                    letterSpacing: '-0.03em',
-                    color: 'var(--ink)',
-                  }}
-                >
-                  67
-                </span>
-                <span className="text-base font-light" style={{ color: 'var(--ink-faint)' }}>/100</span>
-              </div>
-
-              <div
-                className="flex items-center gap-2 text-xs font-semibold mb-5"
-                style={{ color: '#C04444' }}
+                className="rounded-[20px] overflow-hidden"
+                style={{
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 8px 48px rgba(10,15,30,0.10), 0 2px 8px rgba(10,15,30,0.04)',
+                }}
               >
-                <span
-                  className="w-[6px] h-[6px] rounded-full flex-shrink-0"
-                  style={{ background: '#C04444' }}
-                />
-                High friction. Role needs work before going live.
-              </div>
+                {/* Browser top bar */}
+                <div
+                  className="flex items-center gap-2 px-4 py-3"
+                  style={{ background: 'var(--surface-soft)', borderBottom: '1px solid var(--brand-line)' }}
+                >
+                  <div className="flex gap-1.5">
+                    <span className="w-3 h-3 rounded-full" style={{ background: '#FF5F57' }} />
+                    <span className="w-3 h-3 rounded-full" style={{ background: '#FFBD2E' }} />
+                    <span className="w-3 h-3 rounded-full" style={{ background: '#28C840' }} />
+                  </div>
+                  <div
+                    className="flex-1 ml-3 px-3 py-1 rounded-md text-[11px] font-medium"
+                    style={{ background: 'var(--surface)', color: 'var(--ink-faint)' }}
+                  >
+                    www.portal.thepeoplesystem.co.uk
+                  </div>
+                </div>
 
-              {/* Bars */}
-              <div className="space-y-3.5 mb-5">
-                {BARS.map((b) => (
-                  <div key={b.label}>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[11px]" style={{ color: 'var(--ink-soft)' }}>{b.label}</span>
-                      <span className="text-[11px] font-semibold" style={{ color: 'var(--ink)' }}>{b.val}</span>
-                    </div>
+                {/* Portal mockup content */}
+                <div style={{ background: 'var(--bg)', padding: '20px' }}>
+                  {/* Mini sidebar + content */}
+                  <div className="flex gap-4">
+                    {/* Mini sidebar */}
                     <div
-                      className="h-[4px] rounded-full overflow-hidden"
-                      style={{ background: 'var(--surface-alt)' }}
+                      className="flex-shrink-0 rounded-[12px] p-3"
+                      style={{
+                        width: '140px',
+                        background: 'var(--surface-dark, #050810)',
+                      }}
                     >
+                      <div className="space-y-1.5">
+                        {['Dashboard', 'Hiring', 'LEAD', 'PROTECT', 'Compliance', 'Documents', 'Support', 'Metrics'].map((item, i) => (
+                          <div
+                            key={item}
+                            className="px-2 py-1.5 rounded-md text-[10px] font-medium"
+                            style={{
+                              color: i === 0 ? '#fff' : 'rgba(255,255,255,0.40)',
+                              background: i === 0 ? 'rgba(124,58,237,0.25)' : 'transparent',
+                            }}
+                          >
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Mini dashboard content */}
+                    <div className="flex-1 space-y-3">
+                      {/* Stat row */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: 'Active Roles', val: '4', color: 'var(--brand-purple)' },
+                          { label: 'Compliance', val: '96%', color: '#28C840' },
+                          { label: 'Open Actions', val: '7', color: 'var(--brand-blue)' },
+                        ].map((s) => (
+                          <div
+                            key={s.label}
+                            className="rounded-[10px] p-3"
+                            style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}
+                          >
+                            <p className="font-mono text-lg font-bold" style={{ color: s.color, letterSpacing: '-0.02em' }}>{s.val}</p>
+                            <p className="text-[9px] font-medium" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Mini table */}
                       <div
-                        className="h-full rounded-full"
-                        style={{ width: b.pct, background: b.color }}
-                      />
+                        className="rounded-[10px] p-3"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}
+                      >
+                        <p className="text-[10px] font-bold mb-2" style={{ color: 'var(--ink)' }}>Recent Hiring Pipeline</p>
+                        <div className="space-y-2">
+                          {[
+                            { role: 'Senior Developer', stage: 'Interviewing', badge: 'rgba(124,58,237,0.12)', badgeText: '#5A1EC0' },
+                            { role: 'Marketing Manager', stage: 'Offer', badge: 'rgba(52,211,153,0.14)', badgeText: '#047857' },
+                            { role: 'Finance Analyst', stage: 'Screening', badge: 'rgba(59,111,255,0.12)', badgeText: '#1848CC' },
+                          ].map((r) => (
+                            <div key={r.role} className="flex items-center justify-between">
+                              <span className="text-[10px] font-medium" style={{ color: 'var(--ink-soft)' }}>{r.role}</span>
+                              <span
+                                className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                                style={{ background: r.badge, color: r.badgeText }}
+                              >
+                                {r.stage}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Mini compliance bar */}
+                      <div
+                        className="rounded-[10px] p-3"
+                        style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}
+                      >
+                        <p className="text-[10px] font-bold mb-2" style={{ color: 'var(--ink)' }}>Compliance Tracker</p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-alt)' }}>
+                            <div className="h-full rounded-full" style={{ width: '96%', background: '#28C840' }} />
+                          </div>
+                          <span className="text-[10px] font-bold" style={{ color: '#047857' }}>96%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
 
-              {/* Card CTA */}
-              <div className="pt-4" style={{ borderTop: '0.5px solid var(--brand-line)' }}>
-                <Link
-                  href="/smart-hiring-system"
-                  className="flex items-center justify-between w-full text-sm font-semibold transition-colors group"
-                  style={{ color: 'var(--brand-purple)' }}
-                >
-                  Raise a role. See the score before you go live.
-                  <ArrowRight
-                    size={14}
-                    className="transition-transform duration-200 group-hover:translate-x-1"
-                  />
-                </Link>
+              {/* Feature pills positioned outside the mockup edges */}
+              <div
+                className="absolute -left-16 top-[18%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: 'var(--brand-purple)',
+                }}
+              >
+                Hiring Pipeline
+              </div>
+              <div
+                className="absolute -right-14 top-[12%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: 'var(--brand-blue)',
+                }}
+              >
+                HR Documents
+              </div>
+              <div
+                className="absolute -left-14 bottom-[15%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: '#047857',
+                }}
+              >
+                Compliance 96%
+              </div>
+              <div
+                className="absolute -right-16 bottom-[30%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: 'var(--brand-pink)',
+                }}
+              >
+                Salary Benchmarks
+              </div>
+              <div
+                className="absolute -right-10 top-[45%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: '#8A5500',
+                }}
+              >
+                Performance Reviews
+              </div>
+              <div
+                className="absolute -left-12 top-[52%] px-3 py-1.5 rounded-full text-[11px] font-bold"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 16px rgba(10,15,30,0.08)',
+                  color: 'var(--brand-blue)',
+                }}
+              >
+                Absence Tracking
               </div>
             </div>
-
-            <p className="text-center text-[11px] mt-4" style={{ color: 'var(--ink-faint)' }}>
-              Built into every HIRE engagement · No extra cost
-            </p>
           </div>
 
         </div>
-      </div>
-
-      {/* Scroll nudge */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10">
-        <span
-          className="text-[10px] font-bold uppercase tracking-[0.18em]"
-          style={{ color: 'var(--ink-faint)' }}
-        >
-          Scroll
-        </span>
-        <ChevronDown size={14} style={{ color: 'var(--ink-faint)' }} className="animate-bounce" />
       </div>
     </section>
   );

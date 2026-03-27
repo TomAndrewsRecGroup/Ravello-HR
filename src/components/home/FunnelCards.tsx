@@ -8,7 +8,7 @@ const funnels = [
     pill: 'HIRE',
     pillStyle: 'pill-purple',
     headline: 'Your hiring is broken. We fix it before it costs you.',
-    body: 'Agency fees on repeat. Bad hires. Inconsistent managers. We fix the root cause. Before a role goes live, Friction Lens scores it against the live market so you know exactly where it will struggle.',
+    body: 'Agency fees on repeat. Bad hires. Roles that never stay filled. We fix the root cause. Before a role goes live, we score it against live market data so you know exactly where it will struggle.',
     pains: [
       'Roles filled, then vacant again in 6 months',
       'Agency bills with nothing to show for them',
@@ -78,7 +78,7 @@ export default function FunnelCards() {
           </p>
           <h2 className="section-title mb-5">Where do you need us most?</h2>
           <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-            Pick the pillar that fits your situation right now. Most clients start with one and expand as the relationship builds.
+            Start with the pillar that fits right now. Most clients build from there.
           </p>
         </div>
 

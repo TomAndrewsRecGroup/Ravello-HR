@@ -31,14 +31,14 @@ const sectorExperience = [
   { label: 'Retail and Consumer',         desc: 'Multi-site HR transformation, manager capability programme, hiring system redesign' },
   { label: 'Professional Services',        desc: 'Hiring process rebuild, agency dependency reduced, time-to-hire cut by 8 weeks' },
   { label: 'PE-backed SME',                desc: 'Pre-acquisition people DD, post-deal integration, contract harmonisation' },
-  { label: 'Technology Scale-up',          desc: 'Full people function build from 12 to 80 people, Friction Lens embedded throughout' },
+  { label: 'Technology Scale-up',          desc: 'Full people function build from 12 to 80 people, role scoring and hiring structure embedded throughout' },
   { label: 'Manufacturing and Industrial', desc: 'Restructure and redundancy programme, TUPE transfer, policy overhaul' },
   { label: 'Healthcare and Services',      desc: 'Compliance overhaul, full policy library, manager training programme' },
 ];
 
 export default function AboutPage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
@@ -64,10 +64,10 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, the Friction Lens technology platform integrated into every HIRE engagement, and a track record across every sector a founder-led business is likely to sit in.
+            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, and a track record across every sector a founder-led business is likely to sit in.
           </p>
           <p className="text-base leading-relaxed mt-4 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            A proper blend. One partner. Total control of your people function.
+            A proper blend. One partner. No handoffs. No juniors. Just two people who know how to fix it.
           </p>
         </div>
       </section>

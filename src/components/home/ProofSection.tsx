@@ -73,8 +73,8 @@ export default function ProofSection() {
           </div>
           <div className="flex items-center">
             <p className="text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              Every engagement is measured against real outcomes, not activity.
-              These figures come from client work across hiring, compliance and people transformation.
+              Every engagement is measured on outcomes. Not activity.
+              These figures come from real client work across hiring, compliance, and people transformation.
             </p>
           </div>
         </div>
@@ -109,8 +109,8 @@ export default function ProofSection() {
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                      fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                      letterSpacing: '-0.02em',
+                      fontFamily: 'var(--font-mono), "JetBrains Mono", monospace',
+                      letterSpacing: '-0.03em',
                     }}
                   >
                     {s.value}
@@ -124,8 +124,8 @@ export default function ProofSection() {
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                      fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                      letterSpacing: '-0.02em',
+                      fontFamily: 'var(--font-mono), "JetBrains Mono", monospace',
+                      letterSpacing: '-0.03em',
                     }}
                   >
                     {s.value}

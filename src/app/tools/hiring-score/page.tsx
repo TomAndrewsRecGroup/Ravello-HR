@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function HiringScorePage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
       <section className="section-sm" style={{ background: 'var(--bg)', paddingTop: '4rem' }}>
         <div className="container-narrow text-center">
           <p className="eyebrow justify-center mb-4">

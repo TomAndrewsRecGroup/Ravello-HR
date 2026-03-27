@@ -43,7 +43,7 @@ export default function PlaybookTeaser() {
               />
               Free resources
             </p>
-            <h2 className="section-title">The Ravello Playbook</h2>
+            <h2 className="section-title">The People System Playbook</h2>
           </div>
           <Link
             href="/playbook"
@@ -84,7 +84,7 @@ export default function PlaybookTeaser() {
                   style={{
                     color: 'var(--ink)',
                     letterSpacing: '-0.01em',
-                    fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif',
+                    fontFamily: 'var(--font-satoshi), "Satoshi", sans-serif',
                   }}
                 >
                   {r.title}
