@@ -40,7 +40,7 @@ export default function StructuredData() {
         name: 'What is Friction Lens?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Friction Lens is a proprietary role scoring system built by Tom Andrews. It scores every active role across five dimensions — Location, Salary, Skills, Working Model, and Process — before it goes to market, and provides specific recommendations to reduce friction before you recruit.',
+          text: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It scores every active role across five dimensions — Location, Salary, Skills, Working Model, and Process — before it goes to market, and provides specific recommendations to reduce friction before you recruit. The People System integrates Friction Lens into every HIRE engagement as standard.',
         },
       },
       {

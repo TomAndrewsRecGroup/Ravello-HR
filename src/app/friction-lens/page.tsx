@@ -87,7 +87,7 @@ export default function FrictionLensPage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            Friction Lens — Built by Tom Andrews
+            Friction Lens — Technology by IvyLens Technology
           </p>
           <h1
             style={{
@@ -224,7 +224,7 @@ export default function FrictionLensPage() {
           <div className="space-y-5">
             {[
               { step: '01', title: 'Role brief received', body: 'Tom receives the initial brief — either written or via a scoping call. Job title, location, salary range, key requirements, working model, and intended timeline.' },
-              { step: '02', title: 'Friction Lens scoring run', body: 'Each of the five dimensions is assessed against live market data for the specific role type and geography. This is not automated. Tom applies the framework with direct market knowledge.' },
+              { step: '02', title: 'Friction Lens scoring run', body: 'Each of the five dimensions is assessed against live market data for the specific role type and geography. The Friction Lens platform, developed by IvyLens Technology, is applied with Tom\'s direct market knowledge to produce a scored output.' },
               { step: '03', title: 'Score and recommendations delivered', body: 'You receive a written Friction Lens report: overall score, dimension-by-dimension breakdown, and specific recommendations for anything rated Medium or above. Typically returned within 24 hours of briefing.' },
               { step: '04', title: 'Role revised if needed', body: 'Where friction points are High or Critical, Tom works with you to address them before the role goes live — salary adjustment, brief rework, process redesign. Changes made at this stage save weeks.' },
               { step: '05', title: 'Role goes to market correctly', body: 'Role launches with a Friction Lens score of Low or Medium. Correct salary. Right working model expectation set. Realistic must-have list. Tight, fast process designed from day one.' },
@@ -266,7 +266,8 @@ export default function FrictionLensPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'Is Friction Lens automated or manual?', a: 'Friction Lens is a structured framework applied by Tom with direct market knowledge. It is not an automated API query. The value is in the interpretation — understanding why a salary range is problematic for this specific role in this specific geography, not just flagging that it is below average.' },
+        { q: 'Who built Friction Lens?', a: 'Friction Lens is a technology developed by IvyLens Technology. The People System integrates Friction Lens into every HIRE engagement, applied by Tom with direct market knowledge to score each role before it goes live.' },
+        { q: 'Is Friction Lens automated or manual?', a: 'Friction Lens is a structured scoring framework developed by IvyLens Technology. The value is in how it is applied — Tom uses it with direct market knowledge to interpret why a salary range is problematic for this specific role in this specific geography, not just flag that it is below average.' },
         { q: 'How long does a Friction Lens score take?', a: 'Typically delivered within 24 hours of receiving a full role brief. Complex or specialist roles may take 48 hours.' },
         { q: 'Is it included in all HIRE packages?', a: 'Yes. Friction Lens scoring is built into every HIRE engagement as standard — Foundations, Optimiser, Embedded, and Build.' },
         { q: 'Can we get a standalone Friction Lens score without a full HIRE engagement?', a: 'A Friction Lens score is included as part of a free hiring audit. Book a call and Tom will score one live role for you.' },

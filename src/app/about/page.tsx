@@ -20,8 +20,7 @@ const lucyCredentials = [
 const tomCredentials = [
   '10+ years in talent and recruitment leadership',
   'Founder of Andrews Recruitment Group',
-  'Built Friction Lens — a proprietary role scoring system for SMEs',
-  'Built IvyLens — a talent intelligence browser extension',
+  'Founder of IvyLens Technology — creators of Friction Lens',
   'Embedded talent delivery across founder-led and PE-backed businesses',
   'Reduced agency dependency and time-to-hire on every long-term engagement',
 ];
@@ -63,7 +62,7 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, two proprietary tools built from scratch, and a track record across every sector a founder-led business is likely to sit in.
+            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, the Friction Lens technology platform integrated into every HIRE engagement, and a track record across every sector a founder-led business is likely to sit in.
           </p>
           <p className="text-base leading-relaxed mt-4 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             A proper blend. One partner. Total control of your people function.
@@ -151,10 +150,10 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses, and building the two tools that underpin The People System&rsquo;s hiring work: Friction Lens and IvyLens.
+                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group and IvyLens Technology, and embedding inside founder-led and PE-backed businesses as a talent lead.
                 </p>
                 <p>
-                  Friction Lens is Tom&rsquo;s answer to the same problem he kept encountering: businesses launching roles blind, spending weeks discovering what a quick pre-market check would have caught in an hour. Roles scored across five dimensions. Specific recommendations. No more guesswork.
+                  IvyLens Technology is the company behind Friction Lens — a role scoring platform built to address the same problem Tom kept encountering: businesses launching roles blind, spending weeks discovering what a quick pre-market check would have caught in an hour. Roles scored across five dimensions. Specific recommendations. No more guesswork.
                 </p>
                 <p>
                   Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
@@ -180,7 +179,7 @@ export default function AboutPage() {
                 <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
                   <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
                   <div className="flex flex-wrap gap-2">
-                    {['HIRE', 'Friction Lens', 'IvyLens'].map((tag) => (
+                    {['HIRE', 'IvyLens Technology', 'Friction Lens'].map((tag) => (
                       <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
                     ))}
                   </div>
