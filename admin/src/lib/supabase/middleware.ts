@@ -1,15 +1,27 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const UNLOCK_COOKIE = 'tpo_unlocked';
+
 export async function updateSession(request: NextRequest) {
-  // ── Dev bypass ─────────────────────────────────────────────────────────────
-  // Set DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD in .env.local (or Vercel preview
-  // env vars) to bypass authentication for local / staging testing.
-  // Never set these in the production Vercel environment.
+  const { pathname } = request.nextUrl;
+
+  // ── Coming soon gate — checked before everything else ──────────────────────
+  const isGateRoute = pathname === '/coming-soon' || pathname.startsWith('/api/unlock');
+
+  if (!isGateRoute && !request.cookies.get(UNLOCK_COOKIE)?.value) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/coming-soon';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // ── Dev bypass — skip Supabase auth when gate creds are set ───────────────
   if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
     return NextResponse.next({ request });
   }
 
+  // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,7 +42,6 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
   const isPublic = pathname.startsWith('/auth');
 
   if (!user && !isPublic) {
@@ -39,19 +50,35 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin-only guard — check role
   if (user && !isPublic) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Role cached in cookie — avoids a DB round trip on every navigation
+    const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
-    const role = (profile as any)?.role ?? '';
-    if (!['ravello_admin','ravello_staff'].includes(role)) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/auth/unauthorised';
-      return NextResponse.redirect(url);
+    if (cachedRole) {
+      if (!['ravello_admin', 'ravello_recruiter'].includes(cachedRole)) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/auth/unauthorised';
+        return NextResponse.redirect(url);
+      }
+    } else {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const role = (profile as any)?.role ?? '';
+      if (!['ravello_admin', 'ravello_recruiter'].includes(role)) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/auth/unauthorised';
+        return NextResponse.redirect(url);
+      }
+
+      supabaseResponse.cookies.set('tpo_admin_role', role, {
+        httpOnly: true, sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 8, path: '/',
+      });
     }
   }
 

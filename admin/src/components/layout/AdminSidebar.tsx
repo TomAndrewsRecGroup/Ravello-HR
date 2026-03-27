@@ -3,9 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Building2, Users, Users2, Briefcase,
-  FolderOpen, LifeBuoy, ToggleLeft, LogOut, ChevronRight,
-  TrendingUp, Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio,
+  LayoutDashboard, Building2, Briefcase,
+  FolderOpen, LifeBuoy, LogOut, ChevronRight,
+  Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
@@ -14,19 +14,15 @@ const nav = [
   { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard, sub: null },
   { href: '/clients',         label: 'Clients',          icon: Building2,       sub: null },
   { href: '/hiring',          label: 'Hiring',           icon: Briefcase,       sub: '/hiring/analytics' },
-  { href: '/candidates',      label: 'Candidates',       icon: Users2,          sub: null },
-  { href: '/bd-intelligence', label: 'BD Intelligence',  icon: TrendingUp,      sub: null },
   { href: '/requests',        label: 'Service Requests', icon: Inbox,           sub: null },
   { href: '/broadcast',       label: 'Broadcast',        icon: Radio,           sub: null },
   { href: '/roadmap',         label: 'Roadmap',          icon: Map,             sub: null },
   { href: '/documents',       label: 'Documents',        icon: FolderOpen,      sub: null },
   { href: '/reports',         label: 'Reports',          icon: BarChart3,       sub: null },
-  { href: '/compliance',        label: 'Compliance',      icon: ShieldCheck,     sub: null },
-  { href: '/salary-benchmarks',label: 'Benchmarks',      icon: PoundSterling,   sub: null },
-  { href: '/learning',         label: 'Learning',        icon: BookOpen,        sub: null },
+  { href: '/compliance',      label: 'Compliance',       icon: ShieldCheck,     sub: null },
+  { href: '/salary-benchmarks', label: 'Benchmarks',    icon: PoundSterling,   sub: null },
+  { href: '/learning',        label: 'Learning',         icon: BookOpen,        sub: null },
   { href: '/support',         label: 'Support',          icon: LifeBuoy,        sub: null },
-  { href: '/users',           label: 'Users',            icon: Users,           sub: null },
-  { href: '/feature-flags',   label: 'Feature Flags',    icon: ToggleLeft,      sub: null },
 ];
 
 export default function AdminSidebar() {

@@ -3,16 +3,13 @@
   RAVELLO HR — CLIENT PORTAL DESIGN SYSTEM
   ═══════════════════════════════════════════════════════════════
   Deployed at: https://portal.ravello-hr.vercel.app
-  Consistent with main site design language
-  Typography: Plus Jakarta Sans (UI) + Inter (data/mono)
+  Typography: Cormorant Garamond (display) + DM Sans (UI/data)
   ═══════════════════════════════════════════════════════════════
 */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -57,15 +54,24 @@
   body {
     background: var(--bg);
     color: var(--ink);
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, h5 {
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  /* Display headings — Cormorant Garamond serif */
+  h1, h2, h3 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  /* Sub-headings — DM Sans */
+  h4, h5, h6 {
+    font-family: 'DM Sans', system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.015em;
   }
@@ -83,9 +89,9 @@
 
   /* ─── Cards ─────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-[16px] transition-all duration-200;
+    @apply bg-white rounded-[20px] transition-all duration-200;
     border: 1px solid var(--line);
-    box-shadow: 0 1px 3px rgba(7,11,29,0.04), 0 4px 16px rgba(7,11,29,0.05);
+    box-shadow: 0 1px 3px rgba(7,11,29,0.04), 0 6px 28px rgba(7,11,29,0.05);
   }
   .card-hover:hover {
     box-shadow: 0 2px 8px rgba(7,11,29,0.07), 0 10px 32px rgba(7,11,29,0.08);
@@ -98,7 +104,7 @@
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-sm font-semibold
            transition-all duration-150 cursor-pointer;
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
   .btn-primary {
     @apply btn text-white;
@@ -109,8 +115,8 @@
 
   .btn-cta {
     @apply btn text-white relative overflow-hidden;
-    background: var(--gradient-cta);
-    box-shadow: 0 2px 12px rgba(124,58,237,0.32);
+    background: var(--gradient);
+    box-shadow: 0 2px 18px rgba(124,58,237,0.38), 0 1px 4px rgba(234,61,196,0.18);
   }
   .btn-cta::before {
     content: '';
@@ -122,7 +128,7 @@
   }
   .btn-cta:hover::before { transform: translateX(120%); }
   .btn-cta:hover {
-    box-shadow: 0 4px 20px rgba(124,58,237,0.48);
+    box-shadow: 0 4px 30px rgba(124,58,237,0.52), 0 2px 10px rgba(234,61,196,0.28);
     transform: translateY(-1px);
   }
 
@@ -169,7 +175,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     color: var(--ink);
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
   }
   .input::placeholder { color: var(--ink-faint); }
   .input:focus {
@@ -180,14 +186,14 @@
     @apply block text-xs font-semibold mb-1.5;
     color: var(--ink-soft);
     letter-spacing: 0.02em;
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
   .form-group { @apply flex flex-col gap-1; }
 
   /* ─── Status badges ──────────────────────────────── */
   .badge {
     @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold;
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
   .badge-submitted  { background: rgba(59,111,255,0.12);  color: #1848CC; }
   .badge-inprogress { background: rgba(124,58,237,0.12);  color: #5A1EC0; }
@@ -211,7 +217,7 @@
     @apply flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-sm font-medium
            transition-all duration-150 cursor-pointer;
     color: rgba(255,255,255,0.48);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
   .nav-link:hover   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.88); }
   .nav-link.active  {
@@ -222,7 +228,7 @@
   .nav-section-label {
     @apply text-[10px] font-bold uppercase tracking-[0.20em] px-3 mt-6 mb-1.5;
     color: rgba(255,255,255,0.22);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
 
   /* ─── Tables ─────────────────────────────────────── */
@@ -236,7 +242,7 @@
     color: var(--ink-faint);
     background: var(--surface-alt);
     border-bottom: 1px solid var(--line);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
   .table td {
     @apply px-4 py-3 align-middle text-sm;
@@ -251,7 +257,7 @@
   .eyebrow {
     @apply text-[10px] font-bold uppercase tracking-[0.20em];
     color: var(--purple);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
   }
 
   /* ─── Dividers ───────────────────────────────────── */
@@ -273,7 +279,7 @@
     background: var(--gold-surface);
     color: #2A1600;
     box-shadow: 0 1px 6px rgba(191,143,40,0.28);
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     position: relative;
     overflow: hidden;
   }

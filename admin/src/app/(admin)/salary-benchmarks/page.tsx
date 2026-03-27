@@ -7,13 +7,10 @@ export const metadata: Metadata = { title: 'Salary Benchmarks' };
 
 export default async function SalaryBenchmarksPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: benchmarks } = await supabase
-    .from('salary_benchmarks')
-    .select('*')
-    .order('role_type', { ascending: true });
+  const [{ data: { user } }, { data: benchmarks }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('salary_benchmarks').select('*').order('role_type', { ascending: true }),
+  ]);
 
   return (
     <>
@@ -22,7 +19,7 @@ export default async function SalaryBenchmarksPage() {
         subtitle="Market salary data for client role comparisons"
       />
       <main className="admin-page flex-1">
-        <BenchmarkClient userId={user.id} initialBenchmarks={benchmarks ?? []} />
+        <BenchmarkClient userId={user?.id ?? ''} initialBenchmarks={benchmarks ?? []} />
       </main>
     </>
   );
