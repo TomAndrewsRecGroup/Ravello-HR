@@ -1,23 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const UNLOCK_COOKIE = 'tpo_unlocked';
-
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Coming soon gate — checked before everything else ──────────────────────
-  const isGateRoute = pathname === '/coming-soon' || pathname.startsWith('/api/unlock');
-
-  if (!isGateRoute && !request.cookies.get(UNLOCK_COOKIE)?.value) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/coming-soon';
-    url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // ── Dev bypass — skip Supabase auth when gate creds are set ───────────────
-  if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
+  // ── Dev session bypass ─────────────────────────────────────────────────────
+  // Set by /api/dev-login when DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD match.
+  // Bypasses Supabase auth entirely for testing without a live DB.
+  if (request.cookies.get('dev_session')?.value === '1') {
     return NextResponse.next({ request });
   }
 
@@ -25,8 +15,8 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key',
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll()        { return request.cookies.getAll(); },
@@ -42,9 +32,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-
-  const isAuthRoute    = pathname.startsWith('/auth');
-  const isPublicRoute  = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password';
+  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password';
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -52,7 +40,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute && !pathname.startsWith('/auth/callback')) {
+  if (user && pathname.startsWith('/auth') && !pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

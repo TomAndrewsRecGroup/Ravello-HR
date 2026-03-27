@@ -1,13 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
-  const router   = useRouter();
-  const supabase = createClient();
-
+  const router = useRouter();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPwd,  setShowPwd]  = useState(false);
@@ -19,16 +16,19 @@ export default function LoginForm() {
     setLoading(true);
     setError('');
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch('/api/dev-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (authError) {
-      setError(authError.message);
+    if (res.ok) {
+      router.push('/dashboard');
+      router.refresh();
+    } else {
+      setError('Invalid email or password.');
       setLoading(false);
-      return;
     }
-
-    router.push('/dashboard');
-    router.refresh();
   }
 
   return (
@@ -83,16 +83,6 @@ export default function LoginForm() {
         {loading && <Loader2 size={15} className="animate-spin" />}
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
-
-      <div className="text-center pt-1">
-        <a
-          href="/auth/reset-password"
-          className="text-xs"
-          style={{ color: 'rgba(147,184,255,0.7)' }}
-        >
-          Forgot your password?
-        </a>
-      </div>
     </form>
   );
 }
