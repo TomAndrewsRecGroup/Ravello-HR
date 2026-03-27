@@ -1,25 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const UNLOCK_COOKIE = 'tpo_unlocked';
-
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // ── Coming soon gate — checked before everything else ──────────────────────
-  const isGateRoute = pathname === '/coming-soon' || pathname.startsWith('/api/unlock');
-
-  if (!isGateRoute && !request.cookies.get(UNLOCK_COOKIE)?.value) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/coming-soon';
-    url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // ── Dev bypass — skip Supabase auth when gate creds are set ───────────────
-  if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
-    return NextResponse.next({ request });
-  }
 
   // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
