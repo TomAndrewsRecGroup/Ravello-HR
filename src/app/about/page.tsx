@@ -19,8 +19,10 @@ const lucyCredentials = [
 
 const tomCredentials = [
   '10+ years in talent and recruitment leadership',
-  'Founder of Andrews Recruitment Group',
-  'Founder of IvyLens Technology — creators of Friction Lens',
+  'Founder — Andrews Recruitment Group',
+  'Founder — RecXchange (15,000+ recruiter network) and RecX Direct',
+  'Founder — IvyLens Technology (Friction Lens, automated outreach tools)',
+  'Founder — AMIVY Designs (lead generation, sales and marketing)',
   'Embedded talent delivery across founder-led and PE-backed businesses',
   'Reduced agency dependency and time-to-hire on every long-term engagement',
 ];
@@ -150,13 +152,13 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Tom has spent over a decade in talent and recruitment — founding Andrews Recruitment Group and IvyLens Technology, and embedding inside founder-led and PE-backed businesses as a talent lead.
+                  Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment — built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
                 </p>
                 <p>
-                  IvyLens Technology is the company behind Friction Lens — a role scoring platform built to address the same problem Tom kept encountering: businesses launching roles blind, spending weeks discovering what a quick pre-market check would have caught in an hour. Roles scored across five dimensions. Specific recommendations. No more guesswork.
+                  Alongside ARG, Tom built RecXchange — a recruiter networking and collaboration platform with over 15,000 recruiters — and RecX Direct, its business development arm that connects live client roles directly with independent recruiters. He also founded IvyLens Technology, known for the Friction Lens role scoring platform and its automated outreach tools, and AMIVY Designs, a website and lead generation studio focused on sales and marketing.
                 </p>
                 <p>
-                  Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
+                  Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, and Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
                 </p>
               </div>
               <div className="mt-8">
@@ -179,7 +181,7 @@ export default function AboutPage() {
                 <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
                   <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
                   <div className="flex flex-wrap gap-2">
-                    {['HIRE', 'IvyLens Technology', 'Friction Lens'].map((tag) => (
+                    {['HIRE', 'Andrews Recruitment Group', 'RecXchange', 'IvyLens Technology', 'AMIVY Designs'].map((tag) => (
                       <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
                     ))}
                   </div>

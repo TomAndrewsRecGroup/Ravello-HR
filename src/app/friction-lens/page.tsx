@@ -87,7 +87,7 @@ export default function FrictionLensPage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            Friction Lens — Technology by IvyLens Technology
+            Friction Lens — built by Tom Andrews · IvyLens Technology
           </p>
           <h1
             style={{
@@ -266,7 +266,7 @@ export default function FrictionLensPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'Who built Friction Lens?', a: 'Friction Lens is a technology developed by IvyLens Technology. The People System integrates Friction Lens into every HIRE engagement, applied by Tom with direct market knowledge to score each role before it goes live.' },
+        { q: 'Who built Friction Lens?', a: 'Friction Lens was built by Tom Andrews through IvyLens Technology — the technology company Tom founded alongside Andrews Recruitment Group, RecXchange, and AMIVY Designs. The People System integrates Friction Lens into every HIRE engagement, applied by Tom with direct market knowledge to score each role before it goes live.' },
         { q: 'Is Friction Lens automated or manual?', a: 'Friction Lens is a structured scoring framework developed by IvyLens Technology. The value is in how it is applied — Tom uses it with direct market knowledge to interpret why a salary range is problematic for this specific role in this specific geography, not just flag that it is below average.' },
         { q: 'How long does a Friction Lens score take?', a: 'Typically delivered within 24 hours of receiving a full role brief. Complex or specialist roles may take 48 hours.' },
         { q: 'Is it included in all HIRE packages?', a: 'Yes. Friction Lens scoring is built into every HIRE engagement as standard — Foundations, Optimiser, Embedded, and Build.' },
