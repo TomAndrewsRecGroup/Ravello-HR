@@ -4,7 +4,7 @@ import LoginForm from '@/components/modules/LoginForm';
 
 export const metadata: Metadata = { title: 'Sign In' };
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 export default function LoginPage() {
   return (
