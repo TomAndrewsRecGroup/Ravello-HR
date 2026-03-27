@@ -26,13 +26,13 @@ export default function Footer() {
 
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center mb-5">
+            <Link href="/" className="flex items-center mb-3">
               <Image
                 src={LOGO}
                 alt="The People System"
-                width={240}
-                height={80}
-                className="object-contain h-14 w-auto"
+                width={480}
+                height={160}
+                className="object-contain h-[110px] w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>

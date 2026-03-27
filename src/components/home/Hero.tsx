@@ -26,7 +26,7 @@ export default function Hero() {
         }}
       />
 
-      <div className="relative z-10 container-wide section-padding w-full pt-36 pb-20">
+      <div className="relative z-10 container-wide section-padding w-full pt-40 pb-20">
         <div className="grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
 
           {/* Left column — Company-first messaging */}
@@ -36,22 +36,21 @@ export default function Hero() {
                 className="inline-block w-1.5 h-1.5 rounded-full mr-2"
                 style={{ background: 'var(--brand-purple)' }}
               />
-              Your dedicated People Department
+              Hire &nbsp;&middot;&nbsp; Lead &nbsp;&middot;&nbsp; Protect
             </p>
 
             <h1
               className="font-display mb-6"
               style={{
-                fontSize: 'clamp(2.8rem, 5.5vw, 4.8rem)',
-                fontWeight: 400,
-                lineHeight: 1.06,
-                letterSpacing: '-0.03em',
+                fontSize: 'clamp(3.2rem, 6.5vw, 6rem)',
+                fontWeight: 800,
+                lineHeight: 1.0,
+                letterSpacing: '-0.04em',
                 color: 'var(--ink)',
               }}
             >
-              We become your{' '}
-              <span className="text-gradient" style={{ fontWeight: 400 }}>
-                People Department
+              <span className="text-gradient">
+                The People System
               </span>
             </h1>
 

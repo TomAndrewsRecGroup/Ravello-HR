@@ -38,7 +38,7 @@ const sectorExperience = [
 
 export default function AboutPage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

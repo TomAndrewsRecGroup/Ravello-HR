@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function DDChecklistPage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '4rem', paddingBottom: '3rem' }}>
         <div className="max-w-3xl mx-auto text-center">
           <span className="pill pill-purple bg-[var(--brand-navy)] border border-white/30 text-white mb-4 inline-block">Funnel C · DealReady People™</span>

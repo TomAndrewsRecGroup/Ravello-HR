@@ -54,7 +54,7 @@ const included = [
 
 export default function PolicySafePage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
 
       {/* Hero — light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

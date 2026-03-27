@@ -53,7 +53,7 @@ const BOOKING_READY = !BOOKING_URL.includes('YOUR_SCHEDULE_ID');
 
 export default function BookPage() {
   return (
-    <div className="pt-20">
+    <div className="pt-28">
 
       {/* Hero */}
       <section className="py-20 lg:py-24 px-4 sm:px-6 lg:px-8 text-center" style={{ background: 'var(--brand-navy)' }}>

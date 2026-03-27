@@ -27,7 +27,10 @@
       "Bash(cp D:/Sites/Ravello-HR/src/fonts/Satoshi-*.woff2 D:/Sites/Ravello-HR/portal/src/fonts/)",
       "Bash(npm install:*)",
       "Bash(npx next:*)",
-      "Bash(taskkill /PID 28480 /F)"
+      "Bash(taskkill /PID 28480 /F)",
+      "Read(//d D:/Sites/**)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''src\\\\app'' -Recurse -Filter ''*.tsx'' | Select-String ''pt-20'' | ForEach-Object { \\(Get-Content $_Path\\) -replace ''\"\"pt-20\"\"'', ''\"\"pt-28\"\"'' | Set-Content $_Path }\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''D:\\\\Sites\\\\Ravello-HR\\\\src\\\\app'' -Recurse -Filter ''*.tsx'' | ForEach-Object { \\(Get-Content $_FullName -Raw\\) -replace ''className=\"\"pt-20\"\"'', ''className=\"\"pt-28\"\"'' | Set-Content $_FullName }\")"
     ]
   }
 }

@@ -60,16 +60,16 @@ export default function Nav() {
       />
 
       <nav className="container-wide px-6 lg:px-10">
-        <div className="flex items-center justify-between h-[80px]">
+        <div className="flex items-center justify-between h-[100px]">
 
           {/* Logo */}
           <Link href="/" className="flex items-center flex-shrink-0 focus-ring">
             <Image
               src={LOGO_MARK}
               alt="The People System"
-              width={200}
-              height={64}
-              className="h-[44px] w-auto object-contain transition-all duration-500"
+              width={400}
+              height={130}
+              className="h-[90px] w-auto object-contain transition-all duration-500"
               style={{ filter: logoFilter }}
               priority
             />
