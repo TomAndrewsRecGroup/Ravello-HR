@@ -42,7 +42,7 @@ const stats = [
 export default function ProofSection() {
   return (
     <section
-      className="section-padding relative overflow-hidden scan-lines"
+      className="section-padding relative overflow-hidden"
       style={{ background: 'var(--brand-navy)' }}
     >
       {/* Ambient glows */}

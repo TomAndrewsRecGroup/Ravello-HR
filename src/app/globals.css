@@ -16,11 +16,11 @@
 
 @layer base {
   :root {
-    /* ─── Core palette — luminous light base ──────────── */
-    --bg:             #EFF0F7;
+    /* ─── Core palette — near-white, barely-cool base ─── */
+    --bg:             #F8F8FB;
     --surface:        #FFFFFF;
-    --surface-alt:    #E8EAF2;
-    --surface-soft:   #F4F5FB;
+    --surface-alt:    #F0F0F7;
+    --surface-soft:   #F5F5FA;
     --surface-glass:  rgba(255,255,255,0.72);
     --ink:            #070B1D;
     --ink-soft:       #38436A;
@@ -68,7 +68,7 @@
                         rgba(234,61,196,0.10) 0%,
                         rgba(124,58,237,0.08) 45%,
                         rgba(59,111,255,0.06) 100%);
-    --gradient-hero:  #EFF0F7;
+    --gradient-hero:  #F8F8FB;
     --gradient-text:  linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%);
 
     /* ─── Utility ─────────────────────────────────────── */

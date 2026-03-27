@@ -35,8 +35,8 @@ export default function Nav() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
-          : 'bg-[rgba(239,240,247,0.82)] backdrop-blur-md'
+          ? 'bg-white/96 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
+          : 'bg-white/75 backdrop-blur-md'
       }`}
     >
       {/* Top gradient line */}

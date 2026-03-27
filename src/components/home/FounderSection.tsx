@@ -18,7 +18,7 @@ export default function FounderSection() {
 
           {/* Left — quote card (dark, navy) */}
           <div
-            className="relative rounded-[28px] overflow-hidden p-10 scan-lines"
+            className="relative rounded-[28px] overflow-hidden p-10"
             style={{ background: 'var(--brand-navy)', minHeight: '440px' }}
           >
             {/* Gradient top bar */}
@@ -48,8 +48,16 @@ export default function FounderSection() {
             </div>
 
             <blockquote
-              className="relative z-10 font-semibold text-white leading-relaxed mb-8"
-              style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'rgba(255,255,255,0.92)' }}
+              className="relative z-10 leading-relaxed mb-8"
+              style={{
+                fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
+                fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                fontWeight: 300,
+                fontStyle: 'italic',
+                color: 'rgba(255,255,255,0.90)',
+                letterSpacing: '-0.015em',
+                lineHeight: 1.3,
+              }}
             >
               &ldquo;Not HR with a bit of recruitment. Not recruitment pretending to do HR.
               A proper blend. One partner who can do all of it.&rdquo;

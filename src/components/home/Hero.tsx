@@ -22,22 +22,10 @@ const STATS = [
 export default function Hero() {
   return (
     <section
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden data-grid"
+      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
       style={{ background: 'var(--gradient-hero)' }}
     >
       <div className="hero-mesh" />
-
-      {/* Extra ambient orbs */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          width: '500px', height: '500px',
-          top: '20%', left: '40%',
-          borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(234,61,196,0.05) 0%, transparent 65%)',
-          animation: 'meshDrift 22s ease-in-out infinite',
-        }}
-      />
 
       <div className="relative z-10 container-wide section-padding w-full pt-40 pb-24">
         <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
@@ -49,10 +37,10 @@ export default function Hero() {
               <Image
                 src={LOGO_FULL}
                 alt="The People Office"
-                width={700}
-                height={320}
+                width={480}
+                height={220}
                 className="object-contain w-auto"
-                style={{ height: '320px' }}
+                style={{ height: '200px' }}
                 priority
               />
             </div>
