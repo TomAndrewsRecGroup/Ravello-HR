@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const BARS = [
   { label: 'Location',      val: 78, pct: '78%',  color: '#D94444' },
@@ -37,10 +37,10 @@ export default function Hero() {
               <Image
                 src={LOGO_FULL}
                 alt="The People System"
-                width={480}
-                height={220}
+                width={560}
+                height={180}
                 className="object-contain w-auto"
-                style={{ height: '200px' }}
+                style={{ height: '140px' }}
                 priority
               />
             </div>

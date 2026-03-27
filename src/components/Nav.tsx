@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X, ChevronDown, CalendarCheck, LogIn } from 'lucide-react';
 
-const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const solutions = [
   { href: '/hire',          label: 'HIRE',          sub: 'Recruitment & talent delivery', dot: 'var(--brand-purple)' },
@@ -62,9 +62,9 @@ export default function Nav() {
             <Image
               src={LOGO_MARK}
               alt="The People System"
-              width={58}
-              height={58}
-              className="h-[52px] w-auto object-contain"
+              width={200}
+              height={64}
+              className="h-[48px] w-auto object-contain"
               priority
             />
           </Link>

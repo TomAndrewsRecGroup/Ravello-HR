@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Phone, Linkedin, ExternalLink } from 'lucide-react';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 export default function Footer() {
   return (
@@ -30,9 +30,9 @@ export default function Footer() {
               <Image
                 src={LOGO}
                 alt="The People System"
-                width={140}
-                height={48}
-                className="object-contain h-10 w-auto brightness-[1.1]"
+                width={240}
+                height={80}
+                className="object-contain h-14 w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
