@@ -1,12 +1,27 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const UNLOCK_COOKIE = 'tpo_unlocked';
+
 export async function updateSession(request: NextRequest) {
-  // ── Dev bypass ─────────────────────────────────────────────────────────────
+  const { pathname } = request.nextUrl;
+
+  // ── Coming soon gate — checked before everything else ──────────────────────
+  const isGateRoute = pathname === '/coming-soon' || pathname.startsWith('/api/unlock');
+
+  if (!isGateRoute && !request.cookies.get(UNLOCK_COOKIE)?.value) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/coming-soon';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // ── Dev bypass — skip Supabase auth when gate creds are set ───────────────
   if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
     return NextResponse.next({ request });
   }
 
+  // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -27,7 +42,6 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
   const isPublic = pathname.startsWith('/auth');
 
   if (!user && !isPublic) {
@@ -37,19 +51,16 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && !isPublic) {
-    // Check role from short-lived cookie (set at login) — avoids a DB round
-    // trip on every navigation. Falls back to a DB query if cookie is absent.
+    // Role cached in cookie — avoids a DB round trip on every navigation
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole) {
-      const allowed = ['ravello_admin', 'ravello_recruiter'];
-      if (!allowed.includes(cachedRole)) {
+      if (!['ravello_admin', 'ravello_recruiter'].includes(cachedRole)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);
       }
     } else {
-      // First request after login — fetch role and cache it
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -57,21 +68,16 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       const role = (profile as any)?.role ?? '';
-      const allowed = ['ravello_admin', 'ravello_recruiter'];
-
-      if (!allowed.includes(role)) {
+      if (!['ravello_admin', 'ravello_recruiter'].includes(role)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);
       }
 
-      // Cache for 8 hours — cleared automatically on signout via /auth/signout
       supabaseResponse.cookies.set('tpo_admin_role', role, {
-        httpOnly: true,
-        sameSite: 'lax',
+        httpOnly: true, sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 8,
-        path: '/',
+        maxAge: 60 * 60 * 8, path: '/',
       });
     }
   }

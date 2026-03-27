@@ -1,15 +1,27 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const UNLOCK_COOKIE = 'tpo_unlocked';
+
 export async function updateSession(request: NextRequest) {
-  // ── Dev bypass ─────────────────────────────────────────────────────────────
-  // Set DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD in .env.local (or Vercel preview
-  // env vars) to bypass authentication for local / staging testing.
-  // Never set these in the production Vercel environment.
+  const { pathname } = request.nextUrl;
+
+  // ── Coming soon gate — checked before everything else ──────────────────────
+  const isGateRoute = pathname === '/coming-soon' || pathname.startsWith('/api/unlock');
+
+  if (!isGateRoute && !request.cookies.get(UNLOCK_COOKIE)?.value) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/coming-soon';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // ── Dev bypass — skip Supabase auth when gate creds are set ───────────────
   if (process.env.DEV_ADMIN_EMAIL && process.env.DEV_ADMIN_PASSWORD) {
     return NextResponse.next({ request });
   }
 
+  // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,12 +41,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: never run logic between createServerClient and getUser()
   const { data: { user } } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-  const isAuthRoute = pathname.startsWith('/auth');
-  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password';
+  const isAuthRoute    = pathname.startsWith('/auth');
+  const isPublicRoute  = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password';
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
