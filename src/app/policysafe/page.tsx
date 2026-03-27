@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'PROTECT | HR Foundations and Compliance | The People Office',
-  description: 'Get your HR foundations right before something goes wrong. Contracts, handbooks, compliance, Employment Rights Bill readiness — The People Office.',
+  title: 'PROTECT | HR Foundations and Compliance | The People System',
+  description: 'Get your HR foundations right before something goes wrong. Contracts, handbooks, compliance, Employment Rights Bill readiness — The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/policysafe' },
 };
 
@@ -61,7 +61,7 @@ export default function PolicySafePage() {
         <div className="container-narrow">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-            PROTECT — The People Office
+            PROTECT — The People System
           </p>
           <h1
             style={{
@@ -213,7 +213,7 @@ export default function PolicySafePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-          { q: 'What is PROTECT?', a: 'The foundations pillar of The People Office. Lucy builds the contracts, handbook, and policies your business genuinely needs — compliant, practical, and written in plain English your managers will actually follow.' },
+          { q: 'What is PROTECT?', a: 'The foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs — compliant, practical, and written in plain English your managers will actually follow.' },
           { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500–£750/month), Protect Partner (£1,500–£2,500/month), Protect Enterprise (bespoke, £3,000–£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
           { q: 'What about the Employment Rights Bill?', a: 'The Employment Rights Bill introduces significant changes for UK employers — particularly around zero-hours contracts, day-one rights, and dismissal processes. Lucy reviews every engagement against current and upcoming legislation so your documentation is ready, not reactive.' },
           { q: 'Who is PROTECT for?', a: 'Any business that has been moving fast without building proper HR foundations. This is especially common in founder-led SMEs, VC-backed businesses post-raise, and businesses that have not reviewed their HR documentation in more than two years.' },

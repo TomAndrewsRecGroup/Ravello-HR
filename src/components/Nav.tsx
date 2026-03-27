@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X, ChevronDown, CalendarCheck, LogIn } from 'lucide-react';
 
-const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const solutions = [
   { href: '/hire',          label: 'HIRE',          sub: 'Recruitment & talent delivery', dot: 'var(--brand-purple)' },
@@ -25,6 +25,15 @@ export default function Nav() {
   const [solOpen, setSol]       = useState(false);
   const [toolOpen, setTool]     = useState(false);
 
+  const solTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toolTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openSol  = () => { if (solTimer.current)  clearTimeout(solTimer.current);  setSol(true);  };
+  const closeSol = () => { solTimer.current  = setTimeout(() => setSol(false),  150); };
+
+  const openTool  = () => { if (toolTimer.current) clearTimeout(toolTimer.current); setTool(true);  };
+  const closeTool = () => { toolTimer.current = setTimeout(() => setTool(false), 150); };
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 32);
     window.addEventListener('scroll', h);
@@ -35,8 +44,8 @@ export default function Nav() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
-          : 'bg-[rgba(239,240,247,0.82)] backdrop-blur-md'
+          ? 'bg-white/96 backdrop-blur-xl shadow-[0_1px_0_rgba(7,11,29,0.07),0_2px_16px_rgba(7,11,29,0.04)]'
+          : 'bg-white/75 backdrop-blur-md'
       }`}
     >
       {/* Top gradient line */}
@@ -52,10 +61,10 @@ export default function Nav() {
           <Link href="/" className="flex items-center flex-shrink-0 focus-ring">
             <Image
               src={LOGO_MARK}
-              alt="The People Office"
-              width={58}
-              height={58}
-              className="h-[52px] w-auto object-contain"
+              alt="The People System"
+              width={200}
+              height={64}
+              className="h-[48px] w-auto object-contain"
               priority
             />
           </Link>
@@ -64,7 +73,7 @@ export default function Nav() {
           <div className="hidden lg:flex items-center gap-0.5">
 
             {/* Solutions dropdown */}
-            <div className="relative" onMouseEnter={() => setSol(true)} onMouseLeave={() => setSol(false)}>
+            <div className="relative" onMouseEnter={openSol} onMouseLeave={closeSol}>
               <button className="btn-ghost flex items-center gap-1.5">
                 Solutions
                 <ChevronDown
@@ -79,8 +88,8 @@ export default function Nav() {
                     minWidth: '272px',
                     boxShadow: '0 8px 48px rgba(7,11,29,0.12), 0 2px 8px rgba(7,11,29,0.06)',
                     border: '1px solid var(--brand-line)',
-                    background: 'var(--bg)',    // solid light background
-                    zIndex: 60,                 // ensure it sits on top
+                    background: 'var(--bg)',
+                    zIndex: 60,
                     animation: 'slideDown 0.16s ease forwards',
                   }}
                 >
@@ -109,7 +118,7 @@ export default function Nav() {
             </div>
 
             {/* Free Tools dropdown */}
-            <div className="relative" onMouseEnter={() => setTool(true)} onMouseLeave={() => setTool(false)}>
+            <div className="relative" onMouseEnter={openTool} onMouseLeave={closeTool}>
               <button className="btn-ghost flex items-center gap-1.5">
                 Free Tools
                 <ChevronDown

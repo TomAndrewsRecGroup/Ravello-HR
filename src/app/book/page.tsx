@@ -7,7 +7,7 @@ import { ArrowRight, CheckCircle, Clock, MessageSquare, Zap } from 'lucide-react
 const BookingEmbed = dynamic(() => import('@/components/BookingEmbed'), { ssr: false });
 
 export const metadata: Metadata = {
-  title: 'Book a Free Call | The People Office',
+  title: 'Book a Free Call | The People System',
   description:
     'Three routes: I need help hiring / I need HR foundations / I\'m going through a deal. Book a free call with Lucy or Tom. Straight answers. No pitch.',
   alternates: { canonical: 'https://ravellohr.co.uk/book' },
@@ -58,7 +58,7 @@ export default function BookPage() {
       {/* Hero */}
       <section className="py-20 lg:py-24 px-4 sm:px-6 lg:px-8 text-center" style={{ background: 'var(--brand-navy)' }}>
         <div className="max-w-3xl mx-auto">
-          <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>The People Office — Free Call</span>
+          <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>The People System — Free Call</span>
           <h1
             style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
           >

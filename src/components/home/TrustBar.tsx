@@ -27,7 +27,7 @@ export default function TrustBar() {
             <div
               key={s.text}
               className="flex items-center gap-2.5 text-[11px] font-medium"
-              style={{ color: 'rgba(255,255,255,0.48)' }}
+              style={{ color: 'rgba(255,255,255,0.62)' }}
             >
               {/* Alternating gradient/gold dots for visual rhythm */}
               {i === 0 || i === 4 ? (

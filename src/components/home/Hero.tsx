@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CalendarCheck, ChevronDown } from 'lucide-react';
 
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Ravello%20HR-8VMlOBmWizWioaqRpHKw7BZoDcfrg1';
+const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const BARS = [
   { label: 'Location',      val: 78, pct: '78%',  color: '#D94444' },
@@ -22,22 +22,10 @@ const STATS = [
 export default function Hero() {
   return (
     <section
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden data-grid"
+      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
       style={{ background: 'var(--gradient-hero)' }}
     >
       <div className="hero-mesh" />
-
-      {/* Extra ambient orbs */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          width: '500px', height: '500px',
-          top: '20%', left: '40%',
-          borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(234,61,196,0.05) 0%, transparent 65%)',
-          animation: 'meshDrift 22s ease-in-out infinite',
-        }}
-      />
 
       <div className="relative z-10 container-wide section-padding w-full pt-40 pb-24">
         <div className="grid lg:grid-cols-[1fr_460px] gap-12 xl:gap-16 items-center">
@@ -48,11 +36,11 @@ export default function Hero() {
             <div className="mb-8">
               <Image
                 src={LOGO_FULL}
-                alt="The People Office"
-                width={700}
-                height={320}
+                alt="The People System"
+                width={560}
+                height={180}
                 className="object-contain w-auto"
-                style={{ height: '320px' }}
+                style={{ height: '140px' }}
                 priority
               />
             </div>
@@ -103,7 +91,7 @@ export default function Hero() {
               style={{ color: 'var(--ink-faint)' }}
             >
               Lucy leads on HR, compliance, and people strategy. Tom leads on talent and recruitment.
-              Together: The People Office.
+              Together: The People System.
             </p>
 
             {/* CTAs */}

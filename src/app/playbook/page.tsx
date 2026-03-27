@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'People Ops Playbook | HR Guides for Founders and Managers | The People Office',
+  title: 'People Ops Playbook | HR Guides for Founders and Managers | The People System',
   description:
     'Practical HR guides, scripts, and frameworks for founders, leaders, and managers. No theory, no filler. Just the things that actually work.',
   alternates: { canonical: 'https://ravellohr.co.uk/playbook' },

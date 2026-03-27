@@ -6,7 +6,7 @@ export default function BookingEmbed({ src }: { src: string }) {
       <iframe
         src={src}
         style={{ border: 0, width: '100%', height: 520 }}
-        title="Book a free call with The People Office"
+        title="Book a free call with The People System"
       />
     </div>
   );

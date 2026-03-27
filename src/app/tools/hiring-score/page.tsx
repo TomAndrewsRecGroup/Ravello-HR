@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import HiringScoreTool from '@/components/tools/HiringScoreTool';
 
 export const metadata: Metadata = {
-  title: 'Hiring Score | Diagnose Your Hiring Problems | The People Office',
+  title: 'Hiring Score | Diagnose Your Hiring Problems | The People System',
   description:
-    'Find out exactly where your hiring is breaking down. Get your Hiring Score in under 3 minutes — instant results, no fluff. Free diagnostic from The People Office.',
+    'Find out exactly where your hiring is breaking down. Get your Hiring Score in under 3 minutes — instant results, no fluff. Free diagnostic from The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/tools/hiring-score' },
 };
 

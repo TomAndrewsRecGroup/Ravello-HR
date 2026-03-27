@@ -5,7 +5,7 @@ const CREDENTIALS = [
   'Lucy: 18+ years senior HR and People leadership',
   'Tom: 10+ years in Talent and Recruitment',
   'CIPD qualified — Lucy',
-  'Friction Lens and IvyLens built by Tom',
+  'Tom: Founder — Andrews Recruitment Group, RecXchange, IvyLens Technology, AMIVY Designs',
   'TUPE and restructure specialist — Lucy',
   '0 tribunal outcomes across all restructure work',
 ];
@@ -18,7 +18,7 @@ export default function FounderSection() {
 
           {/* Left — quote card (dark, navy) */}
           <div
-            className="relative rounded-[28px] overflow-hidden p-10 scan-lines"
+            className="relative rounded-[28px] overflow-hidden p-10"
             style={{ background: 'var(--brand-navy)', minHeight: '440px' }}
           >
             {/* Gradient top bar */}
@@ -48,8 +48,16 @@ export default function FounderSection() {
             </div>
 
             <blockquote
-              className="relative z-10 font-semibold text-white leading-relaxed mb-8"
-              style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)', color: 'rgba(255,255,255,0.92)' }}
+              className="relative z-10 leading-relaxed mb-8"
+              style={{
+                fontSize: 'clamp(1.3rem, 2.2vw, 1.7rem)',
+                fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                fontWeight: 300,
+                fontStyle: 'italic',
+                color: 'rgba(255,255,255,0.90)',
+                letterSpacing: '-0.015em',
+                lineHeight: 1.3,
+              }}
             >
               &ldquo;Not HR with a bit of recruitment. Not recruitment pretending to do HR.
               A proper blend. One partner who can do all of it.&rdquo;
@@ -66,7 +74,7 @@ export default function FounderSection() {
               <div>
                 <p className="text-sm font-semibold text-white">Lucy &amp; Tom</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>
-                  Co-founders, The People Office
+                  Co-founders, The People System
                 </p>
               </div>
             </div>
@@ -99,7 +107,7 @@ export default function FounderSection() {
                 className="w-1.5 h-1.5 rounded-full inline-block mr-2"
                 style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }}
               />
-              Why The People Office
+              Why The People System
             </p>
             <h2 className="section-title mb-5">
               Two specialists.<br />One partner. No handoffs.
@@ -108,8 +116,8 @@ export default function FounderSection() {
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 Lucy brings 18+ years of senior HR and People leadership. Tom brings 10+ years
-                in Talent and Recruitment, plus the technology behind Friction Lens and IvyLens.
-                You get both — on your account, from day one.
+                in Talent and Recruitment — founder of Andrews Recruitment Group, RecXchange,
+                IvyLens Technology, and AMIVY Designs. You get both — on your account, from day one.
               </p>
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 No junior handoffs. No vague advice. Fixed scope, clear deliverables, and a
@@ -118,7 +126,7 @@ export default function FounderSection() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/about" className="btn-primary">
-                About The People Office <ArrowRight size={15} />
+                About The People System <ArrowRight size={15} />
               </Link>
               <Link href="/book" className="btn-secondary">
                 Book a Free Call

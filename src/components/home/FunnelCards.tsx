@@ -64,7 +64,7 @@ const funnels = [
 
 export default function FunnelCards() {
   return (
-    <section className="section-padding" style={{ background: 'var(--bg)' }}>
+    <section className="section-padding" style={{ background: 'var(--surface)' }}>
       <div className="container-wide">
 
         {/* Section header */}
@@ -88,22 +88,11 @@ export default function FunnelCards() {
             return (
               <div
                 key={f.headline}
-                className="relative flex flex-col rounded-[22px] p-8 bg-white transition-all duration-300 group"
+                className="relative flex flex-col rounded-[22px] p-8 bg-white transition-all duration-300 group hover:-translate-y-[5px]"
                 style={{
                   border: '1px solid var(--brand-line)',
                   boxShadow: '0 2px 6px rgba(7,11,29,0.04), 0 8px 32px rgba(7,11,29,0.05)',
-                }}
-                onMouseOver={(e) => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.boxShadow = '0 8px 24px rgba(7,11,29,0.08), 0 28px 64px rgba(7,11,29,0.09)';
-                  el.style.transform = 'translateY(-5px)';
-                  el.style.borderColor = f.accentBorder;
-                }}
-                onMouseOut={(e) => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.boxShadow = '0 2px 6px rgba(7,11,29,0.04), 0 8px 32px rgba(7,11,29,0.05)';
-                  el.style.transform = 'translateY(0)';
-                  el.style.borderColor = 'var(--brand-line)';
+                  ['--hover-shadow' as string]: '0 8px 24px rgba(7,11,29,0.08), 0 28px 64px rgba(7,11,29,0.09)',
                 }}
               >
                 {/* Top colour bar */}
@@ -123,8 +112,12 @@ export default function FunnelCards() {
                 <span className={`${f.pillStyle} mb-4 self-start`}>{f.pill}</span>
 
                 <h3
-                  className="font-bold text-[1.25rem] mb-3 leading-snug"
-                  style={{ color: 'var(--ink)', letterSpacing: '-0.015em', fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
+                  className="font-light text-[1.7rem] mb-3 leading-[1.1]"
+                  style={{
+                    color: 'var(--ink)',
+                    letterSpacing: '-0.025em',
+                    fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                  }}
                 >
                   {f.headline}
                 </h3>

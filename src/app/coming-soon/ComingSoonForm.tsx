@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 export default function ComingSoonForm() {
   const router = useRouter();
@@ -41,8 +41,8 @@ export default function ComingSoonForm() {
   return (
     <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '420px' }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
-        <Image src={LOGO} alt="The People Office" width={150} height={50}
-          style={{ height: '44px', width: 'auto', filter: 'brightness(1.1)' }} priority />
+        <Image src={LOGO} alt="The People System" width={300} height={96}
+          style={{ height: '72px', width: 'auto' }} priority />
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -149,7 +149,7 @@ export default function ComingSoonForm() {
         textAlign: 'center', marginTop: '24px', fontSize: '0.75rem',
         color: 'rgba(255,255,255,0.2)',
       }}>
-        The People Office · Confidential Preview
+        The People System · Confidential Preview
       </p>
     </div>
   );

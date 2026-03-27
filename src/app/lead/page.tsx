@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'LEAD Services | Fractional People Leadership | The People Office',
-  description: 'Four LEAD packages: Lead Foundations, Lead Optimiser, Lead Partner, Lead Build. Fractional HR leadership and manager enablement — The People Office.',
+  title: 'LEAD Services | Fractional People Leadership | The People System',
+  description: 'Four LEAD packages: Lead Foundations, Lead Optimiser, Lead Partner, Lead Build. Fractional HR leadership and manager enablement — The People System.',
   alternates: { canonical: 'https://ravellohr.co.uk/lead' },
 };
 
@@ -249,7 +249,7 @@ export default function LeadPage() {
         { q: 'What is the difference between LEAD and PROTECT?', a: 'PROTECT builds the foundations: contracts, handbook, policies, compliance. LEAD is about leadership: strategy, culture, manager capability, people function design. Many clients need both. They can run in parallel or sequence depending on priority.' },
         { q: 'Do we need to have a people function already?', a: 'No. Lead Build is specifically designed for businesses building their people function from scratch. Lead Foundations and Lead Optimiser work well for businesses that have no formal HR function at all.' },
         { q: 'How involved is Lucy on a day-to-day basis?', a: 'It depends on the package. Lead Foundations is one structured session per month plus ad-hoc access. Lead Partner typically involves weekly involvement including leadership team meetings. Lead Build is more intensive, particularly in the early months.' },
-        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. Tom and Lucy work together on accounts that span multiple pillars. The People Office is set up specifically for this — a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
+        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. Tom and Lucy work together on accounts that span multiple pillars. The People System is set up specifically for this — a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
       ]} />
 
     </div>

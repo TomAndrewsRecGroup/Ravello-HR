@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Phone, Linkedin, ExternalLink } from 'lucide-react';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 export default function Footer() {
   return (
@@ -29,10 +29,10 @@ export default function Footer() {
             <Link href="/" className="flex items-center mb-5">
               <Image
                 src={LOGO}
-                alt="The People Office"
-                width={140}
-                height={48}
-                className="object-contain h-10 w-auto brightness-[1.1]"
+                alt="The People System"
+                width={240}
+                height={80}
+                className="object-contain h-14 w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -173,7 +173,7 @@ export default function Footer() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
           <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
-            &copy; {new Date().getFullYear()} The People Office. All rights reserved. Registered in England &amp; Wales.
+            &copy; {new Date().getFullYear()} The People System. All rights reserved. Registered in England &amp; Wales.
           </p>
           <div className="flex gap-6">
             {[['Privacy Policy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (
