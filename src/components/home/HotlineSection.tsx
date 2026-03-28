@@ -8,22 +8,20 @@ export default function HotlineSection() {
       className="section-padding relative overflow-hidden"
       style={{ background: 'var(--surface-alt)' }}
     >
-      {/* Data grid overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)',
-          backgroundSize: '44px 44px',
-        }}
+      {/* Full-bleed editorial photo */}
+      <Image
+        src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&h=800&fit=crop"
+        alt="Modern professional workspace"
+        fill
+        className="object-cover"
+        style={{ opacity: 0.14 }}
       />
 
-      {/* Ambient glow */}
+      {/* Gradient overlay — keeps text legible */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            'radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.09) 0%, rgba(59,111,255,0.05) 40%, transparent 68%)',
+          background: 'radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.12) 0%, rgba(59,111,255,0.06) 40%, transparent 70%)',
         }}
       />
 

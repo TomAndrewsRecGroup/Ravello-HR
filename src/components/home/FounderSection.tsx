@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Quote } from 'lucide-react';
 
 const CREDENTIALS = [
@@ -16,11 +17,28 @@ export default function FounderSection() {
       <div className="container-wide">
         <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-center">
 
-          {/* Left: quote card (dark, navy) */}
+          {/* Left: quote card (dark, navy) with photo background */}
           <div
             className="relative rounded-[28px] overflow-hidden p-10"
-            style={{ background: 'var(--brand-navy)', minHeight: '440px' }}
+            style={{ background: 'var(--brand-navy)', minHeight: '480px' }}
           >
+            {/* Editorial photo background */}
+            <Image
+              src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=960&fit=crop&crop=faces"
+              alt="Professional team in a strategic meeting"
+              fill
+              className="object-cover"
+              style={{ opacity: 0.18 }}
+            />
+
+            {/* Dark gradient overlay for legibility */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(160deg, rgba(5,8,16,0.70) 0%, rgba(5,8,16,0.92) 100%)',
+              }}
+            />
+
             {/* Gradient top bar */}
             <div
               className="absolute top-0 left-0 right-0 h-[2px]"

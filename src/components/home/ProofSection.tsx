@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { TrendingDown, Clock, ShieldCheck, Users } from 'lucide-react';
 
 const stats = [
@@ -152,6 +153,45 @@ export default function ProofSection() {
             );
           })}
         </div>
+
+        {/* Editorial photo strip */}
+        <div className="relative mt-20 rounded-[24px] overflow-hidden" style={{ height: 360 }}>
+          <Image
+            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&h=720&fit=crop"
+            alt="People professionals collaborating on strategy"
+            fill
+            className="object-cover"
+          />
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(5,8,16,0.80) 0%, rgba(124,58,237,0.35) 55%, rgba(5,8,16,0.65) 100%)',
+            }}
+          />
+          {/* Centred editorial quote */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-12">
+            <p
+              style={{
+                fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
+                fontSize: 'clamp(1.4rem, 2.8vw, 2.2rem)',
+                fontStyle: 'italic',
+                fontWeight: 300,
+                color: 'rgba(255,255,255,0.92)',
+                letterSpacing: '-0.015em',
+                lineHeight: 1.3,
+                maxWidth: 720,
+                marginBottom: 20,
+              }}
+            >
+              &ldquo;Not HR from a textbook. People results from operators who have done the real work.&rdquo;
+            </p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Lucy &amp; Tom — The People System
+            </p>
+          </div>
+        </div>
+
       </div>
     </section>
   );
