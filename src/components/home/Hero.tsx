@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, type ElementType } from 'react';
+import { type ElementType } from 'react';
 import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network } from 'lucide-react';
 
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -87,23 +87,17 @@ const CARDS: CardDef[] = [
 function PeopleGraphic({ color }: { color: string }) {
   return (
     <svg width="130" height="100" viewBox="0 0 130 100" fill="none" aria-hidden="true">
-      {/* Central node */}
       <circle cx="65" cy="32" r="14" fill={`${color}18`} stroke={color} strokeWidth="2" />
       <circle cx="65" cy="32" r="6" fill={color} opacity="0.7" />
-      {/* Bottom left node */}
       <circle cx="22" cy="80" r="10" fill={`${color}14`} stroke={color} strokeWidth="1.5" />
       <circle cx="22" cy="80" r="4" fill={color} opacity="0.5" />
-      {/* Bottom right node */}
       <circle cx="108" cy="80" r="10" fill={`${color}14`} stroke={color} strokeWidth="1.5" />
       <circle cx="108" cy="80" r="4" fill={color} opacity="0.5" />
-      {/* Middle node */}
       <circle cx="65" cy="68" r="8" fill={`${color}12`} stroke={color} strokeWidth="1.5" />
       <circle cx="65" cy="68" r="3" fill={color} opacity="0.6" />
-      {/* Connecting lines */}
       <line x1="65" y1="46" x2="22" y2="70" stroke={color} strokeWidth="1" opacity="0.3" />
       <line x1="65" y1="46" x2="108" y2="70" stroke={color} strokeWidth="1" opacity="0.3" />
       <line x1="65" y1="46" x2="65" y2="60" stroke={color} strokeWidth="1" opacity="0.3" />
-      {/* Floating dots */}
       <circle cx="42" cy="50" r="3" fill={color} opacity="0.25" />
       <circle cx="90" cy="48" r="2.5" fill={color} opacity="0.20" />
     </svg>
@@ -111,83 +105,61 @@ function PeopleGraphic({ color }: { color: string }) {
 }
 
 function HeroCard({ card }: { card: CardDef }) {
-  const [hovered, setHovered] = useState(false);
   const { Icon } = card;
 
   return (
     <Link
       href={card.href}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="hero-card"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        background: hovered ? `${card.accentBg}` : 'var(--surface)',
-        border: `1.5px solid ${hovered ? card.accentColor : 'var(--brand-line)'}`,
-        borderRadius: 22,
-        padding: card.large ? '26px 22px 22px' : '18px 16px 16px',
-        height: card.large ? 380 : 238,
-        width: card.large ? 218 : undefined,
-        flex: card.large ? '0 0 218px' : '1 1 0',
-        minWidth: card.large ? 218 : 140,
-        transition: 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.22s ease, background 0.25s ease',
-        transform: hovered ? 'translateY(-14px) scale(1.035)' : 'translateY(0) scale(1)',
-        boxShadow: hovered
-          ? `0 28px 70px ${card.shadowColor}, 0 6px 20px ${card.shadowColor}`
-          : '0 2px 14px rgba(10,15,30,0.055)',
-        textDecoration: 'none',
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'pointer',
-      }}
+        '--card-accent':      card.accentColor,
+        '--card-accent-soft': `${card.accentColor}40`,
+        '--card-glow':        `${card.accentColor}20`,
+        '--card-shadow':      card.shadowColor,
+        '--card-bg-hover':    card.accentBg,
+        padding:    card.large ? '26px 22px 22px' : '18px 16px 16px',
+        height:     card.large ? 380 : 244,
+        width:      card.large ? 218 : undefined,
+        flex:       card.large ? '0 0 218px' : '1 1 0',
+        minWidth:   card.large ? 218 : 142,
+      } as React.CSSProperties}
     >
-      {/* Hover glow layer */}
+      {/* Top glow accent */}
       <div style={{
         position: 'absolute',
         inset: 0,
         borderRadius: 22,
-        background: `radial-gradient(ellipse at 50% 0%, ${card.accentColor}12 0%, transparent 70%)`,
-        opacity: hovered ? 1 : 0,
-        transition: 'opacity 0.35s ease',
+        background: `radial-gradient(ellipse at 50% -10%, ${card.accentColor}14 0%, transparent 65%)`,
         pointerEvents: 'none',
+        zIndex: 0,
       }} />
 
       {/* Icon badge */}
       <div style={{
+        position: 'relative', zIndex: 1,
         width: card.large ? 50 : 38,
         height: card.large ? 50 : 38,
         borderRadius: 13,
         background: card.accentBg,
-        border: `1px solid ${card.accentColor}30`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        border: `1px solid ${card.accentColor}35`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
-        position: 'relative',
-        zIndex: 1,
       }}>
         <Icon size={card.large ? 22 : 17} style={{ color: card.accentColor }} />
       </div>
 
-      {/* Graph visual — large card only */}
+      {/* Network graphic — large card only */}
       {card.large && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          zIndex: 1,
-        }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
           <PeopleGraphic color={card.accentColor} />
         </div>
       )}
 
-      {/* Spacer for small cards */}
       {!card.large && <div style={{ flex: 1 }} />}
 
       {/* Label */}
       <p style={{
+        position: 'relative', zIndex: 1,
         fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
         fontSize: card.large ? 30 : 22,
         fontWeight: 800,
@@ -195,50 +167,41 @@ function HeroCard({ card }: { card: CardDef }) {
         color: 'var(--ink)',
         lineHeight: 1,
         marginBottom: 7,
-        position: 'relative',
-        zIndex: 1,
       }}>
         {card.label}
       </p>
 
       {/* Title */}
       <p style={{
+        position: 'relative', zIndex: 1,
         fontSize: card.large ? 12 : 10.5,
         fontWeight: 700,
         color: card.accentColor,
         marginBottom: 6,
         lineHeight: 1.3,
-        position: 'relative',
-        zIndex: 1,
       }}>
         {card.title}
       </p>
 
       {/* Description */}
       <p style={{
+        position: 'relative', zIndex: 1,
         fontSize: card.large ? 11.5 : 10,
         color: 'var(--ink-soft)',
         lineHeight: 1.55,
         marginBottom: card.large ? 14 : 10,
-        position: 'relative',
-        zIndex: 1,
       }}>
         {card.desc}
       </p>
 
-      {/* CTA */}
+      {/* CTA row */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        fontSize: 11,
-        fontWeight: 700,
+        position: 'relative', zIndex: 1,
+        display: 'flex', alignItems: 'center', gap: 5,
+        fontSize: 11, fontWeight: 700,
         color: card.accentColor,
-        position: 'relative',
-        zIndex: 1,
       }}>
-        Learn More
-        <ArrowRight size={11} style={{ transition: 'transform 0.2s ease', transform: hovered ? 'translateX(3px)' : 'none' }} />
+        Learn More <ArrowRight size={11} />
       </div>
     </Link>
   );
@@ -250,16 +213,13 @@ export default function Hero() {
       className="relative overflow-hidden"
       style={{ background: 'var(--bg)' }}
     >
-      {/* Ambient gradient background */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: [
-            'radial-gradient(ellipse at 70% 20%, rgba(124,58,237,0.07) 0%, transparent 55%)',
-            'radial-gradient(ellipse at 15% 75%, rgba(234,61,196,0.05) 0%, transparent 50%)',
-          ].join(', '),
-        }}
-      />
+      {/* Ambient gradient */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: [
+          'radial-gradient(ellipse at 72% 18%, rgba(124,58,237,0.07) 0%, transparent 55%)',
+          'radial-gradient(ellipse at 12% 80%, rgba(234,61,196,0.05) 0%, transparent 50%)',
+        ].join(', '),
+      }} />
 
       <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
 
@@ -274,25 +234,22 @@ export default function Hero() {
             style={{ height: '118px' }}
             priority
           />
-          <p
-            className="text-[11px] font-bold uppercase tracking-[0.24em]"
-            style={{ color: 'var(--ink-faint)' }}
-          >
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--ink-faint)' }}>
             Hire.&nbsp;&nbsp;Lead.&nbsp;&nbsp;Protect.
           </p>
         </div>
 
-        {/* Main grid: left text | right cards */}
-        <div className="grid lg:grid-cols-[42%_58%] gap-10 xl:gap-14 items-end">
+        {/* Main grid */}
+        <div className="grid lg:grid-cols-[40%_60%] gap-10 xl:gap-14 items-center">
 
-          {/* ── Left: messaging + CTAs + stats ── */}
+          {/* ── Left: text + CTAs + stats ── */}
           <div>
             <h1
               className="font-display mb-5"
               style={{
-                fontSize: 'clamp(2.8rem, 5.2vw, 4.8rem)',
+                fontSize: 'clamp(3.6rem, 7vw, 7rem)',
                 fontWeight: 800,
-                lineHeight: 1.0,
+                lineHeight: 0.96,
                 letterSpacing: '-0.04em',
                 color: 'var(--ink)',
               }}
@@ -300,18 +257,12 @@ export default function Hero() {
               <span className="text-gradient">The People System</span>
             </h1>
 
-            <p
-              className="text-lg leading-relaxed mb-5 max-w-[480px]"
-              style={{ color: 'var(--ink-soft)' }}
-            >
+            <p className="text-lg leading-relaxed mb-5 max-w-[480px]" style={{ color: 'var(--ink-soft)' }}>
               Hire the right people. Lead your managers. Protect your business.
               One partner. The expertise you need. The portal that keeps you in control.
             </p>
 
-            <p
-              className="text-sm leading-relaxed mb-8 max-w-[440px]"
-              style={{ color: 'var(--ink-faint)' }}
-            >
+            <p className="text-sm leading-relaxed mb-8 max-w-[440px]" style={{ color: 'var(--ink-faint)' }}>
               Built for senior leaders at growing businesses who need a proper People
               function without the full-time headcount cost.
             </p>
@@ -325,39 +276,27 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Stats row */}
-            <div
-              className="flex flex-wrap gap-8 pt-8"
-              style={{ borderTop: '1px solid var(--brand-line)' }}
-            >
+            {/* Stats */}
+            <div className="flex flex-wrap gap-8 pt-8" style={{ borderTop: '1px solid var(--brand-line)' }}>
               {STATS.map((m) => (
                 <div key={m.lab}>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                      fontSize: '2rem',
-                      fontWeight: 800,
-                      lineHeight: 1,
-                      letterSpacing: '-0.025em',
-                      marginBottom: 4,
-                      background: m.gold ? 'var(--gold-gloss)' : 'linear-gradient(135deg,#EA3DC4,#7C3AED)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
+                  <p style={{
+                    fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+                    fontSize: '2rem', fontWeight: 800, lineHeight: 1,
+                    letterSpacing: '-0.025em', marginBottom: 4,
+                    background: m.gold ? 'var(--gold-gloss)' : 'linear-gradient(135deg,#EA3DC4,#7C3AED)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  }}>
                     {m.val}
                   </p>
-                  <p className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>
-                    {m.lab}
-                  </p>
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>{m.lab}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── Right: 4 morphing cards ── */}
-          <div className="hidden lg:flex items-end gap-3">
+          {/* ── Right: 4 morph cards, center-aligned ── */}
+          <div className="hidden lg:flex items-center gap-3">
             {CARDS.map((card) => (
               <HeroCard key={card.id} card={card} />
             ))}
@@ -369,5 +308,4 @@ export default function Hero() {
   );
 }
 
-// Keep BARS exported so it can be imported by other components if needed
 export { BARS };
