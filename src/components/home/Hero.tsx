@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useRef, type ElementType } from 'react';
-import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2, X } from 'lucide-react';
+import { useState, useRef, useEffect, type ElementType } from 'react';
+import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
 
 const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -114,10 +114,13 @@ const CARDS: CardDef[] = [
   },
 ];
 
+type SourceRect = { top: number; left: number; width: number; height: number };
+
 /* ─── SVG graphic for the PEOPLE card ─── */
-function PeopleGraphic({ color }: { color: string }) {
+function PeopleGraphic({ color, width = 130 }: { color: string; width?: number }) {
+  const height = Math.round(width * 100 / 130);
   return (
-    <svg width="130" height="100" viewBox="0 0 130 100" fill="none" aria-hidden="true">
+    <svg width={width} height={height} viewBox="0 0 130 100" fill="none" aria-hidden="true">
       <circle cx="65" cy="32" r="14" fill={`${color}18`} stroke={color} strokeWidth="2" />
       <circle cx="65" cy="32" r="6" fill={color} opacity="0.7" />
       <circle cx="22" cy="80" r="10" fill={`${color}14`} stroke={color} strokeWidth="1.5" />
@@ -135,117 +138,175 @@ function PeopleGraphic({ color }: { color: string }) {
   );
 }
 
-/* ─── Fixed-position modal popup — visually identical to HeroCard but larger ─── */
+/* ─── CardModal — FLIP morph from card → centre, same visual DNA as HeroCard ─── */
 function CardModal({
   card,
+  sourceRect,
   onMouseEnter,
   onMouseLeave,
   onClose,
 }: {
   card: CardDef;
+  sourceRect: SourceRect | null;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onClose: () => void;
 }) {
   const { Icon } = card;
+  const [phase, setPhase] = useState<'from' | 'to'>('from');
+
+  const MODAL_W = 370;
+  const MODAL_H = 575;
+
+  // Two rAFs: let browser paint the 'from' frame before triggering transition
+  useEffect(() => {
+    const id = requestAnimationFrame(() =>
+      requestAnimationFrame(() => setPhase('to'))
+    );
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Source: card's centre in viewport. Target: viewport centre (pixels, not %).
+  const srcCX = sourceRect ? sourceRect.left + sourceRect.width / 2 : (typeof window !== 'undefined' ? window.innerWidth / 2 : 700);
+  const srcCY = sourceRect ? sourceRect.top + sourceRect.height / 2 : (typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
+  const toTop  = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
+  const toLeft = typeof window !== 'undefined' ? window.innerWidth  / 2 : 700;
+
+  const isTo = phase === 'to';
+
   return (
     <>
-      {/* Backdrop — click to close, never triggers close on mouse traversal */}
+      {/* Backdrop — fades in with the morph; mouseEnter cancels pending close while in transit */}
       <div
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(7,11,29,0.65)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          background: isTo ? 'rgba(7,11,29,0.58)' : 'rgba(7,11,29,0)',
+          backdropFilter: isTo ? 'blur(12px)' : 'blur(0px)',
+          WebkitBackdropFilter: isTo ? 'blur(12px)' : 'blur(0px)',
+          transition: 'background 0.35s ease, backdrop-filter 0.35s ease',
         }}
         onClick={onClose}
+        onMouseEnter={onMouseEnter}
       />
 
-      {/* Modal — same card DNA, scaled up */}
+      {/* Modal — morphs from card's position/size to viewport centre */}
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         style={{
           position: 'fixed', zIndex: 201,
-          top: '50%', left: '50%',
-          width: 460,
+          // Both states use px so CSS can interpolate cleanly
+          top:    isTo ? toTop  : srcCY,
+          left:   isTo ? toLeft : srcCX,
+          width:  isTo ? MODAL_W : (sourceRect?.width  ?? MODAL_W  * 0.56),
+          height: isTo ? MODAL_H : (sourceRect?.height ?? MODAL_H  * 0.43),
+          borderRadius: isTo ? 26 : 22,
+          transform: 'translate(-50%, -50%)',
+
+          // Same card visual: white bg, subtle border, top radial glow
+          display: 'flex', flexDirection: 'column',
           background: 'var(--surface)',
-          borderRadius: 26,
-          padding: '30px 28px 28px',
-          border: `1.5px solid var(--brand-line)`,
-          boxShadow: [
-            `0 0 0 1px ${card.accentColor}18`,
-            `0 0 90px ${card.shadowColor}`,
-            '0 50px 100px rgba(7,11,29,0.38)',
-          ].join(', '),
-          animation: 'heroModalIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-          display: 'flex',
-          flexDirection: 'column',
+          border: '1.5px solid var(--brand-line)',
+          boxShadow: isTo
+            ? [`0 0 0 1px ${card.accentColor}18`, `0 0 80px ${card.shadowColor}`, '0 48px 100px rgba(7,11,29,0.30)'].join(', ')
+            : '0 2px 16px rgba(10,15,30,0.06)',
           overflow: 'hidden',
+          willChange: 'top, left, width, height',
+
+          transition: isTo ? [
+            'top    0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
+            'left   0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
+            'width  0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
+            'height 0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
+            'border-radius 0.35s ease',
+            'box-shadow 0.3s ease 0.15s',
+          ].join(', ') : 'none',
         }}
       >
-        {/* Identical top radial glow — same as HeroCard */}
+        {/* Top radial glow — identical to HeroCard */}
         <div style={{
-          position: 'absolute', inset: 0, borderRadius: 26, pointerEvents: 'none',
-          background: `radial-gradient(ellipse at 50% -10%, ${card.accentColor}16 0%, transparent 60%)`,
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: `radial-gradient(ellipse at 50% -10%, ${card.accentColor}14 0%, transparent 65%)`,
+          opacity: isTo ? 1 : 0,
+          transition: 'opacity 0.3s ease 0.15s',
         }} />
 
-        {/* Icon — same proportions as HeroCard large */}
+        {/* All content fades in after the morph completes */}
         <div style={{
-          position: 'relative', zIndex: 1,
-          width: 52, height: 52, borderRadius: 15,
-          background: card.accentBg,
-          border: `1px solid ${card.accentColor}35`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          marginBottom: 20,
+          display: 'flex', flexDirection: 'column', flex: 1,
+          padding: card.large ? '24px 20px 20px' : '22px 18px 18px',
+          opacity: isTo ? 1 : 0,
+          transition: 'opacity 0.22s ease 0.28s',
         }}>
-          <Icon size={24} style={{ color: card.accentColor }} />
-        </div>
 
-        {/* Label — Cormorant, same font as HeroCard */}
-        <p style={{
-          position: 'relative', zIndex: 1,
-          fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
-          fontSize: 38, fontWeight: 800,
-          letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 6,
-        }}>
-          {card.label}
-        </p>
+          {/* Icon badge — same treatment as HeroCard, scaled up */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            width: card.large ? 52 : 44,
+            height: card.large ? 52 : 44,
+            borderRadius: 14,
+            background: card.accentBg,
+            border: `1px solid ${card.accentColor}35`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Icon size={card.large ? 24 : 19} style={{ color: card.accentColor }} />
+          </div>
 
-        {/* Subtitle */}
-        <p style={{ position: 'relative', zIndex: 1, fontSize: 12, fontWeight: 700, color: card.accentColor, marginBottom: 10, lineHeight: 1.3 }}>
-          {card.title}
-        </p>
-
-        {/* Description */}
-        <p style={{ position: 'relative', zIndex: 1, fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-soft)', marginBottom: 20 }}>
-          {card.desc}
-        </p>
-
-        {/* Bullet points */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 26 }}>
-          {card.points.map((pt) => (
-            <div key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-              <CheckCircle2 size={15} style={{ color: card.accentColor, flexShrink: 0, marginTop: 2 }} />
-              <span style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>{pt}</span>
+          {/* Middle area — same as HeroCard: graphic for PEOPLE, large ghost icon for others */}
+          {card.large ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+              <PeopleGraphic color={card.accentColor} width={178} />
             </div>
-          ))}
-        </div>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+              <Icon size={104} style={{ color: card.accentColor, opacity: 0.045 }} />
+            </div>
+          )}
 
-        {/* CTA — same "Learn More" style as card footer */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Label — same Cormorant font as HeroCard, proportionally larger */}
+          <p style={{
+            position: 'relative', zIndex: 1,
+            fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
+            fontSize: card.large ? 38 : 32, fontWeight: 800,
+            letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 7,
+          }}>
+            {card.label}
+          </p>
+
+          {/* Title */}
+          <p style={{ position: 'relative', zIndex: 1, fontSize: 12, fontWeight: 700, color: card.accentColor, marginBottom: 7, lineHeight: 1.3 }}>
+            {card.title}
+          </p>
+
+          {/* Description */}
+          <p style={{ position: 'relative', zIndex: 1, fontSize: 12.5, lineHeight: 1.6, color: 'var(--ink-soft)', marginBottom: 13 }}>
+            {card.desc}
+          </p>
+
+          {/* Bullet points */}
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+            {card.points.map((pt) => (
+              <div key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <CheckCircle2 size={13} style={{ color: card.accentColor, flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 11.5, color: 'var(--ink)', lineHeight: 1.45 }}>{pt}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA — same "Learn More" treatment, promoted to a pill button */}
           <Link
             href={card.href}
             style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '12px 24px', borderRadius: 11,
-              background: `linear-gradient(135deg, ${card.accentColor}, ${card.accentColor}CC)`,
-              color: '#fff', fontSize: 13.5, fontWeight: 700,
+              position: 'relative', zIndex: 1,
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '10px 18px', borderRadius: 10, alignSelf: 'flex-start',
+              background: `linear-gradient(135deg, ${card.accentColor}, ${card.accentColor}BB)`,
+              color: '#fff', fontSize: 12.5, fontWeight: 700,
               textDecoration: 'none', letterSpacing: '-0.01em',
-              boxShadow: `0 6px 20px ${card.shadowColor}`,
+              boxShadow: `0 4px 16px ${card.shadowColor}`,
             }}
           >
-            {card.ctaLabel} <ArrowRight size={14} />
+            {card.ctaLabel} <ArrowRight size={12} />
           </Link>
         </div>
       </div>
@@ -253,22 +314,25 @@ function CardModal({
   );
 }
 
-/* ─── Small card (in the hero row) ─── */
+/* ─── Individual card in the hero row ─── */
 function HeroCard({
   card,
   dimmed,
   onOpen,
   onClose,
+  divRef,
 }: {
   card: CardDef;
   dimmed: boolean;
   onOpen: () => void;
   onClose: () => void;
+  divRef?: (el: HTMLDivElement | null) => void;
 }) {
   const { Icon } = card;
 
   return (
     <div
+      ref={divRef}
       onMouseEnter={onOpen}
       onMouseLeave={onClose}
       style={{
@@ -352,14 +416,21 @@ function HeroCard({
 /* ─── Main Hero component ─── */
 export default function Hero() {
   const [activeCard, setActiveCard] = useState<string | null>(null);
+  const [cardRect, setCardRect] = useState<SourceRect | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const open = (id: string) => {
     if (timer.current) clearTimeout(timer.current);
+    const el = cardRefs.current[id];
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setCardRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    }
     setActiveCard(id);
   };
   const close = () => {
-    timer.current = setTimeout(() => setActiveCard(null), 90);
+    timer.current = setTimeout(() => setActiveCard(null), 250);
   };
   const cancelClose = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -455,7 +526,7 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Right: 4 cards — hover triggers modal */}
+            {/* Right: 4 cards — hover captures position and triggers modal */}
             <div className="hidden lg:flex items-center gap-3">
               {CARDS.map((card) => (
                 <HeroCard
@@ -464,6 +535,7 @@ export default function Hero() {
                   dimmed={activeCard !== null && activeCard !== card.id}
                   onOpen={() => open(card.id)}
                   onClose={close}
+                  divRef={(el) => { cardRefs.current[card.id] = el; }}
                 />
               ))}
             </div>
@@ -472,10 +544,11 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* Fixed modal portal — rendered outside section to avoid overflow clipping */}
+      {/* Modal rendered outside section — morphs from card to viewport centre */}
       {activeCardDef && (
         <CardModal
           card={activeCardDef}
+          sourceRect={cardRect}
           onMouseEnter={cancelClose}
           onMouseLeave={close}
           onClose={() => setActiveCard(null)}

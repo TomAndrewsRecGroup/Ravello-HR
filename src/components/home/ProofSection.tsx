@@ -66,7 +66,15 @@ export default function ProofSection() {
               />
               Proof of work
             </p>
-            <h2 className="section-title-light mb-5">Results you can point to.</h2>
+            <h2 className="section-title-light mb-5">
+              Results<br />
+              <span style={{
+                background: 'var(--gradient)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>you can point to.</span>
+            </h2>
             <span className="accent-line-lg mb-6" style={{ display: 'block' }} />
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
               Names stay confidential. The numbers speak for themselves.

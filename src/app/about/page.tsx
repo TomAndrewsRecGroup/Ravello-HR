@@ -222,7 +222,7 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="text-center mb-12">
             <p className="eyebrow justify-center mb-3">Proof of Work</p>
-            <h2 className="section-title mb-4">Experience across every sector</h2>
+            <h2 className="section-title mb-4">Experience across<br /><span className="text-gradient">every sector</span></h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
               Client names stay confidential. The outcomes do not.
             </p>
@@ -242,7 +242,7 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Ready to work together?</h2>
+          <h2 className="section-title mb-4">Ready<br /><span className="text-gradient">to work together?</span></h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Book a free call. Bring your current people challenge: whether it is hiring, compliance, or leadership: and leave with a clear, actionable next step.
           </p>

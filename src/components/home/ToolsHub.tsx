@@ -73,7 +73,8 @@ export default function ToolsHub() {
               Free tools
             </p>
             <h2 className="section-title">
-              Know exactly<br />where the gaps are
+              Know exactly<br />
+              <span className="text-gradient">where the gaps are</span>
             </h2>
           </div>
           <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>

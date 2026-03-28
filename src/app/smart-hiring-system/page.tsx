@@ -82,7 +82,7 @@ export default function SmartHiringSystemPage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">The 5 reasons your hiring keeps failing</h2>
+            <h2 className="section-title mb-4">The 5 reasons<br /><span className="text-gradient">your hiring keeps failing</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>Every business we talk to has at least two of these. Most have four.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -110,7 +110,7 @@ export default function SmartHiringSystemPage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="text-center mb-12">
-            <h2 className="section-title mb-4">How HIRE works</h2>
+            <h2 className="section-title mb-4">How<br /><span className="text-gradient">HIRE works</span></h2>
             <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
               Five stages. Better role definition. Faster process. Higher quality hires. And Friction Lens running before every role goes live.
             </p>
@@ -139,7 +139,7 @@ export default function SmartHiringSystemPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="section-title-light mb-6">What changes when HIRE is working</h2>
+              <h2 className="section-title-light mb-6">What changes<br /><span style={{ background: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>when HIRE is working</span></h2>
               <ul className="space-y-3">
                 {outcomes.map((o) => (
                   <li key={o} className="flex items-start gap-3">
@@ -169,7 +169,7 @@ export default function SmartHiringSystemPage() {
       {/* Hotline CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Already know your hiring needs fixing?</h2>
+          <h2 className="section-title mb-4">Already know<br /><span className="text-gradient">your hiring needs fixing?</span></h2>
           <p className="text-lg mb-8" style={{ color: 'var(--ink-soft)' }}>
             Skip the audit. Book 30 minutes with Tom. Bring the role or the challenge and leave with a clear plan.
           </p>

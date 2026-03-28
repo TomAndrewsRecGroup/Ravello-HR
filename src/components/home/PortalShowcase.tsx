@@ -235,7 +235,7 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
         ? '0 40px 120px rgba(10,15,30,0.16), 0 8px 30px rgba(10,15,30,0.08)'
         : '0 8px 32px rgba(10,15,30,0.08)',
       background: '#EFF0F7',
-      transition: 'box-shadow 0.6s ease',
+      transition: 'box-shadow 0.8s ease',
     }}>
       {/* URL bar — always visible */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', height: BROWSER_CLOSED, background: '#FAFAFD', borderBottom: '1px solid rgba(10,15,30,0.07)', flexShrink: 0 }}>
@@ -249,19 +249,25 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
         </div>
       </div>
 
-      {/* Expanding portal content */}
-      <div style={{
-        height: revealed ? BROWSER_OPEN - BROWSER_CLOSED : 0,
-        overflow: 'hidden',
-        transition: 'height 1.1s cubic-bezier(0.16, 1, 0.3, 1)',
-        willChange: 'height',
-        transform: 'translateZ(0)',
-      }}>
+      {/* Portal content area — fixed height, curtain slides up to reveal */}
+      {/* No height animation = no GPU compositing / border-radius flicker */}
+      <div style={{ height: BROWSER_OPEN - BROWSER_CLOSED, position: 'relative', overflow: 'hidden' }}>
+        <PortalContent />
+
+        {/* Curtain: same colour as URL bar, translateY GPU-accelerated */}
         <div style={{
-          opacity: revealed ? 1 : 0,
-          transition: 'opacity 0.5s ease 0.55s',
+          position: 'absolute', inset: 0, zIndex: 10,
+          background: '#FAFAFD',
+          transform: revealed ? 'translateY(-100%)' : 'translateY(0)',
+          transition: 'transform 1.15s cubic-bezier(0.16, 1, 0.3, 1)',
+          willChange: 'transform',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12,
         }}>
-          <PortalContent />
+          {/* Blank-browser "waiting" state */}
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#7C3AED,#3B6FFF)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 }}>
+            <Activity size={18} color="#fff" />
+          </div>
+          <p style={{ fontSize: 11, color: '#748099', fontWeight: 500 }}>Scroll to open portal</p>
         </div>
       </div>
     </div>
@@ -329,11 +335,6 @@ export default function PortalShowcase() {
             background: 'radial-gradient(ellipse, rgba(124,58,237,0.09) 0%, transparent 70%)',
           }} />
           <BrowserWindow revealed={revealed} />
-          {!revealed && (
-            <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--ink-faint)', fontWeight: 500 }}>
-              ↓ Scroll to open the portal
-            </p>
-          )}
         </div>
 
         {/* Feature grid */}

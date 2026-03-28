@@ -151,7 +151,7 @@ export default function LeadPage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">LEAD packages</h2>
+            <h2 className="section-title mb-4">LEAD<br /><span className="text-gradient">packages</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               From a reliable HR floor to a full people function build. No tables: here is what each engagement actually looks like.
             </p>
@@ -233,7 +233,7 @@ export default function LeadPage() {
       {/* CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Not sure where the biggest gap is?</h2>
+          <h2 className="section-title mb-4">Not sure<br /><span className="text-gradient">where the biggest gap is?</span></h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Book thirty minutes with Lucy. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
           </p>

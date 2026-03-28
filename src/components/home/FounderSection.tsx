@@ -128,7 +128,8 @@ export default function FounderSection() {
               Why The People System
             </p>
             <h2 className="section-title mb-5">
-              Two specialists.<br />One partner. No handoffs.
+              Two specialists.<br />
+              <span className="text-gradient">One partner. No handoffs.</span>
             </h2>
             <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
             <div className="space-y-5 mb-10">
