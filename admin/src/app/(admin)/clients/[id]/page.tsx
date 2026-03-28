@@ -25,6 +25,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     { data: perfReviews },
     { data: absenceRecords },
     { data: empDocs },
+    { data: frictionAssessment },
+    { data: frictionItems },
   ] = await Promise.all([
     supabase.from('companies').select('*').eq('id', params.id).single(),
     supabase.from('profiles').select('*').eq('company_id', params.id).order('created_at'),
@@ -40,6 +42,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     supabase.from('performance_reviews').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
     supabase.from('absence_records').select('*').eq('company_id', params.id).order('start_date', { ascending: false }),
     supabase.from('employee_documents').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
+    supabase.from('company_assessments').select('*').eq('company_id', params.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('company_friction_items').select('*').eq('company_id', params.id).order('dimension', { ascending: true }),
   ]);
 
   if (!company) notFound();
@@ -72,6 +76,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           perfReviews={perfReviews ?? []}
           absenceRecords={absenceRecords ?? []}
           empDocs={empDocs ?? []}
+          frictionAssessment={frictionAssessment ?? null}
+          frictionItems={frictionItems ?? []}
           stats={{ activeRoles, docsCount, ticketCount }}
         />
       </main>

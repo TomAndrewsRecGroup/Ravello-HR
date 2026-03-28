@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
   LifeBuoy, LogOut, Settings, Bell, Map, ShieldCheck, TrendingUp,
-  BookOpen, Users, PoundSterling, Lock,
+  BookOpen, Users, PoundSterling, Lock, Gauge,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -22,6 +22,7 @@ const COUNT_KEY: Record<string, string> = {
 const nav = [
   { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
   { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring', sub: '/hiring/analytics' },
+  { href: '/friction-lens', label: 'Friction Lens', icon: Gauge,        flag: 'friction_lens' },
   { href: '/lead',       label: 'LEAD',         icon: BookOpen,        flag: 'lead' },
   { href: '/protect',    label: 'PROTECT',      icon: Users,           flag: 'protect' },
   { href: '/documents',  label: 'Documents',    icon: FolderOpen,      flag: 'documents' },

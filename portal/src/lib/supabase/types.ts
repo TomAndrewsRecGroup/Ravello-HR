@@ -64,12 +64,78 @@ export interface Company {
 }
 
 export interface FeatureFlags {
-  hiring:     boolean;
-  documents:  boolean;
-  reports:    boolean;
-  support:    boolean;
-  metrics:    boolean;
-  compliance: boolean;
+  hiring:        boolean;
+  documents:     boolean;
+  reports:       boolean;
+  support:       boolean;
+  metrics:       boolean;
+  compliance:    boolean;
+  friction_lens: boolean;
+  [key: string]: boolean;
+}
+
+// ─── Company Friction Lens Types ────────────────────────────────────────────
+
+export type FrictionBand = 'Low Friction' | 'Moderate Friction' | 'High Friction';
+export type EmployeeBand = 'micro' | 'small' | 'mid' | 'large';
+
+export interface CompanyAssessment {
+  id:                  string;
+  company_id:          string;
+  ivylens_company_id?: string;
+  employee_count:      number;
+  employee_band:       EmployeeBand;
+  form_responses:      Record<string, any>;
+  overall_band:        FrictionBand | null;
+  confidence:          string | null;
+  dimensions:          AssessmentDimension[];
+  top_signals:         string[];
+  summary:             string | null;
+  benchmarks:          any | null;
+  created_at:          string;
+  updated_at:          string;
+}
+
+export interface AssessmentDimension {
+  name:            string;
+  band:            FrictionBand;
+  signal_count:    number;
+  signals:         AssessmentSignal[];
+  fields_answered: number;
+  fields_total:    number;
+}
+
+export interface AssessmentSignal {
+  signal_type: string;
+  severity:    'critical' | 'high' | 'medium' | 'low';
+  detail:      string;
+}
+
+export interface CompanyFrictionItem {
+  id:            string;
+  company_id:    string;
+  assessment_id: string | null;
+  dimension:     string;
+  field_key:     string;
+  label:         string;
+  severity:      string | null;
+  is_completed:  boolean;
+  completed_at:  string | null;
+  completed_by:  string | null;
+  notes:         string | null;
+  created_at:    string;
+}
+
+export interface Notification {
+  id:         string;
+  user_id:    string;
+  company_id: string | null;
+  type:       string;
+  title:      string;
+  body:       string | null;
+  link:       string | null;
+  read:       boolean;
+  created_at: string;
 }
 
 export interface Profile {

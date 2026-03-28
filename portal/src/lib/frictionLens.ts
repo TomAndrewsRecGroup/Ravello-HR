@@ -17,6 +17,7 @@ export type { FrictionScore, FrictionLevel, ExtractedRole };
 
 // Server-side only — not NEXT_PUBLIC_ so never exposed to browser
 const API_URL = process.env.IVYLENS_API_URL ?? '';
+const API_KEY = process.env.IVYLENS_API_KEY ?? '';
 
 function levelFromScore(score: number): FrictionLevel {
   if (score < 25) return 'Low';
@@ -84,9 +85,17 @@ export async function scoreFriction(input: RoleInput): Promise<FrictionScore> {
   }
 
   try {
-    const res = await fetch(`${API_URL}/api/role/analyze`, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (API_KEY) headers['Authorization'] = `Bearer ${API_KEY}`;
+
+    // Use partner endpoint if API key is set, otherwise fall back to public endpoint
+    const endpoint = API_KEY
+      ? `${API_URL}/api/partner/roles/analyze`
+      : `${API_URL}/api/role/analyze`;
+
+    const res = await fetch(endpoint, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body:    JSON.stringify({ jd_text: input.jd_text }),
       signal:  AbortSignal.timeout(15_000),
     });

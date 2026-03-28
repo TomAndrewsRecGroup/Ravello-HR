@@ -3,33 +3,53 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import BDIntelligenceClient from './BDIntelligenceClient';
 import { Target } from 'lucide-react';
+import { ivylensRequest } from '@/lib/ivylens';
 
 export const metadata: Metadata = { title: 'BD Intelligence' };
 
 export default async function BDIntelligencePage() {
   const supabase = createServerSupabaseClient();
 
-  const [companiesRes, rolesRes] = await Promise.all([
+  const [companiesRes, rolesRes, ivylensRes] = await Promise.all([
     supabase.from('bd_companies').select('*').order('last_seen_at', { ascending: false }),
     supabase.from('bd_scanned_roles').select('*').order('scanned_at', { ascending: false }),
+    ivylensRequest('/bd/companies').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);
 
   const companies: any[] = companiesRes.data ?? [];
   const roles: any[]     = rolesRes.data ?? [];
+  const ivylensCompanies: any[] = (ivylensRes as any)?.data?.companies ?? [];
+
+  // Merge IvyLens BD data — add any companies not already tracked locally
+  const localNames = new Set(companies.map((c: any) => c.company_name?.toLowerCase()));
+  const mergedFromIvylens = ivylensCompanies.filter(
+    (ic: any) => ic.company_name && !localNames.has(ic.company_name.toLowerCase())
+  ).map((ic: any) => ({
+    ...ic,
+    id: `ivylens-${ic.id ?? ic.company_name}`,
+    source: 'ivylens',
+    status: ic.status ?? 'prospect',
+    total_roles_seen: ic.roles_count ?? ic.total_roles_seen ?? 0,
+    last_seen_at: ic.last_seen_at ?? ic.updated_at ?? new Date().toISOString(),
+    first_seen_at: ic.first_seen_at ?? ic.created_at ?? new Date().toISOString(),
+  }));
+
+  const allCompanies = [...companies, ...mergedFromIvylens];
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const totalCompanies    = companies.length;
+  const totalCompanies    = allCompanies.length;
   const totalActiveRoles  = roles.filter((r: any) => r.still_active).length;
-  const newThisWeek       = companies.filter((c: any) => c.first_seen_at && new Date(c.first_seen_at) > sevenDaysAgo).length;
-  const highVolume        = companies.filter((c: any) => (c.total_roles_seen ?? 0) >= 5).length;
+  const newThisWeek       = allCompanies.filter((c: any) => c.first_seen_at && new Date(c.first_seen_at) > sevenDaysAgo).length;
+  const highVolume        = allCompanies.filter((c: any) => (c.total_roles_seen ?? 0) >= 5).length;
+  const ivylensCount      = mergedFromIvylens.length;
 
   const stats = [
     { label: 'Companies Tracked', value: totalCompanies },
     { label: 'Active Roles',       value: totalActiveRoles },
     { label: 'New This Week',      value: newThisWeek },
-    { label: 'High-Volume Prospects', value: highVolume },
+    { label: ivylensCount > 0 ? 'IvyLens Sourced' : 'High-Volume Prospects', value: ivylensCount > 0 ? ivylensCount : highVolume },
   ];
 
   return (
@@ -57,7 +77,7 @@ export default async function BDIntelligencePage() {
         </div>
 
         {/* Client-side interactive table + modal */}
-        <BDIntelligenceClient companies={companies} roles={roles} />
+        <BDIntelligenceClient companies={allCompanies} roles={roles} />
       </main>
     </>
   );

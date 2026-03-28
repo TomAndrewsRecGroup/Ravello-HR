@@ -7,6 +7,7 @@ interface Company {
   id: string; name: string; contact_email: string | null;
   sector: string | null; size_band: string | null; active: boolean;
   feature_flags: Record<string, boolean> | null;
+  friction_band: string | null;
 }
 interface Profile { id: string; full_name: string | null; email: string; role: string; created_at: string; }
 interface Props {
@@ -116,6 +117,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                 <th>Active Roles</th>
                 <th>Open Tickets</th>
                 <th>Overdue Compliance</th>
+                <th>Friction</th>
                 <th>Modules</th>
                 <th></th>
               </tr>
@@ -179,6 +181,20 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                       {overdueComp > 0 ? (
                         <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--red)' }}>
                           <AlertTriangle size={12} /> {overdueComp}
+                        </span>
+                      ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                    </td>
+                    <td>
+                      {c.friction_band ? (
+                        <span
+                          className="badge text-xs"
+                          style={
+                            c.friction_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: '#047857' } :
+                            c.friction_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: '#B02020' } :
+                            { background: 'rgba(245,158,11,0.15)', color: '#8A5500' }
+                          }
+                        >
+                          {c.friction_band.replace(' Friction', '')}
                         </span>
                       ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
                     </td>

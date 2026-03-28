@@ -141,9 +141,26 @@ export default function NewRequisitionPage() {
       friction_score: finalScore ?? null, friction_level: finalScore?.overall_level ?? null,
       friction_recommendations: finalScore?.recommendations ?? null,
       friction_scored_at: finalScore ? new Date().toISOString() : null,
-      stage: 'submitted', submitted_by: user.id,
+      stage: 'pending_approval', submitted_by: user.id,
     }).select().single();
     if (err) { setError(err.message); setLoading(false); return; }
+
+    // Notify admin users about the new role awaiting approval
+    const companyId = (profile as any).company_id;
+    const { data: company } = await supabase.from('companies').select('name').eq('id', companyId).single();
+    const { data: admins } = await supabase.from('profiles').select('id').in('role', ['ravello_admin', 'ravello_staff']);
+    if (admins?.length) {
+      const notifications = admins.map((admin: any) => ({
+        user_id: admin.id,
+        company_id: companyId,
+        type: 'role_pending_approval',
+        title: `New role awaiting approval: ${form.title}`,
+        body: `${company?.name ?? 'A client'} has submitted "${form.title}" for approval.`,
+        link: `/hiring/${(data as any).id}`,
+      }));
+      await supabase.from('notifications').insert(notifications);
+    }
+
     router.push(`/hiring/${(data as any).id}`);
   }
 
@@ -308,7 +325,7 @@ export default function NewRequisitionPage() {
             <div className="flex gap-3 pt-1">
               <button type="submit" disabled={loading} className="btn-cta flex-1 justify-center flex items-center gap-2">
                 {loading && <Loader2 size={14} className="animate-spin" />}
-                {loading ? 'Saving…' : 'Raise this Role'}
+                {loading ? 'Submitting…' : 'Submit for Approval'}
               </button>
               <button type="button" onClick={() => router.back()} className="btn-secondary" disabled={loading}>Cancel</button>
             </div>

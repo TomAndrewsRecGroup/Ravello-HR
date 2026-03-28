@@ -1,5 +1,6 @@
 'use client';
-import { Search, Bell } from 'lucide-react';
+import { Search } from 'lucide-react';
+import NotificationBell from '@/components/modules/NotificationBell';
 
 interface Props { title: string; subtitle?: string; actions?: React.ReactNode; }
 
@@ -33,9 +34,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
         <button className="btn-icon" title="Search">
           <Search size={15} />
         </button>
-        <button className="btn-icon relative" title="Notifications">
-          <Bell size={15} />
-        </button>
+        <NotificationBell />
       </div>
     </header>
   );

@@ -42,7 +42,7 @@ export default async function DashboardPage() {
   const flags: Record<string, boolean> = company?.feature_flags ?? {};
 
   const [reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
-    trainingRes, absenceRes] = await Promise.all([
+    trainingRes, absenceRes, frictionRes] = await Promise.all([
     supabase
       .from('requisitions')
       .select('id,title,stage,created_at,friction_level,friction_recommendations,working_model,location')
@@ -89,6 +89,8 @@ export default async function DashboardPage() {
     flags.protect !== false
       ? supabase.from('absence_records').select('id,employee_name,absence_type,start_date,status').eq('company_id', companyId ?? '').eq('status', 'pending').limit(4)
       : Promise.resolve({ data: null }),
+    // Company friction assessment
+    supabase.from('company_assessments').select('overall_band,top_signals,confidence,created_at').eq('company_id', companyId ?? '').order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const requisitions    = reqRes.data      ?? [];
@@ -99,6 +101,7 @@ export default async function DashboardPage() {
   const actions         = actionsRes.data   ?? [];
   const openTraining    = trainingRes.data  ?? [];
   const pendingAbsences = absenceRes.data   ?? [];
+  const frictionAssessment = frictionRes.data ?? null;
 
   const firstName = (profile as any)?.full_name?.split(' ')[0] ?? 'there';
 
@@ -150,6 +153,59 @@ export default async function DashboardPage() {
             </Link>
           ))}
         </div>
+
+        {/* ── Company Friction Score ─────────────────────────────────── */}
+        {flags.friction_lens !== false && (
+          <div className="mb-6">
+            {frictionAssessment ? (
+              <Link href="/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: frictionAssessment.overall_band === 'Low Friction' ? 'rgba(52,211,153,0.12)' :
+                                frictionAssessment.overall_band === 'High Friction' ? 'rgba(217,68,68,0.08)' :
+                                'rgba(245,158,11,0.10)',
+                  }}
+                >
+                  <Zap size={20} style={{
+                    color: frictionAssessment.overall_band === 'Low Friction' ? '#047857' :
+                           frictionAssessment.overall_band === 'High Friction' ? '#B02020' : '#8A5500',
+                  }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Company Friction Score</p>
+                    <span
+                      className="badge text-xs"
+                      style={
+                        frictionAssessment.overall_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: '#047857' } :
+                        frictionAssessment.overall_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: '#B02020' } :
+                        { background: 'rgba(245,158,11,0.15)', color: '#8A5500' }
+                      }
+                    >
+                      {frictionAssessment.overall_band}
+                    </span>
+                  </div>
+                  {frictionAssessment.top_signals?.[0] && (
+                    <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{frictionAssessment.top_signals[0]}</p>
+                  )}
+                </div>
+                <ArrowRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
+              </Link>
+            ) : (
+              <Link href="/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)' }}>
+                  <Zap size={20} style={{ color: 'var(--purple)' }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Get your Company Friction Score</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>Answer questions about your HR operations to see where friction is slowing you down.</p>
+                </div>
+                <ArrowRight size={14} style={{ color: 'var(--purple)', flexShrink: 0 }} />
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* ── Main grid ─────────────────────────────────────────────── */}
         <div className="grid lg:grid-cols-2 gap-6">

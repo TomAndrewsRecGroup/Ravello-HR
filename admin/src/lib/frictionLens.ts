@@ -11,6 +11,7 @@ export interface RoleInput {
 export type { FrictionScore, FrictionLevel, ExtractedRole };
 
 const API_URL = process.env.IVYLENS_API_URL ?? '';
+const API_KEY = process.env.IVYLENS_API_KEY ?? '';
 
 function levelFromScore(score: number): FrictionLevel {
   if (score < 25) return 'Low';
@@ -69,9 +70,16 @@ export async function scoreFriction(input: RoleInput): Promise<FrictionScore> {
   if (!API_URL) return localHeuristic(input.jd_text);
 
   try {
-    const res = await fetch(`${API_URL}/api/role/analyze`, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (API_KEY) headers['Authorization'] = `Bearer ${API_KEY}`;
+
+    const endpoint = API_KEY
+      ? `${API_URL}/api/partner/roles/analyze`
+      : `${API_URL}/api/role/analyze`;
+
+    const res = await fetch(endpoint, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body:    JSON.stringify({ jd_text: input.jd_text }),
       signal:  AbortSignal.timeout(15_000),
     });

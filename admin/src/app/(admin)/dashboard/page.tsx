@@ -4,7 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import {
   Building2, Users, Briefcase, LifeBuoy,
-  AlertTriangle, Clock, FileWarning, UserX,
+  AlertTriangle, Clock, FileWarning, UserX, Gauge,
 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -21,6 +21,7 @@ export default async function AdminDashboardPage() {
   const [
     compRes, userRes, reqRes, ticketRes,
     overdueComplianceRes, expDocsRes, pendingAbsenceRes, serviceReqRes,
+    highFrictionRes, unassessedRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,name,active').order('name'),
     supabase.from('profiles').select('id,role').neq('role', 'ravello_admin'),
@@ -53,6 +54,14 @@ export default async function AdminDashboardPage() {
       .in('status', ['open', 'in_progress'])
       .order('created_at', { ascending: false })
       .limit(6),
+    supabase.from('companies')
+      .select('id,name,friction_band')
+      .eq('friction_band', 'High Friction')
+      .eq('active', true),
+    supabase.from('companies')
+      .select('id', { count: 'exact', head: true })
+      .eq('active', true)
+      .is('friction_band', null),
   ]);
 
   const companies      = compRes.data           ?? [];
@@ -63,6 +72,8 @@ export default async function AdminDashboardPage() {
   const expiringDocs   = expDocsRes.data        ?? [];
   const pendingAbsence = pendingAbsenceRes.data ?? [];
   const serviceReqs    = serviceReqRes.data     ?? [];
+  const highFriction   = highFrictionRes.data   ?? [];
+  const unassessedCount = unassessedRes.count   ?? 0;
   const active         = companies.filter((c: any) => c.active).length;
 
   const stageBadge: Record<string, string> = {
@@ -119,6 +130,23 @@ export default async function AdminDashboardPage() {
             <Link href="/compliance" className="btn-secondary btn-sm ml-auto" style={{ flexShrink: 0 }}>
               View Compliance
             </Link>
+          </div>
+        )}
+
+        {/* Friction Health */}
+        {(highFriction.length > 0 || unassessedCount > 0) && (
+          <div className="card p-4 mb-6 flex items-center gap-3" style={{ borderLeft: '3px solid var(--purple)', background: 'rgba(124,58,237,0.03)' }}>
+            <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0 }} />
+            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+              Company Friction Health —
+              {highFriction.length > 0 && (
+                <span style={{ color: 'var(--red)' }}> {highFriction.length} high friction ({highFriction.map((c: any) => c.name).join(', ')})</span>
+              )}
+              {unassessedCount > 0 && (
+                <span style={{ color: 'var(--ink-faint)' }}> · {unassessedCount} never assessed</span>
+              )}
+            </p>
+            <Link href="/clients" className="btn-secondary btn-sm ml-auto" style={{ flexShrink: 0 }}>View Clients</Link>
           </div>
         )}
 
