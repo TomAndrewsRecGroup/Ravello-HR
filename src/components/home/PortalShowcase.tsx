@@ -267,28 +267,29 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
 
 /* ─── Main component ─── */
 export default function PortalShowcase() {
-  const sectionRef = useRef<HTMLDivElement>(null);
+  // Observe just the browser frame — fires as soon as the URL bar scrolls into view
+  const browserRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const el = sectionRef.current;
+    const el = browserRef.current;
     if (!el) return;
 
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setRevealed(true);
-          obs.disconnect(); // only trigger once
+          obs.disconnect();
         }
       },
-      { threshold: 0.35 }
+      { threshold: 0, rootMargin: '0px 0px -8% 0px' }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
   return (
-    <section ref={sectionRef} style={{ background: 'var(--bg)' }} className="section-padding">
+    <section style={{ background: 'var(--bg)' }} className="section-padding">
       <div className="container-wide">
 
         {/* Heading */}
@@ -307,7 +308,7 @@ export default function PortalShowcase() {
         </div>
 
         {/* Browser reveal — full container width */}
-        <div style={{ position: 'relative', marginBottom: '4rem' }}>
+        <div ref={browserRef} style={{ position: 'relative', marginBottom: '4rem' }}>
           <div style={{
             position: 'absolute', left: '50%', top: '50%',
             transform: 'translate(-50%,-50%)',
