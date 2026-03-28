@@ -254,6 +254,8 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
         height: revealed ? BROWSER_OPEN - BROWSER_CLOSED : 0,
         overflow: 'hidden',
         transition: 'height 1.1s cubic-bezier(0.16, 1, 0.3, 1)',
+        willChange: 'height',
+        transform: 'translateZ(0)',
       }}>
         <div style={{
           opacity: revealed ? 1 : 0,
@@ -299,7 +301,17 @@ export default function PortalShowcase() {
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
             Client Portal
           </p>
-          <h2 className="section-title mb-4" style={{ maxWidth: 580, margin: '0 auto 16px' }}>
+          <h2
+            className="section-title mb-4"
+            style={{
+              maxWidth: 1200,
+              margin: '0 auto 16px',
+              background: 'var(--gradient)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
             Everything your People Department needs. In one place.
           </h2>
           <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)', maxWidth: 500, margin: '0 auto' }}>

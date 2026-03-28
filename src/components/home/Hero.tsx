@@ -135,120 +135,119 @@ function PeopleGraphic({ color }: { color: string }) {
   );
 }
 
-/* ─── Fixed-position modal popup ─── */
+/* ─── Fixed-position modal popup — visually identical to HeroCard but larger ─── */
 function CardModal({
   card,
   onMouseEnter,
   onMouseLeave,
+  onClose,
 }: {
   card: CardDef;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onClose: () => void;
 }) {
   const { Icon } = card;
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — click to close, never triggers close on mouse traversal */}
       <div
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(7,11,29,0.60)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
+          background: 'rgba(7,11,29,0.65)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
         }}
-        onMouseEnter={onMouseLeave}
+        onClick={onClose}
       />
 
-      {/* Modal card */}
+      {/* Modal — same card DNA, scaled up */}
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         style={{
           position: 'fixed', zIndex: 201,
           top: '50%', left: '50%',
-          width: 480,
+          width: 460,
           background: 'var(--surface)',
-          borderRadius: 28,
-          padding: '40px 38px',
-          border: `2px solid ${card.accentColor}50`,
+          borderRadius: 26,
+          padding: '30px 28px 28px',
+          border: `1.5px solid var(--brand-line)`,
           boxShadow: [
-            `0 0 0 1px ${card.accentColor}20`,
-            `0 0 80px ${card.shadowColor}`,
-            '0 60px 120px rgba(7,11,29,0.45)',
+            `0 0 0 1px ${card.accentColor}18`,
+            `0 0 90px ${card.shadowColor}`,
+            '0 50px 100px rgba(7,11,29,0.38)',
           ].join(', '),
-          animation: 'heroModalIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          animation: 'heroModalIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
         }}
       >
-        {/* Accent top-bar */}
+        {/* Identical top radial glow — same as HeroCard */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-          background: `linear-gradient(90deg, ${card.accentColor}, ${card.accentColor}80)`,
+          position: 'absolute', inset: 0, borderRadius: 26, pointerEvents: 'none',
+          background: `radial-gradient(ellipse at 50% -10%, ${card.accentColor}16 0%, transparent 60%)`,
         }} />
 
-        {/* Top glow */}
+        {/* Icon — same proportions as HeroCard large */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 160,
-          background: `radial-gradient(ellipse at 50% -20%, ${card.accentColor}18 0%, transparent 70%)`,
-          pointerEvents: 'none',
-        }} />
-
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 16,
-              background: card.accentBg,
-              border: `1.5px solid ${card.accentColor}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Icon size={24} style={{ color: card.accentColor }} />
-            </div>
-            <div>
-              <p style={{
-                fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
-                fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em',
-                color: 'var(--ink)', lineHeight: 1, marginBottom: 4,
-              }}>
-                {card.label}
-              </p>
-              <p style={{ fontSize: 12, fontWeight: 700, color: card.accentColor }}>{card.title}</p>
-            </div>
-          </div>
+          position: 'relative', zIndex: 1,
+          width: 52, height: 52, borderRadius: 15,
+          background: card.accentBg,
+          border: `1px solid ${card.accentColor}35`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          marginBottom: 20,
+        }}>
+          <Icon size={24} style={{ color: card.accentColor }} />
         </div>
 
+        {/* Label — Cormorant, same font as HeroCard */}
+        <p style={{
+          position: 'relative', zIndex: 1,
+          fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
+          fontSize: 38, fontWeight: 800,
+          letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 6,
+        }}>
+          {card.label}
+        </p>
+
+        {/* Subtitle */}
+        <p style={{ position: 'relative', zIndex: 1, fontSize: 12, fontWeight: 700, color: card.accentColor, marginBottom: 10, lineHeight: 1.3 }}>
+          {card.title}
+        </p>
+
         {/* Description */}
-        <p style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--ink-soft)', marginBottom: 24, position: 'relative' }}>
+        <p style={{ position: 'relative', zIndex: 1, fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-soft)', marginBottom: 20 }}>
           {card.desc}
         </p>
 
         {/* Bullet points */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32, position: 'relative' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 26 }}>
           {card.points.map((pt) => (
-            <div key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <CheckCircle2 size={16} style={{ color: card.accentColor, flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5 }}>{pt}</span>
+            <div key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+              <CheckCircle2 size={15} style={{ color: card.accentColor, flexShrink: 0, marginTop: 2 }} />
+              <span style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>{pt}</span>
             </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <Link
-          href={card.href}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '14px 28px', borderRadius: 12,
-            background: `linear-gradient(135deg, ${card.accentColor}, ${card.accentColor}CC)`,
-            color: '#fff', fontSize: 14, fontWeight: 700,
-            textDecoration: 'none', letterSpacing: '-0.01em',
-            boxShadow: `0 8px 24px ${card.shadowColor}`,
-            position: 'relative',
-          }}
-        >
-          {card.ctaLabel} <ArrowRight size={15} />
-        </Link>
+        {/* CTA — same "Learn More" style as card footer */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link
+            href={card.href}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '12px 24px', borderRadius: 11,
+              background: `linear-gradient(135deg, ${card.accentColor}, ${card.accentColor}CC)`,
+              color: '#fff', fontSize: 13.5, fontWeight: 700,
+              textDecoration: 'none', letterSpacing: '-0.01em',
+              boxShadow: `0 6px 20px ${card.shadowColor}`,
+            }}
+          >
+            {card.ctaLabel} <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
     </>
   );
@@ -479,6 +478,7 @@ export default function Hero() {
           card={activeCardDef}
           onMouseEnter={cancelClose}
           onMouseLeave={close}
+          onClose={() => setActiveCard(null)}
         />
       )}
     </>

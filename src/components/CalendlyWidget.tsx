@@ -12,21 +12,6 @@ export default function CalendlyWidget() {
       {/* Floating action */}
       <div className="fixed bottom-6 right-6 z-[150] flex flex-col items-end gap-3">
 
-        {/* Label pill: shows when closed */}
-        {!open && (
-          <div
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-semibold text-white"
-            style={{
-              background: 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
-              boxShadow: '0 4px 22px rgba(124,58,237,0.45)',
-              animation: 'fadeIn 0.3s ease',
-            }}
-          >
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-            Book a free call
-          </div>
-        )}
-
         {/* FAB button */}
         <button
           onClick={() => setOpen(!open)}
