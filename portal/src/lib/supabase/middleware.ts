@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password';
+  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password' || pathname === '/api/dev-login';
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
