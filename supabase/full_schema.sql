@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
---  Ravello — Initial Database Schema
+--  TPS — Initial Database Schema
 --  Run this in Supabase SQL Editor to set up the full schema.
 -- ══════════════════════════════════════════════════════════════
 
@@ -7,7 +7,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Enums ────────────────────────────────────────────────────
-CREATE TYPE user_role      AS ENUM ('client_admin','client_user','ravello_admin','ravello_staff');
+CREATE TYPE user_role      AS ENUM ('client_admin','client_user','tps_admin','tps_recruiter');
 CREATE TYPE hiring_stage   AS ENUM ('submitted','in_progress','shortlist_ready','interview','offer','filled','cancelled');
 CREATE TYPE ticket_status  AS ENUM ('open','in_progress','resolved','closed');
 CREATE TYPE ticket_priority AS ENUM ('low','normal','high','urgent');
@@ -198,59 +198,59 @@ RETURNS UUID LANGUAGE sql STABLE AS $$
   SELECT company_id FROM profiles WHERE id = auth.uid();
 $$;
 
--- Helper: is Ravello staff?
-CREATE OR REPLACE FUNCTION is_ravello_staff()
+-- Helper: is TPS staff?
+CREATE OR REPLACE FUNCTION is_tps_staff()
 RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
-  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'));
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'));
 $$;
 
--- Companies: clients see only their company; Ravello sees all
-CREATE POLICY "client_companies"     ON companies FOR SELECT USING (id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_manage_companies" ON companies FOR ALL    USING (is_ravello_staff());
+-- Companies: clients see only their company; TPS sees all
+CREATE POLICY "client_companies"     ON companies FOR SELECT USING (id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_manage_companies" ON companies FOR ALL    USING (is_tps_staff());
 
--- Profiles: users see their own + company members; Ravello sees all
-CREATE POLICY "own_profile"          ON profiles FOR SELECT USING (id = auth.uid() OR company_id = my_company_id() OR is_ravello_staff());
+-- Profiles: users see their own + company members; TPS sees all
+CREATE POLICY "own_profile"          ON profiles FOR SELECT USING (id = auth.uid() OR company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "update_own_profile"   ON profiles FOR UPDATE USING (id = auth.uid());
-CREATE POLICY "ravello_profiles"     ON profiles FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_profiles"     ON profiles FOR ALL    USING (is_tps_staff());
 
--- Requisitions: company-scoped or Ravello
-CREATE POLICY "client_requisitions"  ON requisitions FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
+-- Requisitions: company-scoped or TPS
+CREATE POLICY "client_requisitions"  ON requisitions FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_insert_req"    ON requisitions FOR INSERT WITH CHECK (company_id = my_company_id());
-CREATE POLICY "ravello_requisitions" ON requisitions FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_requisitions" ON requisitions FOR ALL    USING (is_tps_staff());
 
--- Candidates: company-scoped + approved_for_client filter (enforced in app) or Ravello
-CREATE POLICY "client_candidates"    ON candidates FOR SELECT USING (company_id = my_company_id() AND approved_for_client = TRUE OR is_ravello_staff());
+-- Candidates: company-scoped + approved_for_client filter (enforced in app) or TPS
+CREATE POLICY "client_candidates"    ON candidates FOR SELECT USING (company_id = my_company_id() AND approved_for_client = TRUE OR is_tps_staff());
 CREATE POLICY "client_update_cand"   ON candidates FOR UPDATE USING (company_id = my_company_id());
-CREATE POLICY "ravello_candidates"   ON candidates FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_candidates"   ON candidates FOR ALL    USING (is_tps_staff());
 
 -- Documents: company-scoped
-CREATE POLICY "client_documents"     ON documents FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_documents"    ON documents FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "client_documents"     ON documents FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_documents"    ON documents FOR ALL    USING (is_tps_staff());
 
 -- Tickets: company-scoped
-CREATE POLICY "client_tickets"       ON tickets FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
+CREATE POLICY "client_tickets"       ON tickets FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_insert_ticket" ON tickets FOR INSERT WITH CHECK (company_id = my_company_id());
 CREATE POLICY "client_update_ticket" ON tickets FOR UPDATE USING (company_id = my_company_id() AND status NOT IN ('resolved','closed'));
-CREATE POLICY "ravello_tickets"      ON tickets FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_tickets"      ON tickets FOR ALL    USING (is_tps_staff());
 
--- Ticket messages: visible to company or Ravello (no internal notes to clients)
+-- Ticket messages: visible to company or TPS (no internal notes to clients)
 CREATE POLICY "client_messages"      ON ticket_messages FOR SELECT USING (
   is_internal = FALSE AND
   EXISTS(SELECT 1 FROM tickets t WHERE t.id = ticket_id AND t.company_id = my_company_id())
-  OR is_ravello_staff()
+  OR is_tps_staff()
 );
 CREATE POLICY "client_insert_msg"    ON ticket_messages FOR INSERT WITH CHECK (
   EXISTS(SELECT 1 FROM tickets t WHERE t.id = ticket_id AND t.company_id = my_company_id())
 );
-CREATE POLICY "ravello_messages"     ON ticket_messages FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_messages"     ON ticket_messages FOR ALL USING (is_tps_staff());
 
 -- Reports: company-scoped
-CREATE POLICY "client_reports"       ON reports FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_reports"      ON reports FOR ALL USING (is_ravello_staff());
+CREATE POLICY "client_reports"       ON reports FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_reports"      ON reports FOR ALL USING (is_tps_staff());
 
 -- Compliance items: company-scoped
-CREATE POLICY "client_compliance"    ON compliance_items FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_compliance"   ON compliance_items FOR ALL USING (is_ravello_staff());
+CREATE POLICY "client_compliance"    ON compliance_items FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_compliance"   ON compliance_items FOR ALL USING (is_tps_staff());
 
 -- ══════════════════════════════════════════════════════════════
 --  Storage bucket
@@ -404,31 +404,31 @@ ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
 
 -- Client Services
 CREATE POLICY "client_services_select" ON client_services FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_client_services" ON client_services FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_client_services" ON client_services FOR ALL
+  USING (is_tps_staff());
 
 -- Actions
 CREATE POLICY "client_actions_select" ON actions FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_actions_update" ON actions FOR UPDATE
   USING (company_id = my_company_id());
-CREATE POLICY "ravello_actions" ON actions FOR ALL
-  USING (is_ravello_staff());
+CREATE POLICY "tps_actions" ON actions FOR ALL
+  USING (is_tps_staff());
 
 -- Milestones
 CREATE POLICY "client_milestones_select" ON milestones FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_milestones" ON milestones FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_milestones" ON milestones FOR ALL
+  USING (is_tps_staff());
 
 -- Service Requests
 CREATE POLICY "client_service_requests_select" ON service_requests FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_service_requests_insert" ON service_requests FOR INSERT
   WITH CHECK (company_id = my_company_id());
-CREATE POLICY "ravello_service_requests" ON service_requests FOR ALL
-  USING (is_ravello_staff());
+CREATE POLICY "tps_service_requests" ON service_requests FOR ALL
+  USING (is_tps_staff());
 -- ══════════════════════════════════════════════════════════════
 --  Migration 003: BD Intelligence Tables
 --  Populated by the IvyLens browser extension
@@ -492,8 +492,8 @@ CREATE INDEX IF NOT EXISTS idx_bd_scanned_roles_active     ON bd_scanned_roles(s
 ALTER TABLE bd_companies    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bd_scanned_roles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "ravello_bd_companies"     ON bd_companies     FOR ALL USING (is_ravello_staff());
-CREATE POLICY "ravello_bd_scanned_roles" ON bd_scanned_roles FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_bd_companies"     ON bd_companies     FOR ALL USING (is_tps_staff());
+CREATE POLICY "tps_bd_scanned_roles" ON bd_scanned_roles FOR ALL USING (is_tps_staff());
 
 -- Extension can INSERT via service role key (configured in extension)
 -- No client-facing access needed for BD intelligence tables
@@ -592,15 +592,15 @@ ALTER TABLE interview_schedules  ENABLE ROW LEVEL SECURITY;
 
 -- Offers: clients see their own; admin sees all
 CREATE POLICY "client_offers_select" ON offers FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_offers" ON offers FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_offers" ON offers FOR ALL
+  USING (is_tps_staff());
 
 -- Interview schedules: clients see their own; admin sees all
 CREATE POLICY "client_interviews_select" ON interview_schedules FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_interviews" ON interview_schedules FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_interviews" ON interview_schedules FOR ALL
+  USING (is_tps_staff());
 -- ============================================================
 -- Migration 005: LEAD + PROTECT tables
 -- Training needs, performance reviews, skills matrix,
@@ -770,32 +770,32 @@ CREATE POLICY "client_hr_metrics" ON hr_metrics
 -- Admin full access
 CREATE POLICY "admin_training_needs" ON training_needs
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_perf_reviews" ON performance_reviews
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_skills_matrix" ON skills_matrix
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_emp_docs" ON employee_documents
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_absence" ON absence_records
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_hr_metrics" ON hr_metrics
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 -- ============================================================
 -- Migration 006: E-learning marketplace
@@ -856,7 +856,7 @@ CREATE POLICY "read_published_content" ON learning_content
 -- Admin can do everything
 CREATE POLICY "admin_learning_content" ON learning_content
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 -- Clients can read their own purchases
@@ -874,7 +874,7 @@ CREATE POLICY "client_purchases_insert" ON learning_purchases
 -- Admin full access to purchases
 CREATE POLICY "admin_purchases" ON learning_purchases
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 -- ══════════════════════════════════════════════════════════════
 --  Migration 007: Add jd_text to requisitions
@@ -922,7 +922,7 @@ CREATE POLICY "read_benchmarks" ON salary_benchmarks
 -- Only admin can write
 CREATE POLICY "admin_benchmarks" ON salary_benchmarks
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin', 'ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
   );
 -- ══════════════════════════════════════════════════════════════
 --  Migration 009: Manatal ATS Integration
@@ -937,23 +937,23 @@ COMMENT ON COLUMN companies.manatal_client_id IS
   'Manatal ATS department or client ID. When set, the portal HIRE section can display live pipeline data from Manatal.';
 -- ══════════════════════════════════════════════════════════════
 --  Migration 010: RLS Audit Fixes
---  Fix is_ravello_staff() to include ravello_recruiter.
---  The enum is: ravello_admin | ravello_recruiter (NOT ravello_staff).
---  Several policies also use 'ravello_staff' inline — patched below.
+--  Fix is_tps_staff() to include tps_recruiter.
+--  The enum is: tps_admin | tps_recruiter (NOT TPS_staff).
+--  Several policies also use 'tps_recruiter' inline — patched below.
 -- ══════════════════════════════════════════════════════════════
 
--- ── Fix is_ravello_staff() helper ────────────────────────────
-CREATE OR REPLACE FUNCTION is_ravello_staff()
+-- ── Fix is_tps_staff() helper ────────────────────────────
+CREATE OR REPLACE FUNCTION is_tps_staff()
 RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
   SELECT EXISTS(
     SELECT 1 FROM profiles
     WHERE id = auth.uid()
-      AND role IN ('ravello_admin', 'ravello_recruiter')
+      AND role IN ('tps_admin', 'tps_recruiter')
   );
 $$;
 
 -- ── Fix LEAD / PROTECT admin policies ────────────────────────
--- These were incorrectly using 'ravello_staff' instead of 'ravello_recruiter'
+-- These were incorrectly using 'tps_recruiter' instead of 'tps_recruiter'
 
 DROP POLICY IF EXISTS "admin_training_needs"    ON training_needs;
 DROP POLICY IF EXISTS "admin_perf_reviews"      ON performance_reviews;
@@ -964,32 +964,32 @@ DROP POLICY IF EXISTS "admin_hr_metrics"        ON hr_metrics;
 
 CREATE POLICY "admin_training_needs" ON training_needs
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_perf_reviews" ON performance_reviews
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_skills_matrix" ON skills_matrix
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_emp_docs" ON employee_documents
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_absence" ON absence_records
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 CREATE POLICY "admin_hr_metrics" ON hr_metrics
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 -- ── Fix learning_content admin policy ────────────────────────
@@ -997,7 +997,7 @@ DROP POLICY IF EXISTS "admin_learning_content" ON learning_content;
 
 CREATE POLICY "admin_learning_content" ON learning_content
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 -- ── Fix learning_purchases admin policy ──────────────────────
@@ -1005,7 +1005,7 @@ DROP POLICY IF EXISTS "admin_purchases" ON learning_purchases;
 
 CREATE POLICY "admin_purchases" ON learning_purchases
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 -- ── client_insert_req: clients can insert requisitions ───────
@@ -1018,7 +1018,7 @@ CREATE POLICY "client_insert_req" ON requisitions
     AND EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
-        AND role IN ('client_admin', 'client_user', 'ravello_admin', 'ravello_recruiter')
+        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_recruiter')
     )
   );
 
@@ -1031,7 +1031,7 @@ CREATE POLICY "client_insert_ticket" ON tickets
     AND EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
-        AND role IN ('client_admin', 'client_user', 'ravello_admin', 'ravello_recruiter')
+        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_recruiter')
     )
   );
 
@@ -1040,13 +1040,13 @@ CREATE POLICY "client_insert_ticket" ON tickets
 -- are fine as-is because they rely on my_company_id() which now correctly
 -- maps for any authenticated user with a company_id.
 --
--- ravello_admin/recruiter have full access via is_ravello_staff()
+-- tps_admin/recruiter have full access via is_tps_staff()
 -- on all core tables (companies, profiles, requisitions, candidates,
 -- documents, tickets, ticket_messages, compliance_items, reports,
 -- client_services, milestones, bd_companies, bd_scanned_roles,
 -- actions, service_requests, offers, interview_schedules).
 --
--- salary_benchmarks policy already uses 'ravello_recruiter' — correct.
+-- salary_benchmarks policy already uses 'tps_recruiter' — correct.
 -- ══════════════════════════════════════════════════════════════
 --  Migration 011: JD Templates + CV Screening
 --  Phase 34 — JD template library; CV screening fields on candidates
@@ -1075,9 +1075,9 @@ CREATE TRIGGER jd_templates_updated_at
 
 ALTER TABLE jd_templates ENABLE ROW LEVEL SECURITY;
 
--- Only ravello staff can manage templates
-CREATE POLICY "ravello_jd_templates" ON jd_templates
-  FOR ALL USING (is_ravello_staff());
+-- Only TPS staff can manage templates
+CREATE POLICY "tps_jd_templates" ON jd_templates
+  FOR ALL USING (is_tps_staff());
 
 -- ── CV Screening fields on candidates ────────────────────────
 
@@ -1174,7 +1174,7 @@ ALTER TABLE company_assessments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage all assessments"
   ON company_assessments FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin', 'ravello_staff')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
 
 CREATE POLICY "Clients can view own assessments"
   ON company_assessments FOR SELECT
@@ -1189,7 +1189,7 @@ ALTER TABLE company_friction_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage friction items"
   ON company_friction_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin', 'ravello_staff')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
 
 CREATE POLICY "Clients can view own friction items"
   ON company_friction_items FOR SELECT
@@ -1236,8 +1236,8 @@ CREATE INDEX IF NOT EXISTS idx_partner_api_keys_active ON partner_api_keys(is_ac
 -- RLS — admin only
 ALTER TABLE partner_api_keys ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "ravello_partner_api_keys" ON partner_api_keys
-  FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_partner_api_keys" ON partner_api_keys
+  FOR ALL USING (is_tps_staff());
 
 -- ── BD Leads View ────────────────────────────────────────────
 -- Materialises the leads format that partners pull via the API:

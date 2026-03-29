@@ -93,12 +93,12 @@ ALTER TABLE interview_schedules  ENABLE ROW LEVEL SECURITY;
 
 -- Offers: clients see their own; admin sees all
 CREATE POLICY "client_offers_select" ON offers FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_offers" ON offers FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_offers" ON offers FOR ALL
+  USING (is_tps_staff());
 
 -- Interview schedules: clients see their own; admin sees all
 CREATE POLICY "client_interviews_select" ON interview_schedules FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_interviews" ON interview_schedules FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_interviews" ON interview_schedules FOR ALL
+  USING (is_tps_staff());

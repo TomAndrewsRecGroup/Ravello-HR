@@ -172,8 +172,8 @@ interface TeamMembersProps {
 const ROLE_LABELS: Record<string, string> = {
   client_admin:   'Admin',
   client_user:    'Member',
-  ravello_admin:  'The People Office Admin',
-  ravello_staff:  'The People Office Staff',
+  tps_admin:      'The People System Admin',
+  tps_recruiter:  'The People System Recruiter',
 };
 
 export function TeamMembers({ members, currentUserId }: TeamMembersProps) {

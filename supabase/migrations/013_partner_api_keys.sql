@@ -25,8 +25,8 @@ CREATE INDEX IF NOT EXISTS idx_partner_api_keys_active ON partner_api_keys(is_ac
 -- RLS — admin only
 ALTER TABLE partner_api_keys ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "ravello_partner_api_keys" ON partner_api_keys
-  FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_partner_api_keys" ON partner_api_keys
+  FOR ALL USING (is_tps_staff());
 
 -- ── BD Leads View ────────────────────────────────────────────
 -- Materialises the leads format that partners pull via the API:

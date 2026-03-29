@@ -16,7 +16,7 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single();
-  if (!profile || !['ravello_admin', 'ravello_recruiter'].includes(profile.role)) {
+  if (!profile || !['tps_admin', 'tps_recruiter'].includes(profile.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single();
-  if (!profile || profile.role !== 'ravello_admin') {
+  if (!profile || profile.role !== 'tps_admin') {
     return NextResponse.json({ error: 'Only admins can create API keys' }, { status: 403 });
   }
 
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single();
-  if (!profile || profile.role !== 'ravello_admin') {
+  if (!profile || profile.role !== 'tps_admin') {
     return NextResponse.json({ error: 'Only admins can revoke API keys' }, { status: 403 });
   }
 

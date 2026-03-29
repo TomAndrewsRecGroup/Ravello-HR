@@ -7,8 +7,8 @@ import { Loader2 } from 'lucide-react';
 const CLIENT_ROLES = ['client_admin', 'client_viewer'];
 
 const ROLE_BADGE: Record<string, string> = {
-  ravello_admin:  'badge-admin',
-  ravello_staff:  'badge-staff',
+  tps_admin:      'badge-admin',
+  tps_recruiter:  'badge-staff',
   client_admin:   'badge-admin',
   client_viewer:  'badge-client',
 };

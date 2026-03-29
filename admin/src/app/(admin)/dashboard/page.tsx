@@ -24,7 +24,7 @@ export default async function AdminDashboardPage() {
     highFrictionRes, unassessedRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,name,active').order('name'),
-    supabase.from('profiles').select('id,role').neq('role', 'ravello_admin'),
+    supabase.from('profiles').select('id,role').neq('role', 'tps_admin'),
     supabase.from('requisitions')
       .select('id,title,stage,companies(name)')
       .neq('stage', 'filled').neq('stage', 'cancelled')

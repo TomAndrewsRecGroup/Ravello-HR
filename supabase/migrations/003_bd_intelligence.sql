@@ -61,8 +61,8 @@ CREATE INDEX IF NOT EXISTS idx_bd_scanned_roles_active     ON bd_scanned_roles(s
 ALTER TABLE bd_companies    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bd_scanned_roles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "ravello_bd_companies"     ON bd_companies     FOR ALL USING (is_ravello_staff());
-CREATE POLICY "ravello_bd_scanned_roles" ON bd_scanned_roles FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_bd_companies"     ON bd_companies     FOR ALL USING (is_tps_staff());
+CREATE POLICY "tps_bd_scanned_roles" ON bd_scanned_roles FOR ALL USING (is_tps_staff());
 
 -- Extension can INSERT via service role key (configured in extension)
 -- No client-facing access needed for BD intelligence tables
