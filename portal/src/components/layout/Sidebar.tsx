@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
   LifeBuoy, LogOut, Settings, Bell, Map, ShieldCheck, TrendingUp,
-  BookOpen, Users, PoundSterling, Lock, Gauge,
+  BookOpen, Users, PoundSterling, Lock, Gauge, Target,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -33,6 +33,7 @@ const nav = [
   { href: '/benchmarks', label: 'Benchmarks',   icon: PoundSterling,   flag: 'benchmarks' },
   { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
   { href: '/learning',   label: 'Learning',     icon: BookOpen,        flag: 'learning' },
+  { href: '/bd-leads',   label: 'BD Leads',     icon: Target,          flag: 'bd_pipeline' },
   { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
 
