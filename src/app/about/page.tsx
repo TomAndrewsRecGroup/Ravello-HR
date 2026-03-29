@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'About | Lucy and Tom | The People System',
   description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom: 18+ years HR leadership and 10+ years talent expertise, working together.',
-  alternates: { canonical: 'https://ravellohr.co.uk/about' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/about' },
 };
 
 const lucyCredentials = [
@@ -95,7 +95,7 @@ export default function AboutPage() {
                   Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
                 </p>
                 <p>
-                  She founded Ravello HR because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
+                  She founded The People System because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
                 </p>
                 <p>
                   Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
@@ -103,7 +103,7 @@ export default function AboutPage() {
               </div>
               <div className="mt-8">
                 <Link href="/book" className="btn-gradient">
-                  Work with us <ArrowRight size={16} />
+                  Book a Free Discovery Call <ArrowRight size={16} />
                 </Link>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function AboutPage() {
               </div>
               <div className="mt-8">
                 <Link href="/book" className="btn-gradient">
-                  Work with us <ArrowRight size={16} />
+                  Book a Free Discovery Call <ArrowRight size={16} />
                 </Link>
               </div>
             </div>

@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'LEAD Services | Fractional People Leadership | The People System',
   description: 'Four LEAD packages: Lead Foundations, Lead Optimiser, Lead Partner, Lead Build. Fractional HR leadership and manager enablement: The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/lead' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/lead' },
 };
 
 const packages = [

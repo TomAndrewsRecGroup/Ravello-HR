@@ -38,7 +38,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ravellohr.co.uk'),
+  metadataBase: new URL('https://thepeoplesystem.co.uk'),
   title: {
     default: 'The People System | Hire. Lead. Protect.',
     template: '%s',
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   description:
     'The People System helps ambitious businesses fix hiring, build HR foundations, and lead their people function: one partner, total control.',
   keywords: ['HR consultancy UK', 'fractional HR', 'embedded recruitment', 'Friction Lens', 'HR compliance', 'people strategy', 'Employment Rights Bill', 'M&A HR support'],
-  authors: [{ name: 'The People System', url: 'https://ravellohr.co.uk' }],
+  authors: [{ name: 'The People System', url: 'https://thepeoplesystem.co.uk' }],
   openGraph: {
-    type: 'website', locale: 'en_GB', url: 'https://ravellohr.co.uk', siteName: 'The People System',
+    type: 'website', locale: 'en_GB', url: 'https://thepeoplesystem.co.uk', siteName: 'The People System',
     title: 'The People System | Hire. Lead. Protect.',
     description: 'One partner. Total control of your people function. HIRE, LEAD, and PROTECT: delivered by Lucy and Tom.',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: 'https://ravellohr.co.uk' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

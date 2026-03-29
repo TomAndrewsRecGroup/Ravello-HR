@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'People Due Diligence Checklist | M&A People Risk | The People System',
   description:
     'Free People Due Diligence Checklist for M&A and restructures. Identify people risk before and after acquisition. Interactive and downloadable. From The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/tools/due-diligence-checklist' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/tools/due-diligence-checklist' },
 };
 
 export default function DDChecklistPage() {

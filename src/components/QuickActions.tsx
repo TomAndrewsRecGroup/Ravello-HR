@@ -100,33 +100,33 @@ export default function QuickActions() {
           {/* Footer */}
           <div className="px-4 py-3" style={{ borderTop: '1px solid var(--brand-line)' }}>
             <p className="text-[10px] font-medium" style={{ color: 'var(--ink-faint)' }}>
-              ravellohr.co.uk
+              thepeoplesystem.co.uk
             </p>
           </div>
         </div>
       </div>
 
-      {/* Toggle tab */}
+      {/* Toggle tab — compact vertical gradient pill */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-8 flex flex-col items-center justify-center gap-1 transition-all duration-200"
+        className="flex flex-col items-center justify-center gap-1.5 transition-all duration-200"
         style={{
-          minHeight: 140,
-          background: 'var(--brand-navy)',
-          borderRadius: '8px 0 0 8px',
-          boxShadow: '-2px 0 18px rgba(7,11,29,0.16)',
-          writingMode: 'vertical-rl',
+          width: 36,
+          height: 96,
+          background: 'linear-gradient(180deg, #7C3AED 0%, #3B6FFF 100%)',
+          borderRadius: '10px 0 0 10px',
+          boxShadow: '-3px 0 20px rgba(124,58,237,0.28)',
         }}
         aria-label={open ? 'Close quick actions' : 'Open quick actions'}
       >
+        {!open && <ChevronLeft size={14} className="text-white/80" />}
+        {open  && <ChevronRight size={14} className="text-white/80" />}
         <span
-          className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/65"
-          style={{ writingMode: 'vertical-rl', letterSpacing: '0.18em' }}
+          className="text-[8px] font-bold uppercase tracking-[0.14em] text-white/70"
+          style={{ writingMode: 'vertical-rl' }}
         >
-          {open ? '✕' : 'Quick'}
+          {open ? 'Close' : 'Menu'}
         </span>
-        {!open && <ChevronLeft size={11} className="text-white/55" />}
-        {open  && <ChevronRight size={11} className="text-white/55" />}
       </button>
     </div>
   );

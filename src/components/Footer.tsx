@@ -50,7 +50,7 @@ export default function Footer() {
                 <Linkedin size={14} />
               </a>
               <a
-                href="mailto:hello@ravellohr.co.uk"
+                href="mailto:info@thepeoplesystem.co.uk"
                 className="footer-icon-link"
                 aria-label="Email"
               >
@@ -119,8 +119,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@ravellohr.co.uk" className="footer-link text-sm flex items-center gap-2">
-                  <Mail size={12} /> hello@ravellohr.co.uk
+                <a href="mailto:info@thepeoplesystem.co.uk" className="footer-link text-sm flex items-center gap-2">
+                  <Mail size={12} /> info@thepeoplesystem.co.uk
                 </a>
               </li>
               <li>
@@ -151,7 +151,7 @@ export default function Footer() {
                 HR Hotline
               </p>
               <p className="text-sm font-semibold text-white mb-3 leading-snug">
-                Bring your biggest challenge.<br />Leave with a clear plan.
+                30 minutes. No pitch.<br />Leave with a clear plan.
               </p>
               <Link
                 href="/book"

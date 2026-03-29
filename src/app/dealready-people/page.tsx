@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Cl
 export const metadata: Metadata = {
   title: 'DealReady People™ | M&A and Restructure People Advisory | The People System',
   description: 'People due diligence and integration support for M&A, TUPE, and restructures. A specialist project service from The People System: not a retainer product.',
-  alternates: { canonical: 'https://ravellohr.co.uk/dealready-people' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/dealready-people' },
 };
 
 const preDealItems = [

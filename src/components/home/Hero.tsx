@@ -489,21 +489,23 @@ export default function Hero() {
               </h1>
 
               <p className="text-lg leading-relaxed mb-5 max-w-[480px]" style={{ color: 'var(--ink-soft)' }}>
-                Hire the right people. Lead your managers. Protect your business.
-                One partner. The expertise you need. The portal that keeps you in control.
+                Cut agency spend by 40–60%. Get compliant before it costs you.
+                Build the People function your business actually needs — without the
+                full-time headcount.
               </p>
 
               <p className="text-sm leading-relaxed mb-8 max-w-[440px]" style={{ color: 'var(--ink-faint)' }}>
-                Built for senior leaders at growing businesses who need a proper People
-                function without the full-time headcount cost.
+                For founders and senior leaders at 10–250 person businesses who are
+                done guessing and ready for a proper system. Two senior specialists.
+                One partner. No juniors. No handoffs.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link href="/book" className="btn-gradient">
-                  <CalendarCheck size={16} /> Book a Free Call
+                  <CalendarCheck size={16} /> Book a Free 30-min Call
                 </Link>
-                <Link href="/smart-hiring-system" className="btn-secondary">
-                  See how it works <ArrowRight size={15} />
+                <Link href="/tools/hiring-score" className="btn-secondary">
+                  Get your free Hiring Score <ArrowRight size={15} />
                 </Link>
               </div>
 

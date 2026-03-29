@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: 'Book a Free Call | The People System',
   description:
     'Three routes: I need help hiring / I need HR foundations / I\'m going through a deal. Book a free call with Lucy or Tom. Straight answers. No pitch.',
-  alternates: { canonical: 'https://ravellohr.co.uk/book' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/book' },
 };
 
 const whatToExpect = [
@@ -144,7 +144,7 @@ export default function BookPage() {
                   <p className="font-semibold mb-2" style={{ color: 'var(--ink)' }}>Booking calendar coming very soon</p>
                   <p className="text-sm mb-5" style={{ color: 'var(--ink-soft)' }}>While the scheduler gets set up, drop us a direct message:</p>
                   <a
-                    href="mailto:hello@thepeopleoffice.co.uk?subject=Book a Free Call"
+                    href="mailto:info@thepeoplesystem.co.uk?subject=Book a Free Call"
                     className="btn-primary inline-flex"
                   >
                     Email to Book
@@ -154,7 +154,7 @@ export default function BookPage() {
 
               <p className="text-xs mt-4 text-center" style={{ color: 'var(--ink-faint)' }}>
                 Prefer email?{' '}
-                <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--brand-purple)' }}>hello@thepeopleoffice.co.uk</a>
+                <a href="mailto:info@thepeoplesystem.co.uk" style={{ color: 'var(--brand-purple)' }}>info@thepeoplesystem.co.uk</a>
               </p>
             </div>
           </div>

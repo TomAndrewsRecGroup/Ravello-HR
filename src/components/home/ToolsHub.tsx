@@ -5,8 +5,8 @@ const TOOLS = [
   {
     icon: BarChart2,
     href: '/tools/hiring-score',
-    name: 'Hiring Score',
-    problem: 'Understand where your hiring process is costing you time and money.',
+    name: 'Smart Hiring Score',
+    problem: 'Find out in 3 minutes why roles keep reopening and where your process is leaking time and money.',
     color: '#7B2FBE',
     bg: 'rgba(123,47,190,0.08)',
     hoverBorder: 'rgba(123,47,190,0.25)',
@@ -15,7 +15,7 @@ const TOOLS = [
     icon: ShieldAlert,
     href: '/tools/hr-risk-score',
     name: 'HR Risk Score',
-    problem: 'Identify gaps that could expose your business to risk.',
+    problem: 'Score your compliance exposure in 2 minutes. Most businesses score worse than they expect.',
     color: '#4B6EF5',
     bg: 'rgba(75,110,245,0.08)',
     hoverBorder: 'rgba(75,110,245,0.25)',
@@ -24,7 +24,7 @@ const TOOLS = [
     icon: FileCheck,
     href: '/tools/policy-healthcheck',
     name: 'Policy Healthcheck',
-    problem: 'Check if your current documents actually protect your business.',
+    problem: 'Check if your contracts, handbook, and policies would survive a tribunal. Free. Instant results.',
     color: '#C026A0',
     bg: 'rgba(192,38,160,0.08)',
     hoverBorder: 'rgba(192,38,160,0.25)',
@@ -32,8 +32,8 @@ const TOOLS = [
   {
     icon: ClipboardList,
     href: '/tools/due-diligence-checklist',
-    name: 'Due Diligence Checklist',
-    problem: 'Prepare properly for growth, investment, or acquisition.',
+    name: 'DD Checklist',
+    problem: 'The people due diligence checklist dealmakers consistently skip. Download free before your next deal.',
     color: '#5A9E6F',
     bg: 'rgba(90,158,111,0.08)',
     hoverBorder: 'rgba(90,158,111,0.25)',
@@ -78,7 +78,7 @@ export default function ToolsHub() {
             </h2>
           </div>
           <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-            Under 3 minutes each. No account needed. Instant results.
+            Under 3 minutes each. No account needed. No email required. Instant results.
           </p>
         </div>
 

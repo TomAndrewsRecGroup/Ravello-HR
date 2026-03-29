@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     // });
     //
     // await resend.emails.send({
-    //   from: 'Ravello HR <hello@ravellohr.co.uk>',
+    //   from: 'Ravello HR <hello@thepeoplesystem.co.uk>',
     //   to: email,
     //   subject: `Your Smart Hiring Score: ${percentage}%`,
     //   html: `<p>Hi ${name},</p><p>Your hiring score is <strong>${percentage}%</strong>...</p>`
