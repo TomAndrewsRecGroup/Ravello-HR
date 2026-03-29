@@ -5,7 +5,7 @@ import { ArrowRight, CalendarCheck, CheckCircle2, XCircle, Minus } from 'lucide-
 export const metadata: Metadata = {
   title: 'Why The People System | The People System',
   description: 'Why ambitious UK businesses choose The People System over traditional agencies, in-house HR, and generic consultants. One partner. Total control of your people function.',
-  alternates: { canonical: 'https://ravellohr.co.uk/why-ravello' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/why-ravello' },
 };
 
 const COMPARISON = [
@@ -30,7 +30,7 @@ const OBJECTIONS = [
   },
   {
     q: 'We\u2019ve used HR consultants before and it didn\u2019t work.',
-    a: 'That is usually because you got junior delivery on a senior pitch, or vague advice with nothing concrete attached. Every Ravello engagement has a named system, a fixed scope and a senior lead throughout.',
+    a: 'That is usually because you got junior delivery on a senior pitch, or vague advice with nothing concrete attached. Every People System engagement has a named system, a fixed scope and a senior lead throughout.',
   },
   {
     q: 'We can\u2019t afford a consultant right now.',
@@ -103,7 +103,7 @@ export default function WhyRavelloPage() {
             Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root: across hiring, HR leadership, and compliance.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
+            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free 30-min Call</Link>
             <Link href="#comparison" className="btn-secondary">See the comparison <ArrowRight size={15} /></Link>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function WhyRavelloPage() {
             Thirty minutes. No pitch. A straight conversation about what is holding your business back and what to do about it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free Call</Link>
+            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free 30-min Call</Link>
             <Link href="/about" className="btn-secondary">Meet Lucy and Tom <ArrowRight size={14} /></Link>
           </div>
         </div>

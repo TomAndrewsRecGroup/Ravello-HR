@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'People Ops Playbook | HR Guides for Founders and Managers | The People System',
   description:
     'Practical HR guides, scripts, and frameworks for founders, leaders, and managers. No theory, no filler. Just the things that actually work.',
-  alternates: { canonical: 'https://ravellohr.co.uk/playbook' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/playbook' },
 };
 
 const categories = [
@@ -185,7 +185,7 @@ export default function PlaybookPage() {
             Read enough? Good. Let&apos;s talk.
           </h2>
           <p className="text-white/70 text-lg mb-8 max-w-lg mx-auto">
-            If something in the Playbook has resonated, book 15 minutes with Lucinda. Bring your specific situation and leave with a clear, practical path forward.
+            If something in the Playbook has resonated, book 15 minutes with Lucy. Bring your specific situation and leave with a clear, practical path forward.
           </p>
           <Link href="/book" className="btn-primary">
             Book the HR Hotline <ArrowRight size={18} />

@@ -1,12 +1,28 @@
 import Image from 'next/image';
-import { AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 const COSTS = [
-  'Hiring without structure means the same roles keep coming back: and the agency bill keeps growing',
-  'No People leader means managers make it up as they go: and you pay for the inconsistency',
-  'Missing or outdated HR documents are a liability waiting to be triggered',
-  'Growth exposes every people gap you papered over on the way up',
-  'Without the right foundations, you cannot scale: you just accumulate more risk',
+  {
+    stat: '£27,500',
+    pain: 'The average cost of a bad hire in the UK — salary, recruitment fees, lost productivity, and starting over',
+  },
+  {
+    stat: '3×',
+    pain: 'A single role that keeps reopening costs three times what a structured hiring process would',
+  },
+  {
+    stat: '£8,500–£30k',
+    pain: 'The average employment tribunal claim — and most stem from contracts, policies, or processes that were never reviewed',
+  },
+  {
+    stat: '14 weeks',
+    pain: 'Average UK time-to-hire — every week without the right person costs output, momentum, and team morale',
+  },
+  {
+    stat: '67%',
+    pain: 'Of UK SMEs have compliance gaps that would not survive a basic audit. Most find out when something breaks.',
+  },
 ];
 
 export default function CostOfProblem() {
@@ -19,34 +35,53 @@ export default function CostOfProblem() {
             <p className="eyebrow mb-5">
               <span
                 className="w-1.5 h-1.5 rounded-full inline-block mr-2"
-                style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }}
+                style={{ background: '#D94444', verticalAlign: 'middle' }}
               />
-              The real cost
+              The cost of doing nothing
             </p>
 
-            <h2 className="section-title mb-10">
-              Where growing businesses<br />lose time, money, and momentum
+            <h2 className="section-title mb-4">
+              Every month you delay<br />costs more than the fix
             </h2>
 
-            <ul className="space-y-4">
+            <p className="text-base leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
+              These are not hypothetical numbers. They are the measurable cost of leaving your people
+              function to chance. The businesses that grow fastest fix this first.
+            </p>
+
+            <div className="space-y-0">
               {COSTS.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-4 py-4"
+                <div
+                  key={item.stat}
+                  className="flex items-start gap-5 py-5"
                   style={{ borderBottom: '1px solid var(--brand-line)' }}
                 >
                   <span
-                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
-                    style={{ background: 'rgba(217,68,68,0.10)' }}
+                    className="flex-shrink-0 font-bold text-lg"
+                    style={{
+                      color: '#D94444',
+                      minWidth: 90,
+                      fontFamily: 'var(--font-mono), "JetBrains Mono", monospace',
+                      letterSpacing: '-0.03em',
+                    }}
                   >
-                    <AlertCircle size={11} style={{ color: '#C04444' }} />
+                    {item.stat}
                   </span>
-                  <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                    {item}
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+                    {item.pain}
                   </p>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link href="/book" className="btn-gradient">
+                Fix this now — book a free call <ArrowRight size={15} />
+              </Link>
+              <Link href="/tools/hr-risk-score" className="btn-secondary">
+                Find your gaps in 2 minutes <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
 
           {/* People image */}

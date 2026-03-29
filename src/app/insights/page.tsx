@@ -10,7 +10,7 @@ import {
 export const metadata: Metadata = {
   title: 'Insights | Documents, Scores, and Intelligence | The People System',
   description: 'Your client portal gives you real-time visibility into your people function. Documents, compliance tracking, Friction Lens role scores, and a company-wide People Score benchmarked against your industry.',
-  alternates: { canonical: 'https://ravellohr.co.uk/insights' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/insights' },
 };
 
 const PORTAL_FEATURES = [

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
   LifeBuoy, LogOut, Settings, Bell, Map, ShieldCheck, TrendingUp,
-  BookOpen, Users, PoundSterling, Lock, Gauge, Target, KeyRound,
+  BookOpen, Users, PoundSterling, Lock, Gauge, Target,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -20,21 +20,21 @@ const COUNT_KEY: Record<string, string> = {
 };
 
 const nav = [
-  { href: '/dashboard',    label: 'Dashboard',   icon: LayoutDashboard, flag: null },
-  { href: '/hiring',       label: 'Hiring',       icon: Briefcase,       flag: 'hiring', sub: '/hiring/analytics' },
-  { href: '/friction-lens', label: 'Friction Lens', icon: Gauge,          flag: 'friction_lens' },
-  { href: '/bd',           label: 'BD Leads',     icon: Target,          flag: null },
-  { href: '/lead',         label: 'LEAD',         icon: BookOpen,        flag: 'lead' },
-  { href: '/protect',      label: 'PROTECT',      icon: Users,           flag: 'protect' },
-  { href: '/documents',    label: 'Documents',    icon: FolderOpen,      flag: 'documents' },
-  { href: '/actions',      label: 'Actions',      icon: Bell,            flag: null },
-  { href: '/roadmap',      label: 'Roadmap',      icon: Map,             flag: null },
-  { href: '/compliance',   label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
-  { href: '/metrics',      label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
-  { href: '/benchmarks',   label: 'Benchmarks',   icon: PoundSterling,   flag: 'benchmarks' },
-  { href: '/reports',      label: 'Reports',      icon: BarChart3,       flag: 'reports' },
-  { href: '/learning',     label: 'Learning',     icon: BookOpen,        flag: 'learning' },
-  { href: '/support',      label: 'Support',      icon: LifeBuoy,        flag: 'support' },
+  { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard, flag: null },
+  { href: '/hiring',     label: 'Hiring',       icon: Briefcase,       flag: 'hiring', sub: '/hiring/analytics' },
+  { href: '/friction-lens', label: 'Friction Lens', icon: Gauge,        flag: 'friction_lens' },
+  { href: '/lead',       label: 'LEAD',         icon: BookOpen,        flag: 'lead' },
+  { href: '/protect',    label: 'PROTECT',      icon: Users,           flag: 'protect' },
+  { href: '/documents',  label: 'Documents',    icon: FolderOpen,      flag: 'documents' },
+  { href: '/actions',    label: 'Actions',      icon: Bell,            flag: null },
+  { href: '/roadmap',    label: 'Roadmap',      icon: Map,             flag: null },
+  { href: '/compliance', label: 'Compliance',   icon: ShieldCheck,     flag: 'compliance' },
+  { href: '/metrics',    label: 'Metrics',      icon: TrendingUp,      flag: 'metrics' },
+  { href: '/benchmarks', label: 'Benchmarks',   icon: PoundSterling,   flag: 'benchmarks' },
+  { href: '/reports',    label: 'Reports',      icon: BarChart3,       flag: 'reports' },
+  { href: '/learning',   label: 'Learning',     icon: BookOpen,        flag: 'learning' },
+  { href: '/bd-leads',   label: 'BD Leads',     icon: Target,          flag: 'bd_pipeline' },
+  { href: '/support',    label: 'Support',      icon: LifeBuoy,        flag: 'support' },
 ];
 
 interface Props {

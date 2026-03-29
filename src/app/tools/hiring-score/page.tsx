@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Hiring Score | Diagnose Your Hiring Problems | The People System',
   description:
     'Find out exactly where your hiring is breaking down. Get your Hiring Score in under 3 minutes: instant results, no fluff. Free diagnostic from The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/tools/hiring-score' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/tools/hiring-score' },
 };
 
 export default function HiringScorePage() {

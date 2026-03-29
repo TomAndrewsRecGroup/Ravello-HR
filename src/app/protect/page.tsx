@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'PROTECT Services | HR Foundations and Compliance | The People System',
   description: 'Five PROTECT packages: Essentials, Core, Partner, Enterprise, Transaction. Contracts, handbooks, compliance, Employment Rights Bill readiness: The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/protect' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/protect' },
 };
 
 const packages = [

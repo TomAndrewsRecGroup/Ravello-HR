@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Policy and Contract Healthcheck | The People System',
   description:
     'Free Policy and Contract Healthcheck. Find your HR documentation gaps and get a prioritised fix list: before something goes wrong. From The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/tools/policy-healthcheck' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/tools/policy-healthcheck' },
 };
 
 export default function PolicyHealthcheckPage() {

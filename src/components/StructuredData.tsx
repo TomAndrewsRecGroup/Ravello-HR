@@ -3,8 +3,8 @@ export default function StructuredData() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'The People System',
-    url: 'https://ravellohr.co.uk',
-    logo: 'https://ravellohr.co.uk/logo.png',
+    url: 'https://thepeoplesystem.co.uk',
+    logo: 'https://thepeoplesystem.co.uk/logo.png',
     description:
       'The People System delivers HIRE, LEAD, and PROTECT: embedded recruitment, fractional HR leadership, and compliance foundations for founder-led and PE-backed businesses.',
     founders: [
@@ -15,18 +15,18 @@ export default function StructuredData() {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      url: 'https://ravellohr.co.uk/book',
+      url: 'https://thepeoplesystem.co.uk/book',
     },
   };
 
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    url: 'https://ravellohr.co.uk',
+    url: 'https://thepeoplesystem.co.uk',
     name: 'The People System',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://ravellohr.co.uk/playbook?q={search_term_string}',
+      target: 'https://thepeoplesystem.co.uk/playbook?q={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   };
@@ -64,7 +64,7 @@ export default function StructuredData() {
         name: 'How do I book a free call with The People System?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Book directly at ravellohr.co.uk/book. Three routes: I need help hiring, I need HR foundations, or I\u2019m going through a deal. No pitch. No obligation.',
+          text: 'Book directly at thepeoplesystem.co.uk/book. Three routes: I need help hiring, I need HR foundations, or I\u2019m going through a deal. No pitch. No obligation.',
         },
       },
     ],

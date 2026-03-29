@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'HIRE Services | Embedded Recruitment and Talent Strategy | The People System',
   description: 'Four HIRE packages: Hire Foundations, Hire Optimiser, Hire Embedded, Hire Build. Embedded recruitment delivery with Friction Lens role scoring: The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/hire' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/hire' },
 };
 
 const packages = [

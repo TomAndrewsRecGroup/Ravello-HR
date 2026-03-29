@@ -1,33 +1,59 @@
 -- ══════════════════════════════════════════════════════════════
 --  Migration 013: Partner API Keys
---  Stores IvyLens ivl_ partner keys per company.
---  Used to call GET /api/partner/bd/leads on the IvyLens API.
+--  Allows admin to create API keys for partner integrations
+--  (e.g. IvyLens BD pipeline, role analysis, assessments)
 -- ══════════════════════════════════════════════════════════════
+
+-- ── Partner API Keys ─────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS partner_api_keys (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  company_id   UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  name         TEXT NOT NULL DEFAULT 'IvyLens Partner Key',
-  key_value    TEXT NOT NULL,
-  permissions  TEXT[] NOT NULL DEFAULT '{}',
-  created_by   UUID REFERENCES auth.users(id),
+  label        TEXT NOT NULL,                  -- human-readable name, e.g. "IvyLens Production"
+  key_hash     TEXT NOT NULL,                  -- SHA-256 hash of the ivl_ prefixed key
+  key_prefix   TEXT NOT NULL,                  -- first 8 chars for display, e.g. "ivl_a3f8"
+  permissions  TEXT[] NOT NULL DEFAULT '{}',   -- e.g. {'bd_pipeline','role_analyze','company_lens'}
+  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
   last_used_at TIMESTAMPTZ,
+  created_by   UUID REFERENCES profiles(id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   revoked_at   TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_partner_api_keys_company ON partner_api_keys(company_id);
+CREATE INDEX IF NOT EXISTS idx_partner_api_keys_hash   ON partner_api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_partner_api_keys_active ON partner_api_keys(is_active);
 
+-- RLS — admin only
 ALTER TABLE partner_api_keys ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "client_partner_keys_select" ON partner_api_keys
-  FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
+CREATE POLICY "ravello_partner_api_keys" ON partner_api_keys
+  FOR ALL USING (is_ravello_staff());
 
-CREATE POLICY "client_partner_keys_insert" ON partner_api_keys
-  FOR INSERT WITH CHECK (company_id = my_company_id());
+-- ── BD Leads View ────────────────────────────────────────────
+-- Materialises the leads format that partners pull via the API:
+-- Each lead = { company_name, company_location, roles[], sent_at }
 
-CREATE POLICY "client_partner_keys_update" ON partner_api_keys
-  FOR UPDATE USING (company_id = my_company_id() OR is_ravello_staff());
-
-CREATE POLICY "client_partner_keys_delete" ON partner_api_keys
-  FOR DELETE USING (company_id = my_company_id() OR is_ravello_staff());
+CREATE OR REPLACE VIEW bd_leads_view AS
+SELECT
+  bc.id            AS company_id,
+  bc.company_name,
+  bc.notes         AS company_location,
+  bc.status,
+  bc.last_seen_at  AS sent_at,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'role_title',    r.role_title,
+        'salary_text',   r.salary_text,
+        'location',      r.location,
+        'working_model', r.working_model,
+        'source_board',  r.source_board,
+        'date_posted',   r.date_posted
+      )
+    ) FILTER (WHERE r.id IS NOT NULL),
+    '[]'::json
+  ) AS roles
+FROM bd_companies bc
+LEFT JOIN bd_scanned_roles r ON r.company_id = bc.id AND r.still_active = TRUE
+WHERE bc.status IN ('prospect', 'contacted')
+GROUP BY bc.id, bc.company_name, bc.notes, bc.status, bc.last_seen_at
+ORDER BY bc.last_seen_at DESC;

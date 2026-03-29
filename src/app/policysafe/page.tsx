@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Use
 export const metadata: Metadata = {
   title: 'PROTECT | HR Foundations and Compliance | The People System',
   description: 'Get your HR foundations right before something goes wrong. Contracts, handbooks, compliance, Employment Rights Bill readiness: The People System.',
-  alternates: { canonical: 'https://ravellohr.co.uk/policysafe' },
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/policysafe' },
 };
 
 const risks = [
