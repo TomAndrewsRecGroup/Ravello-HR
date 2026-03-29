@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS partner_api_keys (
   label        TEXT NOT NULL,                  -- human-readable name, e.g. "IvyLens Production"
   key_hash     TEXT NOT NULL,                  -- SHA-256 hash of the ivl_ prefixed key
   key_prefix   TEXT NOT NULL,                  -- first 8 chars for display, e.g. "ivl_a3f8"
-  permissions  TEXT[] NOT NULL DEFAULT '{}',   -- e.g. {'bd_pipeline','role_analysis','company_assessment'}
+  permissions  TEXT[] NOT NULL DEFAULT '{}',   -- e.g. {'bd_pipeline','role_analyze','company_lens'}
   is_active    BOOLEAN NOT NULL DEFAULT TRUE,
   last_used_at TIMESTAMPTZ,
   created_by   UUID REFERENCES profiles(id),

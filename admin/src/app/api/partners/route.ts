@@ -6,7 +6,7 @@ function hashKey(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-const VALID_PERMISSIONS = ['bd_pipeline', 'role_analysis', 'company_assessment'] as const;
+const VALID_PERMISSIONS = ['bd_pipeline', 'role_analyze', 'company_lens'] as const;
 
 // GET — list all API keys (hashes hidden, only prefix + metadata)
 export async function GET() {

@@ -17,8 +17,8 @@ interface ApiKey {
 
 const ALL_PERMISSIONS = [
   { value: 'bd_pipeline', label: 'BD Pipeline', description: 'Fetch BD leads via GET /api/partner/bd/leads' },
-  { value: 'role_analysis', label: 'Role Analysis', description: 'Analyse JDs via POST /api/partner/roles/analyze' },
-  { value: 'company_assessment', label: 'Company Assessment', description: 'Submit assessments via POST /api/partner/company/assessment' },
+  { value: 'role_analyze', label: 'Role Analysis', description: 'Analyse JDs via POST /api/partner/roles/analyze' },
+  { value: 'company_lens', label: 'Company Lens', description: 'Submit assessments via POST /api/partner/company/assessment' },
 ] as const;
 
 export default function PartnersClient() {
@@ -247,14 +247,14 @@ export default function PartnersClient() {
             <code className="px-2 py-0.5 rounded text-[10px] font-mono font-bold" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>POST</code>
             <div>
               <code className="font-mono">/api/partner/roles/analyze</code>
-              <p className="mt-0.5">Analyse a JD. Send <code>{`{ "jd_text": "..." }`}</code>. Requires <strong>role_analysis</strong> permission.</p>
+              <p className="mt-0.5">Analyse a JD. Send <code>{`{ "jd_text": "..." }`}</code>. Requires <strong>role_analyze</strong> permission.</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <code className="px-2 py-0.5 rounded text-[10px] font-mono font-bold" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>POST</code>
             <div>
               <code className="font-mono">/api/partner/company/assessment</code>
-              <p className="mt-0.5">Submit company assessment. Requires <strong>company_assessment</strong> permission.</p>
+              <p className="mt-0.5">Submit company assessment. Requires <strong>company_lens</strong> permission.</p>
             </div>
           </div>
         </div>

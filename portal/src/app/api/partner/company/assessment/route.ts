@@ -3,14 +3,14 @@ import { authenticatePartnerKey } from '@/lib/partnerAuth';
 import { ivylensRequest } from '@/lib/ivylens';
 
 // POST /api/partner/company/assessment
-// Auth: Bearer ivl_... with company_assessment permission
+// Auth: Bearer ivl_... with company_lens permission
 // Body: { company_id?, form_responses, employee_count? }
 // Proxies to IvyLens /api/partner/company/assessment and returns the result.
 
 export async function POST(req: NextRequest) {
   const auth = await authenticatePartnerKey(
     req.headers.get('authorization'),
-    'company_assessment',
+    'company_lens',
   );
   if (!auth.valid) {
     return NextResponse.json({ error: auth.error }, { status: auth.status ?? 401 });

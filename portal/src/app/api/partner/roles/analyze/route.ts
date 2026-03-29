@@ -4,14 +4,14 @@ import { ivylensRequest } from '@/lib/ivylens';
 import { scoreFriction } from '@/lib/frictionLens';
 
 // POST /api/partner/roles/analyze
-// Auth: Bearer ivl_... with role_analysis permission
+// Auth: Bearer ivl_... with role_analyze permission
 // Body: { jd_text: string }
 // Proxies to IvyLens /api/partner/roles/analyze, falls back to local heuristic.
 
 export async function POST(req: NextRequest) {
   const auth = await authenticatePartnerKey(
     req.headers.get('authorization'),
-    'role_analysis',
+    'role_analyze',
   );
   if (!auth.valid) {
     return NextResponse.json({ error: auth.error }, { status: auth.status ?? 401 });
