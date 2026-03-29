@@ -36,5 +36,5 @@ CREATE POLICY "read_benchmarks" ON salary_benchmarks
 -- Only admin can write
 CREATE POLICY "admin_benchmarks" ON salary_benchmarks
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin', 'ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
   );

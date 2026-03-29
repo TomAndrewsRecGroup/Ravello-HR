@@ -143,28 +143,28 @@ ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
 
 -- Client Services
 CREATE POLICY "client_services_select" ON client_services FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_client_services" ON client_services FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_client_services" ON client_services FOR ALL
+  USING (is_tps_staff());
 
 -- Actions
 CREATE POLICY "client_actions_select" ON actions FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_actions_update" ON actions FOR UPDATE
   USING (company_id = my_company_id());
-CREATE POLICY "ravello_actions" ON actions FOR ALL
-  USING (is_ravello_staff());
+CREATE POLICY "tps_actions" ON actions FOR ALL
+  USING (is_tps_staff());
 
 -- Milestones
 CREATE POLICY "client_milestones_select" ON milestones FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_milestones" ON milestones FOR ALL
-  USING (is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_milestones" ON milestones FOR ALL
+  USING (is_tps_staff());
 
 -- Service Requests
 CREATE POLICY "client_service_requests_select" ON service_requests FOR SELECT
-  USING (company_id = my_company_id() OR is_ravello_staff());
+  USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_service_requests_insert" ON service_requests FOR INSERT
   WITH CHECK (company_id = my_company_id());
-CREATE POLICY "ravello_service_requests" ON service_requests FOR ALL
-  USING (is_ravello_staff());
+CREATE POLICY "tps_service_requests" ON service_requests FOR ALL
+  USING (is_tps_staff());

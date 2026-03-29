@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
---  Ravello — Initial Database Schema
+--  TPS — Initial Database Schema
 --  Run this in Supabase SQL Editor to set up the full schema.
 -- ══════════════════════════════════════════════════════════════
 
@@ -7,7 +7,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Enums ────────────────────────────────────────────────────
-CREATE TYPE user_role      AS ENUM ('client_admin','client_user','ravello_admin','ravello_staff');
+CREATE TYPE user_role      AS ENUM ('client_admin','client_user','tps_admin','tps_recruiter');
 CREATE TYPE hiring_stage   AS ENUM ('submitted','in_progress','shortlist_ready','interview','offer','filled','cancelled');
 CREATE TYPE ticket_status  AS ENUM ('open','in_progress','resolved','closed');
 CREATE TYPE ticket_priority AS ENUM ('low','normal','high','urgent');
@@ -198,59 +198,59 @@ RETURNS UUID LANGUAGE sql STABLE AS $$
   SELECT company_id FROM profiles WHERE id = auth.uid();
 $$;
 
--- Helper: is Ravello staff?
-CREATE OR REPLACE FUNCTION is_ravello_staff()
+-- Helper: is TPS staff?
+CREATE OR REPLACE FUNCTION is_tps_staff()
 RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
-  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'));
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'));
 $$;
 
--- Companies: clients see only their company; Ravello sees all
-CREATE POLICY "client_companies"     ON companies FOR SELECT USING (id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_manage_companies" ON companies FOR ALL    USING (is_ravello_staff());
+-- Companies: clients see only their company; TPS sees all
+CREATE POLICY "client_companies"     ON companies FOR SELECT USING (id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_manage_companies" ON companies FOR ALL    USING (is_tps_staff());
 
--- Profiles: users see their own + company members; Ravello sees all
-CREATE POLICY "own_profile"          ON profiles FOR SELECT USING (id = auth.uid() OR company_id = my_company_id() OR is_ravello_staff());
+-- Profiles: users see their own + company members; TPS sees all
+CREATE POLICY "own_profile"          ON profiles FOR SELECT USING (id = auth.uid() OR company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "update_own_profile"   ON profiles FOR UPDATE USING (id = auth.uid());
-CREATE POLICY "ravello_profiles"     ON profiles FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_profiles"     ON profiles FOR ALL    USING (is_tps_staff());
 
--- Requisitions: company-scoped or Ravello
-CREATE POLICY "client_requisitions"  ON requisitions FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
+-- Requisitions: company-scoped or TPS
+CREATE POLICY "client_requisitions"  ON requisitions FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_insert_req"    ON requisitions FOR INSERT WITH CHECK (company_id = my_company_id());
-CREATE POLICY "ravello_requisitions" ON requisitions FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_requisitions" ON requisitions FOR ALL    USING (is_tps_staff());
 
--- Candidates: company-scoped + approved_for_client filter (enforced in app) or Ravello
-CREATE POLICY "client_candidates"    ON candidates FOR SELECT USING (company_id = my_company_id() AND approved_for_client = TRUE OR is_ravello_staff());
+-- Candidates: company-scoped + approved_for_client filter (enforced in app) or TPS
+CREATE POLICY "client_candidates"    ON candidates FOR SELECT USING (company_id = my_company_id() AND approved_for_client = TRUE OR is_tps_staff());
 CREATE POLICY "client_update_cand"   ON candidates FOR UPDATE USING (company_id = my_company_id());
-CREATE POLICY "ravello_candidates"   ON candidates FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_candidates"   ON candidates FOR ALL    USING (is_tps_staff());
 
 -- Documents: company-scoped
-CREATE POLICY "client_documents"     ON documents FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_documents"    ON documents FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "client_documents"     ON documents FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_documents"    ON documents FOR ALL    USING (is_tps_staff());
 
 -- Tickets: company-scoped
-CREATE POLICY "client_tickets"       ON tickets FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
+CREATE POLICY "client_tickets"       ON tickets FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
 CREATE POLICY "client_insert_ticket" ON tickets FOR INSERT WITH CHECK (company_id = my_company_id());
 CREATE POLICY "client_update_ticket" ON tickets FOR UPDATE USING (company_id = my_company_id() AND status NOT IN ('resolved','closed'));
-CREATE POLICY "ravello_tickets"      ON tickets FOR ALL    USING (is_ravello_staff());
+CREATE POLICY "tps_tickets"      ON tickets FOR ALL    USING (is_tps_staff());
 
--- Ticket messages: visible to company or Ravello (no internal notes to clients)
+-- Ticket messages: visible to company or TPS (no internal notes to clients)
 CREATE POLICY "client_messages"      ON ticket_messages FOR SELECT USING (
   is_internal = FALSE AND
   EXISTS(SELECT 1 FROM tickets t WHERE t.id = ticket_id AND t.company_id = my_company_id())
-  OR is_ravello_staff()
+  OR is_tps_staff()
 );
 CREATE POLICY "client_insert_msg"    ON ticket_messages FOR INSERT WITH CHECK (
   EXISTS(SELECT 1 FROM tickets t WHERE t.id = ticket_id AND t.company_id = my_company_id())
 );
-CREATE POLICY "ravello_messages"     ON ticket_messages FOR ALL USING (is_ravello_staff());
+CREATE POLICY "tps_messages"     ON ticket_messages FOR ALL USING (is_tps_staff());
 
 -- Reports: company-scoped
-CREATE POLICY "client_reports"       ON reports FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_reports"      ON reports FOR ALL USING (is_ravello_staff());
+CREATE POLICY "client_reports"       ON reports FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_reports"      ON reports FOR ALL USING (is_tps_staff());
 
 -- Compliance items: company-scoped
-CREATE POLICY "client_compliance"    ON compliance_items FOR SELECT USING (company_id = my_company_id() OR is_ravello_staff());
-CREATE POLICY "ravello_compliance"   ON compliance_items FOR ALL USING (is_ravello_staff());
+CREATE POLICY "client_compliance"    ON compliance_items FOR SELECT USING (company_id = my_company_id() OR is_tps_staff());
+CREATE POLICY "tps_compliance"   ON compliance_items FOR ALL USING (is_tps_staff());
 
 -- ══════════════════════════════════════════════════════════════
 --  Storage bucket

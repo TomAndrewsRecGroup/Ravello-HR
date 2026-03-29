@@ -17,7 +17,7 @@ export type FrictionLevel  = 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
 export type TicketStatus   = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type DocCategory    = 'contract' | 'policy' | 'letter' | 'report' | 'other';
-export type UserRole       = 'client_admin' | 'client_user' | 'ravello_admin' | 'ravello_staff';
+export type UserRole       = 'client_admin' | 'client_user' | 'tps_admin' | 'tps_recruiter';
 
 // ─── Friction Lens Types ──────────────────────────────────────────────────────
 // Matches IvyLens API response: POST /api/role/analyze → { role, friction }

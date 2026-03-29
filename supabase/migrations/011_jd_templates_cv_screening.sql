@@ -26,9 +26,9 @@ CREATE TRIGGER jd_templates_updated_at
 
 ALTER TABLE jd_templates ENABLE ROW LEVEL SECURITY;
 
--- Only ravello staff can manage templates
-CREATE POLICY "ravello_jd_templates" ON jd_templates
-  FOR ALL USING (is_ravello_staff());
+-- Only TPS staff can manage templates
+CREATE POLICY "tps_jd_templates" ON jd_templates
+  FOR ALL USING (is_tps_staff());
 
 -- ── CV Screening fields on candidates ────────────────────────
 

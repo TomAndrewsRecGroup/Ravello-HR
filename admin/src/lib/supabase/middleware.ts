@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole) {
-      if (!['ravello_admin', 'ravello_recruiter'].includes(cachedRole)) {
+      if (!['tps_admin', 'tps_recruiter'].includes(cachedRole)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);
@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       const role = (profile as any)?.role ?? '';
-      if (!['ravello_admin', 'ravello_recruiter'].includes(role)) {
+      if (!['tps_admin', 'tps_recruiter'].includes(role)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);

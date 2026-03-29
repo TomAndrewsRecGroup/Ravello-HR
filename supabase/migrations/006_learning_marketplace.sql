@@ -57,7 +57,7 @@ CREATE POLICY "read_published_content" ON learning_content
 -- Admin can do everything
 CREATE POLICY "admin_learning_content" ON learning_content
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
 -- Clients can read their own purchases
@@ -75,5 +75,5 @@ CREATE POLICY "client_purchases_insert" ON learning_purchases
 -- Admin full access to purchases
 CREATE POLICY "admin_purchases" ON learning_purchases
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_staff'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
