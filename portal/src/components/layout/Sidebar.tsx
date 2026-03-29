@@ -62,7 +62,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
         }}
       />
 
-      {/* Logo — more breathing room */}
+      {/* Logo */}
       <div
         className="relative flex items-center gap-3 px-5 py-5"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
@@ -155,6 +155,10 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
           <Link href="/settings" className={`nav-link ${path === '/settings' ? 'active' : ''}`}>
             <Settings size={15} />
             <span>Settings</span>
+          </Link>
+          <Link href="/partners" className={`nav-link ${path === '/partners' ? 'active' : ''}`}>
+            <KeyRound size={15} />
+            <span>Partners</span>
           </Link>
         </div>
       </nav>

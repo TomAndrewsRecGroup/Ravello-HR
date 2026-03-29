@@ -1,6 +1,6 @@
-// ─── The People Office — Portal Database Types ───────────────────────────────
+// ─── The People Office — Portal Database Types ───────────────────────────────────────────
 // Covers migration 001 (base schema) + 002 (friction score + new tables)
-// + 003 (BD intelligence)
+// + 003 (BD intelligence) + 013 (partner API keys)
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
@@ -74,7 +74,7 @@ export interface FeatureFlags {
   [key: string]: boolean;
 }
 
-// ─── Company Friction Lens Types ────────────────────────────────────────────
+// ─── Company Friction Lens Types ────────────────────────────────────────────────
 
 export type FrictionBand = 'Low Friction' | 'Moderate Friction' | 'High Friction';
 export type EmployeeBand = 'micro' | 'small' | 'mid' | 'large';
@@ -354,7 +354,19 @@ export interface BDScannedRole {
   raw_data:      Json | null;
 }
 
-// ─── Database shape ───────────────────────────────────────────────────────────
+export interface PartnerApiKey {
+  id:           string;
+  created_at:   string;
+  company_id:   string;
+  name:         string;
+  key_value:    string;
+  permissions:  string[];
+  created_by:   string | null;
+  last_used_at: string | null;
+  revoked_at:   string | null;
+}
+
+// ─── Database shape ───────────────────────────────────────────────────────────────
 
 export interface Database {
   public: {
@@ -374,6 +386,7 @@ export interface Database {
       service_requests: { Row: ServiceRequest;  Insert: Partial<ServiceRequest>;  Update: Partial<ServiceRequest>; };
       bd_companies:     { Row: BDCompany;       Insert: Partial<BDCompany>;       Update: Partial<BDCompany>; };
       bd_scanned_roles: { Row: BDScannedRole;   Insert: Partial<BDScannedRole>;   Update: Partial<BDScannedRole>; };
+      partner_api_keys: { Row: PartnerApiKey;   Insert: Partial<PartnerApiKey>;   Update: Partial<PartnerApiKey>; };
     };
     Views:   Record<string, never>;
     Functions: Record<string, never>;
