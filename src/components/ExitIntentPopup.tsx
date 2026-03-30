@@ -80,7 +80,7 @@ export default function ExitIntentPopup() {
                 <Download size={24} style={{ color: 'var(--brand-purple)' }} />
               </div>
 
-              <p className="eyebrow mb-4">Free guide — takes 5 minutes to read</p>
+              <p className="eyebrow mb-4">Free guide: takes 5 minutes to read</p>
               <h2
                 className="font-bold mb-4"
                 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}
@@ -88,7 +88,7 @@ export default function ExitIntentPopup() {
                 The exact 4-step framework that stops roles reopening
               </h2>
               <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--ink-soft)' }}>
-                Every role that reopens costs 3× what a structured hire would. This free guide shows you the exact pattern — and the 4-step process 100+ UK businesses have used to fix it for good.
+                Every role that reopens costs 3x what a structured hire would. This free guide shows you the exact pattern, plus the 4-step process 100+ UK businesses have used to fix it for good.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-3">

@@ -155,7 +155,7 @@ export default function ProtectPage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">PROTECT<br /><span className="text-gradient">packages</span></h2>
+            <h2 className="font-display section-title mb-4">PROTECT<br /><span className="text-gradient">packages</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               From a fast one-off essentials fix to fully managed ongoing compliance. All written by Lucy, not by a template generator.
             </p>
@@ -237,7 +237,7 @@ export default function ProtectPage() {
       {/* Audit CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Start with<br /><span className="text-gradient">a free HR audit</span></h2>
+          <h2 className="font-display section-title mb-4">Start with<br /><span className="text-gradient">a free HR audit</span></h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Thirty minutes with Lucy. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
           </p>

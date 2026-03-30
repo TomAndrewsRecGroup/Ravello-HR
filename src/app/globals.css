@@ -173,19 +173,17 @@
 
   /* Section headings — editorial scale */
   .section-title {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-    font-size: clamp(2.2rem, 4.5vw, 3.4rem);
-    font-weight: 300;
-    letter-spacing: -0.03em;
-    line-height: 1.06;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
     color: var(--ink);
   }
   .section-title-light {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-    font-size: clamp(2.2rem, 4.5vw, 3.4rem);
-    font-weight: 300;
-    letter-spacing: -0.03em;
-    line-height: 1.06;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
     color: #fff;
   }
 
@@ -530,6 +528,13 @@
     box-shadow: -4px 0 36px rgba(10,15,30,0.08);
   }
 
+  /* Global focus ring — all interactive elements */
+  :focus-visible {
+    outline: 2px solid var(--brand-purple);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   .focus-ring:focus-visible {
     outline: 2px solid var(--brand-purple);
     outline-offset: 2px;
@@ -538,6 +543,17 @@
 
   .img-cover  { @apply w-full h-full object-cover; }
   .img-contain { @apply w-full h-full object-contain; }
+}
+
+/* ═══════════════════════════════════════════════════
+   REDUCED MOTION — WCAG 2.1 AA compliance
+═══════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════

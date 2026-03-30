@@ -91,7 +91,7 @@ export default function DealReadyPeoplePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">The six people risks that derail deals</h2>
+            <h2 className="font-display section-title mb-4">The six people risks that derail deals</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Most of these are invisible until after completion. By then they belong to you.
             </p>
@@ -112,7 +112,7 @@ export default function DealReadyPeoplePage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="text-center mb-12">
-            <h2 className="section-title mb-4">What we do at each stage</h2>
+            <h2 className="font-display section-title mb-4">What we do at each stage</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-[18px] p-8" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 8px rgba(13,21,53,0.04)' }}>
@@ -151,7 +151,7 @@ export default function DealReadyPeoplePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-narrow">
           <div className="text-center mb-10">
-            <h2 className="section-title mb-4">Quick risk pre-check</h2>
+            <h2 className="font-display section-title mb-4">Quick risk pre-check</h2>
             <p className="text-lg" style={{ color: 'var(--ink-soft)' }}>
               Answer these four questions. If any apply, you need people advisory before you proceed.
             </p>
@@ -178,7 +178,7 @@ export default function DealReadyPeoplePage() {
       {/* CTA: dark */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title-light mb-4">In a deal or planning one?</h2>
+          <h2 className="font-display section-title-light mb-4">In a deal or planning one?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
             The right time to bring in people advisory is before heads of terms are signed. If you are already past that point, the second best time is right now.
           </p>

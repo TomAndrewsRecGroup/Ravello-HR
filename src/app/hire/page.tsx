@@ -149,7 +149,7 @@ export default function HirePage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">HIRE<br /><span className="text-gradient">packages</span></h2>
+            <h2 className="font-display section-title mb-4">HIRE<br /><span className="text-gradient">packages</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               All packages include Friction Lens scoring as standard. No tables: here is what each one means in practice.
             </p>
@@ -231,7 +231,7 @@ export default function HirePage() {
       {/* Not sure section */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-4">Not sure<br /><span className="text-gradient">which package fits?</span></h2>
+          <h2 className="font-display section-title mb-4">Not sure<br /><span className="text-gradient">which package fits?</span></h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Start with a hiring audit. Tom will look at what you are hiring for, how the current process is working, run a Friction Lens score on a live role, and tell you exactly which engagement makes sense.
           </p>

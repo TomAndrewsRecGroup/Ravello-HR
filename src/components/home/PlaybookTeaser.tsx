@@ -43,7 +43,7 @@ export default function PlaybookTeaser() {
               />
               Free resources
             </p>
-            <h2 className="section-title">The People System Playbook</h2>
+            <h2 className="font-display section-title">The People System Playbook</h2>
           </div>
           <Link
             href="/playbook"

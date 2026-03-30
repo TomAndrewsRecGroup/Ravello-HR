@@ -144,7 +144,7 @@ export default function FrictionLensPage() {
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">Five dimensions. One score.</h2>
+            <h2 className="font-display section-title mb-4">Five dimensions. One score.</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Every role is assessed across five areas. Each one scored independently. Combined into a single Friction Score with specific, actionable recommendations attached.
             </p>
@@ -192,7 +192,7 @@ export default function FrictionLensPage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">What the score output looks like</h2>
+            <h2 className="font-display section-title mb-4">What the score output looks like</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Four levels. Each one comes with a written summary of which dimensions are driving the score and specific recommended changes: not generic advice.
             </p>
@@ -220,7 +220,7 @@ export default function FrictionLensPage() {
       {/* How it works in practice */}
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-narrow">
-          <h2 className="section-title mb-8">How it works in a HIRE engagement</h2>
+          <h2 className="font-display section-title mb-8">How it works in a HIRE engagement</h2>
           <div className="space-y-5">
             {[
               { step: '01', title: 'Role brief received', body: 'Tom receives the initial brief: either written or via a scoping call. Job title, location, salary range, key requirements, working model, and intended timeline.' },
@@ -249,7 +249,7 @@ export default function FrictionLensPage() {
       {/* CTA: dark */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title-light mb-4">Ready to see it on a live role?</h2>
+          <h2 className="font-display section-title-light mb-4">Ready to see it on a live role?</h2>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Start with a hiring audit. Tom will run a Friction Lens score on one of your current or upcoming roles and walk you through the output. Free. No obligation.
           </p>

@@ -66,7 +66,7 @@ export default function ProofSection() {
               />
               Proof of work
             </p>
-            <h2 className="section-title-light mb-5">
+            <h2 className="font-display section-title-light mb-5">
               Results<br />
               <span style={{
                 background: 'var(--gradient)',
@@ -195,7 +195,7 @@ export default function ProofSection() {
               &ldquo;Not HR from a textbook. People results from operators who have done the real work.&rdquo;
             </p>
             <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Lucy &amp; Tom — The People System
+              Lucy &amp; Tom, The People System
             </p>
           </div>
         </div>

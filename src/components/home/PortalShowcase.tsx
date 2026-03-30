@@ -115,7 +115,7 @@ function PortalContent() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
                 <p style={{ fontSize: 8.5, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
-                  Friction Lens — Role
+                  Friction Lens: Role
                 </p>
                 <p style={{ fontSize: 12.5, fontWeight: 700, color: '#070B1D' }}>Senior Developer</p>
                 <p style={{ fontSize: 9.5, color: '#748099' }}>Product Engineering · London (Hybrid)</p>
@@ -137,14 +137,14 @@ function PortalContent() {
               ))}
             </div>
             <p style={{ fontSize: 9, color: '#748099', marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(10,15,30,0.05)' }}>
-              Recommendation: Review salary band — below market by ~12% in current London market
+              Recommendation: Review salary band. Below market by ~12% in current London market
             </p>
           </div>
 
           {/* Friction Lens — Company */}
           <div style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
             <p style={{ fontSize: 8.5, fontWeight: 700, color: '#3B6FFF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Friction Lens — Company
+              Friction Lens: Company
             </p>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <div style={{ position: 'relative', width: 80, height: 80 }}>
@@ -308,7 +308,7 @@ export default function PortalShowcase() {
             Client Portal
           </p>
           <h2
-            className="section-title mb-4"
+            className="font-display section-title mb-4"
             style={{
               maxWidth: 1200,
               margin: '0 auto 16px',
@@ -322,7 +322,7 @@ export default function PortalShowcase() {
           </h2>
           <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)', maxWidth: 500, margin: '0 auto' }}>
             Every client gets a dedicated portal. Hiring pipeline, compliance tracker,
-            documents, HR analytics — all real-time. No chasing updates.
+            documents, HR analytics. All real-time. No chasing updates.
           </p>
         </div>
 

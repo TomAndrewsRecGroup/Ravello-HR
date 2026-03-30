@@ -127,7 +127,7 @@ export default function FounderSection() {
               />
               Why The People System
             </p>
-            <h2 className="section-title mb-5">
+            <h2 className="font-display section-title mb-5">
               Two specialists.<br />
               <span className="text-gradient">One partner. No handoffs.</span>
             </h2>

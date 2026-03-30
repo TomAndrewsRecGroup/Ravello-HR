@@ -67,9 +67,9 @@ const CARDS: CardDef[] = [
     accentBg: 'rgba(59,111,255,0.09)',
     shadowColor: 'rgba(59,111,255,0.25)',
     points: [
-      'Friction Lens™ — know the risk before you post',
+      'Friction Lens™: know the risk before you post',
       'Full pipeline visibility in your client portal',
-      'Cut agency spend by 40–60% within 12 months',
+      'Cut agency spend by 40-60% within 12 months',
       'Salary benchmarking vs live market data',
     ],
     ctaLabel: 'See the HIRE system',
@@ -101,9 +101,9 @@ const CARDS: CardDef[] = [
     desc: 'Compliance, employee documents, absence tracking. Stay protected and ahead of every risk.',
     href: '/protect',
     large: false,
-    accentColor: '#14B8A6',
-    accentBg: 'rgba(20,184,166,0.09)',
-    shadowColor: 'rgba(20,184,166,0.25)',
+    accentColor: '#1848CC',
+    accentBg: 'rgba(24,72,204,0.09)',
+    shadowColor: 'rgba(24,72,204,0.25)',
     points: [
       'Live compliance tracker with overdue alerts',
       'Employee document storage and version control',
@@ -478,24 +478,25 @@ export default function Hero() {
               <h1
                 className="font-display mb-5"
                 style={{
-                  fontSize: 'clamp(3.6rem, 7vw, 7rem)',
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
                   fontWeight: 800,
-                  lineHeight: 0.96,
+                  lineHeight: 1.02,
                   letterSpacing: '-0.04em',
                   color: 'var(--ink)',
                 }}
               >
-                <span className="text-gradient">The People System</span>
+                Your People function.<br />
+                <span className="text-gradient">Built properly.</span>
               </h1>
 
               <p className="text-lg leading-relaxed mb-5 max-w-[480px]" style={{ color: 'var(--ink-soft)' }}>
-                Cut agency spend by 40–60%. Get compliant before it costs you.
-                Build the People function your business actually needs — without the
+                Cut agency spend by 40-60%. Get compliant before it costs you.
+                Build the People function your business actually needs, without the
                 full-time headcount.
               </p>
 
               <p className="text-sm leading-relaxed mb-8 max-w-[440px]" style={{ color: 'var(--ink-faint)' }}>
-                For founders and senior leaders at 10–250 person businesses who are
+                For founders and senior leaders at 10-250 person businesses who are
                 done guessing and ready for a proper system. Two senior specialists.
                 One partner. No juniors. No handoffs.
               </p>

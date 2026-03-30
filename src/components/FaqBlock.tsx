@@ -30,7 +30,7 @@ export default function FaqBlock({ title = 'Frequently asked questions', items, 
     >
       <div className="container-narrow">
         {title && (
-          <h2 className="section-title mb-10" style={{ color: ink }}>
+          <h2 className="font-display section-title mb-10" style={{ color: ink }}>
             {title}
           </h2>
         )}

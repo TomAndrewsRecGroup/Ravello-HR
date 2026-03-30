@@ -34,7 +34,7 @@ export default function HotlineSection() {
           Let&rsquo;s talk
         </p>
 
-        <h2 className="section-title mb-6">
+        <h2 className="font-display section-title mb-6">
           One conversation.<br />
           <span className="text-gradient">A clear plan.</span>
         </h2>
@@ -52,7 +52,7 @@ export default function HotlineSection() {
           style={{ color: 'var(--ink-faint)' }}
         >
           Most clients say this is the most useful 30 minutes they&rsquo;ve had on their people
-          function. You leave with 1–3 specific next steps you can act on immediately —
+          function. You leave with 1-3 specific next steps you can act on immediately,
           whether you work with us or not.
         </p>
 
