@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
@@ -20,7 +21,7 @@ const packages = [
       'Monthly strategic HR check-in (60 min)',
       'Ad-hoc advice on people decisions and live situations',
       'Manager guidance on individual cases',
-      'Access to Lucy via email between sessions',
+      'Access to us via email between sessions',
       'Escalation to higher packages where a situation requires it',
     ],
     cta: { label: 'Book a Call', href: '/book' },
@@ -38,14 +39,14 @@ const packages = [
       'Written recommendations and implementation guide',
       'One follow-up review session',
     ],
-    cta: { label: 'Book a Scoping Call', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Lead Partner',
     tag: 'Most popular · embedded fractional HR',
-    price: '£3,000–£4,500/month',
+    price: '£3,000-£4,500/month',
     highlight: true,
-    who: 'For businesses that need a proper people function without the cost of a full-time CPO or HRD. Lucy acts as your fractional People lead: attending leadership team meetings, owning the people agenda, running manager capability work, and building the infrastructure your business needs to scale.',
+    who: 'For businesses that need a proper people function without the cost of a full-time CPO or HRD. We act as your fractional People lead: attending leadership team meetings, owning the people agenda, running manager capability work, and building the infrastructure your business needs to scale.',
     includes: [
       'Weekly leadership team attendance (where relevant)',
       'People strategy development and quarterly roadmap',
@@ -54,23 +55,23 @@ const packages = [
       'Engagement and retention planning',
       'Succession and talent planning (where relevant)',
       'Escalation point for all senior HR matters',
-      'Direct line to Lucy throughout',
+      'Direct line to us throughout',
     ],
-    cta: { label: 'Book a Scoping Call', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Lead Build',
     tag: 'Scale · building your people function',
-    price: '£5,000–£7,500+/month',
+    price: '£5,000-£7,500+/month',
     highlight: false,
-    who: 'For businesses scaling rapidly that need a people function built from scratch or completely rebuilt. Lucy designs the structure, hires into it, builds the processes, and hands over a fully operational people function. This is not a retainer: it is a transformation engagement.',
+    who: 'For businesses scaling rapidly that need a people function built from scratch or completely rebuilt. We design the structure, hire into it, build the processes, and hand over a fully operational people function. This is not a retainer: it is a transformation engagement.',
     includes: [
       'Full people function design and build',
       'HRIS selection and implementation support',
       'HR hire scoping and interview support',
       'Manager capability programme (full cohort)',
       'Culture and values framework',
-      'People strategy aligned to 12–24 month business plan',
+      'People strategy aligned to 12-24 month business plan',
       'Board-level people reporting framework',
       'Transition plan to in-house team',
     ],
@@ -83,44 +84,41 @@ export default function LeadPage() {
     <div className="pt-28">
 
       {/* Hero */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
         <div className="container-wide">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            LEAD: Services and Pricing
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            Four ways to work with Lucy<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              on your people leadership.
-            </span>
-          </h1>
-          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Most growing businesses reach a point where the founder is making too many people decisions, managers are not equipped to lead properly, and the business is scaling without the infrastructure to support it. That is where LEAD starts.
-          </p>
-          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            From a reliable floor of strategic HR advice through to a full fractional CPO engagement: the right model depends on where the biggest gap is sitting. Not sure? A scoping call takes thirty minutes.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Book a Scoping Call <ArrowRight size={16} />
-            </Link>
+          <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                LEAD: Services and Pricing
+              </p>
+              <h1 className="font-display mb-5">
+                Four ways to work with us<br />
+                <span className="text-gradient">on your people leadership.</span>
+              </h1>
+              <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+                Most growing businesses reach a point where the founder is making too many people decisions, managers are not equipped to lead properly, and the business is scaling without the infrastructure to support it. That is where LEAD starts.
+              </p>
+              <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+                From a reliable floor of strategic HR advice through to a full fractional CPO engagement: the right model depends on where the biggest gap is sitting. Not sure? A scoping call takes thirty minutes.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/book" className="btn-gradient">
+                  Book a Call <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=960&h=960&fit=crop&crop=faces" alt="Senior leader in a business setting" fill className="object-cover" sizes="420px" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* What LEAD covers */}
-      <section className="section-sm" style={{ background: 'var(--surface)' }}>
+      <section style={{ padding: '2.5rem 1.5rem' }} className="lg:px-10">
         <div className="container-narrow">
           <div className="rounded-[18px] p-8" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
             <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, fontSize: '1.4rem' }}>
@@ -148,10 +146,10 @@ export default function LeadPage() {
       </section>
 
       {/* Packages */}
-      <section className="section-padding" style={{ background: 'var(--bg)' }}>
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="font-display section-title mb-4">LEAD<br /><span className="text-gradient">packages</span></h2>
+            <h2 className="font-display section-title mb-4">LEAD <span className="text-gradient">packages</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               From a reliable HR floor to a full people function build. No tables: here is what each engagement actually looks like.
             </p>
@@ -231,25 +229,38 @@ export default function LeadPage() {
       </section>
 
       {/* CTA */}
-      <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
-        <div className="container-narrow text-center">
-          <h2 className="font-display section-title mb-4">Not sure<br /><span className="text-gradient">where the biggest gap is?</span></h2>
-          <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-            Book thirty minutes with Lucy. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
-          </p>
-          <Link href="/book" className="btn-gradient">
-            Book a Free Scoping Call <ArrowRight size={16} />
-          </Link>
+      <section style={{ background: 'var(--surface-alt)', padding: '3rem 1.5rem' }} className="lg:px-10">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
+            <div>
+              <h2 className="font-display section-title mb-4">Not sure <span className="text-gradient">where the biggest gap is?</span></h2>
+              <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
+                Book thirty minutes with us. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
+              </p>
+              <Link href="/book" className="btn-gradient">
+                Book a Free Call <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=960&h=960&fit=crop&crop=faces" alt="Business professionals discussing strategy" fill className="object-cover" sizes="420px" />
+                <div className="absolute inset-x-0 bottom-0 p-6" style={{ background: 'linear-gradient(to top, rgba(5,8,16,0.88) 0%, rgba(5,8,16,0.45) 60%, transparent 100%)' }}>
+                  <p className="text-white text-sm leading-relaxed mb-2" style={{ fontStyle: 'italic', opacity: 0.95 }}>&ldquo;Not HR from a textbook. People results from operators who have done the real work.&rdquo;</p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Lucy &amp; Tom, The People System</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'What is fractional People leadership?', a: 'Lucy acts as your CPO or HRD on a part-time basis: typically one to three days per week depending on the package. You get senior-level people leadership without the cost of a full-time executive hire.' },
+        { q: 'What is fractional People leadership?', a: 'We act as your CPO or HRD on a part-time basis: typically one to three days per week depending on the package. You get senior-level people leadership without the cost of a full-time executive hire.' },
         { q: 'What is the difference between LEAD and PROTECT?', a: 'PROTECT builds the foundations: contracts, handbook, policies, compliance. LEAD is about leadership: strategy, culture, manager capability, people function design. Many clients need both. They can run in parallel or sequence depending on priority.' },
         { q: 'Do we need to have a people function already?', a: 'No. Lead Build is specifically designed for businesses building their people function from scratch. Lead Foundations and Lead Optimiser work well for businesses that have no formal HR function at all.' },
-        { q: 'How involved is Lucy on a day-to-day basis?', a: 'It depends on the package. Lead Foundations is one structured session per month plus ad-hoc access. Lead Partner typically involves weekly involvement including leadership team meetings. Lead Build is more intensive, particularly in the early months.' },
-        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. Tom and Lucy work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
+        { q: 'How involved are you on a day-to-day basis?', a: 'It depends on the package. Lead Foundations is one structured session per month plus ad-hoc access. Lead Partner typically involves weekly involvement including leadership team meetings. Lead Build is more intensive, particularly in the early months.' },
+        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. We work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
       ]} />
 
     </div>
