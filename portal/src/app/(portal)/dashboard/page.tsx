@@ -136,22 +136,25 @@ export default async function DashboardPage() {
 
       <main className="portal-page flex-1">
 
-        {/* ── Stat row ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hiring',    color: 'var(--purple)' },
-            { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/documents', color: 'var(--blue)' },
-            { icon: LifeBuoy,      label: 'Open Tickets',     val: tickets.length,         href: '/support',   color: 'var(--teal)' },
-            { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/compliance',color: '#F59E0B' },
-          ].map((s) => (
-            <Link key={s.label} href={s.href} className="stat-card card-hover card">
-              <div className="flex items-center justify-between mb-2">
-                <s.icon size={16} style={{ color: s.color }} />
-                <span className="text-[10px] font-medium" style={{ color: 'var(--ink-faint)' }}>{s.label}</span>
-              </div>
-              <p className="font-display font-bold text-3xl" style={{ color: 'var(--ink)' }}>{s.val}</p>
-            </Link>
-          ))}
+        {/* ── Stat row — with mesh background ────────────────────── */}
+        <div className="relative mb-8">
+          <div className="app-mesh" style={{ opacity: 0.6 }} />
+          <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hiring',    color: 'var(--purple)' },
+              { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/documents', color: 'var(--blue)' },
+              { icon: LifeBuoy,      label: 'Open Tickets',     val: tickets.length,         href: '/support',   color: '#14B8A6' },
+              { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/compliance',color: '#F59E0B' },
+            ].map((s) => (
+              <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <s.icon size={16} style={{ color: s.color }} />
+                  <span className="eyebrow" style={{ fontSize: '10px' }}>{s.label}</span>
+                </div>
+                <p className="font-display font-bold text-3xl text-gradient">{s.val}</p>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* ── Company Friction Score ─────────────────────────────────── */}
@@ -213,9 +216,12 @@ export default async function DashboardPage() {
           {/* Section 1 — Active Services */}
           <section className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                Active Services
-              </h2>
+              <div>
+                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
+                  Active Services
+                </h2>
+                <span className="accent-line mt-1.5" />
+              </div>
             </div>
             {services.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
@@ -246,9 +252,12 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Zap size={15} style={{ color: 'var(--purple)' }} />
-                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                  Friction Alerts
-                </h2>
+                <div>
+                  <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
+                    Friction Alerts
+                  </h2>
+                  <span className="accent-line mt-1.5" />
+                </div>
               </div>
               {frictionAlerts.length > 0 && (
                 <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
@@ -295,9 +304,12 @@ export default async function DashboardPage() {
           {/* Section 2 — Live Roles */}
           <section className="card p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                Live Roles
-              </h2>
+              <div>
+                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
+                  Live Roles
+                </h2>
+                <span className="accent-line mt-1.5" />
+              </div>
               <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
                 View all →
               </Link>

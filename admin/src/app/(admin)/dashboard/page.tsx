@@ -96,22 +96,25 @@ export default async function AdminDashboardPage() {
       />
       <main className="admin-page flex-1">
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
-            { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
-            { icon: Briefcase,     label: 'Active Roles',   val: reqs.length,    href: '/hiring',   color: 'var(--teal)' },
-            { icon: LifeBuoy,      label: 'Open Tickets',   val: tickets.length, href: '/support',  color: '#F59E0B' },
-          ].map(s => (
-            <Link key={s.label} href={s.href} className="stat-card hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <s.icon size={15} style={{ color: s.color }} />
-                <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{s.label}</span>
-              </div>
-              <p className="font-display font-bold text-3xl" style={{ color: 'var(--ink)' }}>{s.val}</p>
-            </Link>
-          ))}
+        {/* Stats — with mesh background */}
+        <div className="relative mb-8">
+          <div className="app-mesh" style={{ opacity: 0.6 }} />
+          <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
+              { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
+              { icon: Briefcase,     label: 'Active Roles',   val: reqs.length,    href: '/hiring',   color: '#14B8A6' },
+              { icon: LifeBuoy,      label: 'Open Tickets',   val: tickets.length, href: '/support',  color: '#F59E0B' },
+            ].map(s => (
+              <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <s.icon size={15} style={{ color: s.color }} />
+                  <span className="eyebrow" style={{ fontSize: '10px' }}>{s.label}</span>
+                </div>
+                <p className="font-display font-bold text-3xl text-gradient">{s.val}</p>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* PROTECT Alerts banner */}
@@ -154,8 +157,11 @@ export default async function AdminDashboardPage() {
           {/* Active roles */}
           <section className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Active Hiring Roles</h2>
-              <Link href="/hiring" className="text-xs" style={{ color: 'var(--purple)' }}>All →</Link>
+              <div>
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Active Hiring Roles</h2>
+                <span className="accent-line mt-1.5" />
+              </div>
+              <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
             </div>
             {reqs.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No active roles</p>
@@ -177,8 +183,11 @@ export default async function AdminDashboardPage() {
           {/* Open tickets */}
           <section className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Support Tickets</h2>
-              <Link href="/support" className="text-xs" style={{ color: 'var(--purple)' }}>All →</Link>
+              <div>
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Support Tickets</h2>
+                <span className="accent-line mt-1.5" />
+              </div>
+              <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
             </div>
             {tickets.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>

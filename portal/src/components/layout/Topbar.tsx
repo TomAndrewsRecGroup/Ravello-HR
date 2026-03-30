@@ -14,12 +14,18 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
       className="sticky top-0 z-30 flex items-center justify-between px-6 lg:px-8"
       style={{
         height: 'var(--topbar-h)',
-        background: 'rgba(250,250,248,0.90)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--line)',
+        background: 'rgba(250,250,248,0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
       }}
     >
+      {/* Gradient bottom accent line */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.12), rgba(59,111,255,0.08), transparent)',
+        }}
+      />
       <div>
         <h1
           className="font-display text-[1.15rem]"
