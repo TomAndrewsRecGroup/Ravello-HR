@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState, useRef, useEffect, type ElementType } from 'react';
+import { useState, useEffect, type ElementType } from 'react';
 import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
 
 const STATS = [
@@ -473,9 +473,6 @@ export default function Hero() {
       {activeCardDef && (
         <CardModal
           card={activeCardDef}
-          sourceRect={cardRect}
-          onMouseEnter={cancelClose}
-          onMouseLeave={close}
           onClose={() => setActiveCard(null)}
         />
       )}
