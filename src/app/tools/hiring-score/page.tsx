@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import HiringScoreTool from '@/components/tools/HiringScoreTool';
 
 export const metadata: Metadata = {
@@ -11,33 +13,47 @@ export const metadata: Metadata = {
 export default function HiringScorePage() {
   return (
     <div className="pt-28">
-      <section className="section-sm" style={{ background: 'var(--bg)', paddingTop: '4rem' }}>
-        <div className="container-narrow text-center">
-          <p className="eyebrow justify-center mb-4">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            Smart Hiring System™
+
+      {/* Hero: light */}
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+        <div className="container-wide">
+          <p className="eyebrow mb-5">
+            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+            Free Tool: Smart Hiring System™
           </p>
           <h1
             style={{
               fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.2rem, 4.5vw, 3.8rem)',
+              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
               fontWeight: 300,
-              lineHeight: 1.08,
+              lineHeight: 1.05,
               letterSpacing: '-0.02em',
               color: 'var(--ink)',
-              marginBottom: '1rem',
+              marginBottom: '1.25rem',
             }}
           >
-            How strong is your{' '}
+            How strong is your hiring process?<br />
             <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              hiring process?
+              Find out in 3 minutes.
             </span>
           </h1>
-          <p className="text-base leading-relaxed max-w-[520px] mx-auto" style={{ color: 'var(--ink-soft)' }}>
-            Answer 8 questions. Find out exactly where roles stall, candidates drop off, and agency spend keeps coming back.
+          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+            Answer 8 questions about how you hire today. Find out exactly where roles stall, candidates drop off, and agency spend keeps coming back. Instant results, no fluff.
           </p>
+          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+            Your score highlights the specific failure points in your current process and tells you what to fix first.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/book" className="btn-gradient">
+              Start with a Hiring Audit <ArrowRight size={16} />
+            </Link>
+            <Link href="/book" className="btn-secondary">
+              Book a Scoping Call
+            </Link>
+          </div>
         </div>
       </section>
+
       <section className="section-padding" style={{ paddingTop: '2rem' }}>
         <div className="max-w-[1200px] mx-auto">
           <HiringScoreTool />
