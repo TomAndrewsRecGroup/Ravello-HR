@@ -34,7 +34,11 @@
       "Bash(grep -E \"page\\\\.\\(tsx|ts|jsx|js\\)$\")",
       "Read(//c/Users/TomAndrews/.claude/**)",
       "Read(//c/Users/TomAndrews/.claude/skills/**)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__execute_sql",
+      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__list_tables",
+      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__get_project",
+      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__list_organizations"
     ]
   }
 }
