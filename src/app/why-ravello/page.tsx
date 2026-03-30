@@ -117,7 +117,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               What makes us different
             </p>
-            <h2 className="section-title">Six reasons businesses choose The People System.</h2>
+            <h2 className="font-display section-title">Six reasons businesses choose The People System.</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {REASONS.map((r) => (
@@ -139,7 +139,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Why not an agency
             </p>
-            <h2 className="section-title">How we compare.</h2>
+            <h2 className="font-display section-title">How we compare.</h2>
             <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at The People System versus the alternatives.</p>
           </div>
 
@@ -181,7 +181,7 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Common questions
             </p>
-            <h2 className="section-title">We hear these a lot. Here are the honest answers.</h2>
+            <h2 className="font-display section-title">We hear these a lot. Here are the honest answers.</h2>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {OBJECTIONS.map((o) => (
@@ -198,7 +198,7 @@ export default function WhyRavelloPage() {
       <section className="section-padding relative overflow-hidden" style={{ background: 'var(--surface-alt)' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(124,92,246,0.08) 0%, transparent 65%)' }} />
         <div className="relative z-10 container-narrow text-center">
-          <h2 className="section-title mb-6">Ready to have an honest conversation?</h2>
+          <h2 className="font-display section-title mb-6">Ready to have an honest conversation?</h2>
           <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
             Thirty minutes. No pitch. A straight conversation about what is holding your business back and what to do about it.
           </p>

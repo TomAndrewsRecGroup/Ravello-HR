@@ -8,9 +8,9 @@ const funnels = [
     pill: 'HIRE',
     pillStyle: 'pill-purple',
     headline: 'Your hiring is broken. We fix it before it costs you.',
-    body: 'The average bad hire costs £27,500. Agency fees on repeat. Roles that never stay filled. We score every role against live market data before it goes live — so you know exactly where it will struggle and what to fix first.',
+    body: 'The average bad hire costs £27,500. Agency fees on repeat. Roles that never stay filled. We score every role against live market data before it goes live, so you know exactly where it will struggle and what to fix first.',
     pains: [
-      'Roles filled, then vacant again in 6 months — costing 3× what a structured hire would',
+      'Roles filled, then vacant again in 6 months, costing 3x what a structured hire would',
       'Agency bills growing with nothing to show for them',
       'Candidates dropping off because your process has too much friction',
     ],
@@ -27,9 +27,9 @@ const funnels = [
     pill: 'LEAD',
     pillStyle: 'pill-navy',
     headline: 'No People lead? Get one without the headcount cost.',
-    body: 'A People Director costs £90k+ before NI and benefits. You get the same strategic thinking, manager enablement, and people leadership — embedded in your business, at a fraction of the cost.',
+    body: 'A People Director costs £90k+ before NI and benefits. You get the same strategic thinking, manager enablement, and people leadership. Embedded in your business, at a fraction of the cost.',
     pains: [
-      'No senior HR thinking driving people decisions — so managers make it up',
+      'No senior HR thinking driving people decisions, so managers make it up',
       'People strategy stuck in a drawer or non-existent',
       'Team issues escalating because nobody is equipped to handle them',
     ],
@@ -46,11 +46,11 @@ const funnels = [
     pill: 'PROTECT',
     pillStyle: 'pill-blue',
     headline: 'Get your HR foundations right. Before something goes wrong.',
-    body: 'The average tribunal claim costs £8,500–£30,000. Missing contracts, outdated handbooks, and compliance gaps the Employment Rights Bill will expose. We build the foundations that protect your business — documented, watertight, ready to scale.',
+    body: 'The average tribunal claim costs £8,500-£30,000. Missing contracts, outdated handbooks, and compliance gaps the Employment Rights Bill will expose. We build the foundations that protect your business. Documented, watertight, ready to scale.',
     pains: [
-      "Contracts that haven't been reviewed in years — each one a live liability",
+      "Contracts that haven't been reviewed in years. Each one a live liability",
       'No handbook managers will actually follow or enforce',
-      'Compliance exposure you cannot currently see — until it becomes a claim',
+      'Compliance exposure you cannot currently see, until it becomes a claim',
     ],
     cta:  { label: 'Get a Free HR Risk Score', href: '/tools/hr-risk-score' },
     link: { label: 'See the PROTECT packages', href: '/policysafe' },
@@ -76,7 +76,7 @@ export default function FunnelCards() {
             />
             Three pillars. One partner.
           </p>
-          <h2 className="section-title mb-5">Where do you need us most?</h2>
+          <h2 className="font-display section-title mb-5">Where do you need us most?</h2>
           <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
             Start with the pillar that fits right now. Most clients build from there.
           </p>

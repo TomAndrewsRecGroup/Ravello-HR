@@ -100,7 +100,7 @@ export default function PolicySafePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="section-title mb-4">What happens when the foundations are missing</h2>
+            <h2 className="font-display section-title mb-4">What happens when the foundations are missing</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Most businesses only find their compliance gaps when something breaks. By that point, the cost of fixing it is far higher than the cost of building it right the first time.
             </p>
@@ -147,7 +147,7 @@ export default function PolicySafePage() {
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
           <div className="text-center mb-12">
-            <h2 className="section-title mb-4">PROTECT packages</h2>
+            <h2 className="font-display section-title mb-4">PROTECT packages</h2>
             <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>Fixed scope. Clear deliverables. Done properly by Lucy.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -188,7 +188,7 @@ export default function PolicySafePage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="section-title mb-6">What makes PROTECT different</h2>
+              <h2 className="font-display section-title mb-6">What makes PROTECT different</h2>
               <ul className="space-y-3">
                 {included.map((item) => (
                   <li key={item} className="flex items-start gap-3">

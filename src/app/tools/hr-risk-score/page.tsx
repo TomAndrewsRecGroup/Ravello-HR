@@ -23,7 +23,7 @@ export default function HRRiskScorePage() {
         </div>
       </section>
       <section className="section-padding ">
-        <div className="container-narrow">
+        <div className="max-w-[1200px] mx-auto">
           <HRRiskScoreTool />
         </div>
       </section>

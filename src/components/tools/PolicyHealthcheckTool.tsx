@@ -117,8 +117,10 @@ export default function PolicyHealthcheckTool() {
       <div className="border-t border-gray-100 pt-6">
         <p className="font-semibold text-[var(--ink)] mb-4 flex items-center gap-2"><FileText size={18} className="text-[var(--brand-purple)]" /> Get your personalised gap report</p>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
-          <input type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]" />
+          <label htmlFor="ph-name" className="sr-only">Your name</label>
+          <input id="ph-name" type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
+          <label htmlFor="ph-email" className="sr-only">Work email</label>
+          <input id="ph-email" type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Generating…' : 'Generate My Gap Report'} <ArrowRight size={16} />
           </button>

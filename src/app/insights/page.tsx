@@ -65,16 +65,7 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Insights
               </p>
-              <h1
-                className="font-display mb-6"
-                style={{
-                  fontSize: 'clamp(2.4rem, 5vw, 4rem)',
-                  fontWeight: 400,
-                  lineHeight: 1.06,
-                  letterSpacing: '-0.025em',
-                  color: 'var(--ink)',
-                }}
-              >
+              <h1 className="font-display mb-6">
                 All your documents and{' '}
                 <span className="text-gradient">insights</span> in one place
               </h1>
@@ -117,7 +108,7 @@ export default function InsightsPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Your portal
             </p>
-            <h2 className="section-title mb-5">Everything lives in one place</h2>
+            <h2 className="font-display section-title mb-5">Everything lives in one place</h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               No more scattered emails, shared drives, or chasing updates. Your portal is the single source of truth.
             </p>
@@ -218,7 +209,7 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Friction Lens for roles
               </p>
-              <h2 className="section-title mb-5">
+              <h2 className="font-display section-title mb-5">
                 Score every role before it goes to market
               </h2>
               <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
@@ -262,7 +253,7 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Company People Score
               </p>
-              <h2 className="section-title mb-5">
+              <h2 className="font-display section-title mb-5">
                 See how your people function compares to your industry
               </h2>
               <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
@@ -418,7 +409,7 @@ export default function InsightsPage() {
       {/* CTA */}
       <section className="section-padding" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="section-title mb-6">
+          <h2 className="font-display section-title mb-6">
             Ready to see your{' '}
             <span className="text-gradient">People Score?</span>
           </h2>

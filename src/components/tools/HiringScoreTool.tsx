@@ -220,21 +220,25 @@ export default function HiringScoreTool() {
           <p className="text-[var(--ink-soft)]">Enter your details to unlock your full Hiring Score report and personalised fix plan.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <label htmlFor="hs-name" className="sr-only">Your first name</label>
           <input
+            id="hs-name"
             type="text"
             placeholder="Your first name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]"
           />
+          <label htmlFor="hs-email" className="sr-only">Your work email</label>
           <input
+            id="hs-email"
             type="email"
             placeholder="Your work email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--brand-purple)] text-[var(--ink)]"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]"
           />
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Unlocking…' : 'Unlock My Hiring Score'} <ArrowRight size={16} />

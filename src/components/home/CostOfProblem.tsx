@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 const COSTS = [
   {
     stat: '£27,500',
-    pain: 'The average cost of a bad hire in the UK — salary, recruitment fees, lost productivity, and starting over',
+    pain: 'The average cost of a bad hire in the UK: salary, recruitment fees, lost productivity, and starting over',
   },
   {
     stat: '3×',
@@ -13,11 +13,11 @@ const COSTS = [
   },
   {
     stat: '£8,500–£30k',
-    pain: 'The average employment tribunal claim — and most stem from contracts, policies, or processes that were never reviewed',
+    pain: 'The average employment tribunal claim. Most stem from contracts, policies, or processes that were never reviewed',
   },
   {
     stat: '14 weeks',
-    pain: 'Average UK time-to-hire — every week without the right person costs output, momentum, and team morale',
+    pain: 'Average UK time-to-hire. Every week without the right person costs output, momentum, and team morale',
   },
   {
     stat: '67%',
@@ -40,7 +40,7 @@ export default function CostOfProblem() {
               The cost of doing nothing
             </p>
 
-            <h2 className="section-title mb-4">
+            <h2 className="font-display section-title mb-4">
               Every month you delay<br />costs more than the fix
             </h2>
 
@@ -76,7 +76,7 @@ export default function CostOfProblem() {
 
             <div className="mt-10 flex flex-wrap gap-4">
               <Link href="/book" className="btn-gradient">
-                Fix this now — book a free call <ArrowRight size={15} />
+                Fix this now: book a free call <ArrowRight size={15} />
               </Link>
               <Link href="/tools/hr-risk-score" className="btn-secondary">
                 Find your gaps in 2 minutes <ArrowRight size={14} />

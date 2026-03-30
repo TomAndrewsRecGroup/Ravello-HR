@@ -10,7 +10,7 @@ import ChatWidget from '@/components/ChatWidget';
 import QuickActions from '@/components/QuickActions';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import CalendlyWidget from '@/components/CalendlyWidget';
-import SocialProofTicker from '@/components/SocialProofTicker';
+import ConditionalTicker from '@/components/ConditionalTicker';
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -67,10 +67,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${satoshi.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}>
       <head><ClarityScript /></head>
       <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] btn-gradient">
+          Skip to content
+        </a>
         <Analytics />
         <Nav />
-        <main>{children}</main>
-        <SocialProofTicker />
+        <main id="main-content">{children}</main>
+        <ConditionalTicker />
         <Footer />
         <QuickActions />
         <CalendlyWidget />

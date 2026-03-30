@@ -72,7 +72,7 @@ export default function ToolsHub() {
               />
               Free tools
             </p>
-            <h2 className="section-title">
+            <h2 className="font-display section-title">
               Know exactly<br />
               <span className="text-gradient">where the gaps are</span>
             </h2>

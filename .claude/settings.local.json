@@ -33,7 +33,8 @@
       "Bash(powershell -Command \"Get-ChildItem -Path ''D:\\\\Sites\\\\Ravello-HR\\\\src\\\\app'' -Recurse -Filter ''*.tsx'' | ForEach-Object { \\(Get-Content $_FullName -Raw\\) -replace ''className=\"\"pt-20\"\"'', ''className=\"\"pt-28\"\"'' | Set-Content $_FullName }\")",
       "Bash(grep -E \"page\\\\.\\(tsx|ts|jsx|js\\)$\")",
       "Read(//c/Users/TomAndrews/.claude/**)",
-      "Read(//c/Users/TomAndrews/.claude/skills/**)"
+      "Read(//c/Users/TomAndrews/.claude/skills/**)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

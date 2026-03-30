@@ -23,7 +23,7 @@ export default function PolicyHealthcheckPage() {
         </div>
       </section>
       <section className="section-padding ">
-        <div className="container-narrow">
+        <div className="max-w-[1200px] mx-auto">
           <PolicyHealthcheckTool />
         </div>
       </section>
