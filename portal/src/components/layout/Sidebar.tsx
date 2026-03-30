@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, FolderOpen, BarChart3,
   LifeBuoy, LogOut, Settings, Bell, Map, ShieldCheck, TrendingUp,
-  BookOpen, Users, PoundSterling, Lock, Gauge, Target,
+  BookOpen, Users, PoundSterling, Lock, Gauge, Target, KeyRound,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
