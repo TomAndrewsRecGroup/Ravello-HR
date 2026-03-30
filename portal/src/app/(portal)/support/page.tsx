@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
-import { LifeBuoy, Plus } from 'lucide-react';
+import { LifeBuoy, Plus, Headphones } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Support' };
 
@@ -66,9 +66,14 @@ export default async function SupportPage() {
         title="HR Support"
         subtitle={`${open.length} open ticket${open.length !== 1 ? 's' : ''}${srOpen.length > 0 ? ` · ${srOpen.length} service request${srOpen.length !== 1 ? 's' : ''}` : ''}`}
         actions={
-          <Link href="/support/new" className="btn-cta btn-sm flex items-center gap-1.5">
-            <Plus size={14} /> Raise a Query
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/support/ivylens" className="btn-secondary btn-sm flex items-center gap-1.5">
+              <Headphones size={13} /> IvyLens Support
+            </Link>
+            <Link href="/support/new" className="btn-cta btn-sm flex items-center gap-1.5">
+              <Plus size={14} /> Raise a Query
+            </Link>
+          </div>
         }
       />
       <main className="portal-page flex-1">

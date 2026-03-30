@@ -1,5 +1,6 @@
 'use client';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import NotificationBell from '@/components/modules/NotificationBell';
 
 interface TopbarProps {
   title: string;
@@ -42,13 +43,7 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
         <button className="btn-icon" aria-label="Search">
           <Search size={15} />
         </button>
-        <button className="btn-icon relative" aria-label="Notifications">
-          <Bell size={15} />
-          <span
-            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-            style={{ background: 'var(--gradient)' }}
-          />
-        </button>
+        <NotificationBell />
       </div>
     </header>
   );
