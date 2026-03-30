@@ -66,67 +66,66 @@ export default function AboutPage() {
       {/* Lucy */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            <div>
-              <p className="eyebrow mb-3">Co-Founder: HR and People</p>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 600,
-                  fontSize: '2.25rem',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--ink)',
-                  marginBottom: '1.25rem',
-                }}
-              >
-                Lucy
-              </h2>
-              <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                <p>
-                  Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
-                </p>
-                <p>
-                  She founded The People System because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
-                </p>
-                <p>
-                  Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
-                </p>
-              </div>
-              <div className="mt-8">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
-              </div>
+          <div className="max-w-3xl mx-auto">
+            <p className="eyebrow mb-3">Co-Founder: HR and People</p>
+            <h2
+              style={{
+                fontFamily: 'var(--font-cormorant), serif',
+                fontWeight: 600,
+                fontSize: '2.25rem',
+                letterSpacing: '-0.02em',
+                color: 'var(--ink)',
+                marginBottom: '1.25rem',
+              }}
+            >
+              Lucy
+            </h2>
+            <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              <p>
+                Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
+              </p>
+              <p>
+                She founded The People System because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
+              </p>
+              <p>
+                Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
+              </p>
             </div>
-            <div>
-              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
-                <Image
-                  src="/Lucy.jpg"
-                  alt="Lucy, Co-Founder of The People System"
-                  width={600}
-                  height={360}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div className="rounded-[18px] p-6" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
-                <p className="eyebrow mb-4">Lucy&rsquo;s credentials</p>
-                <ul className="space-y-2">
-                  {lucyCredentials.map((c) => (
-                    <li key={c} className="flex items-start gap-3">
-                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
-                      <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
-                    </li>
+
+            <div className="rounded-[18px] p-6 mt-8" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
+              <p className="eyebrow mb-4">Lucy&rsquo;s credentials</p>
+              <ul className="space-y-2">
+                {lucyCredentials.map((c) => (
+                  <li key={c} className="flex items-start gap-3">
+                    <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
+                <div className="flex flex-wrap gap-2">
+                  {['PROTECT', 'LEAD', 'DealReady People'].map((tag) => (
+                    <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
                   ))}
-                </ul>
-                <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
-                  <div className="flex flex-wrap gap-2">
-                    {['PROTECT', 'LEAD', 'DealReady People'].map((tag) => (
-                      <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
-                    ))}
-                  </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-[24px] overflow-hidden mt-8 mx-auto" style={{ maxWidth: 480, height: 480 }}>
+              <Image
+                src="/Lucy.jpg"
+                alt="Lucy, Co-Founder of The People System"
+                width={480}
+                height={480}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link href="/book" className="btn-gradient">
+                Book a Free Discovery Call <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </div>
@@ -135,67 +134,66 @@ export default function AboutPage() {
       {/* Tom */}
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            <div>
-              <p className="eyebrow mb-3">Co-Founder: Talent and Recruitment</p>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 600,
-                  fontSize: '2.25rem',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--ink)',
-                  marginBottom: '1.25rem',
-                }}
-              >
-                Tom
-              </h2>
-              <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                <p>
-                  Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment: built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
-                </p>
-                <p>
-                  Alongside ARG, Tom built RecXchange: a recruiter networking and collaboration platform with over 15,000 recruiters: and RecX Direct, its business development arm that connects live client roles directly with independent recruiters. He also founded IvyLens Technology, known for the Friction Lens role scoring platform and its automated outreach tools, and AMIVY Designs, a website and lead generation studio focused on sales and marketing.
-                </p>
-                <p>
-                  Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, and Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
-                </p>
-              </div>
-              <div className="mt-8">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
-              </div>
+          <div className="max-w-3xl mx-auto">
+            <p className="eyebrow mb-3">Co-Founder: Talent and Recruitment</p>
+            <h2
+              style={{
+                fontFamily: 'var(--font-cormorant), serif',
+                fontWeight: 600,
+                fontSize: '2.25rem',
+                letterSpacing: '-0.02em',
+                color: 'var(--ink)',
+                marginBottom: '1.25rem',
+              }}
+            >
+              Tom
+            </h2>
+            <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              <p>
+                Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment: built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
+              </p>
+              <p>
+                Alongside ARG, Tom built RecXchange: a recruiter networking and collaboration platform with over 15,000 recruiters: and RecX Direct, its business development arm that connects live client roles directly with independent recruiters. He also founded IvyLens Technology, known for the Friction Lens role scoring platform and its automated outreach tools, and AMIVY Designs, a website and lead generation studio focused on sales and marketing.
+              </p>
+              <p>
+                Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, and Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
+              </p>
             </div>
-            <div>
-              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
-                <Image
-                  src="/Tom.jpg"
-                  alt="Tom, Co-Founder of The People System"
-                  width={600}
-                  height={360}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div className="rounded-[18px] p-6" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
-                <p className="eyebrow mb-4">Tom&rsquo;s credentials</p>
-                <ul className="space-y-2">
-                  {tomCredentials.map((c) => (
-                    <li key={c} className="flex items-start gap-3">
-                      <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
-                      <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
-                    </li>
+
+            <div className="rounded-[18px] p-6 mt-8" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
+              <p className="eyebrow mb-4">Tom&rsquo;s credentials</p>
+              <ul className="space-y-2">
+                {tomCredentials.map((c) => (
+                  <li key={c} className="flex items-start gap-3">
+                    <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{c}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
+                <div className="flex flex-wrap gap-2">
+                  {['HIRE', 'Andrews Recruitment Group', 'RecXchange', 'IvyLens Technology', 'AMIVY Designs'].map((tag) => (
+                    <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
                   ))}
-                </ul>
-                <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--brand-line)' }}>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Covers</p>
-                  <div className="flex flex-wrap gap-2">
-                    {['HIRE', 'Andrews Recruitment Group', 'RecXchange', 'IvyLens Technology', 'AMIVY Designs'].map((tag) => (
-                      <span key={tag} className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)', color: 'var(--ink-soft)' }}>{tag}</span>
-                    ))}
-                  </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-[24px] overflow-hidden mt-8 mx-auto" style={{ maxWidth: 480, height: 480 }}>
+              <Image
+                src="/Tom.jpg"
+                alt="Tom, Co-Founder of The People System"
+                width={480}
+                height={480}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link href="/book" className="btn-gradient">
+                Book a Free Discovery Call <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </div>
