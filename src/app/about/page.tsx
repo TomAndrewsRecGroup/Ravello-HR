@@ -231,7 +231,19 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="text-center mb-12">
             <p className="eyebrow justify-center mb-3">Proof of Work</p>
-            <h2 className="font-display section-title mb-4">Experience across<br /><span className="text-gradient">every sector</span></h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Experience across<br />
+              <span className="text-gradient">every sector</span>
+            </h3>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
               Client names stay confidential. The outcomes do not.
             </p>
@@ -251,7 +263,19 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="font-display section-title mb-4">Ready<br /><span className="text-gradient">to work together?</span></h2>
+          <h3
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: 'var(--ink)',
+            }}
+          >
+            Ready<br />
+            <span className="text-gradient">to work together?</span>
+          </h3>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Book a free call. Bring your current people challenge: whether it is hiring, compliance, or leadership: and leave with a clear, actionable next step.
           </p>

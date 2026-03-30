@@ -153,7 +153,18 @@ export default function ProtectPage() {
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="font-display section-title mb-4">PROTECT <span className="text-gradient">packages</span></h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              PROTECT <span className="text-gradient">packages</span>
+            </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               From a fast one-off essentials fix to fully managed ongoing compliance. All written by us, not by a template generator.
             </p>
@@ -237,7 +248,19 @@ export default function ProtectPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
             <div>
-              <h2 className="font-display section-title mb-4">Start with <span className="text-gradient">a free HR audit</span></h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Start with<br />
+                <span className="text-gradient">a free HR audit</span>
+              </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Thirty minutes with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
               </p>

@@ -307,19 +307,19 @@ export default function PortalShowcase() {
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
             Client Portal
           </p>
-          <h2
-            className="font-display section-title mb-4"
+          <h3
+            className="font-display mb-5"
             style={{
-              maxWidth: 1200,
-              margin: '0 auto 16px',
-              background: 'var(--gradient)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: 'var(--ink)',
             }}
           >
-            Everything your People Department needs. In one place.
-          </h2>
+            Everything your People Department needs.<br />
+            <span className="text-gradient">In one place.</span>
+          </h3>
           <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)', maxWidth: 500, margin: '0 auto' }}>
             Every client gets a dedicated portal. Hiring pipeline, compliance tracker,
             documents, HR analytics. All real-time. No chasing updates.

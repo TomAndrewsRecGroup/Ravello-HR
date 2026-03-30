@@ -127,9 +127,19 @@ export default function FrictionLensPage() {
         <div className="container-narrow">
           <div className="rounded-[18px] p-8" style={{ background: 'linear-gradient(135deg, rgba(123,47,190,0.06), rgba(75,110,245,0.06))', border: '1px solid rgba(123,47,190,0.15)' }}>
             <p className="eyebrow mb-3" style={{ color: 'var(--brand-purple)' }}>Why it matters</p>
-            <h2 className="font-bold text-xl mb-4" style={{ color: 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
-              No SME-accessible tool offers this. Now one does.
-            </h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              No SME-accessible tool offers this.<br />
+              <span className="text-gradient">Now one does.</span>
+            </h3>
             <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--ink-soft)' }}>
               Enterprise systems like Gartner TalentNeuron and LinkedIn Talent Insights give large businesses live market intelligence against job roles. They cost £50,000+/year and require a dedicated analyst to operate. They are not built for businesses hiring 3–20 roles a year.
             </p>
@@ -249,7 +259,19 @@ export default function FrictionLensPage() {
       {/* CTA: dark */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
-          <h2 className="font-display section-title-light mb-4">Ready to see it on a live role?</h2>
+          <h3
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: '#fff',
+            }}
+          >
+            Ready to see it<br />
+            <span className="text-gradient">on a live role?</span>
+          </h3>
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Start with a hiring audit. Tom will run a Friction Lens score on one of your current or upcoming roles and walk you through the output. Free. No obligation.
           </p>
