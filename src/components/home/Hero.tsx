@@ -460,10 +460,7 @@ export default function Hero() {
                 <HeroCard
                   key={card.id}
                   card={card}
-                  dimmed={activeCard !== null && activeCard !== card.id}
-                  onOpen={() => open(card.id)}
-                  onClose={close}
-                  divRef={(el) => { cardRefs.current[card.id] = el; }}
+                  onOpen={() => setActiveCard(card.id)}
                 />
               ))}
             </div>
