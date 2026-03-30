@@ -357,25 +357,6 @@ function HeroCard({
 /* ─── Main Hero component ─── */
 export default function Hero() {
   const [activeCard, setActiveCard] = useState<string | null>(null);
-  const [cardRect, setCardRect] = useState<SourceRect | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  const open = (id: string) => {
-    if (timer.current) clearTimeout(timer.current);
-    const el = cardRefs.current[id];
-    if (el) {
-      const r = el.getBoundingClientRect();
-      setCardRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    }
-    setActiveCard(id);
-  };
-  const close = () => {
-    timer.current = setTimeout(() => setActiveCard(null), 250);
-  };
-  const cancelClose = () => {
-    if (timer.current) clearTimeout(timer.current);
-  };
 
   const activeCardDef = activeCard ? CARDS.find((c) => c.id === activeCard) : null;
 
