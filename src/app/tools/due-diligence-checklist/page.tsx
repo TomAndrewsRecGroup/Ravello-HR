@@ -11,13 +11,26 @@ export const metadata: Metadata = {
 export default function DDChecklistPage() {
   return (
     <div className="pt-28">
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '4rem', paddingBottom: '3rem' }}>
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="pill pill-purple bg-[var(--brand-navy)] border border-white/30 text-white mb-4 inline-block">Funnel C · DealReady People™</span>
-          <h1 className=" text-4xl lg:text-5xl font-bold mb-4">
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+        <div className="container-wide">
+          <p className="eyebrow mb-5">
+            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+            Free Tool: DealReady People™
+          </p>
+          <h1
+            style={{
+              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
+              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
+              fontWeight: 300,
+              lineHeight: 1.05,
+              letterSpacing: '-0.02em',
+              color: 'var(--ink)',
+              marginBottom: '1.25rem',
+            }}
+          >
             People Due Diligence Checklist
           </h1>
-          <p className="text-white/80 text-lg">
+          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Acquiring or merging? Run this checklist before you sign. Surface people risk before it becomes your problem.
           </p>
         </div>

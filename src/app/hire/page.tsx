@@ -126,8 +126,8 @@ export default function HirePage() {
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
                 <Image
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=960&h=960&fit=crop&crop=faces"
-                  alt="Recruitment professional reviewing candidate profiles"
+                  src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=960&h=960&fit=crop&crop=faces"
+                  alt="Professional on a phone call discussing hiring"
                   fill
                   className="object-cover"
                   sizes="420px"

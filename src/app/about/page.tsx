@@ -101,7 +101,7 @@ export default function AboutPage() {
             <div>
               <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
                 <Image
-                  src="/lucy.jpg"
+                  src="/Lucy.jpg"
                   alt="Lucy, Co-Founder of The People System"
                   width={600}
                   height={360}
@@ -170,7 +170,7 @@ export default function AboutPage() {
             <div>
               <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
                 <Image
-                  src="/tom.jpg"
+                  src="/Tom.jpg"
                   alt="Tom, Co-Founder of The People System"
                   width={600}
                   height={360}
