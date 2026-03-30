@@ -110,7 +110,7 @@ export default function LeadPage() {
             </div>
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
-                <Image src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=960&h=960&fit=crop&crop=faces" alt="Senior leader in a business setting" fill className="object-cover" sizes="420px" />
+                <Image src="https://images.unsplash.com/photo-1560439514-4e9645039924?w=960&h=960&fit=crop&crop=faces" alt="Female leader speaking to a group of people in an office" fill className="object-cover" sizes="420px" />
               </div>
             </div>
           </div>

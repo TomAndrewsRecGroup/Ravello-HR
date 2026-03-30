@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  ChevronLeft, ChevronRight, MessageSquare, Zap,
+  ChevronLeft, ChevronRight, Zap,
   Phone, FileText, ClipboardCheck, BarChart2, X,
 } from 'lucide-react';
 
@@ -12,19 +12,10 @@ const actions = [
   { icon: BarChart2,      label: 'HR Risk Score',    sub: 'Find your gaps',       href: '/tools/hr-risk-score',            type: 'link'  },
   { icon: ClipboardCheck, label: 'Policy Check',     sub: 'Free healthcheck',     href: '/tools/policy-healthcheck',       type: 'link'  },
   { icon: FileText,       label: 'DD Checklist',     sub: 'M&A people risk',      href: '/tools/due-diligence-checklist',  type: 'link'  },
-  { icon: MessageSquare,  label: 'Live Chat',         sub: 'Talk to us now',       href: null,                              type: 'chat'  },
 ];
 
 export default function QuickActions() {
   const [open, setOpen] = useState(false);
-
-  const handleChat = () => {
-    if (typeof window === 'undefined') return;
-    // @ts-ignore
-    if (window.$crisp)     window.$crisp.push(['do', 'chat:open']);
-    // @ts-ignore
-    else if (window.Tawk_API) window.Tawk_API.toggle();
-  };
 
   return (
     <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-stretch">
@@ -91,9 +82,7 @@ export default function QuickActions() {
                   </div>
                 </div>
               );
-              return a.type === 'chat'
-                ? <button key={a.label} onClick={handleChat} className="w-full text-left">{inner}</button>
-                : <Link key={a.label} href={a.href!}>{inner}</Link>;
+              return <Link key={a.label} href={a.href!}>{inner}</Link>;
             })}
           </div>
 
