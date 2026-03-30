@@ -255,24 +255,18 @@ function CardModal({
 /* ─── Individual card in the hero row ─── */
 function HeroCard({
   card,
-  dimmed,
   onOpen,
-  onClose,
-  divRef,
 }: {
   card: CardDef;
-  dimmed: boolean;
   onOpen: () => void;
-  onClose: () => void;
-  divRef?: (el: HTMLDivElement | null) => void;
 }) {
   const { Icon } = card;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
-      ref={divRef}
-      onMouseEnter={onOpen}
-      onMouseLeave={onClose}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         display: 'flex', flexDirection: 'column',
         background: 'var(--surface)',
@@ -283,13 +277,13 @@ function HeroCard({
         width: card.large ? 218 : undefined,
         flex: card.large ? '0 0 218px' : '1 1 0',
         minWidth: card.large ? 218 : 142,
-        cursor: 'pointer',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 2px 16px rgba(10,15,30,0.055)',
-        transition: 'opacity 0.25s ease, transform 0.25s ease',
-        opacity: dimmed ? 0.45 : 1,
-        transform: dimmed ? 'scale(0.97)' : 'scale(1)',
+        boxShadow: isHovered
+          ? `0 8px 30px ${card.shadowColor}`
+          : '0 2px 16px rgba(10,15,30,0.055)',
+        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+        transform: isHovered ? 'scale(1.04) translateY(-8px)' : 'scale(1) translateY(0)',
       }}
     >
       {/* Subtle top glow */}
@@ -340,13 +334,22 @@ function HeroCard({
       }}>
         {card.desc}
       </p>
-      <div style={{
-        position: 'relative', zIndex: 1,
-        display: 'flex', alignItems: 'center', gap: 5,
-        fontSize: 11, fontWeight: 700, color: card.accentColor,
-      }}>
-        Learn More <ArrowRight size={11} />
-      </div>
+
+      {/* Read More button — visible on hover, click opens modal */}
+      <button
+        onClick={onOpen}
+        style={{
+          position: 'relative', zIndex: 1,
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 11, fontWeight: 700, color: card.accentColor,
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          opacity: isHovered ? 1 : 0,
+          transform: isHovered ? 'translateY(0)' : 'translateY(4px)',
+          transition: 'opacity 0.2s ease, transform 0.2s ease',
+        }}
+      >
+        Read More <ArrowRight size={11} />
+      </button>
     </div>
   );
 }
