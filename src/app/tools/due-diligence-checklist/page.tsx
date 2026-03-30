@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import DDChecklistTool from '@/components/tools/DDChecklistTool';
 
 export const metadata: Metadata = {
@@ -11,6 +13,8 @@ export const metadata: Metadata = {
 export default function DDChecklistPage() {
   return (
     <div className="pt-28">
+
+      {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
         <div className="container-wide">
           <p className="eyebrow mb-5">
@@ -28,14 +32,29 @@ export default function DDChecklistPage() {
               marginBottom: '1.25rem',
             }}
           >
-            People Due Diligence Checklist
+            Acquiring or merging?<br />
+            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Surface people risk before you sign.
+            </span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Acquiring or merging? Run this checklist before you sign. Surface people risk before it becomes your problem.
+          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+            People risk is the most overlooked part of any deal. Contracts, liabilities, key person dependency, cultural misalignment: miss it in due diligence and it becomes your problem on day one. Run this checklist before you sign.
           </p>
+          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+            Work through each section, flag your risk areas, and get a clear picture of what needs resolving before or immediately after completion.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/book" className="btn-gradient">
+              Book a Free DD Review <ArrowRight size={16} />
+            </Link>
+            <Link href="/book" className="btn-secondary">
+              Book a Scoping Call
+            </Link>
+          </div>
         </div>
       </section>
-      <section className="section-padding ">
+
+      <section className="section-padding">
         <div className="max-w-[1200px] mx-auto">
           <DDChecklistTool />
         </div>

@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import HRRiskScoreTool from '@/components/tools/HRRiskScoreTool';
 
 export const metadata: Metadata = {
@@ -11,6 +13,8 @@ export const metadata: Metadata = {
 export default function HRRiskScorePage() {
   return (
     <div className="pt-28">
+
+      {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
         <div className="container-wide">
           <p className="eyebrow mb-5">
@@ -28,14 +32,29 @@ export default function HRRiskScorePage() {
               marginBottom: '1.25rem',
             }}
           >
-            HR Risk &amp; Compliance Score
+            Your HR risk is hidden.<br />
+            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              We surface it before it costs you.
+            </span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Do you have the right policies in place? Are managers actually following them? Find out in 2 minutes.
+          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+            Do you have the right policies in place? Are managers actually following them? Most businesses do not know until something goes wrong. This 2-minute diagnostic surfaces your top people risks before they become expensive problems.
           </p>
+          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+            Answer a few quick questions about your current HR setup. Get a scored risk profile with specific recommendations on what to fix first.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/book" className="btn-gradient">
+              Book a Free HR Review <ArrowRight size={16} />
+            </Link>
+            <Link href="/book" className="btn-secondary">
+              Book a Scoping Call
+            </Link>
+          </div>
         </div>
       </section>
-      <section className="section-padding ">
+
+      <section className="section-padding">
         <div className="max-w-[1200px] mx-auto">
           <HRRiskScoreTool />
         </div>

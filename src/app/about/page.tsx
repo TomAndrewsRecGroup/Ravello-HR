@@ -92,23 +92,7 @@ export default function AboutPage() {
                   Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
                 </p>
               </div>
-              <div className="mt-8">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-            <div>
-              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
-                <Image
-                  src="/Lucy.jpg"
-                  alt="Lucy, Co-Founder of The People System"
-                  width={600}
-                  height={360}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div className="rounded-[18px] p-6" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
+              <div className="rounded-[18px] p-6 mt-8" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
                 <p className="eyebrow mb-4">Lucy&rsquo;s credentials</p>
                 <ul className="space-y-2">
                   {lucyCredentials.map((c) => (
@@ -126,6 +110,22 @@ export default function AboutPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="rounded-[24px] overflow-hidden" style={{ width: '100%', maxWidth: 420, height: 480 }}>
+                <Image
+                  src="/Lucy.jpg"
+                  alt="Lucy, Co-Founder of The People System"
+                  width={420}
+                  height={480}
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <div className="mt-6">
+                <Link href="/book" className="btn-gradient">
+                  Book a Free Discovery Call <ArrowRight size={16} />
+                </Link>
               </div>
             </div>
           </div>
@@ -161,23 +161,7 @@ export default function AboutPage() {
                   Tom leads HIRE at The People System. Role definition, embedded recruitment delivery, process design, and Friction Lens scoring on every active role. If it involves finding and securing great people, it goes through Tom.
                 </p>
               </div>
-              <div className="mt-8">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-            <div>
-              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
-                <Image
-                  src="/Tom.jpg"
-                  alt="Tom, Co-Founder of The People System"
-                  width={600}
-                  height={360}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div className="rounded-[18px] p-6" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
+              <div className="rounded-[18px] p-6 mt-8" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
                 <p className="eyebrow mb-4">Tom&rsquo;s credentials</p>
                 <ul className="space-y-2">
                   {tomCredentials.map((c) => (
@@ -195,6 +179,22 @@ export default function AboutPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="rounded-[24px] overflow-hidden" style={{ width: '100%', maxWidth: 420, height: 480 }}>
+                <Image
+                  src="/Tom.jpg"
+                  alt="Tom, Co-Founder of The People System"
+                  width={420}
+                  height={480}
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <div className="mt-6">
+                <Link href="/book" className="btn-gradient">
+                  Book a Free Discovery Call <ArrowRight size={16} />
+                </Link>
               </div>
             </div>
           </div>

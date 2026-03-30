@@ -43,7 +43,7 @@ export default function SmartHiringSystemPage() {
         <div className="container-wide">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            HIRE: The People System
+            Free Tool: Smart Hiring System™
           </p>
           <h1
             style={{
