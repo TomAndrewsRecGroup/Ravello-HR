@@ -91,8 +91,16 @@
     line-height: 1.65;
   }
 
+  /* H1 — global standard: matches homepage hero */
+  h1 {
+    font-size: clamp(2.8rem, 5.5vw, 5rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
   /* Display headings — Cormorant Garamond serif */
-  h1, h2, h3 {
+  h2, h3 {
     font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
     color: var(--ink);
     font-weight: 300;

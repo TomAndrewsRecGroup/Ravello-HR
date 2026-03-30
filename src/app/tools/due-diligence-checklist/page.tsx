@@ -23,7 +23,7 @@ export default function DDChecklistPage() {
         </div>
       </section>
       <section className="section-padding ">
-        <div className="container-narrow">
+        <div className="max-w-[1200px] mx-auto">
           <DDChecklistTool />
         </div>
       </section>

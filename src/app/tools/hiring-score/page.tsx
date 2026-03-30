@@ -39,7 +39,7 @@ export default function HiringScorePage() {
         </div>
       </section>
       <section className="section-padding" style={{ paddingTop: '2rem' }}>
-        <div className="container-narrow">
+        <div className="max-w-[1200px] mx-auto">
           <HiringScoreTool />
         </div>
       </section>

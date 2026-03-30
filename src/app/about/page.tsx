@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 const lucyCredentials = [
   '18+ years senior HR and People leadership',
   'Managed HR through acquisitions, restructures, and rapid scale-ups',
-  'Built hiring frameworks that reduced agency spend by 40–60% in 12 months',
+  'Built hiring frameworks that reduced agency spend by 40-60% in 12 months',
   'Designed HR infrastructure adopted across multi-site, multi-country operations',
   'Advised leadership teams on change affecting hundreds of employees',
   'Zero tribunal outcomes across every disciplinary, redundancy, and TUPE process',
@@ -47,19 +48,9 @@ export default function AboutPage() {
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
             About The People System
           </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
+          <h1 className="font-display mb-5">
             Not HR with a bit of recruitment.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span className="text-gradient">
               Not recruitment pretending to do HR.
             </span>
           </h1>
@@ -108,6 +99,15 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
+              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
+                <Image
+                  src="/lucy.jpg"
+                  alt="Lucy, Co-Founder of The People System"
+                  width={600}
+                  height={360}
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
               <div className="rounded-[18px] p-6" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
                 <p className="eyebrow mb-4">Lucy&rsquo;s credentials</p>
                 <ul className="space-y-2">
@@ -168,6 +168,15 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
+              <div className="rounded-[24px] overflow-hidden mb-6" style={{ height: 360 }}>
+                <Image
+                  src="/tom.jpg"
+                  alt="Tom, Co-Founder of The People System"
+                  width={600}
+                  height={360}
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
               <div className="rounded-[18px] p-6" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
                 <p className="eyebrow mb-4">Tom&rsquo;s credentials</p>
                 <ul className="space-y-2">

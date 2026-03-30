@@ -65,16 +65,7 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Insights
               </p>
-              <h1
-                className="font-display mb-6"
-                style={{
-                  fontSize: 'clamp(2.4rem, 5vw, 4rem)',
-                  fontWeight: 400,
-                  lineHeight: 1.06,
-                  letterSpacing: '-0.025em',
-                  color: 'var(--ink)',
-                }}
-              >
+              <h1 className="font-display mb-6">
                 All your documents and{' '}
                 <span className="text-gradient">insights</span> in one place
               </h1>

@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
@@ -41,14 +42,14 @@ const packages = [
       'Written process map with recommendations',
       'Reduced placement fee if additional roles filled during engagement',
     ],
-    cta: { label: 'Book a Scoping Call', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Hire Embedded',
     tag: 'Most popular · 6-month minimum',
     price: '£5,000/month · fees included in scope',
     highlight: true,
-    who: 'For businesses with a consistent hiring need: typically 3–8 roles over the engagement period. Tom works inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
+    who: 'For businesses with a consistent hiring need: typically 3-8 roles over the engagement period. We work inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
     includes: [
       'Full embedded recruitment delivery',
       'Friction Lens scoring on every role before launch',
@@ -64,9 +65,9 @@ const packages = [
   {
     name: 'Hire Build',
     tag: 'Scale · 6-month minimum',
-    price: '£6,500–£8,500+/month',
+    price: '£6,500-£8,500+/month',
     highlight: false,
-    who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. Tom leads the talent function end-to-end, builds the internal infrastructure, and designs the process your in-house team will eventually run independently.',
+    who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. We lead the talent function end-to-end, build the internal infrastructure, and design the process your in-house team will eventually run independently.',
     includes: [
       'Full talent function leadership',
       'Friction Lens built into every active role',
@@ -75,7 +76,7 @@ const packages = [
       'Recruiter hiring and onboarding support (if building in-house team)',
       'Hiring manager training programme',
       'Talent market intelligence reporting',
-      'Direct line to Tom throughout',
+      'Direct line to us throughout',
     ],
     cta: { label: 'Book a Call', href: '/book' },
   },
@@ -86,47 +87,59 @@ export default function HirePage() {
     <div className="pt-28">
 
       {/* Hero */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
         <div className="container-wide">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            HIRE: Services and Pricing
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
-              marginBottom: '1.25rem',
-            }}
-          >
-            Four ways to work with Tom<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              on your hiring.
-            </span>
-          </h1>
-          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            Every HIRE engagement starts with Friction Lens: a role scoring system that tells you exactly where each vacancy will struggle before it goes to market. From there, the right package depends on your hiring volume and how broken the current process is.
-          </p>
-          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-            Not sure which one fits? Start with a free hiring audit. Thirty minutes with Tom. You will leave with a clear picture of what is broken and which engagement model makes sense.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Start with a Hiring Audit <ArrowRight size={16} />
-            </Link>
-            <Link href="/smart-hiring-system" className="btn-secondary">
-              How HIRE works
-            </Link>
+          <div className="grid lg:grid-cols-[1fr_420px] gap-12 items-center">
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                HIRE: Services and Pricing
+              </p>
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Four ways to work with us<br />
+                <span className="text-gradient">on your hiring.</span>
+              </h1>
+              <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+                Every HIRE engagement starts with Friction Lens: a role scoring system that tells you exactly where each vacancy will struggle before it goes to market. From there, the right package depends on your hiring volume and how broken the current process is.
+              </p>
+              <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+                Not sure which one fits? Start with a free hiring audit. Thirty minutes with us. You will leave with a clear picture of what is broken and which engagement model makes sense.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/book" className="btn-gradient">
+                  Start with a Hiring Audit <ArrowRight size={16} />
+                </Link>
+                <Link href="/smart-hiring-system" className="btn-secondary">
+                  How HIRE works
+                </Link>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=960&h=960&fit=crop&crop=faces"
+                  alt="Recruitment professional reviewing candidate profiles"
+                  fill
+                  className="object-cover"
+                  sizes="420px"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Friction Lens callout */}
-      <section className="section-sm" style={{ background: 'var(--surface)' }}>
+      <section style={{ background: 'var(--surface)', padding: '2.5rem 1.5rem' }} className="lg:px-10">
         <div className="container-narrow">
           <div className="rounded-[18px] p-8 flex flex-col sm:flex-row gap-6 items-start" style={{ background: 'linear-gradient(135deg, rgba(123,47,190,0.08), rgba(75,110,245,0.08))', border: '1px solid rgba(123,47,190,0.15)' }}>
             <div className="flex-1">
@@ -146,10 +159,10 @@ export default function HirePage() {
       </section>
 
       {/* Packages */}
-      <section className="section-padding" style={{ background: 'var(--bg)' }}>
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="font-display section-title mb-4">HIRE<br /><span className="text-gradient">packages</span></h2>
+            <h2 className="font-display section-title mb-4">HIRE <span className="text-gradient">packages</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               All packages include Friction Lens scoring as standard. No tables: here is what each one means in practice.
             </p>
@@ -229,15 +242,44 @@ export default function HirePage() {
       </section>
 
       {/* Not sure section */}
-      <section className="section-sm" style={{ background: 'var(--surface-alt)' }}>
-        <div className="container-narrow text-center">
-          <h2 className="font-display section-title mb-4">Not sure<br /><span className="text-gradient">which package fits?</span></h2>
-          <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
-            Start with a hiring audit. Tom will look at what you are hiring for, how the current process is working, run a Friction Lens score on a live role, and tell you exactly which engagement makes sense.
-          </p>
-          <Link href="/book" className="btn-gradient">
-            Book a Free Hiring Audit <ArrowRight size={16} />
-          </Link>
+      <section style={{ background: 'var(--surface-alt)', padding: '3rem 1.5rem' }} className="lg:px-10">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
+            <div>
+              <h2 className="font-display section-title mb-4">Not sure <span className="text-gradient">which package fits?</span></h2>
+              <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
+                Start with a hiring audit. We will look at what you are hiring for, how the current process is working, run a Friction Lens score on a live role, and tell you exactly which engagement makes sense.
+              </p>
+              <Link href="/book" className="btn-gradient">
+                Book a Free Hiring Audit <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=960&h=960&fit=crop&crop=faces"
+                  alt="Team collaborating on hiring strategy"
+                  fill
+                  className="object-cover"
+                  sizes="420px"
+                />
+                {/* Quote overlay */}
+                <div
+                  className="absolute inset-x-0 bottom-0 p-6"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(5,8,16,0.88) 0%, rgba(5,8,16,0.45) 60%, transparent 100%)',
+                  }}
+                >
+                  <p className="text-white text-sm leading-relaxed mb-2" style={{ fontStyle: 'italic', opacity: 0.95 }}>
+                    &ldquo;Not HR from a textbook. People results from operators who have done the real work.&rdquo;
+                  </p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Lucy &amp; Tom, The People System
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -247,7 +289,7 @@ export default function HirePage() {
         { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
         { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It assesses every active role across five dimensions: Location, Salary, Skills, Working Model, and Process: against live market data and produces a friction score (Low to Critical) with specific recommendations. It is integrated into every HIRE package as standard.' },
         { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
-        { q: 'Do you replace our existing recruiters or agencies?', a: 'Tom typically works alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6–12 months of working with Tom.' },
+        { q: 'Do you replace our existing recruiters or agencies?', a: 'We typically work alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6-12 months of working with us.' },
       ]} />
 
     </div>

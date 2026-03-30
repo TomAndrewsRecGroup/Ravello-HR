@@ -1,10 +1,7 @@
 'use client';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useRef, useEffect, type ElementType } from 'react';
 import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
-
-const LOGO_FULL = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const STATS = [
   { val: '18+', lab: 'Years HR leadership', gold: true },
@@ -41,7 +38,7 @@ const CARDS: CardDef[] = [
     label: 'PEOPLE',
     Icon: Network,
     title: 'Strategic HR Advisory',
-    desc: 'Empowering senior leaders to transform, mature, and grow their HR, Talent, and People function for strategic business success.',
+    desc: 'We sit alongside your leadership team and help you build a people function that actually works. Strategy, structure, and the day-to-day support that means you are never guessing.',
     href: '/why-ravello',
     large: true,
     accentColor: '#7C3AED',
@@ -60,7 +57,7 @@ const CARDS: CardDef[] = [
     label: 'HIRE',
     Icon: Briefcase,
     title: 'Talent Acquisition',
-    desc: 'Right people, faster. Friction-scored roles, full pipeline visibility, no wasted agency spend.',
+    desc: 'We find the right people, faster. Every role scored before it goes live. Full pipeline visibility. No wasted agency spend. Just structured hiring that sticks.',
     href: '/hire',
     large: false,
     accentColor: '#3B6FFF',
@@ -79,7 +76,7 @@ const CARDS: CardDef[] = [
     label: 'LEAD',
     Icon: Users,
     title: 'People Leadership',
-    desc: 'Training, performance reviews, and skills matrix. Develop your people with real structure.',
+    desc: 'Your managers need more than a training day. We build capability, run performance frameworks, and give your leadership team the tools to develop people properly.',
     href: '/lead',
     large: false,
     accentColor: '#EA3DC4',
@@ -98,7 +95,7 @@ const CARDS: CardDef[] = [
     label: 'PROTECT',
     Icon: ShieldCheck,
     title: 'HR Protection',
-    desc: 'Compliance, employee documents, absence tracking. Stay protected and ahead of every risk.',
+    desc: 'Contracts, handbooks, compliance. We build the foundations that protect your business and make sure nothing is left to chance when it matters most.',
     href: '/protect',
     large: false,
     accentColor: '#1848CC',
@@ -113,8 +110,6 @@ const CARDS: CardDef[] = [
     ctaLabel: 'See PROTECT packages',
   },
 ];
-
-type SourceRect = { top: number; left: number; width: number; height: number };
 
 /* ─── SVG graphic for the PEOPLE card ─── */
 function PeopleGraphic({ color, width = 130 }: { color: string; width?: number }) {
@@ -138,162 +133,105 @@ function PeopleGraphic({ color, width = 130 }: { color: string; width?: number }
   );
 }
 
-/* ─── CardModal — FLIP morph from card → centre, same visual DNA as HeroCard ─── */
+/* ─── CardModal — simple centered fade-in modal ─── */
 function CardModal({
   card,
-  sourceRect,
-  onMouseEnter,
-  onMouseLeave,
   onClose,
 }: {
   card: CardDef;
-  sourceRect: SourceRect | null;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
   onClose: () => void;
 }) {
   const { Icon } = card;
-  const [phase, setPhase] = useState<'from' | 'to'>('from');
+  const [visible, setVisible] = useState(false);
 
-  const MODAL_W = 370;
-  const MODAL_H = 575;
-
-  // Two rAFs: let browser paint the 'from' frame before triggering transition
   useEffect(() => {
-    const id = requestAnimationFrame(() =>
-      requestAnimationFrame(() => setPhase('to'))
-    );
-    return () => cancelAnimationFrame(id);
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
   }, []);
-
-  // Source: card's centre in viewport. Target: viewport centre (pixels, not %).
-  const srcCX = sourceRect ? sourceRect.left + sourceRect.width / 2 : (typeof window !== 'undefined' ? window.innerWidth / 2 : 700);
-  const srcCY = sourceRect ? sourceRect.top + sourceRect.height / 2 : (typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
-  const toTop  = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
-  const toLeft = typeof window !== 'undefined' ? window.innerWidth  / 2 : 700;
-
-  const isTo = phase === 'to';
 
   return (
     <>
-      {/* Backdrop — fades in with the morph; mouseEnter cancels pending close while in transit */}
+      {/* Backdrop */}
       <div
         style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: isTo ? 'rgba(7,11,29,0.58)' : 'rgba(7,11,29,0)',
-          backdropFilter: isTo ? 'blur(12px)' : 'blur(0px)',
-          WebkitBackdropFilter: isTo ? 'blur(12px)' : 'blur(0px)',
-          transition: 'background 0.35s ease, backdrop-filter 0.35s ease',
+          background: visible ? 'rgba(7,11,29,0.55)' : 'rgba(7,11,29,0)',
+          backdropFilter: visible ? 'blur(10px)' : 'blur(0px)',
+          WebkitBackdropFilter: visible ? 'blur(10px)' : 'blur(0px)',
+          transition: 'background 0.3s ease, backdrop-filter 0.3s ease',
         }}
         onClick={onClose}
-        onMouseEnter={onMouseEnter}
       />
 
-      {/* Modal — morphs from card's position/size to viewport centre */}
+      {/* Modal */}
       <div
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
         style={{
           position: 'fixed', zIndex: 201,
-          // Both states use px so CSS can interpolate cleanly
-          top:    isTo ? toTop  : srcCY,
-          left:   isTo ? toLeft : srcCX,
-          width:  isTo ? MODAL_W : (sourceRect?.width  ?? MODAL_W  * 0.56),
-          height: isTo ? MODAL_H : (sourceRect?.height ?? MODAL_H  * 0.43),
-          borderRadius: isTo ? 26 : 22,
+          top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
-
-          // Same card visual: white bg, subtle border, top radial glow
+          width: 390, maxHeight: '85vh',
+          borderRadius: 24,
           display: 'flex', flexDirection: 'column',
           background: 'var(--surface)',
           border: '1.5px solid var(--brand-line)',
-          boxShadow: isTo
-            ? [`0 0 0 1px ${card.accentColor}18`, `0 0 80px ${card.shadowColor}`, '0 48px 100px rgba(7,11,29,0.30)'].join(', ')
-            : '0 2px 16px rgba(10,15,30,0.06)',
+          boxShadow: [`0 0 0 1px ${card.accentColor}18`, `0 0 60px ${card.shadowColor}`, '0 32px 80px rgba(7,11,29,0.25)'].join(', '),
           overflow: 'hidden',
-          willChange: 'top, left, width, height',
-
-          transition: isTo ? [
-            'top    0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
-            'left   0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
-            'width  0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
-            'height 0.46s cubic-bezier(0.34, 1.12, 0.64, 1)',
-            'border-radius 0.35s ease',
-            'box-shadow 0.3s ease 0.15s',
-          ].join(', ') : 'none',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.3s ease',
         }}
       >
-        {/* Top radial glow — identical to HeroCard */}
+        {/* Top radial glow */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: `radial-gradient(ellipse at 50% -10%, ${card.accentColor}14 0%, transparent 65%)`,
-          opacity: isTo ? 1 : 0,
-          transition: 'opacity 0.3s ease 0.15s',
         }} />
 
-        {/* All content fades in after the morph completes */}
         <div style={{
           display: 'flex', flexDirection: 'column', flex: 1,
-          padding: card.large ? '24px 20px 20px' : '22px 18px 18px',
-          opacity: isTo ? 1 : 0,
-          transition: 'opacity 0.22s ease 0.28s',
+          padding: '24px 22px 22px',
+          overflowY: 'auto',
         }}>
-
-          {/* Icon badge — same treatment as HeroCard, scaled up */}
+          {/* Icon badge */}
           <div style={{
             position: 'relative', zIndex: 1,
-            width: card.large ? 52 : 44,
-            height: card.large ? 52 : 44,
-            borderRadius: 14,
+            width: 48, height: 48, borderRadius: 14,
             background: card.accentBg,
             border: `1px solid ${card.accentColor}35`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <Icon size={card.large ? 24 : 19} style={{ color: card.accentColor }} />
+            <Icon size={22} style={{ color: card.accentColor }} />
           </div>
 
-          {/* Middle area — same as HeroCard: graphic for PEOPLE, large ghost icon for others */}
-          {card.large ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-              <PeopleGraphic color={card.accentColor} width={178} />
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-              <Icon size={104} style={{ color: card.accentColor, opacity: 0.045 }} />
-            </div>
-          )}
-
-          {/* Label — same Cormorant font as HeroCard, proportionally larger */}
+          {/* Label */}
           <p style={{
-            position: 'relative', zIndex: 1,
+            position: 'relative', zIndex: 1, marginTop: 16,
             fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
-            fontSize: card.large ? 38 : 32, fontWeight: 800,
-            letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 7,
+            fontSize: 36, fontWeight: 800,
+            letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 8,
           }}>
             {card.label}
           </p>
 
           {/* Title */}
-          <p style={{ position: 'relative', zIndex: 1, fontSize: 12, fontWeight: 700, color: card.accentColor, marginBottom: 7, lineHeight: 1.3 }}>
+          <p style={{ position: 'relative', zIndex: 1, fontSize: 13, fontWeight: 700, color: card.accentColor, marginBottom: 10, lineHeight: 1.3 }}>
             {card.title}
           </p>
 
           {/* Description */}
-          <p style={{ position: 'relative', zIndex: 1, fontSize: 12.5, lineHeight: 1.6, color: 'var(--ink-soft)', marginBottom: 13 }}>
+          <p style={{ position: 'relative', zIndex: 1, fontSize: 13, lineHeight: 1.65, color: 'var(--ink-soft)', marginBottom: 18 }}>
             {card.desc}
           </p>
 
           {/* Bullet points */}
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
             {card.points.map((pt) => (
               <div key={pt} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <CheckCircle2 size={13} style={{ color: card.accentColor, flexShrink: 0, marginTop: 2 }} />
-                <span style={{ fontSize: 11.5, color: 'var(--ink)', lineHeight: 1.45 }}>{pt}</span>
+                <CheckCircle2 size={14} style={{ color: card.accentColor, flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.5 }}>{pt}</span>
               </div>
             ))}
           </div>
 
-          {/* CTA — same "Learn More" treatment, promoted to a pill button */}
+          {/* CTA */}
           <Link
             href={card.href}
             style={{
@@ -454,17 +392,20 @@ export default function Hero() {
 
         <div className="relative z-10 container-wide section-padding w-full pt-36 pb-24">
 
-          {/* Centred logo + tagline */}
+          {/* Centred wordmark + tagline */}
           <div className="flex flex-col items-center text-center mb-12">
-            <Image
-              src={LOGO_FULL}
-              alt="The People System"
-              width={520}
-              height={168}
-              className="object-contain w-auto mb-5"
-              style={{ height: '118px' }}
-              priority
-            />
+            <h2
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(2rem, 4vw, 3.2rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.1,
+                color: 'var(--ink)',
+              }}
+            >
+              THE <span className="text-gradient">PEOPLE</span> SYSTEM
+            </h2>
             <p className="text-[11px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--ink-faint)' }}>
               Hire.&nbsp;&nbsp;Lead.&nbsp;&nbsp;Protect.
             </p>
