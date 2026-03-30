@@ -40,9 +40,18 @@ export default function CostOfProblem() {
               The cost of doing nothing
             </p>
 
-            <h2 className="font-display section-title mb-4">
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
               Every month you delay<br />costs more than the fix
-            </h2>
+            </h3>
 
             <p className="text-base leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
               These are not hypothetical numbers. They are the measurable cost of leaving your people

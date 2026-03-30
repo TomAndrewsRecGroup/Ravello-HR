@@ -76,7 +76,18 @@ export default function FunnelCards() {
             />
             Three pillars. One partner.
           </p>
-          <h2 className="font-display section-title mb-5">Where do you need us most?</h2>
+          <h3
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: 'var(--ink)',
+            }}
+          >
+            Where do you need us most?
+          </h3>
           <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
             Start with the pillar that fits right now. Most clients build from there.
           </p>

@@ -81,12 +81,19 @@ export default function ExitIntentPopup() {
               </div>
 
               <p className="eyebrow mb-4">Free guide: takes 5 minutes to read</p>
-              <h2
-                className="font-bold mb-4"
-                style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--ink)', letterSpacing: '-0.02em' }}
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
               >
-                The exact 4-step framework that stops roles reopening
-              </h2>
+                The exact 4-step framework<br />
+                <span className="text-gradient">that stops roles reopening</span>
+              </h3>
               <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--ink-soft)' }}>
                 Every role that reopens costs 3x what a structured hire would. This free guide shows you the exact pattern, plus the 4-step process 100+ UK businesses have used to fix it for good.
               </p>

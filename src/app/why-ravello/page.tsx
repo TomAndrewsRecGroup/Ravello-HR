@@ -117,7 +117,19 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               What makes us different
             </p>
-            <h2 className="font-display section-title">Six reasons businesses choose The People System.</h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Six reasons businesses choose<br />
+              <span className="text-gradient">The People System.</span>
+            </h3>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {REASONS.map((r) => (
@@ -139,7 +151,19 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Why not an agency
             </p>
-            <h2 className="font-display section-title">How we compare.</h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              How we<br />
+              <span className="text-gradient">compare.</span>
+            </h3>
             <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at The People System versus the alternatives.</p>
           </div>
 
@@ -181,7 +205,19 @@ export default function WhyRavelloPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Common questions
             </p>
-            <h2 className="font-display section-title">We hear these a lot. Here are the honest answers.</h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              We hear these a lot.<br />
+              <span className="text-gradient">Here are the honest answers.</span>
+            </h3>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {OBJECTIONS.map((o) => (

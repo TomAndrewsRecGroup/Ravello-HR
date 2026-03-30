@@ -127,10 +127,19 @@ export default function FounderSection() {
               />
               Why The People System
             </p>
-            <h2 className="font-display section-title mb-5">
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
               Two specialists.<br />
               <span className="text-gradient">One partner. No handoffs.</span>
-            </h2>
+            </h3>
             <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>

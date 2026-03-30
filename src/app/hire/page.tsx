@@ -144,9 +144,19 @@ export default function HirePage() {
           <div className="rounded-[18px] p-8 flex flex-col sm:flex-row gap-6 items-start" style={{ background: 'linear-gradient(135deg, rgba(123,47,190,0.08), rgba(75,110,245,0.08))', border: '1px solid rgba(123,47,190,0.15)' }}>
             <div className="flex-1">
               <p className="eyebrow mb-2" style={{ color: 'var(--brand-purple)' }}>Built into every engagement</p>
-              <h2 className="font-bold text-xl mb-3" style={{ color: 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, fontSize: '1.4rem' }}>
-                Friction Lens scores every role before it goes live
-              </h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Friction Lens scores every role<br />
+                <span className="text-gradient">before it goes live</span>
+              </h3>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 Five dimensions: Location, Salary, Skills, Working Model, and Process: scored against live market data. Low, Medium, High, or Critical friction. Specific recommendations attached. No more blind launches.
               </p>
@@ -162,7 +172,18 @@ export default function HirePage() {
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="font-display section-title mb-4">HIRE <span className="text-gradient">packages</span></h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              HIRE <span className="text-gradient">packages</span>
+            </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               All packages include Friction Lens scoring as standard. No tables: here is what each one means in practice.
             </p>
@@ -246,7 +267,19 @@ export default function HirePage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
             <div>
-              <h2 className="font-display section-title mb-4">Not sure <span className="text-gradient">which package fits?</span></h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Not sure<br />
+                <span className="text-gradient">which package fits?</span>
+              </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Start with a hiring audit. We will look at what you are hiring for, how the current process is working, run a Friction Lens score on a live role, and tell you exactly which engagement makes sense.
               </p>

@@ -108,7 +108,19 @@ export default function InsightsPage() {
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Your portal
             </p>
-            <h2 className="font-display section-title mb-5">Everything lives in one place</h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Everything lives<br />
+              <span className="text-gradient">in one place</span>
+            </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               No more scattered emails, shared drives, or chasing updates. Your portal is the single source of truth.
             </p>
@@ -209,9 +221,19 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Friction Lens for roles
               </p>
-              <h2 className="font-display section-title mb-5">
-                Score every role before it goes to market
-              </h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Score every role<br />
+                <span className="text-gradient">before it goes to market</span>
+              </h3>
               <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
                 Before any role goes live, Friction Lens scores it across five dimensions
                 against live market data. You see exactly where it will struggle and what to
@@ -253,9 +275,19 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Company People Score
               </p>
-              <h2 className="font-display section-title mb-5">
-                See how your people function compares to your industry
-              </h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                See how your people function<br />
+                <span className="text-gradient">compares to your industry</span>
+              </h3>
               <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
                 Your People Score benchmarks your entire HR function against businesses of a
                 similar size and sector. See where you stand today, track your improvement
@@ -409,10 +441,19 @@ export default function InsightsPage() {
       {/* CTA */}
       <section className="section-padding" style={{ background: 'var(--surface-alt)' }}>
         <div className="container-narrow text-center">
-          <h2 className="font-display section-title mb-6">
-            Ready to see your{' '}
+          <h3
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: 'var(--ink)',
+            }}
+          >
+            Ready to see your<br />
             <span className="text-gradient">People Score?</span>
-          </h2>
+          </h3>
           <p className="text-lg leading-relaxed mb-10 max-w-[500px] mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Book a free call. We will walk you through the portal, score one of your live roles,
             and show you where your people function sits against your industry.

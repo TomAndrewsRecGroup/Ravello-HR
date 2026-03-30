@@ -272,18 +272,17 @@ function HeroCard({
         background: 'var(--surface)',
         border: `1.5px solid var(--brand-line)`,
         borderRadius: 22,
-        padding: card.large ? '26px 22px 22px' : '18px 16px 16px',
-        height: card.large ? 380 : 244,
-        width: card.large ? 218 : undefined,
-        flex: card.large ? '0 0 218px' : '1 1 0',
-        minWidth: card.large ? 218 : 142,
+        padding: '22px 18px 18px',
+        height: 320,
+        flex: '1 1 0',
+        minWidth: 160,
         position: 'relative',
         overflow: 'hidden',
         boxShadow: isHovered
-          ? `0 8px 30px ${card.shadowColor}`
+          ? `0 12px 40px ${card.shadowColor}`
           : '0 2px 16px rgba(10,15,30,0.055)',
-        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-        transform: isHovered ? 'scale(1.04) translateY(-8px)' : 'scale(1) translateY(0)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        transform: isHovered ? 'scale(1.12) translateY(-12px)' : 'scale(1) translateY(0)',
       }}
     >
       {/* Subtle top glow */}
@@ -295,42 +294,35 @@ function HeroCard({
       {/* Icon */}
       <div style={{
         position: 'relative', zIndex: 1,
-        width: card.large ? 50 : 38,
-        height: card.large ? 50 : 38,
-        borderRadius: 13,
+        width: 42, height: 42, borderRadius: 13,
         background: card.accentBg,
         border: `1px solid ${card.accentColor}35`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
-        <Icon size={card.large ? 22 : 17} style={{ color: card.accentColor }} />
+        <Icon size={19} style={{ color: card.accentColor }} />
       </div>
 
-      {card.large && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-          <PeopleGraphic color={card.accentColor} />
-        </div>
-      )}
-      {!card.large && <div style={{ flex: 1 }} />}
+      <div style={{ flex: 1 }} />
 
       <p style={{
         position: 'relative', zIndex: 1,
         fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)',
-        fontSize: card.large ? 30 : 22, fontWeight: 800,
+        fontSize: 26, fontWeight: 800,
         letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1, marginBottom: 7,
       }}>
         {card.label}
       </p>
       <p style={{
         position: 'relative', zIndex: 1,
-        fontSize: card.large ? 12 : 10.5, fontWeight: 700, color: card.accentColor,
+        fontSize: 11, fontWeight: 700, color: card.accentColor,
         marginBottom: 6, lineHeight: 1.3,
       }}>
         {card.title}
       </p>
       <p style={{
         position: 'relative', zIndex: 1,
-        fontSize: card.large ? 11.5 : 10, color: 'var(--ink-soft)',
-        lineHeight: 1.55, marginBottom: card.large ? 14 : 10,
+        fontSize: 10.5, color: 'var(--ink-soft)',
+        lineHeight: 1.55, marginBottom: 10,
       }}>
         {card.desc}
       </p>
@@ -381,7 +373,7 @@ export default function Hero() {
             <h2
               className="font-display mb-5"
               style={{
-                fontSize: 'clamp(2rem, 4vw, 3.2rem)',
+                fontSize: 'clamp(2.6rem, 5vw, 4.2rem)',
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
                 lineHeight: 1.1,
@@ -455,7 +447,7 @@ export default function Hero() {
             </div>
 
             {/* Right: 4 cards — hover captures position and triggers modal */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-stretch gap-3">
               {CARDS.map((card) => (
                 <HeroCard
                   key={card.id}

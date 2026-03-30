@@ -149,7 +149,18 @@ export default function LeadPage() {
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
           <div className="max-w-[600px] mb-12">
-            <h2 className="font-display section-title mb-4">LEAD <span className="text-gradient">packages</span></h2>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              LEAD <span className="text-gradient">packages</span>
+            </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               From a reliable HR floor to a full people function build. No tables: here is what each engagement actually looks like.
             </p>
@@ -233,7 +244,19 @@ export default function LeadPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
             <div>
-              <h2 className="font-display section-title mb-4">Not sure <span className="text-gradient">where the biggest gap is?</span></h2>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Not sure<br />
+                <span className="text-gradient">where the biggest gap is?</span>
+              </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Book thirty minutes with us. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
               </p>

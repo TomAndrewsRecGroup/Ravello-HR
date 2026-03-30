@@ -66,15 +66,19 @@ export default function ProofSection() {
               />
               Proof of work
             </p>
-            <h2 className="font-display section-title-light mb-5">
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: '#fff',
+              }}
+            >
               Results<br />
-              <span style={{
-                background: 'var(--gradient)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>you can point to.</span>
-            </h2>
+              <span className="text-gradient">you can point to.</span>
+            </h3>
             <span className="accent-line-lg mb-6" style={{ display: 'block' }} />
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
               Names stay confidential. The numbers speak for themselves.
