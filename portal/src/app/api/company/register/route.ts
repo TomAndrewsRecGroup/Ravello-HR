@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { company_name, industry, country, employee_count, contact_email } = body;
+    const { company_name, industry, country, company_size, employee_count, contact_email } = body;
 
     if (!company_name || !contact_email) {
       return NextResponse.json({ error: 'company_name and contact_email are required' }, { status: 400 });
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await ivylensRequest('/company/register', {
       method: 'POST',
-      body: { company_name, industry, country, employee_count, contact_email },
+      body: { company_name, industry, country, company_size, employee_count, contact_email },
     });
 
     if (error) {

@@ -33,3 +33,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# IvyLens integration docs (contains API key - do not commit)
+IvyLens Integration Pack*.pdf

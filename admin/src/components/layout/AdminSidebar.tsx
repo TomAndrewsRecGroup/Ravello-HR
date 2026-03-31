@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Briefcase,
   FolderOpen, LifeBuoy, LogOut,
-  Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, Key,
+  Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -22,7 +22,7 @@ const nav = [
   { href: '/compliance',      label: 'Compliance',       icon: ShieldCheck,     sub: null },
   { href: '/salary-benchmarks', label: 'Benchmarks',    icon: PoundSterling,   sub: null },
   { href: '/learning',        label: 'Learning',         icon: BookOpen,        sub: null },
-  { href: '/partners',        label: 'Partners',         icon: Key,             sub: null },
+  { href: '/clients/new',      label: 'Add Clients',    icon: UserPlus,        sub: null },
   { href: '/support',         label: 'Support',          icon: LifeBuoy,        sub: null },
 ];
 

@@ -43,6 +43,8 @@ export interface FrictionScore {
   clarity_score:         number;       // how clearly the JD is written (inverse — high = poor clarity)
   overload_score:        number;       // requirement overload
   required_skills_count: number;
+  // IvyLens reference
+  ivylens_role_id?:      string;       // role_id returned by IvyLens
   // Extracted role data (auto-fill source)
   extracted_role?:       ExtractedRole;
   recommendations:       string[];
