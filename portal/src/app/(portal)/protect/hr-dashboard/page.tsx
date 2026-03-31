@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import Topbar from '@/components/layout/Topbar';
 import HRDashboardClient from './HRDashboardClient';
 
 export const metadata: Metadata = { title: 'HR Dashboard' };
@@ -32,8 +31,6 @@ export default async function HRDashboardPage() {
   ]);
 
   return (
-    <>
-      <Topbar title="HR Dashboard" subtitle="Headcount, absence, compliance and people metrics" />
       <main className="portal-page flex-1">
         <HRDashboardClient
           companyId={companyId}
@@ -45,6 +42,5 @@ export default async function HRDashboardPage() {
           pendingReviews={pendingReviews ?? 0}
         />
       </main>
-    </>
   );
 }

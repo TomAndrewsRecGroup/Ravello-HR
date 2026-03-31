@@ -203,14 +203,14 @@ export default function OnboardingPage() {
                   icon:  Briefcase,
                   label: 'Raise a role',
                   desc:  'Submit a new vacancy and we\'ll score it with Friction Lens.',
-                  dest:  '/hiring/new',
+                  dest:  '/hire/hiring/new',
                   color: 'var(--purple)',
                 },
                 {
                   icon:  FolderOpen,
                   label: 'Upload a document',
                   desc:  'Add contracts, policies, or handbooks to your document centre.',
-                  dest:  '/documents',
+                  dest:  '/lead/documents',
                   color: 'var(--blue)',
                 },
                 {

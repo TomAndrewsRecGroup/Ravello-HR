@@ -4,12 +4,17 @@ import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 const FLAG_LABELS: Record<string, string> = {
-  hiring:     'Hiring Module',
-  documents:  'Document Management',
-  reports:    'Reports',
-  support:    'HR Support Requests',
-  metrics:    'Metrics Dashboard',
-  compliance: 'Compliance Tracking',
+  hiring:        'Hiring Module',
+  lead:          'LEAD Module',
+  protect:       'PROTECT Module',
+  documents:     'Document Management',
+  reports:       'Reports',
+  support:       'HR Support Requests',
+  metrics:       'Metrics Dashboard',
+  compliance:    'Compliance Tracking',
+  learning:      'E-Learning Marketplace',
+  benchmarks:    'Salary Benchmarks',
+  friction_lens: 'Friction Lens',
 };
 
 interface Props {
