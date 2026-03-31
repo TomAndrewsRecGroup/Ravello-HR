@@ -41,6 +41,7 @@ export interface FrictionScore {
   clarity_score:         number;
   overload_score:        number;
   required_skills_count: number;
+  ivylens_role_id?:      string;
   extracted_role?:       ExtractedRole;
   recommendations:       string[];
   time_to_fill_estimate: string;
