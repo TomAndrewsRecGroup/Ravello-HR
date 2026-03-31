@@ -128,7 +128,7 @@ export default async function DashboardPage() {
         title={`Good ${getGreeting()}, ${firstName}`}
         subtitle={company?.name ?? 'The People Office Portal'}
         actions={
-          <Link href="/hiring/new" className="btn-cta btn-sm">
+          <Link href="/hire/hiring/new" className="btn-cta btn-sm">
             + Raise a Role
           </Link>
         }
@@ -141,10 +141,10 @@ export default async function DashboardPage() {
           <div className="app-mesh" style={{ opacity: 0.6 }} />
           <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hiring',    color: 'var(--purple)' },
-              { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/documents', color: 'var(--blue)' },
+              { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hire/hiring',    color: 'var(--purple)' },
+              { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/lead/documents', color: 'var(--blue)' },
               { icon: LifeBuoy,      label: 'Open Tickets',     val: tickets.length,         href: '/support',   color: '#14B8A6' },
-              { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/compliance',color: '#F59E0B' },
+              { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/protect/compliance',color: '#F59E0B' },
             ].map((s) => (
               <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
         {flags.friction_lens !== false && (
           <div className="mb-6">
             {frictionAssessment ? (
-              <Link href="/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">
+              <Link href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
@@ -196,7 +196,7 @@ export default async function DashboardPage() {
                 <ArrowRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
               </Link>
             ) : (
-              <Link href="/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
+              <Link href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)' }}>
                   <Zap size={20} style={{ color: 'var(--purple)' }} />
                 </div>
@@ -260,7 +260,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
               {frictionAlerts.length > 0 && (
-                <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
+                <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
                   View all →
                 </Link>
               )}
@@ -310,7 +310,7 @@ export default async function DashboardPage() {
                 </h2>
                 <span className="accent-line mt-1.5" />
               </div>
-              <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
+              <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
                 View all →
               </Link>
             </div>
@@ -318,7 +318,7 @@ export default async function DashboardPage() {
               <div className="empty-state">
                 <Briefcase size={24} />
                 <p className="text-sm">No active roles</p>
-                <Link href="/hiring/new" className="btn-cta btn-sm mt-2">Raise a Role</Link>
+                <Link href="/hire/hiring/new" className="btn-cta btn-sm mt-2">Raise a Role</Link>
               </div>
             ) : (
               <div className="space-y-2">
@@ -547,7 +547,7 @@ export default async function DashboardPage() {
               <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
                 Recent Documents
               </h2>
-              <Link href="/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
+              <Link href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
                 View all →
               </Link>
             </div>
@@ -561,7 +561,7 @@ export default async function DashboardPage() {
                 {documents.map((d: any) => (
                   <Link
                     key={d.id}
-                    href="/documents"
+                    href="/lead/documents"
                     className="flex items-center justify-between px-4 py-3 rounded-[10px] transition-colors hover:bg-[var(--surface-alt)]"
                     style={{ border: '1px solid var(--line)' }}
                   >
@@ -586,8 +586,8 @@ export default async function DashboardPage() {
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { label: 'Leadership Development', desc: 'Structured support to improve team performance and decision-making.', href: null },
-              { label: 'Metrics & Analytics',    desc: 'People data, attrition trends, and hiring performance in one view.',   href: '/metrics' },
-              { label: 'Compliance Tracker',     desc: 'Manage upcoming compliance obligations, review dates, and deadlines.', href: '/compliance' },
+              { label: 'Metrics & Analytics',    desc: 'People data, attrition trends, and hiring performance in one view.',   href: '/hire/metrics' },
+              { label: 'Compliance Tracker',     desc: 'Manage upcoming compliance obligations, review dates, and deadlines.', href: '/protect/compliance' },
             ].map((f) => (
               <div
                 key={f.label}

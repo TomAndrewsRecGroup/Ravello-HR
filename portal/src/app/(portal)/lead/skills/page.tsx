@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import Topbar from '@/components/layout/Topbar';
 import SkillsMatrixClient from './SkillsMatrixClient';
 
 export const metadata: Metadata = { title: 'Skills Matrix' };
@@ -22,11 +21,8 @@ export default async function SkillsMatrixPage() {
     .order('employee_name', { ascending: true });
 
   return (
-    <>
-      <Topbar title="Skills Matrix" subtitle="Map team capabilities and track development targets" />
       <main className="portal-page flex-1">
         <SkillsMatrixClient companyId={companyId} initialSkills={skills ?? []} />
       </main>
-    </>
   );
 }
