@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import FrictionAlert from '@/components/FrictionAlert';
+import ManatalPipeline from '@/components/modules/ManatalPipeline';
 import Link from 'next/link';
-import { Briefcase, Plus, ChevronDown, ExternalLink } from 'lucide-react';
-import { getManatalJobs, getManatalApplications, isManatalConfigured } from '@/lib/manatal';
+import { Briefcase, Plus, ChevronDown } from 'lucide-react';
+import { isManatalConfigured } from '@/lib/manatal';
 
 export const metadata: Metadata = { title: 'Hiring' };
 
@@ -61,20 +62,13 @@ export default async function HiringPage({
     .from('profiles').select('company_id, companies(manatal_client_id)').eq('id', user?.id ?? '').single();
   const companyId: string | undefined = (profile as any)?.company_id;
   const manatalClientId: string = (profile as any)?.companies?.manatal_client_id ?? '';
+  const hasManatal = isManatalConfigured() && Boolean(manatalClientId);
 
-  const [{ data: requisitions }, manatalJobs, manatalApplications] = await Promise.all([
-    supabase
-      .from('requisitions')
-      .select('*')
-      .eq('company_id', companyId ?? '')
-      .order('created_at', { ascending: false }),
-    (isManatalConfigured() && manatalClientId)
-      ? getManatalJobs(manatalClientId)
-      : Promise.resolve([]),
-    (isManatalConfigured() && manatalClientId)
-      ? getManatalApplications(manatalClientId, ['Submission', 'Phone Screen', 'Interview', 'Final Interview', 'Offer', 'Hired'])
-      : Promise.resolve([]),
-  ]);
+  const { data: requisitions } = await supabase
+    .from('requisitions')
+    .select('*')
+    .eq('company_id', companyId ?? '')
+    .order('created_at', { ascending: false });
 
   const reqs = requisitions ?? [];
   const active   = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage));
@@ -212,94 +206,16 @@ export default async function HiringPage({
           </>
         )}
 
-        {/* Manatal ATS section — only shown when manatal_client_id is configured */}
-        {manatalClientId && isManatalConfigured() && (manatalJobs.length > 0 || manatalApplications.length > 0) && (
+        {/* Live ATS Pipeline — interactive candidate stage management */}
+        {hasManatal && (
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--ink)' }}>Live ATS Pipeline</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--ink)' }}>Candidate Pipeline</h2>
               <span className="badge" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)', fontSize: 11 }}>
-                Manatal
+                Live from Manatal
               </span>
             </div>
-
-            {manatalJobs.length > 0 && (
-              <div className="card p-0 overflow-hidden mb-6">
-                <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface-soft)' }}>
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
-                    Open Roles ({manatalJobs.length})
-                  </p>
-                </div>
-                <div className="table-wrapper">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Job Title</th>
-                        <th>Department</th>
-                        <th>Location</th>
-                        <th>Type</th>
-                        <th>Posted</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {manatalJobs.map((job) => (
-                        <tr key={job.id}>
-                          <td className="font-medium" style={{ color: 'var(--ink)' }}>{job.name}</td>
-                          <td style={{ color: 'var(--ink-soft)' }}>{job.department?.name ?? '—'}</td>
-                          <td style={{ color: 'var(--ink-soft)' }}>{job.location ?? '—'}</td>
-                          <td style={{ color: 'var(--ink-soft)' }}>{job.employment_type ?? '—'}</td>
-                          <td style={{ color: 'var(--ink-faint)' }}>
-                            {new Date(job.created_at).toLocaleDateString('en-GB')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {manatalApplications.length > 0 && (
-              <div className="card p-0 overflow-hidden">
-                <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--line)', background: 'var(--surface-soft)' }}>
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
-                    Candidate Pipeline ({manatalApplications.length})
-                  </p>
-                </div>
-                <div className="table-wrapper">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Candidate</th>
-                        <th>Role</th>
-                        <th>Stage</th>
-                        <th>Applied</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {manatalApplications.map((app) => (
-                        <tr key={app.id}>
-                          <td>
-                            <p className="font-medium" style={{ color: 'var(--ink)' }}>
-                              {app.candidate.first_name} {app.candidate.last_name}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{app.candidate.email}</p>
-                          </td>
-                          <td style={{ color: 'var(--ink-soft)' }}>{app.job.name}</td>
-                          <td>
-                            <span className="badge" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }}>
-                              {app.stage}
-                            </span>
-                          </td>
-                          <td style={{ color: 'var(--ink-faint)' }}>
-                            {new Date(app.created_at).toLocaleDateString('en-GB')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            <ManatalPipeline />
           </div>
         )}
 
@@ -335,7 +251,7 @@ export default async function HiringPage({
                   {archived.map((r: any) => (
                     <tr key={r.id} style={{ opacity: 0.7 }}>
                       <td>
-                        <Link href={`/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--ink)' }}>
+                        <Link href={`/hire/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--ink)' }}>
                           {r.title}
                         </Link>
                       </td>
