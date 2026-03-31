@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { subject, message, category, priority, reference_id, metadata } = body;
 
-  if (!subject?.trim() || !message?.trim() || !category) {
-    return NextResponse.json({ error: 'Subject, message, and category are required' }, { status: 400 });
+  if (!subject?.trim() || !message?.trim()) {
+    return NextResponse.json({ error: 'Subject and message are required' }, { status: 400 });
   }
   if (message.trim().length < 20) {
     return NextResponse.json({ error: 'Message must be at least 20 characters' }, { status: 400 });
