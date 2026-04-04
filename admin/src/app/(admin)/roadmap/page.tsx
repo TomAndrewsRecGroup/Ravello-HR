@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Map, CheckCircle2, Circle, Clock } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Roadmap' };
+export const revalidate = 60;
 
 type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 type Track   = 'HIRE' | 'LEAD' | 'PROTECT';

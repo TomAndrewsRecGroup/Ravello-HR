@@ -5,6 +5,7 @@ import Link from 'next/link';
 import UsersClient from './UsersClient';
 
 export const metadata: Metadata = { title: 'Users' };
+export const revalidate = 30;
 
 export default async function UsersPage() {
   const supabase = createServerSupabaseClient();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, FileText, ExternalLink } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Compliance Dashboard' };
+export const revalidate = 30;
 
 function ragFromDays(daysUntil: number, status: string): 'red' | 'amber' | 'green' | 'complete' {
   if (status === 'complete') return 'complete';

@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import BenchmarkClient from './BenchmarkClient';
 
 export const metadata: Metadata = { title: 'Salary Benchmarks' };
+export const revalidate = 60;
 
 export default async function SalaryBenchmarksPage() {
   const supabase = createServerSupabaseClient();

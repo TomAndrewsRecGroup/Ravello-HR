@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Plus, Download } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Documents' };
+export const revalidate = 30;
 
 const catBadge: Record<string,string> = { contract:'badge-submitted',policy:'badge-inprogress',letter:'badge-shortlist',report:'badge-offer',other:'badge-normal' };
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BarChart3, Clock, Users, CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Hiring Analytics' };
+export const revalidate = 60;
 
 const STAGE_ORDER = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled', 'cancelled'];
 const STAGE_LABELS: Record<string, string> = {
