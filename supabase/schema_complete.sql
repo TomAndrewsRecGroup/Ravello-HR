@@ -87,16 +87,18 @@ CREATE TABLE IF NOT EXISTS companies (
   sector               TEXT,
   contact_email        TEXT,
   active               BOOLEAN NOT NULL DEFAULT TRUE,
-  feature_flags        JSONB NOT NULL DEFAULT '{"hiring":true,"documents":true,"reports":false,"support":true,"metrics":false,"compliance":false}',
-  manatal_client_id    TEXT,
-  friction_band        TEXT,
-  friction_assessment_id UUID,
-  ivylens_company_id   UUID,
-  account_owner_id     UUID,  -- FK added after profiles table
-  onboarding_status    TEXT DEFAULT 'not_started',
-  last_portal_login    TIMESTAMPTZ,
-  login_count_30d      INT DEFAULT 0
+  feature_flags        JSONB NOT NULL DEFAULT '{"hiring":true,"documents":true,"reports":false,"support":true,"metrics":false,"compliance":false}'
 );
+
+-- Columns added by later migrations (safe to re-run)
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS manatal_client_id    TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS friction_band        TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS friction_assessment_id UUID;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS ivylens_company_id   UUID;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS account_owner_id     UUID;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS onboarding_status    TEXT DEFAULT 'not_started';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_portal_login    TIMESTAMPTZ;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS login_count_30d      INT DEFAULT 0;
 
 -- ─── 2. profiles ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS profiles (
@@ -106,24 +108,27 @@ CREATE TABLE IF NOT EXISTS profiles (
   email                    TEXT NOT NULL,
   full_name                TEXT,
   role                     user_role NOT NULL DEFAULT 'client_user',
-  avatar_url               TEXT,
-  onboarding_completed     BOOLEAN NOT NULL DEFAULT FALSE,
-  onboarding_step          INTEGER NOT NULL DEFAULT 0,
-  ui_preferences           JSONB DEFAULT '{}',
-  -- GDPR consent
-  privacy_consent_at       TIMESTAMPTZ,
-  privacy_consent_version  TEXT,
-  marketing_consent        BOOLEAN DEFAULT false,
-  data_processing_consent  BOOLEAN DEFAULT false,
-  -- Data erasure
-  data_erasure_requested_at TIMESTAMPTZ,
-  data_erasure_completed_at TIMESTAMPTZ,
-  account_deactivated_at   TIMESTAMPTZ
+  avatar_url               TEXT
 );
 
--- Add FK from companies.account_owner_id → profiles.id
-ALTER TABLE companies ADD CONSTRAINT fk_account_owner
-  FOREIGN KEY (account_owner_id) REFERENCES profiles(id);
+-- Columns added by later migrations (safe to re-run)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_completed     BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_step          INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ui_preferences           JSONB DEFAULT '{}';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_consent_at       TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_consent_version  TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS marketing_consent        BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS data_processing_consent  BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS data_erasure_requested_at TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS data_erasure_completed_at TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS account_deactivated_at   TIMESTAMPTZ;
+
+-- Add FK from companies.account_owner_id → profiles.id (skip if exists)
+DO $$ BEGIN
+  ALTER TABLE companies ADD CONSTRAINT fk_account_owner
+    FOREIGN KEY (account_owner_id) REFERENCES profiles(id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Auto-create profile on sign up
 CREATE OR REPLACE FUNCTION handle_new_user()
@@ -158,25 +163,27 @@ CREATE TABLE IF NOT EXISTS requisitions (
   nice_to_haves            TEXT[],
   stage                    hiring_stage NOT NULL DEFAULT 'submitted',
   submitted_by             UUID NOT NULL REFERENCES auth.users(id),
-  assigned_recruiter       TEXT,
-  working_model            TEXT,
-  interview_stages         INTEGER,
-  reason_for_hire          TEXT,
-  urgency                  TEXT,
-  reporting_line           TEXT,
-  jd_text                  TEXT,
-  -- Friction scoring
-  friction_score           JSONB,
-  friction_level           TEXT,
-  friction_recommendations JSONB,
-  friction_scored_at       TIMESTAMPTZ,
-  -- Approval
-  approved_by              UUID REFERENCES profiles(id),
-  approved_at              TIMESTAMPTZ,
-  -- Internal hiring
-  managed_by               TEXT DEFAULT 'tpo',
-  internal_applicants      JSONB DEFAULT '[]'
+  assigned_recruiter       TEXT
 );
+
+-- Columns added by later migrations
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS working_model            TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS salary_min               INTEGER;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS salary_max               INTEGER;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS nice_to_haves            TEXT[];
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS interview_stages         INTEGER;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS reason_for_hire          TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS urgency                  TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS reporting_line           TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS jd_text                  TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS friction_score           JSONB;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS friction_level           TEXT;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS friction_recommendations JSONB;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS friction_scored_at       TIMESTAMPTZ;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS approved_by              UUID;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS approved_at              TIMESTAMPTZ;
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS managed_by               TEXT DEFAULT 'tpo';
+ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS internal_applicants      JSONB DEFAULT '[]';
 CREATE INDEX IF NOT EXISTS idx_requisitions_company ON requisitions(company_id);
 CREATE INDEX IF NOT EXISTS idx_requisitions_stage   ON requisitions(stage);
 
@@ -198,16 +205,18 @@ CREATE TABLE IF NOT EXISTS candidates (
   recruiter_notes     TEXT,
   approved_for_client BOOLEAN NOT NULL DEFAULT FALSE,
   client_status       candidate_client_status NOT NULL DEFAULT 'pending',
-  client_feedback     TEXT,
-  cv_file_path        TEXT,
-  cv_file_name        TEXT,
-  screening_score     INTEGER CHECK (screening_score BETWEEN 1 AND 10),
-  screening_notes     TEXT,
-  screened_at         TIMESTAMPTZ,
-  screened_by         UUID REFERENCES auth.users(id),
-  source              TEXT,
-  pipeline_stage      TEXT NOT NULL DEFAULT 'applied'
+  client_feedback     TEXT
 );
+
+-- Columns added by later migrations
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS cv_file_path      TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS cv_file_name      TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS screening_score   INTEGER;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS screening_notes   TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS screened_at       TIMESTAMPTZ;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS screened_by       UUID;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS source            TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS pipeline_stage    TEXT DEFAULT 'applied';
 CREATE INDEX IF NOT EXISTS idx_candidates_req            ON candidates(requisition_id);
 CREATE INDEX IF NOT EXISTS idx_candidates_source         ON candidates(source);
 CREATE INDEX IF NOT EXISTS idx_candidates_pipeline_stage ON candidates(pipeline_stage);
@@ -230,14 +239,16 @@ CREATE TABLE IF NOT EXISTS documents (
   version          INTEGER NOT NULL DEFAULT 1,
   uploaded_by      UUID NOT NULL REFERENCES auth.users(id),
   review_due_at    TIMESTAMPTZ,
-  notes            TEXT,
-  status           TEXT NOT NULL DEFAULT 'active',
-  requires_approval BOOLEAN NOT NULL DEFAULT FALSE,
-  approved_at      TIMESTAMPTZ,
-  approved_by      UUID REFERENCES auth.users(id),
-  file_path        TEXT,
-  parent_id        UUID REFERENCES documents(id)
+  notes            TEXT
 );
+
+-- Columns added by later migrations
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS status           TEXT DEFAULT 'active';
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS requires_approval BOOLEAN DEFAULT FALSE;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS approved_at      TIMESTAMPTZ;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS approved_by      UUID;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_path        TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS parent_id        UUID;
 CREATE INDEX IF NOT EXISTS idx_documents_company ON documents(company_id);
 CREATE TRIGGER documents_updated_at BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -314,10 +325,12 @@ CREATE TABLE IF NOT EXISTS client_services (
   end_date          DATE,
   status            TEXT NOT NULL DEFAULT 'active',
   monthly_fee       INTEGER,
-  notes             TEXT,
-  renewal_date      DATE,
-  billing_frequency TEXT DEFAULT 'monthly'
+  notes             TEXT
 );
+
+-- Columns added by later migrations
+ALTER TABLE client_services ADD COLUMN IF NOT EXISTS renewal_date      DATE;
+ALTER TABLE client_services ADD COLUMN IF NOT EXISTS billing_frequency TEXT DEFAULT 'monthly';
 CREATE INDEX IF NOT EXISTS idx_client_services_company ON client_services(company_id);
 CREATE TRIGGER client_services_updated_at BEFORE UPDATE ON client_services FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -336,10 +349,12 @@ CREATE TABLE IF NOT EXISTS actions (
   status               TEXT NOT NULL DEFAULT 'active',
   dismissed_at         TIMESTAMPTZ,
   completed_at         TIMESTAMPTZ,
-  dismiss_until        TIMESTAMPTZ,
-  created_by_admin     BOOLEAN NOT NULL DEFAULT FALSE,
-  due_date             DATE
+  dismiss_until        TIMESTAMPTZ
 );
+
+-- Columns added by later migrations
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS created_by_admin BOOLEAN DEFAULT FALSE;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS due_date         DATE;
 CREATE INDEX IF NOT EXISTS idx_actions_company ON actions(company_id);
 CREATE INDEX IF NOT EXISTS idx_actions_status  ON actions(status);
 CREATE TRIGGER actions_updated_at BEFORE UPDATE ON actions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -664,11 +679,13 @@ CREATE TABLE IF NOT EXISTS employee_records (
   leave_year_start_day     INT DEFAULT 1,
   notes                    TEXT,
   address                  TEXT,
-  data_consent_at          TIMESTAMPTZ,
-  sensitive_data_redacted  BOOLEAN DEFAULT false,
   created_at               TIMESTAMPTZ DEFAULT now(),
   updated_at               TIMESTAMPTZ DEFAULT now()
 );
+
+-- GDPR columns added by later migration
+ALTER TABLE employee_records ADD COLUMN IF NOT EXISTS data_consent_at         TIMESTAMPTZ;
+ALTER TABLE employee_records ADD COLUMN IF NOT EXISTS sensitive_data_redacted BOOLEAN DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_employee_records_company ON employee_records(company_id);
 CREATE INDEX IF NOT EXISTS idx_employee_records_status  ON employee_records(company_id, status);
 
@@ -955,11 +972,13 @@ CREATE TABLE IF NOT EXISTS activity_log (
   event_type    TEXT NOT NULL,
   title         TEXT NOT NULL,
   metadata      JSONB DEFAULT '{}',
-  ip_address    TEXT,
-  user_agent    TEXT,
-  data_category TEXT,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
+
+-- GDPR columns added by later migration
+ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS ip_address    TEXT;
+ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS user_agent    TEXT;
+ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS data_category TEXT;
 CREATE INDEX IF NOT EXISTS idx_activity_log_company ON activity_log(company_id);
 CREATE INDEX IF NOT EXISTS idx_activity_log_created ON activity_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_log_type    ON activity_log(event_type);
