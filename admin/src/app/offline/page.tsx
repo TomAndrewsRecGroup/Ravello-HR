@@ -1,6 +1,5 @@
+'use client';
 import { WifiOff, RefreshCw } from 'lucide-react';
-
-export const metadata = { title: 'Offline' };
 
 export default function OfflinePage() {
   return (

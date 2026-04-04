@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     res.cookies.set('tpo_unlocked', '1', {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // dev-only route — never runs in production
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });

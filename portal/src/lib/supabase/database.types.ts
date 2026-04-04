@@ -250,6 +250,12 @@ export type Database = {
         Insert: Partial<Database['public']['Tables']['client_notes']['Row']> & { company_id: string; author_id: string; body: string };
         Update: Partial<Database['public']['Tables']['client_notes']['Row']>;
       };
+      // Allow queries on tables not explicitly typed above
+      [key: string]: {
+        Row: Record<string, any>;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
