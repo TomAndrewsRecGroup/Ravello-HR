@@ -39,13 +39,13 @@ ALTER TABLE data_access_requests ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
   CREATE POLICY data_access_req_sel ON data_access_requests FOR SELECT USING (
     requested_by = auth.uid()
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY data_access_req_ins ON data_access_requests FOR INSERT WITH CHECK (
     requested_by = auth.uid()
   );
   CREATE POLICY data_access_req_upd ON data_access_requests FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;

@@ -15,7 +15,7 @@ export default async function TasksPage() {
       .order('created_at', { ascending: false }),
     supabase.from('profiles')
       .select('id, full_name, role')
-      .in('role', ['ravello_admin', 'ravello_recruiter'])
+      .in('role', ['tps_admin', 'tps_recruiter'])
       .order('full_name'),
     supabase.from('companies')
       .select('id, name')

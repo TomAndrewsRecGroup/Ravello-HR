@@ -22,7 +22,7 @@ export default async function ValueReportsPage() {
     supabase.from('compliance_items').select('id, company_id, title, status, created_at'),
     supabase.from('service_requests').select('id, company_id, subject, status, created_at, responded_at'),
     supabase.from('actions').select('id, company_id, title, status, created_at, completed_at'),
-    supabase.from('profiles').select('id, company_id, role').not('role', 'in', '("ravello_admin","ravello_recruiter")'),
+    supabase.from('profiles').select('id, company_id, role').not('role', 'in', '("tps_admin","tps_recruiter")'),
     supabase.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active'),
   ]);
 

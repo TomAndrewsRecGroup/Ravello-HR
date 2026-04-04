@@ -31,7 +31,7 @@ ALTER TABLE internal_tasks ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   CREATE POLICY internal_tasks_all ON internal_tasks FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;

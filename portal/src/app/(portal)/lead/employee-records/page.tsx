@@ -15,7 +15,7 @@ export default async function EmployeeRecordsPage() {
   const role = (profile as any)?.role;
   if (!companyId) return null;
 
-  const isAdmin = role === 'client_admin' || role === 'ravello_admin' || role === 'ravello_recruiter';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_recruiter';
 
   const [empRes, leaveRes] = await Promise.all([
     supabase

@@ -369,7 +369,7 @@ export default function OnboardWizard({ staff }: Props) {
                   </div>
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{s.full_name || 'Unnamed'}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{s.role === 'ravello_admin' ? 'Admin' : 'Recruiter'}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{s.role === 'tps_admin' ? 'Admin' : 'Recruiter'}</p>
                   </div>
                 </label>
               ))}

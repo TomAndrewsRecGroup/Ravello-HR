@@ -146,85 +146,85 @@ DO $$ BEGIN
   -- Onboarding templates
   CREATE POLICY onboard_tmpl_sel ON onboarding_templates FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY onboard_tmpl_mod ON onboarding_templates FOR ALL USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin')
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Onboarding template tasks
   CREATE POLICY onboard_tmpl_tasks_sel ON onboarding_template_tasks FOR SELECT USING (
     template_id IN (SELECT id FROM onboarding_templates WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY onboard_tmpl_tasks_mod ON onboarding_template_tasks FOR ALL USING (
     template_id IN (SELECT id FROM onboarding_templates WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Onboarding instances
   CREATE POLICY onboard_inst_sel ON onboarding_instances FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY onboard_inst_mod ON onboarding_instances FOR ALL USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin')
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Onboarding task progress
   CREATE POLICY onboard_prog_sel ON onboarding_task_progress FOR SELECT USING (
     instance_id IN (SELECT id FROM onboarding_instances WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY onboard_prog_mod ON onboarding_task_progress FOR ALL USING (
     instance_id IN (SELECT id FROM onboarding_instances WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Offboarding (same pattern)
   CREATE POLICY offboard_tmpl_sel ON offboarding_templates FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_tmpl_mod ON offboarding_templates FOR ALL USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin')
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_tmpl_tasks_sel ON offboarding_template_tasks FOR SELECT USING (
     template_id IN (SELECT id FROM offboarding_templates WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_tmpl_tasks_mod ON offboarding_template_tasks FOR ALL USING (
     template_id IN (SELECT id FROM offboarding_templates WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_inst_sel ON offboarding_instances FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_inst_mod ON offboarding_instances FOR ALL USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin')
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_prog_sel ON offboarding_task_progress FOR SELECT USING (
     instance_id IN (SELECT id FROM offboarding_instances WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY offboard_prog_mod ON offboarding_task_progress FOR ALL USING (
     instance_id IN (SELECT id FROM offboarding_instances WHERE company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Policy acknowledgements
   CREATE POLICY policy_ack_sel ON policy_acknowledgements FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY policy_ack_mod ON policy_acknowledgements FOR ALL USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role = 'client_admin')
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;

@@ -16,7 +16,7 @@ export default async function CalendarPage() {
   const role = (profile as any)?.role;
   if (!companyId) return null;
 
-  const isAdmin = role === 'client_admin' || role === 'ravello_admin' || role === 'ravello_recruiter';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_recruiter';
 
   // Fetch calendar events and leave records for the current view range
   // (client will fetch more as user navigates months)

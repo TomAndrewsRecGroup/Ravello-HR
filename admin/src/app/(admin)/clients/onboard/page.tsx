@@ -12,7 +12,7 @@ export default async function OnboardPage() {
   const { data: staff } = await supabase
     .from('profiles')
     .select('id, full_name, role')
-    .in('role', ['ravello_admin', 'ravello_recruiter'])
+    .in('role', ['tps_admin', 'tps_recruiter'])
     .order('full_name');
 
   return (

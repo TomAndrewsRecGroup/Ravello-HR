@@ -51,13 +51,13 @@ ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
   -- Client notes: ravello staff only
   CREATE POLICY client_notes_all ON client_notes FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
 
   -- Activity log: ravello staff can read all, company users can read own
   CREATE POLICY activity_log_select ON activity_log FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('ravello_admin','ravello_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
   );
   CREATE POLICY activity_log_insert ON activity_log FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid())
