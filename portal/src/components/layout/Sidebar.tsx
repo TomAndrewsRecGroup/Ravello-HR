@@ -17,11 +17,14 @@ const COUNT_KEY: Record<string, string> = {
   '/hire':    'candidates',
 };
 
-const nav = [
+const PRIMARY_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, flag: null },
   { href: '/hire',      label: 'HIRE',      icon: Briefcase,       flag: 'hiring' },
   { href: '/lead',      label: 'LEAD',      icon: BookOpen,        flag: 'lead' },
   { href: '/protect',   label: 'PROTECT',   icon: Users,           flag: 'protect' },
+];
+
+const MORE_NAV = [
   { href: '/calendar',  label: 'Calendar',  icon: CalendarDays,    flag: null },
   { href: '/support',   label: 'Support',   icon: LifeBuoy,        flag: 'support' },
 ];
@@ -88,10 +91,10 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
         </div>
 
         {/* Nav */}
-        <nav className="relative flex-1 overflow-y-auto px-3 pt-5">
-          <p className="nav-section-label">Workspace</p>
+        <nav className="relative flex-1 overflow-y-auto px-3 pt-3">
+          {/* Primary — always visible */}
           <div className="space-y-0.5">
-            {nav.map((item) => {
+            {PRIMARY_NAV.map((item) => {
               const disabled  = item.flag !== null && flags[item.flag] === false;
               const active    = !disabled && path.startsWith(item.href);
               const countKey  = COUNT_KEY[item.href];
@@ -102,7 +105,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
                   <div
                     key={item.href}
                     className="nav-link cursor-not-allowed select-none"
-                    style={{ opacity: 0.25 }}
+                    style={{ opacity: 0.3 }}
                     title="This module is not enabled for your account"
                   >
                     <item.icon size={15} />
@@ -122,22 +125,31 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
                   <span>{item.label}</span>
                   {count > 0 && (
                     <span
-                      className="ml-auto w-2 h-2 rounded-full flex-shrink-0"
-                      style={{
-                        background: item.href === '/protect'
-                          ? 'var(--gradient)'
-                          : 'rgba(245,158,11,0.85)',
-                      }}
-                      title={`${count} pending`}
-                    />
+                      className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                    >
+                      {count}
+                    </span>
                   )}
                 </Link>
               );
             })}
           </div>
 
-          <p className="nav-section-label">Account</p>
+          {/* More — secondary items */}
+          <p className="nav-section-label">More</p>
           <div className="space-y-0.5">
+            {MORE_NAV.map((item) => {
+              const disabled = item.flag !== null && flags[item.flag] === false;
+              const active = !disabled && path.startsWith(item.href);
+              if (disabled) return null;
+              return (
+                <Link key={item.href} href={item.href} className={`nav-link ${active ? 'active' : ''}`}>
+                  <item.icon size={15} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
             <Link href="/settings" className={`nav-link ${path === '/settings' ? 'active' : ''}`}>
               <Settings size={15} />
               <span>Settings</span>
