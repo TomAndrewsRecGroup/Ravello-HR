@@ -7,7 +7,8 @@ export async function updateSession(request: NextRequest) {
   // ── Dev session bypass ─────────────────────────────────────────────────────
   // Set by /api/dev-login when DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD match.
   // Bypasses Supabase auth entirely for testing without a live DB.
-  if (request.cookies.get('dev_session')?.value === '1') {
+  // Only allowed in non-production environments.
+  if (process.env.NODE_ENV !== 'production' && request.cookies.get('dev_session')?.value === '1') {
     return NextResponse.next({ request });
   }
 
