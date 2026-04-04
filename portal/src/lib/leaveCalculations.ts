@@ -31,7 +31,7 @@ export interface LeaveYearPeriod {
  */
 export function getCurrentLeaveYear(config: LeaveYearConfig, referenceDate?: Date): LeaveYearPeriod {
   const ref = referenceDate ?? new Date();
-  const empStart = new Date(config.start_date);
+  const empStart = new Date(config.start_date + 'T12:00:00');
 
   if (config.leave_year_type === 'rolling') {
     return getRollingLeaveYear(config, empStart, ref);
@@ -44,11 +44,11 @@ function getRollingLeaveYear(config: LeaveYearConfig, empStart: Date, ref: Date)
   const startMonth = empStart.getMonth();
   const startDay = empStart.getDate();
 
-  let yearStart = new Date(ref.getFullYear(), startMonth, startDay);
+  let yearStart = clampDay(ref.getFullYear(), startMonth, startDay);
   if (yearStart > ref) {
-    yearStart = new Date(ref.getFullYear() - 1, startMonth, startDay);
+    yearStart = clampDay(ref.getFullYear() - 1, startMonth, startDay);
   }
-  const yearEnd = new Date(yearStart.getFullYear() + 1, startMonth, startDay);
+  const yearEnd = clampDay(yearStart.getFullYear() + 1, startMonth, startDay);
   yearEnd.setDate(yearEnd.getDate() - 1);
 
   return {
@@ -66,11 +66,11 @@ function getFixedLeaveYear(config: LeaveYearConfig, empStart: Date, ref: Date): 
   const leaveDay = config.leave_year_start_day;
 
   // Find the current fixed leave year
-  let yearStart = new Date(ref.getFullYear(), leaveMonth, leaveDay);
+  let yearStart = clampDay(ref.getFullYear(), leaveMonth, leaveDay);
   if (yearStart > ref) {
-    yearStart = new Date(ref.getFullYear() - 1, leaveMonth, leaveDay);
+    yearStart = clampDay(ref.getFullYear() - 1, leaveMonth, leaveDay);
   }
-  const yearEnd = new Date(yearStart.getFullYear() + 1, leaveMonth, leaveDay);
+  const yearEnd = clampDay(yearStart.getFullYear() + 1, leaveMonth, leaveDay);
   yearEnd.setDate(yearEnd.getDate() - 1);
 
   // Pro-rata: if employee started after the leave year start
@@ -159,6 +159,11 @@ export function calculateLeaveBalance(
 }
 
 /* ─── Utilities ─────────────────────────────────────── */
+function clampDay(year: number, month: number, day: number): Date {
+  const maxDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, maxDay));
+}
+
 function toISO(d: Date): string {
   return d.toISOString().split('T')[0];
 }
