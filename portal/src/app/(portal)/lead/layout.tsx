@@ -1,15 +1,30 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
-import SectionTabs from '@/components/layout/SectionTabs';
+import GroupedTabs from '@/components/layout/GroupedTabs';
 
-const TABS = [
-  { href: '/lead/employee-records',       label: 'Employee Records' },
-  { href: '/lead/onboarding',             label: 'Onboarding' },
-  { href: '/lead/org-chart',              label: 'Org Chart' },
-  { href: '/lead/policy-acknowledgements', label: 'Policy Sign-off' },
-  { href: '/lead/hr-reports',             label: 'HR Reports' },
-  { href: '/lead/documents',              label: 'Documents' },
-  { href: '/lead/learning',              label: 'Learning' },
+const TAB_GROUPS = [
+  {
+    label: 'People',
+    tabs: [
+      { href: '/lead/employee-records', label: 'Employees' },
+      { href: '/lead/org-chart',        label: 'Org Chart' },
+      { href: '/lead/onboarding',       label: 'Onboarding' },
+    ],
+  },
+  {
+    label: 'Docs',
+    tabs: [
+      { href: '/lead/documents',              label: 'Documents' },
+      { href: '/lead/policy-acknowledgements', label: 'Sign-off' },
+    ],
+  },
+  {
+    label: 'Develop',
+    tabs: [
+      { href: '/lead/learning',   label: 'Learning' },
+      { href: '/lead/hr-reports', label: 'Reports' },
+    ],
+  },
 ];
 
 export default async function LeadLayout({ children }: { children: React.ReactNode }) {
@@ -53,7 +68,7 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
 
   return (
     <>
-      <Topbar title="LEAD" subtitle="Documents, roadmap and learning" />
+      <Topbar title="LEAD" subtitle="People, documents and development" />
 
       {/* Mini metrics row */}
       <div className="px-6 pt-5 pb-4">
@@ -71,8 +86,8 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
         </div>
       </div>
 
-      {/* Tabs */}
-      <SectionTabs tabs={TABS} />
+      {/* Grouped tabs */}
+      <GroupedTabs groups={TAB_GROUPS} />
 
       {/* Page content */}
       {children}
