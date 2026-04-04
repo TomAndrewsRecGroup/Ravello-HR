@@ -122,11 +122,14 @@ export default async function DashboardPage() {
     return map[stage] ?? 'badge-pending';
   }
 
+  // Count items needing attention
+  const attentionCount = actions.length + frictionAlerts.length + complianceItems.filter((c: any) => c.status === 'overdue').length;
+
   return (
     <>
       <Topbar
         title={`Good ${getGreeting()}, ${firstName}`}
-        subtitle={company?.name ?? 'The People Office Portal'}
+        subtitle={company?.name ?? ''}
         actions={
           <Link href="/hire/hiring/new" className="btn-cta btn-sm">
             + Raise a Role
@@ -136,25 +139,37 @@ export default async function DashboardPage() {
 
       <main className="portal-page flex-1">
 
-        {/* ── Stat row — with mesh background ────────────────────── */}
-        <div className="relative mb-8">
-          <div className="app-mesh" style={{ opacity: 0.6 }} />
-          <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Briefcase,     label: 'Active Roles',     val: requisitions.length,    href: '/hire/hiring',    color: 'var(--purple)' },
-              { icon: FolderOpen,    label: 'Documents',        val: documents.length,       href: '/lead/documents', color: 'var(--blue)' },
-              { icon: LifeBuoy,      label: 'Open Tickets',     val: tickets.length,         href: '/support',   color: '#14B8A6' },
-              { icon: AlertTriangle, label: 'Compliance Items', val: complianceItems.length, href: '/protect/compliance',color: '#F59E0B' },
-            ].map((s) => (
-              <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <s.icon size={16} style={{ color: s.color }} />
-                  <span className="eyebrow" style={{ fontSize: '10px' }}>{s.label}</span>
-                </div>
-                <p className="font-display font-bold text-3xl text-gradient">{s.val}</p>
-              </Link>
-            ))}
-          </div>
+        {/* ── Hero context — one sentence summary ────────────────── */}
+        <div className="mb-6 p-5 rounded-xl" style={{ background: 'var(--gradient-soft)' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink)' }}>
+            You have <strong style={{ color: 'var(--purple)' }}>{requisitions.length} active role{requisitions.length !== 1 ? 's' : ''}</strong>
+            {tickets.length > 0 && <>, <strong>{tickets.length} open ticket{tickets.length !== 1 ? 's' : ''}</strong></>}
+            {actions.length > 0 && <>, and <strong style={{ color: 'var(--warning)' }}>{actions.length} action{actions.length !== 1 ? 's' : ''} needing attention</strong></>}
+            .
+            {attentionCount === 0 && <span style={{ color: 'var(--success)' }}> Everything looks good.</span>}
+          </p>
+        </div>
+
+        {/* ── Stat pills — compact, scannable ────────────────────── */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { label: 'Active Roles',     val: requisitions.length,    href: '/hire/hiring',         color: 'var(--purple)' },
+            { label: 'Open Tickets',     val: tickets.length,         href: '/support',             color: 'var(--warning)' },
+            { label: 'Compliance',       val: complianceItems.length, href: '/protect/compliance',  color: 'var(--danger)' },
+            { label: 'Documents',        val: documents.length,       href: '/lead/documents',      color: 'var(--blue)' },
+            { label: 'Actions',          val: actions.length,         href: '/protect/actions',     color: 'var(--ink-soft)' },
+          ].map(s => (
+            <Link
+              key={s.label}
+              href={s.href}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white"
+              style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: s.val > 0 ? s.color : 'var(--line)' }} />
+              {s.label}
+              <span className="font-semibold" style={{ color: s.val > 0 ? s.color : 'var(--ink-faint)' }}>{s.val}</span>
+            </Link>
+          ))}
         </div>
 
         {/* ── Company Friction Score ─────────────────────────────────── */}
@@ -210,406 +225,147 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* ── Main grid ─────────────────────────────────────────────── */}
-        <div className="grid lg:grid-cols-2 gap-6">
-
-          {/* Section 1 — Active Services */}
-          <section className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                  Active Services
-                </h2>
-                <span className="accent-line mt-1.5" />
-              </div>
+        {/* ── Needs Attention — actionable row ─────────────────────── */}
+        {(actions.length > 0 || frictionAlerts.length > 0) && (
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Needs Your Attention</h2>
+              {actions.length > 0 && (
+                <Link href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              )}
             </div>
-            {services.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
-                Your service packages will appear here once your engagement is confirmed.
-              </p>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+              {actions.slice(0, 6).map((a: any) => (
+                <div key={a.id} className="card p-4 flex-shrink-0 w-[260px]" style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' ? 'var(--danger)' : a.priority === 'medium' ? 'var(--warning)' : 'var(--line)'}` }}>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{a.title}</p>
+                  {a.description && <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
+                </div>
+              ))}
+              {frictionAlerts.slice(0, 3).map((r: any) => (
+                <Link key={r.id} href={`/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction — review details</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Live Roles — horizontal card row ──────────────────────── */}
+        {requisitions.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Live Roles</h2>
+              <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+              {requisitions.slice(0, 8).map((r: any) => (
+                <Link key={r.id} href={`/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{r.stage.replace(/_/g, ' ')}</span>
+                    <FrictionAlert level={r.friction_level} />
+                  </div>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{daysOpen(r.created_at)}d open</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Two-column: Compliance + Tickets ──────────────────────── */}
+        <div className="grid lg:grid-cols-2 gap-5 mb-6">
+          <section className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Compliance</h2>
+              <Link href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+            </div>
+            {complianceItems.length === 0 ? (
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>All clear — no upcoming items</p>
             ) : (
+              <div className="space-y-1.5">
+                {complianceItems.slice(0, 5).map((c: any) => {
+                  const due = new Date(c.due_date);
+                  const days = Math.ceil((due.getTime() - Date.now()) / 86400000);
+                  return (
+                    <div key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: days <= 7 ? 'rgba(239,68,68,0.04)' : 'var(--surface-soft)' }}>
+                      <p className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{c.title}</p>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: days < 0 ? 'var(--danger)' : days <= 7 ? 'var(--warning)' : 'var(--success)' }} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>HR Support</h2>
+              <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+            </div>
+            {tickets.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
+                <Link href="/support/new" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</Link>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {tickets.slice(0, 5).map((t: any) => (
+                  <Link key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)]" style={{ background: 'var(--surface-soft)' }}>
+                    <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 200 }}>{t.subject}</span>
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.priority === 'urgent' ? 'var(--danger)' : t.priority === 'high' ? 'var(--warning)' : 'var(--ink-faint)' }} />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* ── Services + Documents — compact ──────────────────────── */}
+        <div className="grid lg:grid-cols-2 gap-5">
+          {services.length > 0 && (
+            <section className="card p-5">
+              <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>
+                Active Services
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {services.map((s: any) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,0.16)' }}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: 'var(--purple)' }}
-                    />
-                    {s.service_name}
-                    {s.service_tier ? ` — ${s.service_tier}` : ''}
+                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,0.12)' }}>
+                    {s.service_name}{s.service_tier ? ` — ${s.service_tier}` : ''}
                   </span>
                 ))}
               </div>
-            )}
-          </section>
-
-          {/* Section 3 — Friction Alerts */}
-          <section className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Zap size={15} style={{ color: 'var(--purple)' }} />
-                <div>
-                  <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                    Friction Alerts
-                  </h2>
-                  <span className="accent-line mt-1.5" />
-                </div>
-              </div>
-              {frictionAlerts.length > 0 && (
-                <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                  View all →
-                </Link>
-              )}
-            </div>
-            {frictionAlerts.length === 0 ? (
-              <div className="empty-state py-6">
-                <CheckCircle2 size={22} style={{ color: 'var(--teal)' }} />
-                <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-                  No friction alerts. All active roles are well-positioned.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {frictionAlerts.map((r: any) => (
-                  <div
-                    key={r.id}
-                    className="rounded-[10px] px-4 py-3 flex items-start justify-between gap-4"
-                    style={{ border: '1px solid rgba(217,119,6,0.25)', background: 'rgba(217,119,6,0.04)' }}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
-                      {r.friction_recommendations?.[0] && (
-                        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-                          {r.friction_recommendations[0]}
-                        </p>
-                      )}
-                    </div>
-                    <Link
-                      href={`/hiring/${r.id}`}
-                      className="flex-shrink-0 text-xs font-medium flex items-center gap-1"
-                      style={{ color: 'var(--purple)' }}
-                    >
-                      View <ArrowRight size={11} />
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Section 2 — Live Roles */}
-          <section className="card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                  Live Roles
-                </h2>
-                <span className="accent-line mt-1.5" />
-              </div>
-              <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                View all →
-              </Link>
-            </div>
-            {requisitions.length === 0 ? (
-              <div className="empty-state">
-                <Briefcase size={24} />
-                <p className="text-sm">No active roles</p>
-                <Link href="/hire/hiring/new" className="btn-cta btn-sm mt-2">Raise a Role</Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {requisitions.slice(0, 6).map((r: any) => {
-                  const isHighFriction = r.friction_level === 'High' || r.friction_level === 'Critical';
-                  return (
-                    <Link
-                      key={r.id}
-                      href={`/hiring/${r.id}`}
-                      className="flex items-center justify-between px-4 py-3 rounded-[10px] transition-colors hover:bg-[var(--surface-alt)] gap-3"
-                      style={{
-                        border:     `1px solid ${isHighFriction ? 'rgba(217,119,6,0.3)' : 'var(--line)'}`,
-                        background: isHighFriction ? 'rgba(217,119,6,0.03)' : undefined,
-                      }}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
-                          {daysOpen(r.created_at)}d open
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <FrictionAlert level={r.friction_level} />
-                        <span className={`badge ${stageBadge(r.stage)}`}>
-                          {r.stage.replace(/_/g, ' ')}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* Section 4 — Outstanding Actions */}
-          <section className="card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                Outstanding Actions
-              </h2>
-            </div>
-            {actions.length === 0 ? (
-              <div className="empty-state py-6">
-                <CheckCircle2 size={22} style={{ color: 'var(--teal)' }} />
-                <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>No outstanding actions. You're up to date.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {actions.map((a: any) => {
-                  const pb = priorityBadge(a.priority);
-                  const inner = (
-                    <div
-                      key={a.id}
-                      className="flex items-start justify-between gap-3 px-4 py-3 rounded-[10px]"
-                      style={{ border: '1px solid var(--line)' }}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{a.title}</p>
-                        {a.description && (
-                          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>
-                        )}
-                      </div>
-                      <span
-                        className="flex-shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ background: pb.bg, color: pb.text }}
-                      >
-                        {pb.label}
-                      </span>
-                    </div>
-                  );
-
-                  if (a.related_entity_id && a.related_entity_type === 'requisition') {
-                    return (
-                      <Link key={a.id} href={`/hiring/${a.related_entity_id}`} className="block hover:opacity-90 transition-opacity">
-                        {inner}
-                      </Link>
-                    );
-                  }
-                  return <div key={a.id}>{inner}</div>;
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* Compliance / upcoming */}
-          <section id="compliance" className="card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                Compliance &amp; Actions
-              </h2>
-            </div>
-            {complianceItems.length === 0 ? (
-              <div className="empty-state">
-                <CheckCircle2 size={24} />
-                <p className="text-sm">All clear — no upcoming items</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {complianceItems.map((c: any) => {
-                  const due    = new Date(c.due_date);
-                  const days   = Math.ceil((due.getTime() - Date.now()) / 86400000);
-                  const urgent = days <= 7;
-                  return (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between px-4 py-3 rounded-[10px]"
-                      style={{
-                        border:     `1px solid ${urgent ? 'rgba(239,68,68,0.2)' : 'var(--line)'}`,
-                        background: urgent ? 'rgba(239,68,68,0.04)' : undefined,
-                      }}
-                    >
-                      <div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{c.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: urgent ? '#E05555' : 'var(--ink-faint)' }}>
-                          {days < 0 ? 'Overdue' : days === 0 ? 'Due today' : `Due in ${days}d`}
-                        </p>
-                      </div>
-                      <span className={`badge ${c.status === 'overdue' ? 'badge-overdue' : urgent ? 'badge-high' : 'badge-pending'}`}>
-                        {c.status}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* HR Support */}
-          <section className="card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                HR Support
-              </h2>
-              <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                View all →
-              </Link>
-            </div>
-            {tickets.length === 0 ? (
-              <div className="empty-state">
-                <LifeBuoy size={24} />
-                <p className="text-sm">No open tickets</p>
-                <Link href="/support/new" className="btn-secondary btn-sm mt-2">Raise a query</Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {tickets.map((t: any) => (
-                  <Link
-                    key={t.id}
-                    href={`/support/${t.id}`}
-                    className="flex items-center justify-between px-4 py-3 rounded-[10px] transition-colors hover:bg-[var(--surface-alt)]"
-                    style={{ border: '1px solid var(--line)' }}
-                  >
-                    <span className="text-sm font-medium truncate max-w-[220px]" style={{ color: 'var(--ink)' }}>{t.subject}</span>
-                    <span className={`badge badge-${t.priority}`}>{t.priority}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* LEAD — open training needs */}
-          {flags.lead !== false && openTraining.length > 0 && (
-            <section className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                  Open Training Needs
-                </h2>
-                <Link href="/lead/training" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                  View all →
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {openTraining.map((t: any) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between px-4 py-3 rounded-[10px]"
-                    style={{ border: '1px solid var(--line)' }}
-                  >
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{t.title}</p>
-                      {t.employee_name && (
-                        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{t.employee_name}</p>
-                      )}
-                    </div>
-                    <span className="badge" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>open</span>
-                  </div>
-                ))}
-              </div>
             </section>
           )}
 
-          {/* PROTECT — pending absence requests */}
-          {flags.protect !== false && pendingAbsences.length > 0 && (
-            <section className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                  Pending Absence Requests
-                </h2>
-                <Link href="/protect/absence" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                  View all →
-                </Link>
+          {documents.length > 0 && (
+            <section className="card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Recent Documents</h2>
+                <Link href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
               </div>
-              <div className="space-y-2">
-                {pendingAbsences.map((a: any) => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between px-4 py-3 rounded-[10px]"
-                    style={{ border: '1px solid var(--line)' }}
-                  >
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{a.employee_name}</p>
-                      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                        {a.absence_type} · from {new Date(a.start_date).toLocaleDateString('en-GB')}
-                      </p>
-                    </div>
-                    <span className="badge" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }}>pending</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Recent Documents */}
-          <section className="card p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display font-semibold text-[1rem]" style={{ color: 'var(--ink)' }}>
-                Recent Documents
-              </h2>
-              <Link href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
-                View all →
-              </Link>
-            </div>
-            {documents.length === 0 ? (
-              <div className="empty-state">
-                <FolderOpen size={24} />
-                <p className="text-sm">No documents uploaded yet</p>
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-2">
-                {documents.map((d: any) => (
-                  <Link
-                    key={d.id}
-                    href="/lead/documents"
-                    className="flex items-center justify-between px-4 py-3 rounded-[10px] transition-colors hover:bg-[var(--surface-alt)]"
-                    style={{ border: '1px solid var(--line)' }}
-                  >
-                    <span className="text-sm truncate max-w-[220px]" style={{ color: 'var(--ink)' }}>{d.name}</span>
+              <div className="space-y-1.5">
+                {documents.slice(0, 4).map((d: any) => (
+                  <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--surface-soft)' }}>
+                    <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 200 }}>{d.name}</span>
                     {d.review_due_at && (
-                      <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
-                        <Clock size={11} />
+                      <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
                         {new Date(d.review_due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </span>
                     )}
-                  </Link>
+                  </div>
                 ))}
               </div>
-            )}
-          </section>
-
+            </section>
+          )}
         </div>
 
-        {/* Locked feature tiles */}
-        <section className="mt-6">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--ink-faint)' }}>Available with your plan</p>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {[
-              { label: 'Leadership Development', desc: 'Structured support to improve team performance and decision-making.', href: null },
-              { label: 'Metrics & Analytics',    desc: 'People data, attrition trends, and hiring performance in one view.',   href: '/hire/metrics' },
-              { label: 'Compliance Tracker',     desc: 'Manage upcoming compliance obligations, review dates, and deadlines.', href: '/protect/compliance' },
-            ].map((f) => (
-              <div
-                key={f.label}
-                className="rounded-[14px] p-5 flex flex-col gap-3"
-                style={{ border: `1px ${f.href ? 'solid' : 'dashed'} var(--line)`, background: 'var(--surface-alt)', opacity: f.href ? 1 : 0.6 }}
-              >
-                <div className="flex items-center gap-2">
-                  {f.href
-                    ? <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--purple)' }} />
-                    : <Lock size={13} style={{ color: 'var(--ink-faint)' }} />}
-                  <span className="text-xs font-semibold" style={{ color: f.href ? 'var(--ink)' : 'var(--ink-soft)' }}>{f.label}</span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{f.desc}</p>
-                {f.href
-                  ? <a href={f.href} className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View {f.label} →</a>
-                  : <a href={`mailto:hello@thepeopleoffice.co.uk?subject=Unlock: ${f.label}`} className="text-xs font-medium" style={{ color: 'var(--purple)' }}>Speak to your account manager</a>}
-              </div>
-            ))}
-          </div>
-        </section>
-
+        {/* ── Remove old grid content below — replaced above ──────── */}
+        {/* Old content removed — was: Active Services, Friction Alerts,
+            Live Roles, Outstanding Actions, Compliance, HR Support,
+            LEAD/PROTECT modules, Recent Documents, Locked features */}
       </main>
     </>
   );
 }
+
