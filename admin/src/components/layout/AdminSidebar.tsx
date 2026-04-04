@@ -26,7 +26,7 @@ const nav = [
   { href: '/compliance',      label: 'Compliance',       icon: ShieldCheck,     sub: null },
   { href: '/salary-benchmarks', label: 'Benchmarks',    icon: PoundSterling,   sub: null },
   { href: '/learning',        label: 'Learning',         icon: BookOpen,        sub: null },
-  { href: '/clients/new',      label: 'Add Clients',    icon: UserPlus,        sub: null },
+  { href: '/clients/onboard', label: 'Onboard Client', icon: UserPlus,        sub: null },
   { href: '/support',         label: 'Support',          icon: LifeBuoy,        sub: null },
 ];
 
