@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--navy)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#070B1D' }}>
       <div className="w-full max-w-[380px]">
         <div className="flex justify-center mb-8">
           <Image src={LOGO} alt="The People Office" width={120} height={40} className="h-9 w-auto brightness-110" />

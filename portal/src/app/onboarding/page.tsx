@@ -83,7 +83,7 @@ export default function OnboardingPage() {
 
   if (init) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--navy)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#070B1D' }}>
         <Loader2 size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
       </div>
     );
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ background: 'var(--navy)' }}
+      style={{ background: '#070B1D' }}
     >
       {/* Glow */}
       <div

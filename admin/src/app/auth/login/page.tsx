@@ -5,7 +5,7 @@ const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20peop
 
 export default function AdminLoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--navy)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#070B1D' }}>
       <div className="relative w-full max-w-[380px]">
         <div className="flex justify-center mb-8">
           <Image src={LOGO} alt="The People Office" width={130} height={44} className="h-10 w-auto brightness-110" priority />
