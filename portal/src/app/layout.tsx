@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
@@ -20,11 +20,30 @@ export const metadata: Metadata = {
   title: { default: 'The People System Portal', template: '%s | The People System' },
   description: 'Your People System client workspace — hiring, HR, documents, and support.',
   robots: { index: false, follow: false },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'TPS Portal',
+  },
+  formatDetection: {
+    telephone: false, // prevent auto-linking phone numbers
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#7C3AED',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1, // prevent zoom on input focus in iOS
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+      </head>
       <body>{children}</body>
     </html>
   );
