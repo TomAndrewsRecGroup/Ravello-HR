@@ -48,22 +48,14 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
         className={`sidebar-mobile fixed top-0 left-0 h-screen flex flex-col z-40 ${isOpen ? 'open' : ''}`}
         style={{
           width: 'var(--sidebar-w)',
-          background: 'var(--navy)',
-          borderRight: '1px solid rgba(255,255,255,0.05)',
+          background: 'var(--sidebar-bg)',
+          borderRight: '1px solid var(--sidebar-border)',
         }}
       >
-        {/* Subtle gradient wash at top */}
-        <div
-          className="absolute top-0 left-0 right-0 h-40 pointer-events-none"
-          style={{
-            background: 'linear-gradient(180deg, rgba(124,58,237,0.06) 0%, transparent 100%)',
-          }}
-        />
-
         {/* Logo */}
         <div
-          className="relative flex items-center gap-3 px-5 py-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+          className="relative flex items-center gap-3 px-5 py-4"
+          style={{ borderBottom: '1px solid var(--line)' }}
         >
           <Link href="/dashboard" className="flex items-center">
             <Image
@@ -71,16 +63,15 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
               alt="The People System"
               width={160}
               height={52}
-              className="h-9 w-auto object-contain"
-              style={{ filter: 'brightness(0) invert(1)' }}
+              className="h-7 w-auto object-contain"
               priority
             />
           </Link>
           <span
-            className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-[6px] hidden lg:inline"
+            className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline"
             style={{
-              background: 'rgba(124,58,237,0.20)',
-              color: 'rgba(166,125,255,0.85)',
+              background: 'rgba(124,58,237,0.08)',
+              color: 'var(--purple)',
             }}
           >
             Portal
@@ -89,7 +80,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
           <button
             onClick={close}
             className="lg:hidden ml-auto flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-            style={{ color: 'rgba(255,255,255,0.5)' }}
+            style={{ color: 'var(--ink-faint)' }}
             aria-label="Close menu"
           >
             <X size={18} />
@@ -116,7 +107,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
                   >
                     <item.icon size={15} />
                     <span>{item.label}</span>
-                    <Lock size={11} className="ml-auto" style={{ color: 'rgba(255,255,255,0.30)' }} />
+                    <Lock size={11} className="ml-auto" style={{ color: 'var(--ink-faint)' }} />
                   </div>
                 );
               }
@@ -157,7 +148,7 @@ export default function Sidebar({ flags = {}, counts = {} }: Props) {
         {/* Footer */}
         <div
           className="relative p-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+          style={{ borderTop: '1px solid var(--line)' }}
         >
           <form action="/auth/signout" method="post">
             <button type="submit" className="nav-link w-full text-left">
