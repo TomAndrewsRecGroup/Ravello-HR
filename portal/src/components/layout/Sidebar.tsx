@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, BookOpen, Users,
-  LifeBuoy, LogOut, Settings, Lock, X,
+  LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -22,6 +22,7 @@ const nav = [
   { href: '/hire',      label: 'HIRE',      icon: Briefcase,       flag: 'hiring' },
   { href: '/lead',      label: 'LEAD',      icon: BookOpen,        flag: 'lead' },
   { href: '/protect',   label: 'PROTECT',   icon: Users,           flag: 'protect' },
+  { href: '/calendar',  label: 'Calendar',  icon: CalendarDays,    flag: null },
   { href: '/support',   label: 'Support',   icon: LifeBuoy,        flag: 'support' },
 ];
 
