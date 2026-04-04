@@ -7,8 +7,19 @@ import {
   Building2, Calendar, ChevronRight, Filter,
 } from 'lucide-react';
 import Link from 'next/link';
+import { calculateLeaveBalance } from '@/lib/leaveCalculations';
+import type { LeaveRecordRow, LeaveYearConfig } from '@/lib/leaveCalculations';
 
 /* ─── Types ─────────────────────────────────────────── */
+interface LeaveRecord {
+  id: string;
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  days_count: number;
+  status: string;
+}
 interface Employee {
   id: string;
   full_name: string;
@@ -33,6 +44,7 @@ interface Props {
   userId: string;
   isAdmin: boolean;
   initialEmployees: Employee[];
+  leaveRecords: LeaveRecord[];
 }
 
 /* ─── Constants ─────────────────────────────────────── */
@@ -56,7 +68,7 @@ function fmtDate(d: string | null): string {
 }
 
 /* ─── Component ─────────────────────────────────────── */
-export default function EmployeeRecordsClient({ companyId, userId, isAdmin, initialEmployees }: Props) {
+export default function EmployeeRecordsClient({ companyId, userId, isAdmin, initialEmployees, leaveRecords }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
@@ -95,6 +107,20 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
   const activeCount = employees.filter(e => e.status === 'active').length;
   const onLeaveCount = employees.filter(e => e.status === 'on_leave').length;
   const probationCount = employees.filter(e => e.status === 'probation').length;
+
+  // Leave balance helper
+  function getLeaveBalance(emp: Employee) {
+    const empLeave = leaveRecords.filter(r => r.employee_id === emp.id);
+    const config: LeaveYearConfig = {
+      leave_year_type: emp.leave_year_type as 'rolling' | 'fixed',
+      leave_year_start_month: (emp as any).leave_year_start_month ?? 1,
+      leave_year_start_day: (emp as any).leave_year_start_day ?? 1,
+      start_date: emp.start_date,
+      annual_leave_allowance: emp.annual_leave_allowance,
+      sick_day_allowance: emp.sick_day_allowance,
+    };
+    return calculateLeaveBalance(config, empLeave);
+  }
 
   /* ─── Form state ──────────────────────────────────── */
   const emptyForm = {
@@ -305,46 +331,48 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
         <div className="space-y-2">
           {filtered.map(emp => {
             const st = STATUS_CONFIG[emp.status] ?? STATUS_CONFIG.active;
+            const bal = getLeaveBalance(emp);
             return (
               <div
                 key={emp.id}
-                className="card p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all"
+                className="card p-4 cursor-pointer hover:shadow-md transition-all"
                 onClick={() => openEdit(emp)}
               >
-                {/* Avatar */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                  style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
-                >
-                  {emp.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>
-                      {emp.full_name}
-                    </p>
-                    <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: st.bg, color: st.color }}
-                    >
-                      {st.label}
-                    </span>
+                <div className="flex items-center gap-4">
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                    style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                  >
+                    {emp.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
-                  <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--ink-faint)' }}>
-                    {emp.job_title}
-                    {emp.department ? ` · ${emp.department}` : ''}
-                    {' · '}
-                    {EMP_TYPE_LABELS[emp.employment_type] ?? emp.employment_type}
-                  </p>
-                </div>
 
-                {/* Meta — hidden on mobile */}
-                <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-                  {emp.email && (
-                    <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
-                      <Mail size={11} /> {emp.email}
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>
+                        {emp.full_name}
+                      </p>
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: st.bg, color: st.color }}
+                      >
+                        {st.label}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--ink-faint)' }}>
+                      {emp.job_title}
+                      {emp.department ? ` · ${emp.department}` : ''}
+                      {' · '}
+                      {EMP_TYPE_LABELS[emp.employment_type] ?? emp.employment_type}
+                    </p>
+                  </div>
+
+                  {/* Meta — hidden on mobile */}
+                  <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+                    {emp.email && (
+                      <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
+                        <Mail size={11} /> {emp.email}
                     </span>
                   )}
                   <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -352,7 +380,38 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   </span>
                 </div>
 
-                <ChevronRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
+                  <ChevronRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
+                </div>
+
+                {/* Leave balance bar */}
+                {emp.status !== 'terminated' && (
+                  <div className="flex flex-wrap items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Annual Leave</span>
+                      <span className="text-xs font-semibold" style={{ color: bal.annualLeaveRemaining <= 2 ? '#B02020' : '#047857' }}>
+                        {bal.annualLeaveRemaining}
+                      </span>
+                      <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>/ {bal.annualLeaveAllowance} days left</span>
+                      {bal.leaveYear.isProRata && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.08)', color: '#1848CC' }}>pro-rata</span>
+                      )}
+                    </div>
+                    {bal.sickDayAllowance != null && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Sick</span>
+                        <span className="text-xs font-semibold" style={{ color: bal.sickDaysRemaining != null && bal.sickDaysRemaining <= 1 ? '#B02020' : 'var(--ink-soft)' }}>
+                          {bal.sickDaysRemaining ?? '—'}
+                        </span>
+                        <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>/ {bal.sickDayAllowance} left</span>
+                      </div>
+                    )}
+                    {bal.annualLeavePending > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.10)', color: '#92400E' }}>
+                        {bal.annualLeavePending}d pending
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

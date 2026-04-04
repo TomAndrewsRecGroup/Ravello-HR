@@ -17,11 +17,18 @@ export default async function EmployeeRecordsPage() {
 
   const isAdmin = role === 'client_admin' || role === 'ravello_admin' || role === 'ravello_recruiter';
 
-  const { data: employees } = await supabase
-    .from('employee_records')
-    .select('*')
-    .eq('company_id', companyId)
-    .order('full_name');
+  const [empRes, leaveRes] = await Promise.all([
+    supabase
+      .from('employee_records')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('full_name'),
+    supabase
+      .from('leave_records')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('start_date', { ascending: false }),
+  ]);
 
   return (
     <main className="portal-page flex-1">
@@ -29,7 +36,8 @@ export default async function EmployeeRecordsPage() {
         companyId={companyId}
         userId={user.id}
         isAdmin={isAdmin}
-        initialEmployees={employees ?? []}
+        initialEmployees={empRes.data ?? []}
+        leaveRecords={leaveRes.data ?? []}
       />
     </main>
   );
