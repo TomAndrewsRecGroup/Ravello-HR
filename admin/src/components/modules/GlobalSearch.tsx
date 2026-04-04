@@ -189,12 +189,37 @@ export default function GlobalSearch() {
           })}
         </div>
 
-        {/* Footer */}
+        {/* Quick actions — shown when no query */}
         {query.length === 0 && (
-          <div className="px-4 py-3" style={{ borderTop: '1px solid var(--line)' }}>
-            <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
-              Search across clients, roles, candidates, tickets, documents and compliance items
-            </p>
+          <div>
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Quick Actions</p>
+            </div>
+            {[
+              { label: 'Onboard new client',   href: '/clients/onboard', icon: Building2,   color: 'var(--purple)' },
+              { label: 'Create new role',       href: '/hiring/new',     icon: Briefcase,   color: 'var(--blue)' },
+              { label: 'Create task',           href: '/tasks',          icon: ShieldCheck, color: '#14B8A6' },
+              { label: 'View activity feed',    href: '/activity',       icon: Users,       color: '#D97706' },
+              { label: 'Generate value report', href: '/value-reports',  icon: FileText,    color: '#EA3DC4' },
+              { label: 'View engagement',       href: '/engagement',     icon: LifeBuoy,    color: '#DC2626' },
+            ].map((action, i) => (
+              <div
+                key={action.href}
+                className="flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors hover:bg-[var(--surface-soft)]"
+                onClick={() => { setOpen(false); router.push(action.href); }}
+              >
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${action.color}12`, color: action.color }}>
+                  <action.icon size={13} />
+                </div>
+                <p className="text-sm" style={{ color: 'var(--ink)' }}>{action.label}</p>
+                <span className="text-[10px] ml-auto" style={{ color: 'var(--ink-faint)' }}>→</span>
+              </div>
+            ))}
+            <div className="px-4 py-2" style={{ borderTop: '1px solid var(--line)' }}>
+              <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
+                Type to search across clients, roles, candidates, tickets, documents and compliance
+              </p>
+            </div>
           </div>
         )}
       </div>
