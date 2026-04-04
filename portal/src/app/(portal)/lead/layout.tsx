@@ -3,6 +3,7 @@ import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 
 const TABS = [
+  { href: '/lead/employee-records', label: 'Employee Records' },
   { href: '/lead/documents', label: 'Documents' },
   { href: '/lead/roadmap',   label: 'Roadmap' },
   { href: '/lead/learning',  label: 'Learning' },
@@ -16,6 +17,7 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
   let milestones = 0;
   let openTraining = 0;
   let purchasedCourses = 0;
+  let activeEmployees = 0;
 
   if (user) {
     const { data: profile } = await supabase
@@ -23,23 +25,25 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
     const companyId = (profile as any)?.company_id ?? '';
 
     if (companyId) {
-      const [docRes, mileRes, trainRes, purchRes] = await Promise.all([
+      const [docRes, mileRes, trainRes, purchRes, empRes] = await Promise.all([
         supabase.from('documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
         supabase.from('milestones').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
         supabase.from('training_needs').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'open'),
         supabase.from('learning_purchases').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
+        supabase.from('employee_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
       ]);
 
       totalDocs = docRes.count ?? 0;
       milestones = mileRes.count ?? 0;
       openTraining = trainRes.count ?? 0;
       purchasedCourses = purchRes.count ?? 0;
+      activeEmployees = empRes.count ?? 0;
     }
   }
 
   const stats = [
+    { label: 'Employees',       value: activeEmployees,  color: '#14B8A6' },
     { label: 'Documents',       value: totalDocs,        color: 'var(--blue)' },
-    { label: 'Milestones',      value: milestones,       color: 'var(--purple)' },
     { label: 'Open Training',   value: openTraining,     color: '#D97706' },
     { label: 'Courses Active',  value: purchasedCourses, color: 'var(--teal)' },
   ];
