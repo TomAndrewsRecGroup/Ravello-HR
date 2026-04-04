@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Building2, Briefcase,
   FolderOpen, LifeBuoy, LogOut,
   Inbox, Map, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
-  X,
+  X, Activity, TrendingUp, Users,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -16,9 +16,10 @@ const nav = [
   { href: '/dashboard',       label: 'Dashboard',       icon: LayoutDashboard, sub: null },
   { href: '/clients',         label: 'Clients',          icon: Building2,       sub: null },
   { href: '/hiring',          label: 'Hiring',           icon: Briefcase,       sub: '/hiring/analytics' },
+  { href: '/engagement',      label: 'Engagement',       icon: Activity,        sub: null },
+  { href: '/revenue',         label: 'Revenue',          icon: TrendingUp,      sub: null },
   { href: '/requests',        label: 'Service Requests', icon: Inbox,           sub: null },
   { href: '/broadcast',       label: 'Broadcast',        icon: Radio,           sub: null },
-  { href: '/roadmap',         label: 'Roadmap',          icon: Map,             sub: null },
   { href: '/documents',       label: 'Documents',        icon: FolderOpen,      sub: null },
   { href: '/reports',         label: 'Reports',          icon: BarChart3,       sub: null },
   { href: '/compliance',      label: 'Compliance',       icon: ShieldCheck,     sub: null },
