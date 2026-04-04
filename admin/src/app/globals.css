@@ -28,6 +28,7 @@
     --sidebar-active: rgba(124,58,237,0.06);
     --sidebar-text:   #6B7280;
     --sidebar-text-active: #111827;
+    --navy:           #070B1D;
 
     /* ─── Brand ──────────────────────────────────────── */
     --purple:         #7C3AED;
@@ -38,6 +39,8 @@
     --success:        #10B981;
     --warning:        #F59E0B;
     --danger:         #EF4444;
+    --red:            #EF4444;
+    --gold:           #D97706;
 
     /* ─── Extended status palette ────────────────────── */
     --teal:           #14B8A6;

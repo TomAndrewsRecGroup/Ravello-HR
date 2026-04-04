@@ -10,15 +10,8 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'var(--navy)' }}
+      style={{ background: '#FAFAF8' }}
     >
-      {/* Glow */}
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(143,114,246,0.2) 0%, transparent 70%)',
-        }}
-      />
 
       <div className="relative w-full max-w-[400px]">
         {/* Logo */}
@@ -37,21 +30,20 @@ export default function LoginPage() {
         <div
           className="rounded-[20px] p-8"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(20px)',
+            background: '#FFFFFF',
+            border: '1px solid #E5E7EB',
           }}
         >
-          <h1 className="font-display font-bold text-xl text-white mb-1">Welcome back</h1>
-          <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Welcome back</h1>
+          <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
             Sign in to your portal
           </p>
           <LoginForm />
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <p className="text-center text-xs mt-6" style={{ color: '#9CA3AF' }}>
           Need access?{' '}
-          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: 'rgba(147,184,255,0.7)' }}>
+          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: '#7C3AED' }}>
             Contact us
           </a>
         </p>

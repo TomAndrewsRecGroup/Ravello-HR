@@ -17,7 +17,7 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
       className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 topbar-responsive"
       style={{
         height: 'var(--topbar-h)',
-        background: 'rgba(250,250,248,0.92)',
+        background: 'rgba(248,249,252,0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}
