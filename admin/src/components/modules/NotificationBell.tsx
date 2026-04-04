@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, X } from 'lucide-react';
+import {
+  Bell, Briefcase, LifeBuoy, ShieldCheck, Users,
+  FileText, AlertTriangle, CheckCircle2, UserPlus, Radio,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +17,24 @@ interface Notification {
   created_at: string;
 }
 
+const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string }> = {
+  role_pending_approval: { icon: Briefcase,     color: 'var(--purple)' },
+  role_filled:           { icon: CheckCircle2,  color: '#10B981' },
+  ticket_created:        { icon: LifeBuoy,      color: '#D97706' },
+  ticket_escalated:      { icon: AlertTriangle, color: '#DC2626' },
+  compliance_overdue:    { icon: ShieldCheck,    color: '#DC2626' },
+  compliance_due_soon:   { icon: ShieldCheck,    color: '#D97706' },
+  document_uploaded:     { icon: FileText,       color: 'var(--blue)' },
+  user_invited:          { icon: UserPlus,       color: '#14B8A6' },
+  candidate_submitted:   { icon: Users,          color: 'var(--purple)' },
+  broadcast:             { icon: Radio,          color: 'var(--blue)' },
+  general:               { icon: Bell,           color: 'var(--ink-faint)' },
+};
+
+function getTypeConfig(type: string) {
+  return TYPE_CONFIG[type] ?? TYPE_CONFIG.general;
+}
+
 export default function NotificationBell() {
   const supabase = createClient();
   const router   = useRouter();
@@ -22,14 +43,20 @@ export default function NotificationBell() {
   const [open,          setOpen]          = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
+  const [filter,        setFilter]        = useState<'all' | 'unread'>('all');
+
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30_000);
-    return () => clearInterval(interval);
+    // Poll every 60s (reduced from 30s) — only when tab is visible
+    const interval = setInterval(() => {
+      if (!document.hidden) loadNotifications();
+    }, 60_000);
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
-  // Close on click outside
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -39,24 +66,25 @@ export default function NotificationBell() {
   }, []);
 
   async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data, count } = await supabase
+    // Cache user ID to avoid repeated auth calls
+    if (!userIdRef.current) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userIdRef.current = user.id;
+    }
+    const userId = userIdRef.current;
+    const { data } = await supabase
       .from('notifications')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id)
+      .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(30);
 
-    if (data) setNotifications(data);
-
-    const { count: uc } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('read', false);
-
-    setUnreadCount(uc ?? 0);
+    if (data) {
+      setNotifications(data);
+      // Derive unread count from fetched data instead of separate query
+      setUnreadCount(data.filter((n: any) => !n.read).length);
+    }
   }
 
   async function markRead(id: string) {
@@ -73,6 +101,13 @@ export default function NotificationBell() {
     setUnreadCount(0);
   }
 
+  async function clearAll() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('notifications').delete().eq('user_id', user.id).eq('read', true);
+    setNotifications(prev => prev.filter(n => !n.read));
+  }
+
   function handleClick(n: Notification) {
     if (!n.read) markRead(n.id);
     if (n.link) {
@@ -86,8 +121,12 @@ export default function NotificationBell() {
     if (s < 60) return 'just now';
     if (s < 3600) return `${Math.floor(s / 60)}m ago`;
     if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-    return `${Math.floor(s / 86400)}d ago`;
+    const d = Math.floor(s / 86400);
+    if (d < 7) return `${d}d ago`;
+    return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   }
+
+  const displayed = filter === 'unread' ? notifications.filter(n => !n.read) : notifications;
 
   return (
     <div className="relative" ref={ref}>
@@ -109,46 +148,89 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+8px)] w-[360px] rounded-xl overflow-hidden shadow-xl z-50"
-          style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
+          className="absolute right-0 top-[calc(100%+8px)] w-[380px] rounded-xl overflow-hidden shadow-xl z-50"
+          style={{ background: 'var(--surface)', border: '1px solid var(--line)', animation: 'slideDown 0.15s ease' }}
         >
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--line)' }}>
-            <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Notifications</p>
-            {unreadCount > 0 && (
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Notifications</p>
+              {unreadCount > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(217,68,68,0.08)', color: '#B02020' }}>
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button onClick={markAllRead} className="text-[10px] font-medium" style={{ color: 'var(--purple)' }}>
+                  Mark all read
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 px-4 py-2" style={{ borderBottom: '1px solid var(--line)' }}>
+            {(['all', 'unread'] as const).map(f => (
               <button
-                onClick={markAllRead}
-                className="text-xs font-medium hover:underline"
-                style={{ color: 'var(--purple)' }}
+                key={f}
+                onClick={() => setFilter(f)}
+                className="text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors"
+                style={{
+                  background: filter === f ? 'var(--surface-soft)' : 'transparent',
+                  color: filter === f ? 'var(--ink)' : 'var(--ink-faint)',
+                }}
               >
-                Mark all read
+                {f === 'all' ? 'All' : `Unread (${unreadCount})`}
+              </button>
+            ))}
+            {notifications.some(n => n.read) && (
+              <button onClick={clearAll} className="text-[10px] font-medium ml-auto" style={{ color: 'var(--ink-faint)' }}>
+                Clear read
               </button>
             )}
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No notifications</p>
+          {/* Notifications list */}
+          <div className="max-h-[420px] overflow-y-auto">
+            {displayed.length === 0 ? (
+              <p className="text-sm text-center py-10" style={{ color: 'var(--ink-faint)' }}>
+                {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              </p>
             ) : (
-              notifications.map(n => (
-                <button
-                  key={n.id}
-                  onClick={() => handleClick(n)}
-                  className="w-full text-left px-4 py-3 hover:bg-[var(--surface-soft)] transition-colors flex gap-3"
-                  style={{
-                    borderBottom: '1px solid var(--line)',
-                    background: n.read ? undefined : 'rgba(124,58,237,0.03)',
-                  }}
-                >
-                  {!n.read && (
-                    <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: 'var(--purple)' }} />
-                  )}
-                  <div className={n.read ? 'pl-5' : ''}>
-                    <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{n.title}</p>
-                    {n.body && <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{n.body}</p>}
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>{timeAgo(n.created_at)}</p>
-                  </div>
-                </button>
-              ))
+              displayed.map(n => {
+                const tc = getTypeConfig(n.type);
+                const Icon = tc.icon;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleClick(n)}
+                    className="w-full text-left px-4 py-3 hover:bg-[var(--surface-soft)] transition-colors flex gap-3"
+                    style={{
+                      borderBottom: '1px solid var(--line)',
+                      background: n.read ? undefined : 'rgba(124,58,237,0.03)',
+                    }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ background: `${tc.color}12`, color: tc.color }}
+                    >
+                      <Icon size={13} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm leading-snug" style={{ color: 'var(--ink)', fontWeight: n.read ? 400 : 600 }}>{n.title}</p>
+                        {!n.read && (
+                          <span className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ background: 'var(--purple)' }} />
+                        )}
+                      </div>
+                      {n.body && <p className="text-xs mt-0.5 line-clamp-2 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{n.body}</p>}
+                      <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>{timeAgo(n.created_at)}</p>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

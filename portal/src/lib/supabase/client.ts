@@ -1,9 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr';
 
-// Database types will be generated via `npx supabase gen types typescript` once connected.
-// Remove the `any` cast and import Database from './types' at that point.
+// Database types defined in ./database.types.ts for reference.
+// Using any generic until full types are generated from live DB via:
+//   npx supabase gen types typescript --project-id <id>
 export function createClient() {
-  return createBrowserClient<any>(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL  ?? 'https://placeholder.supabase.co',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key',
   );

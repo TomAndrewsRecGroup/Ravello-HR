@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import LearningAdminClient from './LearningAdminClient';
 
 export const metadata: Metadata = { title: 'Learning Content' };
+export const revalidate = 60;
 
 export default async function LearningAdminPage() {
   const supabase = createServerSupabaseClient();

@@ -5,6 +5,7 @@ import CandidatesClient from './CandidatesClient';
 import { Users2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Candidates' };
+export const revalidate = 30;
 
 export default async function CandidatesPage() {
   const supabase = createServerSupabaseClient();

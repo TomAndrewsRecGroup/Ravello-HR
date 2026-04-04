@@ -3,9 +3,10 @@ import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 
 const TABS = [
-  { href: '/protect/actions',    label: 'Actions' },
-  { href: '/protect/compliance', label: 'Compliance' },
-  { href: '/protect/reports',    label: 'Reports' },
+  { href: '/protect/actions',      label: 'Actions' },
+  { href: '/protect/compliance',   label: 'Compliance' },
+  { href: '/protect/offboarding',  label: 'Offboarding' },
+  { href: '/protect/reports',      label: 'Reports' },
 ];
 
 export default async function ProtectLayout({ children }: { children: React.ReactNode }) {
@@ -54,19 +55,24 @@ export default async function ProtectLayout({ children }: { children: React.Reac
     <>
       <Topbar title="PROTECT" subtitle="Actions, compliance and reporting" />
 
-      {/* Mini metrics row */}
-      <div className="px-6 pt-5 pb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {stats.map(s => (
-            <div
-              key={s.label}
-              className="rounded-[10px] px-4 py-3"
-              style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
-            >
-              <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-              <p className="font-display font-bold text-xl" style={{ color: s.color }}>{s.value}</p>
-            </div>
-          ))}
+      {/* Hero context */}
+      <div className="px-5 lg:px-7 pt-4 pb-3">
+        <div
+          className="rounded-xl p-4"
+          style={{
+            background: overdueCompliance > 0
+              ? 'rgba(239,68,68,0.04)'
+              : 'var(--gradient-soft)',
+          }}
+        >
+          <p className="text-sm" style={{ color: 'var(--ink)' }}>
+            {overdueCompliance > 0
+              ? <><strong style={{ color: 'var(--danger)' }}>{overdueCompliance} overdue compliance item{overdueCompliance !== 1 ? 's' : ''}</strong> need{overdueCompliance === 1 ? 's' : ''} attention{pendingCompliance > 0 && <>, plus <strong>{pendingCompliance} pending</strong></>}. {activeActions > 0 && <>{activeActions} active action{activeActions !== 1 ? 's' : ''}.</>}</>
+              : activeActions > 0
+              ? <>You have <strong style={{ color: 'var(--purple)' }}>{activeActions} active action{activeActions !== 1 ? 's' : ''}</strong>{pendingCompliance > 0 && <> and <strong>{pendingCompliance} pending compliance item{pendingCompliance !== 1 ? 's' : ''}</strong></>}.</>
+              : <span style={{ color: 'var(--success)' }}>Everything looks good. No overdue items or outstanding actions.</span>
+            }
+          </p>
         </div>
       </div>
 

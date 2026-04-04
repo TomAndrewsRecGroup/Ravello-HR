@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available' }, { status: 404 });
+  }
+
   const { email, password } = await request.json();
 
   if (
@@ -13,7 +17,7 @@ export async function POST(request: Request) {
     res.cookies.set('dev_session', '1', {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // dev-only route — never runs in production
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });

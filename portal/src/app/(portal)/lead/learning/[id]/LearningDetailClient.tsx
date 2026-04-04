@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import {
@@ -129,6 +130,7 @@ export default function LearningDetailClient({
   content, related, byCreator, purchase, hasAccess, companyId, userId,
 }: Props) {
   const supabase = createClient();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const Icon = TYPE_ICONS[content.content_type] ?? BookOpen;
@@ -155,14 +157,14 @@ export default function LearningDetailClient({
         access_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       setLoading(false);
-      window.location.reload();
+      router.refresh();
       return;
     }
     setLoading(true);
     const res = await fetch('/api/learning/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contentId: content.id, companyId, userId }),
+      body: JSON.stringify({ contentId: content.id }),
     });
     const { url } = await res.json();
     if (url) window.location.href = url;

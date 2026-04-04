@@ -410,7 +410,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
           <div className="space-y-6">
 
             {/* Stat cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 { label: 'Active Roles',   value: stats.activeRoles },
                 { label: 'Documents',      value: stats.docsCount },
@@ -1482,7 +1482,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
   return (
     <div className="space-y-6">
       {/* Score overview */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card p-4 text-center">
           <span className="badge text-sm px-3 py-1" style={BAND_STYLE[assessment.overall_band] ?? {}}>
             {assessment.overall_band ?? 'Not Scored'}

@@ -287,7 +287,7 @@ export default async function MetricsPage() {
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No compliance items.</p>
             ) : (
               <>
-                <div className="grid grid-cols-4 gap-2 mb-5">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-5">
                   {[
                     { label: 'Overdue',   value: compOverdue.length,  bg: 'rgba(220,38,38,0.08)',   text: '#991B1B' },
                     { label: 'Pending',   value: compPending.length,  bg: 'rgba(217,119,6,0.08)',   text: '#92400E' },
@@ -326,7 +326,7 @@ export default async function MetricsPage() {
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No tickets raised.</p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                   {[
                     { label: 'Total',    value: tickets.length,        bg: 'var(--surface-alt)' },
                     { label: 'Open',     value: openTickets.length,    bg: 'rgba(217,119,6,0.08)' },
@@ -365,7 +365,7 @@ export default async function MetricsPage() {
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No documents uploaded.</p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   {[
                     { label: 'Total',    value: docs.length },
                     { label: 'Approved', value: approvedDocs.length },
@@ -396,7 +396,7 @@ export default async function MetricsPage() {
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No actions created.</p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   {[
                     { label: 'Total',    value: actions.length },
                     { label: 'Active',   value: activeActions.length },

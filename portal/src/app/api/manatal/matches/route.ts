@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
-  getManatalMatchesByDepartment,
+  getManatalMatches,
   getManatalStages,
   isManatalConfigured,
 } from '@/lib/manatal';
@@ -33,7 +33,7 @@ export async function GET(_req: NextRequest) {
   }
 
   const [matches, stages] = await Promise.all([
-    getManatalMatchesByDepartment(manatalId),
+    getManatalMatches(manatalId),
     getManatalStages(),
   ]);
 

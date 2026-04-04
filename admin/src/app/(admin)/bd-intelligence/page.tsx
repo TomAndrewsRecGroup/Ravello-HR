@@ -6,6 +6,7 @@ import { Target } from 'lucide-react';
 import { ivylensRequest } from '@/lib/ivylens';
 
 export const metadata: Metadata = { title: 'BD Intelligence' };
+export const revalidate = 60;
 
 export default async function BDIntelligencePage() {
   const supabase = createServerSupabaseClient();

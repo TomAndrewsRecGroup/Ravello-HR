@@ -3,13 +3,32 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { contentId, companyId, userId } = await req.json();
+    const { contentId } = await req.json();
 
-    if (!contentId || !companyId || !userId) {
+    if (!contentId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const supabase = createServerSupabaseClient();
+
+    // Derive userId and companyId from the authenticated session — never trust the client
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.company_id) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 403 });
+    }
+
+    const userId = user.id;
+    const companyId = profile.company_id;
 
     // Verify content exists and is published
     const { data: content } = await supabase

@@ -1,0 +1,20 @@
+{
+  "name": "The People System",
+  "short_name": "TPS Portal",
+  "description": "Your People System client workspace — hiring, HR, documents, and support.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F8F9FC",
+  "theme_color": "#7C3AED",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

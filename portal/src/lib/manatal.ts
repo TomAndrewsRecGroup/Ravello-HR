@@ -96,20 +96,6 @@ export async function getManatalJobs(departmentId: string): Promise<ManatalJob[]
   return (data?.results ?? data ?? []) as ManatalJob[];
 }
 
-/* ─── Applications (legacy read-only) ─────────────── */
-
-export async function getManatalApplications(departmentId: string, stages?: string[]): Promise<ManatalApplication[]> {
-  const data = await manatalFetch('/applications/', { department_id: departmentId, limit: '200' });
-  const all  = (data?.results ?? data ?? []) as ManatalApplication[];
-
-  if (!stages?.length) return all;
-
-  const submissionStages = stages ?? ['Submission', 'Phone Screen', 'Interview', 'Offer', 'Hired', 'Rejected'];
-  return all.filter((a: ManatalApplication) =>
-    submissionStages.some(s => a.stage?.toLowerCase().includes(s.toLowerCase()))
-  );
-}
-
 /* ─── Pipeline stages ─────────────────────────────── */
 
 export async function getManatalStages(): Promise<ManatalStage[]> {
@@ -119,22 +105,12 @@ export async function getManatalStages(): Promise<ManatalStage[]> {
 
 /* ─── Matches (candidate–job with stage) ──────────── */
 
-export async function getManatalMatches(jobId?: string): Promise<ManatalMatch[]> {
-  const params: Record<string, string> = { limit: '200' };
-  if (jobId) params.job_id = jobId;
-  const data = await manatalFetch('/matches/', params);
+export async function getManatalMatches(departmentId: string): Promise<ManatalMatch[]> {
+  // Fetch all matches for this client in a single API call.
+  // Manatal lists all jobs under one department_id (client),
+  // so we can get all matches without per-job N+1 queries.
+  const data = await manatalFetch('/matches/', { department_id: departmentId, limit: '500' });
   return (data?.results ?? data ?? []) as ManatalMatch[];
-}
-
-export async function getManatalMatchesByDepartment(departmentId: string): Promise<ManatalMatch[]> {
-  // Fetch jobs for this department, then get matches for each job
-  const jobs = await getManatalJobs(departmentId);
-  if (!jobs.length) return [];
-
-  const matchArrays = await Promise.all(
-    jobs.map(job => getManatalMatches(String(job.id)))
-  );
-  return matchArrays.flat();
 }
 
 /* ─── Move candidate stage ────────────────────────── */

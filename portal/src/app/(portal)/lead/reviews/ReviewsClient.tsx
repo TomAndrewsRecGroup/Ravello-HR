@@ -91,7 +91,7 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
   return (
     <div className="space-y-5">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Pending',     value: counts.pending,     color: '#475569' },
           { label: 'In Progress', value: counts.in_progress, color: '#D97706' },

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle, Clock, Loader2 } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ActionButtons({ actionId, onMutated }: Props) {
+  const router = useRouter();
   const supabase = createClient();
   const [completing, setCompleting] = useState(false);
   const [dismissing,  setDismissing]  = useState(false);
@@ -24,8 +26,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
     setDone('complete');
     setCompleting(false);
     onMutated?.();
-    // Remove card from view after short delay
-    setTimeout(() => window.location.reload(), 600);
+    router.refresh();
   }
 
   async function handleDismiss() {
@@ -39,7 +40,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
     setDone('dismissed');
     setDismissing(false);
     onMutated?.();
-    setTimeout(() => window.location.reload(), 600);
+    router.refresh();
   }
 
   if (done === 'complete') {

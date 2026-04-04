@@ -22,6 +22,7 @@ export default async function AdminDashboardPage() {
     compRes, userRes, reqRes, ticketRes,
     overdueComplianceRes, expDocsRes, pendingAbsenceRes, serviceReqRes,
     highFrictionRes, unassessedRes,
+    activeRoleCountRes, openTicketCountRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,name,active').order('name'),
     supabase.from('profiles').select('id,role').neq('role', 'tps_admin'),
@@ -62,6 +63,12 @@ export default async function AdminDashboardPage() {
       .select('id', { count: 'exact', head: true })
       .eq('active', true)
       .is('friction_band', null),
+    supabase.from('requisitions')
+      .select('id', { count: 'exact', head: true })
+      .neq('stage', 'filled').neq('stage', 'cancelled'),
+    supabase.from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .neq('status', 'closed'),
   ]);
 
   const companies      = compRes.data           ?? [];
@@ -74,6 +81,8 @@ export default async function AdminDashboardPage() {
   const serviceReqs    = serviceReqRes.data     ?? [];
   const highFriction   = highFrictionRes.data   ?? [];
   const unassessedCount = unassessedRes.count   ?? 0;
+  const activeRoleCount  = activeRoleCountRes.count ?? 0;
+  const openTicketCount  = openTicketCountRes.count ?? 0;
   const active         = companies.filter((c: any) => c.active).length;
 
   const stageBadge: Record<string, string> = {
@@ -103,8 +112,8 @@ export default async function AdminDashboardPage() {
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
               { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
-              { icon: Briefcase,     label: 'Active Roles',   val: reqs.length,    href: '/hiring',   color: '#14B8A6' },
-              { icon: LifeBuoy,      label: 'Open Tickets',   val: tickets.length, href: '/support',  color: '#F59E0B' },
+              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: '#14B8A6' },
+              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: '#F59E0B' },
             ].map(s => (
               <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
@@ -120,17 +129,19 @@ export default async function AdminDashboardPage() {
         {/* PROTECT Alerts banner */}
         {alertCount > 0 && (
           <div
-            className="card p-4 mb-6 flex items-center gap-3"
+            className="card p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3"
             style={{ borderLeft: '3px solid var(--red)', background: 'rgba(217,68,68,0.04)' }}
           >
-            <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0 }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-              {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention —
-              {overdueComp.length > 0 && ` ${overdueComp.length} overdue compliance items,`}
-              {expiringDocs.length > 0 && ` ${expiringDocs.length} documents expiring within 30 days,`}
-              {pendingAbsence.length > 0 && ` ${pendingAbsence.length} pending absence requests`}
-            </p>
-            <Link href="/compliance" className="btn-secondary btn-sm ml-auto" style={{ flexShrink: 0 }}>
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention —
+                {overdueComp.length > 0 && ` ${overdueComp.length} overdue compliance items,`}
+                {expiringDocs.length > 0 && ` ${expiringDocs.length} documents expiring within 30 days,`}
+                {pendingAbsence.length > 0 && ` ${pendingAbsence.length} pending absence requests`}
+              </p>
+            </div>
+            <Link href="/compliance" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>
               View Compliance
             </Link>
           </div>
@@ -138,18 +149,20 @@ export default async function AdminDashboardPage() {
 
         {/* Friction Health */}
         {(highFriction.length > 0 || unassessedCount > 0) && (
-          <div className="card p-4 mb-6 flex items-center gap-3" style={{ borderLeft: '3px solid var(--purple)', background: 'rgba(124,58,237,0.03)' }}>
-            <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0 }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-              Company Friction Health —
-              {highFriction.length > 0 && (
-                <span style={{ color: 'var(--red)' }}> {highFriction.length} high friction ({highFriction.map((c: any) => c.name).join(', ')})</span>
-              )}
-              {unassessedCount > 0 && (
-                <span style={{ color: 'var(--ink-faint)' }}> · {unassessedCount} never assessed</span>
-              )}
-            </p>
-            <Link href="/clients" className="btn-secondary btn-sm ml-auto" style={{ flexShrink: 0 }}>View Clients</Link>
+          <div className="card p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3" style={{ borderLeft: '3px solid var(--purple)', background: 'rgba(124,58,237,0.03)' }}>
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0, marginTop: 2 }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                Company Friction Health —
+                {highFriction.length > 0 && (
+                  <span style={{ color: 'var(--red)' }}> {highFriction.length} high friction ({highFriction.map((c: any) => c.name).join(', ')})</span>
+                )}
+                {unassessedCount > 0 && (
+                  <span style={{ color: 'var(--ink-faint)' }}> · {unassessedCount} never assessed</span>
+                )}
+              </p>
+            </div>
+            <Link href="/clients" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>View Clients</Link>
           </div>
         )}
 
@@ -207,7 +220,7 @@ export default async function AdminDashboardPage() {
           </section>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Overdue compliance */}
           {overdueComp.length > 0 && (
             <section className="card p-6">

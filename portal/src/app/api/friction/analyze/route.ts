@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scoreFriction } from '@/lib/frictionLens';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // POST /api/friction/analyze
 // Body: { jd_text: string }
@@ -9,6 +10,12 @@ import { scoreFriction } from '@/lib/frictionLens';
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check — only authenticated users may call this route
+    const supabase = createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json();
     const jd_text: string = (body.jd_text ?? '').trim();
 
@@ -21,8 +28,11 @@ export async function POST(req: NextRequest) {
 
     const score = await scoreFriction({ jd_text });
     return NextResponse.json(score);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[/api/friction/analyze]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = err?.message?.includes('IvyLens')
+      ? err.message
+      : 'Could not score this role. Please try again or raise a support ticket.';
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

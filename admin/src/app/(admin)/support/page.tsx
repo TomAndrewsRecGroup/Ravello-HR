@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import SupportClient from './SupportClient';
 
 export const metadata: Metadata = { title: 'Support' };
+export const revalidate = 30;
 
 export default async function AdminSupportPage() {
   const supabase = createServerSupabaseClient();

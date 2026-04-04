@@ -122,7 +122,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
   return (
     <div className="space-y-5">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold" style={{ color: 'var(--purple)' }}>{Object.keys(byEmployee).length}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Team Members</p>

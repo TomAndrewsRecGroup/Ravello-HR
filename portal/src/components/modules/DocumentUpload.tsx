@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { UploadCloud, X, Loader2, FileText } from 'lucide-react';
 
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function DocumentUpload({ companyId, userId, onUploaded }: Props) {
+  const router = useRouter();
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -105,8 +107,7 @@ export default function DocumentUpload({ companyId, userId, onUploaded }: Props)
     setSuccess(true);
     setLoading(false);
     onUploaded?.();
-    // Refresh the page to show the new document
-    window.location.reload();
+    router.refresh();
   }
 
   return (
