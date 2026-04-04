@@ -45,10 +45,16 @@ export default function NotificationBell() {
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [filter,        setFilter]        = useState<'all' | 'unread'>('all');
 
+  const userIdRef = useRef<string | null>(null);
+
   useEffect(() => {
+    let active = true;
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30_000);
-    return () => clearInterval(interval);
+    // Poll every 60s (reduced from 30s) — only when tab is visible
+    const interval = setInterval(() => {
+      if (!document.hidden) loadNotifications();
+    }, 60_000);
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
   useEffect(() => {
@@ -60,24 +66,25 @@ export default function NotificationBell() {
   }, []);
 
   async function loadNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Cache user ID to avoid repeated auth calls
+    if (!userIdRef.current) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userIdRef.current = user.id;
+    }
+    const userId = userIdRef.current;
     const { data } = await supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(30);
 
-    if (data) setNotifications(data);
-
-    const { count: uc } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('read', false);
-
-    setUnreadCount(uc ?? 0);
+    if (data) {
+      setNotifications(data);
+      // Derive unread count from fetched data instead of separate query
+      setUnreadCount(data.filter((n: any) => !n.read).length);
+    }
   }
 
   async function markRead(id: string) {

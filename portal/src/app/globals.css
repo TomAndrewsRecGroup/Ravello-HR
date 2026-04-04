@@ -40,6 +40,14 @@
     --warning:        #F59E0B;
     --danger:         #EF4444;
 
+    /* ─── Extended status palette ────────────────────── */
+    --teal:           #14B8A6;
+    --amber:          #D97706;
+    --emerald:        #047857;
+    --rose:           #B02020;
+    --slate:          #475569;
+    --indigo:         #6366F1;
+
     /* ─── Gradient — brand accent only ───────────────── */
     --gradient:       linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
     --gradient-cta:   linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
