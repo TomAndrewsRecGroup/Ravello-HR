@@ -3,9 +3,10 @@ import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 
 const TABS = [
-  { href: '/protect/actions',    label: 'Actions' },
-  { href: '/protect/compliance', label: 'Compliance' },
-  { href: '/protect/reports',    label: 'Reports' },
+  { href: '/protect/actions',      label: 'Actions' },
+  { href: '/protect/compliance',   label: 'Compliance' },
+  { href: '/protect/offboarding',  label: 'Offboarding' },
+  { href: '/protect/reports',      label: 'Reports' },
 ];
 
 export default async function ProtectLayout({ children }: { children: React.ReactNode }) {
