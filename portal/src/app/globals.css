@@ -245,26 +245,27 @@
     font-family: var(--font-inter), 'Inter', sans-serif;
   }
 
-  /* ─── Tables ─────────────────────────────────────── */
+  /* ─── Tables — compact density ────────────────────── */
   .table-wrapper {
-    @apply overflow-x-auto rounded-[16px];
+    @apply overflow-x-auto;
+    border-radius: var(--radius);
     border: 1px solid var(--line);
   }
-  .table { @apply w-full text-sm; }
+  .table { @apply w-full text-[13px]; }
   .table th {
-    @apply px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-[0.14em] whitespace-nowrap;
+    @apply px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.06em] whitespace-nowrap;
     color: var(--ink-faint);
     background: var(--surface-soft);
     border-bottom: 1px solid var(--line);
     font-family: var(--font-inter), 'Inter', sans-serif;
   }
   .table td {
-    @apply px-4 py-3.5 align-middle text-sm;
-    border-bottom: 1px solid var(--line);
+    @apply px-3 py-2.5 align-middle text-[13px];
+    border-bottom: 1px solid var(--line-lt);
     color: var(--ink);
   }
   .table tr:last-child td { border-bottom: none; }
-  .table tbody tr { transition: background 0.12s; }
+  .table tbody tr { transition: background 0.1s; }
   .table tbody tr:hover { background: var(--surface-soft); }
 
   /* ─── Typography ─────────────────────────────────── */
@@ -287,11 +288,13 @@
     background: linear-gradient(90deg, transparent, rgba(124,58,237,0.14), transparent);
   }
 
-  /* ─── Empty states ───────────────────────────────── */
+  /* ─── Empty states — guide style ─────────────────── */
   .empty-state {
-    @apply flex flex-col items-center justify-center gap-3 py-16 text-center;
+    @apply flex flex-col items-center justify-center gap-2 py-12 text-center;
     color: var(--ink-faint);
   }
+  .empty-state svg { opacity: 0.4; }
+  .empty-state p:first-of-type { color: var(--ink-soft); font-weight: 500; }
 
   /* ─── Glass button ────────────────────────────────── */
   .btn-glass {
