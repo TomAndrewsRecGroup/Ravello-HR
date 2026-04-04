@@ -2,6 +2,7 @@
 import { Menu } from 'lucide-react';
 import NotificationBell from '@/components/modules/NotificationBell';
 import GlobalSearch from '@/components/modules/GlobalSearch';
+import { ClientSwitcherDropdown } from './ClientSwitcher';
 import { useMobileMenu } from './MobileMenuContext';
 
 interface Props { title: string; subtitle?: string; actions?: React.ReactNode; }
@@ -54,6 +55,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
         </div>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <ClientSwitcherDropdown />
         {actions}
         <GlobalSearch />
         <NotificationBell />
