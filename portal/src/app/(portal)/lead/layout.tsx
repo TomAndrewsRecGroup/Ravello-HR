@@ -5,6 +5,7 @@ import SectionTabs from '@/components/layout/SectionTabs';
 const TABS = [
   { href: '/lead/employee-records',       label: 'Employee Records' },
   { href: '/lead/onboarding',             label: 'Onboarding' },
+  { href: '/lead/org-chart',              label: 'Org Chart' },
   { href: '/lead/policy-acknowledgements', label: 'Policy Sign-off' },
   { href: '/lead/hr-reports',             label: 'HR Reports' },
   { href: '/lead/documents',              label: 'Documents' },
