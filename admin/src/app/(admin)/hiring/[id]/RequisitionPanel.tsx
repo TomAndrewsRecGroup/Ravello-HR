@@ -18,9 +18,11 @@ const LEVEL_CONFIG: Record<FrictionLevel, { bg: string; border: string; text: st
 };
 
 const DIM_ICONS: Record<string, React.ElementType> = {
+  friction_score: MapPin, clarity_score: FileText, overload_score: Layers,
   location: MapPin, salary: PoundSterling, skills: Layers, working_model: Monitor, process: Clock,
 };
 const DIM_LABELS: Record<string, string> = {
+  friction_score: 'Market Friction', clarity_score: 'JD Clarity', overload_score: 'Requirement Overload',
   location: 'Location', salary: 'Salary', skills: 'Skills', working_model: 'Working Model', process: 'Process',
 };
 
@@ -28,9 +30,27 @@ function FrictionCard({ frictionScore }: { frictionScore: any }) {
   const level = (frictionScore?.overall_level ?? 'Unknown') as FrictionLevel;
   const cfg   = LEVEL_CONFIG[level];
   const Icon  = cfg.icon;
-  const dims  = frictionScore?.dimensions
-    ? Object.entries(frictionScore.dimensions) as [string, { score: number; label: FrictionLevel; explanation: string }][]
-    : [];
+
+  // Support both IvyLens format (flat scores) and legacy format (dimensions object)
+  const dims: [string, { score: number; label: FrictionLevel }][] = [];
+  if (frictionScore?.dimensions && Object.keys(frictionScore.dimensions).length > 0) {
+    // Legacy 5-dimension format
+    Object.entries(frictionScore.dimensions).forEach(([k, v]: [string, any]) => {
+      dims.push([k, { score: v.score, label: v.label }]);
+    });
+  } else if (frictionScore?.friction_score != null) {
+    // IvyLens 3-dimension format
+    dims.push(['friction_score', { score: frictionScore.friction_score, label: levelFromScore(frictionScore.friction_score) }]);
+    dims.push(['clarity_score',  { score: frictionScore.clarity_score ?? 0, label: levelFromScore(frictionScore.clarity_score ?? 0) }]);
+    dims.push(['overload_score', { score: frictionScore.overload_score ?? 0, label: levelFromScore(frictionScore.overload_score ?? 0) }]);
+  }
+
+  function levelFromScore(s: number): FrictionLevel {
+    if (s < 35) return 'Low';
+    if (s < 65) return 'Medium';
+    if (s < 85) return 'High';
+    return 'Critical';
+  }
 
   return (
     <div className="card p-5" style={{ background: cfg.bg, borderColor: cfg.border }}>
@@ -67,13 +87,12 @@ function FrictionCard({ frictionScore }: { frictionScore: any }) {
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{DIM_LABELS[key] ?? key}</span>
                   </div>
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: dc.badge, color: dc.badgeText }}>
-                    {dim.label}
+                    {dim.score}/100
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
                   <div className="h-full rounded-full" style={{ width: `${dim.score}%`, background: dc.badge }} />
                 </div>
-                <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--ink-faint)' }}>{dim.explanation}</p>
               </div>
             );
           })}

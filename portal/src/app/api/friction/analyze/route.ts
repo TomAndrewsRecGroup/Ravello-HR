@@ -28,8 +28,11 @@ export async function POST(req: NextRequest) {
 
     const score = await scoreFriction({ jd_text });
     return NextResponse.json(score);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[/api/friction/analyze]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = err?.message?.includes('IvyLens')
+      ? err.message
+      : 'Could not score this role. Please try again or raise a support ticket.';
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }
