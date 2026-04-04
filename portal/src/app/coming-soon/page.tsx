@@ -12,7 +12,7 @@ const GLOWS = [
 export default function ComingSoonPage() {
   return (
     <div style={{
-      minHeight: '100vh', background: '#070B20',
+      minHeight: '100vh', background: '#FAFAF8',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px', position: 'relative', overflow: 'hidden',
       fontFamily: "'DM Sans', system-ui, sans-serif",

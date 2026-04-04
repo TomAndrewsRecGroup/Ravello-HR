@@ -34,7 +34,7 @@ export default function AdminLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="form-group">
-        <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Email</label>
+        <label className="label" style={{ color: '#4B5563' }}>Email</label>
         <input
           type="email"
           required
@@ -42,11 +42,11 @@ export default function AdminLoginForm() {
           onChange={e => setEmail(e.target.value)}
           className="input"
           placeholder="you@thepeopleoffice.co.uk"
-          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
         />
       </div>
       <div className="form-group">
-        <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Password</label>
+        <label className="label" style={{ color: '#4B5563' }}>Password</label>
         <div className="relative">
           <input
             type={showPwd ? 'text' : 'password'}
@@ -54,12 +54,12 @@ export default function AdminLoginForm() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="input pr-10"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
           />
           <button
             type="button"
             className="absolute right-3 top-1/2 -translate-y-1/2"
-            style={{ color: 'rgba(255,255,255,0.35)' }}
+            style={{ color: '#9CA3AF' }}
             onClick={() => setShowPwd(!showPwd)}
           >
             {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -67,7 +67,7 @@ export default function AdminLoginForm() {
         </div>
       </div>
       {error && (
-        <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#FCA5A5' }}>
+        <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#DC2626' }}>
           {error}
         </p>
       )}

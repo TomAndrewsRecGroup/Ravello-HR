@@ -83,8 +83,8 @@ export default function OnboardingPage() {
 
   if (init) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#070B1D' }}>
-        <Loader2 size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF8' }}>
+        <Loader2 size={24} className="animate-spin" style={{ color: '#9CA3AF' }} />
       </div>
     );
   }
@@ -92,13 +92,8 @@ export default function OnboardingPage() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ background: '#070B1D' }}
+      style={{ background: '#FAFAF8' }}
     >
-      {/* Glow */}
-      <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(143,114,246,0.18) 0%, transparent 70%)' }}
-      />
 
       <div className="relative w-full max-w-[520px]">
         {/* Logo */}
@@ -115,7 +110,7 @@ export default function OnboardingPage() {
               style={{
                 width:      step === s ? '24px' : '8px',
                 height:     '8px',
-                background: step >= s ? 'var(--purple)' : 'rgba(255,255,255,0.15)',
+                background: step >= s ? 'var(--purple)' : '#D1D5DB',
               }}
             />
           ))}
@@ -125,51 +120,51 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div
             className="rounded-[20px] p-8"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'rgba(143,114,246,0.8)' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
               Step 1 of 3
             </p>
-            <h1 className="font-display font-bold text-2xl text-white mb-1">
+            <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
               Welcome to your portal
             </h1>
-            <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
               Let's confirm a few details about {company?.name ?? 'your organisation'}.
             </p>
 
             <form onSubmit={handleStep1} className="space-y-5">
               <div className="form-group">
-                <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Your name</label>
+                <label className="label" style={{ color: '#4B5563' }}>Your name</label>
                 <input
                   value={form.full_name}
                   onChange={e => set('full_name', e.target.value)}
                   className="input"
                   placeholder="Jane Smith"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
                 />
               </div>
               <div className="form-group">
-                <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Sector</label>
+                <label className="label" style={{ color: '#4B5563' }}>Sector</label>
                 <select
                   value={form.sector}
                   onChange={e => set('sector', e.target.value)}
                   className="input"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: form.sector ? '#fff' : 'rgba(255,255,255,0.35)' }}
+                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: form.sector ? '#111827' : '#9CA3AF' }}
                 >
                   <option value="">Select your sector…</option>
-                  {SECTORS.map(s => <option key={s} value={s} style={{ color: '#000' }}>{s}</option>)}
+                  {SECTORS.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Team size</label>
+                <label className="label" style={{ color: '#4B5563' }}>Team size</label>
                 <select
                   value={form.size_band}
                   onChange={e => set('size_band', e.target.value)}
                   className="input"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: form.size_band ? '#fff' : 'rgba(255,255,255,0.35)' }}
+                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: form.size_band ? '#111827' : '#9CA3AF' }}
                 >
                   <option value="">Select team size…</option>
-                  {SIZES.map(s => <option key={s} value={s} style={{ color: '#000' }}>{s}</option>)}
+                  {SIZES.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
                 </select>
               </div>
 
@@ -185,15 +180,15 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div
             className="rounded-[20px] p-8"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'rgba(143,114,246,0.8)' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
               Step 2 of 3
             </p>
-            <h1 className="font-display font-bold text-2xl text-white mb-1">
+            <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
               What would you like to do first?
             </h1>
-            <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
               You can do all of this from your dashboard — pick where to start.
             </p>
 
@@ -226,7 +221,7 @@ export default function OnboardingPage() {
                   onClick={() => completeOnboarding(dest)}
                   disabled={loading}
                   className="w-full text-left rounded-[12px] p-4 flex items-center gap-4 transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
                 >
                   <div
                     className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
@@ -235,10 +230,10 @@ export default function OnboardingPage() {
                     <Icon size={18} style={{ color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white">{label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{desc}</p>
+                    <p className="text-sm font-semibold" style={{ color: '#0A0F1E' }}>{label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#4B5563' }}>{desc}</p>
                   </div>
-                  <ArrowRight size={14} className="ml-auto flex-shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }} />
+                  <ArrowRight size={14} className="ml-auto flex-shrink-0" style={{ color: '#9CA3AF' }} />
                 </button>
               ))}
             </div>
@@ -247,7 +242,7 @@ export default function OnboardingPage() {
               onClick={() => completeOnboarding('/dashboard')}
               disabled={loading}
               className="w-full mt-4 text-xs text-center"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              style={{ color: '#9CA3AF' }}
             >
               Skip — take me to the dashboard
             </button>
@@ -258,8 +253,8 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="flex flex-col items-center gap-4 py-12">
             <CheckCircle2 size={40} style={{ color: 'var(--teal)' }} />
-            <p className="text-white font-semibold text-lg">All set!</p>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Taking you there now…</p>
+            <p className="font-semibold text-lg" style={{ color: '#0A0F1E' }}>All set!</p>
+            <p className="text-sm" style={{ color: '#4B5563' }}>Taking you there now…</p>
           </div>
         )}
       </div>
