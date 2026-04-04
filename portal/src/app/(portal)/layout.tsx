@@ -8,11 +8,14 @@ export default async function PortalLayout({ children }: { children: React.React
 
   let flags:  Record<string, boolean> = {};
   let counts: Record<string, number>  = {};
+  let userId = '';
+  let uiPreferences: Record<string, any> = {};
 
   if (user) {
+    userId = user.id;
     const { data: profile } = await supabase
       .from('profiles')
-      .select('onboarding_completed, company_id, companies(feature_flags)')
+      .select('onboarding_completed, company_id, ui_preferences, companies(feature_flags)')
       .eq('id', user.id)
       .single();
 
@@ -21,6 +24,7 @@ export default async function PortalLayout({ children }: { children: React.React
     }
 
     flags = (profile as any)?.companies?.feature_flags ?? {};
+    uiPreferences = (profile as any)?.ui_preferences ?? {};
     const companyId: string = (profile as any)?.company_id ?? '';
 
     if (companyId) {
@@ -70,7 +74,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <PortalShell flags={flags} counts={counts}>
+    <PortalShell flags={flags} counts={counts} userId={userId} uiPreferences={uiPreferences}>
       {children}
     </PortalShell>
   );
