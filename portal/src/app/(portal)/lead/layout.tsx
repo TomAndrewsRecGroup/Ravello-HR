@@ -3,12 +3,12 @@ import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 
 const TABS = [
-  { href: '/lead/employee-records', label: 'Employee Records' },
-  { href: '/lead/onboarding',       label: 'Onboarding' },
-  { href: '/lead/hr-reports',       label: 'HR Reports' },
-  { href: '/lead/documents', label: 'Documents' },
-  { href: '/lead/roadmap',   label: 'Roadmap' },
-  { href: '/lead/learning',  label: 'Learning' },
+  { href: '/lead/employee-records',       label: 'Employee Records' },
+  { href: '/lead/onboarding',             label: 'Onboarding' },
+  { href: '/lead/policy-acknowledgements', label: 'Policy Sign-off' },
+  { href: '/lead/hr-reports',             label: 'HR Reports' },
+  { href: '/lead/documents',              label: 'Documents' },
+  { href: '/lead/learning',              label: 'Learning' },
 ];
 
 export default async function LeadLayout({ children }: { children: React.ReactNode }) {
