@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import Sidebar from '@/components/layout/Sidebar';
+import PortalShell from '@/components/layout/PortalShell';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient();
@@ -70,14 +70,8 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar flags={flags} counts={counts} />
-      <div
-        className="flex-1 flex flex-col min-h-screen"
-        style={{ marginLeft: 'var(--sidebar-w)' }}
-      >
-        {children}
-      </div>
-    </div>
+    <PortalShell flags={flags} counts={counts}>
+      {children}
+    </PortalShell>
   );
 }

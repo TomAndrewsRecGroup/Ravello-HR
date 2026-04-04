@@ -531,3 +531,118 @@
   0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.14); }
   50%       { box-shadow: 0 0 44px rgba(124,58,237,0.38); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Mobile overlay backdrop ─────────────────────── */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(5,8,16,0.50);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sidebar-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ─── Sidebar mobile transform ────────────────────── */
+.sidebar-mobile {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Hamburger button ────────────────────────────── */
+.hamburger-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+  flex-shrink: 0;
+}
+.hamburger-btn:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+/* ─── Mobile: < 768px ─────────────────────────────── */
+@media (max-width: 767px) {
+  :root { --sidebar-w: 280px; }
+
+  .hamburger-btn { display: flex; }
+
+  .sidebar-mobile {
+    transform: translateX(-100%);
+  }
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .admin-page {
+    padding: 1rem;
+  }
+
+  /* Tables: smaller padding */
+  .table th, .table td { padding: 0.625rem 0.75rem; font-size: 0.75rem; }
+
+  /* Cards: tighter padding on mobile */
+  .card-glass, .card-premium, .stat-card { padding: 1rem; }
+
+  /* Topbar: tighter */
+  .topbar-responsive { padding-left: 1rem; padding-right: 1rem; }
+
+  /* Hide elements on mobile */
+  .hide-mobile { display: none !important; }
+}
+
+/* ─── Tablet: 768px – 1023px ──────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --sidebar-w: 280px; }
+
+  .hamburger-btn { display: flex; }
+
+  .sidebar-mobile {
+    transform: translateX(-100%);
+  }
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .admin-page {
+    padding: 1.25rem;
+  }
+
+  /* Hide elements on tablet */
+  .hide-tablet { display: none !important; }
+}
+
+/* ─── Desktop: >= 1024px — sidebar always visible ─── */
+@media (min-width: 1024px) {
+  .sidebar-mobile {
+    transform: translateX(0) !important;
+  }
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}

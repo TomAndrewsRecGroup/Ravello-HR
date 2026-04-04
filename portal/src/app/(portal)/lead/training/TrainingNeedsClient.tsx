@@ -92,7 +92,7 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
   return (
     <div className="space-y-5">
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Open',        value: counts.open,        color: '#DC2626' },
           { label: 'In Progress', value: counts.in_progress, color: '#D97706' },

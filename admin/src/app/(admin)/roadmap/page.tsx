@@ -78,7 +78,7 @@ export default async function AdminRoadmapPage() {
       <main className="admin-page flex-1">
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {[
             { label: 'Total Milestones', val: totalMilestones, color: 'var(--ink)' },
             { label: 'Complete',         val: completed,        color: 'var(--teal)' },
@@ -122,7 +122,7 @@ export default async function AdminRoadmapPage() {
                 </div>
 
                 {/* Quarter columns */}
-                <div className="grid grid-cols-4 divide-x" style={{ borderColor: 'var(--line)' }}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 divide-x" style={{ borderColor: 'var(--line)' }}>
                   {QUARTERS.map((q) => {
                     const qMilestones = byQuarter[q] ?? [];
                     return (

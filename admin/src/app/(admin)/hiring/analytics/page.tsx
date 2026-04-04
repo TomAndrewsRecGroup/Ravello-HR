@@ -249,7 +249,7 @@ export default async function AdminHiringAnalyticsPage() {
         {allOffers.length > 0 && (
           <div className="card p-6">
             <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Offer Summary</h2>
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               {[
                 { label: 'Total Offers',  value: allOffers.length,    bg: 'rgba(59,111,255,0.08)',  color: '#1848CC' },
                 { label: 'Accepted',      value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)', color: '#166534' },

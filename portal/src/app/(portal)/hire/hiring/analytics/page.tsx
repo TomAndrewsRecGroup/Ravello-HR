@@ -210,7 +210,7 @@ export default async function HiringAnalyticsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { label: 'Active',   value: activeOffers.length,  bg: 'rgba(59,111,255,0.08)',  color: '#1848CC' },
                     { label: 'Accepted', value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)',  color: '#166534' },
