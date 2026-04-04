@@ -59,19 +59,15 @@ export default async function HireLayout({ children }: { children: React.ReactNo
     <>
       <Topbar title="HIRE" subtitle="Recruitment, friction analysis and benchmarking" />
 
-      {/* Mini metrics row */}
-      <div className="px-6 pt-5 pb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {stats.map(s => (
-            <div
-              key={s.label}
-              className="rounded-[10px] px-4 py-3"
-              style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
-            >
-              <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-              <p className="font-display font-bold text-xl" style={{ color: s.color }}>{s.value}</p>
-            </div>
-          ))}
+      {/* Hero context */}
+      <div className="px-5 lg:px-7 pt-4 pb-3">
+        <div className="rounded-xl p-4" style={{ background: 'var(--gradient-soft)' }}>
+          <p className="text-sm" style={{ color: 'var(--ink)' }}>
+            {activeRoles > 0
+              ? <>You have <strong style={{ color: 'var(--purple)' }}>{activeRoles} active role{activeRoles !== 1 ? 's' : ''}</strong>{avgDaysOpen > 0 && <> averaging <strong>{avgDaysOpen} days</strong> open</>}{pendingCandidates > 0 && <> with <strong style={{ color: 'var(--warning)' }}>{pendingCandidates} candidate{pendingCandidates !== 1 ? 's' : ''} awaiting review</strong></>}. {rolesFilled > 0 && <span style={{ color: 'var(--success)' }}>{rolesFilled} role{rolesFilled !== 1 ? 's' : ''} filled.</span>}</>
+              : <span style={{ color: 'var(--ink-soft)' }}>No active roles right now. Raise a role to get started with recruitment.</span>
+            }
+          </p>
         </div>
       </div>
 

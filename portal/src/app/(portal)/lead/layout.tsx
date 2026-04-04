@@ -70,19 +70,15 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
     <>
       <Topbar title="LEAD" subtitle="People, documents and development" />
 
-      {/* Mini metrics row */}
-      <div className="px-6 pt-5 pb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {stats.map(s => (
-            <div
-              key={s.label}
-              className="rounded-[10px] px-4 py-3"
-              style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
-            >
-              <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-              <p className="font-display font-bold text-xl" style={{ color: s.color }}>{s.value}</p>
-            </div>
-          ))}
+      {/* Hero context */}
+      <div className="px-5 lg:px-7 pt-4 pb-3">
+        <div className="rounded-xl p-4" style={{ background: 'var(--gradient-soft)' }}>
+          <p className="text-sm" style={{ color: 'var(--ink)' }}>
+            {activeEmployees > 0
+              ? <>You have <strong style={{ color: 'var(--purple)' }}>{activeEmployees} employee{activeEmployees !== 1 ? 's' : ''}</strong>{totalDocs > 0 && <>, <strong>{totalDocs} document{totalDocs !== 1 ? 's' : ''}</strong></>}{openTraining > 0 && <>, and <strong style={{ color: 'var(--warning)' }}>{openTraining} open training need{openTraining !== 1 ? 's' : ''}</strong></>}.</>
+              : <span style={{ color: 'var(--ink-soft)' }}>Add your first employee record to start building your people directory.</span>
+            }
+          </p>
         </div>
       </div>
 
