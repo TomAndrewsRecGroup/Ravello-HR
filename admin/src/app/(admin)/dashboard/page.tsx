@@ -22,6 +22,7 @@ export default async function AdminDashboardPage() {
     compRes, userRes, reqRes, ticketRes,
     overdueComplianceRes, expDocsRes, pendingAbsenceRes, serviceReqRes,
     highFrictionRes, unassessedRes,
+    activeRoleCountRes, openTicketCountRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,name,active').order('name'),
     supabase.from('profiles').select('id,role').neq('role', 'tps_admin'),
@@ -62,6 +63,12 @@ export default async function AdminDashboardPage() {
       .select('id', { count: 'exact', head: true })
       .eq('active', true)
       .is('friction_band', null),
+    supabase.from('requisitions')
+      .select('id', { count: 'exact', head: true })
+      .neq('stage', 'filled').neq('stage', 'cancelled'),
+    supabase.from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .neq('status', 'closed'),
   ]);
 
   const companies      = compRes.data           ?? [];
@@ -74,6 +81,8 @@ export default async function AdminDashboardPage() {
   const serviceReqs    = serviceReqRes.data     ?? [];
   const highFriction   = highFrictionRes.data   ?? [];
   const unassessedCount = unassessedRes.count   ?? 0;
+  const activeRoleCount  = activeRoleCountRes.count ?? 0;
+  const openTicketCount  = openTicketCountRes.count ?? 0;
   const active         = companies.filter((c: any) => c.active).length;
 
   const stageBadge: Record<string, string> = {
@@ -103,8 +112,8 @@ export default async function AdminDashboardPage() {
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
               { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
-              { icon: Briefcase,     label: 'Active Roles',   val: reqs.length,    href: '/hiring',   color: '#14B8A6' },
-              { icon: LifeBuoy,      label: 'Open Tickets',   val: tickets.length, href: '/support',  color: '#F59E0B' },
+              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: '#14B8A6' },
+              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: '#F59E0B' },
             ].map(s => (
               <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">

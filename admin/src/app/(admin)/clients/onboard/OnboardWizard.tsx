@@ -109,7 +109,6 @@ export default function OnboardWizard({ staff }: Props) {
       size_band: company.size_band || null,
       contact_email: company.contact_email || account.email || null,
       active: true,
-      feature_flags: flags,
       onboarding_status: 'in_progress',
       account_owner_id: ownerId || null,
     }).select().single();

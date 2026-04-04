@@ -78,29 +78,32 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   async function toggle(key: string) {
-    const newVal = !localFlags[key];
-    const updated = { ...localFlags, [key]: newVal };
     setSaving(key);
-    setLocalFlags(updated);
-    await supabase
-      .from('companies')
-      .update({ feature_flags: updated })
-      .eq('id', companyId);
-    setSaving(null);
+    setLocalFlags(prev => {
+      const updated = { ...prev, [key]: !prev[key] };
+      supabase
+        .from('companies')
+        .update({ feature_flags: updated })
+        .eq('id', companyId)
+        .then(() => setSaving(null));
+      return updated;
+    });
   }
 
   async function toggleGroup(group: FlagGroup, on: boolean) {
-    const updated = { ...localFlags };
-    for (const f of group.flags) {
-      updated[f.key] = on;
-    }
     setSaving(group.label);
-    setLocalFlags(updated);
-    await supabase
-      .from('companies')
-      .update({ feature_flags: updated })
-      .eq('id', companyId);
-    setSaving(null);
+    setLocalFlags(prev => {
+      const updated = { ...prev };
+      for (const f of group.flags) {
+        updated[f.key] = on;
+      }
+      supabase
+        .from('companies')
+        .update({ feature_flags: updated })
+        .eq('id', companyId)
+        .then(() => setSaving(null));
+      return updated;
+    });
   }
 
   function toggleCollapse(label: string) {

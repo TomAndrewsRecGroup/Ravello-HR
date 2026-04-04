@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface UIPreferences {
@@ -42,17 +42,21 @@ export function UserPreferencesProvider({ userId, initialPrefs, children }: {
     ...initialPrefs,
   });
   const [loaded, setLoaded] = useState(true);
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   const updatePrefs = useCallback(async (partial: Partial<UIPreferences>) => {
-    const updated = { ...prefs, ...partial };
+    const updated = { ...prefsRef.current, ...partial };
     setPrefs(updated);
+    prefsRef.current = updated;
 
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ ui_preferences: updated })
       .eq('id', userId);
-  }, [prefs, userId]);
+    if (error) console.error('Failed to save preferences:', error);
+  }, [userId]);
 
   return (
     <UserPreferencesContext.Provider value={{ prefs, updatePrefs, loaded }}>
