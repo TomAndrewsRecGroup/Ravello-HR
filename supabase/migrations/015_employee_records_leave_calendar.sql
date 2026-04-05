@@ -162,19 +162,19 @@ ALTER TABLE company_calendar_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY employee_records_select ON employee_records
   FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY employee_records_insert ON employee_records
   FOR INSERT WITH CHECK (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY employee_records_update ON employee_records
   FOR UPDATE USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY employee_records_delete ON employee_records
@@ -186,38 +186,38 @@ CREATE POLICY employee_records_delete ON employee_records
 CREATE POLICY leave_records_select ON leave_records
   FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY leave_records_insert ON leave_records
   FOR INSERT WITH CHECK (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY leave_records_update ON leave_records
   FOR UPDATE USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 -- Calendar events: same pattern
 CREATE POLICY calendar_events_select ON company_calendar_events
   FOR SELECT USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid())
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY calendar_events_insert ON company_calendar_events
   FOR INSERT WITH CHECK (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY calendar_events_update ON company_calendar_events
   FOR UPDATE USING (
     company_id IN (SELECT company_id FROM profiles WHERE id = auth.uid() AND role IN ('client_admin'))
-    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 
 CREATE POLICY calendar_events_delete ON company_calendar_events

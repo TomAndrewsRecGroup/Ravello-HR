@@ -105,7 +105,7 @@ The platform implements a formal **Subject Access Request (SAR)** system via the
 | Measure | Implementation |
 |---------|---------------|
 | **Authentication** | Supabase Auth with email/password. Magic link invites for new users. Session-based with HTTP-only cookies. |
-| **Role-based access control** | 5 roles: `ravello_admin`, `ravello_recruiter`, `client_admin`, `client_viewer`, `client_user`. Each role has defined permissions. |
+| **Role-based access control** | 5 roles: `tps_admin`, `tps_client`, `client_admin`, `client_viewer`, `client_user`. Each role has defined permissions. |
 | **Row-Level Security (RLS)** | PostgreSQL RLS policies on all 47 tables ensure users can only access data belonging to their company. Ravello staff have cross-company access for service delivery. |
 | **API route authentication** | All API routes verify the caller is authenticated and has the correct role before processing requests. |
 | **Feature flag enforcement** | Server-side feature flag checks redirect users away from features not enabled for their company. |

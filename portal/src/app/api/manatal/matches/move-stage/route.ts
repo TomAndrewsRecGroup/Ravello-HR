@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const { data: adminProfiles } = await supabase
     .from('profiles')
     .select('id')
-    .in('role', ['tps_admin', 'tps_recruiter']);
+    .in('role', ['tps_admin', 'tps_client']);
 
   if (adminProfiles?.length) {
     const notifications = adminProfiles.map((p: any) => ({

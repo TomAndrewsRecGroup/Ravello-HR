@@ -173,7 +173,7 @@ const ROLE_LABELS: Record<string, string> = {
   client_admin:   'Admin',
   client_user:    'Member',
   tps_admin:      'The People System Admin',
-  tps_recruiter:  'The People System Recruiter',
+  tps_client:  'The People System Client',
 };
 
 export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
@@ -181,7 +181,7 @@ export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
     <div className="space-y-4">
       <div className="divide-y" style={{ borderColor: 'var(--line)' }}>
         {members.map(m => {
-          const isRavello = m.role.startsWith('ravello_');
+          const isRavello = m.role.startsWith('tps_');
           const isYou     = m.id === currentUserId;
           return (
             <div key={m.id} className="flex items-center gap-3 py-3">

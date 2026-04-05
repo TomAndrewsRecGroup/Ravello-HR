@@ -4,14 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Dev session bypass ─────────────────────────────────────────────────────
-  // Set by /api/dev-login when DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD match.
-  // Bypasses Supabase auth entirely for testing without a live DB.
-  // Only allowed in non-production environments.
-  if (process.env.NODE_ENV !== 'production' && request.cookies.get('dev_session')?.value === '1') {
-    return NextResponse.next({ request });
-  }
-
   // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
@@ -33,7 +25,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const isPublic = pathname.startsWith('/auth') || pathname === '/api/dev-login';
+  const isPublic = pathname.startsWith('/auth');
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -45,7 +37,7 @@ export async function updateSession(request: NextRequest) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole) {
-      if (!['tps_admin', 'tps_recruiter'].includes(cachedRole)) {
+      if (!['tps_admin', 'tps_client'].includes(cachedRole)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);
@@ -58,7 +50,7 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       const role = (profile as any)?.role ?? '';
-      if (!['tps_admin', 'tps_recruiter'].includes(role)) {
+      if (!['tps_admin', 'tps_client'].includes(role)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);

@@ -8,7 +8,7 @@ const CLIENT_ROLES = ['client_admin', 'client_viewer'];
 
 const ROLE_BADGE: Record<string, string> = {
   tps_admin:      'badge-admin',
-  tps_recruiter:  'badge-staff',
+  tps_client:  'badge-staff',
   client_admin:   'badge-admin',
   client_viewer:  'badge-client',
 };
@@ -17,7 +17,7 @@ function RoleCell({ userId, initialRole }: { userId: string; initialRole: string
   const supabase = createClient();
   const [role,    setRole]    = useState(initialRole);
   const [saving,  setSaving]  = useState(false);
-  const isInternal = role.startsWith('ravello_');
+  const isInternal = role.startsWith('tps_');
 
   if (isInternal) {
     return <span className={`badge ${ROLE_BADGE[role] ?? 'badge-client'}`}>{role.replace(/_/g,' ')}</span>;
