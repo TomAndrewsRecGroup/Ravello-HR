@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AdminLoginForm() {
   const router = useRouter();
+  const supabase = createClient();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPwd,  setShowPwd]  = useState(false);
@@ -16,19 +18,19 @@ export default function AdminLoginForm() {
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/dev-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    if (res.ok) {
-      router.push('/dashboard');
-      router.refresh();
-    } else {
-      setError('Invalid email or password.');
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
+      return;
     }
+
+    router.push('/dashboard');
+    router.refresh();
   }
 
   return (

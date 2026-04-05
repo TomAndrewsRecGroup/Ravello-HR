@@ -4,13 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Dev session bypass ─────────────────────────────────────────────────────
-  // Set by /api/dev-login when DEV_ADMIN_EMAIL + DEV_ADMIN_PASSWORD match.
-  // Bypasses Supabase auth entirely for testing without a live DB.
-  if (process.env.NODE_ENV !== 'production' && request.cookies.get('dev_session')?.value === '1') {
-    return NextResponse.next({ request });
-  }
-
   // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
@@ -32,7 +25,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password' || pathname === '/api/dev-login' || pathname === '/api/learning/webhook' || pathname === '/api/partner/bd/leads' || pathname === '/api/partner/company/assessment' || pathname === '/api/partner/roles/analyze';
+  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password' || pathname === '/api/learning/webhook' || pathname === '/api/partner/bd/leads' || pathname === '/api/partner/company/assessment' || pathname === '/api/partner/roles/analyze';
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
