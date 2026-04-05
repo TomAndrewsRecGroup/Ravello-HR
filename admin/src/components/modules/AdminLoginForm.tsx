@@ -4,6 +4,11 @@ import { useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+const MESSAGES: Record<string, string> = {
+  'no-session': 'Your session has expired. Please sign in again.',
+  'unauthorised': 'You do not have access to this area. Contact your administrator.',
+};
+
 export default function AdminLoginForm() {
   const searchParams = useSearchParams();
   const [email,    setEmail]    = useState('');
@@ -12,13 +17,10 @@ export default function AdminLoginForm() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
-  // Show why we were redirected here
   useEffect(() => {
     const reason = searchParams.get('reason');
-    if (reason === 'no-session') {
-      setError('Session not found by server. Cookies may not have been sent — check browser console.');
-    } else if (reason === 'unauthorised') {
-      setError('Your account does not have admin access (needs tps_admin or tps_client role).');
+    if (reason && MESSAGES[reason]) {
+      setError(MESSAGES[reason]);
     }
   }, [searchParams]);
 
@@ -35,29 +37,20 @@ export default function AdminLoginForm() {
       });
 
       if (authError) {
-        setError(`Auth error: ${authError.message}`);
+        setError('Invalid email or password.');
         setLoading(false);
         return;
       }
 
       if (!data.session) {
-        setError('No session returned — email may not be confirmed. Go to Supabase Dashboard → Authentication → Users and confirm your email.');
+        setError('Your email address has not been confirmed. Please check your inbox.');
         setLoading(false);
         return;
       }
 
-      // Debug: show what we got before navigating
-      console.log('[login] Session obtained', {
-        userId: data.session.user.id,
-        email: data.session.user.email,
-        expiresAt: data.session.expires_at,
-        tokenLength: data.session.access_token?.length,
-      });
-
-      // Hard navigation so middleware picks up the new session cookies
       window.location.href = '/dashboard';
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } catch {
+      setError('Something went wrong. Please try again.');
       setLoading(false);
     }
   }
@@ -65,10 +58,12 @@ export default function AdminLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="form-group">
-        <label className="label" style={{ color: '#4B5563' }}>Email</label>
+        <label htmlFor="admin-email" className="label" style={{ color: '#4B5563' }}>Email</label>
         <input
+          id="admin-email"
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           className="input"
@@ -77,11 +72,13 @@ export default function AdminLoginForm() {
         />
       </div>
       <div className="form-group">
-        <label className="label" style={{ color: '#4B5563' }}>Password</label>
+        <label htmlFor="admin-password" className="label" style={{ color: '#4B5563' }}>Password</label>
         <div className="relative">
           <input
+            id="admin-password"
             type={showPwd ? 'text' : 'password'}
             required
+            autoComplete="current-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="input pr-10"
@@ -89,6 +86,7 @@ export default function AdminLoginForm() {
           />
           <button
             type="button"
+            aria-label={showPwd ? 'Hide password' : 'Show password'}
             className="absolute right-3 top-1/2 -translate-y-1/2"
             style={{ color: '#9CA3AF' }}
             onClick={() => setShowPwd(!showPwd)}
@@ -98,7 +96,7 @@ export default function AdminLoginForm() {
         </div>
       </div>
       {error && (
-        <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#DC2626' }}>
+        <p role="alert" className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#DC2626' }}>
           {error}
         </p>
       )}

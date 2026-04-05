@@ -4,7 +4,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,21 +28,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   const isPublic = pathname.startsWith('/auth');
 
-  // Debug logging — visible in Vercel function logs
-  if (!isPublic) {
-    console.log('[auth-middleware]', {
-      pathname,
-      hasUser: !!user,
-      userId: user?.id ?? null,
-      authError: authError?.message ?? null,
-      cookieCount: request.cookies.getAll().length,
-      cookieNames: request.cookies.getAll().map(c => c.name).join(', '),
-    });
-  }
-
+  // Unauthenticated → login
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
@@ -51,12 +39,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Authenticated on protected route → verify role
   if (user && !isPublic) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole) {
       if (!['tps_admin', 'tps_client'].includes(cachedRole)) {
-        console.log('[auth-middleware] bad cached role:', cachedRole);
         const url = request.nextUrl.clone();
         url.pathname = '/auth/login';
         url.searchParams.set('reason', 'unauthorised');
@@ -71,7 +59,6 @@ export async function updateSession(request: NextRequest) {
 
       const role = (profile as any)?.role ?? '';
       if (!['tps_admin', 'tps_client'].includes(role)) {
-        console.log('[auth-middleware] bad profile role:', role);
         const url = request.nextUrl.clone();
         url.pathname = '/auth/login';
         url.searchParams.set('reason', 'unauthorised');
@@ -86,6 +73,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Authenticated on auth pages → redirect to dashboard
   if (user && isPublic && !pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
