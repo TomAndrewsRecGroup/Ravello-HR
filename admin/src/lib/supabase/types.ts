@@ -16,7 +16,7 @@ export type HiringStage =
 export type TicketStatus  = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type DocCategory   = 'contract' | 'policy' | 'letter' | 'report' | 'other';
-export type UserRole      = 'client_admin' | 'client_user' | 'tps_admin' | 'tps_recruiter';
+export type UserRole      = 'client_admin' | 'client_user' | 'tps_admin' | 'tps_client';
 
 export type FrictionLevel = 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
 

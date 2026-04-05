@@ -45,7 +45,7 @@ export async function updateSession(request: NextRequest) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole) {
-      if (!['tps_admin', 'tps_recruiter'].includes(cachedRole)) {
+      if (!['tps_admin', 'tps_client'].includes(cachedRole)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);
@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       const role = (profile as any)?.role ?? '';
-      if (!['tps_admin', 'tps_recruiter'].includes(role)) {
+      if (!['tps_admin', 'tps_client'].includes(role)) {
         const url = request.nextUrl.clone();
         url.pathname = '/auth/unauthorised';
         return NextResponse.redirect(url);

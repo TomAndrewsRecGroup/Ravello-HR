@@ -168,7 +168,7 @@ font-display     — Plus Jakarta Sans (headings)
 | Table | Purpose |
 |-------|---------|
 | `companies` | Client companies. Has `feature_flags` JSONB, `name`, `slug`, `sector`, `size_band`, `contact_email`, `active` |
-| `profiles` | Auth users. Has `company_id`, `email`, `full_name`, `role` (enum: `ravello_admin`, `ravello_recruiter`, `client_admin`, `client_viewer`, `client_user`) |
+| `profiles` | Auth users. Has `company_id`, `email`, `full_name`, `role` (enum: `tps_admin`, `tps_client`, `client_admin`, `client_viewer`, `client_user`) |
 | `requisitions` | Hiring requisitions. Has `company_id`, `title`, `department`, `seniority`, `salary_range`, `location`, `employment_type`, `description`, `must_haves` (TEXT[]), `stage` (enum), `assigned_recruiter`, `friction_score` (JSONB) |
 | `candidates` | Candidates per requisition. Has `requisition_id`, `company_id`, `full_name`, `email`, `cv_url`, `summary`, `approved_for_client`, `client_status` (enum: `pending/shared/approved/rejected`), `client_feedback` |
 | `documents` | Company documents. Has `company_id`, `name`, `category`, `file_url`, `file_size`, `version`, `review_due_at` |
@@ -186,7 +186,7 @@ font-display     — Plus Jakarta Sans (headings)
 ```sql
 hiring_stage: submitted | briefing | sourcing | screening | interviewing | offer | filled | cancelled
 candidate_client_status: pending | shared | approved | rejected
-user_role: ravello_admin | ravello_recruiter | client_admin | client_viewer | client_user
+user_role: tps_admin | tps_client | client_admin | client_viewer | client_user
 doc_category: contract | policy | handbook | compliance | report | other
 ticket_status: open | in_progress | resolved | closed
 ticket_priority: low | normal | high | urgent
@@ -399,7 +399,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 26 | BD pipeline Kanban view — HTML5 drag-and-drop, 4 status columns, inline status update |
 | 28 | Reporting CSV exports — portal `/reports` with 4 export cards; admin `/reports` with cross-client exports |
 | 29 | Manatal ATS integration — `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
-| 30 | RLS audit fixes — `is_ravello_staff()` corrected to include `ravello_recruiter`; 8 policies rewritten; client insert policies tightened |
+| 30 | RLS audit fixes — `is_ravello_staff()` corrected to include `tps_client`; 8 policies rewritten; client insert policies tightened |
 | 31 | Feature flag toggles expanded to include LEAD, PROTECT, Learning, Benchmarks; Manatal ATS pipeline surfaced in portal hiring page |
 | 32 | Admin dashboard enhanced with PROTECT alerts (overdue compliance, expiring docs, pending absences, open service requests) |
 | 33 | Portal dashboard: LEAD/PROTECT module cards when those flags enabled (open training needs, pending absences) |

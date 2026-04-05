@@ -72,7 +72,7 @@ ALTER TABLE company_assessments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage all assessments"
   ON company_assessments FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client')));
 
 CREATE POLICY "Clients can view own assessments"
   ON company_assessments FOR SELECT
@@ -87,7 +87,7 @@ ALTER TABLE company_friction_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage friction items"
   ON company_friction_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client')));
 
 CREATE POLICY "Clients can view own friction items"
   ON company_friction_items FOR SELECT

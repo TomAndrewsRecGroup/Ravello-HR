@@ -8,7 +8,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ═══ ENUMS ═══════════════════════════════════════════════════════════════════
-CREATE TYPE user_role             AS ENUM ('client_admin','client_user','tps_admin','tps_recruiter');
+CREATE TYPE user_role             AS ENUM ('client_admin','client_user','tps_admin','tps_client');
 CREATE TYPE hiring_stage          AS ENUM ('submitted','in_progress','shortlist_ready','interview','offer','filled','cancelled');
 CREATE TYPE ticket_status         AS ENUM ('open','in_progress','resolved','closed');
 CREATE TYPE ticket_priority       AS ENUM ('low','normal','high','urgent');
@@ -90,7 +90,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION is_tps_staff()
 RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
-  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'));
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'));
 $$;
 
 

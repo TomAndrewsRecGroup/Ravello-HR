@@ -7,7 +7,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Enums ────────────────────────────────────────────────────
-CREATE TYPE user_role      AS ENUM ('client_admin','client_user','tps_admin','tps_recruiter');
+CREATE TYPE user_role      AS ENUM ('client_admin','client_user','tps_admin','tps_client');
 CREATE TYPE hiring_stage   AS ENUM ('submitted','in_progress','shortlist_ready','interview','offer','filled','cancelled');
 CREATE TYPE ticket_status  AS ENUM ('open','in_progress','resolved','closed');
 CREATE TYPE ticket_priority AS ENUM ('low','normal','high','urgent');
@@ -201,7 +201,7 @@ $$;
 -- Helper: is TPS staff?
 CREATE OR REPLACE FUNCTION is_tps_staff()
 RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
-  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'));
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'));
 $$;
 
 -- Companies: clients see only their company; TPS sees all
@@ -770,32 +770,32 @@ CREATE POLICY "client_hr_metrics" ON hr_metrics
 -- Admin full access
 CREATE POLICY "admin_training_needs" ON training_needs
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_perf_reviews" ON performance_reviews
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_skills_matrix" ON skills_matrix
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_emp_docs" ON employee_documents
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_absence" ON absence_records
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_hr_metrics" ON hr_metrics
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 -- ============================================================
 -- Migration 006: E-learning marketplace
@@ -856,7 +856,7 @@ CREATE POLICY "read_published_content" ON learning_content
 -- Admin can do everything
 CREATE POLICY "admin_learning_content" ON learning_content
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 -- Clients can read their own purchases
@@ -874,7 +874,7 @@ CREATE POLICY "client_purchases_insert" ON learning_purchases
 -- Admin full access to purchases
 CREATE POLICY "admin_purchases" ON learning_purchases
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 -- ══════════════════════════════════════════════════════════════
 --  Migration 007: Add jd_text to requisitions
@@ -922,7 +922,7 @@ CREATE POLICY "read_benchmarks" ON salary_benchmarks
 -- Only admin can write
 CREATE POLICY "admin_benchmarks" ON salary_benchmarks
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client'))
   );
 -- ══════════════════════════════════════════════════════════════
 --  Migration 009: Manatal ATS Integration
@@ -937,9 +937,9 @@ COMMENT ON COLUMN companies.manatal_client_id IS
   'Manatal ATS department or client ID. When set, the portal HIRE section can display live pipeline data from Manatal.';
 -- ══════════════════════════════════════════════════════════════
 --  Migration 010: RLS Audit Fixes
---  Fix is_tps_staff() to include tps_recruiter.
---  The enum is: tps_admin | tps_recruiter (NOT TPS_staff).
---  Several policies also use 'tps_recruiter' inline — patched below.
+--  Fix is_tps_staff() to include tps_client.
+--  The enum is: tps_admin | tps_client (NOT TPS_staff).
+--  Several policies also use 'tps_client' inline — patched below.
 -- ══════════════════════════════════════════════════════════════
 
 -- ── Fix is_tps_staff() helper ────────────────────────────
@@ -948,12 +948,12 @@ RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
   SELECT EXISTS(
     SELECT 1 FROM profiles
     WHERE id = auth.uid()
-      AND role IN ('tps_admin', 'tps_recruiter')
+      AND role IN ('tps_admin', 'tps_client')
   );
 $$;
 
 -- ── Fix LEAD / PROTECT admin policies ────────────────────────
--- These were incorrectly using 'tps_recruiter' instead of 'tps_recruiter'
+-- These were incorrectly using 'tps_client' instead of 'tps_client'
 
 DROP POLICY IF EXISTS "admin_training_needs"    ON training_needs;
 DROP POLICY IF EXISTS "admin_perf_reviews"      ON performance_reviews;
@@ -964,32 +964,32 @@ DROP POLICY IF EXISTS "admin_hr_metrics"        ON hr_metrics;
 
 CREATE POLICY "admin_training_needs" ON training_needs
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_perf_reviews" ON performance_reviews
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_skills_matrix" ON skills_matrix
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_emp_docs" ON employee_documents
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_absence" ON absence_records
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 CREATE POLICY "admin_hr_metrics" ON hr_metrics
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 -- ── Fix learning_content admin policy ────────────────────────
@@ -997,7 +997,7 @@ DROP POLICY IF EXISTS "admin_learning_content" ON learning_content;
 
 CREATE POLICY "admin_learning_content" ON learning_content
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 -- ── Fix learning_purchases admin policy ──────────────────────
@@ -1005,7 +1005,7 @@ DROP POLICY IF EXISTS "admin_purchases" ON learning_purchases;
 
 CREATE POLICY "admin_purchases" ON learning_purchases
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_recruiter'))
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin','tps_client'))
   );
 
 -- ── client_insert_req: clients can insert requisitions ───────
@@ -1018,7 +1018,7 @@ CREATE POLICY "client_insert_req" ON requisitions
     AND EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
-        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_recruiter')
+        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_client')
     )
   );
 
@@ -1031,7 +1031,7 @@ CREATE POLICY "client_insert_ticket" ON tickets
     AND EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
-        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_recruiter')
+        AND role IN ('client_admin', 'client_user', 'tps_admin', 'tps_client')
     )
   );
 
@@ -1046,7 +1046,7 @@ CREATE POLICY "client_insert_ticket" ON tickets
 -- client_services, milestones, bd_companies, bd_scanned_roles,
 -- actions, service_requests, offers, interview_schedules).
 --
--- salary_benchmarks policy already uses 'tps_recruiter' — correct.
+-- salary_benchmarks policy already uses 'tps_client' — correct.
 -- ══════════════════════════════════════════════════════════════
 --  Migration 011: JD Templates + CV Screening
 --  Phase 34 — JD template library; CV screening fields on candidates
@@ -1174,7 +1174,7 @@ ALTER TABLE company_assessments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage all assessments"
   ON company_assessments FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client')));
 
 CREATE POLICY "Clients can view own assessments"
   ON company_assessments FOR SELECT
@@ -1189,7 +1189,7 @@ ALTER TABLE company_friction_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Staff can manage friction items"
   ON company_friction_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_recruiter')));
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('tps_admin', 'tps_client')));
 
 CREATE POLICY "Clients can view own friction items"
   ON company_friction_items FOR SELECT
