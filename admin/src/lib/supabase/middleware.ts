@@ -24,12 +24,25 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   const isPublic = pathname.startsWith('/auth');
+
+  // Debug logging — visible in Vercel function logs
+  if (!isPublic) {
+    console.log('[auth-middleware]', {
+      pathname,
+      hasUser: !!user,
+      userId: user?.id ?? null,
+      authError: authError?.message ?? null,
+      cookieCount: request.cookies.getAll().length,
+      cookieNames: request.cookies.getAll().map(c => c.name).join(', '),
+    });
+  }
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
+    url.searchParams.set('reason', 'no-session');
     return NextResponse.redirect(url);
   }
 
@@ -38,8 +51,10 @@ export async function updateSession(request: NextRequest) {
 
     if (cachedRole) {
       if (!['tps_admin', 'tps_client'].includes(cachedRole)) {
+        console.log('[auth-middleware] bad cached role:', cachedRole);
         const url = request.nextUrl.clone();
-        url.pathname = '/auth/unauthorised';
+        url.pathname = '/auth/login';
+        url.searchParams.set('reason', 'unauthorised');
         return NextResponse.redirect(url);
       }
     } else {
@@ -51,8 +66,10 @@ export async function updateSession(request: NextRequest) {
 
       const role = (profile as any)?.role ?? '';
       if (!['tps_admin', 'tps_client'].includes(role)) {
+        console.log('[auth-middleware] bad profile role:', role);
         const url = request.nextUrl.clone();
-        url.pathname = '/auth/unauthorised';
+        url.pathname = '/auth/login';
+        url.searchParams.set('reason', 'unauthorised');
         return NextResponse.redirect(url);
       }
 

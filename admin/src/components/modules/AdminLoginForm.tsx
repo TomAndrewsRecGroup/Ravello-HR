@@ -1,14 +1,26 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AdminLoginForm() {
+  const searchParams = useSearchParams();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPwd,  setShowPwd]  = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
+
+  // Show why we were redirected here
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'no-session') {
+      setError('Session not found by server. Cookies may not have been sent — check browser console.');
+    } else if (reason === 'unauthorised') {
+      setError('Your account does not have admin access (needs tps_admin or tps_client role).');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,16 +35,24 @@ export default function AdminLoginForm() {
       });
 
       if (authError) {
-        setError(authError.message);
+        setError(`Auth error: ${authError.message}`);
         setLoading(false);
         return;
       }
 
       if (!data.session) {
-        setError('No session returned. Check that email confirmation is disabled in your Supabase Auth settings (Authentication → Providers → Email → Confirm email).');
+        setError('No session returned — email may not be confirmed. Go to Supabase Dashboard → Authentication → Users and confirm your email.');
         setLoading(false);
         return;
       }
+
+      // Debug: show what we got before navigating
+      console.log('[login] Session obtained', {
+        userId: data.session.user.id,
+        email: data.session.user.email,
+        expiresAt: data.session.expires_at,
+        tokenLength: data.session.access_token?.length,
+      });
 
       // Hard navigation so middleware picks up the new session cookies
       window.location.href = '/dashboard';
