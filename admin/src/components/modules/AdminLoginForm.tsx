@@ -1,12 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AdminLoginForm() {
-  const router = useRouter();
-  const supabase = createClient();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPwd,  setShowPwd]  = useState(false);
@@ -19,6 +16,7 @@ export default function AdminLoginForm() {
     setError('');
 
     try {
+      const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -30,10 +28,10 @@ export default function AdminLoginForm() {
         return;
       }
 
-      // Force a hard navigation so middleware picks up the new session cookies
+      // Hard navigation so middleware picks up the new session cookies
       window.location.href = '/dashboard';
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setLoading(false);
     }
   }
