@@ -17,6 +17,10 @@ export async function POST(request: Request) {
   );
   await supabase.auth.signOut();
   const res = NextResponse.redirect(new URL('/auth/login', request.url));
-  res.cookies.delete('tpo_admin_role');
+  res.cookies.set('tpo_admin_role', '', {
+    httpOnly: true, sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0, path: '/',
+  });
   return res;
 }
