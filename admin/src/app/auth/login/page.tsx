@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { Suspense } from 'react';
 import AdminLoginForm from '@/components/modules/AdminLoginForm';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
@@ -16,7 +17,9 @@ export default function AdminLoginPage() {
             <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.25)', color: '#DC2626' }}>Internal</span>
           </div>
           <p className="text-sm mb-7" style={{ color: '#4B5563' }}>The People Office staff access only</p>
-          <AdminLoginForm />
+          <Suspense>
+            <AdminLoginForm />
+          </Suspense>
         </div>
       </div>
     </div>
