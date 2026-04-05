@@ -1,10 +1,15 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const PUBLIC_ROUTES = [
+  /^\/auth\//,
+  /^\/api\/learning\/webhook$/,
+  /^\/api\/partner\//,
+];
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Supabase session refresh ───────────────────────────────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,8 +34,13 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const isPublicRoute = pathname === '/auth/login' || pathname === '/auth/callback' || pathname === '/auth/reset-password' || pathname === '/api/learning/webhook' || pathname === '/api/partner/bd/leads' || pathname === '/api/partner/company/assessment' || pathname === '/api/partner/roles/analyze';
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const isPublicRoute = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
+
+  // Log auth infrastructure errors (not routine "no session" cases)
+  if (authError && authError.message !== 'Auth session missing!') {
+    console.error('[auth] getUser failed:', authError.message);
+  }
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
