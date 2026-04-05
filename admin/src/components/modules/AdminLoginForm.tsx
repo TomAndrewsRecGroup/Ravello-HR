@@ -17,13 +17,19 @@ export default function AdminLoginForm() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
         setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data.session) {
+        setError('No session returned. Check that email confirmation is disabled in your Supabase Auth settings (Authentication → Providers → Email → Confirm email).');
         setLoading(false);
         return;
       }
