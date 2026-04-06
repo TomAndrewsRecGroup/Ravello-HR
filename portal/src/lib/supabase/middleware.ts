@@ -7,6 +7,9 @@ const PUBLIC_ROUTES = [
   /^\/api\/partner\//,
 ];
 
+const SESSION_COOKIE = 'tps_portal_session';
+const SESSION_TTL = 60 * 15; // 15 minutes
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -34,10 +37,23 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
   const isPublicRoute = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
 
-  // Log auth infrastructure errors (not routine "no session" cases)
+  // Check for cached session cookie — if valid, skip ALL auth checks
+  const cachedSession = request.cookies.get(SESSION_COOKIE)?.value;
+  if (cachedSession && !isPublicRoute) {
+    try {
+      const parsed = JSON.parse(cachedSession);
+      if (parsed.userId && parsed.role) {
+        // Session cookie is valid — no Supabase call needed
+        return supabaseResponse;
+      }
+    } catch {}
+  }
+
+  // No cached session — validate with Supabase (only happens every 15 min or on first load)
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
   if (authError && authError.message !== 'Auth session missing!') {
     console.error('[auth] getUser failed:', authError.message);
   }
@@ -49,8 +65,36 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Authenticated — build session cookie so layouts never call Supabase
+  if (user && !isPublicRoute && !cachedSession) {
+    const { data: rpcRole } = await supabase.rpc('get_my_role');
+    const role = typeof rpcRole === 'string' ? rpcRole : '';
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id, ui_preferences, onboarding_completed')
+      .eq('id', user.id)
+      .single();
+
+    const sessionData = {
+      userId: user.id,
+      email: user.email,
+      role,
+      companyId: (profile as any)?.company_id ?? '',
+      isTpsStaff: role === 'tps_admin' || role === 'tps_client',
+      uiPreferences: (profile as any)?.ui_preferences ?? {},
+      onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
+    };
+
+    supabaseResponse.cookies.set(SESSION_COOKIE, JSON.stringify(sessionData), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: SESSION_TTL,
+      path: '/',
+    });
+  }
+
   // Authenticated on auth pages → redirect to dashboard
-  // Skip if reason param is present (user was just rejected — avoid redirect loop)
   if (user && pathname.startsWith('/auth') && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
     const reason = request.nextUrl.searchParams.get('reason');
     if (!reason) {
