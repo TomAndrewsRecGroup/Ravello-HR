@@ -41,6 +41,7 @@
     --danger:         #EF4444;
     --red:            #EF4444;
     --gold:           #D97706;
+    --gold-surface:   linear-gradient(135deg, #D4A44C 0%, #BF8F28 50%, #A67B20 100%);
 
     /* ─── Extended status palette ────────────────────── */
     --teal:           #14B8A6;
@@ -542,31 +543,14 @@
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes goldSweep {
-  0%   { transform: translateX(-160%); }
-  55%  { transform: translateX(160%); }
-  100% { transform: translateX(160%); }
 }
 @keyframes meshDrift {
   0%   { transform: translate(0,0) scale(1); }
   40%  { transform: translate(45px,-35px) scale(1.06); }
   100% { transform: translate(-22px,22px) scale(0.96); }
-}
-@keyframes glowSoft {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 1; }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.14); }
-  50%       { box-shadow: 0 0 44px rgba(124,58,237,0.38); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
