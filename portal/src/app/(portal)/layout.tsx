@@ -1,27 +1,15 @@
 import { redirect } from 'next/navigation';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import PortalShell from '@/components/layout/PortalShell';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile, companyId, isTpsStaff } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
 
   let flags:  Record<string, boolean> = {};
   let counts: Record<string, number>  = {};
-  let uiPreferences: Record<string, any> = {};
-
-  // Use SECURITY DEFINER function to bypass RLS circular dependency
-  const { data: role } = await supabase.rpc('get_my_role');
-  const isTpsStaff = role === 'tps_admin' || role === 'tps_client';
-
-  // Try to fetch profile — may fail for TPS staff without company_id due to RLS
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('onboarding_completed, company_id, ui_preferences, companies(feature_flags)')
-    .eq('id', user.id)
-    .single();
 
   // If no profile and not TPS staff, redirect to login
   if (!profile && !isTpsStaff) {
@@ -32,9 +20,14 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/onboarding');
   }
 
-  flags = (profile as any)?.companies?.feature_flags ?? {};
-  uiPreferences = (profile as any)?.ui_preferences ?? {};
-  const companyId: string = (profile as any)?.company_id ?? '';
+  // Fetch feature flags from company (separate query — not cached)
+  if (companyId) {
+    const { data: company } = await supabase
+      .from('companies').select('feature_flags').eq('id', companyId).single();
+    flags = (company as any)?.feature_flags ?? {};
+  }
+
+  const uiPreferences = (profile as any)?.ui_preferences ?? {};
 
   // TPS staff without a company see all features enabled, zero counts
   if (isTpsStaff && !companyId) {

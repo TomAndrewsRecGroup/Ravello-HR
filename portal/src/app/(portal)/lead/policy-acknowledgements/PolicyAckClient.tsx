@@ -125,7 +125,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
           <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#92400E' }}>Pending</p>
           <p className="text-xl font-bold mt-1" style={{ color: '#92400E' }}>{pending}</p>

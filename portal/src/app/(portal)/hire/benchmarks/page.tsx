@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { PoundSterling, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Salary Benchmarks' };
@@ -21,14 +21,8 @@ function positionLabel(salary: number, p25: number | null, p50: number | null, p
 
 export default async function BenchmarksPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile }  = await supabase
-    .from('profiles')
-    .select('company_id, companies(feature_flags)')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
+  const { companyId: cId } = await getSessionProfile();
+  const companyId: string = cId ?? '';
 
   const [{ data: reqs }, { data: benchmarks }] = await Promise.all([
     supabase

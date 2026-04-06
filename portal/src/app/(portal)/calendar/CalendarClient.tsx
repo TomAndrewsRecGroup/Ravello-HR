@@ -264,10 +264,10 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         </span>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="card overflow-hidden">
+      {/* Calendar Grid — needs horizontal scroll on mobile */}
+      <div className="card overflow-hidden overflow-x-auto">
         {/* Day headers */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 min-w-[600px]">
           {DAYS.map(d => (
             <div key={d} className="px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)', borderBottom: '1px solid var(--line)' }}>
               {d}
@@ -276,7 +276,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         </div>
 
         {/* Calendar cells */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 min-w-[600px]">
           {calendarDays.map((cell, i) => {
             const dayEvents = getEventsForDate(cell.date);
             const dayLeave = getLeaveForDate(cell.date);
@@ -431,7 +431,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                   <option value="other">Other</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="label">Start Date *</label>
                   <input className="input" type="date" value={eventForm.start_date} onChange={e => setEventForm(f => ({ ...f, start_date: e.target.value }))} />
@@ -491,7 +491,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                   <option value="other">Other</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="label">Start Date *</label>
                   <input className="input" type="date" value={leaveForm.start_date} onChange={e => setLeaveForm(f => ({ ...f, start_date: e.target.value }))} />

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import GroupedTabs from '@/components/layout/GroupedTabs';
 
@@ -29,7 +29,7 @@ const TAB_GROUPS = [
 
 export default async function LeadLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
 
   let totalDocs = 0;
   let milestones = 0;
@@ -37,12 +37,7 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
   let purchasedCourses = 0;
   let activeEmployees = 0;
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles').select('company_id').eq('id', user.id).single();
-    const companyId = (profile as any)?.company_id ?? '';
-
-    if (companyId) {
+  if (user && companyId) {
       const [docRes, mileRes, trainRes, purchRes, empRes] = await Promise.all([
         supabase.from('documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
         supabase.from('milestones').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
@@ -56,7 +51,6 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
       openTraining = trainRes.count ?? 0;
       purchasedCourses = purchRes.count ?? 0;
       activeEmployees = empRes.count ?? 0;
-    }
   }
 
   const stats = [

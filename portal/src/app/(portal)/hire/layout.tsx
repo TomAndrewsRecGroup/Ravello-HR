@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 import { Briefcase } from 'lucide-react';
@@ -14,37 +14,31 @@ const TABS = [
 
 export default async function HireLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
 
   let activeRoles = 0;
   let avgDaysOpen = 0;
   let pendingCandidates = 0;
   let rolesFilled = 0;
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles').select('company_id').eq('id', user.id).single();
-    const companyId = (profile as any)?.company_id ?? '';
+  if (user && companyId) {
+    const [reqRes, candRes] = await Promise.all([
+      supabase.from('requisitions').select('id, stage, created_at').eq('company_id', companyId),
+      supabase.from('candidates').select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
+    ]);
 
-    if (companyId) {
-      const [reqRes, candRes] = await Promise.all([
-        supabase.from('requisitions').select('id, stage, created_at').eq('company_id', companyId),
-        supabase.from('candidates').select('id', { count: 'exact', head: true })
-          .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
-      ]);
+    const reqs = reqRes.data ?? [];
+    const active = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage));
+    const filled = reqs.filter((r: any) => r.stage === 'filled');
+    activeRoles = active.length;
+    rolesFilled = filled.length;
+    pendingCandidates = candRes.count ?? 0;
 
-      const reqs = reqRes.data ?? [];
-      const active = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage));
-      const filled = reqs.filter((r: any) => r.stage === 'filled');
-      activeRoles = active.length;
-      rolesFilled = filled.length;
-      pendingCandidates = candRes.count ?? 0;
-
-      if (active.length > 0) {
-        const totalDays = active.reduce((s: number, r: any) =>
-          s + Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000), 0);
-        avgDaysOpen = Math.round(totalDays / active.length);
-      }
+    if (active.length > 0) {
+      const totalDays = active.reduce((s: number, r: any) =>
+        s + Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000), 0);
+      avgDaysOpen = Math.round(totalDays / active.length);
     }
   }
 

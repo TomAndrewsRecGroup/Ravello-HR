@@ -499,7 +499,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                 <label className="label">Role Title *</label>
                 <input className="input" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Marketing Manager" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="label">Department</label>
                   <input className="input" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} />
@@ -509,7 +509,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                   <input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="label">Salary Min</label>
                   <input className="input" type="number" value={form.salary_min} onChange={e => setForm(f => ({ ...f, salary_min: e.target.value }))} placeholder="e.g. 35000" />
