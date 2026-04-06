@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
+import { createClient } from '@/lib/supabase/client';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -36,13 +37,39 @@ const DEFAULT_ORDER = ALL_NAV_ITEMS.map(i => i.href);
 interface Props {
   flags?:  Record<string, boolean>;
   counts?: Record<string, number>;
+  companyId?: string;
+  userId?: string;
 }
 
-export default function Sidebar({ flags = {}, counts = {} }: Props) {
+export default function Sidebar({ flags = {}, counts: initialCounts = {}, companyId, userId }: Props) {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
   const [editMode, setEditMode] = useState(false);
+  const [counts, setCounts] = useState<Record<string, number>>(initialCounts);
+
+  // Fetch badge counts client-side (non-blocking — page renders immediately)
+  useEffect(() => {
+    if (!companyId) return;
+    const supabase = createClient();
+    const now = new Date().toISOString();
+
+    Promise.all([
+      supabase.from('actions').select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId).eq('status', 'active')
+        .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
+      supabase.from('tickets').select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId).in('status', ['open', 'in_progress']),
+      supabase.from('candidates').select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
+    ]).then(([actRes, tickRes, candRes]) => {
+      setCounts({
+        actions: actRes.count ?? 0,
+        tickets: tickRes.count ?? 0,
+        candidates: candRes.count ?? 0,
+      });
+    }).catch(() => {});
+  }, [companyId, path]); // re-fetch when navigating
 
   // Build ordered, visible nav items
   const orderedItems = useMemo(() => {

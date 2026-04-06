@@ -11,14 +11,17 @@ export default async function CalendarPage() {
   const { user, companyId, role } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (
-    <main className="portal-page flex-1">
-      <div className="card p-12 text-center">
-        <div className="empty-state">
-          <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>No company linked</p>
-          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>This page will populate once your company profile is set up.</p>
+    <>
+      <Topbar title="Company Calendar" subtitle="Track events, closures, and employee leave" />
+      <main className="portal-page flex-1">
+        <div className="card p-12 text-center">
+          <div className="empty-state">
+            <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>No company linked</p>
+            <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>This page will populate once your company profile is set up.</p>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 
   const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';

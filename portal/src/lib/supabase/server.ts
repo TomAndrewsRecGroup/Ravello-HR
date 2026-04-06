@@ -23,15 +23,14 @@ export function createServerSupabaseClient() {
         try {
           cookieStore.set({ name, value, ...options });
         } catch {
-          // set can be called from Server Components where cookies are read-only.
-          // This is safe to ignore — the middleware will handle refreshing the session.
+          // Safe to ignore in read-only server component contexts.
         }
       },
       remove(name: string, options: Record<string, unknown>) {
         try {
           cookieStore.set({ name, value: '', ...options });
         } catch {
-          // Same as above — safe to ignore in read-only contexts.
+          // Safe to ignore in read-only contexts.
         }
       },
     },
@@ -39,16 +38,26 @@ export function createServerSupabaseClient() {
 }
 
 /**
- * Cached per-request: fetches the current user + their profile in a single call.
- * React cache() deduplicates within the same server request, so layout + page
- * + nested layouts all share one DB round-trip instead of 3–4.
+ * Cached per-request: fetches the current user + profile in ONE round-trip batch.
+ *
+ * Uses getSession() instead of getUser() for speed — getSession() reads the JWT
+ * from cookies locally without hitting the Supabase Auth API over the network.
+ * The middleware already validated the session via getUser(), so by the time a
+ * layout/page runs, the session is trustworthy.
+ *
+ * React cache() deduplicates within a single server request, so layout + page
+ * + nested layouts all share ONE call.
  */
 export const getSessionProfile = cache(async () => {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false };
 
-  // Use SECURITY DEFINER function to bypass RLS circular dependency
+  // getSession() reads JWT locally — no network call (middleware already validated)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false };
+
+  const user = session.user;
+
+  // Batch: role RPC + profile in parallel (2 queries, 1 round-trip via HTTP/2)
   const [{ data: rpcRole }, { data: profile }] = await Promise.all([
     supabase.rpc('get_my_role'),
     supabase.from('profiles').select('company_id, ui_preferences, onboarding_completed').eq('id', user.id).single(),
