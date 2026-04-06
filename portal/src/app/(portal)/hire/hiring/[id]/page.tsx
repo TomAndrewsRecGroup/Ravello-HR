@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import FrictionScoreCard from '@/components/FrictionScoreCard';
 import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButton';
 import OfferTab from './OfferTab';
@@ -30,8 +30,9 @@ export default async function RequisitionDetailPage({
   params: { id: string };
 }) {
   const supabase = createServerSupabaseClient();
+  const { companyId } = await getSessionProfile();
   const { data: req } = await supabase
-    .from('requisitions').select('*').eq('id', params.id).single();
+    .from('requisitions').select('*').eq('id', params.id).eq('company_id', companyId).single();
 
   if (!req) notFound();
 

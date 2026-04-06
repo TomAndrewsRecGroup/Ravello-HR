@@ -14,8 +14,8 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
   const supabase = createServerSupabaseClient();
   const { user } = await getSessionProfile();
   const [{ data: ticket }, { data: messages }] = await Promise.all([
-    supabase.from('tickets').select('*').eq('id', params.id).single(),
-    supabase.from('ticket_messages').select('*').eq('ticket_id', params.id).eq('is_internal', false).order('created_at'),
+    supabase.from('tickets').select('id, subject, status, priority, description, created_at, resolved_at').eq('id', params.id).single(),
+    supabase.from('ticket_messages').select('id, sender_id, body, created_at').eq('ticket_id', params.id).eq('is_internal', false).order('created_at'),
   ]);
 
   if (!ticket) notFound();

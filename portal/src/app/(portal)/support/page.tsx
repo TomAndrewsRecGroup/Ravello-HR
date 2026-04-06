@@ -39,12 +39,12 @@ export default async function SupportPage() {
   const [{ data: tickets }, { data: serviceRequests }] = await Promise.all([
     supabase
       .from('tickets')
-      .select('*')
+      .select('id, subject, priority, status, created_at, resolved_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
     supabase
       .from('service_requests')
-      .select('*')
+      .select('id, request_type, type, subject, message, status, response_notes, responded_at, created_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
   ]);

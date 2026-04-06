@@ -15,12 +15,12 @@ export default async function OffboardingPage() {
   const [templatesRes, instancesRes, employeesRes] = await Promise.all([
     supabase
       .from('offboarding_templates')
-      .select('*, offboarding_template_tasks(*)')
+      .select('id, name, description, created_at, offboarding_template_tasks(id, title, description, sort_order)')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
     supabase
       .from('offboarding_instances')
-      .select('*, employee_records(full_name, job_title), offboarding_task_progress(*)')
+      .select('id, template_id, employee_id, status, started_at, completed_at, employee_records(full_name, job_title), offboarding_task_progress(id, task_id, status, completed_at)')
       .eq('company_id', companyId)
       .order('started_at', { ascending: false }),
     supabase

@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   const { user, profile, companyId } = await getSessionProfile();
 
   const [{ data: company }, { data: fullProfile }] = await Promise.all([
-    supabase.from('companies').select('*').eq('id', companyId).single(),
+    supabase.from('companies').select('id, name, sector, size_band, contact_email').eq('id', companyId).single(),
     supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
   ]);
 

@@ -13,7 +13,7 @@ export default async function HRReportsPage() {
   const [empRes, leaveRes] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('*')
+      .select('id, full_name, job_title, department, employment_type, status, start_date, end_date, gender, ethnicity, disability_status, annual_leave_allowance, sick_day_allowance, leave_year_type, leave_year_start_month, leave_year_start_day')
       .eq('company_id', companyId)
       .order('start_date'),
     supabase
