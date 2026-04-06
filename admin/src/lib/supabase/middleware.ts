@@ -75,17 +75,15 @@ export async function updateSession(request: NextRequest) {
     if (cachedRole && typeof cachedRole === 'string' && ALLOWED_ROLES.includes(cachedRole)) {
       // Valid cached role — proceed
     } else {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // Use SECURITY DEFINER function to bypass RLS circular dependency
+      // (profiles RLS calls is_tps_staff() which queries profiles again)
+      const { data: rpcRole, error: roleError } = await supabase.rpc('get_my_role');
 
-      if (profileError) {
-        console.error('[auth] profile query failed:', profileError.message, '| user:', user.id);
+      if (roleError) {
+        console.error('[auth] get_my_role() failed:', roleError.message, '| user:', user.id);
       }
 
-      const role = (profile as any)?.role;
+      const role = typeof rpcRole === 'string' ? rpcRole : null;
       if (typeof role !== 'string' || !ALLOWED_ROLES.includes(role)) {
         // Sign out to prevent redirect loop, then send to login
         await supabase.auth.signOut();

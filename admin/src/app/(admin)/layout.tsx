@@ -11,13 +11,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect('/auth/login');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  const role = (profile as any)?.role ?? '';
+  // Use SECURITY DEFINER function to bypass RLS circular dependency
+  const { data: rpcRole } = await supabase.rpc('get_my_role');
+  const role = typeof rpcRole === 'string' ? rpcRole : '';
   if (!['tps_admin', 'tps_client'].includes(role)) {
     // Sign out to prevent redirect loop (middleware would redirect back here)
     await supabase.auth.signOut();
