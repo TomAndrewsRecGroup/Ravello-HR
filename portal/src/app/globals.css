@@ -153,16 +153,6 @@
     transform: translateY(-1px);
   }
 
-  .btn-gradient {
-    @apply btn text-white;
-    background: var(--gradient);
-    box-shadow: 0 1px 8px rgba(124,58,237,0.25);
-  }
-  .btn-gradient:hover {
-    box-shadow: 0 2px 16px rgba(124,58,237,0.35);
-    transform: translateY(-1px);
-  }
-
   .btn-secondary {
     @apply btn bg-white;
     color: var(--ink);
@@ -346,57 +336,6 @@
   .empty-state svg { opacity: 0.4; }
   .empty-state p:first-of-type { color: var(--ink-soft); font-weight: 500; }
 
-  /* ─── Glass button ────────────────────────────────── */
-  .btn-glass {
-    @apply btn relative;
-    background: rgba(255,255,255,0.80);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    color: var(--ink);
-    border: 1px solid rgba(10,15,30,0.08);
-    box-shadow: 0 1px 4px rgba(10,15,30,0.05);
-  }
-  .btn-glass:hover {
-    background: rgba(255,255,255,0.95);
-    border-color: rgba(124,58,237,0.20);
-    box-shadow: 0 3px 16px rgba(10,15,30,0.08);
-    transform: translateY(-1px);
-  }
-
-  /* ─── Glass card — frosted ─────────────────────── */
-  .card-glass {
-    @apply rounded-[24px] p-6 transition-all duration-300;
-    background: var(--surface-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.60);
-    box-shadow: 0 4px 24px rgba(10,15,30,0.05), inset 0 1px 0 rgba(255,255,255,0.80);
-  }
-  .card-glass:hover {
-    background: rgba(255,255,255,0.90);
-    box-shadow: 0 8px 40px rgba(10,15,30,0.08);
-    transform: translateY(-2px);
-  }
-
-  /* ─── Premium card — gold accent ───────────────── */
-  .card-premium {
-    @apply rounded-[24px] p-6 transition-all duration-300 bg-white relative overflow-hidden;
-    border: 1px solid rgba(191,143,40,0.20);
-    box-shadow: 0 1px 4px rgba(191,143,40,0.06), 0 8px 32px rgba(191,143,40,0.05);
-  }
-  .card-premium::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--gold-surface);
-  }
-  .card-premium:hover {
-    box-shadow: 0 6px 24px rgba(191,143,40,0.14), 0 16px 52px rgba(191,143,40,0.08);
-    transform: translateY(-2px);
-    border-color: rgba(191,143,40,0.36);
-  }
-
   /* ─── Gradient text ────────────────────────────── */
   .text-gradient {
     background-image: var(--gradient-text);
@@ -404,13 +343,6 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .text-gold {
-    background: var(--gold-surface);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
   /* ─── Section title — editorial scale ──────────── */
   .section-title {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -424,75 +356,6 @@
   /* ─── Accent lines / dividers ──────────────────── */
   .accent-line      { @apply block h-px w-10;    background: var(--gradient); }
   .accent-line-lg   { @apply block h-[2px] w-16; background: var(--gradient); border-radius: 99px; }
-  .accent-line-gold { @apply block h-[2px] w-12; background: var(--gold-surface); border-radius: 99px; }
-
-  /* ─── Eyebrow variants ─────────────────────────── */
-  .eyebrow-light {
-    @apply text-[10px] font-bold uppercase tracking-[0.22em];
-    color: rgba(166,125,255,0.80);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-  .eyebrow-gold {
-    @apply text-[10px] font-bold uppercase tracking-[0.22em];
-    background: var(--gold-surface);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-
-  /* ─── Pills / tags ─────────────────────────────── */
-  .pill {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-[0.04em];
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-  .pill-purple { @apply pill; background: rgba(124,58,237,0.08); color: #5A1EC0; }
-  .pill-navy   { @apply pill; background: rgba(10,15,30,0.06);   color: var(--navy); }
-  .pill-blue   { @apply pill; background: rgba(59,111,255,0.08); color: #1848CC; }
-  .pill-pink   { @apply pill; background: rgba(234,61,196,0.08); color: #9E1880; }
-  .pill-gold   { @apply pill; background: rgba(191,143,40,0.10); color: #7E5A10; }
-
-  /* ─── Background textures ──────────────────────── */
-  .data-grid {
-    background-image:
-      linear-gradient(rgba(124,58,237,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124,58,237,0.025) 1px, transparent 1px);
-    background-size: 48px 48px;
-  }
-
-  /* ─── App mesh — subtle animated radial glow ───── */
-  .app-mesh {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 0;
-  }
-  .app-mesh::before {
-    content: '';
-    position: absolute;
-    width: 800px; height: 800px;
-    top: -200px; right: -100px;
-    border-radius: 50%;
-    background: radial-gradient(ellipse,
-      rgba(124,58,237,0.04) 0%,
-      rgba(59,111,255,0.02) 40%,
-      transparent 65%);
-    animation: meshDrift 22s ease-in-out infinite alternate;
-  }
-  .app-mesh::after {
-    content: '';
-    position: absolute;
-    width: 600px; height: 600px;
-    bottom: -100px; left: -80px;
-    border-radius: 50%;
-    background: radial-gradient(ellipse,
-      rgba(234,61,196,0.03) 0%,
-      rgba(124,58,237,0.015) 40%,
-      transparent 65%);
-    animation: meshDrift 28s ease-in-out infinite alternate-reverse;
-  }
-
   /* ─── Focus ring ───────────────────────────────── */
   .focus-ring:focus-visible {
     outline: 2px solid var(--purple);
@@ -500,24 +363,6 @@
     border-radius: 4px;
   }
 
-  /* ─── Gold accent ────────────────────────────────── */
-  .gold-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold;
-    background: var(--gold-surface);
-    color: #2A1600;
-    box-shadow: 0 1px 6px rgba(191,143,40,0.24);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    position: relative;
-    overflow: hidden;
-  }
-  .gold-badge::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.50) 50%, transparent 80%);
-    transform: translateX(-100%);
-    animation: goldSweep 2.5s ease-in-out infinite;
-  }
 }
 
 /* ─── Keyframes ──────────────────────────────────────── */
@@ -532,24 +377,6 @@
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes goldSweep {
-  0%   { transform: translateX(-160%); }
-  55%  { transform: translateX(160%); }
-  100% { transform: translateX(160%); }
-}
-@keyframes meshDrift {
-  0%   { transform: translate(0,0) scale(1); }
-  40%  { transform: translate(45px,-35px) scale(1.06); }
-  100% { transform: translate(-22px,22px) scale(0.96); }
-}
-@keyframes glowSoft {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 1; }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.14); }
-  50%       { box-shadow: 0 0 44px rgba(124,58,237,0.38), 0 0 80px rgba(59,111,255,0.14); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -627,7 +454,7 @@
   .table th, .table td { padding: 0.625rem 0.75rem; font-size: 0.75rem; }
 
   /* Cards: tighter padding on mobile */
-  .card-glass, .card-premium, .stat-card { padding: 1rem; }
+  .stat-card { padding: 1rem; }
 
   /* Topbar: tighter */
   .topbar-responsive { padding-left: 1rem; padding-right: 1rem; }

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import ComplianceStatusButton from '@/components/modules/ComplianceStatusButton';
 import { ShieldCheck, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -37,14 +37,7 @@ function daysUntil(due: string): number {
 
 export default async function CompliancePage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
+  const { companyId } = await getSessionProfile();
 
   const { data: items } = await supabase
     .from('compliance_items')

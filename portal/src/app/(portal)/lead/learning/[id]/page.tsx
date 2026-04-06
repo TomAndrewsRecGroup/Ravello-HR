@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import LearningDetailClient from './LearningDetailClient';
 
 export const metadata: Metadata = { title: 'Learning Content' };
@@ -14,12 +14,8 @@ function tagScore(a: string[] | null, b: string[] | null): number {
 
 export default async function LearningDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  const companyId = (profile as any)?.company_id;
 
   const [{ data: content }, { data: allContent }, { data: purchase }] = await Promise.all([
     supabase

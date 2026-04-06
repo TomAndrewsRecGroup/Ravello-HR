@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import RoadmapView from '@/components/modules/RoadmapView';
 import type { Milestone } from '@/lib/supabase/types';
 
@@ -13,14 +13,7 @@ function currentQuarter(): string {
 
 export default async function RoadmapPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
+  const { companyId } = await getSessionProfile();
 
   const { data: milestonesData } = await supabase
     .from('milestones')

@@ -1,18 +1,13 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import OnboardingClient from './OnboardingClient';
 
 export const metadata: Metadata = { title: 'Onboarding' };
 
 export default async function OnboardingPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId, role } = await getSessionProfile();
   if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id, role').eq('id', user.id).single();
-  const companyId = (profile as any)?.company_id;
-  const role = (profile as any)?.role;
   if (!companyId) return null;
 
   const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
@@ -20,12 +15,12 @@ export default async function OnboardingPage() {
   const [templatesRes, instancesRes, employeesRes] = await Promise.all([
     supabase
       .from('onboarding_templates')
-      .select('*, onboarding_template_tasks(*)')
+      .select('id, name, description, created_at, onboarding_template_tasks(id, title, description, sort_order)')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
     supabase
       .from('onboarding_instances')
-      .select('*, employee_records(full_name, job_title, start_date), onboarding_task_progress(*)')
+      .select('id, template_id, employee_id, status, started_at, completed_at, employee_records(full_name, job_title, start_date), onboarding_task_progress(id, task_id, status, completed_at)')
       .eq('company_id', companyId)
       .order('started_at', { ascending: false }),
     supabase

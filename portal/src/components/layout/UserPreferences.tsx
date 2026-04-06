@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface UIPreferences {

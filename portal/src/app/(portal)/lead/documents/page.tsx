@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import DocumentUpload from '@/components/modules/DocumentUpload';
 import {
   FolderOpen, Download, CheckCircle, ChevronDown,
@@ -67,14 +67,7 @@ function detectDisplayCategory(doc: any): string {
 
 export default async function DocumentsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
+  const { user, companyId } = await getSessionProfile();
 
   const { data: docs } = await supabase
     .from('documents')

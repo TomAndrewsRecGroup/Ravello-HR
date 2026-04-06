@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import CalendarClient from './CalendarClient';
 
@@ -7,13 +7,8 @@ export const metadata: Metadata = { title: 'Company Calendar' };
 
 export default async function CalendarPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId, role } = await getSessionProfile();
   if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id, role').eq('id', user.id).single();
-  const companyId = (profile as any)?.company_id;
-  const role = (profile as any)?.role;
   if (!companyId) return null;
 
   const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';

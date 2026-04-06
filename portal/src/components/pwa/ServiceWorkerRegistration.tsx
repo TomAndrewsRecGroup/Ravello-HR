@@ -42,8 +42,8 @@ export default function ServiceWorkerRegistration() {
     const handler = (e: Event) => {
       e.preventDefault(); // Prevent Chrome's default mini-infobar
       setInstallPrompt(e);
-      // Only show banner if user hasn't dismissed it before
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      // Show banner on every sign-in session (dismiss only lasts for this session)
+      const dismissed = sessionStorage.getItem('pwa-install-dismissed');
       if (!dismissed) {
         setShowBanner(true);
       }
@@ -76,7 +76,7 @@ export default function ServiceWorkerRegistration() {
 
   const handleDismiss = useCallback(() => {
     setShowBanner(false);
-    localStorage.setItem('pwa-install-dismissed', 'true');
+    sessionStorage.setItem('pwa-install-dismissed', 'true');
   }, []);
 
   // Don't render if already installed or no prompt available

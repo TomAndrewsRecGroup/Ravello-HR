@@ -26,8 +26,9 @@ export async function GET(req: NextRequest) {
 
     // Try IvyLens first if company is registered
     if (ivylensCompanyId) {
+      const params = new URLSearchParams({ company_id: ivylensCompanyId });
       const { data: ivylensData } = await ivylensRequest(
-        `/company/results?company_id=${ivylensCompanyId}`
+        `/company/results?${params.toString()}`
       );
       if (ivylensData?.assessment) {
         return NextResponse.json({ assessment: ivylensData.assessment });

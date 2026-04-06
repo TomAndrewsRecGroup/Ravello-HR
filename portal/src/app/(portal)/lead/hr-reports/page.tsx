@@ -1,23 +1,19 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import HRReportsClient from './HRReportsClient';
 
 export const metadata: Metadata = { title: 'HR Reports' };
 
 export default async function HRReportsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  const companyId = (profile as any)?.company_id;
   if (!companyId) return null;
 
   const [empRes, leaveRes] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('*')
+      .select('id, full_name, job_title, department, employment_type, status, start_date, end_date, gender, ethnicity, disability_status, annual_leave_allowance, sick_day_allowance, leave_year_type, leave_year_start_month, leave_year_start_day')
       .eq('company_id', companyId)
       .order('start_date'),
     supabase

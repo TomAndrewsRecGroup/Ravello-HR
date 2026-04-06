@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
 import { TrendingUp, Clock, Users, CheckCircle2, AlertTriangle, BarChart3 } from 'lucide-react';
@@ -47,16 +47,7 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 
 export default async function HiringAnalyticsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user.id)
-    .single();
-
-  const companyId = (profile as any)?.company_id;
+  const { companyId } = await getSessionProfile();
   if (!companyId) return null;
 
   const [{ data: reqs }, { data: candidates }, { data: offers }] = await Promise.all([
