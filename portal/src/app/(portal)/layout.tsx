@@ -12,21 +12,35 @@ export default async function PortalLayout({ children }: { children: React.React
   let counts: Record<string, number>  = {};
   let uiPreferences: Record<string, any> = {};
 
+  // Use SECURITY DEFINER function to bypass RLS circular dependency
+  const { data: role } = await supabase.rpc('get_my_role');
+  const isTpsStaff = role === 'tps_admin' || role === 'tps_client';
+
+  // Try to fetch profile — may fail for TPS staff without company_id due to RLS
   const { data: profile } = await supabase
     .from('profiles')
     .select('onboarding_completed, company_id, ui_preferences, companies(feature_flags)')
     .eq('id', user.id)
     .single();
 
-  if (!profile) redirect('/auth/login');
+  // If no profile and not TPS staff, redirect to login
+  if (!profile && !isTpsStaff) {
+    redirect('/auth/login?reason=no-profile');
+  }
 
-  if ((profile as any).onboarding_completed === false) {
+  if (profile && (profile as any).onboarding_completed === false && !isTpsStaff) {
     redirect('/onboarding');
   }
 
   flags = (profile as any)?.companies?.feature_flags ?? {};
   uiPreferences = (profile as any)?.ui_preferences ?? {};
   const companyId: string = (profile as any)?.company_id ?? '';
+
+  // TPS staff without a company see all features enabled, zero counts
+  if (isTpsStaff && !companyId) {
+    // Enable all features so TPS admins can see every page
+    flags = {};
+  }
 
   if (companyId) {
     const now = new Date().toISOString();
