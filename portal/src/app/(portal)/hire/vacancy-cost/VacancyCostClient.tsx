@@ -3,19 +3,32 @@ import { useMemo } from 'react';
 import { AlertTriangle, Clock, TrendingDown, PoundSterling, Briefcase } from 'lucide-react';
 
 /* ─── Vacancy cost model ──────────────────────────────────────────────
-   Daily cost = midpoint salary ÷ 260 working days × multiplier.
-   The multiplier accounts for lost output beyond just salary:
-   revenue impact, team burden, overtime, delayed projects.
-   Conservative 2–3× range based on Oxford Economics / CIPD research.
-   Friction level adjusts the multiplier (harder-to-fill = more pain).
+   This calculates the REVENUE LOSS to the business from an empty seat.
+   An employee typically generates 2–4× their salary in revenue/output.
+   When a role sits vacant, the business loses that revenue AND incurs
+   hidden costs: overtime, contractor cover, missed targets, churn.
+
+   Revenue multiplier = base (2.5x) + friction adjustment (0–1.5x).
+   Higher friction = harder to fill = role likely more specialised =
+   higher revenue impact. The friction_score (0–100) from Friction
+   Lens is used directly for a continuous scale rather than buckets.
+
+   Sources: Oxford Economics, CIPD Cost of Vacancy research, Cebr.
    ──────────────────────────────────────────────────────────────────── */
 
-const FRICTION_MULTIPLIER: Record<string, number> = {
-  Low:      2.0,
-  Medium:   2.5,
-  High:     3.0,
-  Critical: 3.5,
-};
+const BASE_REVENUE_MULTIPLIER = 2.5; // minimum: an employee generates 2.5× salary in value
+const MAX_FRICTION_BONUS = 1.5;      // up to 1.5× extra for high-friction roles (total: 4×)
+
+function getMultiplier(frictionScore: any, frictionLevel: string | null): number {
+  // If we have a numeric friction score from the Lens, use it for a smooth curve
+  const score = typeof frictionScore === 'object' ? frictionScore?.overall_score : Number(frictionScore);
+  if (score && !isNaN(score)) {
+    return Math.round((BASE_REVENUE_MULTIPLIER + (score / 100) * MAX_FRICTION_BONUS) * 10) / 10;
+  }
+  // Fallback to level buckets
+  const fallback: Record<string, number> = { Low: 2.5, Medium: 3.0, High: 3.5, Critical: 4.0 };
+  return fallback[frictionLevel ?? 'Medium'] ?? 3.0;
+}
 
 function parseSalary(range: string | null): number {
   if (!range) return 35000;
@@ -50,10 +63,13 @@ function calcRoleCost(role: Role) {
   const salary = parseSalary(role.salary_range);
   const days = daysOpen(role.created_at);
   const level = role.friction_level ?? 'Medium';
-  const multiplier = FRICTION_MULTIPLIER[level] ?? 2.5;
-  const dailyCost = Math.round((salary / 260) * multiplier);
-  const totalCost = dailyCost * days;
-  return { salary, days, level, multiplier, dailyCost, totalCost };
+  const multiplier = getMultiplier(role.friction_score, role.friction_level);
+  const dailyRevenueLoss = Math.round((salary / 260) * multiplier);
+  const totalRevenueLoss = dailyRevenueLoss * days;
+  // Hidden costs: overtime for covering team, agency/temp cover, lost clients
+  const hiddenCosts = Math.round(totalRevenueLoss * 0.15);
+  const totalCost = totalRevenueLoss + hiddenCosts;
+  return { salary, days, level, multiplier, dailyRevenueLoss, totalRevenueLoss, hiddenCosts, totalCost };
 }
 
 export default function VacancyCostClient({ roles }: { roles: Role[] }) {
@@ -62,8 +78,10 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
     ...calcRoleCost(r),
   })), [roles]);
 
-  const grandTotal = analysis.reduce((s, r) => s + r.totalCost, 0);
-  const totalDaily = analysis.reduce((s, r) => s + r.dailyCost, 0);
+  const grandRevenueLoss = analysis.reduce((s, r) => s + r.totalRevenueLoss, 0);
+  const grandHiddenCosts = analysis.reduce((s, r) => s + r.hiddenCosts, 0);
+  const grandTotal = grandRevenueLoss + grandHiddenCosts;
+  const totalDaily = analysis.reduce((s, r) => s + r.dailyRevenueLoss, 0);
   const totalWeekly = totalDaily * 7;
   const totalMonthly = totalDaily * 30;
 
@@ -71,9 +89,9 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="section-title text-xl">Vacancy Cost Calculator</h2>
+          <h2 className="section-title text-xl">Cost of an Empty Seat</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Estimated cost of your open roles based on salary and friction data
+            Estimated revenue loss from unfilled roles — powered by your Friction Lens data
           </p>
         </div>
       </div>
@@ -81,7 +99,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
       {/* Disclaimer */}
       <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> Daily vacancy cost is derived from the role salary and a friction-adjusted multiplier (2–3.5x daily salary) reflecting lost productivity, team burden, and revenue impact. Based on industry benchmarks from Oxford Economics and CIPD. Actual costs vary by business model and team structure.
+          <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> An employee typically generates 2.5–4× their salary in revenue and output. When a seat is empty, that value is lost — plus hidden costs like overtime, contractor cover, and missed targets. Multipliers are adjusted by your Friction Lens score (higher friction = more specialised role = greater revenue impact). Based on Oxford Economics and CIPD research. Actual figures vary by business model.
         </p>
       </div>
 
@@ -105,7 +123,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>
-                  Total Vacancy Cost ({roles.length} open role{roles.length !== 1 ? 's' : ''})
+                  Estimated Revenue Lost ({roles.length} empty seat{roles.length !== 1 ? 's' : ''})
                 </p>
                 <p className="font-display font-bold text-2xl text-gradient">
                   {fmt(grandTotal)}
@@ -113,7 +131,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
               </div>
             </div>
             <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-              Your {roles.length} unfilled role{roles.length !== 1 ? 's are' : ' is'} costing an estimated <strong style={{ color: 'var(--danger)' }}>{fmt(totalDaily)}/day</strong> in lost productivity and revenue.
+              Your {roles.length} empty seat{roles.length !== 1 ? 's are' : ' is'} losing an estimated <strong style={{ color: 'var(--danger)' }}>{fmt(totalDaily)}/day</strong> in revenue, output and hidden costs.
             </p>
           </div>
 
@@ -155,8 +173,8 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                     <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider hide-mobile" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Salary</th>
                     <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Days Open</th>
                     <th className="px-4 py-3 text-center text-[11px] font-bold uppercase tracking-wider hide-mobile" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Friction</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider hide-mobile" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Daily Cost</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Total Cost</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider hide-mobile" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Daily Loss</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)', background: 'var(--surface-soft)' }}>Revenue Lost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,7 +215,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-xs font-medium hide-mobile" style={{ color: 'var(--ink-soft)' }}>
-                        {fmt(r.dailyCost)}/d
+                        {fmt(r.dailyRevenueLoss)}/d
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold" style={{ color: 'var(--danger)' }}>
                         {fmt(r.totalCost)}
@@ -219,12 +237,17 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
           <div className="mt-5 rounded-lg p-4" style={{ background: 'var(--surface-soft)' }}>
             <p className="text-xs font-bold mb-2" style={{ color: 'var(--ink-soft)' }}>How it works</p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-              Daily cost = (salary ÷ 260 working days) × friction multiplier. The multiplier reflects total business impact beyond just salary — lost revenue, team overload, overtime, delayed projects. Higher friction roles (harder to fill) carry a higher multiplier because the vacancy impact compounds faster.
+              Daily revenue loss = (salary ÷ 260 working days) × revenue multiplier. An employee generates 2.5–4× their salary in value — when that seat is empty, the business loses that output. Your Friction Lens score adjusts the multiplier: higher-friction roles are more specialised, harder to backfill, and cost more per day vacant. Hidden costs (overtime, temp cover, missed targets) add ~15% on top.
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
-              {Object.entries(FRICTION_MULTIPLIER).map(([level, mult]) => (
-                <span key={level} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}>
-                  {level}: {mult}x daily salary
+              {[
+                { label: 'Low friction', range: '2.5×' },
+                { label: 'Medium friction', range: '3.0×' },
+                { label: 'High friction', range: '3.5×' },
+                { label: 'Critical friction', range: '4.0×' },
+              ].map(item => (
+                <span key={item.label} className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}>
+                  {item.label}: {item.range} salary in revenue
                 </span>
               ))}
             </div>
