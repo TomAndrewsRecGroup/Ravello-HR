@@ -19,6 +19,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const role = (profile as any)?.role ?? '';
   if (!['tps_admin', 'tps_client'].includes(role)) {
+    // Sign out to prevent redirect loop (middleware would redirect back here)
+    await supabase.auth.signOut();
     redirect('/auth/login?reason=unauthorised');
   }
 

@@ -62,10 +62,24 @@ export async function updateSession(request: NextRequest) {
 
       const role = (profile as any)?.role;
       if (typeof role !== 'string' || !ALLOWED_ROLES.includes(role)) {
+        // Sign out + clear role cookie to prevent redirect loop
+        await supabase.auth.signOut();
         const url = request.nextUrl.clone();
         url.pathname = '/auth/login';
         url.searchParams.set('reason', 'unauthorised');
-        return NextResponse.redirect(url);
+        const response = NextResponse.redirect(url);
+        response.cookies.set('tpo_admin_role', '', {
+          httpOnly: true, sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 0, path: '/',
+        });
+        // Clear supabase auth cookies to ensure clean state
+        request.cookies.getAll().forEach(cookie => {
+          if (cookie.name.startsWith('sb-')) {
+            response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' });
+          }
+        });
+        return response;
       }
 
       supabaseResponse.cookies.set('tpo_admin_role', role, {
@@ -77,10 +91,14 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Authenticated on auth pages → redirect to dashboard
-  if (user && isPublic && !pathname.startsWith('/auth/callback')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+  // Skip if reason param is present (user was just rejected — avoid redirect loop)
+  if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
+    const reason = request.nextUrl.searchParams.get('reason');
+    if (!reason) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
