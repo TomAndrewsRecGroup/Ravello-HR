@@ -1,17 +1,13 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import HRReportsClient from './HRReportsClient';
 
 export const metadata: Metadata = { title: 'HR Reports' };
 
 export default async function HRReportsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  const companyId = (profile as any)?.company_id;
   if (!companyId) return null;
 
   const [empRes, leaveRes] = await Promise.all([

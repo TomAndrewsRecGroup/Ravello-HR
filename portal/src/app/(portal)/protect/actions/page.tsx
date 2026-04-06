@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import ActionButtons from '@/components/modules/ActionButtons';
 import { CheckCircle2, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import type { Action } from '@/lib/supabase/types';
@@ -111,14 +111,7 @@ function PrioritySection({ title, actions, accent }: SectionProps) {
 
 export default async function ActionsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
+  const { companyId } = await getSessionProfile();
 
   const now = new Date().toISOString();
 

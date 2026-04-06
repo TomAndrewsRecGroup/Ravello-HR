@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import FrictionAlert from '@/components/FrictionAlert';
 import {
@@ -29,16 +29,13 @@ function priorityBadge(priority: string) {
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile, companyId } = await getSessionProfile();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, companies(*)')
-    .eq('id', user?.id ?? '')
-    .single();
+  const [{ data: company }, { data: fullProfile }] = await Promise.all([
+    supabase.from('companies').select('*').eq('id', companyId).single(),
+    supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
+  ]);
 
-  const company   = (profile as any)?.companies;
-  const companyId: string | undefined = company?.id;
   const flags: Record<string, boolean> = company?.feature_flags ?? {};
 
   const [reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
@@ -103,7 +100,7 @@ export default async function DashboardPage() {
   const pendingAbsences = absenceRes.data   ?? [];
   const frictionAssessment = frictionRes.data ?? null;
 
-  const firstName = (profile as any)?.full_name?.split(' ')[0] ?? 'there';
+  const firstName = (fullProfile as any)?.full_name?.split(' ')[0] ?? 'there';
 
   // Roles with High or Critical friction
   const frictionAlerts = requisitions.filter(

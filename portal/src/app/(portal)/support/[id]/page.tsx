@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -12,7 +12,7 @@ const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'b
 
 export default async function TicketDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getSessionProfile();
   const [{ data: ticket }, { data: messages }] = await Promise.all([
     supabase.from('tickets').select('*').eq('id', params.id).single(),
     supabase.from('ticket_messages').select('*').eq('ticket_id', params.id).eq('is_internal', false).order('created_at'),

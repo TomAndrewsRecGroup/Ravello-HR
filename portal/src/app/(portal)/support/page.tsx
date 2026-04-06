@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
 import { LifeBuoy, Plus, Headphones } from 'lucide-react';
@@ -34,9 +34,7 @@ function humanType(type: string): string {
 
 export default async function SupportPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile }  = await supabase.from('profiles').select('company_id').eq('id', user?.id ?? '').single();
-  const companyId: string  = (profile as any)?.company_id ?? '';
+  const { companyId } = await getSessionProfile();
 
   const [{ data: tickets }, { data: serviceRequests }] = await Promise.all([
     supabase

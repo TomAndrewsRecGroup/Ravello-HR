@@ -426,7 +426,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
       {showStartForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowStartForm(false)} />
-          <div className="relative card p-6 w-full max-w-md" style={{ animation: 'fadeUp 0.2s ease' }}>
+          <div className="relative card p-6 w-full max-w-md overflow-y-auto max-h-[calc(100vh-80px)]" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Start Offboarding</h3>
               <button onClick={() => setShowStartForm(false)} className="btn-icon"><X size={16} /></button>

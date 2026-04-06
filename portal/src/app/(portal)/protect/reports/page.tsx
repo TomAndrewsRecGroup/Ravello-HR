@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import ExportCSVButton from '@/components/modules/ExportCSVButton';
 import { BarChart3, Download } from 'lucide-react';
 
@@ -7,11 +7,10 @@ export const metadata: Metadata = { title: 'Reports' };
 
 export default async function ReportsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile }  = await supabase.from('profiles').select('company_id, companies(feature_flags, name)').eq('id', user?.id ?? '').single();
-  const companyId: string  = (profile as any)?.company_id ?? '';
-  const companyName: string = (profile as any)?.companies?.name ?? 'company';
-  const flags: Record<string, boolean> = (profile as any)?.companies?.feature_flags ?? {};
+  const { companyId } = await getSessionProfile();
+  const { data: company } = await supabase.from('companies').select('feature_flags, name').eq('id', companyId).single();
+  const companyName: string = (company as any)?.name ?? 'company';
+  const flags: Record<string, boolean> = (company as any)?.feature_flags ?? {};
   const enabled = flags.reports !== false;
 
   const [
