@@ -15,12 +15,12 @@ export default async function OnboardingPage() {
   const [templatesRes, instancesRes, employeesRes] = await Promise.all([
     supabase
       .from('onboarding_templates')
-      .select('id, name, description, created_at, onboarding_template_tasks(id, title, description, sort_order)')
+      .select('id, name, description, is_default, created_at, onboarding_template_tasks(id, title, description, category, due_day_offset, assigned_to, sort_order)')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
     supabase
       .from('onboarding_instances')
-      .select('id, template_id, employee_id, status, started_at, completed_at, employee_records(full_name, job_title, start_date), onboarding_task_progress(id, task_id, status, completed_at)')
+      .select('*, employee_records(full_name, job_title, start_date), onboarding_task_progress(*)')
       .eq('company_id', companyId)
       .order('started_at', { ascending: false }),
     supabase

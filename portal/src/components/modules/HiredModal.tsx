@@ -9,6 +9,8 @@ interface Props {
   candidateName: string;
   requisitionId: string;
   companyId: string;
+  jobTitle?: string;
+  department?: string;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -18,6 +20,8 @@ export default function HiredModal({
   candidateName,
   requisitionId,
   companyId,
+  jobTitle: initialJobTitle,
+  department: initialDepartment,
   onClose,
   onSaved,
 }: Props) {
@@ -27,8 +31,8 @@ export default function HiredModal({
 
   const [fullName, setFullName] = useState(candidateName);
   const [email, setEmail] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [department, setDepartment] = useState('');
+  const [jobTitle, setJobTitle] = useState(initialJobTitle ?? '');
+  const [department, setDepartment] = useState(initialDepartment ?? '');
   const [startDate, setStartDate] = useState('');
   const [employmentType, setEmploymentType] = useState('full-time');
   const [annualSalary, setAnnualSalary] = useState('');
