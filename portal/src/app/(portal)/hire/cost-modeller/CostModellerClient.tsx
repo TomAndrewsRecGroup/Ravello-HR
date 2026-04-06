@@ -9,9 +9,10 @@ interface HireRow {
   count: number;
 }
 
-const EMPLOYER_NI_RATE = 0.138;
-const EMPLOYER_NI_THRESHOLD = 9100; // annual secondary threshold 2024/25
+const EMPLOYER_NI_RATE = 0.15;
+const EMPLOYER_NI_THRESHOLD = 5000; // annual secondary threshold 2025/26
 const DEFAULT_PENSION_RATE = 0.03;
+const EMPLOYMENT_ALLOWANCE = 10500; // annual employment allowance 2025/26 — most SMEs can claim
 
 function calcEmployerNI(salary: number): number {
   if (salary <= EMPLOYER_NI_THRESHOLD) return 0;
@@ -28,6 +29,7 @@ export default function CostModellerClient() {
   ]);
   const [pensionRate, setPensionRate] = useState(3);
   const [benefitsCost, setBenefitsCost] = useState(0); // per person annual
+  const [claimAllowance, setClaimAllowance] = useState(false); // employment allowance
 
   let nextId = rows.length > 0 ? Math.max(...rows.map(r => r.id)) + 1 : 1;
 
@@ -52,11 +54,13 @@ export default function CostModellerClient() {
     return { ...row, baseSalary, ni, pen, benefits, total };
   });
 
-  const grandTotal = breakdown.reduce((s, r) => s + r.total, 0);
+  const grossNI = breakdown.reduce((s, r) => s + r.ni, 0);
+  const allowanceSaving = claimAllowance ? Math.min(grossNI, EMPLOYMENT_ALLOWANCE) : 0;
+  const grandNI = grossNI - allowanceSaving;
   const grandSalary = breakdown.reduce((s, r) => s + r.baseSalary, 0);
-  const grandNI = breakdown.reduce((s, r) => s + r.ni, 0);
   const grandPension = breakdown.reduce((s, r) => s + r.pen, 0);
   const grandBenefits = breakdown.reduce((s, r) => s + r.benefits, 0);
+  const grandTotal = grandSalary + grandNI + grandPension + grandBenefits;
   const totalHeads = rows.reduce((s, r) => s + r.count, 0);
   const monthlyBurn = grandTotal / 12;
 
@@ -66,7 +70,7 @@ export default function CostModellerClient() {
         <div>
           <h2 className="section-title text-xl">Employment Cost Modeller</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Model the true cost of hiring — salary + employer NI + pension + benefits
+            Model the true cost of hiring — salary + employer NI (15%) + pension + benefits (2025/26 rates)
           </p>
         </div>
       </div>
@@ -74,7 +78,16 @@ export default function CostModellerClient() {
       {/* Configuration */}
       <div className="card p-5 mb-5">
         <p className="eyebrow mb-3">Company Defaults</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="form-group">
+            <label className="label">Employer NI Rate</label>
+            <p className="input cursor-not-allowed" style={{ background: 'var(--surface-soft)', color: 'var(--ink-faint)' }}>
+              15% (2025/26 statutory)
+            </p>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+              Threshold: £5,000/yr per employee
+            </p>
+          </div>
           <div className="form-group">
             <label className="label">Employer Pension (%)</label>
             <input
@@ -86,6 +99,9 @@ export default function CostModellerClient() {
               value={pensionRate}
               onChange={e => setPensionRate(parseFloat(e.target.value) || 0)}
             />
+            <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+              Min auto-enrolment: 3%
+            </p>
           </div>
           <div className="form-group">
             <label className="label">Benefits per person (annual)</label>
@@ -100,9 +116,28 @@ export default function CostModellerClient() {
             />
           </div>
           <div className="form-group">
-            <label className="label">Employer NI Rate</label>
-            <p className="input bg-[var(--surface-soft)] cursor-not-allowed" style={{ color: 'var(--ink-faint)' }}>
-              13.8% (statutory)
+            <label className="label">Employment Allowance</label>
+            <button
+              type="button"
+              onClick={() => setClaimAllowance(!claimAllowance)}
+              className="input flex items-center gap-2 text-left"
+              style={{ background: claimAllowance ? 'rgba(124,58,237,0.06)' : undefined }}
+            >
+              <span
+                className="flex-shrink-0 w-8 h-5 rounded-full relative transition-colors"
+                style={{ background: claimAllowance ? 'var(--purple)' : 'var(--line)' }}
+              >
+                <span
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                  style={{ left: claimAllowance ? 14 : 2 }}
+                />
+              </span>
+              <span className="text-xs" style={{ color: claimAllowance ? 'var(--purple)' : 'var(--ink-faint)' }}>
+                {claimAllowance ? `Claiming (−${formatCurrency(allowanceSaving)})` : 'Not claiming'}
+              </span>
+            </button>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+              Up to £10,500/yr off your NI bill
             </p>
           </div>
         </div>
@@ -212,7 +247,7 @@ export default function CostModellerClient() {
         <div className="space-y-3">
           {[
             { label: 'Base Salary', value: grandSalary, color: 'var(--ink)' },
-            { label: 'Employer NI (13.8%)', value: grandNI, color: '#D97706' },
+            { label: `Employer NI (15%)${claimAllowance ? ` less £${(allowanceSaving / 1000).toFixed(1)}k allowance` : ''}`, value: grandNI, color: '#D97706' },
             { label: `Pension (${pensionRate}%)`, value: grandPension, color: 'var(--blue)' },
             { label: 'Benefits', value: grandBenefits, color: '#14B8A6' },
           ].map(item => (
