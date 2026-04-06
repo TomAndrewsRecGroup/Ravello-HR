@@ -15,7 +15,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
       className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8 topbar-responsive"
       style={{
         height: 'var(--topbar-h)',
-        background: 'rgba(248,249,252,0.92)',
+        background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}
