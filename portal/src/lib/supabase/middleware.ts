@@ -39,34 +39,33 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
 
-  // Check for cached session cookie — if valid, skip ALL auth checks
+  // Check for cached session cookie — if valid, skip auth
   const cachedSession = request.cookies.get(SESSION_COOKIE)?.value;
   if (cachedSession && !isPublicRoute) {
     try {
       const parsed = JSON.parse(cachedSession);
-      if (parsed.userId && parsed.role) {
-        // Session cookie is valid — no Supabase call needed
+      if (parsed.userId && parsed.companyId) {
         return supabaseResponse;
       }
     } catch {}
+    // Cookie exists but invalid/missing companyId — fall through to re-validate
   }
 
-  // No cached session — validate with Supabase (only happens every 15 min or on first load)
+  // Validate with Supabase (first load, or every 15 min when cookie expires)
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError && authError.message !== 'Auth session missing!') {
     console.error('[auth] getUser failed:', authError.message);
   }
 
-  // Unauthenticated on protected route → login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
-  // Authenticated — build session cookie so layouts never call Supabase
-  if (user && !isPublicRoute && !cachedSession) {
+  // Stamp session cookie with fresh data from DB
+  if (user && !isPublicRoute) {
     const { data: rpcRole } = await supabase.rpc('get_my_role');
     const role = typeof rpcRole === 'string' ? rpcRole : '';
     const { data: profile } = await supabase
