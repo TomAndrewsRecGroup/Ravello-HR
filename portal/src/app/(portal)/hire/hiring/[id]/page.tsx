@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import Topbar from '@/components/layout/Topbar';
 import FrictionScoreCard from '@/components/FrictionScoreCard';
 import CandidateFeedbackButton from '@/components/modules/CandidateFeedbackButton';
 import OfferTab from './OfferTab';
@@ -74,14 +73,17 @@ export default async function RequisitionDetailPage({
 
   return (
     <>
-      <Topbar
-        title={r.title}
-        subtitle={[r.department, r.seniority, r.location].filter(Boolean).join(' · ')}
-        actions={
-          <Link href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>
-        }
-      />
       <main className="portal-page flex-1">
+        {/* Back link + title */}
+        <div className="flex items-center gap-3 mb-5">
+          <Link href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold truncate" style={{ color: 'var(--ink)' }}>{r.title}</h2>
+            <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>
+              {[r.department, r.seniority, r.location].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+        </div>
         <div className="grid lg:grid-cols-[1fr_340px] gap-6">
 
           {/* ── Left column ─────────────────────────────────────────── */}

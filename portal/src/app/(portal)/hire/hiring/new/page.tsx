@@ -281,7 +281,7 @@ export default function NewRequisitionPage() {
 
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: 'var(--ink-faint)' }}>Salary Range (£)</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="label">Minimum</label><input type="number" min={0} value={form.salary_min} onChange={e => set('salary_min', e.target.value)} className="input" placeholder="50000" /></div>
                 <div><label className="label">Maximum</label><input type="number" min={0} value={form.salary_max} onChange={e => set('salary_max', e.target.value)} className="input" placeholder="65000" /></div>
               </div>

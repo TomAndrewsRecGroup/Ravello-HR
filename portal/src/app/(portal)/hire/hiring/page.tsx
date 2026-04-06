@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import FrictionAlert from '@/components/FrictionAlert';
 import ManatalPipeline from '@/components/modules/ManatalPipeline';
 import Link from 'next/link';
@@ -57,11 +57,13 @@ export default async function HiringPage({
   searchParams?: { filter?: string };
 }) {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id, companies(manatal_client_id)').eq('id', user?.id ?? '').single();
-  const companyId: string | undefined = (profile as any)?.company_id;
-  const manatalClientId: string = (profile as any)?.companies?.manatal_client_id ?? '';
+  const { companyId } = await getSessionProfile();
+
+  // Fetch manatal_client_id separately from companies table
+  const { data: company } = companyId
+    ? await supabase.from('companies').select('manatal_client_id').eq('id', companyId).single()
+    : { data: null };
+  const manatalClientId: string = (company as any)?.manatal_client_id ?? '';
   const hasManatal = isManatalConfigured() && Boolean(manatalClientId);
 
   const { data: requisitions } = await supabase

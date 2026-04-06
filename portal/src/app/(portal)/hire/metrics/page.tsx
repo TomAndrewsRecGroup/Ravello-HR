@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { BarChart3, Briefcase, ShieldCheck, LifeBuoy, FolderOpen, Bell, TrendingUp } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Metrics' };
@@ -60,16 +60,14 @@ function SectionHeader({ icon: Icon, title, color = 'var(--purple)' }: {
 
 export default async function MetricsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { companyId: cId } = await getSessionProfile();
+  const companyId: string = cId ?? '';
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id, companies(feature_flags, name)')
-    .eq('id', user?.id ?? '')
-    .single();
-
-  const companyId: string = (profile as any)?.company_id ?? '';
-  const flags: Record<string, boolean> = (profile as any)?.companies?.feature_flags ?? {};
+  // Fetch feature flags from companies table
+  const { data: company } = companyId
+    ? await supabase.from('companies').select('feature_flags').eq('id', companyId).single()
+    : { data: null };
+  const flags: Record<string, boolean> = (company as any)?.feature_flags ?? {};
 
   if (flags.metrics === false) {
     return (
@@ -252,7 +250,7 @@ export default async function MetricsPage() {
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No candidates shared yet.</p>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                   {[
                     { label: 'Shared with You',    value: sharedCands.length,   color: 'var(--surface-alt)' },
                     { label: 'Awaiting Feedback',  value: pendingCands.length,  color: 'rgba(217,119,6,0.08)' },
