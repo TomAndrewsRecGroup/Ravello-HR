@@ -10,7 +10,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: '#FAFAF8' }}
+      style={{ background: '#FFFFFF' }}
     >
 
       <div className="relative w-full max-w-[400px]">
@@ -31,7 +31,7 @@ export default function LoginPage() {
           className="rounded-[20px] p-8"
           style={{
             background: '#FFFFFF',
-            border: '1px solid #E5E7EB',
+            border: '1px solid var(--line)',
           }}
         >
           <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Welcome back</h1>

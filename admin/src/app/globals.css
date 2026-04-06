@@ -131,9 +131,13 @@
   }
   .btn-primary {
     @apply btn text-white;
-    background: var(--ink);
+    background: var(--gradient);
+    box-shadow: 0 1px 8px rgba(124,58,237,0.25);
   }
-  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:hover {
+    box-shadow: 0 2px 16px rgba(124,58,237,0.35);
+    transform: translateY(-1px);
+  }
 
   .btn-cta {
     @apply btn text-white;
