@@ -1,5 +1,5 @@
 'use client';
-import { Search, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import NotificationBell from '@/components/modules/NotificationBell';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -59,9 +59,6 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
 
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         {actions}
-        <button className="btn-icon hide-mobile" aria-label="Search">
-          <Search size={15} />
-        </button>
         <NotificationBell />
       </div>
     </header>
