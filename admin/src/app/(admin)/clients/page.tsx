@@ -18,11 +18,11 @@ export default async function ClientsPage() {
     { data: complianceItems },
     { data: profiles },
   ] = await Promise.all([
-    supabase.from('companies').select('*').order('name'),
-    supabase.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled'),
-    supabase.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']),
-    supabase.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete'),
-    supabase.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_viewer', 'client_user']),
+    supabase.from('companies').select('*').order('name').limit(200),
+    supabase.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
+    supabase.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
+    supabase.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
+    supabase.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_viewer', 'client_user']).limit(200),
   ]);
 
   // Build per-company lookup maps

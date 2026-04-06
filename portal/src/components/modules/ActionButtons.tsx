@@ -16,31 +16,48 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
   const [completing, setCompleting] = useState(false);
   const [dismissing,  setDismissing]  = useState(false);
   const [done, setDone] = useState<'complete' | 'dismissed' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleComplete() {
     setCompleting(true);
-    await supabase
-      .from('actions')
-      .update({ status: 'complete', completed_at: new Date().toISOString() })
-      .eq('id', actionId);
-    setDone('complete');
-    setCompleting(false);
-    onMutated?.();
-    router.refresh();
+    setError(null);
+    try {
+      const { error: err } = await supabase
+        .from('actions')
+        .update({ status: 'complete', completed_at: new Date().toISOString() })
+        .eq('id', actionId);
+      if (err) throw err;
+      setDone('complete');
+      onMutated?.();
+      router.refresh();
+    } catch (err) {
+      console.error('Failed to complete action:', err);
+      setError('Failed to mark complete. Please try again.');
+    } finally {
+      setCompleting(false);
+    }
   }
 
   async function handleDismiss() {
     setDismissing(true);
-    const until = new Date();
-    until.setDate(until.getDate() + 7);
-    await supabase
-      .from('actions')
-      .update({ dismiss_until: until.toISOString() })
-      .eq('id', actionId);
-    setDone('dismissed');
-    setDismissing(false);
-    onMutated?.();
-    router.refresh();
+    setError(null);
+    try {
+      const until = new Date();
+      until.setDate(until.getDate() + 7);
+      const { error: err } = await supabase
+        .from('actions')
+        .update({ dismiss_until: until.toISOString() })
+        .eq('id', actionId);
+      if (err) throw err;
+      setDone('dismissed');
+      onMutated?.();
+      router.refresh();
+    } catch (err) {
+      console.error('Failed to dismiss action:', err);
+      setError('Failed to dismiss. Please try again.');
+    } finally {
+      setDismissing(false);
+    }
   }
 
   if (done === 'complete') {
@@ -60,7 +77,11 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2 mt-3">
+    <div className="flex flex-col gap-2 mt-3">
+      {error && (
+        <p className="text-xs p-2 rounded-[6px]" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--red)' }}>{error}</p>
+      )}
+      <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={handleComplete}
@@ -85,6 +106,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
         }
         Dismiss 7 days
       </button>
+      </div>
     </div>
   );
 }

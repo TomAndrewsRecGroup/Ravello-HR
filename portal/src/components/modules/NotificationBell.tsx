@@ -38,16 +38,22 @@ export default function NotificationBell() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   async function fetchNotifications() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setNotifications(data ?? []);
-    setLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setNotifications(data ?? []);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { fetchNotifications(); }, []);
@@ -64,15 +70,25 @@ export default function NotificationBell() {
   }, [open]);
 
   async function markRead(id: string) {
-    await supabase.from('notifications').update({ read: true }).eq('id', id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
   }
 
   async function markAllRead() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
   }
 
   function handleClick(n: any) {

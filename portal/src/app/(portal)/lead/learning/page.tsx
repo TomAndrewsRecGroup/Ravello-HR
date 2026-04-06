@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import LearningBrowse from './LearningBrowse';
 
@@ -7,7 +8,7 @@ export const metadata: Metadata = { title: 'Learning' };
 export default async function LearningPage() {
   const supabase = createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
-  if (!user) return null;
+  if (!user) redirect('/auth/login');
 
   const [{ data: content }, { data: purchases }] = await Promise.all([
     supabase

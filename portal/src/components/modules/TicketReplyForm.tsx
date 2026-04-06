@@ -17,16 +17,23 @@ export default function TicketReplyForm({ ticketId, userId }: Props) {
     e.preventDefault();
     if (!body.trim()) return;
     setLoading(true);
-    const { error: err } = await supabase.from('ticket_messages').insert({
-      ticket_id:   ticketId,
-      sender_id:   userId,
-      body:        body.trim(),
-      is_internal: false,
-    });
-    if (err) { setError(err.message); setLoading(false); return; }
-    setBody('');
-    setLoading(false);
-    router.refresh();
+    setError('');
+    try {
+      const { error: err } = await supabase.from('ticket_messages').insert({
+        ticket_id:   ticketId,
+        sender_id:   userId,
+        body:        body.trim(),
+        is_internal: false,
+      });
+      if (err) throw err;
+      setBody('');
+      router.refresh();
+    } catch (err: any) {
+      console.error('Failed to send reply:', err);
+      setError(err?.message ?? 'Failed to send reply. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

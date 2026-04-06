@@ -24,19 +24,36 @@ export default function CandidateFeedbackButton({
   const [showInput, setShowInput] = useState(false);
   const [showHired, setShowHired] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function update(status: string, fb?: string) {
     setLoading(status);
-    const upd: Record<string, string> = { client_status: status };
-    if (fb) upd.client_feedback = fb;
-    await supabase.from('candidates').update(upd).eq('id', candidateId);
-    setLoading(null);
-    setDone(true);
+    setError(null);
+    try {
+      const upd: Record<string, string> = { client_status: status };
+      if (fb) upd.client_feedback = fb;
+      const { error: err } = await supabase.from('candidates').update(upd).eq('id', candidateId);
+      if (err) throw err;
+      setDone(true);
+    } catch (err) {
+      console.error('Failed to update candidate feedback:', err);
+      setError('Failed to save feedback. Please try again.');
+    } finally {
+      setLoading(null);
+    }
   }
 
   if (done && !showHired) return (
     <span className="text-xs" style={{ color: 'var(--teal)' }}>Feedback saved ✓</span>
   );
+
+  if (error && !done) {
+    return (
+      <div>
+        <p className="text-xs p-2 rounded-[6px] mb-2" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--red)' }}>{error}</p>
+      </div>
+    );
+  }
 
   // Approved candidates get a "Hire" button
   if (currentStatus === 'approved' || (done && !showHired)) {

@@ -19,23 +19,33 @@ export default function ComplianceStatusButton({ itemId, currentStatus }: Props)
   const [status,  setStatus]  = useState(currentStatus);
   const [loading, setLoading] = useState(false);
   const [done,    setDone]    = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
 
   const next = NEXT_STATUS[status];
   if (!next || done) return null;
 
   async function advance() {
     setLoading(true);
-    await supabase
-      .from('compliance_items')
-      .update({ status: next.value })
-      .eq('id', itemId);
-    setStatus(next.value);
-    setLoading(false);
-    if (next.value === 'complete') setDone(true);
+    setError(null);
+    try {
+      const { error: err } = await supabase
+        .from('compliance_items')
+        .update({ status: next.value })
+        .eq('id', itemId);
+      if (err) throw err;
+      setStatus(next.value);
+      if (next.value === 'complete') setDone(true);
+    } catch (err) {
+      console.error('Failed to update compliance status:', err);
+      setError('Update failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <button
+    <div className="flex items-center gap-2">
+      <button
       onClick={advance}
       disabled={loading}
       className="btn-secondary btn-sm flex-shrink-0 flex items-center gap-1.5"
@@ -43,5 +53,7 @@ export default function ComplianceStatusButton({ itemId, currentStatus }: Props)
       {loading ? <Loader2 size={12} className="animate-spin" /> : null}
       {next.label}
     </button>
+      {error && <span className="text-xs" style={{ color: 'var(--red)' }}>{error}</span>}
+    </div>
   );
 }

@@ -92,18 +92,18 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <input
-          className="input h-9 text-sm max-w-[240px]"
+          className="input h-9 text-sm w-full max-w-[240px]"
           placeholder="Search candidates…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <select className="input h-9 text-sm max-w-[160px]" value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+        <select className="input h-9 text-sm w-full max-w-[160px]" value={filterStage} onChange={e => setFilterStage(e.target.value)}>
           <option value="all">All stages</option>
           {['applied','screening','interviewing','offer','hired','rejected'].map(s => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
-        <select className="input h-9 text-sm max-w-[180px]" value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
+        <select className="input h-9 text-sm w-full max-w-[180px]" value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
           <option value="all">All companies</option>
           {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>

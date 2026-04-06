@@ -148,7 +148,7 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+8px)] w-[380px] rounded-xl overflow-hidden shadow-xl z-50"
+          className="absolute right-0 top-[calc(100%+8px)] w-full sm:w-[380px] rounded-xl overflow-hidden shadow-xl z-50"
           style={{ background: 'var(--surface)', border: '1px solid var(--line)', animation: 'slideDown 0.15s ease' }}
         >
           {/* Header */}

@@ -84,7 +84,7 @@ export function ClientSwitcherDropdown() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute left-0 top-[calc(100%+4px)] w-[240px] rounded-xl shadow-xl z-50 overflow-hidden"
+            className="absolute left-0 top-[calc(100%+4px)] w-full sm:w-[240px] rounded-xl shadow-xl z-50 overflow-hidden"
             style={{ background: 'var(--surface)', border: '1px solid var(--line)', animation: 'slideDown 0.12s ease' }}
           >
             {/* Search */}
