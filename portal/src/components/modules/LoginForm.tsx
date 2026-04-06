@@ -55,7 +55,7 @@ export default function LoginForm() {
           autoComplete="email"
           placeholder="you@company.co.uk"
           className="input"
-          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         />
       </div>
 
@@ -71,7 +71,7 @@ export default function LoginForm() {
             autoComplete="current-password"
             placeholder="••••••••"
             className="input pr-10"
-            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <button
             type="button"

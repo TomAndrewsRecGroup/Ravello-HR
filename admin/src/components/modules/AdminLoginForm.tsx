@@ -68,7 +68,7 @@ export default function AdminLoginForm() {
           onChange={e => setEmail(e.target.value)}
           className="input"
           placeholder="you@thepeopleoffice.co.uk"
-          style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         />
       </div>
       <div className="form-group">
@@ -82,7 +82,7 @@ export default function AdminLoginForm() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             className="input pr-10"
-            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
           />
           <button
             type="button"

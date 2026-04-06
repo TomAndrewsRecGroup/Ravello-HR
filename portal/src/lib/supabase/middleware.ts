@@ -42,16 +42,22 @@ export async function updateSession(request: NextRequest) {
     console.error('[auth] getUser failed:', authError.message);
   }
 
+  // Unauthenticated on protected route → login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname.startsWith('/auth') && !pathname.startsWith('/auth/callback')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+  // Authenticated on auth pages → redirect to dashboard
+  // Skip if reason param is present (user was just rejected — avoid redirect loop)
+  if (user && pathname.startsWith('/auth') && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
+    const reason = request.nextUrl.searchParams.get('reason');
+    if (!reason) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

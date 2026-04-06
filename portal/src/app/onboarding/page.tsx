@@ -120,7 +120,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div
             className="rounded-[20px] p-8"
-            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
+            style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
               Step 1 of 3
@@ -140,7 +140,7 @@ export default function OnboardingPage() {
                   onChange={e => set('full_name', e.target.value)}
                   className="input"
                   placeholder="Jane Smith"
-                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: '#111827' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: '#111827' }}
                 />
               </div>
               <div className="form-group">
@@ -149,7 +149,7 @@ export default function OnboardingPage() {
                   value={form.sector}
                   onChange={e => set('sector', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: form.sector ? '#111827' : '#9CA3AF' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.sector ? '#111827' : '#9CA3AF' }}
                 >
                   <option value="">Select your sector…</option>
                   {SECTORS.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
@@ -161,7 +161,7 @@ export default function OnboardingPage() {
                   value={form.size_band}
                   onChange={e => set('size_band', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', color: form.size_band ? '#111827' : '#9CA3AF' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.size_band ? '#111827' : '#9CA3AF' }}
                 >
                   <option value="">Select team size…</option>
                   {SIZES.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
@@ -180,7 +180,7 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div
             className="rounded-[20px] p-8"
-            style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
+            style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
               Step 2 of 3
@@ -221,7 +221,7 @@ export default function OnboardingPage() {
                   onClick={() => completeOnboarding(dest)}
                   disabled={loading}
                   className="w-full text-left rounded-[12px] p-4 flex items-center gap-4 transition-all"
-                  style={{ background: '#FFFFFF', border: '1px solid #E5E7EB' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
                 >
                   <div
                     className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
