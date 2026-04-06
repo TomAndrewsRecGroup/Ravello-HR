@@ -39,12 +39,33 @@ export async function updateSession(request: NextRequest) {
     console.error('[auth] getUser failed:', authError.message);
   }
 
-  // Unauthenticated → login
+  // Unauthenticated → login (skip for public auth pages)
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     url.searchParams.set('reason', 'no-session');
     return NextResponse.redirect(url);
+  }
+
+  // Helper: sign out and redirect to login with a reason
+  function signOutAndRedirect(reason: string) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/login';
+    url.searchParams.set('reason', reason);
+    const response = NextResponse.redirect(url);
+    // Clear role cookie
+    response.cookies.set('tpo_admin_role', '', {
+      httpOnly: true, sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 0, path: '/',
+    });
+    // Clear supabase auth cookies to break any redirect loop
+    request.cookies.getAll().forEach(cookie => {
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' });
+      }
+    });
+    return response;
   }
 
   // Authenticated on protected route → verify role
@@ -54,18 +75,21 @@ export async function updateSession(request: NextRequest) {
     if (cachedRole && typeof cachedRole === 'string' && ALLOWED_ROLES.includes(cachedRole)) {
       // Valid cached role — proceed
     } else {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
 
+      if (profileError) {
+        console.error('[auth] profile query failed:', profileError.message, '| user:', user.id);
+      }
+
       const role = (profile as any)?.role;
       if (typeof role !== 'string' || !ALLOWED_ROLES.includes(role)) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/auth/login';
-        url.searchParams.set('reason', 'unauthorised');
-        return NextResponse.redirect(url);
+        // Sign out to prevent redirect loop, then send to login
+        await supabase.auth.signOut();
+        return signOutAndRedirect('unauthorised');
       }
 
       supabaseResponse.cookies.set('tpo_admin_role', role, {
@@ -76,11 +100,17 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Authenticated on auth pages → redirect to dashboard
-  if (user && isPublic && !pathname.startsWith('/auth/callback')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+  // Authenticated on auth pages → redirect to dashboard ONLY if role is already confirmed
+  if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
+    const cachedRole = request.cookies.get('tpo_admin_role')?.value;
+    if (cachedRole && ALLOWED_ROLES.includes(cachedRole)) {
+      // Role confirmed — safe to redirect to dashboard
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    // No confirmed role — don't redirect, let them stay on the auth page
+    // This prevents the loop: dashboard rejects → login → dashboard rejects → ...
   }
 
   return supabaseResponse;
