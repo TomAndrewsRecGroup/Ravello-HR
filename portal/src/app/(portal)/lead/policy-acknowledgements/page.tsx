@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import PolicyAckClient from './PolicyAckClient';
 
@@ -7,8 +8,17 @@ export const metadata: Metadata = { title: 'Policy Acknowledgements' };
 export default async function PolicyAcksPage() {
   const supabase = createServerSupabaseClient();
   const { user, companyId, role } = await getSessionProfile();
-  if (!user) return null;
-  if (!companyId) return null;
+  if (!user) redirect('/auth/login');
+  if (!companyId) return (
+    <main className="portal-page flex-1">
+      <div className="card p-12 text-center">
+        <div className="empty-state">
+          <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>No company linked</p>
+          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>This page will populate once your company profile is set up.</p>
+        </div>
+      </div>
+    </main>
+  );
 
   const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
 

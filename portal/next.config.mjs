@@ -5,6 +5,10 @@ const nextConfig = {
       { protocol: 'https', hostname: 'haaqtnq6favvrbuh.public.blob.vercel-storage.com' },
     ],
   },
+  experimental: {
+    // Tree-shake lucide-react icons — only bundle icons actually imported
+    optimizePackageImports: ['lucide-react'],
+  },
   async headers() {
     return [
       {

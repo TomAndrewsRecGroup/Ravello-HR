@@ -1,4 +1,3 @@
-import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import GroupedTabs from '@/components/layout/GroupedTabs';
 
@@ -27,59 +26,11 @@ const TAB_GROUPS = [
   },
 ];
 
-export default async function LeadLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createServerSupabaseClient();
-  const { user, companyId } = await getSessionProfile();
-
-  let totalDocs = 0;
-  let milestones = 0;
-  let openTraining = 0;
-  let purchasedCourses = 0;
-  let activeEmployees = 0;
-
-  if (user && companyId) {
-      const [docRes, mileRes, trainRes, purchRes, empRes] = await Promise.all([
-        supabase.from('documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
-        supabase.from('milestones').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
-        supabase.from('training_needs').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'open'),
-        supabase.from('learning_purchases').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
-        supabase.from('employee_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
-      ]);
-
-      totalDocs = docRes.count ?? 0;
-      milestones = mileRes.count ?? 0;
-      openTraining = trainRes.count ?? 0;
-      purchasedCourses = purchRes.count ?? 0;
-      activeEmployees = empRes.count ?? 0;
-  }
-
-  const stats = [
-    { label: 'Employees',       value: activeEmployees,  color: '#14B8A6' },
-    { label: 'Documents',       value: totalDocs,        color: 'var(--blue)' },
-    { label: 'Open Training',   value: openTraining,     color: '#D97706' },
-    { label: 'Courses Active',  value: purchasedCourses, color: 'var(--teal)' },
-  ];
-
+export default function LeadLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Topbar title="LEAD" subtitle="People, documents and development" />
-
-      {/* Hero context */}
-      <div className="px-5 lg:px-7 pt-4 pb-3">
-        <div className="rounded-xl p-4" style={{ background: 'var(--gradient-soft)' }}>
-          <p className="text-sm" style={{ color: 'var(--ink)' }}>
-            {activeEmployees > 0
-              ? <>You have <strong style={{ color: 'var(--purple)' }}>{activeEmployees} employee{activeEmployees !== 1 ? 's' : ''}</strong>{totalDocs > 0 && <>, <strong>{totalDocs} document{totalDocs !== 1 ? 's' : ''}</strong></>}{openTraining > 0 && <>, and <strong style={{ color: 'var(--warning)' }}>{openTraining} open training need{openTraining !== 1 ? 's' : ''}</strong></>}.</>
-              : <span style={{ color: 'var(--ink-soft)' }}>Add your first employee record to start building your people directory.</span>
-            }
-          </p>
-        </div>
-      </div>
-
-      {/* Grouped tabs */}
       <GroupedTabs groups={TAB_GROUPS} />
-
-      {/* Page content */}
       {children}
     </>
   );

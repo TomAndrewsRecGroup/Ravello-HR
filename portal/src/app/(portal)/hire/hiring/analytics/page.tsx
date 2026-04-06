@@ -48,7 +48,16 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 export default async function HiringAnalyticsPage() {
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
-  if (!companyId) return null;
+  if (!companyId) return (
+    <main className="portal-page flex-1">
+      <div className="card p-12 text-center">
+        <div className="empty-state">
+          <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>No company linked</p>
+          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>This page will populate once your company profile is set up.</p>
+        </div>
+      </div>
+    </main>
+  );
 
   const [{ data: reqs }, { data: candidates }, { data: offers }] = await Promise.all([
     supabase.from('requisitions').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),

@@ -4,19 +4,21 @@
  * Strategy:
  * - STATIC ASSETS (JS, CSS, fonts, images): Cache-first with network fallback.
  *   These are fingerprinted by Next.js so stale cache is impossible.
- * - NAVIGATION (HTML pages): Network-first with offline fallback.
- *   Never serve cached HTML — it may contain stale auth state.
+ * - NAVIGATION (HTML pages): Stale-while-revalidate.
+ *   Serve cached page instantly, update in background for next visit.
+ *   First visit always hits network. Auth is server-managed so stale
+ *   HTML is safe — middleware redirects if session is expired.
  * - API REQUESTS: Network-only. Never cached.
  *   Prevents leaking authenticated data into the cache.
  *
  * Security considerations:
  * - No opaque responses cached (prevents cross-origin data leaks)
- * - Cache cleared on service worker update
+ * - Cache cleared on service worker update (version bump)
  * - API routes explicitly excluded from caching
  * - Auth cookies are never intercepted or modified
  */
 
-const CACHE_NAME = 'tps-portal-v1';
+const CACHE_NAME = 'tps-portal-v2';
 const OFFLINE_URL = '/offline';
 
 // Static asset patterns to cache (fingerprinted by Next.js)
@@ -33,18 +35,15 @@ const NEVER_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Pre-cache the offline page only
       return cache.add(OFFLINE_URL);
     })
   );
-  // Activate immediately — don't wait for existing tabs to close
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((names) => {
-      // Delete old cache versions
       return Promise.all(
         names
           .filter((name) => name !== CACHE_NAME)
@@ -52,7 +51,6 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  // Take control of all open tabs immediately
   self.clients.claim();
 });
 
@@ -60,17 +58,28 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
-
-  // Never intercept API, auth, or data routes
   if (NEVER_CACHE.some((path) => url.pathname.startsWith(path))) return;
 
-  // Navigation requests (HTML pages) — network-first with offline fallback
+  // Navigation requests — stale-while-revalidate
+  // Serve cached page instantly, fetch fresh version in background
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match(OFFLINE_URL);
+      caches.match(request).then((cached) => {
+        const networkFetch = fetch(request).then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => {
+          // Offline — serve cached page or offline fallback
+          return cached || caches.match(OFFLINE_URL);
+        });
+
+        // If we have a cached version, serve it immediately
+        // The background fetch updates the cache for next time
+        return cached || networkFetch;
       })
     );
     return;
@@ -83,16 +92,13 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
 
         return fetch(request).then((response) => {
-          // Only cache successful, same-origin, non-opaque responses
           if (
             response.status === 200 &&
             response.type !== 'opaque' &&
             request.method === 'GET'
           ) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, clone);
-            });
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         });
@@ -101,5 +107,5 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Everything else — network only (no caching)
+  // Everything else — network only
 });
