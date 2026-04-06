@@ -70,9 +70,16 @@ export default function CostModellerClient() {
         <div>
           <h2 className="section-title text-xl">Employment Cost Modeller</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Model the true cost of hiring — salary + employer NI (15%) + pension + benefits (2025/26 rates)
+            Employer costs only — salary + employer NI (15%) + pension + benefits (2025/26 rates)
           </p>
         </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> Figures are based on HMRC 2025/26 employer NI rates (15%, £5,000 threshold), statutory minimum auto-enrolment pension (3%), and your inputs. Actual costs may vary depending on salary sacrifice arrangements, apprenticeship levy liability, benefits in kind, and other employer obligations. Always consult your accountant or payroll provider for precise figures.
+        </p>
       </div>
 
       {/* Configuration */}
