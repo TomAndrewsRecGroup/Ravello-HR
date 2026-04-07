@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 
@@ -137,7 +137,6 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
 
 function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
   const supabase = createClient();
-  const router   = useRouter();
   const [active,  setActive]  = useState(currentActive);
   const [loading, setLoading] = useState(false);
 
@@ -147,7 +146,7 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
     await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
     setActive(newVal);
     setLoading(false);
-    router.refresh();
+    revalidateAdminPath(`/clients/${companyId}`);
   }
 
   return (
@@ -206,7 +205,6 @@ interface Props {
 
 export default function ClientDetailTabs({ company, users, reqs, stats }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [tab, setTab] = useState<Tab>('Overview');
 
   /* ── Lazy-loaded tab data ── */
@@ -1498,7 +1496,6 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
   documents: any[];
 }) {
   const supabase = createClient();
-  const router   = useRouter();
   const [items,  setItems]  = useState<any[]>(initItems);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -1516,7 +1513,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
       .eq('id', item.id);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
     setSaving(null);
-    router.refresh();
+    revalidateAdminPath(`/clients/${company.id}`);
   }
 
   if (!assessment) {

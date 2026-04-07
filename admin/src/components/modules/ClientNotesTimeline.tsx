@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import {
   Plus, X, Loader2, Pin, Phone, Mail, Users as UsersIcon,
   MessageSquare, AlertTriangle, CheckCircle2, Clock,
@@ -53,7 +53,6 @@ function timeAgo(dateStr: string): string {
 
 export default function ClientNotesTimeline({ companyId, companyName, userId, initialNotes }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,7 +79,7 @@ export default function ClientNotesTimeline({ companyId, companyName, userId, in
     setSaving(false);
     setShowForm(false);
     setForm({ note_type: 'general', title: '', body: '' });
-    router.refresh();
+    revalidateAdminPath('/clients');
   }
 
   async function togglePin(noteId: string, currentPinned: boolean) {

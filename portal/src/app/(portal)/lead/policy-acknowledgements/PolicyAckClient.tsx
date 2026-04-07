@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   Plus, X, Loader2, CheckCircle2, Clock, AlertTriangle,
   FileText, Send, Users, Filter,
@@ -31,7 +31,6 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; 
 /* ─── Component ─────────────────────────────────────── */
 export default function PolicyAckClient({ companyId, isAdmin, documents, acknowledgements, employees }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [showSendForm, setShowSendForm] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState('');
@@ -84,7 +83,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
     setSaving(false);
     setShowSendForm(false);
     setSelectedDoc(''); setSelectedEmployees([]);
-    router.refresh();
+    revalidatePortalPath('/lead/policy-acknowledgements');
   }
 
   /* ─── Mark as acknowledged (admin on behalf) ─────── */
@@ -93,7 +92,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
       status: 'acknowledged',
       acknowledged_at: new Date().toISOString(),
     }).eq('id', ackId);
-    router.refresh();
+    revalidatePortalPath('/lead/policy-acknowledgements');
   }
 
   /* ─── Send to all employees ──────────────────────── */

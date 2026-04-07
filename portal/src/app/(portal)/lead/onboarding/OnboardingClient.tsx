@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   Plus, X, Loader2, CheckCircle2, Clock, UserPlus,
   ChevronDown, ChevronRight, Clipboard, Play, Trash2,
@@ -49,7 +49,6 @@ function catColor(cat: string) {
 /* ─── Component ─────────────────────────────────────── */
 export default function OnboardingClient({ companyId, userId, isAdmin, templates, instances, employees }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [tab, setTab] = useState<'active' | 'templates'>('active');
   const [saving, setSaving] = useState(false);
 
@@ -93,7 +92,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
     setSaving(false);
     setShowTemplateForm(false);
     setTemplateName(''); setTemplateDesc(''); setTemplateTasks([]);
-    router.refresh();
+    revalidatePortalPath('/lead/onboarding');
   }
 
   /* ─── Start onboarding ───────────────────────────── */
@@ -134,7 +133,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
     setSaving(false);
     setShowStartForm(false);
     setSelectedEmployee(''); setSelectedTemplate('');
-    router.refresh();
+    revalidatePortalPath('/lead/onboarding');
   }
 
   /* ─── Toggle task status ─────────────────────────── */
@@ -148,7 +147,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
         completed_by: newStatus === 'completed' ? userId : null,
       })
       .eq('id', taskId);
-    router.refresh();
+    revalidatePortalPath('/lead/onboarding');
   }
 
   /* ─── Mark instance complete ─────────────────────── */
@@ -157,7 +156,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
       .from('onboarding_instances')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', instanceId);
-    router.refresh();
+    revalidatePortalPath('/lead/onboarding');
   }
 
   function addTask() {

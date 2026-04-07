@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   Plus, Search, X, Loader2, Users, Mail, Phone,
   Building2, Calendar, ChevronRight, Filter,
@@ -70,7 +70,6 @@ function fmtDate(d: string | null): string {
 /* ─── Component ─────────────────────────────────────── */
 export default function EmployeeRecordsClient({ companyId, userId, isAdmin, initialEmployees, leaveRecords }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -254,7 +253,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
 
     setSaving(false);
     setShowForm(false);
-    router.refresh();
+    revalidatePortalPath('/lead/employee-records');
   }
 
   return (

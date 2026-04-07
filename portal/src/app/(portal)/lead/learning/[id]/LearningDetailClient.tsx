@@ -1,6 +1,7 @@
 'use client';
+import { revalidatePortalPath } from '@/app/actions';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import {
@@ -130,7 +131,6 @@ export default function LearningDetailClient({
   content, related, byCreator, purchase, hasAccess, companyId, userId,
 }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const Icon = TYPE_ICONS[content.content_type] ?? BookOpen;
@@ -157,7 +157,7 @@ export default function LearningDetailClient({
         access_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       setLoading(false);
-      router.refresh();
+      revalidatePortalPath('/lead/learning');
       return;
     }
     setLoading(true);

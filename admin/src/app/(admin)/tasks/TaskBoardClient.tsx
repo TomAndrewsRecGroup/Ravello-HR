@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import {
   Plus, X, Loader2, CheckCircle2, Clock, Circle,
   AlertTriangle, Filter, Building2,
@@ -43,7 +43,6 @@ const COLUMNS = [
 
 export default function TaskBoardClient({ userId, tasks: initialTasks, staff, companies }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -83,7 +82,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
     setSaving(false);
     setShowForm(false);
     setForm({ title: '', description: '', priority: 'normal', assigned_to: '', company_id: '', due_date: '' });
-    router.refresh();
+    revalidateAdminPath('/tasks');
   }
 
   async function moveTask(taskId: string, newStatus: string) {
