@@ -118,7 +118,7 @@ export default async function ActionsPage() {
 
   const { data: actionsData, error } = await supabase
     .from('actions')
-    .select('id,action_type,title,description,priority,status,due_date,completed_at,dismiss_until,created_at,created_by_admin')
+    .select('id,created_at,updated_at,company_id,action_type,title,description,related_entity_id,related_entity_type,priority,status,dismissed_at,completed_at,dismiss_until,due_date,created_by_admin')
     .eq('company_id', companyId)
     .eq('status', 'active')
     .or(`dismiss_until.is.null,dismiss_until.lt.${now}`)
