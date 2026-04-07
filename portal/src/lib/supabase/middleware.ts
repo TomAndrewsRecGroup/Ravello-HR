@@ -5,6 +5,7 @@ const PUBLIC_ROUTES = [
   /^\/auth\//,
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
+  /^\/api\/debug-session$/,
 ];
 
 const SESSION_COOKIE = 'tps_portal_session';
