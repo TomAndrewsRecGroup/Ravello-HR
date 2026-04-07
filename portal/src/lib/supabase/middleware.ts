@@ -67,13 +67,16 @@ export async function updateSession(request: NextRequest) {
 
   // Stamp session cookie with fresh data from DB — all queries in parallel
   if (user && !isPublicRoute) {
-    const [{ data: rpcRole }, { data: profile }] = await Promise.all([
+    const [{ data: rpcRole, error: roleErr }, { data: profile, error: profErr }] = await Promise.all([
       supabase.rpc('get_my_role'),
       supabase.from('profiles')
         .select('company_id, ui_preferences, onboarding_completed')
         .eq('id', user.id)
         .single(),
     ]);
+
+    if (roleErr) console.error('[auth] get_my_role failed:', roleErr.message);
+    if (profErr) console.error('[auth] profile fetch failed:', profErr.message);
 
     const role = typeof rpcRole === 'string' ? rpcRole : '';
     const companyId = (profile as any)?.company_id ?? '';
