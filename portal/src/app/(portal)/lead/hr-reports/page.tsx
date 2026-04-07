@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import HRReportsClient from './HRReportsClient';
 
 export const metadata: Metadata = { title: 'HR Reports' };
+export const revalidate = 60;
 
 export default async function HRReportsPage() {
   const supabase = createServerSupabaseClient();

@@ -5,6 +5,7 @@ import Topbar from '@/components/layout/Topbar';
 import CalendarClient from './CalendarClient';
 
 export const metadata: Metadata = { title: 'Company Calendar' };
+export const revalidate = 30;
 
 export default async function CalendarPage() {
   const supabase = createServerSupabaseClient();

@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import { BarChart3, Briefcase, ShieldCheck, LifeBuoy, FolderOpen, Bell, TrendingUp } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Metrics' };
+export const revalidate = 60;
 
 /* ── Helpers ──────────────────────────────────────────────── */
 

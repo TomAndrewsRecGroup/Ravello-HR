@@ -4,6 +4,7 @@ import ComplianceStatusButton from '@/components/modules/ComplianceStatusButton'
 import { ShieldCheck, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Compliance' };
+export const revalidate = 30;
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
   pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },

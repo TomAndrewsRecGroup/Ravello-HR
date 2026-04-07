@@ -7,6 +7,7 @@ import ReportUploadForm from './ReportUploadForm';
 import ExportCSVButton from '@/components/modules/ExportCSVButton';
 
 export const metadata: Metadata = { title: 'Reports' };
+export const revalidate = 30;
 
 export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();

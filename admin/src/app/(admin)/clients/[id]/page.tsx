@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ClientDetailTabs from './ClientDetailTabs';
 
 export const metadata: Metadata = { title: 'Client Detail' };
+export const revalidate = 30;
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();

@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import EmployeeDocsClient from './EmployeeDocsClient';
 
 export const metadata: Metadata = { title: 'Employee Documents' };
+export const revalidate = 30;
 
 export default async function EmployeeDocsPage() {
   const supabase = createServerSupabaseClient();

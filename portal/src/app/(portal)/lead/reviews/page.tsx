@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import ReviewsClient from './ReviewsClient';
 
 export const metadata: Metadata = { title: 'Performance Reviews' };
+export const revalidate = 60;
 
 export default async function PerformanceReviewsPage() {
   const supabase = createServerSupabaseClient();

@@ -8,6 +8,7 @@ import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Requisition Detail' };
+export const revalidate = 30;
 
 const STAGE_BADGE: Record<string, string> = {
   submitted:       'badge-submitted',

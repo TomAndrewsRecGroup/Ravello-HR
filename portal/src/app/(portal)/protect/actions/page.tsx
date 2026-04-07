@@ -5,6 +5,7 @@ import { CheckCircle2, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import type { Action } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'Actions' };
+export const revalidate = 30;
 
 const ENTITY_LABELS: Record<string, string> = {
   requisition: 'View role',

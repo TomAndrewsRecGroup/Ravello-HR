@@ -7,6 +7,7 @@ import AdminTicketActions from '@/components/modules/AdminTicketActions';
 import AdminTicketReply from '@/components/modules/AdminTicketReply';
 
 export const metadata: Metadata = { title: 'Ticket' };
+export const revalidate = 30;
 
 export default async function AdminTicketPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();

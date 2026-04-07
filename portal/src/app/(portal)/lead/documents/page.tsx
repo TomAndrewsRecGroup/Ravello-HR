@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Documents' };
+export const revalidate = 60;
 
 const CATEGORY_GROUPS: { key: string; label: string }[] = [
   { key: 'contract',      label: 'Contracts'      },

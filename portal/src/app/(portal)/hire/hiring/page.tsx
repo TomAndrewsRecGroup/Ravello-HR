@@ -7,6 +7,7 @@ import { Briefcase, Plus, ChevronDown } from 'lucide-react';
 import { isManatalConfigured } from '@/lib/manatal';
 
 export const metadata: Metadata = { title: 'Hiring' };
+export const revalidate = 30;
 
 const stageBadge: Record<string, string> = {
   submitted:       'badge-submitted',

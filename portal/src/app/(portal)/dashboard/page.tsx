@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Dashboard' };
+export const revalidate = 30;
 
 function getGreeting() {
   const h = new Date().getHours();

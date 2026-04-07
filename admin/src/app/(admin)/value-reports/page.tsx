@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import ValueReportClient from './ValueReportClient';
 
 export const metadata: Metadata = { title: 'Client Value Reports' };
+export const revalidate = 60;
 
 export default async function ValueReportsPage() {
   const supabase = createServerSupabaseClient();

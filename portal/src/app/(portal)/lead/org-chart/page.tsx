@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import OrgChartClient from './OrgChartClient';
 
 export const metadata: Metadata = { title: 'Organisation Chart' };
+export const revalidate = 60;
 
 export default async function OrgChartPage() {
   const supabase = createServerSupabaseClient();

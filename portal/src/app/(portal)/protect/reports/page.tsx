@@ -4,6 +4,7 @@ import ExportCSVButton from '@/components/modules/ExportCSVButton';
 import { BarChart3, Download } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Reports' };
+export const revalidate = 60;
 
 export default async function ReportsPage() {
   const supabase = createServerSupabaseClient();

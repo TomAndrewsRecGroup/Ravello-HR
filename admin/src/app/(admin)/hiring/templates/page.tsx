@@ -5,6 +5,7 @@ import TemplatesClient from './TemplatesClient';
 import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'JD Templates' };
+export const revalidate = 60;
 
 export default async function JDTemplatesPage() {
   const supabase = createServerSupabaseClient();

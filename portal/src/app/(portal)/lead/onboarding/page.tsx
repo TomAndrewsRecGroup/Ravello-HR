@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import OnboardingClient from './OnboardingClient';
 
 export const metadata: Metadata = { title: 'Onboarding' };
+export const revalidate = 60;
 
 export default async function OnboardingPage() {
   const supabase = createServerSupabaseClient();

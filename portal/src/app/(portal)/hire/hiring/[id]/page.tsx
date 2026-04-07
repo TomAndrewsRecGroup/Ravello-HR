@@ -9,6 +9,7 @@ import { CheckCircle2, MessageSquare, Info, Calendar, Video, Phone, MapPin } fro
 import type { FrictionScore } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'Role Detail' };
+export const revalidate = 30;
 
 const stageBadge: Record<string, string> = {
   submitted:       'badge-submitted',
