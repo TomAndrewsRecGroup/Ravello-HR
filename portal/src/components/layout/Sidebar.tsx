@@ -48,7 +48,7 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
   const [editMode, setEditMode] = useState(false);
   const [counts, setCounts] = useState<Record<string, number>>(initialCounts);
 
-  // Fetch badge counts client-side (non-blocking — page renders immediately)
+  // Fetch badge counts once on mount (not on every navigation)
   useEffect(() => {
     if (!companyId) return;
     const supabase = createClient();
@@ -69,7 +69,7 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
         candidates: candRes.count ?? 0,
       });
     }).catch(() => {});
-  }, [companyId, path]); // re-fetch when navigating
+  }, [companyId]); // only on mount, not on path change
 
   // Build ordered, visible nav items
   const orderedItems = useMemo(() => {

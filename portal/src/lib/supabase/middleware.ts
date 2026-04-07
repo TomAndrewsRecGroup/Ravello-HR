@@ -82,7 +82,15 @@ export async function updateSession(request: NextRequest) {
       isTpsStaff: role === 'tps_admin' || role === 'tps_client',
       uiPreferences: (profile as any)?.ui_preferences ?? {},
       onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
+      featureFlags: {} as Record<string, boolean>,
     };
+
+    // Fetch feature flags into the session cookie too (avoids layout DB call)
+    if (sessionData.companyId) {
+      const { data: company } = await supabase
+        .from('companies').select('feature_flags').eq('id', sessionData.companyId).single();
+      sessionData.featureFlags = (company as any)?.feature_flags ?? {};
+    }
 
     supabaseResponse.cookies.set(SESSION_COOKIE, JSON.stringify(sessionData), {
       httpOnly: true,

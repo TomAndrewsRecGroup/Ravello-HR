@@ -36,18 +36,16 @@ export function createServerSupabaseClient() {
 /**
  * Read the session from the middleware-stamped cookie — ZERO Supabase calls.
  *
- * The middleware validates the user via getUser() once every 15 minutes and
- * stamps a tps_portal_session cookie with userId, companyId, role, etc.
+ * The middleware stamps tps_portal_session every 15 minutes with:
+ * userId, companyId, role, featureFlags, uiPreferences, etc.
  * Layouts and pages just read this cookie. No network calls at all.
- *
- * React cache() deduplicates within a single request.
  */
 export const getSessionProfile = cache(async () => {
   const cookieStore = cookies();
   const raw = cookieStore.get('tps_portal_session')?.value;
 
   if (!raw) {
-    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false };
+    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false, featureFlags: {} as Record<string, boolean> };
   }
 
   try {
@@ -62,8 +60,9 @@ export const getSessionProfile = cache(async () => {
       companyId: session.companyId ?? '',
       role: session.role ?? '',
       isTpsStaff: session.isTpsStaff ?? false,
+      featureFlags: session.featureFlags ?? {} as Record<string, boolean>,
     };
   } catch {
-    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false };
+    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false, featureFlags: {} as Record<string, boolean> };
   }
 });
