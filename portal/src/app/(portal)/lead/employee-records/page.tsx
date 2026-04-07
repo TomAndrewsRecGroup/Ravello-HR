@@ -31,7 +31,7 @@ export default async function EmployeeRecordsPage() {
       .order('full_name'),
     supabase
       .from('leave_records')
-      .select('id,employee_id,leave_type,start_date,end_date,days,status,notes')
+      .select('id,employee_id,leave_type,start_date,end_date,days_count,status')
       .eq('company_id', companyId)
       .order('start_date', { ascending: false }),
   ]);
