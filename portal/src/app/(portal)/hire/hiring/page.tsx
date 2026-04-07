@@ -196,7 +196,7 @@ export default async function HiringPage({
                           />
                         </td>
                         <td>
-                          <Link href={`/hiring/${r.id}`} className="btn-secondary btn-sm">
+                          <Link href={`/hire/hiring/${r.id}`} className="btn-secondary btn-sm">
                             View
                           </Link>
                         </td>
