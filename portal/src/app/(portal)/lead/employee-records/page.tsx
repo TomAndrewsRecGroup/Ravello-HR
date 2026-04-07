@@ -26,7 +26,7 @@ export default async function EmployeeRecordsPage() {
   const [empRes, leaveRes] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('id,full_name,email,job_title,department,employment_type,status,start_date,salary,salary_currency,gender,line_manager,annual_leave_allowance,sick_day_allowance')
+      .select('id,full_name,email,phone,job_title,department,employment_type,status,start_date,end_date,salary,salary_currency,gender,ethnicity,line_manager,annual_leave_allowance,sick_day_allowance,leave_year_type,created_at')
       .eq('company_id', companyId)
       .order('full_name'),
     supabase
