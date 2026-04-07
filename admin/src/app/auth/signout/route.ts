@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+async function handleSignOut(request: Request) {
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,3 +24,7 @@ export async function POST(request: Request) {
   });
   return res;
 }
+
+// Support both POST (form submit) and GET (direct navigation / PWA)
+export const POST = handleSignOut;
+export const GET = handleSignOut;
