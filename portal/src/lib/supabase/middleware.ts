@@ -67,20 +67,19 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Stamp session cookie with fresh data from DB — all queries in parallel
+  // Uses SECURITY DEFINER functions to bypass RLS (avoids circular dependency)
   if (user && !isPublicRoute) {
-    const [{ data: rpcRole, error: roleErr }, { data: profile, error: profErr }] = await Promise.all([
+    const [{ data: rpcRole, error: roleErr }, { data: profileRows, error: profErr }] = await Promise.all([
       supabase.rpc('get_my_role'),
-      supabase.from('profiles')
-        .select('company_id, ui_preferences, onboarding_completed')
-        .eq('id', user.id)
-        .single(),
+      supabase.rpc('get_my_profile'),
     ]);
 
     if (roleErr) console.error('[auth] get_my_role failed:', roleErr.message);
-    if (profErr) console.error('[auth] profile fetch failed:', profErr.message);
+    if (profErr) console.error('[auth] get_my_profile failed:', profErr.message);
 
     const role = typeof rpcRole === 'string' ? rpcRole : '';
-    const companyId = (profile as any)?.company_id ?? '';
+    const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
+    const companyId = profile?.company_id ?? '';
 
     // Second parallel batch: feature flags (needs companyId from profile)
     let featureFlags: Record<string, boolean> = {};

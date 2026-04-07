@@ -1,54 +1,95 @@
 import { cookies } from 'next/headers';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 /**
- * GET /api/debug-session
- * Returns the current session state for debugging auth/data issues.
- * Only works for authenticated users.
+ * GET /api/debug-session — comprehensive auth debug
+ * Public route (bypasses middleware auth).
  */
 export async function GET() {
   const cookieStore = cookies();
-  const sessionRaw = cookieStore.get('tps_portal_session')?.value;
 
+  // Show ALL cookies (names only, not values for security)
+  const allCookieNames = cookieStore.getAll().map(c => c.name);
+  const hasSbCookies = allCookieNames.some(n => n.startsWith('sb-'));
+
+  // Session cookie
+  const sessionRaw = cookieStore.get('tps_portal_session')?.value;
   let sessionData = null;
   if (sessionRaw) {
     try { sessionData = JSON.parse(sessionRaw); } catch {}
   }
 
-  // Also fetch live data from DB for comparison
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Create Supabase client from request cookies
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set() {},
+        remove() {},
+      },
+    },
+  );
 
-  let liveProfile = null;
-  let liveRole = null;
-  let profileError = null;
-  if (user) {
-    const [profileRes, roleRes] = await Promise.all([
-      supabase.from('profiles').select('id, email, role, company_id, onboarding_completed').eq('id', user.id).single(),
-      supabase.rpc('get_my_role'),
-    ]);
-    liveProfile = profileRes.data;
-    profileError = profileRes.error?.message ?? null;
-    liveRole = roleRes.data;
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({
+      authenticated: false,
+      authError: authError?.message ?? null,
+      hasSbCookies,
+      cookieNames: allCookieNames,
+      sessionCookie: sessionData,
+      diagnosis: hasSbCookies
+        ? 'Has sb- cookies but getUser() failed — cookies may be expired or invalid'
+        : 'No sb- auth cookies found — login did not set cookies, or they were cleared',
+    });
+  }
+
+  // User is authenticated — check profile via RPC (bypasses RLS)
+  const [roleRes, profileRes] = await Promise.all([
+    supabase.rpc('get_my_role'),
+    supabase.rpc('get_my_profile'),
+  ]);
+
+  const role = roleRes.data;
+  const profileRows = profileRes.data;
+  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
+
+  // Check company
+  let companyData = null;
+  if (profile?.company_id) {
+    const { data } = await supabase
+      .from('companies')
+      .select('id, name, active, feature_flags')
+      .eq('id', profile.company_id)
+      .single();
+    companyData = data;
   }
 
   return NextResponse.json({
-    authenticated: !!user,
-    userId: user?.id ?? null,
-    email: user?.email ?? null,
+    authenticated: true,
+    userId: user.id,
+    email: user.email,
+    hasSbCookies,
     sessionCookie: sessionData,
-    liveProfile,
-    profileError,
-    liveRole,
-    diagnosis: !user
-      ? 'Not authenticated — need to log in'
-      : !liveProfile
-      ? 'No profile row in database — handle_new_user trigger may have failed'
-      : liveProfile.role === 'client_user'
-      ? 'Role is client_user — need to UPDATE profiles SET role = \'tps_admin\' WHERE email = \'...\''
-      : !liveProfile.company_id
-      ? 'No company_id linked — run migration 027 or UPDATE profiles SET company_id = \'00000000-0000-0000-0000-000000000001\''
-      : 'Profile looks correct — try logging out and back in to refresh the session cookie',
-  }, { status: 200 });
+    rpcRole: role,
+    rpcRoleError: roleRes.error?.message ?? null,
+    rpcProfile: profile ?? null,
+    rpcProfileError: profileRes.error?.message ?? null,
+    companyData,
+    diagnosis: profileRes.error
+      ? 'get_my_profile() failed — have you run migration 029? Error: ' + profileRes.error.message
+      : !profile
+      ? 'Profile row missing — run INSERT INTO profiles ...'
+      : !profile.company_id
+      ? 'No company_id on profile — run UPDATE profiles SET company_id = ...'
+      : !companyData
+      ? 'Company query returned null — RLS may be blocking companies table. Run migration 028.'
+      : !sessionData?.companyId
+      ? 'Everything OK in DB but session cookie stale — navigate to /dashboard to force middleware refresh'
+      : 'All good — profile, company, and session cookie are correct',
+  });
 }
