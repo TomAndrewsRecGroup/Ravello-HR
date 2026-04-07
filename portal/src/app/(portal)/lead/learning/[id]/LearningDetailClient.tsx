@@ -157,7 +157,7 @@ export default function LearningDetailClient({
         access_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       setLoading(false);
-      revalidatePortalPath('/lead/learning');
+      revalidatePortalPath(`/lead/learning/${content.id}`);
       return;
     }
     setLoading(true);
