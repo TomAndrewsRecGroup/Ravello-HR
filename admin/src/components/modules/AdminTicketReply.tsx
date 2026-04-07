@@ -1,17 +1,17 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Send } from 'lucide-react';
 
 interface Props { ticketId: string; userId: string; }
 
 export default function AdminTicketReply({ ticketId, userId }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [body,    setBody]    = useState('');
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const [sent,    setSent]    = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +26,9 @@ export default function AdminTicketReply({ ticketId, userId }: Props) {
     if (err) { setError(err.message); setLoading(false); return; }
     setBody('');
     setLoading(false);
-    router.refresh();
+    setSent(true);
+    setTimeout(() => setSent(false), 3000);
+    revalidateAdminPath(`/support/${ticketId}`);
   }
 
   return (

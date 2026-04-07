@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 import type { HiringStage } from '@/lib/supabase/types';
 
@@ -11,7 +11,6 @@ interface Props { reqId: string; currentStage: HiringStage; }
 
 export default function HiringStageUpdater({ reqId, currentStage }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [stage,   setStage]   = useState(currentStage);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +20,7 @@ export default function HiringStageUpdater({ reqId, currentStage }: Props) {
     setLoading(true);
     await supabase.from('requisitions').update({ stage: newStage, updated_at: new Date().toISOString() }).eq('id', reqId);
     setLoading(false);
-    router.refresh();
+    revalidateAdminPath(`/hiring/${reqId}`);
   }
 
   return (

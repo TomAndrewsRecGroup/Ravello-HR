@@ -1,13 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 
 interface Props { companyId: string; currentActive: boolean; }
 
 export default function ClientStatusToggle({ companyId, currentActive }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [active, setActive] = useState(currentActive);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +16,7 @@ export default function ClientStatusToggle({ companyId, currentActive }: Props) 
     await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
     setActive(newVal);
     setLoading(false);
-    router.refresh();
+    revalidateAdminPath(`/clients/${companyId}`);
   }
 
   return (
