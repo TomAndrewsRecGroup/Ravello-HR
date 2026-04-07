@@ -9,6 +9,18 @@
 --  Company ID: 00000000-0000-0000-0000-000000000001
 -- ======================================================================
 
+-- Ensure 'hired' status exists (may not have been added by migration 023)
+DO $$ BEGIN
+  ALTER TYPE candidate_client_status ADD VALUE IF NOT EXISTS 'hired';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Ensure company settings columns exist
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS open_days  JSONB DEFAULT '["mon","tue","wed","thu","fri"]';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS open_hours JSONB DEFAULT '{"start":"09:00","end":"17:30"}';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS timezone   TEXT  DEFAULT 'Europe/London';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS currency   TEXT  DEFAULT 'GBP';
+
 -- Temporarily relax NOT NULL constraints on FK audit columns so seed
 -- data can be inserted without real auth.users references.
 ALTER TABLE requisitions      ALTER COLUMN submitted_by DROP NOT NULL;
@@ -69,9 +81,9 @@ ON CONFLICT (id) DO NOTHING;
 
 -- == 4. REQUISITIONS (6 roles) =========================================
 INSERT INTO requisitions (id, company_id, title, department, seniority, salary_range, salary_min, salary_max, location, employment_type, description, stage, working_model, friction_level, created_at) VALUES
-  ('a1000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Backend Engineer',       'Engineering', 'Mid',    '50000-65000', 50000, 65000, 'London / Hybrid',  'full-time', 'Build scalable APIs and microservices for our HR platform. Experience with Node.js, PostgreSQL and cloud infrastructure required.', 'sourcing',      'hybrid',  'Medium',   NOW() - INTERVAL '18 days'),
+  ('a1000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Backend Engineer',       'Engineering', 'Mid',    '50000-65000', 50000, 65000, 'London / Hybrid',  'full-time', 'Build scalable APIs and microservices for our HR platform. Experience with Node.js, PostgreSQL and cloud infrastructure required.', 'in_progress',      'hybrid',  'Medium',   NOW() - INTERVAL '18 days'),
   ('a1000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Product Designer',       'Product',     'Mid',    '45000-58000', 45000, 58000, 'Remote UK',        'full-time', 'Design intuitive experiences for our client portal. Strong Figma skills and SaaS experience essential.',                             'interviewing',  'remote',  'Low',      NOW() - INTERVAL '32 days'),
-  ('a1000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Sales Development Rep',  'Sales',       'Junior', '28000-35000', 28000, 35000, 'Manchester',       'full-time', 'Generate qualified leads for our SME HR services. Outbound focus with SaaS experience preferred.',                                   'screening',     'office',  'High',     NOW() - INTERVAL '45 days'),
+  ('a1000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Sales Development Rep',  'Sales',       'Junior', '28000-35000', 28000, 35000, 'Manchester',       'full-time', 'Generate qualified leads for our SME HR services. Outbound focus with SaaS experience preferred.',                                   'shortlist_ready',     'office',  'High',     NOW() - INTERVAL '45 days'),
   ('a1000004-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'DevOps Engineer',        'Engineering', 'Senior', '70000-85000', 70000, 85000, 'Remote UK',        'full-time', 'Own our CI/CD, infrastructure, and platform reliability. AWS, Terraform, Kubernetes experience required.',                           'submitted',     'remote',  'Critical', NOW() - INTERVAL '7 days'),
   ('a1000005-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Marketing Coordinator',  'Marketing',   'Junior', '25000-32000', 25000, 32000, 'London',           'full-time', 'Support marketing campaigns, social media, and content creation for our HR tech brand.',                                             'filled',        'hybrid',  'Low',      NOW() - INTERVAL '90 days'),
   ('a1000006-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Data Analyst',           'Product',     'Mid',    '40000-52000', 40000, 52000, 'London / Hybrid',  'full-time', 'Analyse HR data trends and build dashboards for client insights. SQL and Python experience required.',                               'cancelled',     'hybrid',  'Medium',   NOW() - INTERVAL '60 days')
@@ -93,7 +105,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- == 6. DOCUMENTS (8) ==================================================
 INSERT INTO documents (id, company_id, name, category, file_url, file_size, version, created_at) VALUES
-  ('d0000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Employee Handbook 2025',        'handbook',  'https://storage.example.com/tps/employee-handbook-2025.pdf',     2048000, 3, NOW() - INTERVAL '60 days'),
+  ('d0000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Employee Handbook 2025',        'other',  'https://storage.example.com/tps/employee-handbook-2025.pdf',     2048000, 3, NOW() - INTERVAL '60 days'),
   ('d0000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Remote Working Policy',         'policy',    'https://storage.example.com/tps/remote-working-policy.pdf',     512000,  2, NOW() - INTERVAL '45 days'),
   ('d0000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Equal Opportunities Policy',    'policy',    'https://storage.example.com/tps/equal-opportunities.pdf',       384000,  1, NOW() - INTERVAL '120 days'),
   ('d0000004-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Anti-Bribery Policy',           'policy',    'https://storage.example.com/tps/anti-bribery.pdf',              256000,  1, NOW() - INTERVAL '100 days'),
@@ -105,7 +117,7 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- == 7. COMPLIANCE ITEMS (8) ===========================================
-INSERT INTO compliance_items (id, company_id, title, category, status, due_date, notes, created_at) VALUES
+INSERT INTO compliance_items (id, company_id, title, category, status, due_date, description, created_at) VALUES
   ('c1000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Health & Safety Risk Assessment',    'health_safety',   'complete', '2025-03-01', 'Annual review completed by external assessor. No major findings.',                  NOW() - INTERVAL '120 days'),
   ('c1000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'GDPR Data Audit',                    'data_protection', 'pending',  '2025-06-30', 'Annual data mapping and retention review. Third-party processor list needs updating.',NOW() - INTERVAL '30 days'),
   ('c1000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Fire Safety Certificate',             'health_safety',   'overdue',  '2025-03-15', 'Certificate expired. Renewal inspection booked for next week.',                      NOW() - INTERVAL '150 days'),
@@ -287,9 +299,9 @@ ON CONFLICT (id) DO NOTHING;
 
 -- == 20. CLIENT SERVICES (3) ===========================================
 INSERT INTO client_services (id, company_id, service_name, service_tier, start_date, monthly_fee, status, notes, created_at) VALUES
-  ('c5000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'People Management Retainer', 'premium',  '2024-01-01', 250000, 'active', 'Full HR outsource retainer covering all people management needs.',    NOW() - INTERVAL '365 days'),
-  ('c5000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Recruitment Support',        'standard', '2024-06-01', 50000,  'active', 'Ongoing recruitment support for all open roles. Includes sourcing.',  NOW() - INTERVAL '300 days'),
-  ('c5000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Compliance Monitoring',      'standard', '2024-06-01', 35000,  'active', 'Monthly compliance monitoring and quarterly audit reviews.',          NOW() - INTERVAL '300 days')
+  ('c5000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'People Management Retainer', 'premium',  '2024-01-01', 2500, 'active', 'Full HR outsource retainer covering all people management needs.',    NOW() - INTERVAL '365 days'),
+  ('c5000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Recruitment Support',        'standard', '2024-06-01', 500,  'active', 'Ongoing recruitment support for all open roles. Includes sourcing.',  NOW() - INTERVAL '300 days'),
+  ('c5000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Compliance Monitoring',      'standard', '2024-06-01', 350,  'active', 'Monthly compliance monitoring and quarterly audit reviews.',          NOW() - INTERVAL '300 days')
 ON CONFLICT (id) DO NOTHING;
 
 
