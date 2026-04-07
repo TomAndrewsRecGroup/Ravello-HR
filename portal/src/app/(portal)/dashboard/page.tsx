@@ -241,7 +241,7 @@ export default async function DashboardPage() {
                 </div>
               ))}
               {frictionAlerts.slice(0, 3).map((r: any) => (
-                <Link key={r.id} href={`/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
+                <Link key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction — review details</p>
                 </Link>
@@ -259,7 +259,7 @@ export default async function DashboardPage() {
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {requisitions.slice(0, 8).map((r: any) => (
-                <Link key={r.id} href={`/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
+                <Link key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{r.stage.replace(/_/g, ' ')}</span>
                     <FrictionAlert level={r.friction_level} />
