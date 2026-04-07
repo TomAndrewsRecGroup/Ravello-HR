@@ -3,22 +3,25 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 /**
- * GET /api/debug-session
- *
- * Comprehensive auth debug endpoint. Uses SERVICE ROLE key to bypass
- * RLS entirely — shows the true state of the database.
+ * GET /api/debug-session — comprehensive auth debug
+ * Public route (bypasses middleware auth).
  */
 export async function GET() {
   const cookieStore = cookies();
-  const sessionRaw = cookieStore.get('tps_portal_session')?.value;
 
+  // Show ALL cookies (names only, not values for security)
+  const allCookieNames = cookieStore.getAll().map(c => c.name);
+  const hasSbCookies = allCookieNames.some(n => n.startsWith('sb-'));
+
+  // Session cookie
+  const sessionRaw = cookieStore.get('tps_portal_session')?.value;
   let sessionData = null;
   if (sessionRaw) {
     try { sessionData = JSON.parse(sessionRaw); } catch {}
   }
 
-  // Use anon client for auth check
-  const anonClient = createServerClient(
+  // Create Supabase client from request cookies
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -30,111 +33,63 @@ export async function GET() {
     },
   );
 
-  const { data: { user } } = await anonClient.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
   if (!user) {
     return NextResponse.json({
       authenticated: false,
-      diagnosis: 'Not authenticated — no valid Supabase session found',
+      authError: authError?.message ?? null,
+      hasSbCookies,
+      cookieNames: allCookieNames,
       sessionCookie: sessionData,
+      diagnosis: hasSbCookies
+        ? 'Has sb- cookies but getUser() failed — cookies may be expired or invalid'
+        : 'No sb- auth cookies found — login did not set cookies, or they were cleared',
     });
   }
 
-  // Use service role to bypass ALL RLS — see the truth
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  let liveProfile = null;
-  let profileError = null;
-  let liveRole = null;
-  let roleError = null;
+  // User is authenticated — check profile via RPC (bypasses RLS)
+  const [roleRes, profileRes] = await Promise.all([
+    supabase.rpc('get_my_role'),
+    supabase.rpc('get_my_profile'),
+  ]);
+
+  const role = roleRes.data;
+  const profileRows = profileRes.data;
+  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
+
+  // Check company
   let companyData = null;
-  let companyError = null;
-  let demoCompanyExists = false;
-
-  if (serviceKey) {
-    const adminClient = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      {
-        cookies: { get() { return undefined; }, set() {}, remove() {} },
-      },
-    );
-
-    // Check profile
-    const profRes = await adminClient.from('profiles')
-      .select('id, email, role, company_id, full_name, onboarding_completed')
-      .eq('id', user.id)
-      .single();
-    liveProfile = profRes.data;
-    profileError = profRes.error?.message ?? null;
-
-    // Check role via RPC (still uses anon to test RPC works)
-    const roleRes = await anonClient.rpc('get_my_role');
-    liveRole = roleRes.data;
-    roleError = roleRes.error?.message ?? null;
-
-    // Check if demo company exists
-    const compRes = await adminClient.from('companies')
+  if (profile?.company_id) {
+    const { data } = await supabase
+      .from('companies')
       .select('id, name, active, feature_flags')
-      .eq('id', '00000000-0000-0000-0000-000000000001')
+      .eq('id', profile.company_id)
       .single();
-    companyData = compRes.data;
-    companyError = compRes.error?.message ?? null;
-    demoCompanyExists = !!compRes.data;
-
-    // Check if RLS is blocking the anon profile query
-    const anonProfileRes = await anonClient.from('profiles')
-      .select('id, role, company_id')
-      .eq('id', user.id)
-      .single();
-
-    return NextResponse.json({
-      authenticated: true,
-      userId: user.id,
-      email: user.email,
-      sessionCookie: sessionData,
-      liveProfile,
-      profileError,
-      liveRole,
-      roleError,
-      demoCompanyExists,
-      companyData,
-      companyError,
-      rlsTest: {
-        anonProfileQuery: anonProfileRes.data ? 'PASSES' : 'BLOCKED',
-        anonProfileError: anonProfileRes.error?.message ?? null,
-      },
-      diagnosis: !liveProfile
-        ? 'Profile row missing — run: INSERT INTO profiles (id,email,role,company_id,onboarding_completed) VALUES (\'' + user.id + '\',\'' + user.email + '\',\'tps_admin\',\'00000000-0000-0000-0000-000000000001\',true);'
-        : liveProfile.role !== 'tps_admin' && liveProfile.role !== 'tps_client'
-        ? 'Role is ' + liveProfile.role + ' — needs to be tps_admin'
-        : !liveProfile.company_id
-        ? 'No company_id — needs linking to demo company'
-        : !demoCompanyExists
-        ? 'Demo company does not exist — run migration 024'
-        : anonProfileRes.error
-        ? 'RLS is BLOCKING profile reads — run migration 028 to fix circular RLS'
-        : sessionData?.companyId
-        ? 'Everything looks correct — clear cookies and re-login'
-        : 'Profile OK but session cookie has no companyId — clear cookies and re-login',
-    });
+    companyData = data;
   }
-
-  // No service key — limited debug
-  const roleRes = await anonClient.rpc('get_my_role');
-  const profRes = await anonClient.from('profiles')
-    .select('id, email, role, company_id, onboarding_completed')
-    .eq('id', user.id)
-    .single();
 
   return NextResponse.json({
     authenticated: true,
     userId: user.id,
     email: user.email,
+    hasSbCookies,
     sessionCookie: sessionData,
-    liveProfile: profRes.data,
-    profileError: profRes.error?.message ?? null,
-    liveRole: roleRes.data,
-    roleError: roleRes.error?.message ?? null,
-    note: 'No SUPABASE_SERVICE_ROLE_KEY — profile query may be blocked by RLS',
-    diagnosis: profRes.error ? 'RLS blocking profile query: ' + profRes.error.message : 'Check liveProfile data',
+    rpcRole: role,
+    rpcRoleError: roleRes.error?.message ?? null,
+    rpcProfile: profile ?? null,
+    rpcProfileError: profileRes.error?.message ?? null,
+    companyData,
+    diagnosis: profileRes.error
+      ? 'get_my_profile() failed — have you run migration 029? Error: ' + profileRes.error.message
+      : !profile
+      ? 'Profile row missing — run INSERT INTO profiles ...'
+      : !profile.company_id
+      ? 'No company_id on profile — run UPDATE profiles SET company_id = ...'
+      : !companyData
+      ? 'Company query returned null — RLS may be blocking companies table. Run migration 028.'
+      : !sessionData?.companyId
+      ? 'Everything OK in DB but session cookie stale — navigate to /dashboard to force middleware refresh'
+      : 'All good — profile, company, and session cookie are correct',
   });
 }
