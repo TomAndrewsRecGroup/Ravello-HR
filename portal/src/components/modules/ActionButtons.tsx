@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { CheckCircle, Clock, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -11,7 +11,6 @@ interface Props {
 }
 
 export default function ActionButtons({ actionId, onMutated }: Props) {
-  const router = useRouter();
   const supabase = createClient();
   const [completing, setCompleting] = useState(false);
   const [dismissing,  setDismissing]  = useState(false);
@@ -29,7 +28,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
       if (err) throw err;
       setDone('complete');
       onMutated?.();
-      router.refresh();
+      revalidatePortalPath('/protect/actions');
     } catch (err) {
       console.error('Failed to complete action:', err);
       setError('Failed to mark complete. Please try again.');
@@ -51,7 +50,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
       if (err) throw err;
       setDone('dismissed');
       onMutated?.();
-      router.refresh();
+      revalidatePortalPath('/protect/actions');
     } catch (err) {
       console.error('Failed to dismiss action:', err);
       setError('Failed to dismiss. Please try again.');

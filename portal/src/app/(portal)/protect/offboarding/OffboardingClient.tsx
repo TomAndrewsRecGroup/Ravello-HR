@@ -1,7 +1,8 @@
 'use client';
+import { revalidatePortalPath } from '@/app/actions';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+
 import {
   Plus, X, Loader2, CheckCircle2, UserMinus,
   ChevronDown, ChevronRight, Clipboard, Play, Trash2, FileText,
@@ -60,7 +61,6 @@ function catColor(cat: string) {
 /* ─── Component ─────────────────────────────────────── */
 export default function OffboardingClient({ companyId, userId, isAdmin, templates, instances, employees }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [tab, setTab] = useState<'active' | 'templates'>('active');
   const [saving, setSaving] = useState(false);
 
@@ -103,7 +103,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
     setSaving(false);
     setShowTemplateForm(false);
     setTemplateName(''); setTemplateDesc(''); setTemplateTasks([]);
-    router.refresh();
+    revalidatePortalPath('/protect/offboarding');
   }
 
   async function startOffboarding() {
@@ -147,7 +147,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
     setSaving(false);
     setShowStartForm(false);
     setSelectedEmployee(''); setSelectedTemplate(''); setLastWorkingDay(''); setReason('resignation');
-    router.refresh();
+    revalidatePortalPath('/protect/offboarding');
   }
 
   async function toggleTask(taskId: string, currentStatus: string) {
@@ -157,14 +157,14 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
       completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
       completed_by: newStatus === 'completed' ? userId : null,
     }).eq('id', taskId);
-    router.refresh();
+    revalidatePortalPath('/protect/offboarding');
   }
 
   async function completeInstance(instanceId: string) {
     await supabase.from('offboarding_instances').update({
       status: 'completed', completed_at: new Date().toISOString(),
     }).eq('id', instanceId);
-    router.refresh();
+    revalidatePortalPath('/protect/offboarding');
   }
 
   async function saveExitNotes(instanceId: string) {
@@ -173,7 +173,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
       exit_interview_notes: exitNotes,
     }).eq('id', instanceId);
     setSavingNotes(false);
-    router.refresh();
+    revalidatePortalPath('/protect/offboarding');
   }
 
   function addTask() {

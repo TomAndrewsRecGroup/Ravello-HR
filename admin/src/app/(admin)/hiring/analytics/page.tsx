@@ -32,10 +32,10 @@ export default async function AdminHiringAnalyticsPage() {
   const supabase = createServerSupabaseClient();
 
   const [{ data: reqs }, { data: candidates }, { data: offers }, { data: companies }] = await Promise.all([
-    supabase.from('requisitions').select('*, companies(id,name)').order('created_at', { ascending: false }),
-    supabase.from('candidates').select('*'),
-    supabase.from('offers').select('*'),
-    supabase.from('companies').select('id, name').eq('active', true),
+    supabase.from('requisitions').select('id,title,stage,friction_level,assigned_recruiter,created_at,companies(id,name)').order('created_at', { ascending: false }),
+    supabase.from('candidates').select('id,approved_for_client,client_status'),
+    supabase.from('offers').select('id,status'),
+    supabase.from('companies').select('id,name').eq('active', true),
   ]);
 
   const allReqs = reqs ?? [];

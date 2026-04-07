@@ -6,6 +6,7 @@ import Link from 'next/link';
 import TicketReplyForm from '@/components/modules/TicketReplyForm';
 
 export const metadata: Metadata = { title: 'Ticket' };
+export const revalidate = 30;
 
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
 const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'badge-inprogress', resolved:'badge-resolved', closed:'badge-normal' };

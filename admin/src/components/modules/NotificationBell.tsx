@@ -48,13 +48,41 @@ export default function NotificationBell() {
   const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let active = true;
     loadNotifications();
-    // Poll every 60s (reduced from 30s) — only when tab is visible
-    const interval = setInterval(() => {
-      if (!document.hidden) loadNotifications();
-    }, 60_000);
-    return () => { active = false; clearInterval(interval); };
+
+    // Subscribe to realtime inserts instead of polling
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      if (!userIdRef.current) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) userIdRef.current = user.id;
+      }
+      if (!userIdRef.current) return;
+      const userId = userIdRef.current;
+
+      channel = supabase
+        .channel('admin-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const newNotif = payload.new as Notification;
+            setNotifications(prev => [newNotif, ...prev].slice(0, 30));
+            setUnreadCount(prev => prev + 1);
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {

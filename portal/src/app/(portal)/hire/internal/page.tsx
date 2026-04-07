@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import InternalHiringClient from './InternalHiringClient';
 
 export const metadata: Metadata = { title: 'Internal Roles' };
+export const revalidate = 60;
 
 export default async function InternalHiringPage() {
   const supabase = createServerSupabaseClient();

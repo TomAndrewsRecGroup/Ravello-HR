@@ -10,6 +10,7 @@ import {
 } from '@/components/modules/SettingsForm';
 
 export const metadata: Metadata = { title: 'Settings' };
+export const revalidate = 60;
 
 export default async function SettingsPage() {
   const supabase = createServerSupabaseClient();

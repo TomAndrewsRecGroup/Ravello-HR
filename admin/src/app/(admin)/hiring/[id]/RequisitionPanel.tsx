@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle,
          MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText } from 'lucide-react';
 
@@ -311,7 +311,6 @@ interface Props {
 
 export default function RequisitionPanel({ req }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
 
   const [stage,     setStage]     = useState<string>(req.stage ?? 'submitted');
   const [recruiter, setRecruiter] = useState<string>(req.assigned_recruiter ?? '');
@@ -324,7 +323,7 @@ export default function RequisitionPanel({ req }: Props) {
     await supabase.from('requisitions').update({ stage: newStage }).eq('id', req.id);
     setStage(newStage);
     setSavingStage(false);
-    router.refresh();
+    revalidateAdminPath(`/hiring/${req.id}`);
   }
 
   async function saveRecruiter() {

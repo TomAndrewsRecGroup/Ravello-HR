@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import { PoundSterling, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Salary Benchmarks' };
+export const revalidate = 60;
 
 function fmtK(n: number | null): string {
   if (n == null) return '—';

@@ -44,11 +44,12 @@ export async function updateSession(request: NextRequest) {
   if (cachedSession && !isPublicRoute) {
     try {
       const parsed = JSON.parse(cachedSession);
-      if (parsed.userId && parsed.companyId) {
+      // Allow tps_staff through even without companyId (they can browse all clients)
+      if (parsed.userId && (parsed.companyId || parsed.isTpsStaff)) {
         return supabaseResponse;
       }
     } catch {}
-    // Cookie exists but invalid/missing companyId — fall through to re-validate
+    // Cookie exists but invalid — fall through to re-validate
   }
 
   // Validate with Supabase (first load, or every 15 min when cookie expires)
@@ -64,33 +65,37 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Stamp session cookie with fresh data from DB
+  // Stamp session cookie with fresh data from DB — all queries in parallel
   if (user && !isPublicRoute) {
-    const { data: rpcRole } = await supabase.rpc('get_my_role');
+    const [{ data: rpcRole }, { data: profile }] = await Promise.all([
+      supabase.rpc('get_my_role'),
+      supabase.from('profiles')
+        .select('company_id, ui_preferences, onboarding_completed')
+        .eq('id', user.id)
+        .single(),
+    ]);
+
     const role = typeof rpcRole === 'string' ? rpcRole : '';
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id, ui_preferences, onboarding_completed')
-      .eq('id', user.id)
-      .single();
+    const companyId = (profile as any)?.company_id ?? '';
+
+    // Second parallel batch: feature flags (needs companyId from profile)
+    let featureFlags: Record<string, boolean> = {};
+    if (companyId) {
+      const { data: company } = await supabase
+        .from('companies').select('feature_flags').eq('id', companyId).single();
+      featureFlags = (company as any)?.feature_flags ?? {};
+    }
 
     const sessionData = {
       userId: user.id,
       email: user.email,
       role,
-      companyId: (profile as any)?.company_id ?? '',
+      companyId,
       isTpsStaff: role === 'tps_admin' || role === 'tps_client',
       uiPreferences: (profile as any)?.ui_preferences ?? {},
       onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
-      featureFlags: {} as Record<string, boolean>,
+      featureFlags,
     };
-
-    // Fetch feature flags into the session cookie too (avoids layout DB call)
-    if (sessionData.companyId) {
-      const { data: company } = await supabase
-        .from('companies').select('feature_flags').eq('id', sessionData.companyId).single();
-      sessionData.featureFlags = (company as any)?.feature_flags ?? {};
-    }
 
     supabaseResponse.cookies.set(SESSION_COOKIE, JSON.stringify(sessionData), {
       httpOnly: true,

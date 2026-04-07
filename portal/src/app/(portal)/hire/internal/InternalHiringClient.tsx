@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   Plus, X, Loader2, Briefcase, ArrowRight,
   Clock, ChevronDown, ChevronRight,
@@ -60,7 +60,6 @@ function genId(): string {
 /* ─── Component ─────────────────────────────────────── */
 export default function InternalHiringClient({ companyId, userId, isAdmin, internalRoles, tpoFilledCount, tpoAvgDays }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
@@ -98,12 +97,12 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
     setSaving(false);
     setShowForm(false);
     setForm({ title: '', department: '', location: '', salary_min: '', salary_max: '', description: '' });
-    router.refresh();
+    revalidatePortalPath('/hire/internal');
   }
 
   async function upgradeToTPO(roleId: string) {
     await supabase.from('requisitions').update({ managed_by: 'tpo' }).eq('id', roleId);
-    router.refresh();
+    revalidatePortalPath('/hire/internal');
   }
 
   /* ─── Candidate CRUD ─────────────────────────────── */
@@ -123,7 +122,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
     await supabase.from('requisitions').update({ internal_applicants: updated }).eq('id', roleId);
     setShowCandidateForm(null);
     setCandidateForm({ name: '', email: '', phone: '', notes: '' });
-    router.refresh();
+    revalidatePortalPath('/hire/internal');
   }
 
   async function moveCandidateStage(roleId: string, candidateId: string, newStage: string) {
@@ -138,7 +137,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
     if (newStage === 'hired') {
       await supabase.from('requisitions').update({ stage: 'filled' }).eq('id', roleId);
     }
-    router.refresh();
+    revalidatePortalPath('/hire/internal');
   }
 
   async function rejectCandidate(roleId: string, candidateId: string) {
@@ -170,7 +169,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
     // Mark candidate as hired
     await moveCandidateStage(roleId, candidate.id, 'hired');
     setSaving(false);
-    router.refresh();
+    revalidatePortalPath('/hire/internal');
   }
 
   /* ─── Next stage helper ──────────────────────────── */

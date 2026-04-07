@@ -1,7 +1,8 @@
 'use client';
+import { revalidatePortalPath } from '@/app/actions';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+
 import {
   Loader2, Users, ChevronRight, ChevronDown, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
@@ -43,7 +44,6 @@ function stageStyle(name: string) {
 /* ─── Main Component ──────────────────────────────── */
 
 export default function ManatalPipeline() {
-  const router = useRouter();
 
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState('');
@@ -109,7 +109,7 @@ export default function ManatalPipeline() {
         ok: true,
       });
 
-      router.refresh();
+      revalidatePortalPath('/hire/hiring');
     } catch (err: any) {
       setToast({ msg: err.message ?? 'Failed to move candidate', ok: false });
     } finally {

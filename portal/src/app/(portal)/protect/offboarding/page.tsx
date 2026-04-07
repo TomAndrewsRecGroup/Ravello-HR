@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import OffboardingClient from './OffboardingClient';
 
 export const metadata: Metadata = { title: 'Offboarding' };
+export const revalidate = 60;
 
 export default async function OffboardingPage() {
   const supabase = createServerSupabaseClient();

@@ -4,6 +4,7 @@ import RoadmapView from '@/components/modules/RoadmapView';
 import type { Milestone } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'People Roadmap' };
+export const revalidate = 60;
 
 function currentQuarter(): string {
   const now = new Date();

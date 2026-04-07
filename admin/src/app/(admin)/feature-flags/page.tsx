@@ -5,6 +5,7 @@ import Link from 'next/link';
 import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 
 export const metadata: Metadata = { title: 'Feature Flags' };
+export const revalidate = 60;
 
 export default async function FeatureFlagsPage() {
   const supabase = createServerSupabaseClient();

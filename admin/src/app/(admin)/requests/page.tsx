@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import RequestsClient from './RequestsClient';
 
 export const metadata: Metadata = { title: 'Service Requests' };
+export const revalidate = 30;
 
 export default async function ServiceRequestsPage() {
   const supabase = createServerSupabaseClient();

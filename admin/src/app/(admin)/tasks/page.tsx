@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import TaskBoardClient from './TaskBoardClient';
 
 export const metadata: Metadata = { title: 'Tasks' };
+export const revalidate = 30;
 
 export default async function TasksPage() {
   const supabase = createServerSupabaseClient();

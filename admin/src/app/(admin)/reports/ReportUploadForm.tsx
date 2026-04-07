@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 
 const PERIODS = [
@@ -22,7 +22,6 @@ type Mode = 'url' | 'file';
 
 export default function ReportUploadForm({ companies }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
 
   const [mode,       setMode]       = useState<Mode>('url');
   const [form,       setForm]       = useState({ company_id: '', title: '', period: '', file_url: '' });
@@ -78,7 +77,7 @@ export default function ReportUploadForm({ companies }: Props) {
     setForm({ company_id: form.company_id, title: '', period: '', file_url: '' });
     setFile(null);
     setLoading(false);
-    router.refresh();
+    revalidateAdminPath('/reports');
   }
 
   return (

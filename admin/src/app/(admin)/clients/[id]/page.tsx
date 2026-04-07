@@ -6,44 +6,22 @@ import Link from 'next/link';
 import ClientDetailTabs from './ClientDetailTabs';
 
 export const metadata: Metadata = { title: 'Client Detail' };
+export const revalidate = 30;
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
 
+  // Only fetch data needed for Overview tab + stats — other tabs lazy-load via API
   const [
     { data: company },
     { data: users },
     { data: reqs },
-    { data: documents },
-    { data: milestones },
-    { data: services },
     { data: tickets },
-    { data: actions },
-    { data: candidates },
-    { data: compliance },
-    { data: trainingNeeds },
-    { data: perfReviews },
-    { data: absenceRecords },
-    { data: empDocs },
-    { data: frictionAssessment },
-    { data: frictionItems },
   ] = await Promise.all([
-    supabase.from('companies').select('*').eq('id', params.id).single(),
-    supabase.from('profiles').select('*').eq('company_id', params.id).order('created_at'),
-    supabase.from('requisitions').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('documents').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('milestones').select('*').eq('company_id', params.id).order('due_date', { ascending: true }),
-    supabase.from('client_services').select('*').eq('company_id', params.id).order('start_date', { ascending: false }),
+    supabase.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner,open_days,open_hours,timezone,currency').eq('id', params.id).single(),
+    supabase.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', params.id).order('created_at'),
+    supabase.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', params.id).order('created_at', { ascending: false }),
     supabase.from('tickets').select('id,subject,status,priority').eq('company_id', params.id).neq('status', 'closed'),
-    supabase.from('actions').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('candidates').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('compliance_items').select('*').eq('company_id', params.id).order('due_date', { ascending: true }),
-    supabase.from('training_needs').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('performance_reviews').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('absence_records').select('*').eq('company_id', params.id).order('start_date', { ascending: false }),
-    supabase.from('employee_documents').select('*').eq('company_id', params.id).order('created_at', { ascending: false }),
-    supabase.from('company_assessments').select('*').eq('company_id', params.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-    supabase.from('company_friction_items').select('*').eq('company_id', params.id).order('dimension', { ascending: true }),
   ]);
 
   if (!company) notFound();
@@ -51,7 +29,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   const c = company as any;
 
   const activeRoles = (reqs ?? []).filter((r: any) => !['filled', 'cancelled'].includes(r.stage)).length;
-  const docsCount   = (documents ?? []).length;
   const ticketCount = (tickets ?? []).length;
 
   return (
@@ -66,19 +43,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           company={c}
           users={users ?? []}
           reqs={reqs ?? []}
-          documents={documents ?? []}
-          milestones={milestones ?? []}
-          services={services ?? []}
-          actions={actions ?? []}
-          candidates={candidates ?? []}
-          compliance={compliance ?? []}
-          trainingNeeds={trainingNeeds ?? []}
-          perfReviews={perfReviews ?? []}
-          absenceRecords={absenceRecords ?? []}
-          empDocs={empDocs ?? []}
-          frictionAssessment={frictionAssessment ?? null}
-          frictionItems={frictionItems ?? []}
-          stats={{ activeRoles, docsCount, ticketCount }}
+          stats={{ activeRoles, docsCount: 0, ticketCount }}
         />
       </main>
     </>

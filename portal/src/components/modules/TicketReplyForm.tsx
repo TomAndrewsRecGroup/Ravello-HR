@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Send } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 
 interface Props { ticketId: string; userId: string; }
 
 export default function TicketReplyForm({ ticketId, userId }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [body,    setBody]    = useState('');
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
@@ -27,7 +26,7 @@ export default function TicketReplyForm({ ticketId, userId }: Props) {
       });
       if (err) throw err;
       setBody('');
-      router.refresh();
+      revalidatePortalPath(`/support/${ticketId}`);
     } catch (err: any) {
       console.error('Failed to send reply:', err);
       setError(err?.message ?? 'Failed to send reply. Please try again.');

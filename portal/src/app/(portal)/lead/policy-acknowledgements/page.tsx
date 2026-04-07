@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import PolicyAckClient from './PolicyAckClient';
 
 export const metadata: Metadata = { title: 'Policy Acknowledgements' };
+export const revalidate = 60;
 
 export default async function PolicyAcksPage() {
   const supabase = createServerSupabaseClient();

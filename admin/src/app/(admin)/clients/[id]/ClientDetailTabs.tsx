@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 
@@ -137,7 +137,6 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
 
 function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
   const supabase = createClient();
-  const router   = useRouter();
   const [active,  setActive]  = useState(currentActive);
   const [loading, setLoading] = useState(false);
 
@@ -147,7 +146,7 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
     await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
     setActive(newVal);
     setLoading(false);
-    router.refresh();
+    revalidateAdminPath(`/clients/${companyId}`);
   }
 
   return (
@@ -201,28 +200,45 @@ interface Props {
   company: any;
   users: any[];
   reqs: any[];
-  documents: any[];
-  milestones: any[];
-  services: any[];
-  actions: any[];
-  candidates: any[];
-  compliance: any[];
-  trainingNeeds: any[];
-  perfReviews: any[];
-  absenceRecords: any[];
-  empDocs: any[];
-  frictionAssessment: any | null;
-  frictionItems: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
 }
 
-export default function ClientDetailTabs({ company, users, reqs, documents, milestones: initMilestones, services: initServices, actions: initActions, candidates: initCandidates, compliance: initCompliance, trainingNeeds: initTrainingNeeds, perfReviews: initPerfReviews, absenceRecords: initAbsenceRecords, empDocs: initEmpDocs, frictionAssessment: initFrictionAssessment, frictionItems: initFrictionItems, stats }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, stats }: Props) {
   const supabase = createClient();
-  const router   = useRouter();
   const [tab, setTab] = useState<Tab>('Overview');
 
+  /* ── Lazy-loaded tab data ── */
+  const [tabData, setTabData] = useState<Record<string, any>>({});
+  const [tabLoading, setTabLoading] = useState<string | null>(null);
+  const fetchedTabs = useRef(new Set<string>());
+
+  const loadTabData = useCallback(async (tabName: string) => {
+    // Skip tabs that don't need lazy loading or are already loaded
+    if (['Overview', 'Roles'].includes(tabName)) return;
+    if (fetchedTabs.current.has(tabName)) return;
+    fetchedTabs.current.add(tabName);
+    setTabLoading(tabName);
+    try {
+      const res = await fetch(`/api/client-tab-data?companyId=${company.id}&tab=${tabName}`);
+      const data = await res.json();
+      setTabData(prev => ({ ...prev, [tabName]: data }));
+    } catch (err) {
+      console.error(`Failed to load ${tabName} data:`, err);
+      fetchedTabs.current.delete(tabName);
+    }
+    setTabLoading(null);
+  }, [company.id]);
+
+  function handleTabChange(newTab: Tab) {
+    setTab(newTab);
+    loadTabData(newTab);
+  }
+
+  /* ── Lazy-loaded state (populated when tab data arrives) ── */
+  const [documents,    setDocuments]    = useState<any[]>([]);
+
   /* ── Actions state ── */
-  const [actions,      setActions]      = useState<any[]>(initActions);
+  const [actions,      setActions]      = useState<any[]>([]);
   const [showActForm,  setShowActForm]  = useState(false);
   const [actForm,      setActForm]      = useState({ title: '', description: '', priority: 'medium', due_date: '' });
   const [savingAct,    setSavingAct]    = useState(false);
@@ -247,7 +263,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
   }
 
   /* ── Candidates state ── */
-  const [candidates,    setCandidates]   = useState<any[]>(initCandidates);
+  const [candidates,    setCandidates]   = useState<any[]>([]);
   const [showCandForm,  setShowCandForm] = useState(false);
   const [candForm,      setCandForm]     = useState({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
   const [savingCand,    setSavingCand]   = useState(false);
@@ -275,7 +291,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
   }
 
   /* ── Compliance state ── */
-  const [compliance,    setCompliance]   = useState<any[]>(initCompliance);
+  const [compliance,    setCompliance]   = useState<any[]>([]);
   const [showCompForm,  setShowCompForm] = useState(false);
   const [compForm,      setCompForm]     = useState({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
   const [savingComp,    setSavingComp]   = useState(false);
@@ -300,20 +316,20 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
   }
 
   /* ── Roadmap state ── */
-  const [milestones, setMilestones]   = useState<any[]>(initMilestones);
+  const [milestones, setMilestones]   = useState<any[]>([]);
   const [showMSForm,  setShowMSForm]  = useState(false);
   const [msForm,      setMSForm]      = useState({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
   const [savingMS,    setSavingMS]    = useState(false);
 
   /* ── Services state ── */
-  const [services,      setServices]      = useState<any[]>(initServices);
+  const [services,      setServices]      = useState<any[]>([]);
   const [showSvcForm,   setShowSvcForm]   = useState(false);
   const [svcForm,       setSvcForm]       = useState({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
   const [savingSvc,     setSavingSvc]     = useState(false);
 
   /* ── LEAD state ── */
-  const [trainingNeeds, setTrainingNeeds] = useState<any[]>(initTrainingNeeds);
-  const [perfReviews,   setPerfReviews]   = useState<any[]>(initPerfReviews);
+  const [trainingNeeds, setTrainingNeeds] = useState<any[]>([]);
+  const [perfReviews,   setPerfReviews]   = useState<any[]>([]);
 
   async function updateTrainingStatus(id: string, status: string) {
     await supabase.from('training_needs').update({ status }).eq('id', id);
@@ -328,8 +344,40 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
   }
 
   /* ── PROTECT state ── */
-  const [absenceRecords, setAbsenceRecords] = useState<any[]>(initAbsenceRecords);
-  const [empDocs,        setEmpDocs]        = useState<any[]>(initEmpDocs);
+  const [absenceRecords, setAbsenceRecords] = useState<any[]>([]);
+  const [empDocs,        setEmpDocs]        = useState<any[]>([]);
+
+  // Sync lazy-loaded tab data into component state
+  useEffect(() => {
+    if (tabData['Candidates']?.candidates) setCandidates(tabData['Candidates'].candidates);
+  }, [tabData['Candidates']]);
+  useEffect(() => {
+    if (tabData['Documents']?.documents) setDocuments(tabData['Documents'].documents);
+  }, [tabData['Documents']]);
+  useEffect(() => {
+    if (tabData['Roadmap']?.milestones) setMilestones(tabData['Roadmap'].milestones);
+  }, [tabData['Roadmap']]);
+  useEffect(() => {
+    if (tabData['Actions']?.actions) setActions(tabData['Actions'].actions);
+  }, [tabData['Actions']]);
+  useEffect(() => {
+    if (tabData['Compliance']?.compliance) setCompliance(tabData['Compliance'].compliance);
+  }, [tabData['Compliance']]);
+  useEffect(() => {
+    if (tabData['LEAD']) {
+      setTrainingNeeds(tabData['LEAD'].trainingNeeds ?? []);
+      setPerfReviews(tabData['LEAD'].perfReviews ?? []);
+    }
+  }, [tabData['LEAD']]);
+  useEffect(() => {
+    if (tabData['PROTECT']) {
+      setAbsenceRecords(tabData['PROTECT'].absenceRecords ?? []);
+      setEmpDocs(tabData['PROTECT'].empDocs ?? []);
+    }
+  }, [tabData['PROTECT']]);
+  useEffect(() => {
+    if (tabData['Services']?.services) setServices(tabData['Services'].services);
+  }, [tabData['Services']]);
 
   async function updateAbsenceStatus(id: string, status: string) {
     await supabase.from('absence_records').update({ status }).eq('id', id);
@@ -390,7 +438,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
         {TABS.map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => handleTabChange(t)}
             className="px-4 py-2.5 text-sm font-semibold transition-all duration-150 relative"
             style={{
               color: tab === t ? 'var(--purple)' : 'var(--ink-soft)',
@@ -403,6 +451,13 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
           </button>
         ))}
       </div>
+
+      {/* Loading indicator for lazy-loaded tabs */}
+      {tabLoading && tabLoading !== 'Friction' && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={20} className="animate-spin" style={{ color: 'var(--purple)' }} />
+        </div>
+      )}
 
       {/* ─── OVERVIEW ─────────────────────────────────── */}
       {tab === 'Overview' && (
@@ -527,7 +582,7 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
                         <td>
                           <button
                             className="btn-ghost btn-sm"
-                            onClick={() => { setTab('Candidates'); setCandForm(f => ({ ...f, requisition_id: r.id })); setShowCandForm(true); }}
+                            onClick={() => { handleTabChange('Candidates'); setCandForm(f => ({ ...f, requisition_id: r.id })); setShowCandForm(true); }}
                           >
                             <Plus size={12} /> Add Candidate
                           </button>
@@ -1320,13 +1375,19 @@ export default function ClientDetailTabs({ company, users, reqs, documents, mile
 
       {/* ─── SERVICES ─────────────────────────────────── */}
       {tab === 'Friction' && (
-        <FrictionTab
-          company={company}
-          assessment={initFrictionAssessment}
-          items={initFrictionItems}
-          users={users}
-          documents={documents}
-        />
+        tabLoading === 'Friction' ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 size={20} className="animate-spin" style={{ color: 'var(--purple)' }} />
+          </div>
+        ) : (
+          <FrictionTab
+            company={company}
+            assessment={tabData['Friction']?.frictionAssessment ?? null}
+            items={tabData['Friction']?.frictionItems ?? []}
+            users={users}
+            documents={documents}
+          />
+        )
       )}
 
       {tab === 'Services' && (
@@ -1435,7 +1496,6 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
   documents: any[];
 }) {
   const supabase = createClient();
-  const router   = useRouter();
   const [items,  setItems]  = useState<any[]>(initItems);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -1453,7 +1513,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
       .eq('id', item.id);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
     setSaving(null);
-    router.refresh();
+    revalidateAdminPath(`/clients/${company.id}`);
   }
 
   if (!assessment) {

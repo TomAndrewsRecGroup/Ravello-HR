@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import AbsenceClient from './AbsenceClient';
 
 export const metadata: Metadata = { title: 'Absence Records' };
+export const revalidate = 30;
 
 export default async function AbsencePage() {
   const supabase = createServerSupabaseClient();

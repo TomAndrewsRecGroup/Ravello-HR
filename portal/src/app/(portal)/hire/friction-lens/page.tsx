@@ -1,7 +1,8 @@
 'use client';
+import { revalidatePortalPath } from '@/app/actions';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { createClient } from '@/lib/supabase/client';
 import {
   Gauge, ChevronRight, ChevronLeft, Loader2, AlertTriangle,
@@ -126,7 +127,6 @@ function FieldInput({
 
 /* ─── Main page ───────────────────────────────────── */
 export default function FrictionLensPage() {
-  const router   = useRouter();
   const supabase = createClient();
 
   const [loading,    setLoading]    = useState(true);
@@ -233,7 +233,7 @@ export default function FrictionLensPage() {
       const data = await res.json();
       setAssessment(data.assessment);
       setShowForm(false);
-      router.refresh();
+      revalidatePortalPath('/hire/friction-lens');
     } catch (err: any) {
       setSubmitError(err.message ?? 'Something went wrong');
     } finally {

@@ -8,6 +8,7 @@ import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Requisition Detail' };
+export const revalidate = 30;
 
 const STAGE_BADGE: Record<string, string> = {
   submitted:       'badge-submitted',
@@ -43,17 +44,17 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const [{ data: req }, { data: candidates }, { data: interviews }] = await Promise.all([
     supabase
       .from('requisitions')
-      .select('*, companies(id,name)')
+      .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,created_at,companies(id,name)')
       .eq('id', params.id)
       .single(),
     supabase
       .from('candidates')
-      .select('*')
+      .select('id,full_name,email,cv_url,summary,approved_for_client,client_status,client_feedback,screening_score,created_at')
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false }),
     supabase
       .from('interview_schedules')
-      .select('*')
+      .select('id,candidate_id,stage_number,stage_label,interview_type,scheduled_at,duration_mins,status,outcome,notes')
       .eq('requisition_id', params.id)
       .order('scheduled_at', { ascending: true }),
   ]);

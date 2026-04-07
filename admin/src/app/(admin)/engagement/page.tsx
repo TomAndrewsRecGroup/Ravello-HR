@@ -11,12 +11,12 @@ export default async function EngagementPage() {
   const supabase = createServerSupabaseClient();
 
   const [compRes, profileRes, reqRes, ticketRes, docRes, notesRes] = await Promise.all([
-    supabase.from('companies').select('id, name, active, last_portal_login, login_count_30d, contact_email').eq('active', true).order('name'),
-    supabase.from('profiles').select('id, company_id, role, full_name, last_sign_in_at:updated_at').not('role', 'in', '("tps_admin","tps_client")'),
-    supabase.from('requisitions').select('id, company_id, stage, created_at'),
-    supabase.from('tickets').select('id, company_id, status, created_at'),
-    supabase.from('documents').select('id, company_id'),
-    supabase.from('client_notes').select('id, company_id, created_at').order('created_at', { ascending: false }),
+    supabase.from('companies').select('id, name, last_portal_login, login_count_30d').eq('active', true).order('name'),
+    supabase.from('profiles').select('id, company_id').not('role', 'in', '("tps_admin","tps_client")'),
+    supabase.from('requisitions').select('company_id, stage, created_at'),
+    supabase.from('tickets').select('company_id, status, created_at'),
+    supabase.from('documents').select('company_id', { count: 'exact', head: false }),
+    supabase.from('client_notes').select('company_id, created_at').order('created_at', { ascending: false }),
   ]);
 
   const companies = compRes.data ?? [];
@@ -26,16 +26,28 @@ export default async function EngagementPage() {
   const docs = docRes.data ?? [];
   const notes = notesRes.data ?? [];
 
-  // Build per-company engagement data
+  // Pre-index data into Maps for O(1) lookups instead of O(n) .filter() per company
   const now = Date.now();
   const thirtyDaysAgo = now - 30 * 86400000;
 
+  const profileCountMap = new Map<string, number>();
+  for (const p of profiles) profileCountMap.set(p.company_id, (profileCountMap.get(p.company_id) ?? 0) + 1);
+
+  const reqsByCompany = new Map<string, typeof reqs>();
+  for (const r of reqs) { const arr = reqsByCompany.get(r.company_id) ?? []; arr.push(r); reqsByCompany.set(r.company_id, arr); }
+
+  const ticketsByCompany = new Map<string, typeof tickets>();
+  for (const t of tickets) { const arr = ticketsByCompany.get(t.company_id) ?? []; arr.push(t); ticketsByCompany.set(t.company_id, arr); }
+
+  const docCountMap = new Map<string, number>();
+  for (const d of docs) docCountMap.set(d.company_id, (docCountMap.get(d.company_id) ?? 0) + 1);
+
+  const latestNoteMap = new Map<string, string>();
+  for (const n of notes) { if (!latestNoteMap.has(n.company_id)) latestNoteMap.set(n.company_id, n.created_at); }
+
   const engagementData = companies.map((c: any) => {
-    const companyProfiles = profiles.filter((p: any) => p.company_id === c.id);
-    const companyReqs = reqs.filter((r: any) => r.company_id === c.id);
-    const companyTickets = tickets.filter((t: any) => t.company_id === c.id);
-    const companyDocs = docs.filter((d: any) => d.company_id === c.id);
-    const companyNotes = notes.filter((n: any) => n.company_id === c.id);
+    const companyReqs = reqsByCompany.get(c.id) ?? [];
+    const companyTickets = ticketsByCompany.get(c.id) ?? [];
 
     const lastLogin = c.last_portal_login ? new Date(c.last_portal_login).getTime() : 0;
     const daysSinceLogin = lastLogin > 0 ? Math.floor((now - lastLogin) / 86400000) : 999;
@@ -44,9 +56,9 @@ export default async function EngagementPage() {
     const openTickets = companyTickets.filter((t: any) => !['closed', 'resolved'].includes(t.status)).length;
     const recentReqs = companyReqs.filter((r: any) => new Date(r.created_at).getTime() > thirtyDaysAgo).length;
     const recentTickets = companyTickets.filter((t: any) => new Date(t.created_at).getTime() > thirtyDaysAgo).length;
-    const lastNote = companyNotes[0]?.created_at ? Math.floor((now - new Date(companyNotes[0].created_at).getTime()) / 86400000) : 999;
+    const noteDate = latestNoteMap.get(c.id);
+    const lastNote = noteDate ? Math.floor((now - new Date(noteDate).getTime()) / 86400000) : 999;
 
-    // Engagement score (0-100)
     let score = 50;
     if (daysSinceLogin <= 7) score += 20;
     else if (daysSinceLogin <= 14) score += 10;
@@ -55,27 +67,28 @@ export default async function EngagementPage() {
     if (activeRoles > 0) score += 10;
     if (recentReqs > 0) score += 5;
     if (recentTickets > 0) score += 5;
-    if (companyDocs.length > 0) score += 5;
+    if ((docCountMap.get(c.id) ?? 0) > 0) score += 5;
     if (c.login_count_30d > 5) score += 5;
     score = Math.max(0, Math.min(100, score));
 
     const status = score >= 70 ? 'healthy' : score >= 40 ? 'at_risk' : 'disengaged';
 
     return {
-      ...c,
-      userCount: companyProfiles.length,
+      id: c.id,
+      name: c.name,
+      userCount: profileCountMap.get(c.id) ?? 0,
       daysSinceLogin,
       activeRoles,
       openTickets,
       recentReqs,
       recentTickets,
-      docCount: companyDocs.length,
+      docCount: docCountMap.get(c.id) ?? 0,
       loginCount30d: c.login_count_30d ?? 0,
       lastNote,
       score,
       status,
     };
-  }).sort((a: any, b: any) => a.score - b.score); // worst first
+  }).sort((a: any, b: any) => a.score - b.score);
 
   const healthy = engagementData.filter((c: any) => c.status === 'healthy').length;
   const atRisk = engagementData.filter((c: any) => c.status === 'at_risk').length;

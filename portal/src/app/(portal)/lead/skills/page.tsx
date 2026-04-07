@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import SkillsMatrixClient from './SkillsMatrixClient';
 
 export const metadata: Metadata = { title: 'Skills Matrix' };
+export const revalidate = 60;
 
 export default async function SkillsMatrixPage() {
   const supabase = createServerSupabaseClient();

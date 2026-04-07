@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import EmployeeRecordsClient from './EmployeeRecordsClient';
 
 export const metadata: Metadata = { title: 'Employee Records' };
+export const revalidate = 30;
 
 export default async function EmployeeRecordsPage() {
   const supabase = createServerSupabaseClient();
@@ -25,12 +26,12 @@ export default async function EmployeeRecordsPage() {
   const [empRes, leaveRes] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('*')
+      .select('id,full_name,email,job_title,department,employment_type,status,start_date,salary,salary_currency,gender,line_manager,annual_leave_allowance,sick_day_allowance')
       .eq('company_id', companyId)
       .order('full_name'),
     supabase
       .from('leave_records')
-      .select('*')
+      .select('id,employee_id,leave_type,start_date,end_date,days,status,notes')
       .eq('company_id', companyId)
       .order('start_date', { ascending: false }),
   ]);

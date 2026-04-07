@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import LearningDetailClient from './LearningDetailClient';
 
 export const metadata: Metadata = { title: 'Learning Content' };
+export const revalidate = 60;
 
 // Tag-similarity score (server-side)
 function tagScore(a: string[] | null, b: string[] | null): number {

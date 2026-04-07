@@ -5,6 +5,7 @@ import { CheckCircle2, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import type { Action } from '@/lib/supabase/types';
 
 export const metadata: Metadata = { title: 'Actions' };
+export const revalidate = 30;
 
 const ENTITY_LABELS: Record<string, string> = {
   requisition: 'View role',
@@ -117,7 +118,7 @@ export default async function ActionsPage() {
 
   const { data: actionsData, error } = await supabase
     .from('actions')
-    .select('*')
+    .select('id,action_type,title,description,priority,status,due_date,completed_at,dismiss_until,created_at,created_by_admin')
     .eq('company_id', companyId)
     .eq('status', 'active')
     .or(`dismiss_until.is.null,dismiss_until.lt.${now}`)

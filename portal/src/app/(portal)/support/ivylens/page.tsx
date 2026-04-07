@@ -65,13 +65,11 @@ export default function IvyLensSupportPage() {
 
   useEffect(() => { fetchTickets(); }, []);
 
-  // Poll for updates every 5 minutes
+  // Refresh on window focus instead of polling every 5 minutes
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetch('/api/support/poll').catch(() => {});
-      fetchTickets();
-    }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    function handleFocus() { fetchTickets(); }
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

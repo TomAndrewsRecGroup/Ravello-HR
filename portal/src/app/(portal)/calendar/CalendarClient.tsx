@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   ChevronLeft, ChevronRight, Plus, X, Loader2,
   CalendarDays, Palmtree, Thermometer, Building2, Star,
@@ -87,7 +87,6 @@ function isInRange(date: string, start: string, end: string) {
 /* ─── Component ─────────────────────────────────────── */
 export default function CalendarClient({ companyId, isAdmin, initialEvents, initialLeave, employees }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [leave, setLeave] = useState<LeaveRecord[]>(initialLeave);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -180,7 +179,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
     setSaving(false);
     setShowEventForm(false);
     setEventForm({ title: '', event_type: 'closed_day', start_date: '', end_date: '', recurring_yearly: false, notes: '' });
-    router.refresh();
+    revalidatePortalPath('/calendar');
   }
 
   async function saveLeave() {
@@ -204,7 +203,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
     setSaving(false);
     setShowLeaveForm(false);
     setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
-    router.refresh();
+    revalidatePortalPath('/calendar');
   }
 
   function openEventForm(date?: string) {
