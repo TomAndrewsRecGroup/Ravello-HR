@@ -157,7 +157,7 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
             )}
           </div>
         ) : (
-          <Link href={item.href} className={`nav-link flex-1 ${active ? 'active' : ''}`}>
+          <Link href={item.href} prefetch={false} className={`nav-link flex-1 ${active ? 'active' : ''}`}>
             <item.icon size={15} />
             <span>{item.label}</span>
             {count > 0 && (
