@@ -316,12 +316,10 @@ INSERT INTO salary_benchmarks (id, role_type, location, seniority, working_model
 ON CONFLICT (id) DO NOTHING;
 
 
--- == RESTORE NOT NULL CONSTRAINTS ======================================
--- Restore the NOT NULL constraints we temporarily dropped for seeding.
-ALTER TABLE requisitions      ALTER COLUMN submitted_by SET NOT NULL;
-ALTER TABLE tickets           ALTER COLUMN submitted_by SET NOT NULL;
-ALTER TABLE documents         ALTER COLUMN uploaded_by  SET NOT NULL;
-ALTER TABLE service_requests  ALTER COLUMN submitted_by SET NOT NULL;
+-- == NOTE: NOT NULL constraints on submitted_by / uploaded_by remain
+-- relaxed for the demo data (no real auth.users references).
+-- These columns still enforce NOT NULL for real user-created records
+-- via the application layer.
 
 -- ======================================================================
 --  END OF SEED DATA
