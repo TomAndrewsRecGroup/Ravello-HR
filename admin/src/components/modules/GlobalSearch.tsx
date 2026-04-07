@@ -108,7 +108,8 @@ export default function GlobalSearch() {
   function handleInput(val: string) {
     setQuery(val);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(val), 250);
+    if (val.length < 2) { setResults([]); return; }
+    debounceRef.current = setTimeout(() => search(val), 400);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

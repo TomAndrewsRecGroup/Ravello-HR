@@ -31,15 +31,16 @@ export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
   const { user, profile, companyId } = await getSessionProfile();
 
-  const [{ data: company }, { data: fullProfile }] = await Promise.all([
-    supabase.from('companies').select('*').eq('id', companyId).single(),
-    supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
-  ]);
+  // Feature flags are already in the session cookie — use them to avoid a waterfall
+  const { featureFlags: sessionFlags } = await getSessionProfile();
+  const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 
-  const flags: Record<string, boolean> = company?.feature_flags ?? {};
-
-  const [reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
+  // Single parallel batch — no waterfall
+  const [{ data: company }, { data: fullProfile },
+    reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
     trainingRes, absenceRes, frictionRes] = await Promise.all([
+    supabase.from('companies').select('id,name,feature_flags').eq('id', companyId).single(),
+    supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
     supabase
       .from('requisitions')
       .select('id,title,stage,created_at,friction_level,friction_recommendations,working_model,location')
@@ -74,16 +75,16 @@ export default async function DashboardPage() {
       .eq('status', 'active'),
     supabase
       .from('actions')
-      .select('*')
+      .select('id,title,description,priority,status,due_date,created_at')
       .eq('company_id', companyId ?? '')
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
-    // LEAD module — only fetch if enabled
-    flags.lead !== false
+    // LEAD module — use session flags (available immediately, no waterfall)
+    flagsFromSession.lead !== false
       ? supabase.from('training_needs').select('id,title,status,employee_name').eq('company_id', companyId ?? '').eq('status', 'open').limit(4)
       : Promise.resolve({ data: null }),
-    // PROTECT module — only fetch if enabled
-    flags.protect !== false
+    // PROTECT module
+    flagsFromSession.protect !== false
       ? supabase.from('absence_records').select('id,employee_name,absence_type,start_date,status').eq('company_id', companyId ?? '').eq('status', 'pending').limit(4)
       : Promise.resolve({ data: null }),
     // Company friction assessment
@@ -170,7 +171,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Company Friction Score ─────────────────────────────────── */}
-        {flags.friction_lens !== false && (
+        {(company?.feature_flags ?? flagsFromSession).friction_lens !== false && (
           <div className="mb-6">
             {frictionAssessment ? (
               <Link href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">

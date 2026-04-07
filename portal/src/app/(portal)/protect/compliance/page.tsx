@@ -41,7 +41,7 @@ export default async function CompliancePage() {
 
   const { data: items } = await supabase
     .from('compliance_items')
-    .select('*')
+    .select('id,title,category,status,due_date,notes,created_at')
     .eq('company_id', companyId)
     .order('due_date', { ascending: true });
 

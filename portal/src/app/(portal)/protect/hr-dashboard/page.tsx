@@ -28,12 +28,12 @@ export default async function HRDashboardPage() {
     { count: openTraining },
     { count: pendingReviews },
   ] = await Promise.all([
-    supabase.from('hr_metrics').select('*').eq('company_id', companyId).order('period', { ascending: false }).limit(4),
-    supabase.from('employee_documents').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
-    supabase.from('employee_documents').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'expired'),
-    supabase.from('absence_records').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),
-    supabase.from('training_needs').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'open'),
-    supabase.from('performance_reviews').select('*', { count: 'exact', head: true }).eq('company_id', companyId).in('status', ['pending', 'in_progress']),
+    supabase.from('hr_metrics').select('id,period,headcount,turnover_rate,absence_rate,training_completion,avg_time_to_hire').eq('company_id', companyId).order('period', { ascending: false }).limit(4),
+    supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
+    supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'expired'),
+    supabase.from('absence_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),
+    supabase.from('training_needs').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'open'),
+    supabase.from('performance_reviews').select('id', { count: 'exact', head: true }).eq('company_id', companyId).in('status', ['pending', 'in_progress']),
   ]);
 
   return (

@@ -68,7 +68,7 @@ export default async function HiringPage({
 
   const { data: requisitions } = await supabase
     .from('requisitions')
-    .select('*')
+    .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,friction_score,friction_level,description,must_haves,created_at')
     .eq('company_id', companyId ?? '')
     .order('created_at', { ascending: false });
 

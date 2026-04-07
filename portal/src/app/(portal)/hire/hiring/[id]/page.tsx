@@ -32,14 +32,14 @@ export default async function RequisitionDetailPage({
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   const { data: req } = await supabase
-    .from('requisitions').select('*').eq('id', params.id).eq('company_id', companyId).single();
+    .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();
 
   if (!req) notFound();
 
   const [{ data: candidates }, { data: offers }, { data: interviews }] = await Promise.all([
     supabase
       .from('candidates')
-      .select('*')
+      .select('id,full_name,email,cv_url,summary,client_status,client_feedback,created_at')
       .eq('requisition_id', params.id)
       .eq('approved_for_client', true)
       .order('created_at', { ascending: false }),

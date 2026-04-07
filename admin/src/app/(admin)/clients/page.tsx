@@ -18,7 +18,7 @@ export default async function ClientsPage() {
     { data: complianceItems },
     { data: profiles },
   ] = await Promise.all([
-    supabase.from('companies').select('*').order('name').limit(200),
+    supabase.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,account_owner,friction_band').order('name').limit(200),
     supabase.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
     supabase.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
     supabase.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
