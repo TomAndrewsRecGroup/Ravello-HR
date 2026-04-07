@@ -22,13 +22,15 @@ export async function GET() {
 
   let liveProfile = null;
   let liveRole = null;
+  let profileError = null;
   if (user) {
-    const [{ data: profile }, { data: role }] = await Promise.all([
+    const [profileRes, roleRes] = await Promise.all([
       supabase.from('profiles').select('id, email, role, company_id, onboarding_completed').eq('id', user.id).single(),
       supabase.rpc('get_my_role'),
     ]);
-    liveProfile = profile;
-    liveRole = role;
+    liveProfile = profileRes.data;
+    profileError = profileRes.error?.message ?? null;
+    liveRole = roleRes.data;
   }
 
   return NextResponse.json({
@@ -37,6 +39,7 @@ export async function GET() {
     email: user?.email ?? null,
     sessionCookie: sessionData,
     liveProfile,
+    profileError,
     liveRole,
     diagnosis: !user
       ? 'Not authenticated — need to log in'
