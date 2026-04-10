@@ -22,9 +22,18 @@ export async function GET() {
   const { data: ticketData, error } = await ivylensRequest<{ tickets: any[] }>('/tickets');
   if (error || !ticketData?.tickets) return NextResponse.json({ updated: 0, error });
 
+  // ── Company isolation: only process tickets belonging to this user's company ──
+  const { data: companyTickets } = await supabase
+    .from('ivylens_tickets')
+    .select('ivylens_ticket_id')
+    .eq('company_id', profile.company_id);
+  const ownedTicketIds = new Set((companyTickets ?? []).map(t => t.ivylens_ticket_id));
+
   let newNotifications = 0;
 
   for (const ticket of ticketData.tickets) {
+    // Skip tickets that don't belong to this company
+    if (!ownedTicketIds.has(ticket.id)) continue;
     const updatedAt = new Date(ticket.updated_at);
     if (updatedAt <= lastPoll) continue;
 

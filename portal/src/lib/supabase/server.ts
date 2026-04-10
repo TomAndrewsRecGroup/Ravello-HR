@@ -62,7 +62,8 @@ export const getSessionProfile = cache(async () => {
       isTpsStaff: session.isTpsStaff ?? false,
       featureFlags: session.featureFlags ?? {} as Record<string, boolean>,
     };
-  } catch {
+  } catch (err) {
+    console.error('[getSessionProfile] Failed to parse session cookie:', err instanceof Error ? err.message : 'unknown error');
     return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false, featureFlags: {} as Record<string, boolean> };
   }
 });

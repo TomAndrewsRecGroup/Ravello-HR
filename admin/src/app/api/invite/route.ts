@@ -21,6 +21,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'email and company_id are required' }, { status: 400 });
   }
 
+  // ── Validate company_id exists ──
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(company_id)) {
+    return NextResponse.json({ error: 'Invalid company_id format' }, { status: 400 });
+  }
+  const { data: company, error: companyErr } = await supabase
+    .from('companies').select('id').eq('id', company_id).single();
+  if (companyErr || !company) {
+    return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+  }
+
   const allowedRoles = ['client_admin', 'client_viewer'];
   const safeRole = allowedRoles.includes(role) ? role : 'client_admin';
 

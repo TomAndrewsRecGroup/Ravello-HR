@@ -5,7 +5,8 @@ import Script from 'next/script';
 export default function ChatWidget() {
   // Replace with your Tawk.to property ID or Crisp website ID
   const tawkId = process.env.NEXT_PUBLIC_TAWK_ID;
-  if (!tawkId) return null;
+  // Validate Tawk ID format (hex/alphanumeric) to prevent injection via env vars
+  if (!tawkId || !/^[a-f0-9]{24}\/[a-z0-9]+$/i.test(tawkId)) return null;
 
   return (
     <Script

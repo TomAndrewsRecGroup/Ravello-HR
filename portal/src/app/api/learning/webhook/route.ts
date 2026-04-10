@@ -1,46 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHmac, timingSafeEqual } from 'crypto';
+
+/** Tolerance window for replay attack prevention (5 minutes) */
+const TIMESTAMP_TOLERANCE_SEC = 300;
 
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
 
-  if (!webhookSecret || !stripeKey) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Stripe webhook not configured' }, { status: 500 });
   }
 
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
 
   if (!sig) {
-    return NextResponse.json({ error: 'No signature' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
   }
 
-  // Verify webhook signature using Stripe's raw verification
+  // ── Verify Stripe webhook signature (HMAC-SHA256 + timing-safe compare) ──
   let event: any;
   try {
-    // Simple HMAC verification without the Stripe SDK
-    const crypto = await import('crypto');
-    const parts = sig.split(',');
-    const timestamp = parts.find(p => p.startsWith('t='))?.split('=')[1];
-    const v1 = parts.find(p => p.startsWith('v1='))?.split('=')[1];
+    // Parse signature header: "t=<ts>,v1=<sig>,v1=<sig>,..."
+    const elements = new Map<string, string[]>();
+    for (const part of sig.split(',')) {
+      const [key, ...rest] = part.split('=');
+      const val = rest.join('='); // rejoin in case value contains '='
+      const list = elements.get(key) ?? [];
+      list.push(val);
+      elements.set(key, list);
+    }
 
-    if (!timestamp || !v1) {
+    const timestamp = elements.get('t')?.[0];
+    const signatures = elements.get('v1') ?? [];
+
+    if (!timestamp || signatures.length === 0) {
       return NextResponse.json({ error: 'Invalid signature format' }, { status: 400 });
     }
 
-    const signedPayload = `${timestamp}.${body}`;
-    const expectedSig = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(signedPayload)
+    // Reject stale timestamps to prevent replay attacks
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - Number(timestamp)) > TIMESTAMP_TOLERANCE_SEC) {
+      return NextResponse.json({ error: 'Webhook timestamp too old' }, { status: 400 });
+    }
+
+    const expectedSig = createHmac('sha256', webhookSecret)
+      .update(`${timestamp}.${body}`)
       .digest('hex');
 
-    if (expectedSig !== v1) {
+    // Check against ALL v1 signatures (Stripe sends multiple during key rotation)
+    const expectedBuf = Buffer.from(expectedSig, 'hex');
+    const isValid = signatures.some(s => {
+      const actualBuf = Buffer.from(s, 'hex');
+      return expectedBuf.length === actualBuf.length && timingSafeEqual(expectedBuf, actualBuf);
+    });
+
+    if (!isValid) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     event = JSON.parse(body);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Webhook verification failed' }, { status: 400 });
   }
 

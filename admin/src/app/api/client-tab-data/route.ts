@@ -9,6 +9,19 @@ import { NextRequest, NextResponse } from 'next/server';
  * 16-query upfront load that made the page slow.
  */
 export async function GET(request: NextRequest) {
+  const supabase = createServerSupabaseClient();
+
+  // ── Auth: verify caller is authenticated TPO staff ──
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single();
+  if (!callerProfile || !['tps_admin', 'tps_client'].includes(callerProfile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { searchParams } = request.nextUrl;
   const companyId = searchParams.get('companyId');
   const tab = searchParams.get('tab');
@@ -17,7 +30,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing companyId or tab' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  // Validate companyId is a real UUID and company exists
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(companyId)) {
+    return NextResponse.json({ error: 'Invalid companyId format' }, { status: 400 });
+  }
 
   switch (tab) {
     case 'Documents': {

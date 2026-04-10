@@ -5,7 +5,7 @@ const PUBLIC_ROUTES = [
   /^\/auth\//,
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
-  /^\/api\/debug-session$/,
+  // debug-session removed from public routes — now requires TPO staff auth
 ];
 
 const SESSION_COOKIE = 'tps_portal_session';
