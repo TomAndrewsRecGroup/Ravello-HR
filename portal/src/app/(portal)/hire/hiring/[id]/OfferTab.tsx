@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Loader2, Plus, X, CheckCircle2, Clock, AlertTriangle, FileText } from 'lucide-react';
 
 interface Offer {
@@ -69,8 +70,11 @@ function OfferCard({ offer, onStatusChange }: { offer: Offer; onStatusChange: (i
     if (newStatus === 'verbal_accepted')  extra.verbal_accepted_at = now;
     if (newStatus === 'written_accepted') extra.written_accepted_at = now;
     if (newStatus === 'declined')         extra.declined_at = now;
-    await supabase.from('offers').update({ status: newStatus, ...extra }).eq('id', offer.id);
-    onStatusChange(offer.id, newStatus);
+    const { error } = await supabase.from('offers').update({ status: newStatus, ...extra }).eq('id', offer.id);
+    if (!error) {
+      onStatusChange(offer.id, newStatus);
+      revalidatePortalPath('/hiring');
+    }
     setUpdating(false);
   }
 
@@ -178,7 +182,7 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
   async function saveOffer() {
     if (!form.candidate_id) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('offers')
       .insert({
         requisition_id: requisitionId,
@@ -199,10 +203,13 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
       .select('*, candidates(full_name)')
       .single();
 
-    if (data) setOffers(prev => [data as Offer, ...prev]);
+    if (!error && data) {
+      setOffers(prev => [data as Offer, ...prev]);
+      setShowForm(false);
+      setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
+      revalidatePortalPath('/hiring');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
   }
 
   function handleStatusChange(id: string, status: string) {

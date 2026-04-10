@@ -22,6 +22,16 @@ export async function GET() {
   const { data: ticketData, error } = await ivylensRequest<{ tickets: any[] }>('/tickets');
   if (error || !ticketData?.tickets) return NextResponse.json({ updated: 0, error });
 
+  // ── Race condition fix: claim this poll window before processing ──
+  // If we crash mid-processing, the next poll will pick up from this timestamp
+  // rather than re-processing the same batch.
+  const pollTimestamp = new Date().toISOString();
+  await supabase.from('sync_state').upsert({
+    key: pollKey,
+    value: pollTimestamp,
+    updated_at: pollTimestamp,
+  });
+
   // ── Company isolation: only process tickets belonging to this user's company ──
   const { data: companyTickets } = await supabase
     .from('ivylens_tickets')
@@ -82,13 +92,6 @@ export async function GET() {
       }
     }
   }
-
-  // Update poll timestamp
-  await supabase.from('sync_state').upsert({
-    key: pollKey,
-    value: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
 
   return NextResponse.json({ updated: newNotifications });
 }

@@ -162,7 +162,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
   async function saveEvent() {
     if (!eventForm.title || !eventForm.start_date || !eventForm.end_date) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('company_calendar_events')
       .insert({
         company_id: companyId,
@@ -175,11 +175,13 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       })
       .select()
       .single();
-    if (data) setEvents(prev => [...prev, data as CalendarEvent]);
+    if (!error && data) {
+      setEvents(prev => [...prev, data as CalendarEvent]);
+      setShowEventForm(false);
+      setEventForm({ title: '', event_type: 'closed_day', start_date: '', end_date: '', recurring_yearly: false, notes: '' });
+      revalidatePortalPath('/calendar');
+    }
     setSaving(false);
-    setShowEventForm(false);
-    setEventForm({ title: '', event_type: 'closed_day', start_date: '', end_date: '', recurring_yearly: false, notes: '' });
-    revalidatePortalPath('/calendar');
   }
 
   async function saveLeave() {

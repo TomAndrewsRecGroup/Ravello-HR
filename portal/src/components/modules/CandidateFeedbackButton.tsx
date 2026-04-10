@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { CheckCircle2, XCircle, MessageSquare, Loader2, UserPlus } from 'lucide-react';
 import HiredModal from './HiredModal';
 
@@ -35,6 +36,7 @@ export default function CandidateFeedbackButton({
       const { error: err } = await supabase.from('candidates').update(upd).eq('id', candidateId);
       if (err) throw err;
       setDone(true);
+      revalidatePortalPath('/hiring');
     } catch (err) {
       console.error('Failed to update candidate feedback:', err);
       setError('Failed to save feedback. Please try again.');

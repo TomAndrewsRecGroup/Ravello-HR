@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import {
   Loader2, CheckCircle2, Trash2,
   Briefcase, Palmtree, LifeBuoy, FileText,
@@ -152,7 +153,7 @@ export function CompanyProfileForm({ company }: CompanyFormProps) {
         currency:      currency,
       })
       .eq('id', company.id);
-    if (err) { setError(err.message); } else { setSaved(true); }
+    if (err) { setError(err.message); } else { setSaved(true); revalidatePortalPath('/settings'); }
     setLoading(false);
   }
 
@@ -293,7 +294,7 @@ export function YourProfileForm({ profile, email }: ProfileFormProps) {
       .from('profiles')
       .update({ full_name: name })
       .eq('id', profile.id);
-    if (err) { setError(err.message); } else { setSaved(true); }
+    if (err) { setError(err.message); } else { setSaved(true); revalidatePortalPath('/settings'); }
     setLoading(false);
   }
 

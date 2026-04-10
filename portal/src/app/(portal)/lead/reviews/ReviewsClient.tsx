@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, Star, Clock, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
 
 interface Review {
@@ -54,7 +55,7 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
   async function save() {
     if (!form.employee_name.trim() || !form.review_period.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('performance_reviews').insert({
+    const { data, error } = await supabase.from('performance_reviews').insert({
       company_id:     companyId,
       employee_name:  form.employee_name,
       employee_email: form.employee_email || null,
@@ -67,17 +68,23 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
       notes:          form.notes || null,
       status:         'pending',
     }).select().single();
-    if (data) setReviews(prev => [data as Review, ...prev]);
+    if (!error && data) {
+      setReviews(prev => [data as Review, ...prev]);
+      setShowForm(false);
+      setForm({ employee_name: '', employee_email: '', department: '', review_period: '', review_type: 'annual', reviewer_name: '', due_date: '', overall_rating: '', notes: '' });
+      revalidatePortalPath('/lead/reviews');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', employee_email: '', department: '', review_period: '', review_type: 'annual', reviewer_name: '', due_date: '', overall_rating: '', notes: '' });
   }
 
   async function updateStatus(id: string, status: string) {
     const extra: Record<string, string> = {};
     if (status === 'completed') extra.completed_at = new Date().toISOString();
-    await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
-    setReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+    const { error } = await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
+    if (!error) {
+      setReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+      revalidatePortalPath('/lead/reviews');
+    }
   }
 
   const filtered = filter === 'all' ? reviews : reviews.filter(r => r.status === filter);

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, Calendar } from 'lucide-react';
 
 interface AbsenceRecord {
@@ -56,7 +57,7 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
   async function save() {
     if (!form.employee_name.trim() || !form.start_date) return;
     setSaving(true);
-    const { data } = await supabase.from('absence_records').insert({
+    const { data, error } = await supabase.from('absence_records').insert({
       company_id:     companyId,
       employee_name:  form.employee_name,
       employee_email: form.employee_email || null,
@@ -69,15 +70,21 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
       approved_by:    form.approved_by || null,
       status:         'pending',
     }).select().single();
-    if (data) setRecords(prev => [data as AbsenceRecord, ...prev]);
+    if (!error && data) {
+      setRecords(prev => [data as AbsenceRecord, ...prev]);
+      setShowForm(false);
+      setForm({ employee_name: '', employee_email: '', department: '', absence_type: 'holiday', start_date: '', end_date: '', days: '', notes: '', approved_by: '' });
+      revalidatePortalPath('/protect/absence');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', employee_email: '', department: '', absence_type: 'holiday', start_date: '', end_date: '', days: '', notes: '', approved_by: '' });
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('absence_records').update({ status }).eq('id', id);
-    setRecords(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const { error } = await supabase.from('absence_records').update({ status }).eq('id', id);
+    if (!error) {
+      setRecords(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+      revalidatePortalPath('/protect/absence');
+    }
   }
 
   const filtered = records.filter(r =>

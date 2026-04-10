@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
 
 interface EmpDoc {
@@ -64,7 +65,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
   async function save() {
     if (!form.employee_name.trim() || !form.title.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('employee_documents').insert({
+    const { data, error } = await supabase.from('employee_documents').insert({
       company_id:     companyId,
       uploaded_by:    userId,
       employee_name:  form.employee_name,
@@ -77,10 +78,13 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
       notes:          form.notes || null,
       status:         'active',
     }).select().single();
-    if (data) setDocs(prev => [...prev, data as EmpDoc].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
+    if (!error && data) {
+      setDocs(prev => [...prev, data as EmpDoc].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
+      setShowForm(false);
+      setForm({ employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
+      revalidatePortalPath('/protect/employee-docs');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
   }
 
   const employees = useMemo(() => ['all', ...Array.from(new Set(docs.map(d => d.employee_name)))], [docs]);

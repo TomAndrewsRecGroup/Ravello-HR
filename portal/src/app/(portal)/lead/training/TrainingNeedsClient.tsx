@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, AlertTriangle, CheckCircle2, Clock, BookOpen } from 'lucide-react';
 
 interface TrainingNeed {
@@ -59,7 +60,7 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
   async function save() {
     if (!form.skill_gap.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('training_needs').insert({
+    const { data, error } = await supabase.from('training_needs').insert({
       company_id:    companyId,
       flagged_by:    userId,
       employee_name: form.employee_name || null,
@@ -70,15 +71,21 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
       target_date:   form.target_date || null,
       status:        'open',
     }).select().single();
-    if (data) setNeeds(prev => [data as TrainingNeed, ...prev]);
+    if (!error && data) {
+      setNeeds(prev => [data as TrainingNeed, ...prev]);
+      setShowForm(false);
+      setForm({ employee_name: '', department: '', skill_gap: '', priority: 'medium', notes: '', target_date: '' });
+      revalidatePortalPath('/lead/training');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', department: '', skill_gap: '', priority: 'medium', notes: '', target_date: '' });
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('training_needs').update({ status }).eq('id', id);
-    setNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+    const { error } = await supabase.from('training_needs').update({ status }).eq('id', id);
+    if (!error) {
+      setNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+      revalidatePortalPath('/lead/training');
+    }
   }
 
   const filtered = filter === 'all' ? needs : needs.filter(n => n.status === filter);
