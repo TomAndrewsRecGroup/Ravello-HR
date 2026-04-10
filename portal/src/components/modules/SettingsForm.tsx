@@ -334,11 +334,11 @@ export function YourProfileForm({ profile, email }: ProfileFormProps) {
 
 const QUICK_ACTION_OPTIONS: { key: string; label: string; icon: React.ElementType; color: string }[] = [
   { key: 'raise_role',          label: 'Raise a Role',          icon: Briefcase,      color: 'var(--purple)' },
-  { key: 'log_leave',           label: 'Log Leave',             icon: Palmtree,       color: '#10B981' },
-  { key: 'raise_ticket',        label: 'Raise a Ticket',        icon: LifeBuoy,       color: '#D97706' },
+  { key: 'log_leave',           label: 'Log Leave',             icon: Palmtree,       color: 'var(--success)' },
+  { key: 'raise_ticket',        label: 'Raise a Ticket',        icon: LifeBuoy,       color: 'var(--amber)' },
   { key: 'upload_doc',          label: 'Upload Document',       icon: FileText,       color: 'var(--blue)' },
-  { key: 'new_service_request', label: 'New Service Request',   icon: ClipboardList,  color: '#14B8A6' },
-  { key: 'view_compliance',     label: 'View Compliance',       icon: ShieldCheck,    color: '#EF4444' },
+  { key: 'new_service_request', label: 'New Service Request',   icon: ClipboardList,  color: 'var(--teal)' },
+  { key: 'view_compliance',     label: 'View Compliance',       icon: ShieldCheck,    color: 'var(--danger)' },
   { key: 'view_calendar',       label: 'View Calendar',         icon: CalendarDays,   color: '#6366F1' },
   { key: 'raise_internal_role', label: 'Raise Internal Role',   icon: UserPlus,       color: '#8B5CF6' },
 ];

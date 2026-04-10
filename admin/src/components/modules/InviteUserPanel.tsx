@@ -71,14 +71,14 @@ export default function InviteUserPanel({ companyId }: Props) {
         className="rounded-[10px] px-4 py-3 flex items-center gap-3"
         style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)' }}
       >
-        <CheckCircle2 size={15} style={{ color: '#16A34A', flexShrink: 0 }} />
+        <CheckCircle2 size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
         <div className="flex-1">
-          <p className="text-sm font-medium" style={{ color: '#166534' }}>Invite sent</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--emerald)' }}>Invite sent</p>
           <p className="text-xs" style={{ color: '#166534', opacity: 0.8 }}>
             The user will receive a magic-link to set up their portal account.
           </p>
         </div>
-        <button onClick={() => { setSuccess(false); setOpen(true); }} className="text-xs font-medium" style={{ color: '#166534' }}>
+        <button onClick={() => { setSuccess(false); setOpen(true); }} className="text-xs font-medium" style={{ color: 'var(--emerald)' }}>
           Invite another
         </button>
         <button onClick={reset} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /></button>
@@ -129,7 +129,7 @@ export default function InviteUserPanel({ companyId }: Props) {
 
       {error && (
         <p className="text-xs px-3 py-2 rounded-[8px]"
-          style={{ background: 'rgba(220,38,38,0.08)', color: '#991B1B', border: '1px solid rgba(220,38,38,0.2)' }}>
+          style={{ background: 'rgba(220,38,38,0.08)', color: 'var(--rose)', border: '1px solid rgba(220,38,38,0.2)' }}>
           {error}
         </p>
       )}

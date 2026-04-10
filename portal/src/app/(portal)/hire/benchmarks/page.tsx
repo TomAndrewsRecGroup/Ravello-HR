@@ -14,9 +14,9 @@ function positionLabel(salary: number, p25: number | null, p50: number | null, p
   label: string; color: string; bg: string; Icon: React.ElementType;
 } {
   if (!p25 || !p50 || !p75) return { label: 'No data', color: '#94A3B8', bg: 'rgba(148,163,184,0.1)', Icon: Minus };
-  if (salary < p25)  return { label: 'Below market', color: '#991B1B', bg: 'rgba(220,38,38,0.1)',   Icon: TrendingDown };
+  if (salary < p25)  return { label: 'Below market', color: 'var(--rose)', bg: 'rgba(220,38,38,0.1)',   Icon: TrendingDown };
   if (salary < p50)  return { label: 'Lower quartile', color: '#92400E', bg: 'rgba(217,119,6,0.1)', Icon: TrendingDown };
-  if (salary <= p75) return { label: 'Market rate',   color: '#166534', bg: 'rgba(22,163,74,0.1)',  Icon: TrendingUp  };
+  if (salary <= p75) return { label: 'Market rate',   color: 'var(--emerald)', bg: 'rgba(22,163,74,0.1)',  Icon: TrendingUp  };
   return               { label: 'Above market',  color: '#1E40AF', bg: 'rgba(59,111,255,0.1)',  Icon: TrendingUp  };
 }
 
@@ -96,8 +96,8 @@ export default async function BenchmarksPage() {
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { label: 'Above Market',  value: aboveCount,  color: '#1E40AF', bg: 'rgba(59,111,255,0.08)' },
-              { label: 'Market Rate',   value: atCount,     color: '#166534', bg: 'rgba(22,163,74,0.08)'  },
-              { label: 'Below Market',  value: belowCount,  color: '#991B1B', bg: 'rgba(220,38,38,0.08)'  },
+              { label: 'Market Rate',   value: atCount,     color: 'var(--emerald)', bg: 'rgba(22,163,74,0.08)'  },
+              { label: 'Below Market',  value: belowCount,  color: 'var(--rose)', bg: 'rgba(220,38,38,0.08)'  },
             ].map(({ label, value, color, bg }) => (
               <div key={label} className="rounded-[12px] p-5" style={{ background: bg }}>
                 <p className="text-3xl font-bold" style={{ color }}>{value}</p>

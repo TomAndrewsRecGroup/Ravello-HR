@@ -27,21 +27,21 @@ function humanType(type: string): string {
 
 function urgencyBadge(urgency: string): React.CSSProperties {
   switch (urgency?.toLowerCase()) {
-    case 'urgent': return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
-    case 'high':   return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
-    case 'normal': return { background: 'rgba(59,111,255,0.12)', color: '#1848CC' };
-    default:       return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    case 'urgent': return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
+    case 'high':   return { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' };
+    case 'normal': return { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' };
+    default:       return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 
 function statusBadge(status: string): React.CSSProperties {
   switch (status?.toLowerCase()) {
-    case 'new':         return { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' };
+    case 'new':         return { background: 'rgba(124,58,237,0.12)', color: 'var(--purple)' };
     case 'in_progress':
-    case 'in progress': return { background: 'rgba(59,111,255,0.12)', color: '#1848CC' };
+    case 'in progress': return { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' };
     case 'complete':
-    case 'completed':   return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
-    default:            return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    case 'completed':   return { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' };
+    default:            return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 

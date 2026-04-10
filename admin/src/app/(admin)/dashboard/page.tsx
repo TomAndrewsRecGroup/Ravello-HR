@@ -112,8 +112,8 @@ export default async function AdminDashboardPage() {
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
               { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
-              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: '#14B8A6' },
-              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: '#F59E0B' },
+              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
+              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
             ].map(s => (
               <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
@@ -246,7 +246,7 @@ export default async function AdminDashboardPage() {
           {expiringDocs.length > 0 && (
             <section className="card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <FileWarning size={14} style={{ color: '#F59E0B' }} />
+                <FileWarning size={14} style={{ color: 'var(--warning)' }} />
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Docs Expiring Soon</h2>
                 <Link href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
               </div>

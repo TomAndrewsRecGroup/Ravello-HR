@@ -14,9 +14,9 @@ export default function AdminLoginPage() {
         <div className="rounded-[20px] p-8" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="font-display font-bold text-xl" style={{ color: '#0A0F1E' }}>Admin</h1>
-            <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.25)', color: '#DC2626' }}>Internal</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.25)', color: 'var(--danger)' }}>Internal</span>
           </div>
-          <p className="text-sm mb-7" style={{ color: '#4B5563' }}>The People Office staff access only</p>
+          <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>The People Office staff access only</p>
           <Suspense>
             <AdminLoginForm />
           </Suspense>

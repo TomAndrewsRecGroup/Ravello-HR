@@ -18,10 +18,10 @@ interface SearchResult {
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   client:     { icon: Building2,   color: 'var(--purple)', label: 'Client' },
   role:       { icon: Briefcase,   color: 'var(--blue)',   label: 'Role' },
-  candidate:  { icon: Users,       color: '#14B8A6',       label: 'Candidate' },
-  ticket:     { icon: LifeBuoy,    color: '#D97706',       label: 'Ticket' },
+  candidate:  { icon: Users,       color: 'var(--teal)',    label: 'Candidate' },
+  ticket:     { icon: LifeBuoy,    color: 'var(--amber)',   label: 'Ticket' },
   document:   { icon: FileText,    color: '#EA3DC4',       label: 'Document' },
-  compliance: { icon: ShieldCheck, color: '#DC2626',       label: 'Compliance' },
+  compliance: { icon: ShieldCheck, color: 'var(--danger)',  label: 'Compliance' },
 };
 
 export default function GlobalSearch() {
@@ -199,10 +199,10 @@ export default function GlobalSearch() {
             {[
               { label: 'Onboard new client',   href: '/clients/onboard', icon: Building2,   color: 'var(--purple)' },
               { label: 'Create new role',       href: '/hiring/new',     icon: Briefcase,   color: 'var(--blue)' },
-              { label: 'Create task',           href: '/tasks',          icon: ShieldCheck, color: '#14B8A6' },
-              { label: 'View activity feed',    href: '/activity',       icon: Users,       color: '#D97706' },
+              { label: 'Create task',           href: '/tasks',          icon: ShieldCheck, color: 'var(--teal)' },
+              { label: 'View activity feed',    href: '/activity',       icon: Users,       color: 'var(--amber)' },
               { label: 'Generate value report', href: '/value-reports',  icon: FileText,    color: '#EA3DC4' },
-              { label: 'View engagement',       href: '/engagement',     icon: LifeBuoy,    color: '#DC2626' },
+              { label: 'View engagement',       href: '/engagement',     icon: LifeBuoy,    color: 'var(--danger)' },
             ].map((action, i) => (
               <div
                 key={action.href}

@@ -220,7 +220,7 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
                     {b.effective_date && <span className="block">{new Date(b.effective_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>}
                   </td>
                   <td>
-                    <button onClick={() => remove(b.id)} className="btn-icon btn-ghost btn-sm" style={{ color: '#DC2626' }}>
+                    <button onClick={() => remove(b.id)} className="btn-icon btn-ghost btn-sm" style={{ color: 'var(--danger)' }}>
                       <Trash2 size={13} />
                     </button>
                   </td>

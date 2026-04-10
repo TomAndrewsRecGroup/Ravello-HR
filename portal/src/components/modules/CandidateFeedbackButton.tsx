@@ -94,7 +94,7 @@ export default function CandidateFeedbackButton({
           onClick={() => update('approved')}
           disabled={!!loading}
           className="btn-sm flex items-center gap-1.5"
-          style={{ background: 'rgba(52,211,153,0.12)', color: '#047857', border: '1px solid rgba(52,211,153,0.2)' }}
+          style={{ background: 'rgba(52,211,153,0.12)', color: 'var(--emerald)', border: '1px solid rgba(52,211,153,0.2)' }}
         >
           {loading === 'approved' ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
           Approve

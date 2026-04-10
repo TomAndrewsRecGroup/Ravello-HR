@@ -21,17 +21,17 @@ const STAGE_BADGE: Record<string, string> = {
 };
 
 const FRICTION_STYLE: Record<string, React.CSSProperties> = {
-  Low:      { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  Medium:   { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
-  High:     { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
+  Low:      { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  Medium:   { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
+  High:     { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
   Critical: { background: 'rgba(127,29,29,0.12)',  color: '#7F1D1D' },
 };
 
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
 };
 
 function daysOpen(createdAt: string) {

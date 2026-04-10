@@ -340,7 +340,7 @@ export default async function MetricsPage() {
                 {urgentTickets.length > 0 && (
                   <div className="rounded-[10px] px-4 py-3 mb-4 flex items-center gap-2"
                     style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}>
-                    <p className="text-xs font-semibold" style={{ color: '#991B1B' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--rose)' }}>
                       {urgentTickets.length} urgent/high priority ticket{urgentTickets.length !== 1 ? 's' : ''} open
                     </p>
                   </div>
@@ -418,8 +418,8 @@ export default async function MetricsPage() {
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-faint)' }}>Active by Priority</p>
                     {[
-                      { label: 'High',   value: highActions,   color: '#DC2626' },
-                      { label: 'Medium', value: mediumActions, color: '#D97706' },
+                      { label: 'High',   value: highActions,   color: 'var(--danger)' },
+                      { label: 'Medium', value: mediumActions, color: 'var(--amber)' },
                       { label: 'Low',    value: lowActions,    color: '#94A3B8' },
                     ].filter(p => p.value > 0).map(p => (
                       <BarRow key={p.label} label={p.label} value={p.value} max={activeActions.length} color={p.color} />

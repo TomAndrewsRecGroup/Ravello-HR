@@ -195,8 +195,8 @@ export default async function DashboardPage() {
                     <span
                       className="badge text-xs"
                       style={
-                        frictionAssessment.overall_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: '#047857' } :
-                        frictionAssessment.overall_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: '#B02020' } :
+                        frictionAssessment.overall_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' } :
+                        frictionAssessment.overall_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: 'var(--rose)' } :
                         { background: 'rgba(245,158,11,0.15)', color: '#8A5500' }
                       }
                     >

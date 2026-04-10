@@ -83,7 +83,7 @@ export default async function RevenuePage() {
           </div>
           <div className="stat-card">
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Active Services</p>
-            <p className="font-display font-bold text-2xl" style={{ color: '#14B8A6' }}>{activeServices.length}</p>
+            <p className="font-display font-bold text-2xl" style={{ color: 'var(--teal)' }}>{activeServices.length}</p>
             <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>across {companies.length} clients</p>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default async function RevenuePage() {
                         <p className="text-xs font-medium" style={{ color: 'var(--ink)' }}>{(s.companies as any)?.name}</p>
                         <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{s.service_name}</p>
                       </div>
-                      <span className="text-xs font-medium" style={{ color: '#D97706' }}>
+                      <span className="text-xs font-medium" style={{ color: 'var(--amber)' }}>
                         {new Date(s.renewal_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>

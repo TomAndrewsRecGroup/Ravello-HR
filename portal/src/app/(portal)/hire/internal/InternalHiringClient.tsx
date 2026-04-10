@@ -37,12 +37,12 @@ interface Props {
 }
 
 const CANDIDATE_STAGES = [
-  { key: 'applied',    label: 'Applied',    bg: 'rgba(59,111,255,0.10)',  color: '#1848CC' },
+  { key: 'applied',    label: 'Applied',    bg: 'rgba(59,111,255,0.10)',  color: 'var(--blue)' },
   { key: 'screening',  label: 'Screening',  bg: 'rgba(124,58,237,0.10)',  color: '#5A1EC0' },
   { key: 'interview',  label: 'Interview',  bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  { key: 'offer',      label: 'Offer',      bg: 'rgba(52,211,153,0.12)',  color: '#047857' },
+  { key: 'offer',      label: 'Offer',      bg: 'rgba(52,211,153,0.12)',  color: 'var(--emerald)' },
   { key: 'hired',      label: 'Hired',      bg: 'rgba(52,211,153,0.20)',  color: '#065F46' },
-  { key: 'rejected',   label: 'Rejected',   bg: 'rgba(217,68,68,0.08)',   color: '#B02020' },
+  { key: 'rejected',   label: 'Rejected',   bg: 'rgba(217,68,68,0.08)',   color: 'var(--rose)' },
 ];
 
 function stageConfig(stage: string) {
@@ -250,7 +250,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
           style={{ borderLeft: '3px solid #D97706', background: 'rgba(245,158,11,0.04)' }}
         >
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <Clock size={16} style={{ color: '#D97706', flexShrink: 0, marginTop: 2 }} />
+            <Clock size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
                 {staleRoles.length} role{staleRoles.length !== 1 ? 's have' : ' has'} been open for 10+ days
@@ -300,9 +300,9 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{role.title}</p>
                       {isFilled ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#047857' }}>Filled</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: 'var(--emerald)' }}>Filled</span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.10)', color: '#1848CC' }}>Open</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' }}>Open</span>
                       )}
                       {isStale && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', color: '#92400E' }}>{days}d open</span>

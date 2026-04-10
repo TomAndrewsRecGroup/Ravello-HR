@@ -83,7 +83,7 @@ export default function OnboardingPage() {
   if (init) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF8' }}>
-        <Loader2 size={24} className="animate-spin" style={{ color: '#9CA3AF' }} />
+        <Loader2 size={24} className="animate-spin" style={{ color: 'var(--ink-faint)' }} />
       </div>
     );
   }
@@ -121,49 +121,49 @@ export default function OnboardingPage() {
             className="rounded-[20px] p-8"
             style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--purple)' }}>
               Step 1 of 3
             </p>
             <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
               Welcome to your portal
             </h1>
-            <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
+            <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
               Let's confirm a few details about {company?.name ?? 'your organisation'}.
             </p>
 
             <form onSubmit={handleStep1} className="space-y-5">
               <div className="form-group">
-                <label className="label" style={{ color: '#4B5563' }}>Your name</label>
+                <label className="label" style={{ color: 'var(--ink-soft)' }}>Your name</label>
                 <input
                   value={form.full_name}
                   onChange={e => set('full_name', e.target.value)}
                   className="input"
                   placeholder="Jane Smith"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: '#111827' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 />
               </div>
               <div className="form-group">
-                <label className="label" style={{ color: '#4B5563' }}>Sector</label>
+                <label className="label" style={{ color: 'var(--ink-soft)' }}>Sector</label>
                 <select
                   value={form.sector}
                   onChange={e => set('sector', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.sector ? '#111827' : '#9CA3AF' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.sector ? 'var(--ink)' : 'var(--ink-faint)' }}
                 >
                   <option value="">Select your sector…</option>
-                  {SECTORS.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
+                  {SECTORS.map(s => <option key={s} value={s} style={{ color: 'var(--ink)' }}>{s}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label className="label" style={{ color: '#4B5563' }}>Team size</label>
+                <label className="label" style={{ color: 'var(--ink-soft)' }}>Team size</label>
                 <select
                   value={form.size_band}
                   onChange={e => set('size_band', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.size_band ? '#111827' : '#9CA3AF' }}
+                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.size_band ? 'var(--ink)' : 'var(--ink-faint)' }}
                 >
                   <option value="">Select team size…</option>
-                  {SIZES.map(s => <option key={s} value={s} style={{ color: '#111827' }}>{s}</option>)}
+                  {SIZES.map(s => <option key={s} value={s} style={{ color: 'var(--ink)' }}>{s}</option>)}
                 </select>
               </div>
 
@@ -181,13 +181,13 @@ export default function OnboardingPage() {
             className="rounded-[20px] p-8"
             style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: '#7C3AED' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--purple)' }}>
               Step 2 of 3
             </p>
             <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
               What would you like to do first?
             </h1>
-            <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
+            <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
               You can do all of this from your dashboard — pick where to start.
             </p>
 
@@ -230,9 +230,9 @@ export default function OnboardingPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: '#0A0F1E' }}>{label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#4B5563' }}>{desc}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>{desc}</p>
                   </div>
-                  <ArrowRight size={14} className="ml-auto flex-shrink-0" style={{ color: '#9CA3AF' }} />
+                  <ArrowRight size={14} className="ml-auto flex-shrink-0" style={{ color: 'var(--ink-faint)' }} />
                 </button>
               ))}
             </div>
@@ -241,7 +241,7 @@ export default function OnboardingPage() {
               onClick={() => completeOnboarding('/dashboard')}
               disabled={loading}
               className="w-full mt-4 text-xs text-center"
-              style={{ color: '#9CA3AF' }}
+              style={{ color: 'var(--ink-faint)' }}
             >
               Skip — take me to the dashboard
             </button>
@@ -253,7 +253,7 @@ export default function OnboardingPage() {
           <div className="flex flex-col items-center gap-4 py-12">
             <CheckCircle2 size={40} style={{ color: 'var(--teal)' }} />
             <p className="font-semibold text-lg" style={{ color: '#0A0F1E' }}>All set!</p>
-            <p className="text-sm" style={{ color: '#4B5563' }}>Taking you there now…</p>
+            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>Taking you there now…</p>
           </div>
         )}
       </div>

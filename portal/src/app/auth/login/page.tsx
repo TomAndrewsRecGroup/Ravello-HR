@@ -35,15 +35,15 @@ export default function LoginPage() {
           }}
         >
           <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Welcome back</h1>
-          <p className="text-sm mb-7" style={{ color: '#4B5563' }}>
+          <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
             Sign in to your portal
           </p>
           <LoginForm />
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: '#9CA3AF' }}>
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--ink-faint)' }}>
           Need access?{' '}
-          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: '#7C3AED' }}>
+          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: 'var(--purple)' }}>
             Contact us
           </a>
         </p>

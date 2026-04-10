@@ -13,16 +13,16 @@ import type { CompanyAssessment, AssessmentDimension } from '@/lib/supabase/type
 /* ─── Band colours ────────────────────────────────── */
 function bandStyle(band: string | null): React.CSSProperties {
   switch (band) {
-    case 'Low Friction':      return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
+    case 'Low Friction':      return { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' };
     case 'Moderate Friction':  return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
-    case 'High Friction':      return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
+    case 'High Friction':      return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
     default:                   return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
   }
 }
 
 function severityStyle(sev: string): React.CSSProperties {
   switch (sev) {
-    case 'critical': return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
+    case 'critical': return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
     case 'high':     return { background: 'rgba(245,130,11,0.12)', color: '#A45500' };
     case 'medium':   return { background: 'rgba(245,158,11,0.10)', color: '#8A5500' };
     case 'low':      return { background: 'rgba(59,111,255,0.10)', color: '#2A55CC' };

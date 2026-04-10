@@ -11,12 +11,12 @@ import { useUserPreferences } from './UserPreferences';
 /* All available quick actions */
 const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.ElementType; color: string }> = {
   raise_role:     { label: 'Raise a Role',    href: '/hire/hiring/new',    icon: Briefcase,    color: 'var(--purple)' },
-  log_leave:      { label: 'Log Leave',       href: '/calendar',           icon: Palmtree,     color: '#10B981' },
-  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',        icon: LifeBuoy,     color: '#D97706' },
+  log_leave:      { label: 'Log Leave',       href: '/calendar',           icon: Palmtree,     color: 'var(--success)' },
+  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',        icon: LifeBuoy,     color: 'var(--amber)' },
   upload_doc:     { label: 'Upload Document', href: '/lead/documents',     icon: FileText,     color: 'var(--blue)' },
-  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,  color: '#14B8A6' },
+  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,  color: 'var(--teal)' },
   view_calendar:  { label: 'View Calendar',   href: '/calendar',           icon: CalendarDays, color: '#6366F1' },
-  compliance:     { label: 'Compliance',       href: '/protect/compliance', icon: ShieldCheck,  color: '#EF4444' },
+  compliance:     { label: 'Compliance',       href: '/protect/compliance', icon: ShieldCheck,  color: 'var(--danger)' },
   learning:       { label: 'Learning',         href: '/lead/learning',      icon: BookOpen,     color: '#8B5CF6' },
 };
 

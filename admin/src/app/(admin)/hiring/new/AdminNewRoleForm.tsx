@@ -142,7 +142,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
 
       {error && (
         <div className="rounded-[10px] px-4 py-3 text-sm"
-          style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#991B1B' }}>
+          style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: 'var(--rose)' }}>
           {error}
         </div>
       )}

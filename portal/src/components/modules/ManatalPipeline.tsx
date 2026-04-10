@@ -192,7 +192,7 @@ export default function ManatalPipeline() {
         <div
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-[10px] shadow-lg text-sm font-medium animate-in slide-in-from-bottom-4"
           style={{
-            background: toast.ok ? '#047857' : '#DC2626',
+            background: toast.ok ? 'var(--emerald)' : 'var(--danger)',
             color: '#fff',
           }}
         >

@@ -9,16 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        navy:   'var(--navy)',
-        purple: 'var(--purple)',
-        blue:   'var(--blue)',
-        pink:   'var(--pink)',
-        gold:   'var(--gold)',
+        navy:    'var(--navy)',
+        purple:  'var(--purple)',
+        blue:    'var(--blue)',
+        gold:    'var(--gold)',
+        teal:    'var(--teal)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger:  'var(--danger)',
       },
       fontFamily: {
-        display: ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
-        sans:    ['var(--font-satoshi)', 'Satoshi', 'system-ui', 'sans-serif'],
-        mono:    ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
+        display: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        sans:    ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
     },
   },

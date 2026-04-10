@@ -37,18 +37,18 @@ const TYPE_ICON: Record<string, React.ElementType> = {
 };
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  scheduled:   { background: 'rgba(59,111,255,0.1)',  color: '#1848CC' },
-  completed:   { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  cancelled:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  rescheduled: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  scheduled:   { background: 'rgba(59,111,255,0.1)',  color: 'var(--blue)' },
+  completed:   { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  cancelled:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  rescheduled: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
   no_show:     { background: 'rgba(127,29,29,0.1)',   color: '#7F1D1D' },
 };
 
 const OUTCOME_STYLE: Record<string, React.CSSProperties> = {
-  pass:    { background: 'rgba(22,163,74,0.1)',    color: '#166534' },
-  fail:    { background: 'rgba(220,38,38,0.1)',    color: '#991B1B' },
-  hold:    { background: 'rgba(217,119,6,0.1)',    color: '#92400E' },
-  pending: { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  pass:    { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' },
+  fail:    { background: 'rgba(220,38,38,0.1)',    color: 'var(--rose)' },
+  hold:    { background: 'rgba(217,119,6,0.1)',    color: 'var(--amber)' },
+  pending: { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
 const INTERVIEW_TYPES = ['video', 'phone', 'in_person', 'task'];
@@ -147,7 +147,7 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
         <h3 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
           Interview Schedule
           {interviews.length > 0 && (
-            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.1)', color: '#1848CC' }}>
+            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }}>
               {interviews.length}
             </span>
           )}

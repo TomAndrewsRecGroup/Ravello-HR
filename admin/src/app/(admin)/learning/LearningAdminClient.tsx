@@ -104,7 +104,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Total Content</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: '#16A34A' }}>{published}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--success)' }}>{published}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Published</p>
         </div>
         <div className="card p-4 text-center">
@@ -217,7 +217,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                 <tr key={c.id}>
                   <td>
                     <div className="flex items-center gap-2">
-                      {c.is_featured && <Star size={12} style={{ color: '#F59E0B' }} />}
+                      {c.is_featured && <Star size={12} style={{ color: 'var(--warning)' }} />}
                       <div>
                         <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{c.title}</p>
                         {c.creator_name && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.creator_name}</p>}

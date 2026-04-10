@@ -36,8 +36,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const ICONS = {
-    success: { icon: CheckCircle2, color: '#10B981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.20)' },
-    error:   { icon: AlertTriangle, color: '#DC2626', bg: 'rgba(220,38,38,0.06)', border: 'rgba(220,38,38,0.16)' },
+    success: { icon: CheckCircle2, color: 'var(--success)', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.20)' },
+    error:   { icon: AlertTriangle, color: 'var(--danger)', bg: 'rgba(220,38,38,0.06)', border: 'rgba(220,38,38,0.16)' },
     info:    { icon: Info,          color: 'var(--blue)', bg: 'rgba(59,111,255,0.06)', border: 'rgba(59,111,255,0.16)' },
   };
 

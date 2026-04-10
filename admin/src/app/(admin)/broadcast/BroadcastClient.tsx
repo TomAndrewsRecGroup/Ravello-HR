@@ -121,7 +121,7 @@ export default function BroadcastClient({ companies }: Props) {
         {sent && (
           <div
             className="card p-4 flex items-center gap-2"
-            style={{ borderLeft: '3px solid #16A34A', color: '#166534', background: 'rgba(22,163,74,0.06)' }}
+            style={{ borderLeft: '3px solid var(--success)', color: 'var(--emerald)', background: 'rgba(22,163,74,0.06)' }}
           >
             <CheckCircle2 size={16} />
             Action broadcast sent successfully.

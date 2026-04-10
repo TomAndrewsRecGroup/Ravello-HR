@@ -37,10 +37,10 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:  { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  pending:  { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
   shared:   { background: 'rgba(59,111,255,0.1)',   color: 'var(--blue)' },
-  approved: { background: 'rgba(22,163,74,0.1)',    color: '#166534' },
-  rejected: { background: 'rgba(220,38,38,0.1)',    color: '#991B1B' },
+  approved: { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' },
+  rejected: { background: 'rgba(220,38,38,0.1)',    color: 'var(--rose)' },
 };
 
 function Stars({ score }: { score: number | null }) {

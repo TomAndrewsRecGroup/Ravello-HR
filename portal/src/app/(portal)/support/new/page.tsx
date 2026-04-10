@@ -38,14 +38,14 @@ const REQUEST_TYPES = [
     label:       'Book a Strategic Review',
     description: 'Schedule time with The People Office to plan ahead.',
     icon:        Calendar,
-    color:       '#F59E0B',
+    color:       'var(--warning)',
   },
   {
     id:          'hr_audit',
     label:       'Request HR Audit',
     description: 'A full review of your current HR policies and processes.',
     icon:        ClipboardList,
-    color:       '#EF4444',
+    color:       'var(--danger)',
   },
   {
     id:          'support_query',

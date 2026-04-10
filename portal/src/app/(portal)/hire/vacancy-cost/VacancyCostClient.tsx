@@ -149,7 +149,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                 <TrendingDown size={14} style={{ color: 'var(--ink-faint)' }} />
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Weekly Burn</p>
               </div>
-              <p className="font-display font-bold text-xl" style={{ color: '#D97706' }}>{fmt(totalWeekly)}</p>
+              <p className="font-display font-bold text-xl" style={{ color: 'var(--amber)' }}>{fmt(totalWeekly)}</p>
             </div>
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-2">

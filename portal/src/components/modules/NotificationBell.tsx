@@ -8,12 +8,12 @@ import { createClient } from '@/lib/supabase/client';
 const TYPE_META: Record<string, { Icon: any; color: string }> = {
   role_pending_approval:    { Icon: BarChart2,       color: '#a855f7' },
   ivylens_ticket_reply:     { Icon: Headphones,      color: '#a855f7' },
-  ivylens_ticket_resolved:  { Icon: Check,           color: '#10b981' },
+  ivylens_ticket_resolved:  { Icon: Check,           color: 'var(--success)' },
   friction_complete:        { Icon: BarChart2,        color: '#a855f7' },
   assessment_complete:      { Icon: Building2,        color: '#06b6d4' },
-  bd_leads_new:             { Icon: Target,           color: '#10b981' },
-  high_friction_alert:      { Icon: AlertTriangle,    color: '#ef4444' },
-  default:                  { Icon: MessageSquare,    color: '#6b7280' },
+  bd_leads_new:             { Icon: Target,           color: 'var(--success)' },
+  high_friction_alert:      { Icon: AlertTriangle,    color: 'var(--danger)' },
+  default:                  { Icon: MessageSquare,    color: 'var(--ink-faint)' },
 };
 
 function timeAgo(dateStr: string): string {
