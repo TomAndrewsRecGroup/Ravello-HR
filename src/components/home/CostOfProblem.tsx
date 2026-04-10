@@ -50,7 +50,8 @@ export default function CostOfProblem() {
                 color: 'var(--ink)',
               }}
             >
-              Every month you delay<br />costs more than the fix
+              Every month you delay<br />
+              <span className="text-gradient">costs more than the fix.</span>
             </h3>
 
             <p className="text-base leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
