@@ -298,11 +298,10 @@ function HeroCard({
         background: card.accentBg,
         border: `1px solid ${card.accentColor}35`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        marginBottom: 16,
       }}>
         <Icon size={19} style={{ color: card.accentColor }} />
       </div>
-
-      <div style={{ flex: 1 }} />
 
       <p style={{
         position: 'relative', zIndex: 1,
