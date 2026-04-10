@@ -58,7 +58,7 @@ export default function AdminLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="form-group">
-        <label htmlFor="admin-email" className="label" style={{ color: '#4B5563' }}>Email</label>
+        <label htmlFor="admin-email" className="label" style={{ color: 'var(--ink-soft)' }}>Email</label>
         <input
           id="admin-email"
           type="email"
@@ -72,7 +72,7 @@ export default function AdminLoginForm() {
         />
       </div>
       <div className="form-group">
-        <label htmlFor="admin-password" className="label" style={{ color: '#4B5563' }}>Password</label>
+        <label htmlFor="admin-password" className="label" style={{ color: 'var(--ink-soft)' }}>Password</label>
         <div className="relative">
           <input
             id="admin-password"
@@ -88,7 +88,7 @@ export default function AdminLoginForm() {
             type="button"
             aria-label={showPwd ? 'Hide password' : 'Show password'}
             className="absolute right-3 top-1/2 -translate-y-1/2"
-            style={{ color: '#9CA3AF' }}
+            style={{ color: 'var(--ink-faint)' }}
             onClick={() => setShowPwd(!showPwd)}
           >
             {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -96,7 +96,7 @@ export default function AdminLoginForm() {
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#DC2626' }}>
+        <p role="alert" className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--danger)' }}>
           {error}
         </p>
       )}

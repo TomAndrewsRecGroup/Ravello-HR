@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Loader2, X } from 'lucide-react';
 
 interface Props {
@@ -82,6 +83,7 @@ export default function HiredModal({
 
       onSaved();
       onClose();
+      revalidatePortalPath('/hiring');
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Failed to save employee record';

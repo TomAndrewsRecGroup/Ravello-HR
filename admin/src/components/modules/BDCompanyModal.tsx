@@ -204,7 +204,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
             <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
               <div className="w-14 h-14 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(52,211,153,0.14)' }}>
-                <CheckCircle2 size={28} style={{ color: '#047857' }} />
+                <CheckCircle2 size={28} style={{ color: 'var(--emerald)' }} />
               </div>
               <div>
                 <p className="font-display font-bold text-base" style={{ color: 'var(--ink)' }}>
@@ -285,7 +285,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
               </div>
 
               {convertError && (
-                <p className="text-sm p-3 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: '#B02020' }}>
+                <p className="text-sm p-3 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--rose)' }}>
                   {convertError}
                 </p>
               )}

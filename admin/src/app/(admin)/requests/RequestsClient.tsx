@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { ChevronDown, ChevronRight, Loader2, Save } from 'lucide-react';
 
 interface Props {
@@ -26,21 +27,21 @@ function humanType(type: string): string {
 
 function urgencyBadge(urgency: string): React.CSSProperties {
   switch (urgency?.toLowerCase()) {
-    case 'urgent': return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
-    case 'high':   return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
-    case 'normal': return { background: 'rgba(59,111,255,0.12)', color: '#1848CC' };
-    default:       return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    case 'urgent': return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
+    case 'high':   return { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' };
+    case 'normal': return { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' };
+    default:       return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 
 function statusBadge(status: string): React.CSSProperties {
   switch (status?.toLowerCase()) {
-    case 'new':         return { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' };
+    case 'new':         return { background: 'rgba(124,58,237,0.12)', color: 'var(--purple)' };
     case 'in_progress':
-    case 'in progress': return { background: 'rgba(59,111,255,0.12)', color: '#1848CC' };
+    case 'in progress': return { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' };
     case 'complete':
-    case 'completed':   return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
-    default:            return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    case 'completed':   return { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' };
+    default:            return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 
@@ -72,25 +73,31 @@ export default function RequestsClient({ requests }: Props) {
     setUpdating(id);
     const update: Record<string, any> = { status: newStatus };
     if (newStatus === 'complete') update.responded_at = new Date().toISOString();
-    await supabase.from('service_requests').update(update).eq('id', id);
-    setLocalStatus(prev => ({ ...prev, [id]: newStatus }));
+    const { error } = await supabase.from('service_requests').update(update).eq('id', id);
+    if (!error) {
+      setLocalStatus(prev => ({ ...prev, [id]: newStatus }));
+      revalidateAdminPath('/requests');
+    }
     setUpdating(null);
   }
 
   async function saveResponse(id: string) {
     setSavingNotes(id);
-    await supabase
+    const { error } = await supabase
       .from('service_requests')
       .update({ response_notes: responseNotes[id] ?? '' })
       .eq('id', id);
-    setSavedNotes(prev => ({ ...prev, [id]: true }));
-    setTimeout(() => setSavedNotes(prev => ({ ...prev, [id]: false })), 2000);
+    if (!error) {
+      setSavedNotes(prev => ({ ...prev, [id]: true }));
+      setTimeout(() => setSavedNotes(prev => ({ ...prev, [id]: false })), 2000);
+      revalidateAdminPath('/requests');
+    }
     setSavingNotes(null);
   }
 
   async function completeWithResponse(id: string) {
     setSavingNotes(id);
-    await supabase
+    const { error } = await supabase
       .from('service_requests')
       .update({
         response_notes: responseNotes[id] ?? '',
@@ -98,7 +105,10 @@ export default function RequestsClient({ requests }: Props) {
         responded_at:   new Date().toISOString(),
       })
       .eq('id', id);
-    setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+    if (!error) {
+      setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+      revalidateAdminPath('/requests');
+    }
     setSavingNotes(null);
   }
 

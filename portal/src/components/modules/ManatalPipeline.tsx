@@ -28,13 +28,13 @@ interface Match {
 /* ─── Stage colours ───────────────────────────────── */
 
 const STAGE_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
-  submission:      { bg: 'rgba(148,163,184,0.12)', text: '#475569', dot: '#94A3B8' },
-  'phone screen':  { bg: 'rgba(59,111,255,0.10)',  text: '#1D4ED8', dot: '#3B6FFF' },
-  interview:       { bg: 'rgba(124,58,237,0.10)',   text: '#6D28D9', dot: '#7C3AED' },
-  'final interview': { bg: 'rgba(217,119,6,0.10)',  text: '#92400E', dot: '#D97706' },
-  offer:           { bg: 'rgba(20,184,166,0.10)',   text: '#0D9488', dot: '#14B8A6' },
-  hired:           { bg: 'rgba(22,163,74,0.10)',    text: '#166534', dot: '#16A34A' },
-  rejected:        { bg: 'rgba(220,38,38,0.08)',    text: '#991B1B', dot: '#DC2626' },
+  submission:      { bg: 'rgba(148,163,184,0.12)', text: 'var(--slate)', dot: '#94A3B8' },
+  'phone screen':  { bg: 'rgba(59,111,255,0.10)',  text: '#1D4ED8', dot: 'var(--blue)' },
+  interview:       { bg: 'rgba(124,58,237,0.10)',   text: '#6D28D9', dot: 'var(--purple)' },
+  'final interview': { bg: 'rgba(217,119,6,0.10)',  text: '#92400E', dot: 'var(--amber)' },
+  offer:           { bg: 'rgba(20,184,166,0.10)',   text: '#0D9488', dot: 'var(--teal)' },
+  hired:           { bg: 'rgba(22,163,74,0.10)',    text: 'var(--emerald)', dot: 'var(--success)' },
+  rejected:        { bg: 'rgba(220,38,38,0.08)',    text: 'var(--rose)', dot: 'var(--danger)' },
 };
 
 function stageStyle(name: string) {
@@ -192,7 +192,7 @@ export default function ManatalPipeline() {
         <div
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-[10px] shadow-lg text-sm font-medium animate-in slide-in-from-bottom-4"
           style={{
-            background: toast.ok ? '#047857' : '#DC2626',
+            background: toast.ok ? 'var(--emerald)' : 'var(--danger)',
             color: '#fff',
           }}
         >

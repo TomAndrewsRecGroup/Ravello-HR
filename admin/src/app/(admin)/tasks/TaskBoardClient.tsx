@@ -23,16 +23,16 @@ interface Props {
 }
 
 const PRIORITY: Record<string, { label: string; bg: string; color: string }> = {
-  low:    { label: 'Low',    bg: 'rgba(148,163,184,0.10)', color: '#475569' },
-  normal: { label: 'Normal', bg: 'rgba(59,111,255,0.10)',  color: '#1848CC' },
-  high:   { label: 'High',   bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  urgent: { label: 'Urgent', bg: 'rgba(217,68,68,0.08)',   color: '#B02020' },
+  low:    { label: 'Low',    bg: 'rgba(148,163,184,0.10)', color: 'var(--slate)' },
+  normal: { label: 'Normal', bg: 'rgba(59,111,255,0.10)',  color: 'var(--blue)' },
+  high:   { label: 'High',   bg: 'rgba(245,158,11,0.12)',  color: 'var(--amber)' },
+  urgent: { label: 'Urgent', bg: 'rgba(217,68,68,0.08)',   color: 'var(--rose)' },
 };
 
 const STATUS_ICON: Record<string, { icon: React.ElementType; color: string }> = {
   todo:        { icon: Circle,        color: 'var(--ink-faint)' },
   in_progress: { icon: Clock,         color: 'var(--purple)' },
-  done:        { icon: CheckCircle2,  color: '#10B981' },
+  done:        { icon: CheckCircle2,  color: 'var(--success)' },
 };
 
 const COLUMNS = [
@@ -87,13 +87,19 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
 
   async function moveTask(taskId: string, newStatus: string) {
     const completed = newStatus === 'done' ? new Date().toISOString() : null;
-    await supabase.from('internal_tasks').update({ status: newStatus, completed_at: completed }).eq('id', taskId);
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, completed_at: completed } : t));
+    const { error } = await supabase.from('internal_tasks').update({ status: newStatus, completed_at: completed }).eq('id', taskId);
+    if (!error) {
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, completed_at: completed } : t));
+      revalidateAdminPath('/tasks');
+    }
   }
 
   async function deleteTask(taskId: string) {
-    await supabase.from('internal_tasks').delete().eq('id', taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    const { error } = await supabase.from('internal_tasks').delete().eq('id', taskId);
+    if (!error) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      revalidateAdminPath('/tasks');
+    }
   }
 
   function isOverdue(due: string | null): boolean {
@@ -181,7 +187,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                           </span>
                         )}
                         {task.due_date && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: overdue ? 'rgba(217,68,68,0.08)' : 'var(--surface-soft)', color: overdue ? '#DC2626' : 'var(--ink-faint)' }}>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: overdue ? 'rgba(217,68,68,0.08)' : 'var(--surface-soft)', color: overdue ? 'var(--danger)' : 'var(--ink-faint)' }}>
                             {overdue && '⚠ '}{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                           </span>
                         )}
@@ -200,7 +206,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                               <button onClick={() => moveTask(task.id, 'todo')} className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ color: 'var(--ink-faint)' }}>
                                 ← Back
                               </button>
-                              <button onClick={() => moveTask(task.id, 'done')} className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.10)', color: '#047857' }}>
+                              <button onClick={() => moveTask(task.id, 'done')} className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.10)', color: 'var(--emerald)' }}>
                                 Done ✓
                               </button>
                             </>

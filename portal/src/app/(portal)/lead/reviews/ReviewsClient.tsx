@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, Star, Clock, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
 
 interface Review {
@@ -22,10 +23,10 @@ interface Review {
 interface Props { companyId: string; initialReviews: Review[]; }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  pending:     { label: 'Pending',     bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  in_progress: { label: 'In Progress', bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
-  completed:   { label: 'Completed',   bg: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  cancelled:   { label: 'Cancelled',   bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
+  pending:     { label: 'Pending',     bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  in_progress: { label: 'In Progress', bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
+  completed:   { label: 'Completed',   bg: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  cancelled:   { label: 'Cancelled',   bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
 };
 
 const REVIEW_TYPES = ['annual', 'mid_year', 'probation', '360', 'other'];
@@ -54,7 +55,7 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
   async function save() {
     if (!form.employee_name.trim() || !form.review_period.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('performance_reviews').insert({
+    const { data, error } = await supabase.from('performance_reviews').insert({
       company_id:     companyId,
       employee_name:  form.employee_name,
       employee_email: form.employee_email || null,
@@ -67,17 +68,23 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
       notes:          form.notes || null,
       status:         'pending',
     }).select().single();
-    if (data) setReviews(prev => [data as Review, ...prev]);
+    if (!error && data) {
+      setReviews(prev => [data as Review, ...prev]);
+      setShowForm(false);
+      setForm({ employee_name: '', employee_email: '', department: '', review_period: '', review_type: 'annual', reviewer_name: '', due_date: '', overall_rating: '', notes: '' });
+      revalidatePortalPath('/lead/reviews');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', employee_email: '', department: '', review_period: '', review_type: 'annual', reviewer_name: '', due_date: '', overall_rating: '', notes: '' });
   }
 
   async function updateStatus(id: string, status: string) {
     const extra: Record<string, string> = {};
     if (status === 'completed') extra.completed_at = new Date().toISOString();
-    await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
-    setReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+    const { error } = await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
+    if (!error) {
+      setReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+      revalidatePortalPath('/lead/reviews');
+    }
   }
 
   const filtered = filter === 'all' ? reviews : reviews.filter(r => r.status === filter);
@@ -93,9 +100,9 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Pending',     value: counts.pending,     color: '#475569' },
-          { label: 'In Progress', value: counts.in_progress, color: '#D97706' },
-          { label: 'Completed',   value: counts.completed,   color: '#16A34A' },
+          { label: 'Pending',     value: counts.pending,     color: 'var(--slate)' },
+          { label: 'In Progress', value: counts.in_progress, color: 'var(--amber)' },
+          { label: 'Completed',   value: counts.completed,   color: 'var(--success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card p-4 text-center">
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>

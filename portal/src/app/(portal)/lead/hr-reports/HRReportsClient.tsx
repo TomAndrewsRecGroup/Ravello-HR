@@ -233,18 +233,18 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
             {/* Summary stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="rounded-lg p-3" style={{ background: 'rgba(52,211,153,0.08)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#047857' }}>Current Headcount</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#047857' }}>{active.length}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--emerald)' }}>Current Headcount</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--emerald)' }}>{active.length}</p>
               </div>
               <div className="rounded-lg p-3" style={{ background: 'rgba(59,111,255,0.08)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#1848CC' }}>Joined This Year</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#1848CC' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--blue)' }}>Joined This Year</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--blue)' }}>
                   {employees.filter(e => e.start_date >= `${new Date().getFullYear()}-01-01`).length}
                 </p>
               </div>
               <div className="rounded-lg p-3" style={{ background: 'rgba(217,68,68,0.06)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B02020' }}>Left This Year</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#B02020' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--rose)' }}>Left This Year</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--rose)' }}>
                   {terminated.filter(e => e.end_date && e.end_date >= `${new Date().getFullYear()}-01-01`).length}
                 </p>
               </div>
@@ -272,11 +272,11 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                     <tr key={r.month}>
                       <td className="font-medium">{r.month}</td>
                       <td>
-                        {r.joined > 0 && <span style={{ color: '#047857' }}>+{r.joined}</span>}
+                        {r.joined > 0 && <span style={{ color: 'var(--emerald)' }}>+{r.joined}</span>}
                         {r.joined === 0 && <span style={{ color: 'var(--ink-faint)' }}>—</span>}
                       </td>
                       <td>
-                        {r.left > 0 && <span style={{ color: '#B02020' }}>-{r.left}</span>}
+                        {r.left > 0 && <span style={{ color: 'var(--rose)' }}>-{r.left}</span>}
                         {r.left === 0 && <span style={{ color: 'var(--ink-faint)' }}>—</span>}
                       </td>
                       <td className="font-bold">{r.headcount}</td>
@@ -351,7 +351,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                       <span className="text-sm" style={{ color: 'var(--ink)' }}>{status}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
-                          <div className="h-full rounded-full" style={{ width: percent(emps.length, deiData.total), background: '#14B8A6' }} />
+                          <div className="h-full rounded-full" style={{ width: percent(emps.length, deiData.total), background: 'var(--teal)' }} />
                         </div>
                         <span className="text-xs font-semibold w-10 text-right" style={{ color: 'var(--ink-soft)' }}>
                           {emps.length}
@@ -418,14 +418,14 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                       </td>
                       <td>{balance.annualLeaveAllowance}d</td>
                       <td>{balance.annualLeaveTaken}d</td>
-                      <td style={{ color: balance.annualLeaveRemaining <= 2 ? '#B02020' : '#047857', fontWeight: 600 }}>
+                      <td style={{ color: balance.annualLeaveRemaining <= 2 ? 'var(--rose)' : 'var(--emerald)', fontWeight: 600 }}>
                         {balance.annualLeaveRemaining}d
                       </td>
                       <td>{balance.sickDaysTaken}d</td>
                       <td>{balance.sickDaysRemaining != null ? `${balance.sickDaysRemaining}d` : '—'}</td>
                       <td>
                         {balance.leaveYear.isProRata ? (
-                          <span className="badge" style={{ background: 'rgba(59,111,255,0.08)', color: '#1848CC' }}>
+                          <span className="badge" style={{ background: 'rgba(59,111,255,0.08)', color: 'var(--blue)' }}>
                             {Math.round(balance.leaveYear.proRataFraction * 100)}%
                           </span>
                         ) : '—'}

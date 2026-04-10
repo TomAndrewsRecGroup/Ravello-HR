@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 
 interface Props {
@@ -35,6 +36,7 @@ export default function ComplianceStatusButton({ itemId, currentStatus }: Props)
       if (err) throw err;
       setStatus(next.value);
       if (next.value === 'complete') setDone(true);
+      revalidatePortalPath('/compliance');
     } catch (err) {
       console.error('Failed to update compliance status:', err);
       setError('Update failed');

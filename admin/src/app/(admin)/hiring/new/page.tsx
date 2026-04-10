@@ -15,9 +15,10 @@ export default async function AdminNewRolePage({
 
   const templateId = searchParams?.template ?? null;
 
-  const [{ data: { user } }, { data: companies }, templateResult] = await Promise.all([
+  const [{ data: { user } }, { data: companies }, { data: tpoStaff }, templateResult] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from('companies').select('id,name').eq('active', true).order('name'),
+    supabase.from('profiles').select('id,full_name').in('role', ['tps_admin', 'tps_client']).order('full_name'),
     templateId
       ? supabase.from('jd_templates').select('*').eq('id', templateId).single()
       : Promise.resolve({ data: null }),
@@ -40,6 +41,7 @@ export default async function AdminNewRolePage({
           companies={companies ?? []}
           adminUserId={user?.id ?? ''}
           template={templateResult?.data ?? null}
+          recruiters={(tpoStaff ?? []).map(s => s.full_name).filter(Boolean)}
         />
       </main>
     </>

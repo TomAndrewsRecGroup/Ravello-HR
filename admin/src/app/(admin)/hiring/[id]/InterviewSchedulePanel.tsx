@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Calendar, Video, Phone, MapPin, ClipboardList, ChevronDown } from 'lucide-react';
 
 interface Interview {
@@ -36,18 +37,18 @@ const TYPE_ICON: Record<string, React.ElementType> = {
 };
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  scheduled:   { background: 'rgba(59,111,255,0.1)',  color: '#1848CC' },
-  completed:   { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  cancelled:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  rescheduled: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  scheduled:   { background: 'rgba(59,111,255,0.1)',  color: 'var(--blue)' },
+  completed:   { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  cancelled:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  rescheduled: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
   no_show:     { background: 'rgba(127,29,29,0.1)',   color: '#7F1D1D' },
 };
 
 const OUTCOME_STYLE: Record<string, React.CSSProperties> = {
-  pass:    { background: 'rgba(22,163,74,0.1)',    color: '#166534' },
-  fail:    { background: 'rgba(220,38,38,0.1)',    color: '#991B1B' },
-  hold:    { background: 'rgba(217,119,6,0.1)',    color: '#92400E' },
-  pending: { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  pass:    { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' },
+  fail:    { background: 'rgba(220,38,38,0.1)',    color: 'var(--rose)' },
+  hold:    { background: 'rgba(217,119,6,0.1)',    color: 'var(--amber)' },
+  pending: { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
 const INTERVIEW_TYPES = ['video', 'phone', 'in_person', 'task'];
@@ -84,7 +85,7 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
 
     const candidateName = candidates.find(c => c.id === form.candidate_id)?.full_name;
 
-    const { data } = await supabase.from('interview_schedules').insert({
+    const { data, error } = await supabase.from('interview_schedules').insert({
       requisition_id:   requisitionId,
       company_id:       companyId,
       candidate_id:     form.candidate_id,
@@ -99,8 +100,9 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
       outcome:          'pending',
     }).select().single();
 
-    if (data) {
+    if (!error && data) {
       setInterviews(prev => [{ ...(data as any), candidate_name: candidateName }, ...prev]);
+      revalidateAdminPath('/hiring');
     }
     setSaving(false);
     setShowForm(false);
@@ -108,18 +110,27 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('interview_schedules').update({ status }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+    const { error } = await supabase.from('interview_schedules').update({ status }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   async function updateOutcome(id: string, outcome: string) {
-    await supabase.from('interview_schedules').update({ outcome }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, outcome } : i));
+    const { error } = await supabase.from('interview_schedules').update({ outcome }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, outcome } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   async function saveFeedback(id: string, feedback_notes: string) {
-    await supabase.from('interview_schedules').update({ feedback_notes }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, feedback_notes } : i));
+    const { error } = await supabase.from('interview_schedules').update({ feedback_notes }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, feedback_notes } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   // Group by candidate
@@ -136,7 +147,7 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
         <h3 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
           Interview Schedule
           {interviews.length > 0 && (
-            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.1)', color: '#1848CC' }}>
+            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }}>
               {interviews.length}
             </span>
           )}

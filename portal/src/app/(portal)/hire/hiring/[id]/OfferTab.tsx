@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Loader2, Plus, X, CheckCircle2, Clock, AlertTriangle, FileText } from 'lucide-react';
 
 interface Offer {
@@ -33,13 +34,13 @@ interface Props {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
+  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
   verbal_accepted:  { label: 'Verbal Accepted',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
-  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: '#166534' },
-  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: 'var(--emerald)' },
+  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
 };
 
 const OFFER_STATUSES = ['draft', 'sent', 'verbal_accepted', 'written_accepted', 'declined', 'withdrawn', 'lapsed'];
@@ -69,8 +70,11 @@ function OfferCard({ offer, onStatusChange }: { offer: Offer; onStatusChange: (i
     if (newStatus === 'verbal_accepted')  extra.verbal_accepted_at = now;
     if (newStatus === 'written_accepted') extra.written_accepted_at = now;
     if (newStatus === 'declined')         extra.declined_at = now;
-    await supabase.from('offers').update({ status: newStatus, ...extra }).eq('id', offer.id);
-    onStatusChange(offer.id, newStatus);
+    const { error } = await supabase.from('offers').update({ status: newStatus, ...extra }).eq('id', offer.id);
+    if (!error) {
+      onStatusChange(offer.id, newStatus);
+      revalidatePortalPath('/hiring');
+    }
     setUpdating(false);
   }
 
@@ -178,7 +182,7 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
   async function saveOffer() {
     if (!form.candidate_id) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('offers')
       .insert({
         requisition_id: requisitionId,
@@ -199,10 +203,13 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
       .select('*, candidates(full_name)')
       .single();
 
-    if (data) setOffers(prev => [data as Offer, ...prev]);
+    if (!error && data) {
+      setOffers(prev => [data as Offer, ...prev]);
+      setShowForm(false);
+      setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
+      revalidatePortalPath('/hiring');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
   }
 
   function handleStatusChange(id: string, status: string) {

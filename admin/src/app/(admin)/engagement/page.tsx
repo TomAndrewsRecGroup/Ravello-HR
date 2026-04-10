@@ -105,16 +105,16 @@ export default async function EngagementPage() {
             <p className="font-display font-bold text-2xl text-gradient">{companies.length}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#047857' }}>Healthy</p>
-            <p className="font-display font-bold text-2xl" style={{ color: '#047857' }}>{healthy}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--emerald)' }}>Healthy</p>
+            <p className="font-display font-bold text-2xl" style={{ color: 'var(--emerald)' }}>{healthy}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#D97706' }}>At Risk</p>
-            <p className="font-display font-bold text-2xl" style={{ color: '#D97706' }}>{atRisk}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--amber)' }}>At Risk</p>
+            <p className="font-display font-bold text-2xl" style={{ color: 'var(--amber)' }}>{atRisk}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#DC2626' }}>Disengaged</p>
-            <p className="font-display font-bold text-2xl" style={{ color: '#DC2626' }}>{disengaged}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>Disengaged</p>
+            <p className="font-display font-bold text-2xl" style={{ color: 'var(--danger)' }}>{disengaged}</p>
           </div>
         </div>
 
@@ -137,10 +137,10 @@ export default async function EngagementPage() {
             <tbody>
               {engagementData.map((c: any) => {
                 const statusConfig = c.status === 'healthy'
-                  ? { bg: 'rgba(52,211,153,0.12)', color: '#047857', label: 'Healthy' }
+                  ? { bg: 'rgba(52,211,153,0.12)', color: 'var(--emerald)', label: 'Healthy' }
                   : c.status === 'at_risk'
-                  ? { bg: 'rgba(245,158,11,0.12)', color: '#92400E', label: 'At Risk' }
-                  : { bg: 'rgba(217,68,68,0.08)', color: '#B02020', label: 'Disengaged' };
+                  ? { bg: 'rgba(245,158,11,0.12)', color: 'var(--amber)', label: 'At Risk' }
+                  : { bg: 'rgba(217,68,68,0.08)', color: 'var(--rose)', label: 'Disengaged' };
 
                 return (
                   <tr key={c.id}>
@@ -154,7 +154,7 @@ export default async function EngagementPage() {
                         <div className="w-12 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
                           <div className="h-full rounded-full" style={{
                             width: `${c.score}%`,
-                            background: c.score >= 70 ? '#10B981' : c.score >= 40 ? '#F59E0B' : '#DC2626',
+                            background: c.score >= 70 ? 'var(--success)' : c.score >= 40 ? 'var(--warning)' : 'var(--danger)',
                           }} />
                         </div>
                         <span className="text-xs font-bold" style={{ color: statusConfig.color }}>{c.score}</span>
@@ -166,16 +166,16 @@ export default async function EngagementPage() {
                       </span>
                     </td>
                     <td>
-                      <span className="text-xs" style={{ color: c.daysSinceLogin > 30 ? '#DC2626' : c.daysSinceLogin > 14 ? '#D97706' : 'var(--ink-soft)' }}>
+                      <span className="text-xs" style={{ color: c.daysSinceLogin > 30 ? 'var(--danger)' : c.daysSinceLogin > 14 ? 'var(--amber)' : 'var(--ink-soft)' }}>
                         {c.daysSinceLogin === 999 ? 'Never' : c.daysSinceLogin === 0 ? 'Today' : `${c.daysSinceLogin}d ago`}
                       </span>
                     </td>
                     <td className="text-xs" style={{ color: 'var(--ink-soft)' }}>{c.loginCount30d}</td>
                     <td className="text-xs font-medium" style={{ color: c.activeRoles > 0 ? 'var(--purple)' : 'var(--ink-faint)' }}>{c.activeRoles}</td>
-                    <td className="text-xs" style={{ color: c.openTickets > 0 ? '#D97706' : 'var(--ink-faint)' }}>{c.openTickets}</td>
+                    <td className="text-xs" style={{ color: c.openTickets > 0 ? 'var(--amber)' : 'var(--ink-faint)' }}>{c.openTickets}</td>
                     <td className="text-xs" style={{ color: 'var(--ink-soft)' }}>{c.userCount}</td>
                     <td>
-                      <span className="text-xs" style={{ color: c.lastNote > 14 ? '#DC2626' : 'var(--ink-faint)' }}>
+                      <span className="text-xs" style={{ color: c.lastNote > 14 ? 'var(--danger)' : 'var(--ink-faint)' }}>
                         {c.lastNote === 999 ? 'Never' : c.lastNote === 0 ? 'Today' : `${c.lastNote}d ago`}
                       </span>
                     </td>

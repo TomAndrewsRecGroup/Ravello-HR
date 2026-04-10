@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   // Auth check — verify caller is ravello staff
@@ -21,8 +22,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'email, password and company_id are required' }, { status: 400 });
   }
 
+  // ── Validate company_id exists ──
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(company_id)) {
+    return NextResponse.json({ error: 'Invalid company_id format' }, { status: 400 });
+  }
+  const { data: company, error: companyErr } = await supabase
+    .from('companies').select('id').eq('id', company_id).single();
+  if (companyErr || !company) {
+    return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+  }
+
+  // ── Password strength: min 8 chars, must contain uppercase, lowercase, and digit ──
   if (password.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+    return NextResponse.json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one digit' }, { status: 400 });
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -57,6 +73,14 @@ export async function POST(request: NextRequest) {
     role: 'client_admin',
     onboarding_completed: true,
   }, { onConflict: 'id', ignoreDuplicates: false });
+
+  auditLog({
+    action: 'user.created',
+    actor_id: user.id,
+    target_id: data.user.id,
+    target_type: 'profile',
+    metadata: { email, company_id, role: 'client_admin' },
+  });
 
   return NextResponse.json({ success: true, user_id: data.user.id });
 }

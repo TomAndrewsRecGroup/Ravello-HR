@@ -172,7 +172,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                     </td>
                     <td>
                       {openTickets > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: '#F59E0B' }}>
+                        <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--warning)' }}>
                           <LifeBuoy size={12} /> {openTickets}
                         </span>
                       ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
@@ -189,9 +189,9 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         <span
                           className="badge text-xs"
                           style={
-                            c.friction_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: '#047857' } :
-                            c.friction_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: '#B02020' } :
-                            { background: 'rgba(245,158,11,0.15)', color: '#8A5500' }
+                            c.friction_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' } :
+                            c.friction_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: 'var(--rose)' } :
+                            { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' }
                           }
                         >
                           {c.friction_band.replace(' Friction', '')}

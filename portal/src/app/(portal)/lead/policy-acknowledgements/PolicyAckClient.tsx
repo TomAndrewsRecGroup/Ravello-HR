@@ -24,8 +24,8 @@ interface Props {
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; icon: React.ElementType }> = {
   pending:      { label: 'Pending',      bg: 'rgba(245,158,11,0.12)', color: '#92400E', icon: Clock },
-  acknowledged: { label: 'Signed',       bg: 'rgba(52,211,153,0.12)', color: '#047857', icon: CheckCircle2 },
-  overdue:      { label: 'Overdue',      bg: 'rgba(217,68,68,0.08)',  color: '#B02020', icon: AlertTriangle },
+  acknowledged: { label: 'Signed',       bg: 'rgba(52,211,153,0.12)', color: 'var(--emerald)', icon: CheckCircle2 },
+  overdue:      { label: 'Overdue',      bg: 'rgba(217,68,68,0.08)',  color: 'var(--rose)', icon: AlertTriangle },
 };
 
 /* ─── Component ─────────────────────────────────────── */
@@ -78,21 +78,23 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
       sent_at: new Date().toISOString(),
     }));
 
-    await supabase.from('policy_acknowledgements').upsert(inserts, { onConflict: 'document_id,employee_id' });
+    const { error } = await supabase.from('policy_acknowledgements').upsert(inserts, { onConflict: 'document_id,employee_id' });
 
     setSaving(false);
-    setShowSendForm(false);
-    setSelectedDoc(''); setSelectedEmployees([]);
-    revalidatePortalPath('/lead/policy-acknowledgements');
+    if (!error) {
+      setShowSendForm(false);
+      setSelectedDoc(''); setSelectedEmployees([]);
+      revalidatePortalPath('/lead/policy-acknowledgements');
+    }
   }
 
   /* ─── Mark as acknowledged (admin on behalf) ─────── */
   async function markAcknowledged(ackId: string) {
-    await supabase.from('policy_acknowledgements').update({
+    const { error } = await supabase.from('policy_acknowledgements').update({
       status: 'acknowledged',
       acknowledged_at: new Date().toISOString(),
     }).eq('id', ackId);
-    revalidatePortalPath('/lead/policy-acknowledgements');
+    if (!error) revalidatePortalPath('/lead/policy-acknowledgements');
   }
 
   /* ─── Send to all employees ──────────────────────── */
@@ -130,12 +132,12 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
           <p className="text-xl font-bold mt-1" style={{ color: '#92400E' }}>{pending}</p>
         </div>
         <div className="rounded-lg p-3" style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#047857' }}>Signed</p>
-          <p className="text-xl font-bold mt-1" style={{ color: '#047857' }}>{signed}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--emerald)' }}>Signed</p>
+          <p className="text-xl font-bold mt-1" style={{ color: 'var(--emerald)' }}>{signed}</p>
         </div>
         <div className="rounded-lg p-3" style={{ background: 'rgba(217,68,68,0.04)', border: '1px solid rgba(217,68,68,0.12)' }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B02020' }}>Overdue</p>
-          <p className="text-xl font-bold mt-1" style={{ color: '#B02020' }}>{overdue}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--rose)' }}>Overdue</p>
+          <p className="text-xl font-bold mt-1" style={{ color: 'var(--rose)' }}>{overdue}</p>
         </div>
       </div>
 
@@ -185,7 +187,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
                   <div className="w-16 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
                     <div className="h-full rounded-full" style={{
                       width: docTotal > 0 ? `${Math.round((docSigned / docTotal) * 100)}%` : '0%',
-                      background: docSigned === docTotal ? '#10B981' : 'var(--purple)',
+                      background: docSigned === docTotal ? 'var(--success)' : 'var(--purple)',
                     }} />
                   </div>
                 </div>
@@ -216,7 +218,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
                             <button
                               onClick={() => markAcknowledged(ack.id)}
                               className="text-[10px] font-medium px-2 py-0.5 rounded-md"
-                              style={{ background: 'rgba(52,211,153,0.10)', color: '#047857' }}
+                              style={{ background: 'rgba(52,211,153,0.10)', color: 'var(--emerald)' }}
                               title="Mark as signed (on behalf of employee)"
                             >
                               Mark Signed

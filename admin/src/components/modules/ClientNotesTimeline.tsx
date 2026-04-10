@@ -28,11 +28,11 @@ interface Props {
 
 const NOTE_TYPES = [
   { key: 'general',    label: 'Note',       icon: MessageSquare, color: 'var(--blue)' },
-  { key: 'call',       label: 'Call',        icon: Phone,         color: '#14B8A6' },
+  { key: 'call',       label: 'Call',        icon: Phone,         color: 'var(--teal)' },
   { key: 'meeting',    label: 'Meeting',     icon: UsersIcon,     color: 'var(--purple)' },
-  { key: 'email',      label: 'Email',       icon: Mail,          color: '#D97706' },
-  { key: 'task',       label: 'Task',        icon: CheckCircle2,  color: '#10B981' },
-  { key: 'escalation', label: 'Escalation',  icon: AlertTriangle, color: '#DC2626' },
+  { key: 'email',      label: 'Email',       icon: Mail,          color: 'var(--amber)' },
+  { key: 'task',       label: 'Task',        icon: CheckCircle2,  color: 'var(--success)' },
+  { key: 'escalation', label: 'Escalation',  icon: AlertTriangle, color: 'var(--danger)' },
 ];
 
 function typeConfig(type: string) {

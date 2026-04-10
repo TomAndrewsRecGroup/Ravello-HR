@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, Grid3X3 } from 'lucide-react';
 
 interface Skill {
@@ -78,7 +79,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
   async function save() {
     if (!form.employee_name.trim() || !form.skill_name.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('skills_matrix').insert({
+    const { data, error } = await supabase.from('skills_matrix').insert({
       company_id:     companyId,
       employee_name:  form.employee_name,
       department:     form.department || null,
@@ -90,10 +91,13 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
       last_assessed:  form.last_assessed || null,
       notes:          form.notes || null,
     }).select().single();
-    if (data) setSkills(prev => [...prev, data as Skill].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
+    if (!error && data) {
+      setSkills(prev => [...prev, data as Skill].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
+      setShowForm(false);
+      setForm({ employee_name: '', department: '', role_title: '', skill_name: '', skill_category: 'Technical', current_level: '0', target_level: '3', last_assessed: '', notes: '' });
+      revalidatePortalPath('/lead/skills');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', department: '', role_title: '', skill_name: '', skill_category: 'Technical', current_level: '0', target_level: '3', last_assessed: '', notes: '' });
   }
 
   const departments = useMemo(() => ['all', ...Array.from(new Set(skills.map(s => s.department).filter(Boolean) as string[]))], [skills]);
@@ -132,7 +136,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Avg Skill Level</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: totalGaps > 0 ? '#D97706' : '#16A34A' }}>{totalGaps}</p>
+          <p className="text-2xl font-bold" style={{ color: totalGaps > 0 ? 'var(--amber)' : 'var(--success)' }}>{totalGaps}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Skill Gaps</p>
         </div>
       </div>

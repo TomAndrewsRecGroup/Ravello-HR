@@ -45,7 +45,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="form-group">
-        <label htmlFor="portal-email" className="label" style={{ color: '#4B5563' }}>Email address</label>
+        <label htmlFor="portal-email" className="label" style={{ color: 'var(--ink-soft)' }}>Email address</label>
         <input
           id="portal-email"
           type="email"
@@ -60,7 +60,7 @@ export default function LoginForm() {
       </div>
 
       <div className="form-group">
-        <label htmlFor="portal-password" className="label" style={{ color: '#4B5563' }}>Password</label>
+        <label htmlFor="portal-password" className="label" style={{ color: 'var(--ink-soft)' }}>Password</label>
         <div className="relative">
           <input
             id="portal-password"
@@ -77,7 +77,7 @@ export default function LoginForm() {
             type="button"
             aria-label={showPwd ? 'Hide password' : 'Show password'}
             className="absolute right-3 top-1/2 -translate-y-1/2"
-            style={{ color: '#9CA3AF' }}
+            style={{ color: 'var(--ink-faint)' }}
             onClick={() => setShowPwd(!showPwd)}
           >
             {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -86,7 +86,7 @@ export default function LoginForm() {
       </div>
 
       {error && (
-        <p role="alert" className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: '#DC2626' }}>
+        <p role="alert" className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--danger)' }}>
           {error}
         </p>
       )}
@@ -100,7 +100,7 @@ export default function LoginForm() {
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
 
-      <p className="text-center text-xs mt-3" style={{ color: '#9CA3AF' }}>
+      <p className="text-center text-xs mt-3" style={{ color: 'var(--ink-faint)' }}>
         <Link href="/auth/reset-password" style={{ color: 'var(--purple)' }}>
           Forgot your password?
         </Link>

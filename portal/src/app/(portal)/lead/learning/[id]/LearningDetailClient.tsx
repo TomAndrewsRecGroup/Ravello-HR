@@ -48,7 +48,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   video: Play, pdf: FileText, pptx: FileText, link: LinkIcon, scorm: BookOpen,
 };
 const TYPE_COLORS: Record<string, string> = {
-  video: '#8B5CF6', pdf: '#3B82F6', pptx: '#F59E0B', link: '#10B981', scorm: '#EC4899',
+  video: '#8B5CF6', pdf: 'var(--blue)', pptx: 'var(--warning)', link: 'var(--success)', scorm: '#EC4899',
 };
 
 function fmtPrice(pence: number): string {
@@ -81,7 +81,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   return (
     <span
       className="text-xs font-semibold"
-      style={{ color: urgent ? '#DC2626' : '#16A34A' }}
+      style={{ color: urgent ? 'var(--danger)' : 'var(--success)' }}
     >
       {urgent && <AlertTriangle size={11} className="inline mr-1" />}
       {remaining}
@@ -118,7 +118,7 @@ function RelatedCard({ item }: { item: Content }) {
         {item.creator_name && (
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>{item.creator_name}</p>
         )}
-        <p className="text-[10px] font-bold mt-1" style={{ color: item.price_pence === 0 ? '#16A34A' : typeColor }}>
+        <p className="text-[10px] font-bold mt-1" style={{ color: item.price_pence === 0 ? 'var(--success)' : typeColor }}>
           {fmtPrice(item.price_pence)}
         </p>
       </div>
@@ -148,7 +148,7 @@ export default function LearningDetailClient({
   async function handleCheckout() {
     if (!content.stripe_price_id) {
       setLoading(true);
-      await supabase.from('learning_purchases').insert({
+      const { error } = await supabase.from('learning_purchases').insert({
         content_id:        content.id,
         company_id:        companyId,
         purchased_by:      userId,
@@ -157,7 +157,7 @@ export default function LearningDetailClient({
         access_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       setLoading(false);
-      revalidatePortalPath(`/lead/learning/${content.id}`);
+      if (!error) revalidatePortalPath(`/lead/learning/${content.id}`);
       return;
     }
     setLoading(true);
@@ -224,7 +224,7 @@ export default function LearningDetailClient({
                   )}
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-2xl font-bold" style={{ color: content.price_pence === 0 ? '#16A34A' : typeColor }}>
+                  <p className="text-2xl font-bold" style={{ color: content.price_pence === 0 ? 'var(--success)' : typeColor }}>
                     {fmtPrice(content.price_pence)}
                   </p>
                   {content.price_pence > 0 && (
@@ -273,7 +273,7 @@ export default function LearningDetailClient({
           {related.length > 0 && (
             <div className="card p-5">
               <h2 className="font-display font-semibold text-sm mb-4 flex items-center gap-2" style={{ color: 'var(--ink)' }}>
-                <Star size={13} style={{ color: '#F59E0B' }} /> You May Like
+                <Star size={13} style={{ color: 'var(--warning)' }} /> You May Like
               </h2>
               <div className="space-y-2">
                 {related.map(r => <RelatedCard key={r.id} item={r} />)}
@@ -301,9 +301,9 @@ export default function LearningDetailClient({
               <div className="space-y-4">
                 {/* Access confirmed */}
                 <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)' }}>
-                  <CheckCircle2 size={18} style={{ color: '#16A34A', flexShrink: 0 }} />
+                  <CheckCircle2 size={18} style={{ color: 'var(--success)', flexShrink: 0 }} />
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: '#166534' }}>You have access</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--emerald)' }}>You have access</p>
                     {purchase?.access_expires_at && (
                       <CountdownTimer expiresAt={purchase.access_expires_at} />
                     )}
@@ -338,7 +338,7 @@ export default function LearningDetailClient({
               <div className="space-y-4">
                 {/* Price + lock */}
                 <div className="text-center py-2">
-                  <p className="text-3xl font-bold mb-1" style={{ color: content.price_pence === 0 ? '#16A34A' : typeColor }}>
+                  <p className="text-3xl font-bold mb-1" style={{ color: content.price_pence === 0 ? 'var(--success)' : typeColor }}>
                     {fmtPrice(content.price_pence)}
                   </p>
                   {content.price_pence > 0 && (
@@ -355,7 +355,7 @@ export default function LearningDetailClient({
                     content.content_type === 'video' ? 'Stream directly in browser' : 'Download and keep',
                   ].map(f => (
                     <div key={f} className="flex items-center gap-2">
-                      <CheckCircle2 size={12} style={{ color: '#16A34A', flexShrink: 0 }} />
+                      <CheckCircle2 size={12} style={{ color: 'var(--success)', flexShrink: 0 }} />
                       {f}
                     </div>
                   ))}

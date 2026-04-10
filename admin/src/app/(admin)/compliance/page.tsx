@@ -19,9 +19,9 @@ function fmtDate(d: string): string {
 }
 
 const RAG_STYLE = {
-  red:      { bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.2)',  badge: '#DC2626', badgeBg: 'rgba(220,38,38,0.1)',  icon: AlertTriangle, label: 'Overdue'       },
-  amber:    { bg: 'rgba(217,119,6,0.06)',  border: 'rgba(217,119,6,0.2)',  badge: '#D97706', badgeBg: 'rgba(217,119,6,0.1)',  icon: Clock,         label: 'Due Soon'      },
-  green:    { bg: 'rgba(22,163,74,0.05)',  border: 'rgba(22,163,74,0.15)', badge: '#16A34A', badgeBg: 'rgba(22,163,74,0.1)',  icon: ShieldCheck,   label: 'On Track'      },
+  red:      { bg: 'rgba(220,38,38,0.08)',  border: 'rgba(220,38,38,0.2)',  badge: 'var(--danger)', badgeBg: 'rgba(220,38,38,0.1)',  icon: AlertTriangle, label: 'Overdue'       },
+  amber:    { bg: 'rgba(217,119,6,0.06)',  border: 'rgba(217,119,6,0.2)',  badge: 'var(--amber)', badgeBg: 'rgba(217,119,6,0.1)',  icon: Clock,         label: 'Due Soon'      },
+  green:    { bg: 'rgba(22,163,74,0.05)',  border: 'rgba(22,163,74,0.15)', badge: 'var(--success)', badgeBg: 'rgba(22,163,74,0.1)',  icon: ShieldCheck,   label: 'On Track'      },
   complete: { bg: 'rgba(148,163,184,0.04)',border: 'rgba(148,163,184,0.1)',badge: '#94A3B8', badgeBg: 'rgba(148,163,184,0.1)',icon: CheckCircle2,  label: 'Complete'      },
 };
 
@@ -128,7 +128,7 @@ export default async function AdminComplianceDashboard() {
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Employee Document Expiry Alerts
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#991B1B' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' }}>
                 {docItems.red} expired · {docItems.amber} expiring soon
               </span>
             </h2>
@@ -170,7 +170,7 @@ export default async function AdminComplianceDashboard() {
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{d.doc_type?.replace(/_/g, ' ')}</td>
                         <td>
-                          <p className="text-sm" style={{ color: d.rag === 'red' ? '#991B1B' : '#92400E', fontWeight: 600 }}>
+                          <p className="text-sm" style={{ color: d.rag === 'red' ? 'var(--rose)' : 'var(--amber)', fontWeight: 600 }}>
                             {fmtDate(d.expiry_date)}
                           </p>
                           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -233,7 +233,7 @@ export default async function AdminComplianceDashboard() {
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{ci.category?.replace(/_/g, ' ')}</td>
                         <td>
-                          <p className="text-sm" style={{ color: ci.rag === 'red' ? '#991B1B' : ci.rag === 'amber' ? '#92400E' : 'var(--ink-soft)', fontWeight: ci.rag === 'red' || ci.rag === 'amber' ? 600 : 400 }}>
+                          <p className="text-sm" style={{ color: ci.rag === 'red' ? 'var(--rose)' : ci.rag === 'amber' ? 'var(--amber)' : 'var(--ink-soft)', fontWeight: ci.rag === 'red' || ci.rag === 'amber' ? 600 : 400 }}>
                             {fmtDate(ci.due_date)}
                           </p>
                           {ci.rag !== 'complete' && (
@@ -246,10 +246,10 @@ export default async function AdminComplianceDashboard() {
                           <span
                             className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
                             style={
-                              ci.status === 'complete'  ? { background: 'rgba(148,163,184,0.1)', color: '#475569' } :
-                              ci.status === 'overdue'   ? { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' } :
-                              ci.status === 'in_review' ? { background: 'rgba(217,119,6,0.1)',   color: '#92400E' } :
-                              { background: 'rgba(59,111,255,0.1)', color: '#1848CC' }
+                              ci.status === 'complete'  ? { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' } :
+                              ci.status === 'overdue'   ? { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' } :
+                              ci.status === 'in_review' ? { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' } :
+                              { background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }
                             }
                           >
                             {ci.status?.replace(/_/g, ' ')}

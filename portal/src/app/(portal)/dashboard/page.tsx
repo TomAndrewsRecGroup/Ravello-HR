@@ -23,9 +23,9 @@ function daysOpen(createdAt: string): number {
 }
 
 function priorityBadge(priority: string) {
-  if (priority === 'high')   return { bg: 'rgba(220,38,38,0.1)',   text: '#991B1B', label: 'High' };
+  if (priority === 'high')   return { bg: 'rgba(220,38,38,0.1)',   text: 'var(--rose)', label: 'High' };
   if (priority === 'medium') return { bg: 'rgba(217,119,6,0.1)',   text: '#92400E', label: 'Medium' };
-  return                            { bg: 'rgba(148,163,184,0.1)', text: '#64748B', label: 'Low' };
+  return                            { bg: 'rgba(148,163,184,0.1)', text: 'var(--slate)', label: 'Low' };
 }
 
 export default async function DashboardPage() {
@@ -185,8 +185,8 @@ export default async function DashboardPage() {
                   }}
                 >
                   <Zap size={20} style={{
-                    color: frictionAssessment.overall_band === 'Low Friction' ? '#047857' :
-                           frictionAssessment.overall_band === 'High Friction' ? '#B02020' : '#8A5500',
+                    color: frictionAssessment.overall_band === 'Low Friction' ? 'var(--emerald)' :
+                           frictionAssessment.overall_band === 'High Friction' ? 'var(--rose)' : '#8A5500',
                   }} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -195,8 +195,8 @@ export default async function DashboardPage() {
                     <span
                       className="badge text-xs"
                       style={
-                        frictionAssessment.overall_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: '#047857' } :
-                        frictionAssessment.overall_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: '#B02020' } :
+                        frictionAssessment.overall_band === 'Low Friction' ? { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' } :
+                        frictionAssessment.overall_band === 'High Friction' ? { background: 'rgba(217,68,68,0.10)', color: 'var(--rose)' } :
                         { background: 'rgba(245,158,11,0.15)', color: '#8A5500' }
                       }
                     >

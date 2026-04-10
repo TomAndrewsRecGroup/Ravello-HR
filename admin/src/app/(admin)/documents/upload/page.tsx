@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Upload } from 'lucide-react';
 
 const CATEGORIES = ['contract','policy','letter','report','other'];
@@ -54,6 +55,7 @@ export default function DocumentUploadPage() {
     });
 
     if (dbErr) { setError(dbErr.message); setLoading(false); return; }
+    revalidateAdminPath('/documents');
     router.push('/documents');
   }
 
@@ -103,7 +105,7 @@ export default function DocumentUploadPage() {
               <input id="file-input" type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onChange={e=>setFile(e.target.files?.[0]??null)} />
             </div>
           </div>
-          {error && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)', color: '#E05555' }}>{error}</p>}
+          {error && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger)' }}>{error}</p>}
           <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
             {loading && <Loader2 size={14} className="animate-spin" />}
             {loading ? 'Uploading…' : 'Upload Document'}

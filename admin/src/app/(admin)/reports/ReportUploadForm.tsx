@@ -4,6 +4,14 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, UploadCloud, Link as LinkIcon } from 'lucide-react';
 
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'doc', 'docx', 'xlsx', 'csv']);
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+
+function sanitizeFilename(name: string): string {
+  // Strip everything except alphanumerics, hyphens, underscores, and dots
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.{2,}/g, '.');
+}
+
 const PERIODS = [
   'January 2026','February 2026','March 2026','April 2026','May 2026','June 2026',
   'July 2026','August 2026','September 2026','October 2026','November 2026','December 2026',
@@ -49,8 +57,22 @@ export default function ReportUploadForm({ companies }: Props) {
     // Upload file to Supabase Storage if mode=file
     if (mode === 'file') {
       if (!file) { setError('Please select a file.'); setLoading(false); return; }
-      const ext  = file.name.split('.').pop();
-      const path = `reports/${form.company_id}/${Date.now()}.${ext}`;
+
+      // Server-grade validation: extension, MIME type, and file size
+      const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        setError(`File type .${ext} is not allowed. Accepted: ${[...ALLOWED_EXTENSIONS].join(', ')}`);
+        setLoading(false);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 25 MB.`);
+        setLoading(false);
+        return;
+      }
+
+      const safeName = sanitizeFilename(file.name);
+      const path = `reports/${form.company_id}/${Date.now()}_${safeName}`;
       const { error: uploadErr } = await supabase.storage
         .from('documents')
         .upload(path, file, { upsert: false });
@@ -171,8 +193,8 @@ export default function ReportUploadForm({ companies }: Props) {
           </div>
         )}
 
-        {error   && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: '#E05555' }}>{error}</p>}
-        {success && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(22,163,74,0.08)', color: '#166534' }}>{success}</p>}
+        {error   && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: 'var(--danger)' }}>{error}</p>}
+        {success && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--emerald)' }}>{success}</p>}
 
         <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
           {loading && <Loader2 size={14} className="animate-spin" />}

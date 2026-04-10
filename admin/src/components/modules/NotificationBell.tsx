@@ -19,13 +19,13 @@ interface Notification {
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string }> = {
   role_pending_approval: { icon: Briefcase,     color: 'var(--purple)' },
-  role_filled:           { icon: CheckCircle2,  color: '#10B981' },
-  ticket_created:        { icon: LifeBuoy,      color: '#D97706' },
-  ticket_escalated:      { icon: AlertTriangle, color: '#DC2626' },
-  compliance_overdue:    { icon: ShieldCheck,    color: '#DC2626' },
-  compliance_due_soon:   { icon: ShieldCheck,    color: '#D97706' },
+  role_filled:           { icon: CheckCircle2,  color: 'var(--success)' },
+  ticket_created:        { icon: LifeBuoy,      color: 'var(--amber)' },
+  ticket_escalated:      { icon: AlertTriangle, color: 'var(--danger)' },
+  compliance_overdue:    { icon: ShieldCheck,    color: 'var(--danger)' },
+  compliance_due_soon:   { icon: ShieldCheck,    color: 'var(--amber)' },
   document_uploaded:     { icon: FileText,       color: 'var(--blue)' },
-  user_invited:          { icon: UserPlus,       color: '#14B8A6' },
+  user_invited:          { icon: UserPlus,       color: 'var(--teal)' },
   candidate_submitted:   { icon: Users,          color: 'var(--purple)' },
   broadcast:             { icon: Radio,          color: 'var(--blue)' },
   general:               { icon: Bell,           color: 'var(--ink-faint)' },
@@ -184,7 +184,7 @@ export default function NotificationBell() {
             <div className="flex items-center gap-3">
               <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Notifications</p>
               {unreadCount > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(217,68,68,0.08)', color: '#B02020' }}>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--rose)' }}>
                   {unreadCount} new
                 </span>
               )}

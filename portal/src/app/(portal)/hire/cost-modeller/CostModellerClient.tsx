@@ -242,7 +242,7 @@ export default function CostModellerClient() {
         </div>
         <div className="card p-5">
           <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--ink-faint)' }}>Avg Cost per Head</p>
-          <p className="font-display font-bold text-2xl" style={{ color: '#14B8A6' }}>
+          <p className="font-display font-bold text-2xl" style={{ color: 'var(--teal)' }}>
             {totalHeads > 0 ? formatCurrency(grandTotal / totalHeads) : '—'}
           </p>
         </div>
@@ -254,9 +254,9 @@ export default function CostModellerClient() {
         <div className="space-y-3">
           {[
             { label: 'Base Salary', value: grandSalary, color: 'var(--ink)' },
-            { label: `Employer NI (15%)${claimAllowance ? ` less £${(allowanceSaving / 1000).toFixed(1)}k allowance` : ''}`, value: grandNI, color: '#D97706' },
+            { label: `Employer NI (15%)${claimAllowance ? ` less £${(allowanceSaving / 1000).toFixed(1)}k allowance` : ''}`, value: grandNI, color: 'var(--amber)' },
             { label: `Pension (${pensionRate}%)`, value: grandPension, color: 'var(--blue)' },
-            { label: 'Benefits', value: grandBenefits, color: '#14B8A6' },
+            { label: 'Benefits', value: grandBenefits, color: 'var(--teal)' },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between">
               <div className="flex items-center gap-3">

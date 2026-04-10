@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { ivylensRequest } from '@/lib/ivylens';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 5 }); // 5 assessments per minute
+
+const AssessmentSchema = z.object({
+  company_id: z.string().uuid().optional(),
+  form_responses: z.record(z.unknown()).refine(obj => Object.keys(obj).length > 0, {
+    message: 'form_responses must be a non-empty object',
+  }),
+  employee_count: z.number().int().min(0).max(100_000).optional(),
+});
 
 // POST /api/company/assessment
 // Submits assessment to IvyLens, stores results locally in company_assessments.
@@ -13,17 +25,22 @@ function employeeBand(count: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  const { allowed, remaining } = limiter.check(getRateLimitKey(req));
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': '60' } });
+  }
+
   try {
     const supabase = createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { company_id: ivylensCompanyId, form_responses, employee_count } = body;
-
-    if (!form_responses) {
-      return NextResponse.json({ error: 'form_responses required' }, { status: 400 });
+    const parsed = AssessmentSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues.map(i => i.message).join('; ') }, { status: 400 });
     }
+    const { company_id: ivylensCompanyId, form_responses, employee_count } = parsed.data;
 
     // Get user's company
     const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
@@ -43,13 +60,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Store assessment locally
-    const band = employeeBand(employee_count ?? form_responses?.employee_count ?? 0);
+    const empCount = employee_count ?? (typeof form_responses?.employee_count === 'number' ? form_responses.employee_count : 0);
+    const band = employeeBand(empCount);
     const { data: assessment, error: dbErr } = await supabase
       .from('company_assessments')
       .insert({
         company_id:         profile.company_id,
         ivylens_company_id: ivylensCompanyId ?? null,
-        employee_count:     employee_count ?? form_responses?.employee_count ?? null,
+        employee_count:     empCount || null,
         employee_band:      band,
         form_responses,
         overall_band:       result?.overall?.band ?? null,

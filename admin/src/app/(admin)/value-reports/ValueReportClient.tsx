@@ -219,7 +219,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
             {/* PROTECT */}
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck size={15} style={{ color: '#14B8A6' }} />
+                <ShieldCheck size={15} style={{ color: 'var(--teal)' }} />
                 <h3 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>PROTECT</h3>
               </div>
               <div className="space-y-3">
@@ -231,7 +231,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
-                    <span className="text-sm font-bold" style={{ color: item.highlight ? '#14B8A6' : 'var(--ink)' }}>{item.value}</span>
+                    <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--teal)' : 'var(--ink)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>

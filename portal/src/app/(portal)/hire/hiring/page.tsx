@@ -29,9 +29,9 @@ const STAGE_FILTERS = [
 ];
 
 const MODEL_PILL: Record<string, { label: string; dot: string }> = {
-  office: { label: 'Office', dot: '#3B6FFF' },
-  hybrid: { label: 'Hybrid', dot: '#14B8A6' },
-  remote: { label: 'Remote', dot: '#16A34A' },
+  office: { label: 'Office', dot: 'var(--blue)' },
+  hybrid: { label: 'Hybrid', dot: 'var(--teal)' },
+  remote: { label: 'Remote', dot: 'var(--success)' },
 };
 
 function daysOpen(createdAt: string): number {

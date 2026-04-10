@@ -10,11 +10,11 @@ import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle,
 type FrictionLevel = 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
 
 const LEVEL_CONFIG: Record<FrictionLevel, { bg: string; border: string; text: string; badge: string; badgeText: string; icon: React.ElementType }> = {
-  Low:      { bg: 'rgba(22,163,74,0.06)',   border: 'rgba(22,163,74,0.2)',   text: '#166534', badge: '#16A34A', badgeText: '#fff', icon: CheckCircle2 },
-  Medium:   { bg: 'rgba(217,119,6,0.06)',   border: 'rgba(217,119,6,0.2)',   text: '#92400E', badge: '#D97706', badgeText: '#fff', icon: AlertCircle },
-  High:     { bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.2)',   text: '#991B1B', badge: '#DC2626', badgeText: '#fff', icon: XCircle },
+  Low:      { bg: 'rgba(22,163,74,0.06)',   border: 'rgba(22,163,74,0.2)',   text: 'var(--emerald)', badge: 'var(--success)', badgeText: '#fff', icon: CheckCircle2 },
+  Medium:   { bg: 'rgba(217,119,6,0.06)',   border: 'rgba(217,119,6,0.2)',   text: 'var(--amber)', badge: 'var(--amber)', badgeText: '#fff', icon: AlertCircle },
+  High:     { bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.2)',   text: 'var(--rose)', badge: 'var(--danger)', badgeText: '#fff', icon: XCircle },
   Critical: { bg: 'rgba(127,29,29,0.08)',   border: 'rgba(127,29,29,0.25)',  text: '#7F1D1D', badge: '#7F1D1D', badgeText: '#fff', icon: AlertTriangle },
-  Unknown:  { bg: 'rgba(148,163,184,0.06)', border: 'rgba(148,163,184,0.2)', text: '#64748B', badge: '#94A3B8', badgeText: '#fff', icon: HelpCircle },
+  Unknown:  { bg: 'rgba(148,163,184,0.06)', border: 'rgba(148,163,184,0.2)', text: 'var(--slate)', badge: '#94A3B8', badgeText: '#fff', icon: HelpCircle },
 };
 
 const DIM_ICONS: Record<string, React.ElementType> = {
@@ -119,13 +119,13 @@ function FrictionCard({ frictionScore }: { frictionScore: any }) {
 /* ── Admin Offer Panel ────────────────────────────────────── */
 
 const OFFER_STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
-  verbal_accepted:  { label: 'Verbal Accepted',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
-  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: '#166534' },
-  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
+  verbal_accepted:  { label: 'Verbal Accepted',  bg: 'rgba(245,158,11,0.12)', color: 'var(--amber)' },
+  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: 'var(--emerald)' },
+  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
 };
 const OFFER_STATUSES = Object.keys(OFFER_STATUS_CONFIG);
 const CONTRACT_TYPES = ['permanent', 'fixed_term', 'contract', 'interim'];
@@ -328,10 +328,13 @@ export default function RequisitionPanel({ req }: Props) {
 
   async function saveRecruiter() {
     setSavingRecruiter(true);
-    await supabase.from('requisitions').update({ assigned_recruiter: recruiter }).eq('id', req.id);
+    const { error } = await supabase.from('requisitions').update({ assigned_recruiter: recruiter }).eq('id', req.id);
     setSavingRecruiter(false);
-    setRecruiterSaved(true);
-    setTimeout(() => setRecruiterSaved(false), 2000);
+    if (!error) {
+      setRecruiterSaved(true);
+      setTimeout(() => setRecruiterSaved(false), 2000);
+      revalidateAdminPath(`/hiring/${req.id}`);
+    }
   }
 
   return (

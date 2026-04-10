@@ -17,9 +17,11 @@ export default function EmailGate({ toolName, teaserScore, teaserLabel, onUnlock
     e.preventDefault();
     if (!email) return;
     setLoading(true);
-    // TODO: POST to your email provider
-    // await fetch('/api/leads', { method: 'POST', body: JSON.stringify({ email, source: toolName }) });
-    await new Promise(r => setTimeout(r, 600)); // UX delay
+    await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, source: `email_gate_${toolName}` }),
+    });
     onUnlock(email);
   };
 

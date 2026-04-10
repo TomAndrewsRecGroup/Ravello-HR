@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, AlertTriangle, CheckCircle2, Clock, BookOpen } from 'lucide-react';
 
 interface TrainingNeed {
@@ -22,10 +23,10 @@ interface Props {
 }
 
 const PRIORITY_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  low:      { label: 'Low',      bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  medium:   { label: 'Medium',   bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
+  low:      { label: 'Low',      bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  medium:   { label: 'Medium',   bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
   high:     { label: 'High',     bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  critical: { label: 'Critical', bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
+  critical: { label: 'Critical', bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType }> = {
@@ -59,7 +60,7 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
   async function save() {
     if (!form.skill_gap.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('training_needs').insert({
+    const { data, error } = await supabase.from('training_needs').insert({
       company_id:    companyId,
       flagged_by:    userId,
       employee_name: form.employee_name || null,
@@ -70,15 +71,21 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
       target_date:   form.target_date || null,
       status:        'open',
     }).select().single();
-    if (data) setNeeds(prev => [data as TrainingNeed, ...prev]);
+    if (!error && data) {
+      setNeeds(prev => [data as TrainingNeed, ...prev]);
+      setShowForm(false);
+      setForm({ employee_name: '', department: '', skill_gap: '', priority: 'medium', notes: '', target_date: '' });
+      revalidatePortalPath('/lead/training');
+    }
     setSaving(false);
-    setShowForm(false);
-    setForm({ employee_name: '', department: '', skill_gap: '', priority: 'medium', notes: '', target_date: '' });
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('training_needs').update({ status }).eq('id', id);
-    setNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+    const { error } = await supabase.from('training_needs').update({ status }).eq('id', id);
+    if (!error) {
+      setNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+      revalidatePortalPath('/lead/training');
+    }
   }
 
   const filtered = filter === 'all' ? needs : needs.filter(n => n.status === filter);
@@ -94,9 +101,9 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Open',        value: counts.open,        color: '#DC2626' },
-          { label: 'In Progress', value: counts.in_progress, color: '#D97706' },
-          { label: 'Resolved',    value: counts.resolved,    color: '#16A34A' },
+          { label: 'Open',        value: counts.open,        color: 'var(--danger)' },
+          { label: 'In Progress', value: counts.in_progress, color: 'var(--amber)' },
+          { label: 'Resolved',    value: counts.resolved,    color: 'var(--success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card p-4 text-center">
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>

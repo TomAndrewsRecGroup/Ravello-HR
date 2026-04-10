@@ -13,14 +13,14 @@ export const revalidate = 30;
 
 const EVENT_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   role_created:        { icon: Briefcase,     color: 'var(--purple)',  label: 'New Role' },
-  role_filled:         { icon: CheckCircle2,  color: '#10B981',        label: 'Role Filled' },
-  ticket_created:      { icon: LifeBuoy,      color: '#D97706',        label: 'Ticket Raised' },
-  ticket_resolved:     { icon: CheckCircle2,  color: '#10B981',        label: 'Ticket Resolved' },
+  role_filled:         { icon: CheckCircle2,  color: 'var(--success)', label: 'Role Filled' },
+  ticket_created:      { icon: LifeBuoy,      color: 'var(--amber)',   label: 'Ticket Raised' },
+  ticket_resolved:     { icon: CheckCircle2,  color: 'var(--success)', label: 'Ticket Resolved' },
   compliance_updated:  { icon: ShieldCheck,    color: 'var(--blue)',    label: 'Compliance' },
-  document_uploaded:   { icon: FileText,       color: '#14B8A6',        label: 'Document' },
+  document_uploaded:   { icon: FileText,       color: 'var(--teal)',    label: 'Document' },
   candidate_added:     { icon: Users,          color: 'var(--purple)',  label: 'Candidate' },
-  user_invited:        { icon: UserPlus,       color: '#14B8A6',        label: 'User Invited' },
-  service_request:     { icon: MessageSquare,  color: '#D97706',        label: 'Service Request' },
+  user_invited:        { icon: UserPlus,       color: 'var(--teal)',    label: 'User Invited' },
+  service_request:     { icon: MessageSquare,  color: 'var(--amber)',   label: 'Service Request' },
   feature_toggled:     { icon: Radio,          color: 'var(--blue)',    label: 'Feature Toggle' },
   login:               { icon: LogIn,          color: 'var(--ink-faint)', label: 'Login' },
 };

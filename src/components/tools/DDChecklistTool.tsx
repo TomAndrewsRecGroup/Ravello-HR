@@ -65,7 +65,7 @@ export default function DDChecklistTool() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/leads/dd-checklist', {
+      await fetch('/api/leads/due-diligence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, checkedCount, totalItems, missing: missingItems.map((i) => i.label) }),

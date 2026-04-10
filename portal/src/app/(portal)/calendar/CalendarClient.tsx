@@ -50,21 +50,21 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  closed_day:    { bg: 'rgba(217,68,68,0.10)',  border: '#D94444', text: '#B02020' },
-  bank_holiday:  { bg: 'rgba(124,58,237,0.10)', border: '#7C3AED', text: '#5A1EC0' },
-  company_event: { bg: 'rgba(59,111,255,0.10)', border: '#3B6FFF', text: '#1848CC' },
-  other:         { bg: 'rgba(148,163,184,0.10)', border: '#94A3B8', text: '#475569' },
+  closed_day:    { bg: 'rgba(217,68,68,0.10)',  border: '#D94444', text: 'var(--rose)' },
+  bank_holiday:  { bg: 'rgba(124,58,237,0.10)', border: 'var(--purple)', text: '#5A1EC0' },
+  company_event: { bg: 'rgba(59,111,255,0.10)', border: 'var(--blue)', text: 'var(--blue)' },
+  other:         { bg: 'rgba(148,163,184,0.10)', border: '#94A3B8', text: 'var(--slate)' },
 };
 
 const LEAVE_COLORS: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
-  annual_leave:   { bg: 'rgba(52,211,153,0.14)', text: '#047857', icon: Palmtree },
+  annual_leave:   { bg: 'rgba(52,211,153,0.14)', text: 'var(--emerald)', icon: Palmtree },
   sick_day:       { bg: 'rgba(245,158,11,0.14)', text: '#92400E', icon: Thermometer },
   bank_holiday:   { bg: 'rgba(124,58,237,0.10)', text: '#5A1EC0', icon: Star },
-  unpaid:         { bg: 'rgba(148,163,184,0.10)', text: '#475569', icon: CalendarDays },
+  unpaid:         { bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', icon: CalendarDays },
   maternity:      { bg: 'rgba(234,61,196,0.10)', text: '#9E1880', icon: CalendarDays },
-  paternity:      { bg: 'rgba(59,111,255,0.10)', text: '#1848CC', icon: CalendarDays },
-  compassionate:  { bg: 'rgba(148,163,184,0.10)', text: '#475569', icon: CalendarDays },
-  other:          { bg: 'rgba(148,163,184,0.10)', text: '#475569', icon: CalendarDays },
+  paternity:      { bg: 'rgba(59,111,255,0.10)', text: 'var(--blue)', icon: CalendarDays },
+  compassionate:  { bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', icon: CalendarDays },
+  other:          { bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', icon: CalendarDays },
 };
 
 function getDaysInMonth(year: number, month: number) {
@@ -162,7 +162,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
   async function saveEvent() {
     if (!eventForm.title || !eventForm.start_date || !eventForm.end_date) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('company_calendar_events')
       .insert({
         company_id: companyId,
@@ -175,17 +175,19 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       })
       .select()
       .single();
-    if (data) setEvents(prev => [...prev, data as CalendarEvent]);
+    if (!error && data) {
+      setEvents(prev => [...prev, data as CalendarEvent]);
+      setShowEventForm(false);
+      setEventForm({ title: '', event_type: 'closed_day', start_date: '', end_date: '', recurring_yearly: false, notes: '' });
+      revalidatePortalPath('/calendar');
+    }
     setSaving(false);
-    setShowEventForm(false);
-    setEventForm({ title: '', event_type: 'closed_day', start_date: '', end_date: '', recurring_yearly: false, notes: '' });
-    revalidatePortalPath('/calendar');
   }
 
   async function saveLeave() {
     if (!leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('leave_records')
       .insert({
         company_id: companyId,
@@ -199,11 +201,13 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       })
       .select('*, employee_records(full_name, job_title)')
       .single();
-    if (data) setLeave(prev => [...prev, data as LeaveRecord]);
+    if (!error && data) {
+      setLeave(prev => [...prev, data as LeaveRecord]);
+      setShowLeaveForm(false);
+      setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
+      revalidatePortalPath('/calendar');
+    }
     setSaving(false);
-    setShowLeaveForm(false);
-    setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
-    revalidatePortalPath('/calendar');
   }
 
   function openEventForm(date?: string) {
@@ -249,13 +253,13 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#B02020' }}>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--rose)' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.closed_day.bg, border: `1px solid ${EVENT_COLORS.closed_day.border}` }} /> Closed
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#5A1EC0' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.bank_holiday.bg, border: `1px solid ${EVENT_COLORS.bank_holiday.border}` }} /> Bank Holiday
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#047857' }}>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--emerald)' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.annual_leave.bg }} /> Annual Leave
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#92400E' }}>

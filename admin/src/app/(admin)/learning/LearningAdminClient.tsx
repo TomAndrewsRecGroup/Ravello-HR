@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Eye, EyeOff, Star, BookOpen, ExternalLink } from 'lucide-react';
 
 interface LearningContent {
@@ -50,7 +51,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
   async function save() {
     if (!form.title.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('learning_content').insert({
+    const { data, error } = await supabase.from('learning_content').insert({
       title:           form.title,
       description:     form.description || null,
       creator_name:    form.creator_name || null,
@@ -65,20 +66,29 @@ export default function LearningAdminClient({ initialContent }: Props) {
       is_featured:     form.is_featured,
       is_published:    false,
     }).select().single();
-    if (data) setContent(prev => [data as LearningContent, ...prev]);
+    if (!error && data) {
+      setContent(prev => [data as LearningContent, ...prev]);
+      revalidateAdminPath('/learning');
+    }
     setSaving(false);
     setShowForm(false);
     setForm({ title: '', description: '', creator_name: '', category: 'HR Fundamentals', content_type: 'video', file_url: '', thumbnail_url: '', duration_mins: '', price_pence: '0', stripe_price_id: '', tags: '', is_featured: false });
   }
 
   async function togglePublish(id: string, current: boolean) {
-    await supabase.from('learning_content').update({ is_published: !current }).eq('id', id);
-    setContent(prev => prev.map(c => c.id === id ? { ...c, is_published: !current } : c));
+    const { error } = await supabase.from('learning_content').update({ is_published: !current }).eq('id', id);
+    if (!error) {
+      setContent(prev => prev.map(c => c.id === id ? { ...c, is_published: !current } : c));
+      revalidateAdminPath('/learning');
+    }
   }
 
   async function toggleFeatured(id: string, current: boolean) {
-    await supabase.from('learning_content').update({ is_featured: !current }).eq('id', id);
-    setContent(prev => prev.map(c => c.id === id ? { ...c, is_featured: !current } : c));
+    const { error } = await supabase.from('learning_content').update({ is_featured: !current }).eq('id', id);
+    if (!error) {
+      setContent(prev => prev.map(c => c.id === id ? { ...c, is_featured: !current } : c));
+      revalidateAdminPath('/learning');
+    }
   }
 
   const filtered = filterCat === 'all' ? content : content.filter(c => c.category === filterCat);
@@ -94,7 +104,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Total Content</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: '#16A34A' }}>{published}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--success)' }}>{published}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Published</p>
         </div>
         <div className="card p-4 text-center">
@@ -207,7 +217,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                 <tr key={c.id}>
                   <td>
                     <div className="flex items-center gap-2">
-                      {c.is_featured && <Star size={12} style={{ color: '#F59E0B' }} />}
+                      {c.is_featured && <Star size={12} style={{ color: 'var(--warning)' }} />}
                       <div>
                         <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{c.title}</p>
                         {c.creator_name && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.creator_name}</p>}
@@ -224,7 +234,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={{
                         background: c.is_published ? 'rgba(22,163,74,0.12)' : 'rgba(148,163,184,0.12)',
-                        color: c.is_published ? '#166534' : '#475569',
+                        color: c.is_published ? 'var(--emerald)' : 'var(--slate)',
                       }}
                     >
                       {c.is_published ? 'Published' : 'Draft'}
@@ -245,7 +255,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                         className="btn-ghost btn-sm"
                         title={c.is_featured ? 'Remove from featured' : 'Feature'}
                       >
-                        <Star size={12} style={{ color: c.is_featured ? '#F59E0B' : 'var(--ink-faint)' }} />
+                        <Star size={12} style={{ color: c.is_featured ? 'var(--warning)' : 'var(--ink-faint)' }} />
                       </button>
                       {c.file_url && (
                         <a href={c.file_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm">

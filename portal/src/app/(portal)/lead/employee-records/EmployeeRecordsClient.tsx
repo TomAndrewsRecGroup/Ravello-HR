@@ -49,10 +49,10 @@ interface Props {
 
 /* ─── Constants ─────────────────────────────────────── */
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  active:     { label: 'Active',     bg: 'rgba(52,211,153,0.12)', color: '#047857' },
+  active:     { label: 'Active',     bg: 'rgba(52,211,153,0.12)', color: 'var(--emerald)' },
   probation:  { label: 'Probation',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
-  on_leave:   { label: 'On Leave',   bg: 'rgba(59,111,255,0.12)', color: '#1848CC' },
-  terminated: { label: 'Terminated', bg: 'rgba(217,68,68,0.08)',  color: '#B02020' },
+  on_leave:   { label: 'On Leave',   bg: 'rgba(59,111,255,0.12)', color: 'var(--blue)' },
+  terminated: { label: 'Terminated', bg: 'rgba(217,68,68,0.08)',  color: 'var(--rose)' },
 };
 
 const EMP_TYPE_LABELS: Record<string, string> = {
@@ -231,29 +231,31 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
     };
 
     if (editingId) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('employee_records')
         .update(payload)
         .eq('id', editingId)
         .select()
         .single();
-      if (data) {
+      if (!error && data) {
         setEmployees(prev => prev.map(e => e.id === editingId ? data as Employee : e));
+        setShowForm(false);
+        revalidatePortalPath('/lead/employee-records');
       }
     } else {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('employee_records')
         .insert(payload)
         .select()
         .single();
-      if (data) {
+      if (!error && data) {
         setEmployees(prev => [...prev, data as Employee]);
+        setShowForm(false);
+        revalidatePortalPath('/lead/employee-records');
       }
     }
 
     setSaving(false);
-    setShowForm(false);
-    revalidatePortalPath('/lead/employee-records');
   }
 
   return (
@@ -387,18 +389,18 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   <div className="flex flex-wrap items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Annual Leave</span>
-                      <span className="text-xs font-semibold" style={{ color: bal.annualLeaveRemaining <= 2 ? '#B02020' : '#047857' }}>
+                      <span className="text-xs font-semibold" style={{ color: bal.annualLeaveRemaining <= 2 ? 'var(--rose)' : 'var(--emerald)' }}>
                         {bal.annualLeaveRemaining}
                       </span>
                       <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>/ {bal.annualLeaveAllowance} days left</span>
                       {bal.leaveYear.isProRata && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.08)', color: '#1848CC' }}>pro-rata</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.08)', color: 'var(--blue)' }}>pro-rata</span>
                       )}
                     </div>
                     {bal.sickDayAllowance != null && (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Sick</span>
-                        <span className="text-xs font-semibold" style={{ color: bal.sickDaysRemaining != null && bal.sickDaysRemaining <= 1 ? '#B02020' : 'var(--ink-soft)' }}>
+                        <span className="text-xs font-semibold" style={{ color: bal.sickDaysRemaining != null && bal.sickDaysRemaining <= 1 ? 'var(--rose)' : 'var(--ink-soft)' }}>
                           {bal.sickDaysRemaining ?? '—'}
                         </span>
                         <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>/ {bal.sickDayAllowance} left</span>

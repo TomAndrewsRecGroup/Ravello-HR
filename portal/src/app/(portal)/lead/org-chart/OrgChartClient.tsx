@@ -23,14 +23,14 @@ interface Props {
 }
 
 const STATUS_DOT: Record<string, string> = {
-  active: '#10B981',
-  probation: '#F59E0B',
+  active: 'var(--success)',
+  probation: 'var(--warning)',
   on_leave: '#3B6FFF',
 };
 
 const DEPT_COLORS = [
-  '#7C3AED', '#3B6FFF', '#14B8A6', '#EA3DC4', '#D97706',
-  '#10B981', '#DC2626', '#6366F1', '#0891B2', '#CA8A04',
+  'var(--purple)', 'var(--blue)', 'var(--teal)', '#EA3DC4', 'var(--amber)',
+  'var(--success)', 'var(--danger)', '#6366F1', '#0891B2', '#CA8A04',
 ];
 
 function getDeptColor(dept: string | null, allDepts: string[]): string {

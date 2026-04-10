@@ -13,7 +13,7 @@ const STAGE_LABELS: Record<string, string> = {
   interview: 'Interview', offer: 'Offer', filled: 'Filled', cancelled: 'Cancelled',
 };
 const FRICTION_COLORS: Record<string, string> = {
-  Low: '#16A34A', Medium: '#D97706', High: '#DC2626', Critical: '#7F1D1D', Unknown: '#94A3B8',
+  Low: 'var(--success)', Medium: 'var(--amber)', High: 'var(--danger)', Critical: '#7F1D1D', Unknown: '#94A3B8',
 };
 
 function daysOpen(createdAt: string): number {
@@ -184,8 +184,8 @@ export default async function HiringAnalyticsPage() {
               {[
                 { label: 'Total in pipeline',  value: totalCands,    color: 'var(--blue)' },
                 { label: 'Shared with you',    value: sharedCands,   color: 'var(--purple)' },
-                { label: 'Approved by you',    value: approvedCands, color: '#16A34A' },
-                { label: 'Not progressed',     value: rejectedCands, color: '#DC2626' },
+                { label: 'Approved by you',    value: approvedCands, color: 'var(--success)' },
+                { label: 'Not progressed',     value: rejectedCands, color: 'var(--danger)' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
                   <div className="flex items-center justify-between mb-1">
@@ -213,9 +213,9 @@ export default async function HiringAnalyticsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { label: 'Active',   value: activeOffers.length,  bg: 'rgba(59,111,255,0.08)',  color: '#1848CC' },
-                    { label: 'Accepted', value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)',  color: '#166534' },
-                    { label: 'Declined', value: declinedOffers.length, bg: 'rgba(220,38,38,0.08)',  color: '#991B1B' },
+                    { label: 'Active',   value: activeOffers.length,  bg: 'rgba(59,111,255,0.08)',  color: 'var(--blue)' },
+                    { label: 'Accepted', value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)',  color: 'var(--emerald)' },
+                    { label: 'Declined', value: declinedOffers.length, bg: 'rgba(220,38,38,0.08)',  color: 'var(--rose)' },
                   ].map(({ label, value, bg, color }) => (
                     <div key={label} className="rounded-[10px] p-3 text-center" style={{ background: bg }}>
                       <p className="text-lg font-bold" style={{ color }}>{value}</p>
@@ -229,7 +229,7 @@ export default async function HiringAnalyticsPage() {
                       <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Acceptance rate</span>
                       <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{offerAcceptRate}%</span>
                     </div>
-                    <Bar pct={offerAcceptRate} color="#16A34A" />
+                    <Bar pct={offerAcceptRate} color="var(--success)" />
                   </div>
                 )}
               </div>
@@ -262,9 +262,9 @@ export default async function HiringAnalyticsPage() {
         {(frictionCounts.High + frictionCounts.Critical) > 0 && (
           <div
             className="card p-5 flex items-start gap-4"
-            style={{ borderLeft: '3px solid #DC2626', background: 'rgba(220,38,38,0.03)' }}
+            style={{ borderLeft: '3px solid var(--danger)', background: 'rgba(220,38,38,0.03)' }}
           >
-            <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" style={{ color: '#DC2626' }} />
+            <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
             <div>
               <p className="font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>
                 {frictionCounts.High + frictionCounts.Critical} role{(frictionCounts.High + frictionCounts.Critical) > 1 ? 's' : ''} with High or Critical friction

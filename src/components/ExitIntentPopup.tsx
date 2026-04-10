@@ -39,8 +39,11 @@ export default function ExitIntentPopup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    // TODO: wire to your email provider (Resend / Make webhook)
-    // await fetch('/api/leads', { method: 'POST', body: JSON.stringify({ email, source: 'exit_intent' }) });
+    await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, source: 'exit_intent' }),
+    });
     setSubmitted(true);
     sessionStorage.setItem(STORAGE_KEY, '1');
   };

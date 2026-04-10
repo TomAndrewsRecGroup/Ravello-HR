@@ -3,7 +3,8 @@ import Script from 'next/script';
 
 export function Analytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  if (!gaId) return null;
+  // Validate GA ID format (G-XXXXXXXXXX or UA-XXXXX-X) to prevent injection via env vars
+  if (!gaId || !/^(G-[A-Z0-9]+|UA-\d+-\d+)$/i.test(gaId)) return null;
   return (
     <>
       <Script

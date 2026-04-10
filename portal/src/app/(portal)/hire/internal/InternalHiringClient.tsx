@@ -37,12 +37,12 @@ interface Props {
 }
 
 const CANDIDATE_STAGES = [
-  { key: 'applied',    label: 'Applied',    bg: 'rgba(59,111,255,0.10)',  color: '#1848CC' },
+  { key: 'applied',    label: 'Applied',    bg: 'rgba(59,111,255,0.10)',  color: 'var(--blue)' },
   { key: 'screening',  label: 'Screening',  bg: 'rgba(124,58,237,0.10)',  color: '#5A1EC0' },
   { key: 'interview',  label: 'Interview',  bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  { key: 'offer',      label: 'Offer',      bg: 'rgba(52,211,153,0.12)',  color: '#047857' },
+  { key: 'offer',      label: 'Offer',      bg: 'rgba(52,211,153,0.12)',  color: 'var(--emerald)' },
   { key: 'hired',      label: 'Hired',      bg: 'rgba(52,211,153,0.20)',  color: '#065F46' },
-  { key: 'rejected',   label: 'Rejected',   bg: 'rgba(217,68,68,0.08)',   color: '#B02020' },
+  { key: 'rejected',   label: 'Rejected',   bg: 'rgba(217,68,68,0.08)',   color: 'var(--rose)' },
 ];
 
 function stageConfig(stage: string) {
@@ -101,8 +101,8 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
   }
 
   async function upgradeToTPO(roleId: string) {
-    await supabase.from('requisitions').update({ managed_by: 'tpo' }).eq('id', roleId);
-    revalidatePortalPath('/hire/internal');
+    const { error } = await supabase.from('requisitions').update({ managed_by: 'tpo' }).eq('id', roleId);
+    if (!error) revalidatePortalPath('/hire/internal');
   }
 
   /* ─── Candidate CRUD ─────────────────────────────── */
@@ -247,10 +247,10 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
       {staleRoles.length > 0 && (
         <div
           className="card p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3"
-          style={{ borderLeft: '3px solid #D97706', background: 'rgba(245,158,11,0.04)' }}
+          style={{ borderLeft: '3px solid var(--amber)', background: 'rgba(245,158,11,0.04)' }}
         >
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <Clock size={16} style={{ color: '#D97706', flexShrink: 0, marginTop: 2 }} />
+            <Clock size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
                 {staleRoles.length} role{staleRoles.length !== 1 ? 's have' : ' has'} been open for 10+ days
@@ -290,7 +290,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
             const isFilled = role.stage === 'filled';
 
             return (
-              <div key={role.id} className="card" style={isStale ? { borderLeft: '3px solid #D97706' } : undefined}>
+              <div key={role.id} className="card" style={isStale ? { borderLeft: '3px solid var(--amber)' } : undefined}>
                 {/* Role header */}
                 <div
                   className="p-4 flex items-center gap-4 cursor-pointer"
@@ -300,9 +300,9 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{role.title}</p>
                       {isFilled ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#047857' }}>Filled</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: 'var(--emerald)' }}>Filled</span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.10)', color: '#1848CC' }}>Open</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' }}>Open</span>
                       )}
                       {isStale && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', color: '#92400E' }}>{days}d open</span>
@@ -409,7 +409,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                                         <button
                                           onClick={() => moveCandidateStage(role.id, candidate.id, nextStage)}
                                           className="text-[10px] font-bold px-2 py-1 rounded-md transition-colors"
-                                          style={{ background: 'rgba(52,211,153,0.12)', color: '#047857' }}
+                                          style={{ background: 'rgba(52,211,153,0.12)', color: 'var(--emerald)' }}
                                           title={`Move to ${nextStage}`}
                                         >
                                           {stageConfig(nextStage).label} →
@@ -431,7 +431,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                                         <button
                                           onClick={() => rejectCandidate(role.id, candidate.id)}
                                           className="text-[10px] font-medium px-2 py-1 rounded-md transition-colors"
-                                          style={{ color: '#B02020' }}
+                                          style={{ color: 'var(--rose)' }}
                                           title="Reject"
                                         >
                                           Reject

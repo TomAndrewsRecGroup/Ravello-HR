@@ -47,9 +47,9 @@ const notFor = [
   'Requests for free ongoing support',
 ];
 
-// Replace with Lucinda's real Google Calendar appointment schedule URL when ready
-const BOOKING_URL = 'https://calendar.google.com/calendar/appointments/schedules/YOUR_SCHEDULE_ID';
-const BOOKING_READY = !BOOKING_URL.includes('YOUR_SCHEDULE_ID');
+// Booking URL — set NEXT_PUBLIC_BOOKING_URL in .env to activate the embedded calendar
+const BOOKING_URL = process.env.NEXT_PUBLIC_BOOKING_URL ?? '';
+const BOOKING_READY = BOOKING_URL.length > 0 && !BOOKING_URL.includes('YOUR_SCHEDULE_ID');
 
 export default function BookPage() {
   return (

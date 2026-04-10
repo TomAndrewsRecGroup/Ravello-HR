@@ -33,11 +33,11 @@ const STAGE_BADGE: Record<string, string> = {
 
 function frictionBadgeStyle(level: string): React.CSSProperties {
   switch (level) {
-    case 'Low':      return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
-    case 'Medium':   return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
-    case 'High':     return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
+    case 'Low':      return { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' };
+    case 'Medium':   return { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' };
+    case 'High':     return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
     case 'Critical': return { background: 'rgba(127,17,17,0.14)',  color: '#7F1111' };
-    default:         return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    default:         return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 
@@ -62,11 +62,14 @@ function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Re
   async function toggle(key: string) {
     const newVal = !localFlags[key];
     setSaving(key);
-    setLocalFlags(prev => ({ ...prev, [key]: newVal }));
-    await supabase
+    const { error } = await supabase
       .from('companies')
       .update({ feature_flags: { ...localFlags, [key]: newVal } })
       .eq('id', companyId);
+    if (!error) {
+      setLocalFlags(prev => ({ ...prev, [key]: newVal }));
+      revalidateAdminPath('/clients');
+    }
     setSaving(null);
   }
 
@@ -108,10 +111,13 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
 
   async function save() {
     setSaving(true);
-    await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (!error) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      revalidateAdminPath('/clients');
+    }
   }
 
   return (
@@ -143,10 +149,12 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
   async function toggle() {
     setLoading(true);
     const newVal = !active;
-    await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
-    setActive(newVal);
+    const { error } = await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
+    if (!error) {
+      setActive(newVal);
+      revalidateAdminPath('/clients');
+    }
     setLoading(false);
-    revalidateAdminPath(`/clients/${companyId}`);
   }
 
   return (
@@ -177,23 +185,23 @@ const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'd
 const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
 
 const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },
-  in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  complete:  { background: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  overdue:   { background: 'rgba(220,38,38,0.12)',   color: '#991B1B' },
+  pending:   { background: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  in_review: { background: 'rgba(245,158,11,0.12)',  color: 'var(--amber)' },
+  complete:  { background: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  overdue:   { background: 'rgba(220,38,38,0.12)',   color: 'var(--rose)' },
 };
 
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
-  high:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  medium: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
-  low:    { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  high:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  medium: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
+  low:    { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
 };
 
 interface Props {
@@ -246,20 +254,26 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveAction() {
     if (!actForm.title) return;
     setSavingAct(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('actions')
       .insert({ ...actForm, company_id: company.id, status: 'active', due_date: actForm.due_date || null })
       .select()
       .single();
-    if (data) setActions(prev => [data, ...prev]);
+    if (!error && data) {
+      setActions(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingAct(false);
     setShowActForm(false);
     setActForm({ title: '', description: '', priority: 'medium', due_date: '' });
   }
 
   async function completeAction(id: string) {
-    await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+    const { error } = await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
+    if (!error) {
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Candidates state ── */
@@ -272,12 +286,15 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveCandidate() {
     if (!candForm.full_name || !candForm.requisition_id) return;
     setSavingCand(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('candidates')
       .insert({ ...candForm, company_id: company.id })
       .select()
       .single();
-    if (data) setCandidates(prev => [data, ...prev]);
+    if (!error && data) {
+      setCandidates(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingCand(false);
     setShowCandForm(false);
     setCandForm({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
@@ -285,8 +302,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
   async function toggleApproved(id: string, current: boolean) {
     setTogglingCand(id);
-    await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+    const { error } = await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
+    if (!error) {
+      setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+      revalidateAdminPath('/clients');
+    }
     setTogglingCand(null);
   }
 
@@ -299,20 +319,26 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveCompliance() {
     if (!compForm.title || !compForm.due_date) return;
     setSavingComp(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('compliance_items')
       .insert({ ...compForm, company_id: company.id })
       .select()
       .single();
-    if (data) setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+    if (!error && data) {
+      setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+      revalidateAdminPath('/clients');
+    }
     setSavingComp(false);
     setShowCompForm(false);
     setCompForm({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
   }
 
   async function updateComplianceStatus(id: string, status: string) {
-    await supabase.from('compliance_items').update({ status }).eq('id', id);
-    setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+    const { error } = await supabase.from('compliance_items').update({ status }).eq('id', id);
+    if (!error) {
+      setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Roadmap state ── */
@@ -332,15 +358,21 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   const [perfReviews,   setPerfReviews]   = useState<any[]>([]);
 
   async function updateTrainingStatus(id: string, status: string) {
-    await supabase.from('training_needs').update({ status }).eq('id', id);
-    setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+    const { error } = await supabase.from('training_needs').update({ status }).eq('id', id);
+    if (!error) {
+      setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+      revalidateAdminPath('/clients');
+    }
   }
 
   async function updateReviewStatus(id: string, status: string) {
     const extra: Record<string, string> = {};
     if (status === 'completed') extra.completed_at = new Date().toISOString();
-    await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
-    setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+    const { error } = await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
+    if (!error) {
+      setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── PROTECT state ── */
@@ -380,8 +412,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   }, [tabData['Services']]);
 
   async function updateAbsenceStatus(id: string, status: string) {
-    await supabase.from('absence_records').update({ status }).eq('id', id);
-    setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    const { error } = await supabase.from('absence_records').update({ status }).eq('id', id);
+    if (!error) {
+      setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Doc approve ── */
@@ -390,42 +425,54 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
   async function approveDoc(docId: string) {
     setApprovingDoc(docId);
-    await supabase
+    const { error } = await supabase
       .from('documents')
       .update({ approved_at: new Date().toISOString() })
       .eq('id', docId);
-    setApprovedDocs(prev => ({ ...prev, [docId]: true }));
+    if (!error) {
+      setApprovedDocs(prev => ({ ...prev, [docId]: true }));
+      revalidateAdminPath('/clients');
+    }
     setApprovingDoc(null);
   }
 
   async function saveMilestone() {
     if (!msForm.title) return;
     setSavingMS(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('milestones')
       .insert({ ...msForm, company_id: company.id })
       .select()
       .single();
-    if (data) setMilestones(prev => [...prev, data]);
+    if (!error && data) {
+      setMilestones(prev => [...prev, data]);
+      revalidateAdminPath('/clients');
+    }
     setSavingMS(false);
     setShowMSForm(false);
     setMSForm({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
   }
 
   async function updateMilestoneStatus(id: string, status: string) {
-    await supabase.from('milestones').update({ status }).eq('id', id);
-    setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+    const { error } = await supabase.from('milestones').update({ status }).eq('id', id);
+    if (!error) {
+      setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+      revalidateAdminPath('/clients');
+    }
   }
 
   async function saveService() {
     if (!svcForm.service_name) return;
     setSavingSvc(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('client_services')
       .insert({ ...svcForm, company_id: company.id, monthly_fee: svcForm.monthly_fee ? parseFloat(svcForm.monthly_fee) : null })
       .select()
       .single();
-    if (data) setServices(prev => [data, ...prev]);
+    if (!error && data) {
+      setServices(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingSvc(false);
     setShowSvcForm(false);
     setSvcForm({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
@@ -573,7 +620,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         <td>
                           <span className="badge" style={frictionBadgeStyle(friction)}>{friction}</span>
                         </td>
-                        <td style={{ color: days >= 30 ? '#B02020' : 'var(--ink-soft)' }}>{days}d</td>
+                        <td style={{ color: days >= 30 ? 'var(--rose)' : 'var(--ink-soft)' }}>{days}d</td>
                         <td>
                           <span className="text-xs font-mono" style={{ color: 'var(--ink-faint)' }}>
                             /hiring/{r.id}
@@ -1082,7 +1129,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }}>{ci.category?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: isOverdue ? '#991B1B' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
+                        <td style={{ color: isOverdue ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
                           {new Date(ci.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {isOverdue && <span className="ml-1 text-[10px]">OVERDUE</span>}
                         </td>
@@ -1118,7 +1165,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Training Needs
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
                 {trainingNeeds.filter(n => n.status === 'open').length} open
               </span>
             </h2>
@@ -1174,7 +1221,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Performance Reviews
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: '#5B21B6' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: 'var(--purple)' }}>
                 {perfReviews.filter(r => ['pending', 'in_progress'].includes(r.status)).length} pending
               </span>
             </h2>
@@ -1233,7 +1280,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Absence Records
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
                 {absenceRecords.filter(a => a.status === 'pending').length} pending approval
               </span>
             </h2>
@@ -1269,14 +1316,14 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                               <button
                                 onClick={() => updateAbsenceStatus(a.id, 'approved')}
                                 className="btn-sm btn-secondary text-[11px] flex items-center gap-1"
-                                style={{ color: '#166534' }}
+                                style={{ color: 'var(--emerald)' }}
                               >
                                 <Check size={11} /> Approve
                               </button>
                               <button
                                 onClick={() => updateAbsenceStatus(a.id, 'rejected')}
                                 className="btn-sm btn-ghost text-[11px]"
-                                style={{ color: '#991B1B' }}
+                                style={{ color: 'var(--rose)' }}
                               >
                                 Reject
                               </button>
@@ -1285,9 +1332,9 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             <span
                               className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
                               style={
-                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: '#166534' } :
-                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: '#991B1B' } :
-                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)' } :
+                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' } :
+                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
                               }
                             >
                               {a.status}
@@ -1307,7 +1354,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Employee Documents
               {empDocs.filter(d => d.status === 'expired').length > 0 && (
-                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#991B1B' }}>
+                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' }}>
                   {empDocs.filter(d => d.status === 'expired').length} expired
                 </span>
               )}
@@ -1345,7 +1392,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             )}
                           </td>
                           <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
-                          <td style={{ color: isExpired ? '#991B1B' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
+                          <td style={{ color: isExpired ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
                             {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                             {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
                           </td>
@@ -1353,10 +1400,10 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             <span
                               className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
                               style={
-                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: '#166534' } :
-                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' } :
-                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: '#92400E' } :
-                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' } :
+                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' } :
+                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' } :
+                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
                               }
                             >
                               {d.status?.replace(/_/g, ' ')}
@@ -1476,16 +1523,16 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 /* ─── Friction Tab ──────────────────────────────────── */
 
 const BAND_STYLE: Record<string, React.CSSProperties> = {
-  'Low Friction':      { background: 'rgba(52,211,153,0.14)', color: '#047857' },
-  'Moderate Friction': { background: 'rgba(245,158,11,0.15)', color: '#8A5500' },
-  'High Friction':     { background: 'rgba(217,68,68,0.10)',  color: '#B02020' },
+  'Low Friction':      { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
+  'Moderate Friction': { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' },
+  'High Friction':     { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' },
 };
 
 const SEV_STYLE: Record<string, React.CSSProperties> = {
-  critical: { background: 'rgba(217,68,68,0.10)',  color: '#B02020' },
-  high:     { background: 'rgba(245,130,11,0.12)', color: '#A45500' },
-  medium:   { background: 'rgba(245,158,11,0.10)', color: '#8A5500' },
-  low:      { background: 'rgba(59,111,255,0.10)', color: '#2A55CC' },
+  critical: { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' },
+  high:     { background: 'rgba(245,130,11,0.12)', color: 'var(--amber)' },
+  medium:   { background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' },
+  low:      { background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' },
 };
 
 function FrictionTab({ company, assessment, items: initItems, users, documents }: {
@@ -1503,7 +1550,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
     const newCompleted = !item.is_completed;
     setSaving(item.id);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase
+    const { error } = await supabase
       .from('company_friction_items')
       .update({
         is_completed: newCompleted,
@@ -1511,9 +1558,11 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
         completed_by: newCompleted ? user?.id : null,
       })
       .eq('id', item.id);
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
+    if (!error) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
+      revalidateAdminPath('/clients');
+    }
     setSaving(null);
-    revalidateAdminPath(`/clients/${company.id}`);
   }
 
   if (!assessment) {
@@ -1609,14 +1658,14 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
                     disabled={saving === item.id}
                     className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{
-                      borderColor: item.is_completed ? '#16A34A' : 'var(--line)',
+                      borderColor: item.is_completed ? 'var(--success)' : 'var(--line)',
                       background: item.is_completed ? 'rgba(22,163,74,0.1)' : 'transparent',
                     }}
                   >
                     {saving === item.id ? (
                       <Loader2 size={10} className="animate-spin" />
                     ) : item.is_completed ? (
-                      <Check size={10} style={{ color: '#16A34A' }} />
+                      <Check size={10} style={{ color: 'var(--success)' }} />
                     ) : null}
                   </button>
                   <span

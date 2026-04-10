@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { ExternalLink, ChevronDown, Star, Loader2 } from 'lucide-react';
 
 interface Candidate {
@@ -36,10 +37,10 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:  { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  pending:  { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
   shared:   { background: 'rgba(59,111,255,0.1)',   color: 'var(--blue)' },
-  approved: { background: 'rgba(22,163,74,0.1)',    color: '#166534' },
-  rejected: { background: 'rgba(220,38,38,0.1)',    color: '#991B1B' },
+  approved: { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' },
+  rejected: { background: 'rgba(220,38,38,0.1)',    color: 'var(--rose)' },
 };
 
 function Stars({ score }: { score: number | null }) {
@@ -64,14 +65,20 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
 
   async function updateScore(id: string, score: number) {
     setUpdatingScore(id);
-    const { data } = await supabase.from('candidates').update({ screening_score: score }).eq('id', id).select().single();
-    if (data) setCandidates(cs => cs.map(c => c.id === id ? { ...c, screening_score: score } : c));
+    const { data, error } = await supabase.from('candidates').update({ screening_score: score }).eq('id', id).select().single();
+    if (!error && data) {
+      setCandidates(cs => cs.map(c => c.id === id ? { ...c, screening_score: score } : c));
+      revalidateAdminPath('/candidates');
+    }
     setUpdatingScore(null);
   }
 
   async function updatePipelineStage(id: string, stage: string) {
-    await supabase.from('candidates').update({ pipeline_stage: stage }).eq('id', id);
-    setCandidates(cs => cs.map(c => c.id === id ? { ...c, pipeline_stage: stage } : c));
+    const { error } = await supabase.from('candidates').update({ pipeline_stage: stage }).eq('id', id);
+    if (!error) {
+      setCandidates(cs => cs.map(c => c.id === id ? { ...c, pipeline_stage: stage } : c));
+      revalidateAdminPath('/candidates');
+    }
   }
 
   const filtered = candidates.filter(c => {

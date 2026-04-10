@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 10 }); // 10 checkouts per minute
 
 export async function POST(req: NextRequest) {
+  const { allowed } = limiter.check(getRateLimitKey(req));
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': '60' } });
+  }
+
   try {
     const { contentId } = await req.json();
 
@@ -79,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     if (!stripeRes.ok) {
       console.error('Stripe error:', session);
-      return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 502 });
     }
 
     // Create a pending purchase record

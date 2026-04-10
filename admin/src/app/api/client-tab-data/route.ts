@@ -9,6 +9,19 @@ import { NextRequest, NextResponse } from 'next/server';
  * 16-query upfront load that made the page slow.
  */
 export async function GET(request: NextRequest) {
+  const supabase = createServerSupabaseClient();
+
+  // ── Auth: verify caller is authenticated TPO staff ──
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single();
+  if (!callerProfile || !['tps_admin', 'tps_client'].includes(callerProfile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { searchParams } = request.nextUrl;
   const companyId = searchParams.get('companyId');
   const tab = searchParams.get('tab');
@@ -17,7 +30,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing companyId or tab' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  // Validate companyId is a real UUID and company exists
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(companyId)) {
+    return NextResponse.json({ error: 'Invalid companyId format' }, { status: 400 });
+  }
 
   switch (tab) {
     case 'Documents': {
@@ -67,16 +84,16 @@ export async function GET(request: NextRequest) {
 
     case 'LEAD': {
       const [{ data: trainingNeeds }, { data: perfReviews }] = await Promise.all([
-        supabase.from('training_needs').select('id,employee_name,topic,priority,status,due_date,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
-        supabase.from('performance_reviews').select('id,employee_name,reviewer_name,review_type,status,scheduled_date,completed_date,overall_rating,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('training_needs').select('id,employee_name,skill_gap,priority,status,target_date,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('performance_reviews').select('id,employee_name,reviewer_name,review_type,status,due_date,completed_at,overall_rating,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
       ]);
       return NextResponse.json({ trainingNeeds: trainingNeeds ?? [], perfReviews: perfReviews ?? [] });
     }
 
     case 'PROTECT': {
       const [{ data: absenceRecords }, { data: empDocs }] = await Promise.all([
-        supabase.from('absence_records').select('id,employee_name,absence_type,start_date,end_date,status,days_taken,created_at').eq('company_id', companyId).order('start_date', { ascending: false }),
-        supabase.from('employee_documents').select('id,employee_name,document_type,expiry_date,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('absence_records').select('id,employee_name,absence_type,start_date,end_date,status,days,created_at').eq('company_id', companyId).order('start_date', { ascending: false }),
+        supabase.from('employee_documents').select('id,employee_name,doc_type,expiry_date,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
       ]);
       return NextResponse.json({ absenceRecords: absenceRecords ?? [], empDocs: empDocs ?? [] });
     }
@@ -92,8 +109,8 @@ export async function GET(request: NextRequest) {
 
     case 'Friction': {
       const [{ data: assessment }, { data: items }] = await Promise.all([
-        supabase.from('company_assessments').select('id,overall_score,overall_band,dimension_scores,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('company_friction_items').select('id,dimension,score,label,recommendation').eq('company_id', companyId).order('dimension', { ascending: true }),
+        supabase.from('company_assessments').select('id,overall_band,confidence,dimensions,summary,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('company_friction_items').select('id,dimension,field_key,label,severity,is_completed,notes').eq('company_id', companyId).order('dimension', { ascending: true }),
       ]);
       return NextResponse.json({ frictionAssessment: assessment, frictionItems: items ?? [] });
     }

@@ -40,7 +40,7 @@ export default async function AdminDashboardPage() {
       .order('due_date')
       .limit(8),
     supabase.from('employee_documents')
-      .select('id,document_type,employee_name,expiry_date,companies(name)')
+      .select('id,doc_type,employee_name,expiry_date,companies(name)')
       .lte('expiry_date', in30ISO)
       .gte('expiry_date', todayISO)
       .order('expiry_date')
@@ -112,8 +112,8 @@ export default async function AdminDashboardPage() {
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
               { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
-              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: '#14B8A6' },
-              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: '#F59E0B' },
+              { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
+              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
             ].map(s => (
               <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
@@ -246,7 +246,7 @@ export default async function AdminDashboardPage() {
           {expiringDocs.length > 0 && (
             <section className="card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <FileWarning size={14} style={{ color: '#F59E0B' }} />
+                <FileWarning size={14} style={{ color: 'var(--warning)' }} />
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Docs Expiring Soon</h2>
                 <Link href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
               </div>
@@ -255,7 +255,7 @@ export default async function AdminDashboardPage() {
                   <div key={d.id} className="px-3 py-2.5 rounded-[8px]" style={{ background: 'rgba(245,158,11,0.05)' }}>
                     <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
                     <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                      {d.document_type} · {(d.companies as any)?.name} · expires {new Date(d.expiry_date).toLocaleDateString('en-GB')}
+                      {d.doc_type} · {(d.companies as any)?.name} · expires {new Date(d.expiry_date).toLocaleDateString('en-GB')}
                     </p>
                   </div>
                 ))}

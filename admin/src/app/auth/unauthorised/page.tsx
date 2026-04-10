@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function UnauthorisedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--surface)' }}>
       <div className="max-w-md w-full text-center">
         <div className="mb-8">
           <div

@@ -13,15 +13,15 @@ import {
 const CATEGORIES = [
   { value: 'friction_lens_role',     label: 'Friction Lens — Role Analysis', Icon: BarChart2,  color: '#a855f7' },
   { value: 'friction_lens_business', label: 'Friction Lens — Business Form', Icon: Building2,  color: '#06b6d4' },
-  { value: 'score_connection',       label: 'Score Connection',               Icon: Plug,       color: '#f59e0b' },
-  { value: 'bd_leads',              label: 'BD Leads',                       Icon: Target,     color: '#10b981' },
-  { value: 'bug_report',            label: 'Bug Report',                     Icon: Bug,        color: '#ef4444' },
-  { value: 'feature_request',       label: 'Feature Request',                Icon: Lightbulb,  color: '#3b82f6' },
-  { value: 'general',               label: 'General',                        Icon: HelpCircle, color: '#6b7280' },
+  { value: 'score_connection',       label: 'Score Connection',               Icon: Plug,       color: 'var(--warning)' },
+  { value: 'bd_leads',              label: 'BD Leads',                       Icon: Target,     color: 'var(--success)' },
+  { value: 'bug_report',            label: 'Bug Report',                     Icon: Bug,        color: 'var(--danger)' },
+  { value: 'feature_request',       label: 'Feature Request',                Icon: Lightbulb,  color: 'var(--blue)' },
+  { value: 'general',               label: 'General',                        Icon: HelpCircle, color: 'var(--ink-faint)' },
 ] as const;
 
 const STATUS_COLORS: Record<string, string> = {
-  open: '#f59e0b', in_progress: '#00d4ff', resolved: '#10b981', closed: '#6b7280',
+  open: 'var(--warning)', in_progress: '#00d4ff', resolved: 'var(--success)', closed: 'var(--ink-faint)',
 };
 
 function categoryMeta(cat: string) {
@@ -112,7 +112,7 @@ export default function IvyLensSupportPage() {
         {/* Success banner */}
         {success && (
           <div className="card p-4 mb-5 flex items-center gap-2" style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.2)' }}>
-            <span className="text-sm font-medium" style={{ color: '#047857' }}>{success}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--emerald)' }}>{success}</span>
           </div>
         )}
 
@@ -208,7 +208,7 @@ export default function IvyLensSupportPage() {
                         ? p === 'high' ? 'rgba(239,68,68,0.12)' : p === 'low' ? 'rgba(59,111,255,0.08)' : 'rgba(124,58,237,0.08)'
                         : 'var(--surface-alt)',
                       color: priority === p
-                        ? p === 'high' ? '#dc2626' : p === 'low' ? '#3b82f6' : 'var(--purple)'
+                        ? p === 'high' ? 'var(--danger)' : p === 'low' ? 'var(--blue)' : 'var(--purple)'
                         : 'var(--ink-faint)',
                       border: `1.5px solid ${priority === p ? (p === 'high' ? '#ef444440' : p === 'low' ? '#3b82f640' : '#7c3aed30') : 'transparent'}`,
                     }}
@@ -294,13 +294,13 @@ export default function IvyLensSupportPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {t.priority === 'high' && (
-                          <span className="badge text-[10px]" style={{ background: 'rgba(239,68,68,0.10)', color: '#dc2626' }}>High</span>
+                          <span className="badge text-[10px]" style={{ background: 'rgba(239,68,68,0.10)', color: 'var(--danger)' }}>High</span>
                         )}
                         <span
                           className="badge text-[10px] capitalize"
                           style={{
                             background: `${STATUS_COLORS[t.status] ?? '#6b7280'}18`,
-                            color: STATUS_COLORS[t.status] ?? '#6b7280',
+                            color: STATUS_COLORS[t.status] ?? 'var(--ink-faint)',
                           }}
                         >
                           {t.status?.replace('_', ' ')}

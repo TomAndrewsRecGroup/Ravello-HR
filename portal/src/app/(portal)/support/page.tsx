@@ -12,8 +12,8 @@ const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'b
 
 const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
   new:         { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' },
-  in_progress: { background: 'rgba(59,111,255,0.12)', color: '#1848CC' },
-  complete:    { background: 'rgba(52,211,153,0.14)', color: '#047857' },
+  in_progress: { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' },
+  complete:    { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -197,7 +197,7 @@ export default async function SupportPage() {
                               className="mt-4 p-3 rounded-[8px]"
                               style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.2)' }}
                             >
-                              <p className="text-xs font-semibold mb-1" style={{ color: '#047857' }}>
+                              <p className="text-xs font-semibold mb-1" style={{ color: 'var(--emerald)' }}>
                                 Response from The People Office
                               </p>
                               <p className="text-sm" style={{ color: 'var(--ink)' }}>{r.response_notes}</p>

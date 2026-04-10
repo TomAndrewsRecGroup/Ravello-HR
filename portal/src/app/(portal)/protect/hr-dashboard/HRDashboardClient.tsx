@@ -31,7 +31,7 @@ interface Props {
 function RAGBadge({ value, thresholds, label, suffix = '' }: { value: number | null; thresholds: [number, number]; label: string; suffix?: string }) {
   if (value === null) return <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>—</span>;
   const [warn, danger] = thresholds;
-  const color = value >= danger ? '#DC2626' : value >= warn ? '#D97706' : '#16A34A';
+  const color = value >= danger ? 'var(--danger)' : value >= warn ? 'var(--amber)' : 'var(--success)';
   const bg = value >= danger ? 'rgba(220,38,38,0.08)' : value >= warn ? 'rgba(217,119,6,0.08)' : 'rgba(22,163,74,0.08)';
   return (
     <span className="text-sm font-semibold px-2 py-0.5 rounded-full" style={{ background: bg, color }}>
@@ -106,9 +106,9 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
         {quickLinks.map(({ href, icon: Icon, label, stat, alert, alertText }) => (
           <Link key={href} href={href} className="card p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
-              <Icon size={16} style={{ color: alert ? '#DC2626' : 'var(--purple)' }} />
+              <Icon size={16} style={{ color: alert ? 'var(--danger)' : 'var(--purple)' }} />
               {alert && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--danger)' }}>
                   {alertText}
                 </span>
               )}
@@ -149,7 +149,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
               <RAGBadge value={latest.turnover_rate} thresholds={[10, 20]} label="Turnover" suffix="%" />
               {latest.turnover_rate !== null && (
                 <div className="mt-1.5">
-                  <Bar pct={latest.turnover_rate} color={latest.turnover_rate >= 20 ? '#DC2626' : latest.turnover_rate >= 10 ? '#D97706' : '#16A34A'} />
+                  <Bar pct={latest.turnover_rate} color={latest.turnover_rate >= 20 ? 'var(--danger)' : latest.turnover_rate >= 10 ? 'var(--amber)' : 'var(--success)'} />
                 </div>
               )}
             </div>
@@ -159,7 +159,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
               <RAGBadge value={latest.absence_rate} thresholds={[3, 6]} label="Absence" suffix="%" />
               {latest.absence_rate !== null && (
                 <div className="mt-1.5">
-                  <Bar pct={latest.absence_rate * 10} color={latest.absence_rate >= 6 ? '#DC2626' : latest.absence_rate >= 3 ? '#D97706' : '#16A34A'} />
+                  <Bar pct={latest.absence_rate * 10} color={latest.absence_rate >= 6 ? 'var(--danger)' : latest.absence_rate >= 3 ? 'var(--amber)' : 'var(--success)'} />
                 </div>
               )}
             </div>
@@ -181,7 +181,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
                 {[
                   { label: 'Male',   pct: latest.gender_m_pct,     color: '#60A5FA' },
                   { label: 'Female', pct: latest.gender_f_pct,     color: '#F472B6' },
-                  { label: 'Other',  pct: latest.gender_other_pct, color: '#A78BFA' },
+                  { label: 'Other',  pct: latest.gender_other_pct, color: 'var(--purple-lt)' },
                 ].filter(g => g.pct !== null).map(g => (
                   <div key={g.label}>
                     <div className="flex items-center justify-between mb-1">

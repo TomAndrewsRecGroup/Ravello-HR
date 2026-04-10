@@ -149,7 +149,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                 <TrendingDown size={14} style={{ color: 'var(--ink-faint)' }} />
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Weekly Burn</p>
               </div>
-              <p className="font-display font-bold text-xl" style={{ color: '#D97706' }}>{fmt(totalWeekly)}</p>
+              <p className="font-display font-bold text-xl" style={{ color: 'var(--amber)' }}>{fmt(totalWeekly)}</p>
             </div>
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -192,7 +192,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold"
                           style={{
                             background: r.days > 30 ? 'rgba(217,68,68,0.08)' : r.days > 14 ? 'rgba(245,158,11,0.12)' : 'rgba(52,211,153,0.12)',
-                            color: r.days > 30 ? '#B02020' : r.days > 14 ? '#8A5500' : '#047857',
+                            color: r.days > 30 ? 'var(--rose)' : r.days > 14 ? '#8A5500' : 'var(--emerald)',
                           }}
                         >
                           {r.days}d
@@ -207,8 +207,8 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
                                         r.level === 'Medium' ? 'rgba(245,158,11,0.12)' :
                                         'rgba(52,211,153,0.14)',
                             color: r.level === 'Critical' ? '#7F1111' :
-                                   r.level === 'High' ? '#B02020' :
-                                   r.level === 'Medium' ? '#8A5500' : '#047857',
+                                   r.level === 'High' ? 'var(--rose)' :
+                                   r.level === 'Medium' ? '#8A5500' : 'var(--emerald)',
                           }}
                         >
                           {r.level} ({r.multiplier}x)

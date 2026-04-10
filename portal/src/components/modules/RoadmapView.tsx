@@ -43,9 +43,9 @@ function statusBadge(status: Milestone['status']): React.ReactNode {
 // ── Pillar config ──────────────────────────────────────────────────────────────
 
 const PILLARS: { key: Milestone['pillar']; label: string; color: string }[] = [
-  { key: 'hire',    label: 'HIRE',    color: '#7C3AED' },
-  { key: 'lead',    label: 'LEAD',    color: '#14B8A6' },
-  { key: 'protect', label: 'PROTECT', color: '#3B6FFF' },
+  { key: 'hire',    label: 'HIRE',    color: 'var(--purple)' },
+  { key: 'lead',    label: 'LEAD',    color: 'var(--teal)' },
+  { key: 'protect', label: 'PROTECT', color: 'var(--blue)' },
 ];
 
 // ── Milestone card ─────────────────────────────────────────────────────────────

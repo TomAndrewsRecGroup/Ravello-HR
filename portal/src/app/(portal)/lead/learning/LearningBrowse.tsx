@@ -41,7 +41,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  video: '#8B5CF6', pdf: '#3B82F6', pptx: '#F59E0B', link: '#10B981', scorm: '#EC4899',
+  video: '#8B5CF6', pdf: 'var(--blue)', pptx: 'var(--warning)', link: 'var(--success)', scorm: '#EC4899',
 };
 
 function fmtPrice(pence: number): string {
@@ -170,7 +170,7 @@ function ContentCard({
           ) : <span />}
           <span
             className="text-[11px] font-bold"
-            style={{ color: item.price_pence === 0 ? '#16A34A' : typeColor }}
+            style={{ color: item.price_pence === 0 ? 'var(--success)' : typeColor }}
           >
             {fmtPrice(item.price_pence)}
           </span>
@@ -491,7 +491,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="Your Purchases"
                 items={purchased}
                 purchaseMap={purchaseMap}
-                icon={<CheckCircle2 size={14} style={{ color: '#16A34A' }} />}
+                icon={<CheckCircle2 size={14} style={{ color: 'var(--success)' }} />}
               />
             </div>
           )}
@@ -503,7 +503,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="You May Like"
                 items={youMayLike}
                 purchaseMap={purchaseMap}
-                icon={<Star size={14} style={{ color: '#F59E0B' }} />}
+                icon={<Star size={14} style={{ color: 'var(--warning)' }} />}
               />
             </div>
           )}
@@ -515,7 +515,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="Featured"
                 items={featuredRest}
                 purchaseMap={purchaseMap}
-                icon={<Star size={14} style={{ color: '#F59E0B' }} />}
+                icon={<Star size={14} style={{ color: 'var(--warning)' }} />}
               />
             </div>
           )}

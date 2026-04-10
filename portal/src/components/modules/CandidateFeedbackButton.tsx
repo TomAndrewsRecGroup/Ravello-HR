@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidatePortalPath } from '@/app/actions';
 import { CheckCircle2, XCircle, MessageSquare, Loader2, UserPlus } from 'lucide-react';
 import HiredModal from './HiredModal';
 
@@ -35,6 +36,7 @@ export default function CandidateFeedbackButton({
       const { error: err } = await supabase.from('candidates').update(upd).eq('id', candidateId);
       if (err) throw err;
       setDone(true);
+      revalidatePortalPath('/hiring');
     } catch (err) {
       console.error('Failed to update candidate feedback:', err);
       setError('Failed to save feedback. Please try again.');
@@ -92,7 +94,7 @@ export default function CandidateFeedbackButton({
           onClick={() => update('approved')}
           disabled={!!loading}
           className="btn-sm flex items-center gap-1.5"
-          style={{ background: 'rgba(52,211,153,0.12)', color: '#047857', border: '1px solid rgba(52,211,153,0.2)' }}
+          style={{ background: 'rgba(52,211,153,0.12)', color: 'var(--emerald)', border: '1px solid rgba(52,211,153,0.2)' }}
         >
           {loading === 'approved' ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
           Approve

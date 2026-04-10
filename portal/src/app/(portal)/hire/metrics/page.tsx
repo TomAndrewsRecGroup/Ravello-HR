@@ -140,7 +140,7 @@ export default async function MetricsPage() {
   const frictionDist = ['Low','Medium','High','Critical','Unknown'].map(level => ({
     label: level,
     value: activeReqs.filter(r => (r.friction_level ?? 'Unknown') === level).length,
-    color: level === 'Low' ? '#16A34A' : level === 'Medium' ? '#D97706' : level === 'High' ? '#DC2626' : level === 'Critical' ? '#7F1D1D' : '#94A3B8',
+    color: level === 'Low' ? 'var(--success)' : level === 'Medium' ? 'var(--amber)' : level === 'High' ? 'var(--danger)' : level === 'Critical' ? '#7F1D1D' : '#94A3B8',
   })).filter(f => f.value > 0);
 
   /* ── Candidate stats ── */
@@ -168,7 +168,7 @@ export default async function MetricsPage() {
   const ticketPrios = ['urgent','high','normal','low'].map(p => ({
     label: p.charAt(0).toUpperCase() + p.slice(1),
     value: tickets.filter(t => t.priority === p).length,
-    color: p === 'urgent' ? '#DC2626' : p === 'high' ? '#D97706' : p === 'normal' ? 'var(--blue)' : '#94A3B8',
+    color: p === 'urgent' ? 'var(--danger)' : p === 'high' ? 'var(--amber)' : p === 'normal' ? 'var(--blue)' : '#94A3B8',
   })).filter(p => p.value > 0);
   const maxPrio = Math.max(...ticketPrios.map(p => p.value), 1);
 
@@ -209,8 +209,8 @@ export default async function MetricsPage() {
           <StatCard label="Active Roles"       value={activeReqs.length}   color="var(--purple)" />
           <StatCard label="Roles Filled"       value={filledReqs.length}   color="var(--teal)" />
           <StatCard label="Avg Days Open"      value={`${avgDaysOpen}d`}   color="var(--blue)" />
-          <StatCard label="Compliance Rate"    value={`${compRate}%`}      color={compRate >= 80 ? '#16A34A' : compRate >= 50 ? '#D97706' : '#DC2626'} />
-          <StatCard label="Open Tickets"       value={openTickets.length}  color="#D97706" />
+          <StatCard label="Compliance Rate"    value={`${compRate}%`}      color={compRate >= 80 ? 'var(--success)' : compRate >= 50 ? 'var(--amber)' : 'var(--danger)'} />
+          <StatCard label="Open Tickets"       value={openTickets.length}  color="var(--amber)" />
           <StatCard label="Actions Completed"  value={`${actionRate}%`}    color="var(--teal)" />
         </div>
 
@@ -288,10 +288,10 @@ export default async function MetricsPage() {
               <>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-5">
                   {[
-                    { label: 'Overdue',   value: compOverdue.length,  bg: 'rgba(220,38,38,0.08)',   text: '#991B1B' },
+                    { label: 'Overdue',   value: compOverdue.length,  bg: 'rgba(220,38,38,0.08)',   text: 'var(--rose)' },
                     { label: 'Pending',   value: compPending.length,  bg: 'rgba(217,119,6,0.08)',   text: '#92400E' },
                     { label: 'In Review', value: compReview.length,   bg: 'rgba(59,130,246,0.08)',  text: '#1D4ED8' },
-                    { label: 'Complete',  value: compComplete.length, bg: 'rgba(22,163,74,0.08)',   text: '#166534' },
+                    { label: 'Complete',  value: compComplete.length, bg: 'rgba(22,163,74,0.08)',   text: 'var(--emerald)' },
                   ].map(s => (
                     <div key={s.label} className="rounded-[10px] p-3 text-center" style={{ background: s.bg }}>
                       <p className="font-display font-bold text-2xl" style={{ color: s.text }}>{s.value}</p>
@@ -302,7 +302,7 @@ export default async function MetricsPage() {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-faint)' }}>Completion rate</p>
                   <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-alt)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${compRate}%`, background: compRate >= 80 ? '#16A34A' : '#D97706' }} />
+                    <div className="h-full rounded-full" style={{ width: `${compRate}%`, background: compRate >= 80 ? 'var(--success)' : 'var(--amber)' }} />
                   </div>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{compRate}% complete</p>
                 </div>
@@ -340,7 +340,7 @@ export default async function MetricsPage() {
                 {urgentTickets.length > 0 && (
                   <div className="rounded-[10px] px-4 py-3 mb-4 flex items-center gap-2"
                     style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}>
-                    <p className="text-xs font-semibold" style={{ color: '#991B1B' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--rose)' }}>
                       {urgentTickets.length} urgent/high priority ticket{urgentTickets.length !== 1 ? 's' : ''} open
                     </p>
                   </div>
@@ -418,8 +418,8 @@ export default async function MetricsPage() {
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-faint)' }}>Active by Priority</p>
                     {[
-                      { label: 'High',   value: highActions,   color: '#DC2626' },
-                      { label: 'Medium', value: mediumActions, color: '#D97706' },
+                      { label: 'High',   value: highActions,   color: 'var(--danger)' },
+                      { label: 'Medium', value: mediumActions, color: 'var(--amber)' },
                       { label: 'Low',    value: lowActions,    color: '#94A3B8' },
                     ].filter(p => p.value > 0).map(p => (
                       <BarRow key={p.label} label={p.label} value={p.value} max={activeActions.length} color={p.color} />

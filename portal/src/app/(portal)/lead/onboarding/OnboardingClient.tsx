@@ -35,10 +35,10 @@ interface Props {
 }
 
 const CATEGORIES = [
-  { key: 'general', label: 'General', color: '#3B6FFF' },
-  { key: 'it_setup', label: 'IT Setup', color: '#7C3AED' },
-  { key: 'documents', label: 'Documents', color: '#14B8A6' },
-  { key: 'training', label: 'Training', color: '#D97706' },
+  { key: 'general', label: 'General', color: 'var(--blue)' },
+  { key: 'it_setup', label: 'IT Setup', color: 'var(--purple)' },
+  { key: 'documents', label: 'Documents', color: 'var(--teal)' },
+  { key: 'training', label: 'Training', color: 'var(--amber)' },
   { key: 'intro', label: 'Introductions', color: '#EA3DC4' },
 ];
 
@@ -139,7 +139,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
   /* ─── Toggle task status ─────────────────────────── */
   async function toggleTask(taskId: string, currentStatus: string) {
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    await supabase
+    const { error } = await supabase
       .from('onboarding_task_progress')
       .update({
         status: newStatus,
@@ -147,16 +147,16 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
         completed_by: newStatus === 'completed' ? userId : null,
       })
       .eq('id', taskId);
-    revalidatePortalPath('/lead/onboarding');
+    if (!error) revalidatePortalPath('/lead/onboarding');
   }
 
   /* ─── Mark instance complete ─────────────────────── */
   async function completeInstance(instanceId: string) {
-    await supabase
+    const { error } = await supabase
       .from('onboarding_instances')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', instanceId);
-    revalidatePortalPath('/lead/onboarding');
+    if (!error) revalidatePortalPath('/lead/onboarding');
   }
 
   function addTask() {
@@ -252,11 +252,11 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="hidden sm:block text-right">
-                          <p className="text-sm font-bold" style={{ color: pct === 100 ? '#047857' : 'var(--purple)' }}>{pct}%</p>
+                          <p className="text-sm font-bold" style={{ color: pct === 100 ? 'var(--emerald)' : 'var(--purple)' }}>{pct}%</p>
                           <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{done}/{total} tasks</p>
                         </div>
                         <div className="w-16 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? '#10B981' : 'var(--purple)' }} />
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? 'var(--success)' : 'var(--purple)' }} />
                         </div>
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </div>
@@ -275,7 +275,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
                                 className="mt-0.5 flex-shrink-0"
                               >
                                 {task.status === 'completed' ? (
-                                  <CheckCircle2 size={16} style={{ color: '#10B981' }} />
+                                  <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />
                                 ) : (
                                   <div className="w-4 h-4 rounded-full border-2" style={{ borderColor: 'var(--line)' }} />
                                 )}
