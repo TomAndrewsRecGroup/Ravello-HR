@@ -101,8 +101,8 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
   }
 
   async function upgradeToTPO(roleId: string) {
-    await supabase.from('requisitions').update({ managed_by: 'tpo' }).eq('id', roleId);
-    revalidatePortalPath('/hire/internal');
+    const { error } = await supabase.from('requisitions').update({ managed_by: 'tpo' }).eq('id', roleId);
+    if (!error) revalidatePortalPath('/hire/internal');
   }
 
   /* ─── Candidate CRUD ─────────────────────────────── */

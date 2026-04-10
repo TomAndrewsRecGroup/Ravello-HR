@@ -161,19 +161,19 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
   }
 
   async function completeInstance(instanceId: string) {
-    await supabase.from('offboarding_instances').update({
+    const { error } = await supabase.from('offboarding_instances').update({
       status: 'completed', completed_at: new Date().toISOString(),
     }).eq('id', instanceId);
-    revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/protect/offboarding');
   }
 
   async function saveExitNotes(instanceId: string) {
     setSavingNotes(true);
-    await supabase.from('offboarding_instances').update({
+    const { error } = await supabase.from('offboarding_instances').update({
       exit_interview_notes: exitNotes,
     }).eq('id', instanceId);
     setSavingNotes(false);
-    revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/protect/offboarding');
   }
 
   function addTask() {
