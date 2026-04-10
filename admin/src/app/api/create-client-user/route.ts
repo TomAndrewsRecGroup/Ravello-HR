@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   // Auth check — verify caller is ravello staff
@@ -72,6 +73,14 @@ export async function POST(request: NextRequest) {
     role: 'client_admin',
     onboarding_completed: true,
   }, { onConflict: 'id', ignoreDuplicates: false });
+
+  auditLog({
+    action: 'user.created',
+    actor_id: user.id,
+    target_id: data.user.id,
+    target_type: 'profile',
+    metadata: { email, company_id, role: 'client_admin' },
+  });
 
   return NextResponse.json({ success: true, user_id: data.user.id });
 }

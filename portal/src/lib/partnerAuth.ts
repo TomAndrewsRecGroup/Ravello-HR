@@ -43,17 +43,19 @@ export async function authenticatePartnerKey(
     return { valid: false, error: 'API key has been revoked', status: 403 };
   }
 
-  const perms: string[] = key.permissions ?? [];
+  const perms = Array.isArray(key.permissions) ? key.permissions as string[] : [];
   if (!perms.includes(requiredPermission)) {
     return { valid: false, error: `API key lacks '${requiredPermission}' permission`, status: 403 };
   }
 
-  // Update last_used_at (fire-and-forget)
+  // Update last_used_at (fire-and-forget with error logging)
   supabase
     .from('partner_api_keys')
     .update({ last_used_at: new Date().toISOString() })
     .eq('id', key.id)
-    .then(() => {});
+    .then(({ error: updateErr }) => {
+      if (updateErr) console.error('[partnerAuth] Failed to update last_used_at:', updateErr.message);
+    });
 
   return { valid: true, keyId: key.id, permissions: perms };
 }

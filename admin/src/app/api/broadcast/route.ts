@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { auditLog } from '@/lib/audit';
 
 // POST /api/broadcast
 // Creates an action item for each selected company.
@@ -60,6 +61,12 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase.from('actions').insert(rows).select('id');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  auditLog({
+    action: 'broadcast.sent',
+    actor_id: user.id,
+    metadata: { title, action_type, company_count: company_ids.length, created: data?.length ?? 0 },
+  });
 
   return NextResponse.json({ created: data?.length ?? 0 });
 }
