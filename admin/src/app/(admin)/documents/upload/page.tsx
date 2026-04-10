@@ -55,6 +55,7 @@ export default function DocumentUploadPage() {
     });
 
     if (dbErr) { setError(dbErr.message); setLoading(false); return; }
+    revalidateAdminPath('/documents');
     router.push('/documents');
   }
 

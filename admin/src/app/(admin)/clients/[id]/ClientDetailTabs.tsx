@@ -425,42 +425,54 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
   async function approveDoc(docId: string) {
     setApprovingDoc(docId);
-    await supabase
+    const { error } = await supabase
       .from('documents')
       .update({ approved_at: new Date().toISOString() })
       .eq('id', docId);
-    setApprovedDocs(prev => ({ ...prev, [docId]: true }));
+    if (!error) {
+      setApprovedDocs(prev => ({ ...prev, [docId]: true }));
+      revalidateAdminPath('/clients');
+    }
     setApprovingDoc(null);
   }
 
   async function saveMilestone() {
     if (!msForm.title) return;
     setSavingMS(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('milestones')
       .insert({ ...msForm, company_id: company.id })
       .select()
       .single();
-    if (data) setMilestones(prev => [...prev, data]);
+    if (!error && data) {
+      setMilestones(prev => [...prev, data]);
+      revalidateAdminPath('/clients');
+    }
     setSavingMS(false);
     setShowMSForm(false);
     setMSForm({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
   }
 
   async function updateMilestoneStatus(id: string, status: string) {
-    await supabase.from('milestones').update({ status }).eq('id', id);
-    setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+    const { error } = await supabase.from('milestones').update({ status }).eq('id', id);
+    if (!error) {
+      setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+      revalidateAdminPath('/clients');
+    }
   }
 
   async function saveService() {
     if (!svcForm.service_name) return;
     setSavingSvc(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('client_services')
       .insert({ ...svcForm, company_id: company.id, monthly_fee: svcForm.monthly_fee ? parseFloat(svcForm.monthly_fee) : null })
       .select()
       .single();
-    if (data) setServices(prev => [data, ...prev]);
+    if (!error && data) {
+      setServices(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingSvc(false);
     setShowSvcForm(false);
     setSvcForm({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
@@ -1538,7 +1550,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
     const newCompleted = !item.is_completed;
     setSaving(item.id);
     const { data: { user } } = await supabase.auth.getUser();
-    await supabase
+    const { error } = await supabase
       .from('company_friction_items')
       .update({
         is_completed: newCompleted,
@@ -1546,9 +1558,11 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
         completed_by: newCompleted ? user?.id : null,
       })
       .eq('id', item.id);
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
+    if (!error) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_completed: newCompleted } : i));
+      revalidateAdminPath('/clients');
+    }
     setSaving(null);
-    revalidateAdminPath(`/clients/${company.id}`);
   }
 
   if (!assessment) {
