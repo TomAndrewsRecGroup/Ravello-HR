@@ -357,67 +357,6 @@ export default function PortalShowcase() {
           })}
         </div>
 
-        {/* "In use" editorial section */}
-        <div className="grid lg:grid-cols-[1fr_480px] gap-14 items-center mt-20 pt-20" style={{ borderTop: '1px solid var(--brand-line)' }}>
-          <div>
-            <p className="eyebrow mb-4">
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-              Designed for leaders
-            </p>
-            <h3
-              className="font-display mb-5"
-              style={{
-                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
-                fontWeight: 800,
-                lineHeight: 1.05,
-                letterSpacing: '-0.035em',
-                color: 'var(--ink)',
-              }}
-            >
-              Clarity, not complexity.<br />
-              <span className="text-gradient">Your People data, your way.</span>
-            </h3>
-            <p className="text-base leading-relaxed mb-8 max-w-[480px]" style={{ color: 'var(--ink-soft)' }}>
-              Every client gets a portal that reflects their business. No spreadsheets,
-              no chasing emails. One place for hiring pipeline, compliance status, team documents,
-              and real-time HR analytics.
-            </p>
-            <div className="flex flex-col gap-4 mb-10">
-              {[
-                'Live hiring pipeline updated in real time',
-                'Compliance tracker with due-date alerts',
-                'Document library with version control',
-                'HR metrics your board will actually understand',
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3">
-                  <ArrowRight size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--brand-purple)' }} />
-                  <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{item}</span>
-                </div>
-              ))}
-            </div>
-            <Link href="/book" className="btn-gradient">
-              See the portal in action <ArrowRight size={15} />
-            </Link>
-          </div>
-
-          {/* Photo */}
-          <div className="hidden lg:block">
-            <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
-              <Image
-                src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=960&h=960&fit=crop&crop=faces"
-                alt="Business leader reviewing HR analytics on laptop"
-                fill
-                className="object-cover"
-              />
-              {/* Subtle gradient overlay */}
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(180deg, transparent 50%, rgba(10,15,30,0.28) 100%)' }}
-              />
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
   );
