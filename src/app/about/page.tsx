@@ -72,7 +72,7 @@ export default function AboutPage() {
               <h2
                 style={{
                   fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 600,
+                  fontWeight: 300,
                   fontSize: '2.25rem',
                   letterSpacing: '-0.02em',
                   color: 'var(--ink)',
@@ -141,7 +141,7 @@ export default function AboutPage() {
               <h2
                 style={{
                   fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 600,
+                  fontWeight: 300,
                   fontSize: '2.25rem',
                   letterSpacing: '-0.02em',
                   color: 'var(--ink)',

@@ -87,7 +87,7 @@ export default async function AdminRoadmapPage() {
           ].map((s) => (
             <div key={s.label} className="card p-5">
               <p className="text-xs font-medium mb-1" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-              <p className="text-3xl font-bold font-display" style={{ color: s.color }}>{s.val}</p>
+              <p className="text-2xl font-bold font-display" style={{ color: s.color }}>{s.val}</p>
             </div>
           ))}
         </div>

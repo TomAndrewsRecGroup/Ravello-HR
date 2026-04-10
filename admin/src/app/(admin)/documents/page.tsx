@@ -27,7 +27,7 @@ export default async function AdminDocumentsPage() {
       />
       <main className="admin-page flex-1">
         {all.length === 0 ? (
-          <div className="card p-12 empty-state">No documents uploaded yet. <Link href="/documents/upload" className="btn-cta mt-2">Upload first document</Link></div>
+          <div className="card p-12 empty-state">No documents yet. <Link href="/documents/upload" className="btn-cta mt-2">Upload first document</Link></div>
         ) : (
           <div className="table-wrapper">
             <table className="table">

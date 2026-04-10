@@ -101,19 +101,19 @@ export default async function EngagementPage() {
         {/* Summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Total Clients</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Total Clients</p>
             <p className="font-display font-bold text-2xl text-gradient">{companies.length}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--emerald)' }}>Healthy</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--emerald)' }}>Healthy</p>
             <p className="font-display font-bold text-2xl" style={{ color: 'var(--emerald)' }}>{healthy}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--amber)' }}>At Risk</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--amber)' }}>At Risk</p>
             <p className="font-display font-bold text-2xl" style={{ color: 'var(--amber)' }}>{atRisk}</p>
           </div>
           <div className="stat-card">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>Disengaged</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--danger)' }}>Disengaged</p>
             <p className="font-display font-bold text-2xl" style={{ color: 'var(--danger)' }}>{disengaged}</p>
           </div>
         </div>

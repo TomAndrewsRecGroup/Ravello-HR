@@ -204,7 +204,7 @@ export default async function HiringAnalyticsPage() {
               Offer Summary
             </h2>
             {allOffers.length === 0 ? (
-              <div className="empty-state py-6">
+              <div className="empty-state py-8">
                 <CheckCircle2 size={20} />
                 <p className="text-sm">No offers yet</p>
                 <p className="text-xs max-w-[220px]">Offers will appear here once your consultant creates them for approved candidates.</p>

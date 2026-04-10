@@ -23,16 +23,17 @@ const CATEGORY_GROUPS: { key: string; label: string }[] = [
 
 function catBadgeClass(cat: string): string {
   const m: Record<string, string> = {
-    contract:       'badge-submitted',
-    policy:         'badge-inprogress',
-    handbook:       'badge-shortlist',
-    template:       'badge-offer',
-    role_pack:      'badge-filled',
+    contract:       'badge-admin',
+    policy:         'badge-staff',
+    handbook:       'badge-normal',
+    template:       'badge-normal',
+    role_pack:      'badge-normal',
     meeting_notes:  'badge-normal',
     strategic_plan: 'badge-normal',
     letter:         'badge-normal',
     report:         'badge-normal',
-    other:          'badge-normal',
+    compliance:     'badge-active',
+    other:          'badge-inactive',
   };
   return m[cat] ?? 'badge-normal';
 }

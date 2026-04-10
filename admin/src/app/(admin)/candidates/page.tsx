@@ -46,7 +46,7 @@ export default async function CandidatesPage() {
         {/* Stage summary */}
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {statsByStage.map(({ stage, count }) => (
-            <div key={stage} className="card p-4 text-center">
+            <div key={stage} className="stat-card text-center">
               <p className="text-2xl font-bold font-display" style={{ color: STAGE_COLORS[stage] }}>{count}</p>
               <p className="text-[11px] font-medium mt-1 capitalize" style={{ color: 'var(--ink-faint)' }}>{stage}</p>
             </div>

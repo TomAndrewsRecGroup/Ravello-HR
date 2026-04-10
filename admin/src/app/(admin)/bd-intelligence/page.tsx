@@ -72,7 +72,7 @@ export default async function BDIntelligencePage() {
           {stats.map((s) => (
             <div key={s.label} className="stat-card">
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-              <p className="font-display font-bold text-3xl mt-1" style={{ color: 'var(--ink)' }}>{s.value}</p>
+              <p className="font-display font-bold text-2xl mt-1" style={{ color: 'var(--ink)' }}>{s.value}</p>
             </div>
           ))}
         </div>

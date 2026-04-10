@@ -271,7 +271,7 @@ function HeroCard({
         display: 'flex', flexDirection: 'column',
         background: 'var(--surface)',
         border: `1.5px solid var(--brand-line)`,
-        borderRadius: 22,
+        borderRadius: 24,
         padding: '22px 18px 18px',
         height: 320,
         flex: '1 1 0',
@@ -294,7 +294,7 @@ function HeroCard({
       {/* Icon */}
       <div style={{
         position: 'relative', zIndex: 1,
-        width: 42, height: 42, borderRadius: 13,
+        width: 44, height: 44, borderRadius: 14,
         background: card.accentBg,
         border: `1px solid ${card.accentColor}35`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
