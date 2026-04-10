@@ -35,10 +35,10 @@ interface Props {
 }
 
 const CATEGORIES = [
-  { key: 'general', label: 'General', color: '#3B6FFF' },
-  { key: 'it_setup', label: 'IT Setup', color: '#7C3AED' },
-  { key: 'documents', label: 'Documents', color: '#14B8A6' },
-  { key: 'training', label: 'Training', color: '#D97706' },
+  { key: 'general', label: 'General', color: 'var(--blue)' },
+  { key: 'it_setup', label: 'IT Setup', color: 'var(--purple)' },
+  { key: 'documents', label: 'Documents', color: 'var(--teal)' },
+  { key: 'training', label: 'Training', color: 'var(--amber)' },
   { key: 'intro', label: 'Introductions', color: '#EA3DC4' },
 ];
 
@@ -275,7 +275,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
                                 className="mt-0.5 flex-shrink-0"
                               >
                                 {task.status === 'completed' ? (
-                                  <CheckCircle2 size={16} style={{ color: '#10B981' }} />
+                                  <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />
                                 ) : (
                                   <div className="w-4 h-4 rounded-full border-2" style={{ borderColor: 'var(--line)' }} />
                                 )}

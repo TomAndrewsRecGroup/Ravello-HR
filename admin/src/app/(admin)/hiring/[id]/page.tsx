@@ -116,7 +116,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               </div>
               <div>
                 <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Days Open</p>
-                <p className="text-sm font-semibold" style={{ color: days >= 30 ? '#991B1B' : 'var(--ink)' }}>{days}d</p>
+                <p className="text-sm font-semibold" style={{ color: days >= 30 ? 'var(--rose)' : 'var(--ink)' }}>{days}d</p>
               </div>
               {r.assigned_recruiter && (
                 <div>

@@ -234,7 +234,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={{
                         background: c.is_published ? 'rgba(22,163,74,0.12)' : 'rgba(148,163,184,0.12)',
-                        color: c.is_published ? '#166534' : '#475569',
+                        color: c.is_published ? 'var(--emerald)' : 'var(--slate)',
                       }}
                     >
                       {c.is_published ? 'Published' : 'Draft'}
@@ -255,7 +255,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
                         className="btn-ghost btn-sm"
                         title={c.is_featured ? 'Remove from featured' : 'Feature'}
                       >
-                        <Star size={12} style={{ color: c.is_featured ? '#F59E0B' : 'var(--ink-faint)' }} />
+                        <Star size={12} style={{ color: c.is_featured ? 'var(--warning)' : 'var(--ink-faint)' }} />
                       </button>
                       {c.file_url && (
                         <a href={c.file_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm">

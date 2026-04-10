@@ -491,7 +491,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="Your Purchases"
                 items={purchased}
                 purchaseMap={purchaseMap}
-                icon={<CheckCircle2 size={14} style={{ color: '#16A34A' }} />}
+                icon={<CheckCircle2 size={14} style={{ color: 'var(--success)' }} />}
               />
             </div>
           )}
@@ -503,7 +503,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="You May Like"
                 items={youMayLike}
                 purchaseMap={purchaseMap}
-                icon={<Star size={14} style={{ color: '#F59E0B' }} />}
+                icon={<Star size={14} style={{ color: 'var(--warning)' }} />}
               />
             </div>
           )}
@@ -515,7 +515,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
                 title="Featured"
                 items={featuredRest}
                 purchaseMap={purchaseMap}
-                icon={<Star size={14} style={{ color: '#F59E0B' }} />}
+                icon={<Star size={14} style={{ color: 'var(--warning)' }} />}
               />
             </div>
           )}

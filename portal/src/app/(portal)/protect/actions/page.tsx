@@ -22,8 +22,8 @@ const ENTITY_PATHS: Record<string, string> = {
 };
 
 function priorityIcon(priority: Action['priority']) {
-  if (priority === 'high')   return <AlertTriangle size={14} className="flex-shrink-0" style={{ color: '#EF4444' }} />;
-  if (priority === 'medium') return <Info          size={14} className="flex-shrink-0" style={{ color: '#F59E0B' }} />;
+  if (priority === 'high')   return <AlertTriangle size={14} className="flex-shrink-0" style={{ color: 'var(--danger)' }} />;
+  if (priority === 'medium') return <Info          size={14} className="flex-shrink-0" style={{ color: 'var(--warning)' }} />;
   return                            <Info          size={14} className="flex-shrink-0" style={{ color: 'var(--blue)' }} />;
 }
 

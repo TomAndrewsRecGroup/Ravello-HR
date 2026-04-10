@@ -34,13 +34,13 @@ interface Props {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
+  draft:            { label: 'Draft',            bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  sent:             { label: 'Sent',             bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
   verbal_accepted:  { label: 'Verbal Accepted',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
-  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: '#166534' },
-  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: '#991B1B' },
-  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  written_accepted: { label: 'Written Accepted', bg: 'rgba(22,163,74,0.12)',  color: 'var(--emerald)' },
+  declined:         { label: 'Declined',         bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  withdrawn:        { label: 'Withdrawn',        bg: 'rgba(220,38,38,0.10)',  color: 'var(--rose)' },
+  lapsed:           { label: 'Lapsed',           bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
 };
 
 const OFFER_STATUSES = ['draft', 'sent', 'verbal_accepted', 'written_accepted', 'declined', 'withdrawn', 'lapsed'];

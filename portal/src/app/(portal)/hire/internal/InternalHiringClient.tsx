@@ -247,7 +247,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
       {staleRoles.length > 0 && (
         <div
           className="card p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3"
-          style={{ borderLeft: '3px solid #D97706', background: 'rgba(245,158,11,0.04)' }}
+          style={{ borderLeft: '3px solid var(--amber)', background: 'rgba(245,158,11,0.04)' }}
         >
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <Clock size={16} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 2 }} />
@@ -290,7 +290,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
             const isFilled = role.stage === 'filled';
 
             return (
-              <div key={role.id} className="card" style={isStale ? { borderLeft: '3px solid #D97706' } : undefined}>
+              <div key={role.id} className="card" style={isStale ? { borderLeft: '3px solid var(--amber)' } : undefined}>
                 {/* Role header */}
                 <div
                   className="p-4 flex items-center gap-4 cursor-pointer"

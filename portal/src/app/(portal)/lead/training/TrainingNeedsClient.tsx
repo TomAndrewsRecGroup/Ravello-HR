@@ -23,10 +23,10 @@ interface Props {
 }
 
 const PRIORITY_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  low:      { label: 'Low',      bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  medium:   { label: 'Medium',   bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
+  low:      { label: 'Low',      bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  medium:   { label: 'Medium',   bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
   high:     { label: 'High',     bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  critical: { label: 'Critical', bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
+  critical: { label: 'Critical', bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType }> = {
@@ -101,9 +101,9 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Open',        value: counts.open,        color: '#DC2626' },
-          { label: 'In Progress', value: counts.in_progress, color: '#D97706' },
-          { label: 'Resolved',    value: counts.resolved,    color: '#16A34A' },
+          { label: 'Open',        value: counts.open,        color: 'var(--danger)' },
+          { label: 'In Progress', value: counts.in_progress, color: 'var(--amber)' },
+          { label: 'Resolved',    value: counts.resolved,    color: 'var(--success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card p-4 text-center">
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>

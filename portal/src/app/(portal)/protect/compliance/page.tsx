@@ -7,17 +7,17 @@ export const metadata: Metadata = { title: 'Compliance' };
 export const revalidate = 30;
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },
+  pending:   { background: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
   in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  complete:  { background: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  overdue:   { background: 'rgba(220,38,38,0.12)',   color: '#991B1B' },
+  complete:  { background: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  overdue:   { background: 'rgba(220,38,38,0.12)',   color: 'var(--rose)' },
 };
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   pending:   <Clock size={13} style={{ color: '#94A3B8' }} />,
-  in_review: <AlertTriangle size={13} style={{ color: '#D97706' }} />,
-  complete:  <CheckCircle2 size={13} style={{ color: '#16A34A' }} />,
-  overdue:   <AlertTriangle size={13} style={{ color: '#DC2626' }} />,
+  in_review: <AlertTriangle size={13} style={{ color: 'var(--amber)' }} />,
+  complete:  <CheckCircle2 size={13} style={{ color: 'var(--success)' }} />,
+  overdue:   <AlertTriangle size={13} style={{ color: 'var(--danger)' }} />,
 };
 
 function fmtCategory(cat: string): string {
@@ -87,10 +87,10 @@ export default async function CompliancePage() {
             {/* Summary stat row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               {[
-                { label: 'Overdue',   value: overdue.length,  color: '#DC2626',  bg: 'rgba(220,38,38,0.06)' },
-                { label: 'Pending',   value: pending.length,  color: '#D97706',  bg: 'rgba(245,158,11,0.06)' },
+                { label: 'Overdue',   value: overdue.length,  color: 'var(--danger)',  bg: 'rgba(220,38,38,0.06)' },
+                { label: 'Pending',   value: pending.length,  color: 'var(--amber)',  bg: 'rgba(245,158,11,0.06)' },
                 { label: 'In Review', value: inReview.length, color: 'var(--blue)', bg: 'rgba(59,130,246,0.06)' },
-                { label: 'Complete',  value: complete.length, color: '#16A34A',  bg: 'rgba(22,163,74,0.06)' },
+                { label: 'Complete',  value: complete.length, color: 'var(--success)',  bg: 'rgba(22,163,74,0.06)' },
               ].map(s => (
                 <div key={s.label} className="card p-4" style={{ background: s.bg, borderColor: `color-mix(in srgb, ${s.color} 20%, transparent)` }}>
                   <p className="text-xs font-medium mb-1" style={{ color: s.color }}>{s.label}</p>

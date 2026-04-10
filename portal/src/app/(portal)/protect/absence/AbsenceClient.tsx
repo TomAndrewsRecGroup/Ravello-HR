@@ -28,10 +28,10 @@ const ABSENCE_LABELS: Record<string, string> = {
   compassionate: 'Compassionate', unpaid: 'Unpaid', other: 'Other',
 };
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  pending:   { label: 'Pending',   bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  approved:  { label: 'Approved',  bg: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  rejected:  { label: 'Rejected',  bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
-  cancelled: { label: 'Cancelled', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  pending:   { label: 'Pending',   bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  approved:  { label: 'Approved',  bg: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  rejected:  { label: 'Rejected',  bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
+  cancelled: { label: 'Cancelled', bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
 };
 
 function fmtDate(d: string | null): string {
@@ -221,10 +221,10 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
                     <td>
                       {r.status === 'pending' && (
                         <div className="flex gap-1">
-                          <button onClick={() => updateStatus(r.id, 'approved')} className="btn-sm" style={{ background: 'rgba(22,163,74,0.1)', color: '#166534', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
+                          <button onClick={() => updateStatus(r.id, 'approved')} className="btn-sm" style={{ background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
                             Approve
                           </button>
-                          <button onClick={() => updateStatus(r.id, 'rejected')} className="btn-sm" style={{ background: 'rgba(220,38,38,0.08)', color: '#991B1B', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
+                          <button onClick={() => updateStatus(r.id, 'rejected')} className="btn-sm" style={{ background: 'rgba(220,38,38,0.08)', color: 'var(--rose)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
                             Reject
                           </button>
                         </div>

@@ -195,7 +195,7 @@ export default function NewRequisitionPage() {
             >
               <div className="flex items-center gap-2.5">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{ background: frictionScore ? '#16A34A' : 'var(--purple)', color: '#fff' }}>
+                  style={{ background: frictionScore ? 'var(--success)' : 'var(--purple)', color: '#fff' }}>
                   {frictionScore ? '✓' : '1'}
                 </div>
                 <div className="text-left">
@@ -203,7 +203,7 @@ export default function NewRequisitionPage() {
                     Import Job Description
                     <span className="ml-2 text-xs font-normal" style={{ color: 'var(--ink-faint)' }}>optional — recommended for Friction Lens scoring</span>
                   </p>
-                  {autoFilled && !jdOpen && <p className="text-xs mt-0.5" style={{ color: '#16A34A' }}>Form auto-filled from JD</p>}
+                  {autoFilled && !jdOpen && <p className="text-xs mt-0.5" style={{ color: 'var(--success)' }}>Form auto-filled from JD</p>}
                 </div>
               </div>
               {jdOpen ? <ChevronUp size={16} style={{ color: 'var(--ink-faint)' }} /> : <ChevronDown size={16} style={{ color: 'var(--ink-faint)' }} />}
@@ -238,7 +238,7 @@ export default function NewRequisitionPage() {
                       <Wand2 size={12} /> Auto-fill form fields
                     </button>
                   )}
-                  {autoFilled && <span className="text-xs font-medium" style={{ color: '#16A34A' }}>✓ Form fields auto-filled — review and edit below</span>}
+                  {autoFilled && <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>✓ Form fields auto-filled — review and edit below</span>}
                 </div>
 
                 {frictionScore && <div className="mt-2"><FrictionScoreCard score={frictionScore} /></div>}

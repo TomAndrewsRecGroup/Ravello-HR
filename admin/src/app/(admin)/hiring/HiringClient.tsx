@@ -183,7 +183,7 @@ export default function HiringClient({ reqs, companies }: Props) {
                     <td>
                       <span
                         className="font-medium"
-                        style={{ color: days >= 30 ? '#B02020' : days >= 14 ? '#8A5500' : 'var(--ink-soft)' }}
+                        style={{ color: days >= 30 ? 'var(--rose)' : days >= 14 ? 'var(--amber)' : 'var(--ink-soft)' }}
                       >
                         {days}d
                       </span>

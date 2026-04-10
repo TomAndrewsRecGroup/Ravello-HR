@@ -23,10 +23,10 @@ interface Review {
 interface Props { companyId: string; initialReviews: Review[]; }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  pending:     { label: 'Pending',     bg: 'rgba(148,163,184,0.12)', color: '#475569' },
-  in_progress: { label: 'In Progress', bg: 'rgba(59,111,255,0.12)',  color: '#1848CC' },
-  completed:   { label: 'Completed',   bg: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  cancelled:   { label: 'Cancelled',   bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
+  pending:     { label: 'Pending',     bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  in_progress: { label: 'In Progress', bg: 'rgba(59,111,255,0.12)',  color: 'var(--blue)' },
+  completed:   { label: 'Completed',   bg: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  cancelled:   { label: 'Cancelled',   bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
 };
 
 const REVIEW_TYPES = ['annual', 'mid_year', 'probation', '360', 'other'];
@@ -100,9 +100,9 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Pending',     value: counts.pending,     color: '#475569' },
-          { label: 'In Progress', value: counts.in_progress, color: '#D97706' },
-          { label: 'Completed',   value: counts.completed,   color: '#16A34A' },
+          { label: 'Pending',     value: counts.pending,     color: 'var(--slate)' },
+          { label: 'In Progress', value: counts.in_progress, color: 'var(--amber)' },
+          { label: 'Completed',   value: counts.completed,   color: 'var(--success)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="card p-4 text-center">
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>

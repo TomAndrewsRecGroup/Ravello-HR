@@ -74,7 +74,7 @@ export default function InviteUserPanel({ companyId }: Props) {
         <CheckCircle2 size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
         <div className="flex-1">
           <p className="text-sm font-medium" style={{ color: 'var(--emerald)' }}>Invite sent</p>
-          <p className="text-xs" style={{ color: '#166534', opacity: 0.8 }}>
+          <p className="text-xs" style={{ color: 'var(--emerald)', opacity: 0.8 }}>
             The user will receive a magic-link to set up their portal account.
           </p>
         </div>

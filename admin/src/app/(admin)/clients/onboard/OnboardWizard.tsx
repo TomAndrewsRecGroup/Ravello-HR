@@ -218,14 +218,14 @@ export default function OnboardWizard({ staff }: Props) {
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
                   style={{
-                    background: isDone ? '#10B981' : isActive ? 'var(--purple)' : 'var(--surface-alt)',
+                    background: isDone ? 'var(--success)' : isActive ? 'var(--purple)' : 'var(--surface-alt)',
                     color: isDone || isActive ? '#fff' : 'var(--ink-faint)',
                   }}
                 >
                   {isDone ? <CheckCircle2 size={14} /> : <Icon size={13} />}
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className="flex-1 h-0.5 mx-1" style={{ background: isDone ? '#10B981' : 'var(--line)' }} />
+                  <div className="flex-1 h-0.5 mx-1" style={{ background: isDone ? 'var(--success)' : 'var(--line)' }} />
                 )}
               </div>
               <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: isActive ? 'var(--purple)' : 'var(--ink-faint)' }}>
@@ -485,7 +485,7 @@ export default function OnboardWizard({ staff }: Props) {
         )}
 
         {/* Error */}
-        {error && <p className="text-xs p-3 mt-4 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: '#E05555' }}>{error}</p>}
+        {error && <p className="text-xs p-3 mt-4 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger)' }}>{error}</p>}
 
         {/* Navigation */}
         {step < 6 && (

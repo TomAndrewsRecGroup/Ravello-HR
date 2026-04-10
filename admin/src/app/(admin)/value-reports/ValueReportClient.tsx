@@ -231,7 +231,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
-                    <span className="text-sm font-bold" style={{ color: item.highlight ? '#14B8A6' : 'var(--ink)' }}>{item.value}</span>
+                    <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--teal)' : 'var(--ink)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>

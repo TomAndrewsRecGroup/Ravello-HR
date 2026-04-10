@@ -31,10 +31,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   absence_record: 'Absence Record', other: 'Other',
 };
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  active:           { label: 'Active',           bg: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  expired:          { label: 'Expired',          bg: 'rgba(220,38,38,0.10)',   color: '#991B1B' },
+  active:           { label: 'Active',           bg: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  expired:          { label: 'Expired',          bg: 'rgba(220,38,38,0.10)',   color: 'var(--rose)' },
   pending_renewal:  { label: 'Pending Renewal',  bg: 'rgba(245,158,11,0.12)', color: '#92400E' },
-  archived:         { label: 'Archived',         bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  archived:         { label: 'Archived',         bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
 };
 
 function daysUntilExpiry(d: string | null): number | null {
@@ -110,8 +110,8 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
       {(expired.length > 0 || expiringWithin30.length > 0) && (
         <div className="space-y-2">
           {expired.length > 0 && (
-            <div className="card p-4 flex items-start gap-3" style={{ borderLeft: '3px solid #DC2626', background: 'rgba(220,38,38,0.03)' }}>
-              <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: '#DC2626' }} />
+            <div className="card p-4 flex items-start gap-3" style={{ borderLeft: '3px solid var(--danger)', background: 'rgba(220,38,38,0.03)' }}>
+              <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{expired.length} expired document{expired.length > 1 ? 's' : ''}</p>
                 <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expired.map(d => `${d.employee_name} – ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
@@ -119,8 +119,8 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
             </div>
           )}
           {expiringWithin30.length > 0 && (
-            <div className="card p-4 flex items-start gap-3" style={{ borderLeft: '3px solid #D97706', background: 'rgba(217,119,6,0.03)' }}>
-              <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: '#D97706' }} />
+            <div className="card p-4 flex items-start gap-3" style={{ borderLeft: '3px solid var(--amber)', background: 'rgba(217,119,6,0.03)' }}>
+              <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--amber)' }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{expiringWithin30.length} document{expiringWithin30.length > 1 ? 's' : ''} expiring within 30 days</p>
                 <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expiringWithin30.map(d => `${d.employee_name} – ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
@@ -137,11 +137,11 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Total Documents</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>{expired.length}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--danger)' }}>{expired.length}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Expired</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: '#D97706' }}>{expiringWithin30.length}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--amber)' }}>{expiringWithin30.length}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Expiring Soon</p>
         </div>
       </div>

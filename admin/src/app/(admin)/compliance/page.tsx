@@ -170,7 +170,7 @@ export default async function AdminComplianceDashboard() {
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{d.doc_type?.replace(/_/g, ' ')}</td>
                         <td>
-                          <p className="text-sm" style={{ color: d.rag === 'red' ? '#991B1B' : '#92400E', fontWeight: 600 }}>
+                          <p className="text-sm" style={{ color: d.rag === 'red' ? 'var(--rose)' : 'var(--amber)', fontWeight: 600 }}>
                             {fmtDate(d.expiry_date)}
                           </p>
                           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -233,7 +233,7 @@ export default async function AdminComplianceDashboard() {
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{ci.category?.replace(/_/g, ' ')}</td>
                         <td>
-                          <p className="text-sm" style={{ color: ci.rag === 'red' ? '#991B1B' : ci.rag === 'amber' ? '#92400E' : 'var(--ink-soft)', fontWeight: ci.rag === 'red' || ci.rag === 'amber' ? 600 : 400 }}>
+                          <p className="text-sm" style={{ color: ci.rag === 'red' ? 'var(--rose)' : ci.rag === 'amber' ? 'var(--amber)' : 'var(--ink-soft)', fontWeight: ci.rag === 'red' || ci.rag === 'amber' ? 600 : 400 }}>
                             {fmtDate(ci.due_date)}
                           </p>
                           {ci.rag !== 'complete' && (

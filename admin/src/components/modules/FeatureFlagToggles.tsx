@@ -154,7 +154,7 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
                     className="text-[10px] font-bold px-2 py-0.5 rounded-md transition-colors"
                     style={{
                       background: allOn ? 'rgba(217,68,68,0.08)' : 'rgba(52,211,153,0.10)',
-                      color: allOn ? '#B02020' : '#047857',
+                      color: allOn ? 'var(--rose)' : 'var(--emerald)',
                     }}
                   >
                     {allOn ? 'All Off' : 'All On'}

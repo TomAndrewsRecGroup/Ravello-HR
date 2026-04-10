@@ -8,11 +8,11 @@ interface Props {
 }
 
 const LEVEL_STYLES: Record<FrictionLevel, { dot: string; bg: string; text: string; label: string }> = {
-  Low:      { dot: '#16A34A', bg: 'rgba(22,163,74,0.10)',   text: '#166534', label: 'Low' },
-  Medium:   { dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   text: '#92400E', label: 'Medium' },
-  High:     { dot: '#DC2626', bg: 'rgba(220,38,38,0.10)',   text: '#991B1B', label: 'High' },
+  Low:      { dot: 'var(--success)', bg: 'rgba(22,163,74,0.10)',   text: 'var(--emerald)', label: 'Low' },
+  Medium:   { dot: 'var(--amber)', bg: 'rgba(217,119,6,0.10)',   text: '#92400E', label: 'Medium' },
+  High:     { dot: 'var(--danger)', bg: 'rgba(220,38,38,0.10)',   text: 'var(--rose)', label: 'High' },
   Critical: { dot: '#7F1D1D', bg: 'rgba(127,29,29,0.12)',   text: '#7F1D1D', label: 'Critical' },
-  Unknown:  { dot: '#94A3B8', bg: 'rgba(148,163,184,0.10)', text: '#64748B', label: '—' },
+  Unknown:  { dot: '#94A3B8', bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', label: '—' },
 };
 
 export default function FrictionAlert({ level, topRec, size = 'sm' }: Props) {

@@ -185,23 +185,23 @@ const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'd
 const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
 
 const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:   { background: 'rgba(148,163,184,0.12)', color: '#475569' },
-  in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  complete:  { background: 'rgba(22,163,74,0.12)',   color: '#166534' },
-  overdue:   { background: 'rgba(220,38,38,0.12)',   color: '#991B1B' },
+  pending:   { background: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  in_review: { background: 'rgba(245,158,11,0.12)',  color: 'var(--amber)' },
+  complete:  { background: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
+  overdue:   { background: 'rgba(220,38,38,0.12)',   color: 'var(--rose)' },
 };
 
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
-  high:   { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  medium: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
-  low:    { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
+  high:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  medium: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
+  low:    { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: '#64748B' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: '#166534' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: '#92400E' },
+  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
 };
 
 interface Props {
@@ -620,7 +620,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         <td>
                           <span className="badge" style={frictionBadgeStyle(friction)}>{friction}</span>
                         </td>
-                        <td style={{ color: days >= 30 ? '#B02020' : 'var(--ink-soft)' }}>{days}d</td>
+                        <td style={{ color: days >= 30 ? 'var(--rose)' : 'var(--ink-soft)' }}>{days}d</td>
                         <td>
                           <span className="text-xs font-mono" style={{ color: 'var(--ink-faint)' }}>
                             /hiring/{r.id}
@@ -1129,7 +1129,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }}>{ci.category?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: isOverdue ? '#991B1B' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
+                        <td style={{ color: isOverdue ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
                           {new Date(ci.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {isOverdue && <span className="ml-1 text-[10px]">OVERDUE</span>}
                         </td>
@@ -1165,7 +1165,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Training Needs
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
                 {trainingNeeds.filter(n => n.status === 'open').length} open
               </span>
             </h2>
@@ -1221,7 +1221,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Performance Reviews
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: '#5B21B6' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: 'var(--purple)' }}>
                 {perfReviews.filter(r => ['pending', 'in_progress'].includes(r.status)).length} pending
               </span>
             </h2>
@@ -1280,7 +1280,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           <div>
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Absence Records
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: '#92400E' }}>
+              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
                 {absenceRecords.filter(a => a.status === 'pending').length} pending approval
               </span>
             </h2>
@@ -1316,14 +1316,14 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                               <button
                                 onClick={() => updateAbsenceStatus(a.id, 'approved')}
                                 className="btn-sm btn-secondary text-[11px] flex items-center gap-1"
-                                style={{ color: '#166534' }}
+                                style={{ color: 'var(--emerald)' }}
                               >
                                 <Check size={11} /> Approve
                               </button>
                               <button
                                 onClick={() => updateAbsenceStatus(a.id, 'rejected')}
                                 className="btn-sm btn-ghost text-[11px]"
-                                style={{ color: '#991B1B' }}
+                                style={{ color: 'var(--rose)' }}
                               >
                                 Reject
                               </button>
@@ -1332,9 +1332,9 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             <span
                               className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
                               style={
-                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: '#166534' } :
-                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: '#991B1B' } :
-                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)' } :
+                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' } :
+                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
                               }
                             >
                               {a.status}
@@ -1354,7 +1354,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
             <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
               Employee Documents
               {empDocs.filter(d => d.status === 'expired').length > 0 && (
-                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#991B1B' }}>
+                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' }}>
                   {empDocs.filter(d => d.status === 'expired').length} expired
                 </span>
               )}
@@ -1392,7 +1392,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             )}
                           </td>
                           <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
-                          <td style={{ color: isExpired ? '#991B1B' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
+                          <td style={{ color: isExpired ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
                             {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                             {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
                           </td>
@@ -1400,10 +1400,10 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                             <span
                               className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
                               style={
-                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: '#166534' } :
-                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: '#991B1B' } :
-                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: '#92400E' } :
-                                { background: 'rgba(148,163,184,0.1)', color: '#64748B' }
+                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' } :
+                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' } :
+                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' } :
+                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
                               }
                             >
                               {d.status?.replace(/_/g, ' ')}
@@ -1523,16 +1523,16 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 /* ─── Friction Tab ──────────────────────────────────── */
 
 const BAND_STYLE: Record<string, React.CSSProperties> = {
-  'Low Friction':      { background: 'rgba(52,211,153,0.14)', color: '#047857' },
-  'Moderate Friction': { background: 'rgba(245,158,11,0.15)', color: '#8A5500' },
-  'High Friction':     { background: 'rgba(217,68,68,0.10)',  color: '#B02020' },
+  'Low Friction':      { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
+  'Moderate Friction': { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' },
+  'High Friction':     { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' },
 };
 
 const SEV_STYLE: Record<string, React.CSSProperties> = {
-  critical: { background: 'rgba(217,68,68,0.10)',  color: '#B02020' },
-  high:     { background: 'rgba(245,130,11,0.12)', color: '#A45500' },
-  medium:   { background: 'rgba(245,158,11,0.10)', color: '#8A5500' },
-  low:      { background: 'rgba(59,111,255,0.10)', color: '#2A55CC' },
+  critical: { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' },
+  high:     { background: 'rgba(245,130,11,0.12)', color: 'var(--amber)' },
+  medium:   { background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' },
+  low:      { background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' },
 };
 
 function FrictionTab({ company, assessment, items: initItems, users, documents }: {
@@ -1658,14 +1658,14 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
                     disabled={saving === item.id}
                     className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{
-                      borderColor: item.is_completed ? '#16A34A' : 'var(--line)',
+                      borderColor: item.is_completed ? 'var(--success)' : 'var(--line)',
                       background: item.is_completed ? 'rgba(22,163,74,0.1)' : 'transparent',
                     }}
                   >
                     {saving === item.id ? (
                       <Loader2 size={10} className="animate-spin" />
                     ) : item.is_completed ? (
-                      <Check size={10} style={{ color: '#16A34A' }} />
+                      <Check size={10} style={{ color: 'var(--success)' }} />
                     ) : null}
                   </button>
                   <span

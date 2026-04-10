@@ -6,9 +6,9 @@ import { CheckCircle2, AlertTriangle, XCircle, AlertCircle, HelpCircle,
 const LEVEL_CONFIG: Record<FrictionLevel, {
   bg: string; border: string; badgeBg: string; badgeText: string; icon: React.ElementType;
 }> = {
-  Low:      { bg: 'rgba(22,163,74,0.06)',   border: 'rgba(22,163,74,0.2)',   badgeBg: '#16A34A', badgeText: '#fff', icon: CheckCircle2 },
-  Medium:   { bg: 'rgba(217,119,6,0.06)',   border: 'rgba(217,119,6,0.2)',   badgeBg: '#D97706', badgeText: '#fff', icon: AlertCircle  },
-  High:     { bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.2)',   badgeBg: '#DC2626', badgeText: '#fff', icon: XCircle      },
+  Low:      { bg: 'rgba(22,163,74,0.06)',   border: 'rgba(22,163,74,0.2)',   badgeBg: 'var(--success)', badgeText: '#fff', icon: CheckCircle2 },
+  Medium:   { bg: 'rgba(217,119,6,0.06)',   border: 'rgba(217,119,6,0.2)',   badgeBg: 'var(--amber)', badgeText: '#fff', icon: AlertCircle  },
+  High:     { bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.2)',   badgeBg: 'var(--danger)', badgeText: '#fff', icon: XCircle      },
   Critical: { bg: 'rgba(127,29,29,0.08)',   border: 'rgba(127,29,29,0.25)',  badgeBg: '#7F1D1D', badgeText: '#fff', icon: AlertTriangle },
   Unknown:  { bg: 'rgba(148,163,184,0.06)', border: 'rgba(148,163,184,0.2)', badgeBg: '#94A3B8', badgeText: '#fff', icon: HelpCircle   },
 };

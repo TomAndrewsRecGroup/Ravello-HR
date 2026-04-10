@@ -13,7 +13,7 @@ const STAGE_LABELS: Record<string, string> = {
   interview: 'Interview', offer: 'Offer', filled: 'Filled', cancelled: 'Cancelled',
 };
 const FRICTION_COLORS: Record<string, string> = {
-  Low: '#16A34A', Medium: '#D97706', High: '#DC2626', Critical: '#7F1D1D', Unknown: '#94A3B8',
+  Low: 'var(--success)', Medium: 'var(--amber)', High: 'var(--danger)', Critical: '#7F1D1D', Unknown: '#94A3B8',
 };
 
 function daysOpen(createdAt: string): number {

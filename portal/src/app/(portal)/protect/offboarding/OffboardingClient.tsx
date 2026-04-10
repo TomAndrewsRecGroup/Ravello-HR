@@ -38,10 +38,10 @@ interface Props {
 }
 
 const CATEGORIES = [
-  { key: 'general', label: 'General', color: '#3B6FFF' },
-  { key: 'it_access', label: 'IT & Access', color: '#7C3AED' },
-  { key: 'asset_return', label: 'Asset Return', color: '#D97706' },
-  { key: 'knowledge_transfer', label: 'Knowledge Transfer', color: '#14B8A6' },
+  { key: 'general', label: 'General', color: 'var(--blue)' },
+  { key: 'it_access', label: 'IT & Access', color: 'var(--purple)' },
+  { key: 'asset_return', label: 'Asset Return', color: 'var(--amber)' },
+  { key: 'knowledge_transfer', label: 'Knowledge Transfer', color: 'var(--teal)' },
   { key: 'exit_admin', label: 'Exit Admin', color: '#EA3DC4' },
 ];
 
@@ -246,7 +246,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                       if (!isExpanded) setExitNotes(inst.exit_interview_notes ?? '');
                     }}>
                       <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(217,68,68,0.08)' }}>
-                        <UserMinus size={16} style={{ color: '#B02020' }} />
+                        <UserMinus size={16} style={{ color: 'var(--rose)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{emp?.full_name ?? 'Employee'}</p>
@@ -258,11 +258,11 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="hidden sm:block text-right">
-                          <p className="text-sm font-bold" style={{ color: pct === 100 ? '#047857' : '#B02020' }}>{pct}%</p>
+                          <p className="text-sm font-bold" style={{ color: pct === 100 ? 'var(--emerald)' : 'var(--rose)' }}>{pct}%</p>
                           <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{done}/{total}</p>
                         </div>
                         <div className="w-16 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? '#10B981' : '#D94444' }} />
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? 'var(--success)' : '#D94444' }} />
                         </div>
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </div>
@@ -276,7 +276,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                             <div key={task.id} className="flex items-start gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-[var(--surface-soft)]">
                               <button onClick={() => toggleTask(task.id, task.status)} className="mt-0.5 flex-shrink-0">
                                 {task.status === 'completed'
-                                  ? <CheckCircle2 size={16} style={{ color: '#10B981' }} />
+                                  ? <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />
                                   : <div className="w-4 h-4 rounded-full border-2" style={{ borderColor: 'var(--line)' }} />}
                               </button>
                               <div className="flex-1 min-w-0">

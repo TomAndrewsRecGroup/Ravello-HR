@@ -126,8 +126,8 @@ export default function NewClientPage() {
             </label>
           )}
 
-          {error      && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: '#E05555' }}>{error}</p>}
-          {inviteNote && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,119,6,0.08)', color: '#B45309' }}>{inviteNote}</p>}
+          {error      && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: 'var(--danger)' }}>{error}</p>}
+          {inviteNote && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--amber)' }}>{inviteNote}</p>}
 
           <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
             {loading && <Loader2 size={14} className="animate-spin" />}

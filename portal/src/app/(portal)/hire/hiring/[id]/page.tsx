@@ -263,7 +263,7 @@ export default async function RequisitionDetailPage({
                                     {iv.outcome && iv.outcome !== 'pending' && (
                                       <span
                                         className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                                        style={iv.outcome === 'pass' ? { background: 'rgba(22,163,74,0.1)', color: '#166534' } : iv.outcome === 'fail' ? { background: 'rgba(220,38,38,0.1)', color: '#991B1B' } : { background: 'rgba(217,119,6,0.1)', color: '#92400E' }}
+                                        style={iv.outcome === 'pass' ? { background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)' } : iv.outcome === 'fail' ? { background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' } : { background: 'rgba(217,119,6,0.1)', color: '#92400E' }}
                                       >
                                         {iv.outcome}
                                       </span>

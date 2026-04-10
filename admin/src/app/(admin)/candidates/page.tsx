@@ -32,7 +32,7 @@ export default async function CandidatesPage() {
 
   const STAGE_COLORS: Record<string, string> = {
     applied: 'var(--ink-faint)', screening: 'var(--blue)', interviewing: 'var(--purple)',
-    offer: 'var(--teal)', hired: '#16A34A', rejected: 'var(--red)',
+    offer: 'var(--teal)', hired: 'var(--success)', rejected: 'var(--red)',
   };
 
   return (

@@ -187,7 +187,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                           </span>
                         )}
                         {task.due_date && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: overdue ? 'rgba(217,68,68,0.08)' : 'var(--surface-soft)', color: overdue ? '#DC2626' : 'var(--ink-faint)' }}>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: overdue ? 'rgba(217,68,68,0.08)' : 'var(--surface-soft)', color: overdue ? 'var(--danger)' : 'var(--ink-faint)' }}>
                             {overdue && '⚠ '}{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                           </span>
                         )}
