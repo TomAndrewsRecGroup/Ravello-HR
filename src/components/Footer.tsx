@@ -41,7 +41,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/company/the-people-system"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-icon-link"

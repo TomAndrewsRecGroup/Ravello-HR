@@ -143,7 +143,7 @@ export default function HRRiskScoreTool() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/leads/hr-risk-score', {
+      await fetch('/api/leads/hr-risk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, score: totalScore, maxScore, percentage, topRisks: getTopRisks() }),
