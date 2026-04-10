@@ -152,12 +152,12 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
 
   async function toggleTask(taskId: string, currentStatus: string) {
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    await supabase.from('offboarding_task_progress').update({
+    const { error } = await supabase.from('offboarding_task_progress').update({
       status: newStatus,
       completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
       completed_by: newStatus === 'completed' ? userId : null,
     }).eq('id', taskId);
-    revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/protect/offboarding');
   }
 
   async function completeInstance(instanceId: string) {

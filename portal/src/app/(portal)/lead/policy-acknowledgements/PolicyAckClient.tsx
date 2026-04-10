@@ -78,21 +78,23 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
       sent_at: new Date().toISOString(),
     }));
 
-    await supabase.from('policy_acknowledgements').upsert(inserts, { onConflict: 'document_id,employee_id' });
+    const { error } = await supabase.from('policy_acknowledgements').upsert(inserts, { onConflict: 'document_id,employee_id' });
 
     setSaving(false);
-    setShowSendForm(false);
-    setSelectedDoc(''); setSelectedEmployees([]);
-    revalidatePortalPath('/lead/policy-acknowledgements');
+    if (!error) {
+      setShowSendForm(false);
+      setSelectedDoc(''); setSelectedEmployees([]);
+      revalidatePortalPath('/lead/policy-acknowledgements');
+    }
   }
 
   /* ─── Mark as acknowledged (admin on behalf) ─────── */
   async function markAcknowledged(ackId: string) {
-    await supabase.from('policy_acknowledgements').update({
+    const { error } = await supabase.from('policy_acknowledgements').update({
       status: 'acknowledged',
       acknowledged_at: new Date().toISOString(),
     }).eq('id', ackId);
-    revalidatePortalPath('/lead/policy-acknowledgements');
+    if (!error) revalidatePortalPath('/lead/policy-acknowledgements');
   }
 
   /* ─── Send to all employees ──────────────────────── */
