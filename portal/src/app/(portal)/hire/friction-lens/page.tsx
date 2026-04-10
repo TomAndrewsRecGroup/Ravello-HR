@@ -72,7 +72,7 @@ function FieldInput({
         >
           <div className={`toggle-knob ${value ? 'toggle-knob-on' : 'toggle-knob-off'}`} />
         </button>
-        <span className="text-sm" style={{ color: value ? '#047857' : 'var(--ink-faint)' }}>
+        <span className="text-sm" style={{ color: value ? 'var(--emerald)' : 'var(--ink-faint)' }}>
           {value ? 'Yes' : 'No'}
         </span>
       </div>

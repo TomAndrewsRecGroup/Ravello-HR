@@ -48,7 +48,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   video: Play, pdf: FileText, pptx: FileText, link: LinkIcon, scorm: BookOpen,
 };
 const TYPE_COLORS: Record<string, string> = {
-  video: '#8B5CF6', pdf: '#3B82F6', pptx: '#F59E0B', link: '#10B981', scorm: '#EC4899',
+  video: '#8B5CF6', pdf: 'var(--blue)', pptx: 'var(--warning)', link: 'var(--success)', scorm: '#EC4899',
 };
 
 function fmtPrice(pence: number): string {
@@ -81,7 +81,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   return (
     <span
       className="text-xs font-semibold"
-      style={{ color: urgent ? '#DC2626' : '#16A34A' }}
+      style={{ color: urgent ? 'var(--danger)' : 'var(--success)' }}
     >
       {urgent && <AlertTriangle size={11} className="inline mr-1" />}
       {remaining}
@@ -118,7 +118,7 @@ function RelatedCard({ item }: { item: Content }) {
         {item.creator_name && (
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>{item.creator_name}</p>
         )}
-        <p className="text-[10px] font-bold mt-1" style={{ color: item.price_pence === 0 ? '#16A34A' : typeColor }}>
+        <p className="text-[10px] font-bold mt-1" style={{ color: item.price_pence === 0 ? 'var(--success)' : typeColor }}>
           {fmtPrice(item.price_pence)}
         </p>
       </div>
@@ -224,7 +224,7 @@ export default function LearningDetailClient({
                   )}
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-2xl font-bold" style={{ color: content.price_pence === 0 ? '#16A34A' : typeColor }}>
+                  <p className="text-2xl font-bold" style={{ color: content.price_pence === 0 ? 'var(--success)' : typeColor }}>
                     {fmtPrice(content.price_pence)}
                   </p>
                   {content.price_pence > 0 && (

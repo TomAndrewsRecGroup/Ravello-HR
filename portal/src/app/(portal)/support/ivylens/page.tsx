@@ -13,7 +13,7 @@ import {
 const CATEGORIES = [
   { value: 'friction_lens_role',     label: 'Friction Lens — Role Analysis', Icon: BarChart2,  color: '#a855f7' },
   { value: 'friction_lens_business', label: 'Friction Lens — Business Form', Icon: Building2,  color: '#06b6d4' },
-  { value: 'score_connection',       label: 'Score Connection',               Icon: Plug,       color: '#f59e0b' },
+  { value: 'score_connection',       label: 'Score Connection',               Icon: Plug,       color: 'var(--warning)' },
   { value: 'bd_leads',              label: 'BD Leads',                       Icon: Target,     color: 'var(--success)' },
   { value: 'bug_report',            label: 'Bug Report',                     Icon: Bug,        color: 'var(--danger)' },
   { value: 'feature_request',       label: 'Feature Request',                Icon: Lightbulb,  color: 'var(--blue)' },
@@ -208,7 +208,7 @@ export default function IvyLensSupportPage() {
                         ? p === 'high' ? 'rgba(239,68,68,0.12)' : p === 'low' ? 'rgba(59,111,255,0.08)' : 'rgba(124,58,237,0.08)'
                         : 'var(--surface-alt)',
                       color: priority === p
-                        ? p === 'high' ? '#dc2626' : p === 'low' ? '#3b82f6' : 'var(--purple)'
+                        ? p === 'high' ? 'var(--danger)' : p === 'low' ? 'var(--blue)' : 'var(--purple)'
                         : 'var(--ink-faint)',
                       border: `1.5px solid ${priority === p ? (p === 'high' ? '#ef444440' : p === 'low' ? '#3b82f640' : '#7c3aed30') : 'transparent'}`,
                     }}
@@ -300,7 +300,7 @@ export default function IvyLensSupportPage() {
                           className="badge text-[10px] capitalize"
                           style={{
                             background: `${STATUS_COLORS[t.status] ?? '#6b7280'}18`,
-                            color: STATUS_COLORS[t.status] ?? '#6b7280',
+                            color: STATUS_COLORS[t.status] ?? 'var(--ink-faint)',
                           }}
                         >
                           {t.status?.replace('_', ' ')}

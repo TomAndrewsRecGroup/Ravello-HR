@@ -121,7 +121,7 @@ function ManagerSupportForm({ fields, set }: { fields: any; set: (k: string, v: 
           onChange={e => set('situation', e.target.value)}
           placeholder="What's happening? Include any relevant context…"
         />
-        <p className="text-xs mt-1" style={{ color: remaining < 50 ? '#F59E0B' : 'var(--ink-faint)' }}>
+        <p className="text-xs mt-1" style={{ color: remaining < 50 ? 'var(--warning)' : 'var(--ink-faint)' }}>
           {remaining} characters remaining
         </p>
       </div>

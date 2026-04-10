@@ -31,7 +31,7 @@ interface Props {
 function RAGBadge({ value, thresholds, label, suffix = '' }: { value: number | null; thresholds: [number, number]; label: string; suffix?: string }) {
   if (value === null) return <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>—</span>;
   const [warn, danger] = thresholds;
-  const color = value >= danger ? '#DC2626' : value >= warn ? '#D97706' : '#16A34A';
+  const color = value >= danger ? 'var(--danger)' : value >= warn ? 'var(--amber)' : 'var(--success)';
   const bg = value >= danger ? 'rgba(220,38,38,0.08)' : value >= warn ? 'rgba(217,119,6,0.08)' : 'rgba(22,163,74,0.08)';
   return (
     <span className="text-sm font-semibold px-2 py-0.5 rounded-full" style={{ background: bg, color }}>

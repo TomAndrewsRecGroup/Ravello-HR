@@ -106,11 +106,11 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Approved Days</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? '#D97706' : 'var(--ink)' }}>{pendingCount}</p>
+          <p className="text-2xl font-bold" style={{ color: pendingCount > 0 ? 'var(--amber)' : 'var(--ink)' }}>{pendingCount}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Pending Approval</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: sickDays > 10 ? '#DC2626' : 'var(--ink)' }}>{sickDays}</p>
+          <p className="text-2xl font-bold" style={{ color: sickDays > 10 ? 'var(--danger)' : 'var(--ink)' }}>{sickDays}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Sick Days (approved)</p>
         </div>
       </div>

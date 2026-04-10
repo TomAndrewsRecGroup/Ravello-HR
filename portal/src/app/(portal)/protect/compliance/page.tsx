@@ -151,7 +151,7 @@ export default async function CompliancePage() {
                                     >
                                       {eff.replace(/_/g, ' ')}
                                     </span>
-                                    <span className="text-xs" style={{ color: eff === 'overdue' ? '#991B1B' : 'var(--ink-faint)', fontWeight: eff === 'overdue' ? 600 : undefined }}>
+                                    <span className="text-xs" style={{ color: eff === 'overdue' ? 'var(--rose)' : 'var(--ink-faint)', fontWeight: eff === 'overdue' ? 600 : undefined }}>
                                       {eff === 'overdue'
                                         ? `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`
                                         : eff === 'complete'

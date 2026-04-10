@@ -252,11 +252,11 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <div className="hidden sm:block text-right">
-                          <p className="text-sm font-bold" style={{ color: pct === 100 ? '#047857' : 'var(--purple)' }}>{pct}%</p>
+                          <p className="text-sm font-bold" style={{ color: pct === 100 ? 'var(--emerald)' : 'var(--purple)' }}>{pct}%</p>
                           <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{done}/{total} tasks</p>
                         </div>
                         <div className="w-16 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? '#10B981' : 'var(--purple)' }} />
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct === 100 ? 'var(--success)' : 'var(--purple)' }} />
                         </div>
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </div>

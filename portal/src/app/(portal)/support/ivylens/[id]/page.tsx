@@ -12,7 +12,7 @@ import {
 const CATEGORIES: Record<string, { label: string; Icon: any; color: string }> = {
   friction_lens_role:     { label: 'Friction Lens — Role',     Icon: BarChart2,  color: '#a855f7' },
   friction_lens_business: { label: 'Friction Lens — Business', Icon: Building2,  color: '#06b6d4' },
-  score_connection:       { label: 'Score Connection',          Icon: Plug,       color: '#f59e0b' },
+  score_connection:       { label: 'Score Connection',          Icon: Plug,       color: 'var(--warning)' },
   bd_leads:              { label: 'BD Leads',                  Icon: Target,     color: 'var(--success)' },
   bug_report:            { label: 'Bug Report',                Icon: Bug,        color: 'var(--danger)' },
   feature_request:       { label: 'Feature Request',           Icon: Lightbulb,  color: 'var(--blue)' },
@@ -134,7 +134,7 @@ export default function IvyLensTicketDetailPage() {
           </div>
           <div>
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Priority</p>
-            <span className="text-sm font-medium capitalize mt-0.5 block" style={{ color: ticket.priority === 'high' ? '#dc2626' : 'var(--ink)' }}>
+            <span className="text-sm font-medium capitalize mt-0.5 block" style={{ color: ticket.priority === 'high' ? 'var(--danger)' : 'var(--ink)' }}>
               {ticket.priority}
             </span>
           </div>

@@ -187,7 +187,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
                   <div className="w-16 h-2 rounded-full overflow-hidden" style={{ background: 'var(--line)' }}>
                     <div className="h-full rounded-full" style={{
                       width: docTotal > 0 ? `${Math.round((docSigned / docTotal) * 100)}%` : '0%',
-                      background: docSigned === docTotal ? '#10B981' : 'var(--purple)',
+                      background: docSigned === docTotal ? 'var(--success)' : 'var(--purple)',
                     }} />
                   </div>
                 </div>

@@ -246,7 +246,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
                     <td className="text-sm max-w-[200px] truncate">{d.title}</td>
                     <td>
                       {d.expiry_date ? (
-                        <span className="text-sm" style={{ color: isExpired ? '#DC2626' : isExpiringSoon ? '#D97706' : 'var(--ink-soft)' }}>
+                        <span className="text-sm" style={{ color: isExpired ? 'var(--danger)' : isExpiringSoon ? 'var(--amber)' : 'var(--ink-soft)' }}>
                           {fmtDate(d.expiry_date)}
                           {isExpired && ' (expired)'}
                           {isExpiringSoon && !isExpired && ` (${days}d)`}

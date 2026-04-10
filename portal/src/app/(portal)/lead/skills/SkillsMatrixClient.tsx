@@ -136,7 +136,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Avg Skill Level</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold" style={{ color: totalGaps > 0 ? '#D97706' : '#16A34A' }}>{totalGaps}</p>
+          <p className="text-2xl font-bold" style={{ color: totalGaps > 0 ? 'var(--amber)' : 'var(--success)' }}>{totalGaps}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Skill Gaps</p>
         </div>
       </div>
