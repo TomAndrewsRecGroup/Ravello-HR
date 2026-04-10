@@ -37,7 +37,7 @@ export default function CostOfProblem() {
                 className="w-1.5 h-1.5 rounded-full inline-block mr-2"
                 style={{ background: '#D94444', verticalAlign: 'middle' }}
               />
-              The cost of doing nothing
+              Why Act Now?
             </p>
 
             <h3
