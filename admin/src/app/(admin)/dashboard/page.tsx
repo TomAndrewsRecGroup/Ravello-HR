@@ -40,7 +40,7 @@ export default async function AdminDashboardPage() {
       .order('due_date')
       .limit(8),
     supabase.from('employee_documents')
-      .select('id,document_type,employee_name,expiry_date,companies(name)')
+      .select('id,doc_type,employee_name,expiry_date,companies(name)')
       .lte('expiry_date', in30ISO)
       .gte('expiry_date', todayISO)
       .order('expiry_date')
@@ -255,7 +255,7 @@ export default async function AdminDashboardPage() {
                   <div key={d.id} className="px-3 py-2.5 rounded-[8px]" style={{ background: 'rgba(245,158,11,0.05)' }}>
                     <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
                     <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                      {d.document_type} · {(d.companies as any)?.name} · expires {new Date(d.expiry_date).toLocaleDateString('en-GB')}
+                      {d.doc_type} · {(d.companies as any)?.name} · expires {new Date(d.expiry_date).toLocaleDateString('en-GB')}
                     </p>
                   </div>
                 ))}

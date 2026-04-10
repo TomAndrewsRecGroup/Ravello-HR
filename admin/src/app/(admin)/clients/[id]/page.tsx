@@ -18,7 +18,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     { data: reqs },
     { data: tickets },
   ] = await Promise.all([
-    supabase.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner,open_days,open_hours,timezone,currency').eq('id', params.id).single(),
+    supabase.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency').eq('id', params.id).single(),
     supabase.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', params.id).order('created_at'),
     supabase.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', params.id).order('created_at', { ascending: false }),
     supabase.from('tickets').select('id,subject,status,priority').eq('company_id', params.id).neq('status', 'closed'),
