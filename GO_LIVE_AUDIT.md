@@ -213,10 +213,8 @@
 - **Issue:** `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are used in code but not documented in any `.env.example` file. Cannot configure Stripe without external documentation.
 - **Fix:** Add to `portal/.env.example`
 
-### ENV-002: Tawk.to Environment Variable Missing from .env.example [HIGH]
-- **File:** `src/components/ChatWidget.tsx` line 7
-- **Issue:** `NEXT_PUBLIC_TAWK_ID` used but not in any `.env.example`.
-- **Fix:** Add to root `.env.example`
+### ENV-002: Tawk.to Chat Widget [RESOLVED — REMOVED]
+- **Resolution:** Tawk.to chat widget removed entirely. ChatWidget component deleted, import removed from layout.
 
 ---
 
@@ -357,7 +355,7 @@
 | MKT-007 | Correct LinkedIn company profile URL | TPO team |
 | MKT-006 | Privacy Policy & Terms of Service content | Legal/TPO team |
 | ENV-001 | Stripe API keys for production | TPO team |
-| ENV-002 | Tawk.to widget ID | TPO team |
+| ~~ENV-002~~ | ~~Tawk.to~~ Removed | N/A |
 | Lead capture | Decision: Resend vs Make webhook vs other | TPO team |
 
 ---
@@ -504,7 +502,7 @@ Environment docs, production hardening, and final cleanup.
 | # | ID | Issue | Severity |
 |---|-----|-------|----------|
 | 1 | ENV-001 | Add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` to portal/.env.example | HIGH |
-| 2 | ENV-002 | Add `NEXT_PUBLIC_TAWK_ID` to root .env.example | HIGH |
+| 2 | ~~ENV-002~~ | ~~Tawk.to~~ Removed — chat widget deleted | N/A |
 | 3 | ENV-004 | Add startup validation -- throw error instead of fallback in Supabase client configs | MEDIUM |
 | 4 | ENV-005 | Document all required env vars in a single setup guide | MEDIUM |
 | 5 | API-010 | Add audit logging for user creation, role changes, payment events | MEDIUM |
@@ -541,7 +539,7 @@ Environment docs, production hardening, and final cleanup.
 | MKT-007 | Correct LinkedIn company profile URL | TPO team | Sprint 6 |
 | MKT-006 | Privacy Policy & Terms of Service content | Legal/TPO team | Sprint 6 |
 | ENV-001 | Stripe API keys for production | TPO team | Sprint 7 |
-| ENV-002 | Tawk.to widget ID | TPO team | Sprint 7 |
+| ~~ENV-002~~ | ~~Tawk.to~~ Removed | N/A | Sprint 7 |
 | MKT-003/004 | Decision: Resend vs Make webhook vs other for email | TPO team | Sprint 6 |
 
 ---

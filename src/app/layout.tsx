@@ -6,7 +6,6 @@ import { Analytics } from '@/components/Analytics';
 import { ClarityScript } from '@/components/ClarityScript';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
-import ChatWidget from '@/components/ChatWidget';
 import QuickActions from '@/components/QuickActions';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import CalendlyWidget from '@/components/CalendlyWidget';
@@ -78,7 +77,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QuickActions />
         <CalendlyWidget />
         <ExitIntentPopup />
-        <ChatWidget />
       </body>
     </html>
   );
