@@ -40,7 +40,7 @@ ON CONFLICT (id) DO NOTHING;
 -- == 2. ONBOARDING TEMPLATE (Standard New Starter) ========================
 INSERT INTO onboarding_templates (id, company_id, name, description, is_default)
 VALUES (
-  'ot000001-0000-0000-0000-000000000001',
+  'a0000001-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
   'Standard New Starter',
   'Default onboarding checklist for all new employees joining The People System. Covers IT setup, compliance, introductions, and first-week orientation.',
@@ -51,55 +51,55 @@ ON CONFLICT (id) DO NOTHING;
 -- Onboarding tasks (18 tasks across 5 categories)
 INSERT INTO onboarding_template_tasks (id, template_id, title, description, category, due_day_offset, assigned_to, sort_order) VALUES
   -- Pre-start (before day 1)
-  ('ott00001-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Send welcome email',                   'Send welcome pack with start date, dress code, parking info, and first-day agenda', 'general',    -5, 'HR Coordinator',     1),
-  ('ott00002-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Prepare workstation',                  'Set up desk, chair, monitor, peripherals. Order any special equipment needed',      'it_setup',   -3, 'IT / Office Manager', 2),
-  ('ott00003-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Create email & system accounts',       'Google Workspace, Slack, GitHub, Jira, Notion — based on department',               'it_setup',   -2, 'IT / Office Manager', 3),
-  ('ott00004-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Add to payroll system',                'Set up in payroll with salary, bank details, tax code',                             'documents',  -2, 'Finance Manager',     4),
+  ('b0000001-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Send welcome email',                   'Send welcome pack with start date, dress code, parking info, and first-day agenda', 'general',    -5, 'HR Coordinator',     1),
+  ('b0000002-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Prepare workstation',                  'Set up desk, chair, monitor, peripherals. Order any special equipment needed',      'it_setup',   -3, 'IT / Office Manager', 2),
+  ('b0000003-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Create email & system accounts',       'Google Workspace, Slack, GitHub, Jira, Notion — based on department',               'it_setup',   -2, 'IT / Office Manager', 3),
+  ('b0000004-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Add to payroll system',                'Set up in payroll with salary, bank details, tax code',                             'documents',  -2, 'Finance Manager',     4),
 
   -- Day 1
-  ('ott00005-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Office tour & introductions',          'Show key areas: kitchen, meeting rooms, fire exits. Introduce to immediate team',   'intro',       0, 'Line Manager',        5),
-  ('ott00006-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Issue laptop & access badge',          'Hand over company laptop, set up fingerprint/password, issue access badge',         'it_setup',    0, 'IT / Office Manager', 6),
-  ('ott00007-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Sign employment contract',             'Review and sign contract, NDA, and IP assignment',                                  'documents',   0, 'HR Coordinator',      7),
-  ('ott00008-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Health & safety briefing',             'Fire evacuation procedures, first aiders, incident reporting',                      'training',    0, 'HR Coordinator',      8),
+  ('b0000005-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Office tour & introductions',          'Show key areas: kitchen, meeting rooms, fire exits. Introduce to immediate team',   'intro',       0, 'Line Manager',        5),
+  ('b0000006-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Issue laptop & access badge',          'Hand over company laptop, set up fingerprint/password, issue access badge',         'it_setup',    0, 'IT / Office Manager', 6),
+  ('b0000007-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Sign employment contract',             'Review and sign contract, NDA, and IP assignment',                                  'documents',   0, 'HR Coordinator',      7),
+  ('b0000008-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Health & safety briefing',             'Fire evacuation procedures, first aiders, incident reporting',                      'training',    0, 'HR Coordinator',      8),
 
   -- Week 1
-  ('ott00009-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Complete right-to-work check',         'Verify passport/visa and file copies. Must be done within 3 days of start',         'documents',   1, 'HR Coordinator',      9),
-  ('ott00010-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Company policies walkthrough',         'Review employee handbook: leave, expenses, code of conduct, remote work policy',    'training',    2, 'HR Coordinator',     10),
-  ('ott00011-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Meet with CEO / leadership',           'Informal 20-min chat with Sarah to learn about company vision and values',          'intro',       3, 'CEO',                11),
-  ('ott00012-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Data protection & GDPR training',      'Complete online GDPR awareness module and sign data handling agreement',             'training',    3, 'HR Coordinator',     12),
-  ('ott00013-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Set up benefits & pension',            'Enrol in pension scheme, choose benefits options if applicable',                     'documents',   5, 'Finance Manager',    13),
+  ('b0000009-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Complete right-to-work check',         'Verify passport/visa and file copies. Must be done within 3 days of start',         'documents',   1, 'HR Coordinator',      9),
+  ('ott00010-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Company policies walkthrough',         'Review employee handbook: leave, expenses, code of conduct, remote work policy',    'training',    2, 'HR Coordinator',     10),
+  ('ott00011-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Meet with CEO / leadership',           'Informal 20-min chat with Sarah to learn about company vision and values',          'intro',       3, 'CEO',                11),
+  ('ott00012-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Data protection & GDPR training',      'Complete online GDPR awareness module and sign data handling agreement',             'training',    3, 'HR Coordinator',     12),
+  ('ott00013-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Set up benefits & pension',            'Enrol in pension scheme, choose benefits options if applicable',                     'documents',   5, 'Finance Manager',    13),
 
   -- Month 1
-  ('ott00014-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', '1-to-1 check-in with line manager',    'First formal 1-to-1: how are things going? Any blockers or questions?',             'general',    14, 'Line Manager',       14),
-  ('ott00015-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Complete role-specific training',       'Department-specific tools and processes training (managed by line manager)',          'training',   21, 'Line Manager',       15),
-  ('ott00016-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Set 90-day objectives',                'Agree SMART objectives for probation period with line manager',                      'general',    21, 'Line Manager',       16),
+  ('ott00014-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', '1-to-1 check-in with line manager',    'First formal 1-to-1: how are things going? Any blockers or questions?',             'general',    14, 'Line Manager',       14),
+  ('ott00015-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Complete role-specific training',       'Department-specific tools and processes training (managed by line manager)',          'training',   21, 'Line Manager',       15),
+  ('ott00016-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Set 90-day objectives',                'Agree SMART objectives for probation period with line manager',                      'general',    21, 'Line Manager',       16),
 
   -- Month 3
-  ('ott00017-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Probation mid-point review',           'Formal probation review: progress against objectives, feedback, any concerns',       'general',    45, 'Line Manager',       17),
-  ('ott00018-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'Probation sign-off',                   'Final probation review and confirmation of permanent employment',                    'general',    90, 'HR Coordinator',     18)
+  ('ott00017-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Probation mid-point review',           'Formal probation review: progress against objectives, feedback, any concerns',       'general',    45, 'Line Manager',       17),
+  ('ott00018-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'Probation sign-off',                   'Final probation review and confirmation of permanent employment',                    'general',    90, 'HR Coordinator',     18)
 ON CONFLICT (id) DO NOTHING;
 
 
 -- == 3. ONBOARDING INSTANCE (for newest employees) ========================
 -- Give the 3 most recent joiners active onboarding instances
 INSERT INTO onboarding_instances (id, company_id, employee_id, template_id, status) VALUES
-  ('oi000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000016-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'in_progress'),
-  ('oi000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000025-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'in_progress'),
-  ('oi000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000027-0000-0000-0000-000000000001', 'ot000001-0000-0000-0000-000000000001', 'in_progress')
+  ('c0000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000016-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'in_progress'),
+  ('c0000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000025-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'in_progress'),
+  ('c0000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'e0000027-0000-0000-0000-000000000001', 'a0000001-0000-0000-0000-000000000001', 'in_progress')
 ON CONFLICT (id) DO NOTHING;
 
 -- Create task progress for Ben Whitaker's onboarding (partially complete)
 INSERT INTO onboarding_task_progress (id, instance_id, task_title, task_description, category, status, sort_order) VALUES
-  ('otp00001-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Send welcome email',              'Send welcome pack with start date details',          'general',   'completed',    1),
-  ('otp00002-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Prepare workstation',             'Set up desk, chair, monitor',                        'it_setup',  'completed',    2),
-  ('otp00003-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Create email & system accounts',  'Google Workspace, Slack, GitHub',                    'it_setup',  'completed',    3),
-  ('otp00004-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Add to payroll system',           'Set up in payroll',                                  'documents', 'completed',    4),
-  ('otp00005-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Office tour & introductions',     'Show key areas, introduce to team',                  'intro',     'completed',    5),
-  ('otp00006-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Issue laptop & access badge',     'Hand over company laptop',                           'it_setup',  'completed',    6),
-  ('otp00007-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Sign employment contract',        'Review and sign contract, NDA',                      'documents', 'completed',    7),
-  ('otp00008-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Health & safety briefing',        'Fire evacuation, first aiders',                      'training',  'in_progress',  8),
-  ('otp00009-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Complete right-to-work check',    'Verify passport/visa',                               'documents', 'pending',      9),
-  ('otp00010-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Company policies walkthrough',    'Review employee handbook',                           'training',  'pending',     10),
-  ('otp00011-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Meet with CEO / leadership',      'Informal chat with Sarah',                           'intro',     'pending',     11),
-  ('otp00012-0000-0000-0000-000000000001', 'oi000001-0000-0000-0000-000000000001', 'Data protection & GDPR training', 'Complete GDPR module',                               'training',  'pending',     12)
+  ('d0000001-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Send welcome email',              'Send welcome pack with start date details',          'general',   'completed',    1),
+  ('d0000002-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Prepare workstation',             'Set up desk, chair, monitor',                        'it_setup',  'completed',    2),
+  ('d0000003-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Create email & system accounts',  'Google Workspace, Slack, GitHub',                    'it_setup',  'completed',    3),
+  ('d0000004-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Add to payroll system',           'Set up in payroll',                                  'documents', 'completed',    4),
+  ('d0000005-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Office tour & introductions',     'Show key areas, introduce to team',                  'intro',     'completed',    5),
+  ('d0000006-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Issue laptop & access badge',     'Hand over company laptop',                           'it_setup',  'completed',    6),
+  ('d0000007-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Sign employment contract',        'Review and sign contract, NDA',                      'documents', 'completed',    7),
+  ('d0000008-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Health & safety briefing',        'Fire evacuation, first aiders',                      'training',  'in_progress',  8),
+  ('d0000009-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Complete right-to-work check',    'Verify passport/visa',                               'documents', 'pending',      9),
+  ('otp00010-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Company policies walkthrough',    'Review employee handbook',                           'training',  'pending',     10),
+  ('otp00011-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Meet with CEO / leadership',      'Informal chat with Sarah',                           'intro',     'pending',     11),
+  ('otp00012-0000-0000-0000-000000000001', 'c0000001-0000-0000-0000-000000000001', 'Data protection & GDPR training', 'Complete GDPR module',                               'training',  'pending',     12)
 ON CONFLICT (id) DO NOTHING;
