@@ -231,29 +231,31 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
     };
 
     if (editingId) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('employee_records')
         .update(payload)
         .eq('id', editingId)
         .select()
         .single();
-      if (data) {
+      if (!error && data) {
         setEmployees(prev => prev.map(e => e.id === editingId ? data as Employee : e));
+        setShowForm(false);
+        revalidatePortalPath('/lead/employee-records');
       }
     } else {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('employee_records')
         .insert(payload)
         .select()
         .single();
-      if (data) {
+      if (!error && data) {
         setEmployees(prev => [...prev, data as Employee]);
+        setShowForm(false);
+        revalidatePortalPath('/lead/employee-records');
       }
     }
 
     setSaving(false);
-    setShowForm(false);
-    revalidatePortalPath('/lead/employee-records');
   }
 
   return (

@@ -139,7 +139,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
   /* ─── Toggle task status ─────────────────────────── */
   async function toggleTask(taskId: string, currentStatus: string) {
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    await supabase
+    const { error } = await supabase
       .from('onboarding_task_progress')
       .update({
         status: newStatus,
@@ -147,16 +147,16 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
         completed_by: newStatus === 'completed' ? userId : null,
       })
       .eq('id', taskId);
-    revalidatePortalPath('/lead/onboarding');
+    if (!error) revalidatePortalPath('/lead/onboarding');
   }
 
   /* ─── Mark instance complete ─────────────────────── */
   async function completeInstance(instanceId: string) {
-    await supabase
+    const { error } = await supabase
       .from('onboarding_instances')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', instanceId);
-    revalidatePortalPath('/lead/onboarding');
+    if (!error) revalidatePortalPath('/lead/onboarding');
   }
 
   function addTask() {

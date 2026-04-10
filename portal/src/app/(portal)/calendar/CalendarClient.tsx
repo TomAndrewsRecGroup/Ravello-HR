@@ -187,7 +187,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
   async function saveLeave() {
     if (!leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date) return;
     setSaving(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('leave_records')
       .insert({
         company_id: companyId,
@@ -201,11 +201,13 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       })
       .select('*, employee_records(full_name, job_title)')
       .single();
-    if (data) setLeave(prev => [...prev, data as LeaveRecord]);
+    if (!error && data) {
+      setLeave(prev => [...prev, data as LeaveRecord]);
+      setShowLeaveForm(false);
+      setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
+      revalidatePortalPath('/calendar');
+    }
     setSaving(false);
-    setShowLeaveForm(false);
-    setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
-    revalidatePortalPath('/calendar');
   }
 
   function openEventForm(date?: string) {

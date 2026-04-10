@@ -148,7 +148,7 @@ export default function LearningDetailClient({
   async function handleCheckout() {
     if (!content.stripe_price_id) {
       setLoading(true);
-      await supabase.from('learning_purchases').insert({
+      const { error } = await supabase.from('learning_purchases').insert({
         content_id:        content.id,
         company_id:        companyId,
         purchased_by:      userId,
@@ -157,7 +157,7 @@ export default function LearningDetailClient({
         access_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       setLoading(false);
-      revalidatePortalPath(`/lead/learning/${content.id}`);
+      if (!error) revalidatePortalPath(`/lead/learning/${content.id}`);
       return;
     }
     setLoading(true);
