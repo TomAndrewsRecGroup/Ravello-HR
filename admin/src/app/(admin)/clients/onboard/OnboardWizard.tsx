@@ -449,7 +449,7 @@ export default function OnboardWizard({ staff }: Props) {
         {step === 6 && (
           <div className="text-center py-6">
             <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.12)' }}>
-              <CheckCircle2 size={28} style={{ color: '#10B981' }} />
+              <CheckCircle2 size={28} style={{ color: 'var(--success)' }} />
             </div>
             <h3 className="font-display text-xl mb-2" style={{ color: 'var(--ink)' }}>Client Onboarded</h3>
             <p className="text-sm mb-1" style={{ color: 'var(--ink-soft)' }}>

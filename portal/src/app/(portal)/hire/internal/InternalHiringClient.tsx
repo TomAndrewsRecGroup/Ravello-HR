@@ -409,7 +409,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                                         <button
                                           onClick={() => moveCandidateStage(role.id, candidate.id, nextStage)}
                                           className="text-[10px] font-bold px-2 py-1 rounded-md transition-colors"
-                                          style={{ background: 'rgba(52,211,153,0.12)', color: '#047857' }}
+                                          style={{ background: 'rgba(52,211,153,0.12)', color: 'var(--emerald)' }}
                                           title={`Move to ${nextStage}`}
                                         >
                                           {stageConfig(nextStage).label} →
@@ -431,7 +431,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                                         <button
                                           onClick={() => rejectCandidate(role.id, candidate.id)}
                                           className="text-[10px] font-medium px-2 py-1 rounded-md transition-colors"
-                                          style={{ color: '#B02020' }}
+                                          style={{ color: 'var(--rose)' }}
                                           title="Reject"
                                         >
                                           Reject

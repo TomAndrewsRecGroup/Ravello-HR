@@ -107,7 +107,7 @@ export default async function AdminHiringAnalyticsPage() {
             { label: 'Active Roles',    value: activeRoles.length,  sub: `${filledRoles.length} filled`,          icon: BarChart3,    color: 'var(--purple)' },
             { label: 'Avg Days Open',   value: `${avgDaysOpen}d`,   sub: 'across active roles',                   icon: Clock,        color: 'var(--blue)' },
             { label: 'Total Candidates', value: totalCands,          sub: `${sharedCands} shared`,                 icon: Users,        color: 'var(--teal)' },
-            { label: 'Offers Made',     value: allOffers.length,    sub: offerAcceptRate != null ? `${offerAcceptRate}% accepted` : 'No offers yet', icon: CheckCircle2, color: '#16A34A' },
+            { label: 'Offers Made',     value: allOffers.length,    sub: offerAcceptRate != null ? `${offerAcceptRate}% accepted` : 'No offers yet', icon: CheckCircle2, color: 'var(--success)' },
           ].map(({ label, value, sub, icon: Icon, color }) => (
             <div key={label} className="card p-5">
               <div className="flex items-start justify-between mb-3">
@@ -171,7 +171,7 @@ export default async function AdminHiringAnalyticsPage() {
               {[
                 { label: 'Total in pipeline', value: totalCands,    color: 'var(--blue)' },
                 { label: 'Shared with clients', value: sharedCands, color: 'var(--purple)' },
-                { label: 'Approved by clients', value: approvedCands, color: '#16A34A' },
+                { label: 'Approved by clients', value: approvedCands, color: 'var(--success)' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
                   <div className="flex items-center justify-between mb-1">
@@ -231,7 +231,7 @@ export default async function AdminHiringAnalyticsPage() {
                       <td>{c.filled}</td>
                       <td>
                         {c.highFriction > 0 ? (
-                          <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: '#DC2626' }}>
+                          <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--danger)' }}>
                             <AlertTriangle size={12} /> {c.highFriction}
                           </span>
                         ) : (
@@ -252,9 +252,9 @@ export default async function AdminHiringAnalyticsPage() {
             <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Offer Summary</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               {[
-                { label: 'Total Offers',  value: allOffers.length,    bg: 'rgba(59,111,255,0.08)',  color: '#1848CC' },
-                { label: 'Accepted',      value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)', color: '#166534' },
-                { label: 'Declined',      value: declinedOffers.length, bg: 'rgba(220,38,38,0.08)', color: '#991B1B' },
+                { label: 'Total Offers',  value: allOffers.length,    bg: 'rgba(59,111,255,0.08)',  color: 'var(--blue)' },
+                { label: 'Accepted',      value: acceptedOffers.length, bg: 'rgba(22,163,74,0.08)', color: 'var(--emerald)' },
+                { label: 'Declined',      value: declinedOffers.length, bg: 'rgba(220,38,38,0.08)', color: 'var(--rose)' },
               ].map(({ label, value, bg, color }) => (
                 <div key={label} className="rounded-[10px] p-4 text-center" style={{ background: bg }}>
                   <p className="text-2xl font-bold" style={{ color }}>{value}</p>

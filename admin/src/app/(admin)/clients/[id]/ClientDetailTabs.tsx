@@ -33,11 +33,11 @@ const STAGE_BADGE: Record<string, string> = {
 
 function frictionBadgeStyle(level: string): React.CSSProperties {
   switch (level) {
-    case 'Low':      return { background: 'rgba(52,211,153,0.14)', color: '#047857' };
-    case 'Medium':   return { background: 'rgba(245,158,11,0.15)', color: '#8A5500' };
-    case 'High':     return { background: 'rgba(217,68,68,0.10)',  color: '#B02020' };
+    case 'Low':      return { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' };
+    case 'Medium':   return { background: 'rgba(245,158,11,0.15)', color: 'var(--amber)' };
+    case 'High':     return { background: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' };
     case 'Critical': return { background: 'rgba(127,17,17,0.14)',  color: '#7F1111' };
-    default:         return { background: 'rgba(7,11,29,0.07)',    color: '#38436A' };
+    default:         return { background: 'rgba(7,11,29,0.07)',    color: 'var(--ink-soft)' };
   }
 }
 

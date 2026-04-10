@@ -194,7 +194,7 @@ export default function ReportUploadForm({ companies }: Props) {
         )}
 
         {error   && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: '#E05555' }}>{error}</p>}
-        {success && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(22,163,74,0.08)', color: '#166534' }}>{success}</p>}
+        {success && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--emerald)' }}>{success}</p>}
 
         <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
           {loading && <Loader2 size={14} className="animate-spin" />}

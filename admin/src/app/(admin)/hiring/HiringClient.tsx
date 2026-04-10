@@ -28,9 +28,9 @@ function frictionBadgeStyle(level: string): React.CSSProperties {
 
 function rowBorderStyle(req: any, daysOpen: number): React.CSSProperties {
   const level = req.friction_level ?? 'Unknown';
-  if (level === 'Critical') return { borderLeft: '3px solid #B02020' };
-  if (level === 'High')     return { borderLeft: '3px solid #F59E0B' };
-  if (daysOpen >= 30)       return { borderLeft: '3px solid #F59E0B' };
+  if (level === 'Critical') return { borderLeft: '3px solid var(--rose)' };
+  if (level === 'High')     return { borderLeft: '3px solid var(--warning)' };
+  if (daysOpen >= 30)       return { borderLeft: '3px solid var(--warning)' };
   return {};
 }
 

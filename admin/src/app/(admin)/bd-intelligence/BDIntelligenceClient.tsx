@@ -35,9 +35,9 @@ const STATUS_OPTIONS = ['All', 'Prospect', 'Contacted', 'Client', 'Not Relevant'
 const DATE_OPTIONS   = ['All time', 'Last 7 days', 'Last 30 days', 'Last 90 days'] as const;
 
 const KANBAN_COLS = [
-  { key: 'Prospect',     label: 'Prospect',     color: '#748099', bg: 'rgba(148,163,184,0.08)' },
-  { key: 'Contacted',    label: 'Contacted',    color: '#3B6FFF', bg: 'rgba(59,111,255,0.06)'  },
-  { key: 'Client',       label: 'Client',       color: '#16A34A', bg: 'rgba(22,163,74,0.06)'   },
+  { key: 'Prospect',     label: 'Prospect',     color: 'var(--ink-faint)', bg: 'rgba(148,163,184,0.08)' },
+  { key: 'Contacted',    label: 'Contacted',    color: 'var(--blue)', bg: 'rgba(59,111,255,0.06)'  },
+  { key: 'Client',       label: 'Client',       color: 'var(--success)', bg: 'rgba(22,163,74,0.06)'   },
   { key: 'Not Relevant', label: 'Not Relevant', color: '#94A3B8', bg: 'rgba(148,163,184,0.04)' },
 ];
 

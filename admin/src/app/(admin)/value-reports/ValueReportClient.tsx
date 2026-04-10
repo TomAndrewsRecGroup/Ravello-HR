@@ -219,7 +219,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
             {/* PROTECT */}
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck size={15} style={{ color: '#14B8A6' }} />
+                <ShieldCheck size={15} style={{ color: 'var(--teal)' }} />
                 <h3 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>PROTECT</h3>
               </div>
               <div className="space-y-3">
