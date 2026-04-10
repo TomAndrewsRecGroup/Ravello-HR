@@ -100,7 +100,7 @@ export default async function BenchmarksPage() {
               { label: 'Below Market',  value: belowCount,  color: 'var(--rose)', bg: 'rgba(220,38,38,0.08)'  },
             ].map(({ label, value, color, bg }) => (
               <div key={label} className="rounded-[12px] p-5" style={{ background: bg }}>
-                <p className="text-3xl font-bold" style={{ color }}>{value}</p>
+                <p className="text-2xl font-bold" style={{ color }}>{value}</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{label}</p>
               </div>
             ))}

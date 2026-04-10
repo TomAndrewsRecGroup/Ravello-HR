@@ -108,7 +108,7 @@ export default function PlaybookPage() {
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
         <div className="max-w-4xl mx-auto">
           <span className="eyebrow mb-5">People Ops Playbook</span>
-          <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.2rem,4vw,3.5rem)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: '1rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.2rem,4vw,3.5rem)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-0.035em', color: 'var(--ink)', marginBottom: '1rem' }}>
             Straight-talking HR for leaders
           </h1>
           <p className="text-xl max-w-2xl" style={{ color: 'var(--ink-soft)' }}>

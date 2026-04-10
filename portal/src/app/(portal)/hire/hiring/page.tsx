@@ -213,7 +213,7 @@ export default async function HiringPage({
         {hasManatal && (
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--ink)' }}>Candidate Pipeline</h2>
+              <h2 className="font-display text-base font-semibold" style={{ color: 'var(--ink)' }}>Candidate Pipeline</h2>
               <span className="badge" style={{ background: 'rgba(59,111,255,0.1)', color: 'var(--blue)', fontSize: 11 }}>
                 Live from Manatal
               </span>

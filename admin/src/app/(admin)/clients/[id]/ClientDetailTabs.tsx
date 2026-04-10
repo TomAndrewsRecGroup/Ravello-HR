@@ -520,7 +520,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
               ].map(s => (
                 <div key={s.label} className="stat-card">
                   <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>
-                  <p className="font-display font-bold text-3xl mt-1" style={{ color: 'var(--ink)' }}>{s.value}</p>
+                  <p className="font-display font-bold text-2xl mt-1" style={{ color: 'var(--ink)' }}>{s.value}</p>
                 </div>
               ))}
             </div>
@@ -789,7 +789,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       {tab === 'Documents' && (
         <div>
           {documents.length === 0 ? (
-            <div className="card empty-state">No documents uploaded for this client.</div>
+            <div className="card p-12 empty-state">No documents yet.</div>
           ) : (
             <div className="table-wrapper">
               <table className="table">
@@ -1360,7 +1360,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
               )}
             </h2>
             {empDocs.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No employee documents uploaded.</p>
+              <div className="card p-12 empty-state"><p className="text-sm">No employee documents yet.</p></div>
             ) : (
               <div className="table-wrapper">
                 <table className="table">
@@ -1713,7 +1713,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: 'var(--ink-faint)' }}>Uploaded Documents</p>
         {documents.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No documents uploaded.</p>
+          <div className="card p-12 empty-state"><p className="text-sm">No documents yet.</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="table">

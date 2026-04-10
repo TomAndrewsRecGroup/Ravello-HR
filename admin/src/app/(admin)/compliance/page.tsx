@@ -117,7 +117,7 @@ export default async function AdminComplianceDashboard() {
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>{label}</p>
                 <Icon size={14} style={{ color: badge }} />
               </div>
-              <p className="text-3xl font-bold" style={{ color: badge }}>{value}</p>
+              <p className="text-2xl font-bold" style={{ color: badge }}>{value}</p>
               <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>compliance items</p>
             </div>
           ))}
@@ -201,7 +201,7 @@ export default async function AdminComplianceDashboard() {
           {items.length === 0 ? (
             <div className="card empty-state">
               <ShieldCheck size={24} />
-              <p className="text-sm">No compliance items found.</p>
+              <p className="text-sm">No compliance items yet.</p>
             </div>
           ) : (
             <div className="table-wrapper">

@@ -91,7 +91,7 @@ export default async function RevenuePage() {
         <div className="grid lg:grid-cols-[1fr_340px] gap-6">
           {/* Revenue by client */}
           <div className="card p-6">
-            <h3 className="font-display text-base font-semibold mb-4" style={{ color: 'var(--ink)' }}>Revenue by Client</h3>
+            <h3 className="font-display text-sm font-semibold mb-4" style={{ color: 'var(--ink)' }}>Revenue by Client</h3>
             <div className="table-wrapper" style={{ border: 'none' }}>
               <table className="table">
                 <thead>

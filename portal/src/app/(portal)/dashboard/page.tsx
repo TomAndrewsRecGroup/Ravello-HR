@@ -228,7 +228,7 @@ export default async function DashboardPage() {
         {(actions.length > 0 || frictionAlerts.length > 0) && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Needs Your Attention</h2>
+              <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Needs Your Attention</h2>
               {actions.length > 0 && (
                 <Link href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
               )}
@@ -254,7 +254,7 @@ export default async function DashboardPage() {
         {requisitions.length > 0 && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Live Roles</h2>
+              <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Live Roles</h2>
               <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
@@ -276,7 +276,7 @@ export default async function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-5 mb-6">
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Compliance</h2>
+              <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Compliance</h2>
               <Link href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             {complianceItems.length === 0 ? (
@@ -299,7 +299,7 @@ export default async function DashboardPage() {
 
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>HR Support</h2>
+              <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>HR Support</h2>
               <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             {tickets.length === 0 ? (
@@ -324,7 +324,7 @@ export default async function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-5">
           {services.length > 0 && (
             <section className="card p-5">
-              <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>
+              <h2 className="font-display text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>
                 Active Services
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -340,7 +340,7 @@ export default async function DashboardPage() {
           {documents.length > 0 && (
             <section className="card p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Recent Documents</h2>
+                <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Recent Documents</h2>
                 <Link href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
               </div>
               <div className="space-y-1.5">

@@ -22,7 +22,7 @@ function StatCard({ label, value, sub, color = 'var(--purple)' }: {
   return (
     <div className="card p-5">
       <p className="text-xs font-medium mb-1" style={{ color: 'var(--ink-faint)' }}>{label}</p>
-      <p className="font-display font-bold text-3xl" style={{ color: 'var(--ink)' }}>{value}</p>
+      <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{value}</p>
       {sub && <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{sub}</p>}
     </div>
   );

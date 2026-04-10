@@ -88,9 +88,9 @@ export default async function AdminReportsPage() {
           <section>
             <div className="card overflow-hidden">
               {reports.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-16">
-                  <BarChart3 size={28} style={{ color: 'var(--ink-faint)' }} />
-                  <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No reports uploaded yet</p>
+                <div className="card p-12 empty-state">
+                  <BarChart3 size={28} />
+                  <p className="text-sm">No reports yet.</p>
                 </div>
               ) : (
                 <table className="w-full text-sm">

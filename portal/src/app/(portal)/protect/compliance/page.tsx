@@ -94,7 +94,7 @@ export default async function CompliancePage() {
               ].map(s => (
                 <div key={s.label} className="card p-4" style={{ background: s.bg, borderColor: `color-mix(in srgb, ${s.color} 20%, transparent)` }}>
                   <p className="text-xs font-medium mb-1" style={{ color: s.color }}>{s.label}</p>
-                  <p className="font-display font-bold text-3xl" style={{ color: 'var(--ink)' }}>{s.value}</p>
+                  <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{s.value}</p>
                 </div>
               ))}
             </div>

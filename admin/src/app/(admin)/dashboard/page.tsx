@@ -120,7 +120,7 @@ export default async function AdminDashboardPage() {
                   <s.icon size={15} style={{ color: s.color }} />
                   <span className="eyebrow" style={{ fontSize: '10px' }}>{s.label}</span>
                 </div>
-                <p className="font-display font-bold text-3xl text-gradient">{s.val}</p>
+                <p className="font-display font-bold text-2xl text-gradient">{s.val}</p>
               </Link>
             ))}
           </div>

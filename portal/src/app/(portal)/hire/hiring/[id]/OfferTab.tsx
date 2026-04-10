@@ -319,7 +319,7 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
 
       {offers.length === 0 && !showForm ? (
         <div className="card p-10">
-          <div className="empty-state py-4">
+          <div className="empty-state py-8">
             <FileText size={24} />
             <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>No offers yet</p>
             <p className="text-xs max-w-[280px]" style={{ color: 'var(--ink-faint)' }}>

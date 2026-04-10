@@ -80,7 +80,7 @@ export default function ProofSection() {
               <span className="text-gradient">you can point to.</span>
             </h3>
             <span className="accent-line-lg mb-6" style={{ display: 'block' }} />
-            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Names stay confidential. The numbers speak for themselves.
             </p>
           </div>
@@ -103,7 +103,7 @@ export default function ProofSection() {
               >
                 {/* Icon box */}
                 <div
-                  className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-5"
+                  className="w-11 h-11 rounded-[14px] flex items-center justify-center mb-5"
                   style={{
                     background: s.glow,
                     border: `1px solid ${s.color}40`,

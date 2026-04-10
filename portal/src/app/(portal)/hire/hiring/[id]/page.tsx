@@ -194,7 +194,7 @@ export default async function RequisitionDetailPage({
                 Only candidates approved by The People Office are shown here.
               </p>
               {cands.length === 0 ? (
-                <div className="empty-state py-10">
+                <div className="empty-state py-8">
                   <p className="text-sm">No candidates yet — The People Office will add them as sourcing progresses.</p>
                 </div>
               ) : (
