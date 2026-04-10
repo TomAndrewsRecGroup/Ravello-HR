@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { ChevronDown, ChevronRight, Loader2, Save } from 'lucide-react';
 
 interface Props {
@@ -72,25 +73,31 @@ export default function RequestsClient({ requests }: Props) {
     setUpdating(id);
     const update: Record<string, any> = { status: newStatus };
     if (newStatus === 'complete') update.responded_at = new Date().toISOString();
-    await supabase.from('service_requests').update(update).eq('id', id);
-    setLocalStatus(prev => ({ ...prev, [id]: newStatus }));
+    const { error } = await supabase.from('service_requests').update(update).eq('id', id);
+    if (!error) {
+      setLocalStatus(prev => ({ ...prev, [id]: newStatus }));
+      revalidateAdminPath('/requests');
+    }
     setUpdating(null);
   }
 
   async function saveResponse(id: string) {
     setSavingNotes(id);
-    await supabase
+    const { error } = await supabase
       .from('service_requests')
       .update({ response_notes: responseNotes[id] ?? '' })
       .eq('id', id);
-    setSavedNotes(prev => ({ ...prev, [id]: true }));
-    setTimeout(() => setSavedNotes(prev => ({ ...prev, [id]: false })), 2000);
+    if (!error) {
+      setSavedNotes(prev => ({ ...prev, [id]: true }));
+      setTimeout(() => setSavedNotes(prev => ({ ...prev, [id]: false })), 2000);
+      revalidateAdminPath('/requests');
+    }
     setSavingNotes(null);
   }
 
   async function completeWithResponse(id: string) {
     setSavingNotes(id);
-    await supabase
+    const { error } = await supabase
       .from('service_requests')
       .update({
         response_notes: responseNotes[id] ?? '',
@@ -98,7 +105,10 @@ export default function RequestsClient({ requests }: Props) {
         responded_at:   new Date().toISOString(),
       })
       .eq('id', id);
-    setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+    if (!error) {
+      setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+      revalidateAdminPath('/requests');
+    }
     setSavingNotes(null);
   }
 

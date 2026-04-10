@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Trash2, Edit2, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -71,11 +72,17 @@ export default function TemplatesClient({ initialTemplates }: Props) {
       tags:          form.tags.split(',').map(s => s.trim()).filter(Boolean),
     };
     if (editing) {
-      const { data } = await supabase.from('jd_templates').update(payload).eq('id', editing).select().single();
-      if (data) setTemplates(ts => ts.map(t => t.id === editing ? (data as Template) : t));
+      const { data, error } = await supabase.from('jd_templates').update(payload).eq('id', editing).select().single();
+      if (!error && data) {
+        setTemplates(ts => ts.map(t => t.id === editing ? (data as Template) : t));
+        revalidateAdminPath('/hiring/templates');
+      }
     } else {
-      const { data } = await supabase.from('jd_templates').insert(payload).select().single();
-      if (data) setTemplates(ts => [data as Template, ...ts]);
+      const { data, error } = await supabase.from('jd_templates').insert(payload).select().single();
+      if (!error && data) {
+        setTemplates(ts => [data as Template, ...ts]);
+        revalidateAdminPath('/hiring/templates');
+      }
     }
     setSaving(false);
     setShowForm(false);
@@ -84,8 +91,11 @@ export default function TemplatesClient({ initialTemplates }: Props) {
 
   async function del(id: string) {
     setDeleting(id);
-    await supabase.from('jd_templates').delete().eq('id', id);
-    setTemplates(ts => ts.filter(t => t.id !== id));
+    const { error } = await supabase.from('jd_templates').delete().eq('id', id);
+    if (!error) {
+      setTemplates(ts => ts.filter(t => t.id !== id));
+      revalidateAdminPath('/hiring/templates');
+    }
     setDeleting(null);
   }
 

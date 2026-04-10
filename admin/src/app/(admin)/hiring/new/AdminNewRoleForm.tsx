@@ -9,8 +9,6 @@ const WORKING_MODELS   = ['office', 'hybrid', 'remote'] as const;
 const SENIORITY_OPTS   = ['Junior/Graduate', 'Mid-level', 'Senior', 'Head of/Director', 'C-suite/Executive'];
 const EMP_TYPES        = ['Permanent', 'Fixed-term', 'Contract', 'Interim'];
 const STAGE_OPTS       = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer'] as const;
-const OWNERS           = ['Lucy', 'Tom'];
-
 interface Template {
   id: string;
   title: string;
@@ -25,9 +23,10 @@ interface Props {
   companies: { id: string; name: string }[];
   adminUserId: string;
   template?: Template | null;
+  recruiters: string[];
 }
 
-export default function AdminNewRoleForm({ companies, adminUserId, template }: Props) {
+export default function AdminNewRoleForm({ companies, adminUserId, template, recruiters }: Props) {
   const router  = useRouter();
   const supabase = createClient();
 
@@ -169,7 +168,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template }: P
             <label className="label">Assigned Recruiter</label>
             <select className="input" value={form.assigned_recruiter} onChange={e => set('assigned_recruiter', e.target.value)}>
               <option value="">— unassigned —</option>
-              {OWNERS.map(o => <option key={o}>{o}</option>)}
+              {recruiters.map(name => <option key={name}>{name}</option>)}
             </select>
           </div>
         </div>

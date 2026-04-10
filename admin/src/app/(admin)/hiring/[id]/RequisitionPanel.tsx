@@ -328,10 +328,13 @@ export default function RequisitionPanel({ req }: Props) {
 
   async function saveRecruiter() {
     setSavingRecruiter(true);
-    await supabase.from('requisitions').update({ assigned_recruiter: recruiter }).eq('id', req.id);
+    const { error } = await supabase.from('requisitions').update({ assigned_recruiter: recruiter }).eq('id', req.id);
     setSavingRecruiter(false);
-    setRecruiterSaved(true);
-    setTimeout(() => setRecruiterSaved(false), 2000);
+    if (!error) {
+      setRecruiterSaved(true);
+      setTimeout(() => setRecruiterSaved(false), 2000);
+      revalidateAdminPath(`/hiring/${req.id}`);
+    }
   }
 
   return (

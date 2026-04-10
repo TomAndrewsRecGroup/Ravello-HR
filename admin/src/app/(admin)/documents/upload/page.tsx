@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Upload } from 'lucide-react';
 
 const CATEGORIES = ['contract','policy','letter','report','other'];

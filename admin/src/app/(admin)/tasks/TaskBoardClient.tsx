@@ -87,13 +87,19 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
 
   async function moveTask(taskId: string, newStatus: string) {
     const completed = newStatus === 'done' ? new Date().toISOString() : null;
-    await supabase.from('internal_tasks').update({ status: newStatus, completed_at: completed }).eq('id', taskId);
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, completed_at: completed } : t));
+    const { error } = await supabase.from('internal_tasks').update({ status: newStatus, completed_at: completed }).eq('id', taskId);
+    if (!error) {
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, completed_at: completed } : t));
+      revalidateAdminPath('/tasks');
+    }
   }
 
   async function deleteTask(taskId: string) {
-    await supabase.from('internal_tasks').delete().eq('id', taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    const { error } = await supabase.from('internal_tasks').delete().eq('id', taskId);
+    if (!error) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      revalidateAdminPath('/tasks');
+    }
   }
 
   function isOverdue(due: string | null): boolean {

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Calendar, Video, Phone, MapPin, ClipboardList, ChevronDown } from 'lucide-react';
 
 interface Interview {
@@ -84,7 +85,7 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
 
     const candidateName = candidates.find(c => c.id === form.candidate_id)?.full_name;
 
-    const { data } = await supabase.from('interview_schedules').insert({
+    const { data, error } = await supabase.from('interview_schedules').insert({
       requisition_id:   requisitionId,
       company_id:       companyId,
       candidate_id:     form.candidate_id,
@@ -99,8 +100,9 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
       outcome:          'pending',
     }).select().single();
 
-    if (data) {
+    if (!error && data) {
       setInterviews(prev => [{ ...(data as any), candidate_name: candidateName }, ...prev]);
+      revalidateAdminPath('/hiring');
     }
     setSaving(false);
     setShowForm(false);
@@ -108,18 +110,27 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('interview_schedules').update({ status }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+    const { error } = await supabase.from('interview_schedules').update({ status }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   async function updateOutcome(id: string, outcome: string) {
-    await supabase.from('interview_schedules').update({ outcome }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, outcome } : i));
+    const { error } = await supabase.from('interview_schedules').update({ outcome }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, outcome } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   async function saveFeedback(id: string, feedback_notes: string) {
-    await supabase.from('interview_schedules').update({ feedback_notes }).eq('id', id);
-    setInterviews(prev => prev.map(i => i.id === id ? { ...i, feedback_notes } : i));
+    const { error } = await supabase.from('interview_schedules').update({ feedback_notes }).eq('id', id);
+    if (!error) {
+      setInterviews(prev => prev.map(i => i.id === id ? { ...i, feedback_notes } : i));
+      revalidateAdminPath('/hiring');
+    }
   }
 
   // Group by candidate

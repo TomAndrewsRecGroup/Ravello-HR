@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import BDCompanyModal from '@/components/modules/BDCompanyModal';
 import { Search, ChevronDown, LayoutList, Columns3 } from 'lucide-react';
 
@@ -82,8 +83,11 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
   }
 
   async function moveToStatus(companyId: string, newStatus: string) {
-    await supabase.from('bd_companies').update({ status: newStatus }).eq('id', companyId);
-    setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, status: newStatus } : c));
+    const { error } = await supabase.from('bd_companies').update({ status: newStatus }).eq('id', companyId);
+    if (!error) {
+      setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, status: newStatus } : c));
+      revalidateAdminPath('/bd-intelligence');
+    }
   }
 
   /* ─── Drag handlers ──────────────────────────────── */

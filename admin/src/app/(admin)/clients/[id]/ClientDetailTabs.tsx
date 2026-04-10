@@ -62,11 +62,14 @@ function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Re
   async function toggle(key: string) {
     const newVal = !localFlags[key];
     setSaving(key);
-    setLocalFlags(prev => ({ ...prev, [key]: newVal }));
-    await supabase
+    const { error } = await supabase
       .from('companies')
       .update({ feature_flags: { ...localFlags, [key]: newVal } })
       .eq('id', companyId);
+    if (!error) {
+      setLocalFlags(prev => ({ ...prev, [key]: newVal }));
+      revalidateAdminPath('/clients');
+    }
     setSaving(null);
   }
 
@@ -108,10 +111,13 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
 
   async function save() {
     setSaving(true);
-    await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
+    const { error } = await supabase.from('companies').update({ manatal_client_id: value || null }).eq('id', companyId);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (!error) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      revalidateAdminPath('/clients');
+    }
   }
 
   return (
@@ -143,10 +149,12 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
   async function toggle() {
     setLoading(true);
     const newVal = !active;
-    await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
-    setActive(newVal);
+    const { error } = await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
+    if (!error) {
+      setActive(newVal);
+      revalidateAdminPath('/clients');
+    }
     setLoading(false);
-    revalidateAdminPath(`/clients/${companyId}`);
   }
 
   return (
@@ -246,20 +254,26 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveAction() {
     if (!actForm.title) return;
     setSavingAct(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('actions')
       .insert({ ...actForm, company_id: company.id, status: 'active', due_date: actForm.due_date || null })
       .select()
       .single();
-    if (data) setActions(prev => [data, ...prev]);
+    if (!error && data) {
+      setActions(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingAct(false);
     setShowActForm(false);
     setActForm({ title: '', description: '', priority: 'medium', due_date: '' });
   }
 
   async function completeAction(id: string) {
-    await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+    const { error } = await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
+    if (!error) {
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Candidates state ── */
@@ -272,12 +286,15 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveCandidate() {
     if (!candForm.full_name || !candForm.requisition_id) return;
     setSavingCand(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('candidates')
       .insert({ ...candForm, company_id: company.id })
       .select()
       .single();
-    if (data) setCandidates(prev => [data, ...prev]);
+    if (!error && data) {
+      setCandidates(prev => [data, ...prev]);
+      revalidateAdminPath('/clients');
+    }
     setSavingCand(false);
     setShowCandForm(false);
     setCandForm({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
@@ -285,8 +302,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
   async function toggleApproved(id: string, current: boolean) {
     setTogglingCand(id);
-    await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+    const { error } = await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
+    if (!error) {
+      setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
+      revalidateAdminPath('/clients');
+    }
     setTogglingCand(null);
   }
 
@@ -299,20 +319,26 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   async function saveCompliance() {
     if (!compForm.title || !compForm.due_date) return;
     setSavingComp(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('compliance_items')
       .insert({ ...compForm, company_id: company.id })
       .select()
       .single();
-    if (data) setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+    if (!error && data) {
+      setCompliance(prev => [...prev, data].sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()));
+      revalidateAdminPath('/clients');
+    }
     setSavingComp(false);
     setShowCompForm(false);
     setCompForm({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
   }
 
   async function updateComplianceStatus(id: string, status: string) {
-    await supabase.from('compliance_items').update({ status }).eq('id', id);
-    setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+    const { error } = await supabase.from('compliance_items').update({ status }).eq('id', id);
+    if (!error) {
+      setCompliance(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Roadmap state ── */
@@ -332,15 +358,21 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   const [perfReviews,   setPerfReviews]   = useState<any[]>([]);
 
   async function updateTrainingStatus(id: string, status: string) {
-    await supabase.from('training_needs').update({ status }).eq('id', id);
-    setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+    const { error } = await supabase.from('training_needs').update({ status }).eq('id', id);
+    if (!error) {
+      setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
+      revalidateAdminPath('/clients');
+    }
   }
 
   async function updateReviewStatus(id: string, status: string) {
     const extra: Record<string, string> = {};
     if (status === 'completed') extra.completed_at = new Date().toISOString();
-    await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
-    setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+    const { error } = await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
+    if (!error) {
+      setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── PROTECT state ── */
@@ -380,8 +412,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   }, [tabData['Services']]);
 
   async function updateAbsenceStatus(id: string, status: string) {
-    await supabase.from('absence_records').update({ status }).eq('id', id);
-    setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    const { error } = await supabase.from('absence_records').update({ status }).eq('id', id);
+    if (!error) {
+      setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+      revalidateAdminPath('/clients');
+    }
   }
 
   /* ── Doc approve ── */

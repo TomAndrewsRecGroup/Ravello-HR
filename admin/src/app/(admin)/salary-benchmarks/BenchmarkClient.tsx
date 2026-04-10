@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Trash2, PoundSterling } from 'lucide-react';
 
 interface Benchmark {
@@ -34,6 +35,8 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>(initialBenchmarks);
   const [showForm, setShowForm]     = useState(false);
   const [saving, setSaving]         = useState(false);
+  const [deleting, setDeleting]     = useState<string | null>(null);
+  const [error, setError]           = useState('');
   const [search, setSearch]         = useState('');
   const [form, setForm] = useState({
     role_type:      '',
@@ -55,7 +58,8 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
   async function save() {
     if (!form.role_type.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('salary_benchmarks').insert({
+    setError('');
+    const { data, error: insertErr } = await supabase.from('salary_benchmarks').insert({
       role_type:      form.role_type,
       location:       form.location   || null,
       seniority:      form.seniority  || null,
@@ -69,15 +73,28 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
       notes:          form.notes          || null,
       created_by:     userId,
     }).select().single();
+    if (insertErr) {
+      setError(insertErr.message);
+      setSaving(false);
+      return;
+    }
     if (data) setBenchmarks(prev => [data as Benchmark, ...prev]);
     setSaving(false);
     setShowForm(false);
     setForm({ role_type: '', location: '', seniority: '', working_model: '', salary_p25: '', salary_p50: '', salary_p75: '', salary_p90: '', source: '', effective_date: '', notes: '' });
+    revalidateAdminPath('/salary-benchmarks');
   }
 
   async function remove(id: string) {
-    await supabase.from('salary_benchmarks').delete().eq('id', id);
-    setBenchmarks(prev => prev.filter(b => b.id !== id));
+    setDeleting(id);
+    const { error: delErr } = await supabase.from('salary_benchmarks').delete().eq('id', id);
+    if (!delErr) {
+      setBenchmarks(prev => prev.filter(b => b.id !== id));
+      revalidateAdminPath('/salary-benchmarks');
+    } else {
+      setError(delErr.message);
+    }
+    setDeleting(null);
   }
 
   const filtered = search

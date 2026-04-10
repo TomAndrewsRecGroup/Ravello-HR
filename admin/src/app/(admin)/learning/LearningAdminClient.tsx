@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Eye, EyeOff, Star, BookOpen, ExternalLink } from 'lucide-react';
 
 interface LearningContent {
@@ -50,7 +51,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
   async function save() {
     if (!form.title.trim()) return;
     setSaving(true);
-    const { data } = await supabase.from('learning_content').insert({
+    const { data, error } = await supabase.from('learning_content').insert({
       title:           form.title,
       description:     form.description || null,
       creator_name:    form.creator_name || null,
@@ -65,20 +66,29 @@ export default function LearningAdminClient({ initialContent }: Props) {
       is_featured:     form.is_featured,
       is_published:    false,
     }).select().single();
-    if (data) setContent(prev => [data as LearningContent, ...prev]);
+    if (!error && data) {
+      setContent(prev => [data as LearningContent, ...prev]);
+      revalidateAdminPath('/learning');
+    }
     setSaving(false);
     setShowForm(false);
     setForm({ title: '', description: '', creator_name: '', category: 'HR Fundamentals', content_type: 'video', file_url: '', thumbnail_url: '', duration_mins: '', price_pence: '0', stripe_price_id: '', tags: '', is_featured: false });
   }
 
   async function togglePublish(id: string, current: boolean) {
-    await supabase.from('learning_content').update({ is_published: !current }).eq('id', id);
-    setContent(prev => prev.map(c => c.id === id ? { ...c, is_published: !current } : c));
+    const { error } = await supabase.from('learning_content').update({ is_published: !current }).eq('id', id);
+    if (!error) {
+      setContent(prev => prev.map(c => c.id === id ? { ...c, is_published: !current } : c));
+      revalidateAdminPath('/learning');
+    }
   }
 
   async function toggleFeatured(id: string, current: boolean) {
-    await supabase.from('learning_content').update({ is_featured: !current }).eq('id', id);
-    setContent(prev => prev.map(c => c.id === id ? { ...c, is_featured: !current } : c));
+    const { error } = await supabase.from('learning_content').update({ is_featured: !current }).eq('id', id);
+    if (!error) {
+      setContent(prev => prev.map(c => c.id === id ? { ...c, is_featured: !current } : c));
+      revalidateAdminPath('/learning');
+    }
   }
 
   const filtered = filterCat === 'all' ? content : content.filter(c => c.category === filterCat);

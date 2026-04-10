@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { revalidateAdminPath } from '@/app/actions';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
@@ -25,8 +26,11 @@ function RoleCell({ userId, initialRole }: { userId: string; initialRole: string
 
   async function change(newRole: string) {
     setSaving(true);
-    await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-    setRole(newRole);
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+    if (!error) {
+      setRole(newRole);
+      revalidateAdminPath('/users');
+    }
     setSaving(false);
   }
 
