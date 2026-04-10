@@ -3,12 +3,6 @@ import Link from 'next/link';
 import { useState, useEffect, type ElementType } from 'react';
 import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
 
-const STATS = [
-  { val: '18+', lab: 'Years HR leadership', gold: true },
-  { val: '10+', lab: 'Years in Talent',     gold: false },
-  { val: '0',   lab: 'Tribunal outcomes',   gold: true },
-];
-
 const BARS = [
   { label: 'Location',      val: 78, color: '#D94444' },
   { label: 'Salary',        val: 62, color: '#E8954A' },
@@ -298,11 +292,10 @@ function HeroCard({
         background: card.accentBg,
         border: `1px solid ${card.accentColor}35`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        marginBottom: 16,
       }}>
         <Icon size={19} style={{ color: card.accentColor }} />
       </div>
-
-      <div style={{ flex: 1 }} />
 
       <p style={{
         position: 'relative', zIndex: 1,
@@ -425,24 +418,6 @@ export default function Hero() {
                 <Link href="/tools/hiring-score" className="btn-secondary">
                   Get your free Hiring Score <ArrowRight size={15} />
                 </Link>
-              </div>
-
-              {/* Stats */}
-              <div className="flex flex-wrap gap-8 pt-8" style={{ borderTop: '1px solid var(--brand-line)' }}>
-                {STATS.map((m) => (
-                  <div key={m.lab}>
-                    <p style={{
-                      fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-                      fontSize: '2rem', fontWeight: 800, lineHeight: 1,
-                      letterSpacing: '-0.025em', marginBottom: 4,
-                      background: m.gold ? 'var(--gold-gloss)' : 'linear-gradient(135deg,#EA3DC4,#7C3AED)',
-                      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                    }}>
-                      {m.val}
-                    </p>
-                    <p className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>{m.lab}</p>
-                  </div>
-                ))}
               </div>
             </div>
 
