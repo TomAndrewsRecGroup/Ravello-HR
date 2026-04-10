@@ -362,36 +362,207 @@
 
 ---
 
-## RECOMMENDED FIX ORDER
+## RECOMMENDED FIX ORDER (7 Sprints -- All 84 Issues)
 
-### Sprint 1: Security (Estimated: 13 fixes)
-1. SEC-001 through SEC-007 (auth & authorization gaps)
-2. API-001, API-002, API-003 (company isolation & debug endpoint)
-3. DB-001 (client_viewer enum)
-4. DB-002 (account_owner column name)
+### Sprint 1: Security & Auth (14 fixes)
+Lock down every endpoint before anything else touches production.
 
-### Sprint 2: Data Integrity (Estimated: 10 fixes)
-1. DB-003 through DB-008 (all column name mismatches)
-2. ADMIN-001 + PORTAL-001 (router.refresh everywhere)
-3. ADMIN-002, ADMIN-003 (hardcoded values)
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | SEC-001 | Add auth check to `/api/client-tab-data` | CRITICAL |
+| 2 | SEC-002 | Add company authorization to `/api/broadcast` | CRITICAL |
+| 3 | SEC-003 | Add company authorization to `/api/invite` | CRITICAL |
+| 4 | SEC-004 | Add company authorization to `/api/create-client-user` | CRITICAL |
+| 5 | API-001 | Add company isolation to support ticket polling | CRITICAL |
+| 6 | API-002 | Add company isolation to support tickets GET | CRITICAL |
+| 7 | API-003 | Remove or protect debug-session endpoint | CRITICAL |
+| 8 | SEC-005 | Server-side file upload validation | HIGH |
+| 9 | SEC-006 | Replace custom Stripe webhook HMAC with SDK | HIGH |
+| 10 | SEC-007 | Sanitize HTML in support ticket input | HIGH |
+| 11 | SEC-008 | Add logging on session cookie parse failure | MEDIUM |
+| 12 | SEC-009 | Replace dangerouslySetInnerHTML with next/script | MEDIUM |
+| 13 | SEC-010 | Strengthen password validation rules | LOW |
+| 14 | SEC-011 | Add nonce to Analytics/Chat script tags (CSP) | LOW |
 
-### Sprint 3: Design System (Estimated: 6 fixes)
-1. CSS-001, CSS-002, CSS-003 (font loading & tailwind config)
-2. CSS-004 (hardcoded colors -- largest effort)
-3. CSS-005, CSS-006 (button consistency)
+**Sprint 1 total: 7 critical, 3 high, 2 medium, 2 low**
 
-### Sprint 4: Marketing Site (Estimated: 7 fixes)
-1. MKT-001 (booking calendar -- needs external input)
-2. MKT-002 through MKT-005 (lead capture backend)
-3. MKT-006 (privacy & terms pages)
-4. MKT-007 (LinkedIn URL)
+---
 
-### Sprint 5: Polish & Infrastructure (Estimated: 15 fixes)
-1. ENV-001, ENV-002, ENV-003 (.env.example updates)
-2. DB-009 through DB-012 (indexes, RLS, storage)
-3. API-004 through API-007 (validation, error handling)
-4. ADMIN-004, ADMIN-005 (error handling, loading states)
-5. All remaining low-severity items
+### Sprint 2: Database Schema & Data Integrity (14 fixes)
+Fix every column mismatch and schema issue so queries actually return data.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | DB-001 | Add `client_viewer` to `user_role` enum | CRITICAL |
+| 2 | DB-002 | Fix `account_owner` vs `account_owner_id` mismatch | CRITICAL |
+| 3 | DB-003 | Fix `topic` vs `skill_gap` column mismatch | HIGH |
+| 4 | DB-004 | Fix `days_taken` vs `days` column mismatch | HIGH |
+| 5 | DB-005 | Fix `document_type` vs `doc_type` column mismatch | HIGH |
+| 6 | DB-006 | Fix `scheduled_date/completed_date` vs `due_date/completed_at` | HIGH |
+| 7 | DB-007 | Fix `overall_score/dimension_scores` vs `overall_band/dimensions` | HIGH |
+| 8 | DB-008 | Fix `score/recommendation` vs `severity/field_key` | HIGH |
+| 9 | DB-009 | Add missing composite indexes (4 tables) | MEDIUM |
+| 10 | DB-010 | Fix overly permissive RLS on notifications table | MEDIUM |
+| 11 | DB-011 | Fix CASCADE DELETE risk on company foreign keys | MEDIUM |
+| 12 | DB-012 | Automate storage bucket creation in migration | MEDIUM |
+| 13 | DB-013 | Standardize CHECK vs ENUM patterns | LOW |
+| 14 | DB-014 | Add missing NOT NULL constraints on template tables | LOW |
+
+**Sprint 2 total: 2 critical, 6 high, 4 medium, 2 low**
+
+---
+
+### Sprint 3: Admin Portal -- Mutations & UX (12 fixes)
+Fix every stale-data bug and missing UX feedback in the admin app.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | ADMIN-001a | Add `router.refresh()` to `UsersClient.tsx` | HIGH |
+| 2 | ADMIN-001b | Add `router.refresh()` to `RequestsClient.tsx` (3 mutations) | HIGH |
+| 3 | ADMIN-001c | Add `router.refresh()` to `RequisitionPanel.tsx` (recruiter save) | HIGH |
+| 4 | ADMIN-001d | Add `router.refresh()` to `BDIntelligenceClient.tsx` | HIGH |
+| 5 | ADMIN-001e | Add `router.refresh()` to `CandidatesClient.tsx` (2 mutations) | HIGH |
+| 6 | ADMIN-001f | Add `router.refresh()` to `TaskBoardClient.tsx` (2 mutations) | HIGH |
+| 7 | ADMIN-001g | Add `router.refresh()` to `BenchmarkClient.tsx`, `LearningAdminClient.tsx`, `TemplatesClient.tsx`, `InterviewSchedulePanel.tsx`, upload pages | HIGH |
+| 8 | ADMIN-001h | Add `router.refresh()` to `ClientDetailTabs.tsx` (60+ mutations) | HIGH |
+| 9 | ADMIN-002 | Replace hardcoded `OWNERS = ['Lucy', 'Tom']` with DB query | HIGH |
+| 10 | ADMIN-003 | Fix hardcoded `docsCount: 0` with actual documents count query | HIGH |
+| 11 | ADMIN-004 | Add error handling to BenchmarkClient, LearningAdmin, doc upload | MEDIUM |
+| 12 | ADMIN-005 | Add loading indicators to BenchmarkClient, LearningAdmin | MEDIUM |
+
+**Sprint 3 total: 0 critical, 10 high, 2 medium, 0 low**
+
+---
+
+### Sprint 4: Client Portal -- Mutations & Validation (10 fixes)
+Fix portal-side stale data and input validation gaps.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | PORTAL-001a | Add `router.refresh()` to `HiredModal.tsx` | HIGH |
+| 2 | PORTAL-001b | Add `router.refresh()` to `ActionButtons.tsx` | HIGH |
+| 3 | PORTAL-001c | Add `router.refresh()` to all other portal mutation components | HIGH |
+| 4 | API-004 | Fix race condition in support ticket polling | MEDIUM |
+| 5 | API-005 | Add Zod validation to company assessment input | MEDIUM |
+| 6 | API-006 | Add Zod validation to broadcast input (UUIDs, dates) | MEDIUM |
+| 7 | API-007 | Standardize error status codes (502 vs 500) across all routes | MEDIUM |
+| 8 | API-008 | Make learning content access expiration configurable | LOW |
+| 9 | API-009 | Add rate limiting middleware to API routes | LOW |
+| 10 | DB-010 | Add WITH CHECK on notifications RLS (duplicate ref -- ensure done) | MEDIUM |
+
+**Sprint 4 total: 0 critical, 3 high, 5 medium, 2 low**
+
+---
+
+### Sprint 5: Design System & CSS (12 fixes)
+Get fonts loading, kill hardcoded colors, unify the visual language.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | CSS-001 | Add Inter font import to Admin `layout.tsx` via `next/font/google` | CRITICAL |
+| 2 | CSS-002 | Add Inter font import to Portal `layout.tsx` via `next/font/google` | CRITICAL |
+| 3 | CSS-003 | Fix Admin & Portal `tailwind.config.ts` font variable references | CRITICAL |
+| 4 | CSS-004a | Replace hardcoded colors in `admin/src/components/modules/` (~15 files) | MEDIUM |
+| 5 | CSS-004b | Replace hardcoded colors in `admin/src/app/(admin)/` page components | MEDIUM |
+| 6 | CSS-004c | Replace hardcoded colors in `portal/src/components/` | MEDIUM |
+| 7 | CSS-004d | Replace hardcoded colors in `portal/src/app/(portal)/` page components | MEDIUM |
+| 8 | CSS-004e | Replace hardcoded colors in marketing site components | MEDIUM |
+| 9 | CSS-005 | Standardize `btn-danger` color across Admin (#EF4444) and Portal (#D94444) | MEDIUM |
+| 10 | CSS-006 | Consolidate duplicate `.btn-primary` / `.btn-cta` classes | MEDIUM |
+| 11 | CSS-007 | Align CSS variable naming (`--brand-navy` vs `--navy`) across apps | MEDIUM |
+| 12 | CSS-008 | Ensure Admin & Portal tailwind configs match their globals.css color vars | MEDIUM |
+
+**Sprint 5 total: 3 critical, 0 high, 9 medium, 0 low**
+
+---
+
+### Sprint 6: Marketing Site -- Go-Live (12 fixes)
+Complete every unfinished marketing feature and legal requirement.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | MKT-001 | Configure Google Calendar booking URL (BLOCKED -- needs TPO input) | CRITICAL |
+| 2 | MKT-002 | Implement lead capture API backend (Supabase `leads` table + insert) | HIGH |
+| 3 | MKT-003 | Wire ExitIntentPopup to email provider (Resend/Make) | HIGH |
+| 4 | MKT-004 | Wire EmailGate to email provider | HIGH |
+| 5 | MKT-005 | Wire all 4 tool form backends to leads API | HIGH |
+| 6 | MKT-006 | Create `/privacy` and `/terms` pages (BLOCKED -- needs legal content) | HIGH |
+| 7 | MKT-007 | Fix LinkedIn URL to correct company profile (BLOCKED -- needs TPO input) | HIGH |
+| 8 | MKT-008 | Create `leads` table migration (required by MKT-002) | HIGH |
+| 9 | ENV-003a | Implement Resend integration OR remove `RESEND_API_KEY` from .env.example | MEDIUM |
+| 10 | ENV-003b | Remove unused `EMAIL_FROM`, `LEAD_NOTIFY_EMAIL`, `NEXT_PUBLIC_SITE_URL` from .env.example OR implement them | MEDIUM |
+| 11 | MKT-009 | Verify portal URL in Nav.tsx and Footer.tsx is correct | MEDIUM |
+| 12 | MKT-010 | Add responsive breakpoint patterns to marketing site | MEDIUM |
+
+**Sprint 6 total: 1 critical, 7 high, 4 medium, 0 low**
+
+---
+
+### Sprint 7: Config, Infrastructure & Final Polish (10 fixes)
+Environment docs, production hardening, and final cleanup.
+
+| # | ID | Issue | Severity |
+|---|-----|-------|----------|
+| 1 | ENV-001 | Add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` to portal/.env.example | HIGH |
+| 2 | ENV-002 | Add `NEXT_PUBLIC_TAWK_ID` to root .env.example | HIGH |
+| 3 | ENV-004 | Add startup validation -- throw error instead of fallback in Supabase client configs | MEDIUM |
+| 4 | ENV-005 | Document all required env vars in a single setup guide | MEDIUM |
+| 5 | API-010 | Add audit logging for user creation, role changes, payment events | MEDIUM |
+| 6 | API-011 | Add request ID / correlation tracking headers | MEDIUM |
+| 7 | API-012 | Standardize error response format (`{ error: string }` everywhere) | MEDIUM |
+| 8 | API-013 | Add explicit timeout to all IvyLens API requests | MEDIUM |
+| 9 | PORTAL-002 | Fix uncaught promise rejection in `frictionLens.ts` JSON parsing | MEDIUM |
+| 10 | PORTAL-003 | Add type safety to partner API permission checking | MEDIUM |
+
+**Sprint 7 total: 0 critical, 2 high, 8 medium, 0 low**
+
+---
+
+## SPRINT SUMMARY
+
+| Sprint | Focus | Critical | High | Medium | Low | Total |
+|--------|-------|----------|------|--------|-----|-------|
+| 1 | Security & Auth | 7 | 3 | 2 | 2 | **14** |
+| 2 | Database & Schema | 2 | 6 | 4 | 2 | **14** |
+| 3 | Admin Mutations & UX | 0 | 10 | 2 | 0 | **12** |
+| 4 | Portal Mutations & Validation | 0 | 3 | 5 | 2 | **10** |
+| 5 | Design System & CSS | 3 | 0 | 9 | 0 | **12** |
+| 6 | Marketing Site | 1 | 7 | 4 | 0 | **12** |
+| 7 | Config & Final Polish | 0 | 2 | 8 | 0 | **10** |
+| **TOTAL** | | **13** | **31** | **34** | **6** | **84** |
+
+---
+
+## BLOCKED / REQUIRES EXTERNAL INPUT
+
+| Item | What's Needed | Owner | Sprint |
+|------|--------------|-------|--------|
+| MKT-001 | Google Calendar appointment scheduling URL | TPO team | Sprint 6 |
+| MKT-007 | Correct LinkedIn company profile URL | TPO team | Sprint 6 |
+| MKT-006 | Privacy Policy & Terms of Service content | Legal/TPO team | Sprint 6 |
+| ENV-001 | Stripe API keys for production | TPO team | Sprint 7 |
+| ENV-002 | Tawk.to widget ID | TPO team | Sprint 7 |
+| MKT-003/004 | Decision: Resend vs Make webhook vs other for email | TPO team | Sprint 6 |
+
+---
+
+## DONE CRITERIA
+
+After all 7 sprints are complete:
+- [ ] Zero unauthenticated API endpoints
+- [ ] All company data isolated by company_id
+- [ ] All database queries reference correct column names
+- [ ] All enum values exist in the database
+- [ ] All mutations refresh the UI after success
+- [ ] Fonts load correctly in all 3 apps
+- [ ] Zero hardcoded hex colors in inline styles
+- [ ] All marketing forms capture and store leads
+- [ ] Privacy Policy and Terms pages exist
+- [ ] Booking calendar functional
+- [ ] All environment variables documented
+- [ ] All external API integrations have error handling and timeouts
+- [ ] Rate limiting on public-facing endpoints
+- [ ] Production debug endpoints removed
 
 ---
 
@@ -400,8 +571,8 @@
 - **Total files audited:** 200+
 - **Total issues found:** 84
 - **Critical:** 13 (must fix)
-- **High:** 33 (must fix before public launch)
-- **Medium:** 32 (should fix before launch)
+- **High:** 31 (must fix before public launch)
+- **Medium:** 34 (should fix before launch)
 - **Low:** 6 (nice to have)
 - **Blocked on external input:** 6 items
-- **Estimated sprints to go-live ready:** 5
+- **Estimated sprints to go-live ready:** 7
