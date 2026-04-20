@@ -1,73 +1,27 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import ClientsClient from './ClientsClient';
+import ClientsFetcher from './ClientsFetcher';
 
 export const metadata: Metadata = { title: 'Clients' };
 export const runtime    = 'edge';
-export const revalidate = 30;
+export const revalidate = 60;
 
-export default async function ClientsPage() {
-  const supabase = createServerSupabaseClient();
-
-  const [
-    { data: companies },
-    { data: reqs },
-    { data: tickets },
-    { data: complianceItems },
-    { data: profiles },
-  ] = await Promise.all([
-    supabase.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,account_owner_id,friction_band').order('name').limit(200),
-    supabase.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
-    supabase.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
-    supabase.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
-    supabase.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_viewer', 'client_user']).limit(200),
-  ]);
-
-  // Build per-company lookup maps
-  const activeRolesMap: Record<string, number> = {};
-  const openTicketsMap: Record<string, number> = {};
-  const overdueCompMap: Record<string, number> = {};
-  const usersByCompany: Record<string, any[]>  = {};
-
-  for (const r of reqs ?? []) {
-    activeRolesMap[r.company_id] = (activeRolesMap[r.company_id] ?? 0) + 1;
-  }
-  for (const t of tickets ?? []) {
-    openTicketsMap[t.company_id] = (openTicketsMap[t.company_id] ?? 0) + 1;
-  }
-  const now = new Date();
-  for (const c of complianceItems ?? []) {
-    if (c.due_date && new Date(c.due_date) < now) {
-      overdueCompMap[c.company_id] = (overdueCompMap[c.company_id] ?? 0) + 1;
-    }
-  }
-  for (const p of profiles ?? []) {
-    if (!usersByCompany[p.company_id]) usersByCompany[p.company_id] = [];
-    usersByCompany[p.company_id].push(p);
-  }
-
-  const all           = companies ?? [];
-  const activeCount   = all.filter((c: any) => c.active).length;
-  const inactiveCount = all.filter((c: any) => !c.active).length;
-
+// Shell-only server component. All list data now loads client-side from
+// /api/clients/summary with browser-level stale-while-revalidate, so the
+// HTML streams with the topbar ready in <30ms and the table fills in
+// from the HTTP cache on subsequent visits.
+export default function ClientsPage() {
   return (
     <>
       <AdminTopbar
         title="Clients"
-        subtitle={`${activeCount} active, ${inactiveCount} inactive`}
-        actions={<Link href="/clients/new" className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13} />New Client</Link>}
+        subtitle="Live client roster"
+        actions={<Link href="/clients/new" prefetch={false} className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13} />New Client</Link>}
       />
       <main className="admin-page flex-1">
-        <ClientsClient
-          companies={all}
-          usersByCompany={usersByCompany}
-          activeRolesMap={activeRolesMap}
-          openTicketsMap={openTicketsMap}
-          overdueCompMap={overdueCompMap}
-        />
+        <ClientsFetcher />
       </main>
     </>
   );
