@@ -8,7 +8,7 @@ import {
   FolderOpen, LifeBuoy, LogOut,
   Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
   X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Radar, Activity, Target,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -34,6 +34,15 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/hiring',          label: 'Roles',          icon: Briefcase },
       { href: '/hiring/templates', label: 'Templates',     icon: FileText },
       { href: '/salary-benchmarks', label: 'Benchmarks',  icon: PoundSterling },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    defaultOpen: true,
+    items: [
+      { href: '/bd-intelligence', label: 'BD Intelligence', icon: Target },
+      { href: '/bd-roles',        label: 'BD Roles',        icon: Radar },
+      { href: '/health',          label: 'Health Status',   icon: Activity },
     ],
   },
   {
