@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { Plus, X, Loader2, Trash2, PoundSterling } from 'lucide-react';
+import IvylensMarketSection from './IvylensMarketSection';
 
 interface Benchmark {
   id: string;
@@ -103,6 +104,17 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
 
   return (
     <div className="space-y-5">
+      <IvylensMarketSection />
+
+      <div className="flex items-center justify-between">
+        <p className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+          TPO curated benchmarks
+        </p>
+        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+          Manually-entered salary data that overrides or supplements IvyLens
+        </p>
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <input
