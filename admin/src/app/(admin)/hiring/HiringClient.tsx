@@ -203,11 +203,11 @@ export default function HiringClient({ reqs, companies }: Props) {
                     </td>
                     <td>
                       <div className="flex items-center gap-2">
-                        <Link href={`/hiring/${r.id}`} className="btn-cta btn-sm">
+                        <Link href={`/hiring/${r.id}`} prefetch={false} className="btn-cta btn-sm">
                           View Role →
                         </Link>
                         {companyId && (
-                          <Link href={`/clients/${companyId}`} className="btn-ghost btn-sm">
+                          <Link href={`/clients/${companyId}`} prefetch={false} className="btn-ghost btn-sm">
                             Client
                           </Link>
                         )}
