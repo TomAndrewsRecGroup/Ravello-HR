@@ -11,8 +11,8 @@ interface Props {
 const STATUS_OPTIONS = ['Prospect', 'Contacted', 'Client', 'Not Relevant'];
 const SIZE_BANDS     = ['Micro (1–9)', 'Small (10–49)', 'SME (50–249)', 'Mid-Market (250–999)', 'Enterprise (1000+)'];
 
-function fmtSalary(min: number | null, max: number | null): string {
-  if (!min && !max) return '—';
+function fmtSalary(min: number | null, max: number | null, fallback?: string | null): string {
+  if (!min && !max) return fallback ?? '—';
   const fmt = (n: number) => `£${(n / 1000).toFixed(0)}k`;
   if (min && max && min !== max) return `${fmt(min)} – ${fmt(max)}`;
   return fmt((min ?? max)!);
@@ -47,9 +47,30 @@ export default function BDCompanyModal({ company, onClose }: Props) {
 
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const isIvylensCompany = typeof company.id === 'string' && company.id.startsWith('ivylens-');
+
   useEffect(() => {
     async function fetchRoles() {
       setLoadingRoles(true);
+      if (isIvylensCompany) {
+        // Synthetic company from IvyLens feed — roles come inline, no DB lookup needed
+        const inlineRoles = (company.ivylens_roles ?? []).map((r: any, idx: number) => ({
+          id:           `${company.id}-role-${idx}`,
+          role_title:   r.title ?? null,
+          salary_min:   null,
+          salary_max:   null,
+          salary_text:  r.salary ?? null,
+          location:     r.location ?? null,
+          working_model: null,
+          source_board: r.source ?? null,
+          source_url:   r.url ?? null,
+          scanned_at:   company.last_seen_at ?? null,
+          still_active: true,
+        }));
+        setRoles(inlineRoles);
+        setLoadingRoles(false);
+        return;
+      }
       const { data } = await supabase
         .from('bd_scanned_roles')
         .select('*')
@@ -59,7 +80,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
       setLoadingRoles(false);
     }
     fetchRoles();
-  }, [company.id]);
+  }, [company.id, isIvylensCompany]);
 
   function handleOverlayClick(e: React.MouseEvent) {
     if (e.target === overlayRef.current) onClose();
@@ -293,6 +314,51 @@ export default function BDCompanyModal({ company, onClose }: Props) {
           ) : (
             /* ── Normal body ── */
             <>
+              {isIvylensCompany && company.company_location && (
+                <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+                  Sourced by IvyLens · {company.company_location}
+                </p>
+              )}
+
+              {isIvylensCompany && company.friction_intel?.summary && (
+                <div className="px-4 py-3 rounded-[10px]"
+                  style={{ background: 'rgba(234,61,196,0.06)', border: '1px solid rgba(234,61,196,0.18)' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--purple)' }}>
+                    IvyLens Friction Intel
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-[10px] uppercase" style={{ color: 'var(--ink-faint)' }}>High repost</p>
+                      <p className="font-bold" style={{ color: 'var(--ink)' }}>
+                        {company.friction_intel.summary.high_repost ?? 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase" style={{ color: 'var(--ink-faint)' }}>Long vacancy</p>
+                      <p className="font-bold" style={{ color: 'var(--ink)' }}>
+                        {company.friction_intel.summary.long_vacancy ?? 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase" style={{ color: 'var(--ink-faint)' }}>Volume hiring</p>
+                      <p className="font-bold" style={{ color: 'var(--ink)' }}>
+                        {company.friction_intel.summary.volume_hiring ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                  {Array.isArray(company.friction_intel.signals) && company.friction_intel.signals.length > 0 && (
+                    <ul className="mt-3 space-y-1">
+                      {company.friction_intel.signals.slice(0, 4).map((s: any, idx: number) => (
+                        <li key={idx} className="text-xs flex items-start gap-2" style={{ color: 'var(--ink-soft)' }}>
+                          <span className="inline-block w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--purple)' }} />
+                          <span><strong>{s.role_title ?? s.signal_type}</strong> — {s.signal_type}{s.severity ? ` (${s.severity})` : ''}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               {showInsight && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-[10px]"
                   style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
@@ -378,7 +444,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                                 )}
                               </div>
                             </td>
-                            <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max)}</td>
+                            <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max, r.salary_text)}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '—'}</td>
                             <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '—'}</td>
