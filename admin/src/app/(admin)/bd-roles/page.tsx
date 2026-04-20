@@ -6,6 +6,7 @@ import { Radar } from 'lucide-react';
 import { ivylensRequest } from '@/lib/ivylens';
 
 export const metadata: Metadata = { title: 'BD Roles' };
+export const runtime    = 'edge';
 export const revalidate = 60;
 
 export interface FlatRole {

@@ -5,6 +5,7 @@ import HealthClient from './HealthClient';
 import { Activity } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Health Status' };
+export const runtime    = 'edge';
 export const revalidate = 30;
 
 const RATE_LIMIT_PER_DAY = 1000;
