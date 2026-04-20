@@ -6,7 +6,8 @@ import ClientDetailTabs from './ClientDetailTabs';
 import { getCachedClientDetail } from '@/lib/cache/clientDetail';
 
 export const metadata: Metadata = { title: 'Client Detail' };
-export const runtime    = 'edge';
+// Note: Node runtime (not edge) because the Redis client uses TCP sockets.
+// The global Redis cache more than offsets the lost edge proximity.
 export const revalidate = 60;
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
