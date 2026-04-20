@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { scoreFriction } from '@/lib/frictionLens';
 import { Loader2, Zap } from 'lucide-react';
 
 const WORKING_MODELS   = ['office', 'hybrid', 'remote'] as const;
@@ -70,7 +69,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
     const interview_stages = form.interview_stages ? Number(form.interview_stages) : 2;
 
     setScoring(true);
-    let frictionResult;
+    let frictionResult: any = null;
     try {
       const jd_text = [
         `Role: ${form.title}`,
@@ -82,7 +81,13 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
         must_haves.length ? `Requirements:\n${must_haves.map(s => `- ${s}`).join('\n')}` : '',
         form.description ? `\n${form.description}` : '',
       ].filter(Boolean).join('\n');
-      frictionResult = await scoreFriction({ jd_text });
+
+      const res = await fetch('/api/friction/analyze', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jd_text, title: form.title }),
+      });
+      if (res.ok) frictionResult = await res.json();
     } catch {
       frictionResult = null;
     }
@@ -108,6 +113,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
         friction_score:     frictionResult        ?? null,
         friction_level:     frictionResult?.overall_level ?? null,
         friction_scored_at: frictionResult ? new Date().toISOString() : null,
+        ivylens_role_id:    frictionResult?.ivylens_role_id ?? null,
         submitted_by:       adminUserId,
       })
       .select()
