@@ -16,8 +16,8 @@ export default async function SalaryBenchmarksPage() {
   return (
     <>
       <AdminTopbar
-        title="Salary Benchmarks"
-        subtitle="Market salary data for client role comparisons"
+        title="Benchmarks & Market Data"
+        subtitle="Live IvyLens market signals alongside TPO's curated salary benchmarks"
       />
       <main className="admin-page flex-1">
         <BenchmarkClient userId={user?.id ?? ''} initialBenchmarks={benchmarks ?? []} />
