@@ -18,6 +18,7 @@ const FLAG_GROUPS: FlagGroup[] = [
       { key: 'hiring',          label: 'Hiring Pipeline' },
       { key: 'friction_lens',   label: 'Friction Lens Scoring' },
       { key: 'benchmarks',      label: 'Salary Benchmarks' },
+      { key: 'ivylens_market',  label: 'IvyLens Market Access' },
       { key: 'hiring_analytics', label: 'Hiring Analytics' },
       { key: 'jd_templates',    label: 'JD Templates' },
       { key: 'manatal_ats',     label: 'Manatal ATS Integration' },
