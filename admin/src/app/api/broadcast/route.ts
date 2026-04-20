@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 
 // POST /api/broadcast
@@ -8,17 +9,9 @@ import { auditLog } from '@/lib/audit';
 //         action_type: string, priority: string, due_date?: string }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  // Verify requester is ravello staff
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single();
-  const role = (profile as any)?.role ?? '';
-  if (!['tps_admin', 'tps_client'].includes(role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   const body = await req.json();
   const { company_ids, title, description, action_type, priority, due_date } = body;
@@ -64,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   auditLog({
     action: 'broadcast.sent',
-    actor_id: user.id,
+    actor_id: auth.userId,
     metadata: { title, action_type, company_count: company_ids.length, created: data?.length ?? 0 },
   });
 

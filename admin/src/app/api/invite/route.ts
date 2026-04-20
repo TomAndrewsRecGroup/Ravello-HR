@@ -1,20 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
-  // Auth check — verify caller is ravello staff
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single();
-  const callerRole = (profile as any)?.role ?? '';
-  if (!['tps_admin', 'tps_client'].includes(callerRole)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   const { email, company_id, role = 'client_admin', full_name } = await request.json();
 
@@ -70,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   auditLog({
     action: 'user.invited',
-    actor_id: user.id,
+    actor_id: auth.userId,
     target_id: data.user.id,
     target_type: 'profile',
     metadata: { email, company_id, role: safeRole },

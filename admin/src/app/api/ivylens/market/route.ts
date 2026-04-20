@@ -7,7 +7,7 @@
 // Cache: 24h TTL, keyed by role_type + location. force=true bypasses.
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireStaff } from '@/lib/auth/requireStaff';
 import { ivylensRequest, readCache, writeCache } from '@/lib/ivylens';
 
 interface IvylensLead {
@@ -148,16 +148,8 @@ const CACHE_KEY = 'market:aggregate';
 const CACHE_TTL = 24 * 60 * 60; // 24h
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single();
-  const callerRole = (profile as any)?.role ?? '';
-  if (!['tps_admin', 'tps_client'].includes(callerRole)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
 
   const force = request.nextUrl.searchParams.get('force') === 'true';
 
