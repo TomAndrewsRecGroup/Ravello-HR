@@ -1,4 +1,7 @@
 'use client';
+// Sidebar v2026-04-21: Intelligence group (BD Intelligence, BD Roles, Health Status).
+// Header comment forces a fresh webpack chunk hash when clients were serving
+// a stale cached bundle from before the Intelligence group landed.
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
