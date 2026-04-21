@@ -166,7 +166,7 @@ export default function HiringClient({ reqs, companies }: Props) {
                   <tr key={r.id} style={rowBorderStyle(r, days)}>
                     <td>
                       {companyId ? (
-                        <Link
+                        <Link prefetch={false}
                           href={`/clients/${companyId}`}
                           className="font-medium hover:underline"
                           style={{ color: 'var(--purple)' }}

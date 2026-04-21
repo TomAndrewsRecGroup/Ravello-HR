@@ -104,7 +104,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
       {/* Quick links */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {quickLinks.map(({ href, icon: Icon, label, stat, alert, alertText }) => (
-          <Link key={href} href={href} className="card p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
+          <Link prefetch={false} key={href} href={href} className="card p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <Icon size={16} style={{ color: alert ? 'var(--danger)' : 'var(--purple)' }} />
               {alert && (

@@ -28,7 +28,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
       <Topbar
         title={t.subject}
         subtitle={`Ticket — ${t.status.replace('_',' ')}`}
-        actions={<Link href="/support" className="btn-secondary btn-sm">← All Tickets</Link>}
+        actions={<Link prefetch={false} href="/support" className="btn-secondary btn-sm">← All Tickets</Link>}
       />
       <main className="portal-page flex-1 max-w-[740px]">
 

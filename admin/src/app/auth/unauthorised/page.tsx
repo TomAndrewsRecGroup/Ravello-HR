@@ -32,7 +32,7 @@ export default function UnauthorisedPage() {
         </div>
 
         <div className="space-y-3">
-          <Link
+          <Link prefetch={false}
             href="/auth/login"
             className="btn-cta block w-full justify-center py-2.5"
           >

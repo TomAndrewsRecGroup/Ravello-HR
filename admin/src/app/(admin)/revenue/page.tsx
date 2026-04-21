@@ -107,7 +107,7 @@ export default async function RevenuePage() {
                   {revenueByClient.map((c: any) => (
                     <tr key={c.id}>
                       <td>
-                        <Link href={`/clients/${c.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
+                        <Link prefetch={false} href={`/clients/${c.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
                           {c.name}
                         </Link>
                       </td>

@@ -31,8 +31,8 @@ export default async function AdminNewRolePage({
         subtitle="Create a role on behalf of a client — Friction Lens runs automatically"
         actions={
           <div className="flex items-center gap-2">
-            <Link href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
-            <Link href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
+            <Link prefetch={false} href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
+            <Link prefetch={false} href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
           </div>
         }
       />

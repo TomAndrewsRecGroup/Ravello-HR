@@ -29,7 +29,7 @@ export default async function AdminTicketPage({ params }: { params: { id: string
       <AdminTopbar
         title={t.subject}
         subtitle={t.companies?.name}
-        actions={<Link href="/support" className="btn-secondary btn-sm">← All Tickets</Link>}
+        actions={<Link prefetch={false} href="/support" className="btn-secondary btn-sm">← All Tickets</Link>}
       />
       <main className="admin-page flex-1 max-w-[800px]">
 

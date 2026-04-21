@@ -103,7 +103,7 @@ export default function UsersClient({ users }: { users: any[] }) {
                 </td>
                 <td>
                   {u.companies?.id ? (
-                    <Link
+                    <Link prefetch={false}
                       href={`/clients/${u.companies.id}`}
                       className="hover:underline"
                       style={{ color: 'var(--purple)' }}

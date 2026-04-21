@@ -24,7 +24,7 @@ export default function GroupedTabs({ groups }: { groups: TabGroup[] }) {
           {group.tabs.map(tab => {
             const active = path === tab.href || path.startsWith(tab.href + '/');
             return (
-              <Link
+              <Link prefetch={false}
                 key={tab.href}
                 href={tab.href}
                 className="px-3 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap"

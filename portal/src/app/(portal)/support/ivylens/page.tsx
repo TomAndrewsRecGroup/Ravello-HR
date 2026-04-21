@@ -102,7 +102,7 @@ export default function IvyLensSupportPage() {
         title="IvyLens Support"
         subtitle={`${openCount} open ticket${openCount !== 1 ? 's' : ''}`}
         actions={
-          <Link href="/support" className="btn-secondary btn-sm flex items-center gap-1.5">
+          <Link prefetch={false} href="/support" className="btn-secondary btn-sm flex items-center gap-1.5">
             <ArrowLeft size={13} /> Local Tickets
           </Link>
         }
@@ -274,7 +274,7 @@ export default function IvyLensSupportPage() {
                   const cat = categoryMeta(t.category);
                   const CatIcon = cat.Icon;
                   return (
-                    <Link
+                    <Link prefetch={false}
                       key={t.id}
                       href={`/support/ivylens/${t.id}`}
                       className="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow"

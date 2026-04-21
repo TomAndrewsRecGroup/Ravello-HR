@@ -21,7 +21,7 @@ export default async function JDTemplatesPage() {
         title="JD Templates"
         subtitle="Reusable job description templates for faster role creation"
         actions={
-          <Link href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
+          <Link prefetch={false} href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
         }
       />
       <main className="admin-page flex-1">

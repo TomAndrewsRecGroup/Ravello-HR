@@ -89,7 +89,7 @@ export default async function HiringPage({
           <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
             {active.length} active role{active.length !== 1 ? 's' : ''}
           </p>
-          <Link href="/hire/hiring/new" className="btn-cta btn-sm flex items-center gap-1.5">
+          <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm flex items-center gap-1.5">
             <Plus size={14} /> Raise a New Role
           </Link>
         </div>
@@ -102,7 +102,7 @@ export default async function HiringPage({
               <p className="text-sm max-w-[340px]" style={{ color: 'var(--ink-faint)' }}>
                 Raise your first role and run it through Friction Lens before going to market.
               </p>
-              <Link href="/hire/hiring/new" className="btn-cta mt-2">Raise a New Role</Link>
+              <Link prefetch={false} href="/hire/hiring/new" className="btn-cta mt-2">Raise a New Role</Link>
             </div>
           </div>
         ) : (
@@ -115,7 +115,7 @@ export default async function HiringPage({
                   : active.filter((r: any) => r.stage === f.key).length;
                 const isActive = activeFilter === f.key;
                 return (
-                  <Link
+                  <Link prefetch={false}
                     key={f.key}
                     href={f.key === 'all' ? '/hire/hiring' : `/hire/hiring?filter=${f.key}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
@@ -166,7 +166,7 @@ export default async function HiringPage({
                     filtered.map((r: any) => (
                       <tr key={r.id}>
                         <td>
-                          <Link
+                          <Link prefetch={false}
                             href={`/hire/hiring/${r.id}`}
                             className="font-semibold hover:underline"
                             style={{ color: 'var(--ink)' }}
@@ -196,7 +196,7 @@ export default async function HiringPage({
                           />
                         </td>
                         <td>
-                          <Link href={`/hire/hiring/${r.id}`} className="btn-secondary btn-sm">
+                          <Link prefetch={false} href={`/hire/hiring/${r.id}`} className="btn-secondary btn-sm">
                             View
                           </Link>
                         </td>
@@ -254,7 +254,7 @@ export default async function HiringPage({
                   {archived.map((r: any) => (
                     <tr key={r.id} style={{ opacity: 0.7 }}>
                       <td>
-                        <Link href={`/hire/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--ink)' }}>
+                        <Link prefetch={false} href={`/hire/hiring/${r.id}`} className="hover:underline" style={{ color: 'var(--ink)' }}>
                           {r.title}
                         </Link>
                       </td>

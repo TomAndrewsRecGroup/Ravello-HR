@@ -78,7 +78,7 @@ export default async function RequisitionDetailPage({
       <main className="portal-page flex-1">
         {/* Back link + title */}
         <div className="flex items-center gap-3 mb-5">
-          <Link href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>
+          <Link prefetch={false} href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>
           <div className="min-w-0">
             <h2 className="text-lg font-semibold truncate" style={{ color: 'var(--ink)' }}>{r.title}</h2>
             <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>

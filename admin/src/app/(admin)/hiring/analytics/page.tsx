@@ -97,7 +97,7 @@ export default async function AdminHiringAnalyticsPage() {
       <AdminTopbar
         title="Hiring Analytics"
         subtitle="Cross-client hiring performance overview"
-        actions={<Link href="/hiring" className="btn-secondary btn-sm">← All Roles</Link>}
+        actions={<Link prefetch={false} href="/hiring" className="btn-secondary btn-sm">← All Roles</Link>}
       />
       <main className="admin-page flex-1 space-y-6">
 
@@ -222,7 +222,7 @@ export default async function AdminHiringAnalyticsPage() {
                   {clientBreakdown.map(c => (
                     <tr key={c.id}>
                       <td>
-                        <Link href={`/clients/${c.id}`} className="font-medium hover:underline" style={{ color: 'var(--purple)' }}>
+                        <Link prefetch={false} href={`/clients/${c.id}`} className="font-medium hover:underline" style={{ color: 'var(--purple)' }}>
                           {c.name}
                         </Link>
                       </td>

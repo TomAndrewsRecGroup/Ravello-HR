@@ -109,7 +109,7 @@ export default function AdminSidebar() {
           className="flex items-center gap-3 px-5 py-4"
           style={{ borderBottom: '1px solid var(--line)' }}
         >
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" prefetch={false} className="flex items-center">
             <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" priority />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
@@ -124,6 +124,7 @@ export default function AdminSidebar() {
           {/* Dashboard — always top-level */}
           <Link
             href="/dashboard"
+            prefetch={false}
             className={`nav-link mb-1 ${path === '/dashboard' ? 'active' : ''}`}
           >
             <LayoutDashboard size={15} />
@@ -160,6 +161,7 @@ export default function AdminSidebar() {
                         <Link
                           key={item.href}
                           href={item.href}
+                          prefetch={false}
                           className={`nav-link ${active ? 'active' : ''}`}
                         >
                           <item.icon size={14} />

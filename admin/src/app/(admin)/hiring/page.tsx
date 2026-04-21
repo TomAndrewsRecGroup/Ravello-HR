@@ -36,9 +36,9 @@ export default async function AdminHiringPage() {
         subtitle="All active roles across all clients"
         actions={
           <div className="flex items-center gap-2">
-            <Link href="/hiring/analytics" className="btn-ghost btn-sm">Analytics</Link>
-            <Link href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
-            <Link href="/hiring/new" className="btn-cta btn-sm">+ New Role</Link>
+            <Link prefetch={false} href="/hiring/analytics" className="btn-ghost btn-sm">Analytics</Link>
+            <Link prefetch={false} href="/hiring/templates" className="btn-secondary btn-sm">JD Templates</Link>
+            <Link prefetch={false} href="/hiring/new" className="btn-cta btn-sm">+ New Role</Link>
           </div>
         }
       />
