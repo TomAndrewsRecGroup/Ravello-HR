@@ -29,6 +29,7 @@ export async function ivylensRequest<T = any>(
   opts: FetchOptions = {},
 ): Promise<IvylensResponse<T>> {
   const { method = 'GET', body, timeout = 20_000, retries = 3 } = opts;
+  const started = Date.now();
 
   if (!API_URL) {
     return { data: null, error: 'IVYLENS_API_URL not configured', status: 503 };
@@ -52,7 +53,9 @@ export async function ivylensRequest<T = any>(
       });
 
       if (res.ok) {
-        return { data: await res.json() as T, error: null, status: res.status };
+        const data = await res.json() as T;
+        recordCall(path, method, res.status, Date.now() - started, false, null);
+        return { data, error: null, status: res.status };
       }
 
       lastStatus = res.status;
@@ -60,6 +63,7 @@ export async function ivylensRequest<T = any>(
 
       // 429 — signal rate-limited so caller can use stale cache
       if (res.status === 429) {
+        recordCall(path, method, 429, Date.now() - started, true, lastError);
         return { data: null, error: lastError, status: 429, rate_limited: true };
       }
 
@@ -70,6 +74,7 @@ export async function ivylensRequest<T = any>(
       }
 
       // 4xx other than 429 — no retry
+      recordCall(path, method, res.status, Date.now() - started, false, lastError);
       return { data: null, error: lastError, status: res.status };
     } catch (err: any) {
       lastError = err?.message ?? 'Network error';
@@ -80,7 +85,26 @@ export async function ivylensRequest<T = any>(
     }
   }
 
+  recordCall(path, method, lastStatus, Date.now() - started, false, lastError);
   return { data: null, error: lastError, status: lastStatus };
+}
+
+// ─── Telemetry ──────────────────────────────────────────────────────────────
+// Fire-and-forget write to ivylens_api_calls. Never blocks the response.
+
+function recordCall(
+  endpoint: string,
+  method: string,
+  status: number,
+  duration_ms: number,
+  rate_limited: boolean,
+  error: string | null,
+): void {
+  const sb = serviceClient();
+  if (!sb) return;
+  sb.from('ivylens_api_calls')
+    .insert({ endpoint, method, status, duration_ms, rate_limited, error })
+    .then(() => {}, () => {}); // swallow errors — telemetry must never break the caller
 }
 
 // ─── Cache helpers ──────────────────────────────────────────────────────────

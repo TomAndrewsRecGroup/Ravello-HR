@@ -137,6 +137,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                     <td>
                       <Link
                         href={`/clients/${c.id}`}
+                        prefetch={false}
                         className="font-semibold hover:underline"
                         style={{ color: 'var(--purple)' }}
                       >
@@ -202,7 +203,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                       {total > 0 ? `${on}/${total} on` : '—'}
                     </td>
                     <td>
-                      <Link href={`/clients/${c.id}`} className="btn-ghost btn-sm">
+                      <Link href={`/clients/${c.id}`} prefetch={false} className="btn-ghost btn-sm">
                         Manage →
                       </Link>
                     </td>

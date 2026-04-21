@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireStaff } from '@/lib/auth/requireStaff';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -9,18 +10,9 @@ import { NextRequest, NextResponse } from 'next/server';
  * 16-query upfront load that made the page slow.
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
-
-  // ── Auth: verify caller is authenticated TPO staff ──
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  const { data: callerProfile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single();
-  if (!callerProfile || !['tps_admin', 'tps_client'].includes(callerProfile.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   const { searchParams } = request.nextUrl;
   const companyId = searchParams.get('companyId');
