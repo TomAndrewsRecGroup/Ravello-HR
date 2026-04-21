@@ -46,7 +46,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Link
+                <Link prefetch={false}
                   href={`/clients/${usersModal.company.id}`}
                   className="btn-secondary btn-sm"
                   onClick={() => setUsersModal(null)}
@@ -102,7 +102,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
       {companies.length === 0 ? (
         <div className="card p-12 empty-state">
           No clients yet.
-          <Link href="/clients/new" className="btn-cta mt-2">Add first client</Link>
+          <Link prefetch={false} href="/clients/new" className="btn-cta mt-2">Add first client</Link>
         </div>
       ) : (
         <div className="table-wrapper">

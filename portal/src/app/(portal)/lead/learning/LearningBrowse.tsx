@@ -83,7 +83,7 @@ function ContentCard({
   const days = purchased ? daysLeftFor(purchase) : null;
 
   return (
-    <Link
+    <Link prefetch={false}
       href={`/learning/${item.id}`}
       className="group flex-shrink-0 flex flex-col overflow-hidden rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
       style={{
@@ -238,7 +238,7 @@ function HeroBanner({ item, purchase }: { item: Content; purchase?: Purchase }) 
   const typeColor = TYPE_COLORS[item.content_type] ?? '#8B5CF6';
 
   return (
-    <Link href={`/learning/${item.id}`} className="block group">
+    <Link prefetch={false} href={`/learning/${item.id}`} className="block group">
       <div
         className="relative rounded-2xl overflow-hidden"
         style={{

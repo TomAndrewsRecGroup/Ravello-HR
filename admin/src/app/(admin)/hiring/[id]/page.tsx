@@ -87,11 +87,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
         actions={
           <div className="flex items-center gap-2">
             {company?.id && (
-              <Link href={`/clients/${company.id}`} className="btn-secondary btn-sm">
+              <Link prefetch={false} href={`/clients/${company.id}`} className="btn-secondary btn-sm">
                 View Client →
               </Link>
             )}
-            <Link href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
+            <Link prefetch={false} href="/hiring" className="btn-ghost btn-sm">← All Roles</Link>
           </div>
         }
       />
@@ -128,7 +128,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               <div>
                 <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Client</p>
                 {company?.id
-                  ? <Link href={`/clients/${company.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>{company.name}</Link>
+                  ? <Link prefetch={false} href={`/clients/${company.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>{company.name}</Link>
                   : <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{company?.name ?? '—'}</p>
                 }
               </div>
@@ -220,7 +220,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                 </div>
               )}
               <div className="mt-3">
-                <Link
+                <Link prefetch={false}
                   href={`/clients/${company?.id}?tab=Candidates`}
                   className="text-xs font-medium"
                   style={{ color: 'var(--purple)' }}

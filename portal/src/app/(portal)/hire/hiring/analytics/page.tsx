@@ -117,7 +117,7 @@ export default async function HiringAnalyticsPage() {
       <Topbar
         title="Hiring Analytics"
         subtitle="Performance overview for your active and completed roles"
-        actions={<Link href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>}
+        actions={<Link prefetch={false} href="/hire/hiring" className="btn-secondary btn-sm">← All Roles</Link>}
       />
       <main className="portal-page flex-1 space-y-6">
 
@@ -272,7 +272,7 @@ export default async function HiringAnalyticsPage() {
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 These roles are at risk of taking significantly longer to fill. Your consultant at The People Office will have recommendations — check the individual role pages for details.
               </p>
-              <Link href="/hire/hiring" className="btn-secondary btn-sm mt-3 inline-flex">
+              <Link prefetch={false} href="/hire/hiring" className="btn-secondary btn-sm mt-3 inline-flex">
                 View Roles →
               </Link>
             </div>

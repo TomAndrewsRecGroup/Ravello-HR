@@ -99,8 +99,8 @@ export default function SupportClient({ tickets }: Props) {
                   <td style={{ color: 'var(--ink-faint)' }}>{new Date(t.created_at).toLocaleDateString('en-GB')}</td>
                   <td>
                     {t.status === 'resolved' || t.status === 'closed'
-                      ? <Link href={`/support/${t.id}`} className="btn-ghost btn-sm">View</Link>
-                      : <Link href={`/support/${t.id}`} className="btn-cta btn-sm">Respond →</Link>
+                      ? <Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View</Link>
+                      : <Link prefetch={false} href={`/support/${t.id}`} className="btn-cta btn-sm">Respond →</Link>
                     }
                   </td>
                 </tr>

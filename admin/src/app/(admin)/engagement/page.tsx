@@ -145,7 +145,7 @@ export default async function EngagementPage() {
                 return (
                   <tr key={c.id}>
                     <td>
-                      <Link href={`/clients/${c.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
+                      <Link prefetch={false} href={`/clients/${c.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
                         {c.name}
                       </Link>
                     </td>

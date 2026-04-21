@@ -23,11 +23,11 @@ export default async function AdminDocumentsPage() {
       <AdminTopbar
         title="Documents"
         subtitle={`${all.length} documents across all clients`}
-        actions={<Link href="/documents/upload" className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13}/>Upload Document</Link>}
+        actions={<Link prefetch={false} href="/documents/upload" className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13}/>Upload Document</Link>}
       />
       <main className="admin-page flex-1">
         {all.length === 0 ? (
-          <div className="card p-12 empty-state">No documents yet. <Link href="/documents/upload" className="btn-cta mt-2">Upload first document</Link></div>
+          <div className="card p-12 empty-state">No documents yet. <Link prefetch={false} href="/documents/upload" className="btn-cta mt-2">Upload first document</Link></div>
         ) : (
           <div className="table-wrapper">
             <table className="table">

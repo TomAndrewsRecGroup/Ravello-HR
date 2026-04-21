@@ -18,7 +18,7 @@ export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
       {tabs.map(tab => {
         const active = path === tab.href || path.startsWith(tab.href + '/');
         return (
-          <Link
+          <Link prefetch={false}
             key={tab.href}
             href={tab.href}
             className="px-4 py-2.5 text-sm font-medium transition-colors"

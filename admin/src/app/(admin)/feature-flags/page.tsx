@@ -23,7 +23,7 @@ export default async function FeatureFlagsPage() {
       <main className="admin-page flex-1">
         {all.length === 0 ? (
           <div className="card p-12 empty-state">
-            No active clients. <Link href="/clients/new" className="btn-cta mt-2">Add a client</Link>
+            No active clients. <Link prefetch={false} href="/clients/new" className="btn-cta mt-2">Add a client</Link>
           </div>
         ) : (
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -31,7 +31,7 @@ export default async function FeatureFlagsPage() {
               <div key={c.id} className="card p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <Link href={`/clients/${c.id}`} className="font-display font-semibold text-sm hover:underline" style={{ color: 'var(--ink)' }}>
+                    <Link prefetch={false} href={`/clients/${c.id}`} className="font-display font-semibold text-sm hover:underline" style={{ color: 'var(--ink)' }}>
                       {c.name}
                     </Link>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>

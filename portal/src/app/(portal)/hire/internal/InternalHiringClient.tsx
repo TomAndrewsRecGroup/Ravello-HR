@@ -222,7 +222,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
               </div>
             </div>
           </div>
-          <Link href="/hire/hiring/new" className="btn-cta btn-sm flex-shrink-0">
+          <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm flex-shrink-0">
             <Briefcase size={13} /> Raise a Role with TPS
           </Link>
         </div>
@@ -272,7 +272,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
             For the best results, we recommend raising roles with The People System.
           </p>
           <div className="flex items-center gap-2 mt-3">
-            <Link href="/hire/hiring/new" className="btn-cta btn-sm">
+            <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm">
               <Sparkles size={13} /> Raise with TPS
             </Link>
             <button onClick={() => setShowForm(true)} className="btn-ghost btn-sm">
@@ -487,7 +487,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
             <div className="rounded-lg p-3 mb-4" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <span className="font-bold" style={{ color: 'var(--purple)' }}>Tip:</span> With The People System, your role is managed by experienced recruiters, posted to 60+ job boards with proactive sourcing across our networks.{' '}
-                <Link href="/hire/hiring/new" className="font-bold underline" style={{ color: 'var(--purple)' }}>
+                <Link prefetch={false} href="/hire/hiring/new" className="font-bold underline" style={{ color: 'var(--purple)' }}>
                   Raise with TPS instead →
                 </Link>
               </p>

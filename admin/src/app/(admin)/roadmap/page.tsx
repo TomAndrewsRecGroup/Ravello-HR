@@ -113,7 +113,7 @@ export default async function AdminRoadmapPage() {
                   <h2 className="font-display font-semibold" style={{ color: 'var(--ink)' }}>
                     {client.name}
                   </h2>
-                  <Link
+                  <Link prefetch={false}
                     href={`/clients/${cid}`}
                     className="text-xs font-medium"
                     style={{ color: 'var(--purple)' }}
@@ -186,7 +186,7 @@ export default async function AdminRoadmapPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {clientsWithout.map((c: any) => (
-                  <Link
+                  <Link prefetch={false}
                     key={c.id}
                     href={`/clients/${c.id}`}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors hover:opacity-80"

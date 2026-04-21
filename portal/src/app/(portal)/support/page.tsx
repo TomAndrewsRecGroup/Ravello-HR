@@ -66,10 +66,10 @@ export default async function SupportPage() {
         subtitle={`${open.length} open ticket${open.length !== 1 ? 's' : ''}${srOpen.length > 0 ? ` · ${srOpen.length} service request${srOpen.length !== 1 ? 's' : ''}` : ''}`}
         actions={
           <div className="flex items-center gap-2">
-            <Link href="/support/ivylens" className="btn-secondary btn-sm flex items-center gap-1.5">
+            <Link prefetch={false} href="/support/ivylens" className="btn-secondary btn-sm flex items-center gap-1.5">
               <Headphones size={13} /> IvyLens Support
             </Link>
-            <Link href="/support/new" className="btn-cta btn-sm flex items-center gap-1.5">
+            <Link prefetch={false} href="/support/new" className="btn-cta btn-sm flex items-center gap-1.5">
               <Plus size={14} /> Raise a Query
             </Link>
           </div>
@@ -84,7 +84,7 @@ export default async function SupportPage() {
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
                 Raise a query and The People Office will respond within one business day.
               </p>
-              <Link href="/support/new" className="btn-cta mt-2">Raise a Query</Link>
+              <Link prefetch={false} href="/support/new" className="btn-cta mt-2">Raise a Query</Link>
             </div>
           </div>
         ) : (
@@ -110,7 +110,7 @@ export default async function SupportPage() {
                               <td><span className={`badge ${priorityBadge[t.priority]}`}>{t.priority}</span></td>
                               <td><span className={`badge ${statusBadge[t.status]}`}>{t.status.replace('_',' ')}</span></td>
                               <td style={{ color: 'var(--ink-faint)' }}>{new Date(t.created_at).toLocaleDateString('en-GB')}</td>
-                              <td><Link href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
+                              <td><Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
                             </tr>
                           ))}
                         </tbody>
@@ -134,7 +134,7 @@ export default async function SupportPage() {
                               <td style={{ color: 'var(--ink-soft)' }}>{t.subject}</td>
                               <td><span className={`badge ${statusBadge[t.status]}`}>{t.status}</span></td>
                               <td style={{ color: 'var(--ink-faint)' }}>{t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '—'}</td>
-                              <td><Link href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
+                              <td><Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
                             </tr>
                           ))}
                         </tbody>

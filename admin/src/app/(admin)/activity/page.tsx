@@ -147,7 +147,7 @@ export default async function ActivityPage() {
                     const cfg = getConfig(item.type);
                     const Icon = cfg.icon;
                     return (
-                      <Link
+                      <Link prefetch={false}
                         key={item.id}
                         href={item.href}
                         className="flex gap-3 py-2.5 px-1 rounded-lg transition-colors hover:bg-[var(--surface-soft)] group"

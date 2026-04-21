@@ -151,7 +151,7 @@ export default async function AdminComplianceDashboard() {
                     return (
                       <tr key={d.id}>
                         <td>
-                          <Link href={`/clients/${d.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
+                          <Link prefetch={false} href={`/clients/${d.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
                             {d.companyName}
                           </Link>
                         </td>
@@ -223,7 +223,7 @@ export default async function AdminComplianceDashboard() {
                     return (
                       <tr key={ci.id}>
                         <td>
-                          <Link href={`/clients/${ci.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
+                          <Link prefetch={false} href={`/clients/${ci.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
                             {ci.companyName}
                           </Link>
                         </td>

@@ -109,7 +109,7 @@ export default async function AdminReportsPage() {
                         style={{ borderBottom: '1px solid var(--line)' }}
                       >
                         <td className="px-4 py-3">
-                          <Link
+                          <Link prefetch={false}
                             href={`/clients/${(r.companies as any)?.id}`}
                             className="font-medium hover:underline"
                             style={{ color: 'var(--purple)' }}

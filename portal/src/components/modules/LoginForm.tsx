@@ -101,7 +101,7 @@ export default function LoginForm() {
       </button>
 
       <p className="text-center text-xs mt-3" style={{ color: 'var(--ink-faint)' }}>
-        <Link href="/auth/reset-password" style={{ color: 'var(--purple)' }}>
+        <Link prefetch={false} href="/auth/reset-password" style={{ color: 'var(--purple)' }}>
           Forgot your password?
         </Link>
       </p>

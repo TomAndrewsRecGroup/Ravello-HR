@@ -93,7 +93,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
 function RelatedCard({ item }: { item: Content }) {
   const typeColor = TYPE_COLORS[item.content_type] ?? '#8B5CF6';
   return (
-    <Link
+    <Link prefetch={false}
       href={`/learning/${item.id}`}
       className="flex items-center gap-3 p-3 rounded-lg transition-colors group"
       style={{ background: 'var(--surface-alt)', border: '1px solid var(--border)' }}
@@ -381,7 +381,7 @@ export default function LearningDetailClient({
           </div>
 
           {/* Back to library */}
-          <Link href="/lead/learning" className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ink-faint)' }}>
+          <Link prefetch={false} href="/lead/learning" className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ink-faint)' }}>
             <ChevronRight size={12} className="rotate-180" /> Back to Learning Library
           </Link>
         </div>

@@ -130,7 +130,7 @@ export default async function DashboardPage() {
         title={`Good ${getGreeting()}, ${firstName}`}
         subtitle={company?.name ?? ''}
         actions={
-          <Link href="/hire/hiring/new" className="btn-cta btn-sm">
+          <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm">
             + Raise a Role
           </Link>
         }
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
             { label: 'Documents',        val: documents.length,       href: '/lead/documents',      color: 'var(--blue)' },
             { label: 'Actions',          val: actions.length,         href: '/protect/actions',     color: 'var(--ink-soft)' },
           ].map(s => (
-            <Link
+            <Link prefetch={false}
               key={s.label}
               href={s.href}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white"
@@ -175,7 +175,7 @@ export default async function DashboardPage() {
         {(company?.feature_flags ?? flagsFromSession).friction_lens !== false && (
           <div className="mb-6">
             {frictionAssessment ? (
-              <Link href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">
+              <Link prefetch={false} href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                 <ArrowRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
               </Link>
             ) : (
-              <Link href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
+              <Link prefetch={false} href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)' }}>
                   <Zap size={20} style={{ color: 'var(--purple)' }} />
                 </div>
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Needs Your Attention</h2>
               {actions.length > 0 && (
-                <Link href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+                <Link prefetch={false} href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
               )}
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
@@ -241,7 +241,7 @@ export default async function DashboardPage() {
                 </div>
               ))}
               {frictionAlerts.slice(0, 3).map((r: any) => (
-                <Link key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
+                <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction — review details</p>
                 </Link>
@@ -255,11 +255,11 @@ export default async function DashboardPage() {
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Live Roles</h2>
-              <Link href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <Link prefetch={false} href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {requisitions.slice(0, 8).map((r: any) => (
-                <Link key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
+                <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{r.stage.replace(/_/g, ' ')}</span>
                     <FrictionAlert level={r.friction_level} />
@@ -277,7 +277,7 @@ export default async function DashboardPage() {
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Compliance</h2>
-              <Link href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <Link prefetch={false} href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             {complianceItems.length === 0 ? (
               <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>All clear — no upcoming items</p>
@@ -300,17 +300,17 @@ export default async function DashboardPage() {
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>HR Support</h2>
-              <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <Link prefetch={false} href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             {tickets.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
-                <Link href="/support/new" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</Link>
+                <Link prefetch={false} href="/support/new" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</Link>
               </div>
             ) : (
               <div className="space-y-1.5">
                 {tickets.slice(0, 5).map((t: any) => (
-                  <Link key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)]" style={{ background: 'var(--surface-soft)' }}>
+                  <Link prefetch={false} key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)]" style={{ background: 'var(--surface-soft)' }}>
                     <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 200 }}>{t.subject}</span>
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.priority === 'urgent' ? 'var(--danger)' : t.priority === 'high' ? 'var(--warning)' : 'var(--ink-faint)' }} />
                   </Link>
@@ -341,7 +341,7 @@ export default async function DashboardPage() {
             <section className="card p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Recent Documents</h2>
-                <Link href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+                <Link prefetch={false} href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
               </div>
               <div className="space-y-1.5">
                 {documents.slice(0, 4).map((d: any) => (

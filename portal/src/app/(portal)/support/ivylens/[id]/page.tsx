@@ -96,7 +96,7 @@ export default function IvyLensTicketDetailPage() {
   if (error || !ticket) {
     return (
       <>
-        <Topbar title="Ticket" actions={<Link href="/support/ivylens" className="btn-secondary btn-sm"><ArrowLeft size={13} /> Back</Link>} />
+        <Topbar title="Ticket" actions={<Link prefetch={false} href="/support/ivylens" className="btn-secondary btn-sm"><ArrowLeft size={13} /> Back</Link>} />
         <main className="portal-page flex-1">
           <div className="card p-6 text-center">
             <p className="text-sm" style={{ color: 'var(--red)' }}>{error || 'Ticket not found'}</p>
@@ -114,7 +114,7 @@ export default function IvyLensTicketDetailPage() {
       <Topbar
         title={ticket.subject}
         subtitle="IvyLens Support Ticket"
-        actions={<Link href="/support/ivylens" className="btn-secondary btn-sm"><ArrowLeft size={13} /> All Tickets</Link>}
+        actions={<Link prefetch={false} href="/support/ivylens" className="btn-secondary btn-sm"><ArrowLeft size={13} /> All Tickets</Link>}
       />
       <main className="portal-page flex-1 max-w-[740px]">
 
