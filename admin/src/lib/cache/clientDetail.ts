@@ -90,5 +90,3 @@ export async function getCachedClientDetail(id: string): Promise<ClientDetail | 
   }
   return fresh;
 }
-
-export { redisKey as clientDetailRedisKey };

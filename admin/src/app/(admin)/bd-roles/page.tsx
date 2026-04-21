@@ -1,3 +1,6 @@
+// Admin → Intelligence → BD Roles. Flat feed of every role IvyLens and
+// local scanning have surfaced, merged and filterable. Reachable via the
+// sidebar "Intelligence" group or directly at /bd-roles.
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';

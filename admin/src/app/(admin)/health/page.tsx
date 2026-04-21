@@ -1,3 +1,7 @@
+// Admin → Intelligence → Health Status. IvyLens integration health
+// (call volume, latency, errors, rate-limit headroom) and per-client
+// RAG roll-up. Reachable via the sidebar "Intelligence" group or
+// directly at /health.
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
