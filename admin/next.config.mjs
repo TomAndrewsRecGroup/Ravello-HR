@@ -2,6 +2,10 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    // node-redis pulls in net/tls/string_decoder/crypto. Without this,
+    // Next.js' server-action flight loader tries to bundle the package
+    // for the client and the build fails. Keep it Node-side.
+    serverComponentsExternalPackages: ['redis'],
   },
   images: {
     remotePatterns: [
