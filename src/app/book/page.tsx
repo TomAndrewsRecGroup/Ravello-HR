@@ -28,18 +28,26 @@ export default function BookPage() {
     <div className="pt-28">
 
       {/* Hero */}
-      <section className="py-20 lg:py-24 px-4 sm:px-6 lg:px-8 text-center" style={{ background: 'var(--brand-navy)' }}>
+      <section className="py-20 lg:py-24 px-4 sm:px-6 lg:px-8 text-center" style={{ background: 'var(--bg)' }}>
         <div className="max-w-3xl mx-auto">
-          <span className="eyebrow mb-6 inline-block" style={{ color: 'var(--brand-blue)' }}>The People System: Free Call</span>
+          <p className="eyebrow mb-6">
+            <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+            The People System: Free Call
+          </p>
           <h1
-            style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '1.25rem', fontSize: 'clamp(2.4rem,5vw,3.8rem)', color: '#fff' }}
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(2.4rem, 5vw, 3.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              color: 'var(--ink)',
+            }}
           >
             Bring your challenge.<br />
-            <span style={{ background: 'linear-gradient(135deg,var(--brand-blue),var(--brand-purple),var(--brand-pink))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Leave with a clear path.
-            </span>
+            <span className="text-gradient">Leave with a clear path.</span>
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.1rem' }}>
+          <p className="text-lg leading-relaxed max-w-[560px] mx-auto" style={{ color: 'var(--ink-soft)' }}>
             One honest conversation. No slides. No pitch. Just a straight answer on what the problem is and exactly what to do about it.
           </p>
         </div>

@@ -62,8 +62,8 @@ export default function BookForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!name || !email || !challenge) {
-      setError('Please fill in your name, email, and which challenge fits.');
+    if (!name || !email || !company || !phone || !challenge) {
+      setError('Please fill in your name, email, company, phone, and which challenge fits.');
       return;
     }
     setError(null);
@@ -75,11 +75,11 @@ export default function BookForm() {
         body: JSON.stringify({
           name,
           email,
-          company: company || undefined,
+          company,
           source: 'book-form',
           problemType: challenge,
           metadata: {
-            phone: phone || null,
+            phone,
             companySize: companySize || null,
             situation: situation || null,
           },
@@ -214,12 +214,13 @@ export default function BookForm() {
       <div className="grid sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label htmlFor="bf-company" className={LABEL_CLS} style={LABEL_STYLE}>
-            Company
+            Company <span style={{ color: 'var(--brand-pink)' }}>*</span>
           </label>
           <input
             id="bf-company"
             type="text"
             autoComplete="organization"
+            required
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             className={INPUT_CLS}
@@ -229,12 +230,13 @@ export default function BookForm() {
         </div>
         <div>
           <label htmlFor="bf-phone" className={LABEL_CLS} style={LABEL_STYLE}>
-            Phone <span style={{ color: 'var(--ink-faint)' }}>(optional)</span>
+            Phone <span style={{ color: 'var(--brand-pink)' }}>*</span>
           </label>
           <input
             id="bf-phone"
             type="tel"
             autoComplete="tel"
+            required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={INPUT_CLS}
