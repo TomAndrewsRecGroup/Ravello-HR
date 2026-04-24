@@ -11,7 +11,7 @@ import {
   FolderOpen, LifeBuoy, LogOut,
   Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
   X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight, Radar, Activity, Target,
+  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -68,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/value-reports',   label: 'Value Reports',  icon: BarChart3 },
       { href: '/reports',         label: 'CSV Exports',    icon: FolderOpen },
       { href: '/documents',       label: 'Documents',      icon: FileText },
+      { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
       { href: '/learning',        label: 'Learning',       icon: BookOpen },
     ],
   },

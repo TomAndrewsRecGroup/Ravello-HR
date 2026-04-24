@@ -170,16 +170,19 @@ export default function Nav() {
               )}
             </div>
 
-            {['Playbook', 'About'].map((label) => (
+            {[
+              { label: 'Latest Updates', href: '/latest-updates' },
+              { label: 'About',          href: '/about' },
+            ].map((link) => (
               <Link
-                key={label}
-                href={`/${label.toLowerCase().replace(' ', '-')}`}
+                key={link.href}
+                href={link.href}
                 className="px-4 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-200 hover:bg-[var(--surface-alt)]"
                 style={{ color: textColor }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ink)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
               >
-                {label}
+                {link.label}
               </Link>
             ))}
 
@@ -266,8 +269,8 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <Link href="/playbook" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Playbook</Link>
-            <Link href="/about"    className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
+            <Link href="/latest-updates" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
+            <Link href="/about"          className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />
             <a
               href="https://www.portal.thepeoplesystem.co.uk"
