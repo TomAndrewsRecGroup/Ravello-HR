@@ -5,7 +5,7 @@ import FaqBlock from '@/components/FaqBlock';
 import {
   ArrowRight, TrendingUp, Briefcase, BookOpen, Users, ShieldCheck,
   BarChart3, Target, Zap, CheckCircle2, FileText, Scale,
-  PoundSterling, Calculator,
+  PoundSterling, Calculator, GraduationCap, CalendarDays, Star, Play,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -81,6 +81,89 @@ const INSIGHT_TOOLS = [
   { icon: ShieldCheck,   title: 'Compliance Tracker',        desc: 'Every compliance item tracked against due dates, with overdue items auto-flagged.' },
   { icon: TrendingUp,    title: 'Company People Score',      desc: 'Your entire people function benchmarked against your sector and size.' },
 ];
+
+type CalCell =
+  | { blank: true }
+  | {
+      day: number;
+      today?: boolean;
+      events?: { type: 'leave' | 'sick' | 'holiday' | 'event'; label?: string }[];
+    };
+
+const CALENDAR_MOCK: CalCell[] = [
+  // Week 1 (Apr 2026 starts Wed, so Mon & Tue blank)
+  { blank: true }, { blank: true },
+  { day: 1 }, { day: 2 },
+  { day: 3, events: [{ type: 'leave' }] },
+  { day: 4 }, { day: 5 },
+  // Week 2
+  { day: 6, events: [{ type: 'holiday' }] },
+  { day: 7 }, { day: 8 },
+  { day: 9, events: [{ type: 'leave' }] },
+  { day: 10, events: [{ type: 'sick' }] },
+  { day: 11 }, { day: 12 },
+  // Week 3
+  { day: 13 },
+  { day: 14, events: [{ type: 'leave' }] },
+  { day: 15 },
+  { day: 16, today: true, events: [{ type: 'event' }] },
+  { day: 17, events: [{ type: 'leave' }] },
+  { day: 18 }, { day: 19 },
+  // Week 4
+  { day: 20 }, { day: 21 },
+  { day: 22, events: [{ type: 'sick' }] },
+  { day: 23 }, { day: 24 },
+  { day: 25, events: [{ type: 'event' }] },
+  { day: 26 },
+  // Week 5
+  { day: 27 }, { day: 28 },
+  { day: 29, events: [{ type: 'leave' }] },
+  { day: 30 },
+  { blank: true }, { blank: true }, { blank: true },
+];
+
+const EVENT_COLOURS: Record<'leave' | 'sick' | 'holiday' | 'event', { dot: string; bg: string }> = {
+  leave:   { dot: '#10B981', bg: 'rgba(16,185,129,0.14)' },
+  sick:    { dot: '#F59E0B', bg: 'rgba(245,158,11,0.14)' },
+  holiday: { dot: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  event:   { dot: '#3B6FFF', bg: 'rgba(59,111,255,0.12)' },
+};
+
+function CalendarCell({ cell }: { cell: CalCell }) {
+  if ('blank' in cell) {
+    return <div className="aspect-square rounded-[6px]" style={{ background: 'transparent' }} />;
+  }
+  const ev = cell.events?.[0];
+  const colour = ev ? EVENT_COLOURS[ev.type] : null;
+  return (
+    <div
+      className="aspect-square rounded-[6px] flex flex-col items-center justify-center relative"
+      style={{
+        background: ev ? colour!.bg : 'var(--surface)',
+        border: '1px solid var(--brand-line)',
+      }}
+    >
+      {cell.today ? (
+        <span
+          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: 'var(--brand-purple)' }}
+        >
+          {cell.day}
+        </span>
+      ) : (
+        <span className="text-[10px] font-semibold" style={{ color: 'var(--ink-soft)' }}>
+          {cell.day}
+        </span>
+      )}
+      {ev && (
+        <span
+          className="absolute bottom-1 w-1.5 h-1.5 rounded-full"
+          style={{ background: colour!.dot }}
+        />
+      )}
+    </div>
+  );
+}
 
 const FRICTION_DIMENSIONS = [
   { name: 'Location', desc: 'Is your location requirement realistic for the talent pool?', color: '#7B2FBE' },
@@ -522,8 +605,275 @@ export default function InsightsPage() {
         </div>
       </section>
 
+      {/* Learning & Calendar */}
+      <section className="section-padding" style={{ background: 'var(--surface)' }}>
+        <div className="container-wide">
+          <div className="max-w-[640px] mb-16">
+            <p className="eyebrow mb-5">
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-pink)', verticalAlign: 'middle' }} />
+              Beyond the scores
+            </p>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Tools your team{' '}
+              <span className="text-gradient">actually uses</span>
+            </h3>
+            <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              Your portal is not just an HR analytics layer. It is where your team
+              picks up the guides you publish and where managers see who is in,
+              who is off, and what is coming.
+            </p>
+          </div>
+
+          {/* Row 1: Learning */}
+          <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
+
+            {/* Learning mockup */}
+            <div>
+              <div
+                className="rounded-[24px] p-6"
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 32px rgba(10,15,30,0.06)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="eyebrow" style={{ margin: 0 }}>
+                    <GraduationCap size={12} className="inline mr-1.5" style={{ verticalAlign: 'middle', color: 'var(--brand-purple)' }} />
+                    Learning Library
+                  </span>
+                  <span
+                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--brand-purple)' }}
+                  >
+                    12 items
+                  </span>
+                </div>
+
+                {/* Featured hero tile */}
+                <div
+                  className="rounded-[16px] overflow-hidden mb-4 relative"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #4B6EF5 60%, #EA3DC4 100%)', height: 140 }}
+                >
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full inline-flex items-center gap-1"
+                      style={{ background: 'rgba(253,243,214,0.95)', color: '#7E5A10' }}
+                    >
+                      <Star size={9} fill="#BF8F28" style={{ color: '#BF8F28' }} /> Featured
+                    </span>
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)' }}
+                    >
+                      Video
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.95)' }}
+                    >
+                      <Play size={12} fill="#7C3AED" style={{ color: '#7C3AED' }} />
+                    </span>
+                  </div>
+                  <div className="absolute inset-x-4 bottom-3">
+                    <p className="font-bold text-white text-sm mb-0.5 leading-tight">
+                      Difficult Conversations for Managers
+                    </p>
+                    <p className="text-white/75 text-[11px]">Lucy Andrews · 45 min</p>
+                  </div>
+                </div>
+
+                {/* Smaller cards */}
+                <div className="space-y-2">
+                  {[
+                    { title: 'Onboarding Playbook', meta: 'PDF · 24 pages', badge: 'Shared', badgeBg: 'rgba(34,197,94,0.10)', badgeColor: '#16A34A', thumbBg: 'linear-gradient(135deg, #3B6FFF, #7C3AED)' },
+                    { title: 'Performance Review Framework', meta: 'Video · 32 min', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
+                    { title: 'AI at Work Policy', meta: 'PDF · 8 pages', badge: 'New', badgeBg: 'rgba(245,158,11,0.12)', badgeColor: '#92400E', thumbBg: 'linear-gradient(135deg, #BF8F28, #7C3AED)' },
+                  ].map((c) => (
+                    <div
+                      key={c.title}
+                      className="flex items-center gap-3 p-2 rounded-[10px]"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}
+                    >
+                      <div className="w-10 h-10 rounded-[8px] flex-shrink-0" style={{ background: c.thumbBg }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--ink)' }}>{c.title}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{c.meta}</p>
+                      </div>
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: c.badgeBg, color: c.badgeColor }}
+                      >
+                        {c.badge}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Learning copy */}
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Learning content
+              </p>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.6rem, 2.6vw, 2.4rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Build a library{' '}
+                <span className="text-gradient">your team actually uses</span>
+              </h3>
+              <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
+                Upload videos, PDFs, playbooks and policies and share them with
+                your whole team or a specific group. We keep the library stocked
+                with practical guides on the things managers usually struggle
+                with: performance reviews, difficult conversations, onboarding,
+                AI at work. You add your own on top.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                {[
+                  'Upload your own content: videos, PDFs, interactive modules',
+                  'A curated starter library maintained by The People System',
+                  'Share with everyone or with a specific team',
+                  'Track who has opened, started and completed each item',
+                  'Bundle content into your engagement or sell it per seat',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--brand-purple)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/book" className="btn-secondary">
+                See the library <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Row 2: Calendar */}
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+            {/* Calendar copy */}
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
+                Company calendar
+              </p>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.6rem, 2.6vw, 2.4rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                One view of who is in,{' '}
+                <span className="text-gradient">who is out, and what is coming</span>
+              </h3>
+              <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
+                Annual leave, sick days, bank holidays, company-wide events and
+                office closures all on one shared calendar. Managers plan around
+                it, the team can see what is coming, and everything is
+                colour-coded by type so the view stays readable.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                {[
+                  'Log annual leave, sick days, maternity, paternity and more',
+                  'Bank holidays pre-loaded for your jurisdiction',
+                  'Company events, all-hands and office closures',
+                  'Team-wide visibility with clear colour coding',
+                  'Approval workflow for leave requests',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--brand-blue)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/book" className="btn-secondary">
+                See the calendar <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            {/* Calendar mockup */}
+            <div>
+              <div
+                className="rounded-[24px] p-6"
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 32px rgba(10,15,30,0.06)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="eyebrow" style={{ margin: 0 }}>
+                    <CalendarDays size={12} className="inline mr-1.5" style={{ verticalAlign: 'middle', color: 'var(--brand-blue)' }} />
+                    Company Calendar
+                  </span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--ink-soft)' }}>April 2026</span>
+                </div>
+
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-1 mb-1">
+                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                    <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: 'var(--ink-faint)' }}>{d}</div>
+                  ))}
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {CALENDAR_MOCK.map((cell, i) => (
+                    <CalendarCell key={i} cell={cell} />
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                  {[
+                    { color: '#10B981', label: 'Annual Leave' },
+                    { color: '#F59E0B', label: 'Sick Day' },
+                    { color: '#7C3AED', label: 'Bank Holiday' },
+                    { color: '#3B6FFF', label: 'Company Event' },
+                  ].map((l) => (
+                    <div key={l.label} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
+                      <span className="text-[11px] font-medium" style={{ color: 'var(--ink-soft)' }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How the scores work together */}
-      <section className="section-sm" style={{ background: 'var(--surface)' }}>
+      <section className="section-sm" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div
             className="rounded-[24px] p-10"
