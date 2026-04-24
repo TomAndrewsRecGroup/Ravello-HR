@@ -60,7 +60,7 @@ export default async function BDRolesPage() {
   // Flatten local roles
   const local: FlatRole[] = localRoles.map((r: any) => ({
     id:             r.id,
-    company_name:   companyById.get(r.company_id) ?? '—',
+    company_name:   companyById.get(r.company_id) ?? '-',
     company_id:     r.company_id,
     company_source: 'local',
     role_title:     r.role_title ?? null,
@@ -81,7 +81,7 @@ export default async function BDRolesPage() {
       const { min, max } = parseSalary(r.salary);
       return {
         id:             `ivylens-${lead.id ?? lead.company_name}-${idx}`,
-        company_name:   lead.company_name ?? '—',
+        company_name:   lead.company_name ?? '-',
         company_id:     null,
         company_source: 'ivylens' as const,
         role_title:     r.title ?? null,

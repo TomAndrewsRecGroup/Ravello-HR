@@ -8,7 +8,7 @@ import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
 
 const DEFAULT_FLAGS = { hiring: true, documents: true, reports: false, support: true, metrics: false, compliance: false };
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
-const SIZES   = ['10–24','25–49','50–99','100–249','250+'];
+const SIZES   = ['10-24','25-49','50-99','100-249','250+'];
 
 export default function NewClientPage() {
   const router   = useRouter();

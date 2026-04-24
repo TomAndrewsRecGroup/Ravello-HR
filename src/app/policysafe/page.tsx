@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const risks = [
   { icon: AlertTriangle, title: 'No written contracts',           description: 'Employing someone without a written statement is a legal risk from day one. Tribunal claims are expensive to defend. Prevention costs a fraction of that.' },
-  { icon: FileText,      title: 'Outdated or non-existent handbook', description: 'A handbook written in 2019 does not cover remote working, AI use, mental health leave or the Employment Rights Bill changes coming in 2025–26. Those gaps become grievances.' },
+  { icon: FileText,      title: 'Outdated or non-existent handbook', description: 'A handbook written in 2019 does not cover remote working, AI use, mental health leave or the Employment Rights Bill changes coming in 2025-26. Those gaps become grievances.' },
   { icon: Users,         title: 'Managers applying different rules', description: 'Without clear policies, managers invent their own version. Inconsistency creates resentment, discrimination risk, and the kind of tribunal claims that are hardest to defend.' },
   { icon: Shield,        title: 'No disciplinary framework',       description: 'One poorly handled disciplinary can cost over £10,000 at tribunal. A documented process, followed properly, is your most reliable protection. Most businesses do not have one.' },
 ];
@@ -27,16 +27,16 @@ const packages = [
   },
   {
     name: 'Protect Core',
-    tag: 'Most popular · 10–50 people',
+    tag: 'Most popular · 10-50 people',
     price: 'From £1,200',
     highlight: true,
-    items: ['Full employment contract suite', 'Staff handbook (bespoke)', 'Core policy set (12 policies)', 'Manager guide & FAQ document', 'Gap analysis against current docs', '2 x review sessions', 'Optional retainer: £500–£750/month'],
+    items: ['Full employment contract suite', 'Staff handbook (bespoke)', 'Core policy set (12 policies)', 'Manager guide & FAQ document', 'Gap analysis against current docs', '2 x review sessions', 'Optional retainer: £500-£750/month'],
     cta: { label: 'Get a Free HR Audit', href: '/book' },
   },
   {
     name: 'Protect Partner',
     tag: 'Ongoing · 50+ people',
-    price: '£1,500–£2,500/month',
+    price: '£1,500-£2,500/month',
     highlight: false,
     items: ['Everything in Core', 'Full bespoke policy library', 'Employment Rights Bill compliance review', 'Manager training session', 'Ongoing update retainer included', 'Priority response SLA'],
     cta: { label: 'Book a Call', href: '/book' },
@@ -214,7 +214,7 @@ export default function PolicySafePage() {
       {/* FAQ */}
       <FaqBlock items={[
           { q: 'What is PROTECT?', a: 'The foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs: compliant, practical, and written in plain English your managers will actually follow.' },
-          { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500–£750/month), Protect Partner (£1,500–£2,500/month), Protect Enterprise (bespoke, £3,000–£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
+          { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500-£750/month), Protect Partner (£1,500-£2,500/month), Protect Enterprise (bespoke, £3,000-£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
           { q: 'What about the Employment Rights Bill?', a: 'The Employment Rights Bill introduces significant changes for UK employers: particularly around zero-hours contracts, day-one rights, and dismissal processes. Lucy reviews every engagement against current and upcoming legislation so your documentation is ready, not reactive.' },
           { q: 'Who is PROTECT for?', a: 'Any business that has been moving fast without building proper HR foundations. This is especially common in founder-led SMEs, VC-backed businesses post-raise, and businesses that have not reviewed their HR documentation in more than two years.' },
           { q: 'How long does it take?', a: 'Most PROTECT engagements complete within two to four weeks depending on the package and the state of your existing documentation.' },

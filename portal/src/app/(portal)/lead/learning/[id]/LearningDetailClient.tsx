@@ -294,7 +294,7 @@ export default function LearningDetailClient({
           )}
         </div>
 
-        {/* ── Right column — access panel ── */}
+        {/* ── Right column: access panel ── */}
         <div className="space-y-4">
           <div className="card p-5 sticky top-6">
             {hasAccess ? (

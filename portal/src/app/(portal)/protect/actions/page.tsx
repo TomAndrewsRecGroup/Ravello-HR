@@ -143,7 +143,7 @@ export default async function ActionsPage() {
                 No outstanding actions
               </p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                You're up to date. The People Office will add actions here as they arise.
+                You're up to date. The People System will add actions here as they arise.
               </p>
             </div>
           </div>

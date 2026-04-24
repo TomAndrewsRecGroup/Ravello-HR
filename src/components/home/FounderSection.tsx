@@ -87,7 +87,7 @@ export default function FounderSection() {
                 className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white"
                 style={{ background: 'var(--gradient)' }}
               >
-                TPO
+                TPS
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Lucy &amp; Tom</p>

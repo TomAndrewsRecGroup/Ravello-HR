@@ -74,7 +74,7 @@ export default async function AdminRoadmapPage() {
     <>
       <AdminTopbar
         title="Roadmap Management"
-        subtitle={`All client roadmaps — ${currentYear()}`}
+        subtitle={`All client roadmaps: ${currentYear()}`}
       />
       <main className="admin-page flex-1">
 

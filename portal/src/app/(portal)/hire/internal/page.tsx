@@ -38,7 +38,7 @@ export default async function InternalHiringPage() {
       .order('created_at', { ascending: false });
     internalRoles = roles ?? [];
 
-    // TPO-managed stats for comparison
+    // The People System-managed stats for comparison
     const [tpoActiveRes, tpoFilledRes] = await Promise.all([
       supabase.from('requisitions')
         .select('id, created_at', { count: 'exact' })

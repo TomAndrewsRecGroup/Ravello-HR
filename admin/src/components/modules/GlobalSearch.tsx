@@ -190,7 +190,7 @@ export default function GlobalSearch() {
           })}
         </div>
 
-        {/* Quick actions — shown when no query */}
+        {/* Quick actions: shown when no query */}
         {query.length === 0 && (
           <div>
             <div className="px-4 pt-3 pb-1">

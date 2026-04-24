@@ -28,7 +28,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
         }}
       />
       <div className="flex items-center gap-3 min-w-0">
-        {/* Hamburger — mobile/tablet only */}
+        {/* Hamburger: mobile/tablet only */}
         <button
           onClick={toggle}
           className="hamburger-btn"

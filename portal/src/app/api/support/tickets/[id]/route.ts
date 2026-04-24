@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 
-// GET /api/support/tickets/:id — get ticket with conversation
+// GET /api/support/tickets/:id: get ticket with conversation
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json(data);
 }
 
-// POST /api/support/tickets/:id — reply to a ticket
+// POST /api/support/tickets/:id: reply to a ticket
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

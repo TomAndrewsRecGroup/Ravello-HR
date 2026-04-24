@@ -49,7 +49,7 @@ function statusBadge(status: string, requiresApproval: boolean, approvedAt: stri
 }
 
 function fileSize(bytes: number | null): string {
-  if (!bytes) return '—';
+  if (!bytes) return '-';
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
@@ -97,7 +97,7 @@ export default async function DocumentsPage() {
   return (
       <main className="portal-page flex-1">
 
-        {/* Upload form — client component */}
+        {/* Upload form: client component */}
         <DocumentUpload companyId={companyId} userId={user?.id ?? ''} />
 
         {/* Document list */}
@@ -107,7 +107,7 @@ export default async function DocumentsPage() {
               <FolderOpen size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No documents yet</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Upload your first document above, or The People Office will share documents with you here.
+                Upload your first document above, or The People System will share documents with you here.
               </p>
             </div>
           </div>

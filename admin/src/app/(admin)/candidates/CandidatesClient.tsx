@@ -44,7 +44,7 @@ const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
 };
 
 function Stars({ score }: { score: number | null }) {
-  if (!score) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+  if (!score) return <span style={{ color: 'var(--ink-faint)' }}>-</span>;
   return (
     <span className="inline-flex gap-0.5">
       {[1,2,3,4,5].map(i => (
@@ -153,14 +153,14 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                       className="text-sm hover:underline"
                       style={{ color: 'var(--purple)' }}
                     >
-                      {c.requisitions?.title ?? '—'}
+                      {c.requisitions?.title ?? '-'}
                     </a>
                   </td>
                   <td style={{ color: 'var(--ink-soft)' }}>
-                    {c.requisitions?.companies?.name ?? '—'}
+                    {c.requisitions?.companies?.name ?? '-'}
                   </td>
                   <td style={{ color: 'var(--ink-soft)' }}>
-                    {SOURCE_LABELS[c.source ?? ''] ?? c.source ?? '—'}
+                    {SOURCE_LABELS[c.source ?? ''] ?? c.source ?? '-'}
                   </td>
                   <td>
                     <select
@@ -184,7 +184,7 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                         value={c.screening_score ?? ''}
                         onChange={e => e.target.value && updateScore(c.id, Number(e.target.value))}
                       >
-                        <option value="">—</option>
+                        <option value="">-</option>
                         {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
                       </select>
                     </div>
@@ -209,7 +209,7 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                         CV <ExternalLink size={10} />
                       </a>
                     ) : (
-                      <span style={{ color: 'var(--ink-faint)' }}>—</span>
+                      <span style={{ color: 'var(--ink-faint)' }}>-</span>
                     )}
                   </td>
                 </tr>

@@ -20,19 +20,19 @@ const STEPS = [
 ];
 
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Education','Construction','Other'];
-const SIZES = ['1–9','10–24','25–49','50–99','100–249','250+'];
+const SIZES = ['1-9','10-24','25-49','50-99','100-249','250+'];
 
 const MODULE_FLAGS = [
-  { key: 'hiring',              label: 'HIRE — Recruitment Pipeline',    section: 'HIRE' },
+  { key: 'hiring',              label: 'HIRE: Recruitment Pipeline',    section: 'HIRE' },
   { key: 'friction_lens',       label: 'Friction Lens Scoring',          section: 'HIRE' },
   { key: 'benchmarks',          label: 'Salary Benchmarks',              section: 'HIRE' },
-  { key: 'lead',                label: 'LEAD — People Development',      section: 'LEAD' },
+  { key: 'lead',                label: 'LEAD: People Development',      section: 'LEAD' },
   { key: 'employee_records',    label: 'Employee Records',               section: 'LEAD' },
   { key: 'onboarding',          label: 'Onboarding Workflows',           section: 'LEAD' },
   { key: 'org_chart',           label: 'Organisation Chart',             section: 'LEAD' },
   { key: 'learning',            label: 'E-Learning Marketplace',         section: 'LEAD' },
   { key: 'documents',           label: 'Document Management',            section: 'LEAD' },
-  { key: 'protect',             label: 'PROTECT — Compliance & Risk',    section: 'PROTECT' },
+  { key: 'protect',             label: 'PROTECT: Compliance & Risk',    section: 'PROTECT' },
   { key: 'compliance',          label: 'Compliance Tracking',            section: 'PROTECT' },
   { key: 'offboarding',         label: 'Offboarding Workflows',          section: 'PROTECT' },
   { key: 'policy_acknowledgement', label: 'Policy Acknowledgements',     section: 'PROTECT' },
@@ -61,27 +61,27 @@ export default function OnboardWizard({ staff }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Step 1 — Company
+  // Step 1: Company
   const [company, setCompany] = useState({
     name: '', sector: '', size_band: '', contact_email: '', website: '',
   });
 
-  // Step 2 — Portal Account
+  // Step 2: Portal Account
   const [account, setAccount] = useState({
     full_name: '', email: '', password: generatePassword(),
   });
 
-  // Step 3 — Account Owner
+  // Step 3: Account Owner
   const [ownerId, setOwnerId] = useState('');
 
-  // Step 4 — Feature Flags
+  // Step 4: Feature Flags
   const [flags, setFlags] = useState<Record<string, boolean>>(() => {
     const f: Record<string, boolean> = {};
     MODULE_FLAGS.forEach(m => { f[m.key] = ['hiring', 'lead', 'protect', 'support', 'documents', 'compliance', 'employee_records', 'calendar'].includes(m.key); });
     return f;
   });
 
-  // Step 5 — Services
+  // Step 5: Services
   const [services, setServices] = useState<{ name: string; tier: string; fee: string }[]>([
     { name: '', tier: '', fee: '' },
   ]);
@@ -326,7 +326,7 @@ export default function OnboardWizard({ staff }: Props) {
                 </button>
               </div>
               <p className="text-xs font-mono" style={{ color: 'var(--ink-soft)' }}>
-                Email: {account.email || '—'}<br />
+                Email: {account.email || '-'}<br />
                 Password: {account.password}
               </p>
               <p className="text-[10px] mt-2" style={{ color: 'var(--ink-faint)' }}>

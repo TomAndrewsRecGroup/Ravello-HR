@@ -11,7 +11,7 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/onboarding');
   }
 
-  // Feature flags come from the session cookie — no DB call needed.
+  // Feature flags come from the session cookie: no DB call needed.
   // Middleware stamps them every 15 minutes.
   const flags = (isTpsStaff && !companyId) ? {} : featureFlags;
   const uiPreferences = (profile as any)?.ui_preferences ?? {};

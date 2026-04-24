@@ -9,7 +9,7 @@ import {
 
 export const metadata: Metadata = { title: 'Dashboard' };
 export const runtime    = 'edge';
-export const revalidate = 30; // cache page for 30s — revalidates in background
+export const revalidate = 30; // cache page for 30s: revalidates in background
 
 export default async function AdminDashboardPage() {
   const supabase = createServerSupabaseClient();
@@ -101,12 +101,12 @@ export default async function AdminDashboardPage() {
     <>
       <AdminTopbar
         title="Admin Dashboard"
-        subtitle="The People Office — internal operations"
+        subtitle="The People System: internal operations"
         actions={<Link prefetch={false} href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
 
-        {/* Stats — with mesh background */}
+        {/* Stats: with mesh background */}
         <div className="relative mb-8">
           <div className="app-mesh" style={{ opacity: 0.6 }} />
           <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,7 +136,7 @@ export default async function AdminDashboardPage() {
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-                {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention —
+                {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention -
                 {overdueComp.length > 0 && ` ${overdueComp.length} overdue compliance items,`}
                 {expiringDocs.length > 0 && ` ${expiringDocs.length} documents expiring within 30 days,`}
                 {pendingAbsence.length > 0 && ` ${pendingAbsence.length} pending absence requests`}
@@ -154,7 +154,7 @@ export default async function AdminDashboardPage() {
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0, marginTop: 2 }} />
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-                Company Friction Health —
+                Company Friction Health -
                 {highFriction.length > 0 && (
                   <span style={{ color: 'var(--red)' }}> {highFriction.length} high friction ({highFriction.map((c: any) => c.name).join(', ')})</span>
                 )}

@@ -29,7 +29,7 @@ interface Props {
 }
 
 function RAGBadge({ value, thresholds, label, suffix = '' }: { value: number | null; thresholds: [number, number]; label: string; suffix?: string }) {
-  if (value === null) return <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>—</span>;
+  if (value === null) return <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>-</span>;
   const [warn, danger] = thresholds;
   const color = value >= danger ? 'var(--danger)' : value >= warn ? 'var(--amber)' : 'var(--success)';
   const bg = value >= danger ? 'rgba(220,38,38,0.08)' : value >= warn ? 'rgba(217,119,6,0.08)' : 'rgba(22,163,74,0.08)';
@@ -136,7 +136,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
             <div>
               <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Headcount</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>{latest.headcount ?? '—'}</span>
+                <span className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>{latest.headcount ?? '-'}</span>
                 {latest.headcount_target && <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>/ {latest.headcount_target} target</span>}
               </div>
               {latest.headcount && latest.headcount_target && (
@@ -167,7 +167,7 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
             <div>
               <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Avg Tenure</p>
               <span className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>
-                {latest.avg_tenure_months ? `${Math.floor(latest.avg_tenure_months / 12)}y ${latest.avg_tenure_months % 12}m` : '—'}
+                {latest.avg_tenure_months ? `${Math.floor(latest.avg_tenure_months / 12)}y ${latest.avg_tenure_months % 12}m` : '-'}
               </span>
             </div>
           </div>
@@ -265,10 +265,10 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
                 {metrics.map(m => (
                   <tr key={m.id}>
                     <td className="font-medium text-sm">{m.period}</td>
-                    <td className="text-sm">{m.headcount ?? '—'}{m.headcount_target ? ` / ${m.headcount_target}` : ''}</td>
+                    <td className="text-sm">{m.headcount ?? '-'}{m.headcount_target ? ` / ${m.headcount_target}` : ''}</td>
                     <td><RAGBadge value={m.turnover_rate} thresholds={[10, 20]} label="" suffix="%" /></td>
                     <td><RAGBadge value={m.absence_rate} thresholds={[3, 6]} label="" suffix="%" /></td>
-                    <td className="text-sm">{m.avg_tenure_months ? `${Math.floor(m.avg_tenure_months / 12)}y ${m.avg_tenure_months % 12}m` : '—'}</td>
+                    <td className="text-sm">{m.avg_tenure_months ? `${Math.floor(m.avg_tenure_months / 12)}y ${m.avg_tenure_months % 12}m` : '-'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -60,7 +60,7 @@ export default async function AdminTicketPage({ params }: { params: { id: string
                 >
                   <div className="flex justify-between mb-2">
                     <span className="text-xs font-semibold" style={{ color: isTPO ? 'var(--purple)' : 'var(--teal)' }}>
-                      {isTPO ? 'The People Office' : 'Client'}
+                      {isTPO ? 'The People System' : 'Client'}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                       {new Date(m.created_at).toLocaleString('en-GB', { day:'numeric',month:'short',hour:'2-digit',minute:'2-digit' })}

@@ -114,11 +114,11 @@ export default async function AdminReportsPage() {
                             className="font-medium hover:underline"
                             style={{ color: 'var(--purple)' }}
                           >
-                            {(r.companies as any)?.name ?? '—'}
+                            {(r.companies as any)?.name ?? '-'}
                           </Link>
                         </td>
                         <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink)' }}>{r.title}</td>
-                        <td className="px-4 py-3" style={{ color: 'var(--ink-soft)' }}>{r.period ?? '—'}</td>
+                        <td className="px-4 py-3" style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
                         <td className="px-4 py-3" style={{ color: 'var(--ink-faint)' }}>
                           {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>

@@ -17,8 +17,8 @@ export default function TermsPage() {
         <h2>1. About these terms</h2>
         <p>
           These terms govern your use of thepeoplesystem.co.uk (the &ldquo;Website&rdquo;) and any
-          services provided by The People System (trading as The People Office Ltd),
-          registered in England &amp; Wales (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
+          services provided by The People System, registered in England &amp; Wales
+          (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
         </p>
 
         <h2>2. Use of our website</h2>

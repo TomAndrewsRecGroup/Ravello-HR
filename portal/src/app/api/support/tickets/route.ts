@@ -11,7 +11,7 @@ function sanitize(input: string): string {
     .trim();
 }
 
-// GET /api/support/tickets — list IvyLens tickets (company-scoped)
+// GET /api/support/tickets: list IvyLens tickets (company-scoped)
 export async function GET() {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,7 +38,7 @@ export async function GET() {
   return NextResponse.json({ tickets: filtered });
 }
 
-// POST /api/support/tickets — create an IvyLens ticket
+// POST /api/support/tickets: create an IvyLens ticket
 export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

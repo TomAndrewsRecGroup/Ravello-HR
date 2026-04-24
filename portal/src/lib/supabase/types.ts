@@ -1,4 +1,4 @@
-// ─── The People Office — Portal Database Types ───────────────────────────────────────────
+// ─── The People System: Portal Database Types ───────────────────────────────────────────
 // Covers migration 001 (base schema) + 002 (friction score + new tables)
 // + 003 (BD intelligence) + 013 (partner API keys)
 
@@ -36,11 +36,11 @@ export interface ExtractedRole {
 
 export interface FrictionScore {
   // Overall
-  overall_score:         number;       // 0–100, higher = more friction
+  overall_score:         number;       // 0-100, higher = more friction
   overall_level:         FrictionLevel;
-  // IvyLens dimensions (0–100)
+  // IvyLens dimensions (0-100)
   friction_score:        number;       // hiring demand / competition friction
-  clarity_score:         number;       // how clearly the JD is written (inverse — high = poor clarity)
+  clarity_score:         number;       // how clearly the JD is written (inverse: high = poor clarity)
   overload_score:        number;       // requirement overload
   required_skills_count: number;
   // IvyLens reference

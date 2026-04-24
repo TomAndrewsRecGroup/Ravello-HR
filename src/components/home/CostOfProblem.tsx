@@ -12,7 +12,7 @@ const COSTS = [
     pain: 'A single role that keeps reopening costs three times what a structured hiring process would',
   },
   {
-    stat: '£8,500–£30k',
+    stat: '£8,500-£30k',
     pain: 'The average employment tribunal claim. Most stem from contracts, policies, or processes that were never reviewed',
   },
   {

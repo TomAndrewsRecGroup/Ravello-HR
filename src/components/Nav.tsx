@@ -40,7 +40,7 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', h);
   }, []);
 
-  /* Text stays ink-toned — hero is light now */
+  /* Text stays ink-toned: hero is light now */
   const textColor = 'var(--ink-soft)';
   const textHover = 'var(--ink)';
   const logoFilter = 'none';
@@ -53,7 +53,7 @@ export default function Nav() {
           : 'bg-white/70 backdrop-blur-md'
       }`}
     >
-      {/* Top gradient line — only visible when scrolled */}
+      {/* Top gradient line: only visible when scrolled */}
       <div
         className="absolute top-0 left-0 right-0 h-[1.5px] transition-opacity duration-500"
         style={{ background: 'var(--gradient)', opacity: scrolled ? 1 : 0 }}

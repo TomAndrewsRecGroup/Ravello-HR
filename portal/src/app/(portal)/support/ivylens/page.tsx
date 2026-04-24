@@ -11,8 +11,8 @@ import {
 
 /* ─── Category config ─── */
 const CATEGORIES = [
-  { value: 'friction_lens_role',     label: 'Friction Lens — Role Analysis', Icon: BarChart2,  color: '#a855f7' },
-  { value: 'friction_lens_business', label: 'Friction Lens — Business Form', Icon: Building2,  color: '#06b6d4' },
+  { value: 'friction_lens_role',     label: 'Friction Lens: Role Analysis', Icon: BarChart2,  color: '#a855f7' },
+  { value: 'friction_lens_business', label: 'Friction Lens: Business Form', Icon: Building2,  color: '#06b6d4' },
   { value: 'score_connection',       label: 'Score Connection',               Icon: Plug,       color: 'var(--warning)' },
   { value: 'bd_leads',              label: 'BD Leads',                       Icon: Target,     color: 'var(--success)' },
   { value: 'bug_report',            label: 'Bug Report',                     Icon: Bug,        color: 'var(--danger)' },
@@ -83,7 +83,7 @@ export default function IvyLensSupportPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to create ticket');
-      setSuccess('Ticket submitted — we\'ll get back to you.');
+      setSuccess('Ticket submitted: we\'ll get back to you.');
       setSubject(''); setMessage(''); setCategory(''); setPriority('normal');
       setTab('list');
       fetchTickets();

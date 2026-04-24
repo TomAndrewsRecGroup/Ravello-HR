@@ -34,7 +34,7 @@ export function createServerSupabaseClient() {
 }
 
 /**
- * Read the session from the middleware-stamped cookie — ZERO Supabase calls.
+ * Read the session from the middleware-stamped cookie: ZERO Supabase calls.
  *
  * The middleware stamps tps_portal_session every 15 minutes with:
  * userId, companyId, role, featureFlags, uiPreferences, etc.

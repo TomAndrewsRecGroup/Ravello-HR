@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Salary Benchmarks' };
 export const revalidate = 60;
 
 function fmtK(n: number | null): string {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return `£${Math.round(n / 1000)}k`;
 }
 
@@ -149,7 +149,7 @@ export default async function BenchmarksPage() {
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Your range:</span>
                     <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
-                      {fmtK(req.salary_min)} – {fmtK(req.salary_max)}
+                      {fmtK(req.salary_min)}: {fmtK(req.salary_max)}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>(mid: {fmtK(mid)})</span>
                   </div>
@@ -159,7 +159,7 @@ export default async function BenchmarksPage() {
                       {/* Benchmark bar */}
                       <div className="relative mb-2">
                         <div className="h-3 rounded-full relative" style={{ background: 'var(--surface-alt)' }}>
-                          {/* p25–p75 zone (market range) */}
+                          {/* p25-p75 zone (market range) */}
                           {p25 && p75 && (
                             <div
                               className="absolute h-full rounded-full"
@@ -192,7 +192,7 @@ export default async function BenchmarksPage() {
                     </>
                   ) : (
                     <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                      No benchmark data available for this role type. Contact your consultant at The People Office for a market rate analysis.
+                      No benchmark data available for this role type. Contact your consultant at The People System for a market rate analysis.
                     </p>
                   )}
                 </div>

@@ -121,7 +121,7 @@ export default function AdminSidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-2">
-          {/* Dashboard — always top-level */}
+          {/* Dashboard: always top-level */}
           <Link
             href="/dashboard"
             prefetch={false}

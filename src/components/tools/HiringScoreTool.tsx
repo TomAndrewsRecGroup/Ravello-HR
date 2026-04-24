@@ -42,8 +42,8 @@ const questions = [
     q: 'How long does it typically take from final interview to offer?',
     options: [
       { label: 'Under 48 hours', score: 3 },
-      { label: '2–5 working days', score: 2 },
-      { label: '1–2 weeks', score: 1 },
+      { label: '2-5 working days', score: 2 },
+      { label: '1-2 weeks', score: 1 },
       { label: 'More than 2 weeks', score: 0 },
     ],
   },
@@ -53,8 +53,8 @@ const questions = [
     q: 'In the last year, how many accepted offers were then declined before start date?',
     options: [
       { label: 'None', score: 3 },
-      { label: '1–2 cases', score: 2 },
-      { label: '3–5 cases', score: 1 },
+      { label: '1-2 cases', score: 2 },
+      { label: '3-5 cases', score: 1 },
       { label: 'More than 5, or we don\'t track this', score: 0 },
     ],
   },
@@ -64,8 +64,8 @@ const questions = [
     q: 'What percentage of hires come through recruitment agencies?',
     options: [
       { label: 'Under 20%: mostly direct', score: 3 },
-      { label: '20–40%', score: 2 },
-      { label: '40–70%', score: 1 },
+      { label: '20-40%', score: 2 },
+      { label: '40-70%', score: 1 },
       { label: 'Over 70% or all agency-led', score: 0 },
     ],
   },

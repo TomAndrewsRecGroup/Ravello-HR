@@ -129,7 +129,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                 <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Client</p>
                 {company?.id
                   ? <Link prefetch={false} href={`/clients/${company.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>{company.name}</Link>
-                  : <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{company?.name ?? '—'}</p>
+                  : <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{company?.name ?? '-'}</p>
                 }
               </div>
             </div>
@@ -194,9 +194,9 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                               <span className="font-medium" style={{ color: 'var(--ink)' }}>{c.full_name}</span>
                             </div>
                           </td>
-                          <td className="py-3 pr-4" style={{ color: 'var(--ink-soft)' }}>{c.email ?? '—'}</td>
+                          <td className="py-3 pr-4" style={{ color: 'var(--ink-soft)' }}>{c.email ?? '-'}</td>
                           <td className="py-3 pr-4 max-w-[180px]">
-                            <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '—'}</p>
+                            <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '-'}</p>
                             {c.cv_url && (
                               <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] mt-0.5" style={{ color: 'var(--purple)' }}>
                                 CV <ExternalLink size={9} />

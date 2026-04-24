@@ -19,7 +19,7 @@ export default function Pagination({ page, totalPages, onPageChange, pageSize, t
     <div className="flex items-center justify-between pt-4">
       <div className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
         {start != null && end != null && totalItems != null
-          ? `${start}–${end} of ${totalItems}`
+          ? `${start}-${end} of ${totalItems}`
           : `Page ${page} of ${totalPages}`}
       </div>
       <div className="flex items-center gap-1">

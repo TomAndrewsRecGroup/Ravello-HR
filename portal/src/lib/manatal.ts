@@ -3,11 +3,11 @@
 // Manatal docs: https://developers.manatal.com/reference
 //
 // Key endpoints used:
-//   GET    /jobs/              — list job postings
-//   GET    /pipeline/          — pipeline stage definitions
-//   GET    /matches/           — candidate–job pairings (with stage)
-//   PATCH  /matches/:id/       — move candidate to a different stage
-//   GET    /applications/      — applications/candidates per job
+//   GET    /jobs/             : list job postings
+//   GET    /pipeline/         : pipeline stage definitions
+//   GET    /matches/          : candidate-job pairings (with stage)
+//   PATCH  /matches/:id/      : move candidate to a different stage
+//   GET    /applications/     : applications/candidates per job
 //
 // All filtered by department_id = company.manatal_client_id
 
@@ -103,7 +103,7 @@ export async function getManatalStages(): Promise<ManatalStage[]> {
   return (data?.results ?? data ?? []) as ManatalStage[];
 }
 
-/* ─── Matches (candidate–job with stage) ──────────── */
+/* ─── Matches (candidate-job with stage) ──────────── */
 
 export async function getManatalMatches(departmentId: string): Promise<ManatalMatch[]> {
   // Fetch all matches for this client in a single API call.

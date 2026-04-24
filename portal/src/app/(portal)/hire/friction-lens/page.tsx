@@ -293,10 +293,10 @@ export default function FrictionLensPage() {
               {employeeCount > 0 && (
                 <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
                   Size band: <span className="font-semibold capitalize">{employeeBand}</span>
-                  {employeeBand === 'micro' && ' — 25 fields will be skipped'}
-                  {employeeBand === 'small' && ' — 9 fields will be skipped'}
-                  {employeeBand === 'mid' && ' — 1 field will be skipped'}
-                  {employeeBand === 'large' && ' — all fields shown'}
+                  {employeeBand === 'micro' && ': 25 fields will be skipped'}
+                  {employeeBand === 'small' && ': 9 fields will be skipped'}
+                  {employeeBand === 'mid' && ': 1 field will be skipped'}
+                  {employeeBand === 'large' && ': all fields shown'}
                 </p>
               )}
               <button
@@ -309,7 +309,7 @@ export default function FrictionLensPage() {
             </div>
           )}
 
-          {/* Steps 1–N: Dimension fields */}
+          {/* Steps 1-N: Dimension fields */}
           {step > 0 && schema && dims[step - 1] && (() => {
             const dim = dims[step - 1];
             const fields = visibleFields(dim);
@@ -432,7 +432,7 @@ export default function FrictionLensPage() {
     );
   }
 
-  // ─── No Assessment — Landing ───────────────────────
+  // ─── No Assessment: Landing ───────────────────────
   return (
       <main className="portal-page flex-1 flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -446,7 +446,7 @@ export default function FrictionLensPage() {
             Get your Company Friction Score
           </h2>
           <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
-            Answer questions across 10 dimensions of your HR operations — hiring, onboarding, compensation, policies, and more.
+            Answer questions across 10 dimensions of your HR operations: hiring, onboarding, compensation, policies, and more.
             You'll get a friction score, actionable signals, and industry benchmarks.
           </p>
           <button onClick={() => setShowForm(true)} className="btn-cta flex items-center gap-2 mx-auto">

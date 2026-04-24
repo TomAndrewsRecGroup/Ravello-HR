@@ -39,7 +39,7 @@ function daysOpen(createdAt: string): number {
 }
 
 function WorkingModelPill({ model }: { model: string | null }) {
-  if (!model) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+  if (!model) return <span style={{ color: 'var(--ink-faint)' }}>-</span>;
   const cfg = MODEL_PILL[model.toLowerCase()] ?? { label: model, dot: 'var(--ink-faint)' };
   return (
     <span
@@ -180,7 +180,7 @@ export default async function HiringPage({
                         <td>
                           <WorkingModelPill model={r.working_model} />
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                         <td style={{ color: 'var(--ink-soft)' }}>
                           {daysOpen(r.created_at)}d
                         </td>
@@ -209,7 +209,7 @@ export default async function HiringPage({
           </>
         )}
 
-        {/* Live ATS Pipeline — interactive candidate stage management */}
+        {/* Live ATS Pipeline: interactive candidate stage management */}
         {hasManatal && (
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
@@ -235,7 +235,7 @@ export default async function HiringPage({
                 style={{ color: 'var(--ink-faint)' }}
               />
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Archived — Filled &amp; Cancelled ({archived.length})
+                Archived: Filled &amp; Cancelled ({archived.length})
               </span>
             </summary>
             <div className="table-wrapper">
@@ -259,7 +259,7 @@ export default async function HiringPage({
                         </Link>
                       </td>
                       <td><WorkingModelPill model={r.working_model} /></td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                       <td>
                         <span className={`badge ${stageBadge[r.stage] ?? ''}`}>{r.stage}</span>
                       </td>

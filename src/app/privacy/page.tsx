@@ -16,7 +16,7 @@ export default function PrivacyPage() {
 
         <h2>1. Who we are</h2>
         <p>
-          The People System (trading as The People Office Ltd) is an HR consultancy registered in England &amp; Wales.
+          The People System is an HR consultancy registered in England &amp; Wales.
           We are the data controller for the personal data we collect through this website and our client portals.
         </p>
 

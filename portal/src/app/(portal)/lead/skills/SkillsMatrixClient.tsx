@@ -121,7 +121,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
   const totalGaps = skills.filter(s => (s.target_level ?? 0) > (s.current_level ?? 0)).length;
   const avgCurrent = skills.length > 0
     ? (skills.reduce((sum, s) => sum + (s.current_level ?? 0), 0) / skills.length).toFixed(1)
-    : '—';
+    : '-';
 
   return (
     <div className="space-y-5">
@@ -188,15 +188,15 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
               <input type="date" className="input" value={form.last_assessed} onChange={e => set('last_assessed', e.target.value)} />
             </div>
             <div>
-              <label className="label">Current Level (0–5)</label>
+              <label className="label">Current Level (0-5)</label>
               <select className="input" value={form.current_level} onChange={e => set('current_level', e.target.value)}>
-                {LEVEL_LABELS.map((l, i) => <option key={i} value={i}>{i} – {l}</option>)}
+                {LEVEL_LABELS.map((l, i) => <option key={i} value={i}>{i}: {l}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">Target Level (0–5)</label>
+              <label className="label">Target Level (0-5)</label>
               <select className="input" value={form.target_level} onChange={e => set('target_level', e.target.value)}>
-                {LEVEL_LABELS.map((l, i) => <option key={i} value={i}>{i} – {l}</option>)}
+                {LEVEL_LABELS.map((l, i) => <option key={i} value={i}>{i}: {l}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
@@ -220,7 +220,7 @@ export default function SkillsMatrixClient({ companyId, initialSkills }: Props) 
         {LEVEL_LABELS.map((l, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <LevelDot level={i} size={14} />
-            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{i} – {l}</span>
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{i}: {l}</span>
           </div>
         ))}
       </div>

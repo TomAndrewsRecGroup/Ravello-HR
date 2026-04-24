@@ -35,7 +35,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }
 };
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -212,7 +212,7 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
                     <td className="text-sm">{ABSENCE_LABELS[r.absence_type] ?? r.absence_type}</td>
                     <td className="text-sm">{fmtDate(r.start_date)}</td>
                     <td className="text-sm">{fmtDate(r.end_date)}</td>
-                    <td className="text-sm">{r.days ?? '—'}</td>
+                    <td className="text-sm">{r.days ?? '-'}</td>
                     <td>
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: sc.bg, color: sc.color }}>
                         {sc.label}

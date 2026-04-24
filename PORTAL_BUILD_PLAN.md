@@ -1,4 +1,4 @@
-# The People Office — Portal Build Plan
+# The People System: Portal Build Plan
 
 ## Existing Routes & Status
 
@@ -6,32 +6,32 @@
 
 | Route | File | Status | Notes |
 |-------|------|--------|-------|
-| `/dashboard` | dashboard/page.tsx | Wired — rebuilt Phase 2D | Active services, friction alerts, live roles, actions |
-| `/hiring` | hiring/page.tsx | Wired — rebuilt Phase 2C | Friction badge in table, filter by level |
-| `/hiring/new` | hiring/new/page.tsx | Wired — rebuilt Phase 2C | Full intake form + Friction Lens scoring on submit |
-| `/hiring/[id]` | hiring/[id]/page.tsx | Wired — rebuilt Phase 2C | FrictionScoreCard, Re-score, candidate tab |
-| `/documents` | documents/page.tsx | Wired — rebuilt Phase 3A | Upload, categories, versioning, approval workflow |
-| `/actions` | actions/page.tsx | New — Phase 3B | System-generated actions, dismiss/complete |
-| `/roadmap` | roadmap/page.tsx | New — Phase 3B | Quarterly milestones across HIRE/LEAD/PROTECT |
+| `/dashboard` | dashboard/page.tsx | Wired: rebuilt Phase 2D | Active services, friction alerts, live roles, actions |
+| `/hiring` | hiring/page.tsx | Wired: rebuilt Phase 2C | Friction badge in table, filter by level |
+| `/hiring/new` | hiring/new/page.tsx | Wired: rebuilt Phase 2C | Full intake form + Friction Lens scoring on submit |
+| `/hiring/[id]` | hiring/[id]/page.tsx | Wired: rebuilt Phase 2C | FrictionScoreCard, Re-score, candidate tab |
+| `/documents` | documents/page.tsx | Wired: rebuilt Phase 3A | Upload, categories, versioning, approval workflow |
+| `/actions` | actions/page.tsx | New: Phase 3B | System-generated actions, dismiss/complete |
+| `/roadmap` | roadmap/page.tsx | New: Phase 3B | Quarterly milestones across HIRE/LEAD/PROTECT |
 | `/support` | support/page.tsx | Wired | Ticket list |
-| `/support/new` | support/new/page.tsx | Needs build — Phase 3D | Six service request types |
+| `/support/new` | support/new/page.tsx | Needs build: Phase 3D | Six service request types |
 | `/support/[id]` | support/[id]/page.tsx | Needs build | Ticket detail + reply |
-| `/settings` | settings/page.tsx | Wired — rebuilt Phase 3D | Company profile, team invites, notification prefs |
+| `/settings` | settings/page.tsx | Wired: rebuilt Phase 3D | Company profile, team invites, notification prefs |
 | `/reports` | reports/page.tsx | Wired | Report list, download |
 
 ### Admin (`/admin/src/app/(admin)/`)
 
 | Route | File | Status | Notes |
 |-------|------|--------|-------|
-| `/dashboard` | dashboard/page.tsx | Wired — enhanced Phase 4A | Cross-client stats, service requests, friction alerts |
+| `/dashboard` | dashboard/page.tsx | Wired: enhanced Phase 4A | Cross-client stats, service requests, friction alerts |
 | `/clients` | clients/page.tsx | Wired | Client table |
 | `/clients/new` | clients/new/ | Needs build | Create company + send invite |
-| `/clients/[id]` | clients/[id]/page.tsx | Wired — enhanced Phase 4A | 6 tabs including roadmap, services, actions |
-| `/hiring` | hiring/page.tsx | New — Phase 4C | All roles across all clients |
-| `/roadmap` | roadmap/page.tsx | New — Phase 4C | Admin roadmap editor |
-| `/bd-intelligence` | bd-intelligence/page.tsx | New — Phase 4B | IvyLens BD data |
+| `/clients/[id]` | clients/[id]/page.tsx | Wired: enhanced Phase 4A | 6 tabs including roadmap, services, actions |
+| `/hiring` | hiring/page.tsx | New: Phase 4C | All roles across all clients |
+| `/roadmap` | roadmap/page.tsx | New: Phase 4C | Admin roadmap editor |
+| `/bd-intelligence` | bd-intelligence/page.tsx | New: Phase 4B | IvyLens BD data |
 | `/support` | support/page.tsx | Wired | Ticket list |
-| `/requests` | requests/page.tsx | New — Phase 4A | Service request inbox |
+| `/requests` | requests/page.tsx | New: Phase 4A | Service request inbox |
 
 ## Supabase Table → Portal Page Mapping
 
@@ -47,8 +47,8 @@
 | actions | /dashboard, /actions | /clients/[id] Tab 5 |
 | milestones | /roadmap | /roadmap, /clients/[id] Tab 4 |
 | service_requests | /support/new | /requests |
-| bd_companies | — (admin only) | /bd-intelligence |
-| bd_scanned_roles | — (admin only) | /bd-intelligence |
+| bd_companies |: (admin only) | /bd-intelligence |
+| bd_scanned_roles |: (admin only) | /bd-intelligence |
 
 ## Build Order (Priority)
 
@@ -75,6 +75,6 @@
 ## Friction Lens Integration
 
 - Client: `portal/src/lib/frictionLens.ts` → `scoreFriction(RoleInput): Promise<FrictionScore>`
-- Card: `portal/src/components/FrictionScoreCard.tsx` — full breakdown
-- Badge: `portal/src/components/FrictionAlert.tsx` — compact inline badge with tooltip
+- Card: `portal/src/components/FrictionScoreCard.tsx`: full breakdown
+- Badge: `portal/src/components/FrictionAlert.tsx`: compact inline badge with tooltip
 - Stored on `requisitions` table: `friction_score JSONB`, `friction_level TEXT`, `friction_recommendations JSONB`, `friction_scored_at TIMESTAMPTZ`

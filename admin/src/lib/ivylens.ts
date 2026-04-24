@@ -61,19 +61,19 @@ export async function ivylensRequest<T = any>(
       lastStatus = res.status;
       lastError  = (await res.text().catch(() => '')) || `HTTP ${res.status}`;
 
-      // 429 — signal rate-limited so caller can use stale cache
+      // 429: signal rate-limited so caller can use stale cache
       if (res.status === 429) {
         recordCall(path, method, 429, Date.now() - started, true, lastError);
         return { data: null, error: lastError, status: 429, rate_limited: true };
       }
 
-      // 5xx — retry with exponential backoff (2s, 4s, 8s)
+      // 5xx: retry with exponential backoff (2s, 4s, 8s)
       if (res.status >= 500 && attempt < retries) {
         await sleep(2_000 * Math.pow(2, attempt));
         continue;
       }
 
-      // 4xx other than 429 — no retry
+      // 4xx other than 429: no retry
       recordCall(path, method, res.status, Date.now() - started, false, lastError);
       return { data: null, error: lastError, status: res.status };
     } catch (err: any) {
@@ -104,7 +104,7 @@ function recordCall(
   if (!sb) return;
   sb.from('ivylens_api_calls')
     .insert({ endpoint, method, status, duration_ms, rate_limited, error })
-    .then(() => {}, () => {}); // swallow errors — telemetry must never break the caller
+    .then(() => {}, () => {}); // swallow errors: telemetry must never break the caller
 }
 
 // ─── Cache helpers ──────────────────────────────────────────────────────────

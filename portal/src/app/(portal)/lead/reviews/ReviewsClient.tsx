@@ -34,7 +34,7 @@ const STATUSES = ['pending', 'in_progress', 'completed', 'cancelled'];
 const RATINGS = ['Exceeds Expectations', 'Meets Expectations', 'Below Expectations', 'Outstanding', 'Unsatisfactory'];
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -211,9 +211,9 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
                     </td>
                     <td className="text-sm">{r.review_period}</td>
                     <td className="text-sm capitalize">{r.review_type.replace(/_/g, ' ')}</td>
-                    <td className="text-sm">{r.reviewer_name ?? '—'}</td>
+                    <td className="text-sm">{r.reviewer_name ?? '-'}</td>
                     <td className="text-sm">{fmtDate(r.due_date)}</td>
-                    <td className="text-sm">{r.overall_rating ?? '—'}</td>
+                    <td className="text-sm">{r.overall_rating ?? '-'}</td>
                     <td>
                       <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: sc.bg, color: sc.color }}>
                         {sc.label}

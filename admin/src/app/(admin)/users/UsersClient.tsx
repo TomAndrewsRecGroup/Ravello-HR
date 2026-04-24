@@ -96,7 +96,7 @@ export default function UsersClient({ users }: { users: any[] }) {
           <tbody>
             {filtered.map((u: any) => (
               <tr key={u.id}>
-                <td className="font-medium">{u.full_name ?? '—'}</td>
+                <td className="font-medium">{u.full_name ?? '-'}</td>
                 <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                 <td>
                   <RoleCell userId={u.id} initialRole={u.role ?? 'client_viewer'} />
@@ -111,7 +111,7 @@ export default function UsersClient({ users }: { users: any[] }) {
                       {u.companies.name}
                     </Link>
                   ) : (
-                    <span style={{ color: 'var(--ink-faint)' }}>—</span>
+                    <span style={{ color: 'var(--ink-faint)' }}>-</span>
                   )}
                 </td>
                 <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>

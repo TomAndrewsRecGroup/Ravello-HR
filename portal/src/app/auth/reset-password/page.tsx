@@ -28,14 +28,14 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFFFFF' }}>
       <div className="w-full max-w-[380px]">
         <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="The People Office" width={120} height={40} className="h-9 w-auto brightness-110" />
+          <Image src={LOGO} alt="The People System" width={120} height={40} className="h-9 w-auto brightness-110" />
         </div>
         <div className="rounded-[20px] p-8" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
           <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Reset password</h1>
           <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>We'll email you a reset link</p>
           {sent ? (
             <p className="text-sm p-4 rounded-[10px]" style={{ background: 'rgba(52,211,153,0.1)', color: '#059669' }}>
-              Check your inbox — a reset link is on its way.
+              Check your inbox: a reset link is on its way.
             </p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

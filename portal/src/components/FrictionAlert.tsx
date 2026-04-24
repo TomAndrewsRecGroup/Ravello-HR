@@ -12,7 +12,7 @@ const LEVEL_STYLES: Record<FrictionLevel, { dot: string; bg: string; text: strin
   Medium:   { dot: 'var(--amber)', bg: 'rgba(217,119,6,0.10)',   text: '#92400E', label: 'Medium' },
   High:     { dot: 'var(--danger)', bg: 'rgba(220,38,38,0.10)',   text: 'var(--rose)', label: 'High' },
   Critical: { dot: '#7F1D1D', bg: 'rgba(127,29,29,0.12)',   text: '#7F1D1D', label: 'Critical' },
-  Unknown:  { dot: '#94A3B8', bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', label: '—' },
+  Unknown:  { dot: '#94A3B8', bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', label: '-' },
 };
 
 export default function FrictionAlert({ level, topRec, size = 'sm' }: Props) {

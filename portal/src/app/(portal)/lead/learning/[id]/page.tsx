@@ -45,7 +45,7 @@ export default async function LearningDetailPage({ params }: { params: { id: str
 
   const hasAccess = purchase && (!purchase.access_expires_at || new Date(purchase.access_expires_at) > new Date());
 
-  // "You May Like" — tag similarity, top 5
+  // "You May Like": tag similarity, top 5
   const related = (allContent ?? [])
     .map(c => ({ c, score: tagScore(content.tags, c.tags) + (c.category === content.category ? 1 : 0) }))
     .filter(({ score }) => score > 0)
@@ -53,7 +53,7 @@ export default async function LearningDetailPage({ params }: { params: { id: str
     .slice(0, 5)
     .map(({ c }) => c);
 
-  // "More From This Coach" — same creator, top 4
+  // "More From This Coach": same creator, top 4
   const byCreator = content.creator_name
     ? (allContent ?? [])
         .filter(c => c.creator_name === content.creator_name)

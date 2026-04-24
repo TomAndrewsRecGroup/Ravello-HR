@@ -60,7 +60,7 @@ export default async function AdminComplianceDashboard() {
       ...ci,
       daysUntil,
       rag: ragFromDays(daysUntil, ci.status),
-      companyName: ci.companies?.name ?? '—',
+      companyName: ci.companies?.name ?? '-',
       companyId:   ci.companies?.id ?? '',
     };
   });
@@ -74,7 +74,7 @@ export default async function AdminComplianceDashboard() {
       ...d,
       daysUntil,
       rag: d.status === 'expired' ? 'red' : docStatus,
-      companyName: d.companies?.name ?? '—',
+      companyName: d.companies?.name ?? '-',
       companyId:   d.companies?.id ?? '',
     };
   });

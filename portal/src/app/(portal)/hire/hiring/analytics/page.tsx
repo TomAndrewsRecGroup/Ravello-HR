@@ -270,7 +270,7 @@ export default async function HiringAnalyticsPage() {
                 {frictionCounts.High + frictionCounts.Critical} role{(frictionCounts.High + frictionCounts.Critical) > 1 ? 's' : ''} with High or Critical friction
               </p>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                These roles are at risk of taking significantly longer to fill. Your consultant at The People Office will have recommendations — check the individual role pages for details.
+                These roles are at risk of taking significantly longer to fill. Your consultant at The People System will have recommendations: check the individual role pages for details.
               </p>
               <Link prefetch={false} href="/hire/hiring" className="btn-secondary btn-sm mt-3 inline-flex">
                 View Roles →

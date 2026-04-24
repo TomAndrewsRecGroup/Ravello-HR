@@ -224,9 +224,9 @@ export default function LearningAdminClient({ initialContent }: Props) {
                       </div>
                     </div>
                   </td>
-                  <td className="text-sm">{c.category ?? '—'}</td>
+                  <td className="text-sm">{c.category ?? '-'}</td>
                   <td className="text-sm uppercase">{c.content_type}</td>
-                  <td className="text-sm">{c.duration_mins ? `${c.duration_mins}m` : '—'}</td>
+                  <td className="text-sm">{c.duration_mins ? `${c.duration_mins}m` : '-'}</td>
                   <td className="text-sm font-semibold">{fmtPrice(c.price_pence)}</td>
                   <td className="text-sm">{c.view_count}</td>
                   <td>

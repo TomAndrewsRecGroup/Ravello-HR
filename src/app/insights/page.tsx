@@ -25,11 +25,11 @@ const PILLARS = [
     features: [
       'Live requisitions and candidate pipeline',
       'Friction Lens score on every role before launch',
-      'Salary benchmarks (P25 / P50 / P75 / P90)',
+      'Salary benchmarks across the market range',
       'Vacancy cost calculator',
       'Cost modeller for offers and scenarios',
       'Hiring metrics, cycle times and feedback rates',
-      'Internal-role tracking vs. TPO benchmarks',
+      'Internal-role tracking vs. The People System benchmarks',
     ],
   },
   {
@@ -38,7 +38,7 @@ const PILLARS = [
     icon: BookOpen,
     color: 'var(--brand-pink)',
     bg: 'rgba(234,61,196,0.08)',
-    desc: 'Documents, employee records, reviews, training, skills and the org chart — versioned, audit-ready, and in one place.',
+    desc: 'Documents, employee records, reviews, training, skills and the org chart: versioned, audit-ready, and in one place.',
     features: [
       'Documents and policies, versioned by category',
       'Employee records with leave and demographics',
@@ -58,13 +58,13 @@ const PILLARS = [
     icon: Users,
     color: 'var(--brand-blue)',
     bg: 'rgba(59,111,255,0.08)',
-    desc: 'Compliance, absence, employee-doc expiry, actions and offboarding — tracked against due dates with everything overdue flagged.',
+    desc: 'Compliance, absence, employee-doc expiry, actions and offboarding: tracked against due dates with everything overdue flagged.',
     features: [
       'Compliance tracker with RAG status and due dates',
       'Absence management with approval workflows',
       'Employee document expiry alerts (30-day window)',
       'HR dashboard: records, reviews, training at a glance',
-      'Actions from The People Office, prioritised',
+      'Actions from The People System, prioritised',
       'Offboarding workflows and knowledge transfer',
       'Live CSV exports: roles, candidates, compliance, actions',
     ],
@@ -73,11 +73,11 @@ const PILLARS = [
 
 const INSIGHT_TOOLS = [
   { icon: Target,        title: 'Friction Lens Role Scores', desc: 'Every role scored on five dimensions against live market data before it goes live.' },
-  { icon: Scale,         title: 'Salary Benchmarks',         desc: 'P25 to P90 compensation benchmarks by role type, location and seniority.' },
+  { icon: Scale,         title: 'Salary Benchmarks',         desc: 'Market compensation benchmarks across the full range by role type, location and seniority.' },
   { icon: PoundSterling, title: 'Vacancy Cost',              desc: 'Quantify the true cost of an open role: salary, productivity loss, fees, time.' },
   { icon: Calculator,    title: 'Hiring Cost Modeller',      desc: 'Model offers, counter-offers and recruitment scenarios before you commit.' },
   { icon: BarChart3,     title: 'Hiring Metrics',            desc: 'Time-to-fill, pipeline conversion, feedback rates, friction distribution.' },
-  { icon: FileText,      title: 'HR Reports',                desc: 'Headcount, leave, absence and demographics — exportable for board reporting.' },
+  { icon: FileText,      title: 'HR Reports',                desc: 'Headcount, leave, absence and demographics: exportable for board reporting.' },
   { icon: ShieldCheck,   title: 'Compliance Tracker',        desc: 'Every compliance item tracked against due dates, with overdue items auto-flagged.' },
   { icon: TrendingUp,    title: 'Company People Score',      desc: 'Your entire people function benchmarked against your sector and size.' },
 ];
@@ -161,7 +161,7 @@ export default function InsightsPage() {
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Your portal mirrors the way we structure your people function. Three
-              working modules, each with its own records, workflows and reporting —
+              working modules, each with its own records, workflows and reporting,
               plus scoring and benchmarks cutting across all of them.
             </p>
           </div>
@@ -212,13 +212,13 @@ export default function InsightsPage() {
               Running across everything
             </span>
             <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-              <strong style={{ color: 'var(--ink)' }}>Dashboard</strong> — live snapshot of roles, actions, compliance and score
+              <strong style={{ color: 'var(--ink)' }}>Dashboard</strong>: live snapshot of roles, actions, compliance and score
             </span>
             <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-              <strong style={{ color: 'var(--ink)' }}>Calendar</strong> — company events, closures and leave
+              <strong style={{ color: 'var(--ink)' }}>Calendar</strong>: company events, closures and leave
             </span>
             <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-              <strong style={{ color: 'var(--ink)' }}>Support</strong> — raise HR queries direct to us
+              <strong style={{ color: 'var(--ink)' }}>Support</strong>: raise HR queries direct to us
             </span>
           </div>
         </div>
@@ -362,7 +362,7 @@ export default function InsightsPage() {
               <span className="text-gradient">into decisions</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Scoring, benchmarks, costing and reporting — the analytical layer that
+              Scoring, benchmarks, costing and reporting: the analytical layer that
               sits over every record in your portal and tells you what to do next.
               Friction Lens leads the way, with a stack of commercial tools
               alongside it.
@@ -603,7 +603,7 @@ export default function InsightsPage() {
         { q: 'How is the People Score calculated?', a: 'We assess your current state across four pillars: hiring, compliance, people development, and employee relations. Each pillar is weighted and scored based on real data from your portal, then compared against industry benchmarks.' },
         { q: 'What actually lives in the portal?', a: 'Three working modules. HIRE holds your requisitions, candidate pipeline, friction scores, benchmarks, vacancy cost and hiring metrics. LEAD holds your documents, employee records, reviews, training, skills, org chart, policy acknowledgements and HR reports. PROTECT holds compliance, absence, employee-doc expiry, actions, offboarding and exports. On top of that: a live dashboard, a shared calendar, and a direct support channel to us.' },
         { q: 'Do I need every module, or can I start with one?', a: 'You can start with one. Each module is feature-flagged and scoped to your engagement. Most clients begin with HIRE or PROTECT, then layer on LEAD as the people function matures.' },
-        { q: 'What commercial tools sit inside the portal?', a: 'Salary benchmarks (P25 to P90), a vacancy cost calculator, a hiring cost modeller, full hiring metrics, and exportable HR reports covering headcount, leave, absence and demographics. All live, all tied to the records in your portal.' },
+        { q: 'What commercial tools sit inside the portal?', a: 'Salary benchmarks across the market range, a vacancy cost calculator, a hiring cost modeller, full hiring metrics, and exportable HR reports covering headcount, leave, absence and demographics. All live, all tied to the records in your portal.' },
         { q: 'Can I get my People Score without a full engagement?', a: 'Book a free call and we will give you an indicative score based on a short assessment. The full tracked score sits in the portal as part of any engagement.' },
         { q: 'How quickly does the score improve?', a: 'Most clients see a 15 to 25 point improvement within the first 3 months. Compliance and documentation improvements show the fastest gains. Hiring efficiency improvements typically follow in months 3 to 6.' },
       ]} />

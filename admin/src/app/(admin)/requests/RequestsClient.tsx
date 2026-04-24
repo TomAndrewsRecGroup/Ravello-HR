@@ -22,7 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function humanType(type: string): string {
-  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '—';
+  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-';
 }
 
 function urgencyBadge(urgency: string): React.CSSProperties {
@@ -49,7 +49,7 @@ function statusLabel(status: string): string {
   switch (status?.toLowerCase()) {
     case 'in_progress': return 'In Progress';
     case 'complete':    return 'Complete';
-    default:            return status ? status.charAt(0).toUpperCase() + status.slice(1) : '—';
+    default:            return status ? status.charAt(0).toUpperCase() + status.slice(1) : '-';
   }
 }
 
@@ -177,14 +177,14 @@ export default function RequestsClient({ requests }: Props) {
                           : <ChevronRight size={14} style={{ color: 'var(--ink-faint)' }} />
                         }
                       </td>
-                      <td className="font-medium">{r.companies?.name ?? '—'}</td>
+                      <td className="font-medium">{r.companies?.name ?? '-'}</td>
                       <td style={{ color: 'var(--ink-soft)' }}>{humanType(r.type ?? r.request_type)}</td>
                       <td className="max-w-[220px]">
-                        <p className="truncate" style={{ color: 'var(--ink)' }}>{r.subject ?? '—'}</p>
+                        <p className="truncate" style={{ color: 'var(--ink)' }}>{r.subject ?? '-'}</p>
                       </td>
                       <td>
                         <span className="badge" style={urgencyBadge(r.urgency)}>
-                          {r.urgency ? r.urgency.charAt(0).toUpperCase() + r.urgency.slice(1) : '—'}
+                          {r.urgency ? r.urgency.charAt(0).toUpperCase() + r.urgency.slice(1) : '-'}
                         </span>
                       </td>
                       <td>

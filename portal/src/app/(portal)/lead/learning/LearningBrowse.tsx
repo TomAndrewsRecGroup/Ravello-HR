@@ -282,7 +282,7 @@ function HeroBanner({ item, purchase }: { item: Content; purchase?: Purchase }) 
                 style={{ background: typeColor, color: '#fff' }}
               >
                 <Play size={14} fill="white" />
-                {purchased ? 'Continue' : item.price_pence === 0 ? 'Get Free Access' : `Buy — ${fmtPrice(item.price_pence)}`}
+                {purchased ? 'Continue' : item.price_pence === 0 ? 'Get Free Access' : `Buy: ${fmtPrice(item.price_pence)}`}
               </div>
               {purchased && days !== null && (
                 <span className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -352,7 +352,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
 
   const purchased = useMemo(() => content.filter(c => purchasedIds.has(c.id)), [content, purchasedIds]);
 
-  // "You May Like" — tag similarity against purchased content
+  // "You May Like": tag similarity against purchased content
   const youMayLike = useMemo(() => {
     if (purchasedIds.size === 0) return [];
     const purchasedContent = content.filter(c => purchasedIds.has(c.id));
@@ -365,7 +365,7 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
       .map(({ c }) => c);
   }, [content, purchasedIds]);
 
-  // "More From This Coach" — group by creator
+  // "More From This Coach": group by creator
   const byCreator = useMemo(() => {
     const map: Record<string, Content[]> = {};
     for (const c of content) {

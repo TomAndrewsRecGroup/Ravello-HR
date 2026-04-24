@@ -21,7 +21,7 @@ const COUNT_KEY: Record<string, string> = {
   '/hire':    'candidates',
 };
 
-/* All possible nav items — order/visibility controlled by user prefs */
+/* All possible nav items: order/visibility controlled by user prefs */
 const ALL_NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, flag: null,      fixed: true },
   { href: '/hire',      label: 'HIRE',      icon: Briefcase,       flag: 'hiring',  fixed: false },

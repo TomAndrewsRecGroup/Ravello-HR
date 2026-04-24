@@ -7,7 +7,7 @@ import {
 } from '@/lib/manatal';
 
 // GET /api/manatal/matches
-// Returns all candidate–job matches from Manatal for the authenticated client,
+// Returns all candidate-job matches from Manatal for the authenticated client,
 // grouped by job, plus available pipeline stages.
 
 export const dynamic = 'force-dynamic';

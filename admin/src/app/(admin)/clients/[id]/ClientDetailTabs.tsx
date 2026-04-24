@@ -46,7 +46,7 @@ function daysOpen(createdAt: string): number {
 }
 
 function fmtBytes(bytes: number | null): string {
-  if (!bytes) return '—';
+  if (!bytes) return '-';
   if (bytes < 1024)       return `${bytes} B`;
   if (bytes < 1048576)    return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1048576).toFixed(1)} MB`;
@@ -540,7 +540,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                 ].map(([l, v]) => (
                   <div key={l as string}>
                     <dt className="text-xs" style={{ color: 'var(--ink-faint)' }}>{l}</dt>
-                    <dd className="text-sm font-medium mt-0.5" style={{ color: v ? 'var(--ink)' : 'var(--ink-faint)' }}>{v || '—'}</dd>
+                    <dd className="text-sm font-medium mt-0.5" style={{ color: v ? 'var(--ink)' : 'var(--ink-faint)' }}>{v || '-'}</dd>
                   </div>
                 ))}
               </dl>
@@ -564,7 +564,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                     <tbody>
                       {users.map((u: any) => (
                         <tr key={u.id}>
-                          <td className="font-medium">{u.full_name ?? '—'}</td>
+                          <td className="font-medium">{u.full_name ?? '-'}</td>
                           <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                           <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{u.role?.replace(/_/g,' ')}</span></td>
                           <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
@@ -720,7 +720,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                 return (
                   <div key={r.id}>
                     <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
-                      {r.title} — {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
+                      {r.title}: {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
                     </p>
                     <div className="card overflow-hidden">
                       <table className="w-full text-sm">
@@ -746,14 +746,14 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                                 </div>
                               </td>
                               <td className="px-4 py-3 max-w-[200px]">
-                                <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '—'}</p>
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '-'}</p>
                               </td>
                               <td className="px-4 py-3">
                                 {c.cv_url ? (
                                   <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1 w-fit">
                                     <ExternalLink size={11} /> CV
                                   </a>
-                                ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                                ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                               </td>
                               <td className="px-4 py-3">
                                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
@@ -761,7 +761,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                                 </span>
                               </td>
                               <td className="px-4 py-3 max-w-[160px]">
-                                <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{c.client_feedback ?? '—'}</p>
+                                <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{c.client_feedback ?? '-'}</p>
                               </td>
                               <td className="px-4 py-3">
                                 <button
@@ -809,9 +809,9 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                     const isApproved = approvedDocs[d.id] || !!d.approved_at;
                     return (
                       <tr key={d.id}>
-                        <td className="font-medium">{d.name ?? d.file_name ?? '—'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{d.category ?? '—'}</td>
-                        <td style={{ color: 'var(--ink-faint)' }}>{d.version ?? '—'}</td>
+                        <td className="font-medium">{d.name ?? d.file_name ?? '-'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{d.category ?? '-'}</td>
+                        <td style={{ color: 'var(--ink-faint)' }}>{d.version ?? '-'}</td>
                         <td style={{ color: 'var(--ink-faint)' }}>{fmtBytes(d.file_size)}</td>
                         <td style={{ color: 'var(--ink-faint)' }}>{new Date(d.created_at).toLocaleDateString('en-GB')}</td>
                         <td>
@@ -908,7 +908,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
             </div>
           )}
 
-          {/* Quarterly view — three columns per quarter */}
+          {/* Quarterly view: three columns per quarter */}
           {milestones.length === 0 ? (
             <div className="card empty-state">No milestones yet. Add the first one above.</div>
           ) : (
@@ -1190,13 +1190,13 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{n.skill_gap}</p>
                           {n.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{n.notes}</p>}
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{[n.employee_name, n.department].filter(Boolean).join(' · ') || '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{[n.employee_name, n.department].filter(Boolean).join(' · ') || '-'}</td>
                         <td>
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={PRIORITY_STYLE[n.priority] ?? PRIORITY_STYLE.medium}>
                             {n.priority}
                           </span>
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{n.target_date ? new Date(n.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{n.target_date ? new Date(n.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
                         <td>
                           <select
                             className="text-xs rounded-[6px] px-2 py-1 border"
@@ -1249,8 +1249,8 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }}>{r.review_period}</td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{r.review_type?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.overall_rating ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.overall_rating ?? '-'}</td>
                         <td>
                           <select
                             className="text-xs rounded-[6px] px-2 py-1 border"
@@ -1307,9 +1307,9 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           {a.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{a.department}</p>}
                         </td>
                         <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{a.absence_type?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.start_date ? new Date(a.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.end_date ? new Date(a.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.days ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.start_date ? new Date(a.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.end_date ? new Date(a.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{a.days ?? '-'}</td>
                         <td>
                           {a.status === 'pending' ? (
                             <div className="flex gap-1.5">
@@ -1393,7 +1393,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           </td>
                           <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
                           <td style={{ color: isExpired ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
-                            {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                             {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
                           </td>
                           <td>
@@ -1500,14 +1500,14 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                   {services.map((s: any) => (
                     <tr key={s.id}>
                       <td className="font-medium">{s.service_name}</td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.service_tier ?? '—'}</td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.start_date ? new Date(s.start_date).toLocaleDateString('en-GB') : '—'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.service_tier ?? '-'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.start_date ? new Date(s.start_date).toLocaleDateString('en-GB') : '-'}</td>
                       <td>
                         <span className={`badge ${s.status === 'Active' ? 'badge-active' : s.status === 'Paused' ? 'badge-high' : 'badge-inactive'}`}>
                           {s.status}
                         </span>
                       </td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.monthly_fee != null ? `£${Number(s.monthly_fee).toLocaleString()}` : '—'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{s.monthly_fee != null ? `£${Number(s.monthly_fee).toLocaleString()}` : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1607,7 +1607,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
           <p className="text-[10px] mt-1 uppercase tracking-wider font-semibold" style={{ color: 'var(--ink-faint)' }}>Items Resolved</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-sm font-medium capitalize" style={{ color: 'var(--ink)' }}>{assessment.confidence ?? '—'}</p>
+          <p className="text-sm font-medium capitalize" style={{ color: 'var(--ink)' }}>{assessment.confidence ?? '-'}</p>
           <p className="text-[10px] mt-1 uppercase tracking-wider font-semibold" style={{ color: 'var(--ink-faint)' }}>Confidence</p>
         </div>
       </div>
@@ -1645,7 +1645,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
       {/* Checklist */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: 'var(--ink-faint)' }}>
-          Friction Checklist — tick items as you resolve them
+          Friction Checklist: tick items as you resolve them
         </p>
         {Object.entries(itemsByDim).map(([dim, dimItems]) => (
           <div key={dim} className="mb-4">
@@ -1699,7 +1699,7 @@ function FrictionTab({ company, assessment, items: initItems, users, documents }
             <tbody>
               {users.map((u: any) => (
                 <tr key={u.id}>
-                  <td className="font-medium">{u.full_name ?? '—'}</td>
+                  <td className="font-medium">{u.full_name ?? '-'}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                   <td><span className="badge">{u.role}</span></td>
                 </tr>

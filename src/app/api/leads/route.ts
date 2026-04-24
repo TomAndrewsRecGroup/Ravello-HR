@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
       if (dbErr) {
         console.error('[leads] DB insert failed:', dbErr.message);
-        // Don't fail the request — still count as captured
+        // Don't fail the request: still count as captured
       }
     }
 

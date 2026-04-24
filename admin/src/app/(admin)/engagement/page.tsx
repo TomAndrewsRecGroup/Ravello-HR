@@ -131,7 +131,7 @@ export default async function EngagementPage() {
                 <th>Active Roles</th>
                 <th>Open Tickets</th>
                 <th>Users</th>
-                <th>Last TPO Note</th>
+                <th>Last The People System Note</th>
               </tr>
             </thead>
             <tbody>

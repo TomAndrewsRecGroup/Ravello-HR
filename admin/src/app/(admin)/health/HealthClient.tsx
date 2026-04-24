@@ -97,7 +97,7 @@ export default function HealthClient({ ivylens, clients, rag }: Props) {
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>p50 latency</p>
             </div>
             <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>
-              {ivylens.p50_latency_ms !== null ? `${ivylens.p50_latency_ms}ms` : '—'}
+              {ivylens.p50_latency_ms !== null ? `${ivylens.p50_latency_ms}ms` : '-'}
             </p>
             <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
               last call: {relative(ivylens.last_call_at)}
@@ -179,13 +179,13 @@ export default function HealthClient({ ivylens, clients, rag }: Props) {
                       </span>
                     </td>
                     <td style={{ color: c.overdue_comp > 0 ? 'var(--red)' : 'var(--ink-faint)' }}>
-                      {c.overdue_comp || '—'}
+                      {c.overdue_comp || '-'}
                     </td>
                     <td style={{ color: c.open_tickets > 0 ? 'var(--gold)' : 'var(--ink-faint)' }}>
-                      {c.open_tickets || '—'}
+                      {c.open_tickets || '-'}
                     </td>
                     <td style={{ color: c.stalled_reqs > 0 ? 'var(--gold)' : 'var(--ink-faint)' }}>
-                      {c.stalled_reqs || '—'}
+                      {c.stalled_reqs || '-'}
                     </td>
                     <td>
                       <span className="badge text-[10px] font-semibold" style={{ background: bandStyle.bg, color: bandStyle.color }}>

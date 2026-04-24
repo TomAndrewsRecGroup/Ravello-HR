@@ -30,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function humanType(type: string): string {
-  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '—';
+  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-';
 }
 
 export default async function SupportPage() {
@@ -82,7 +82,7 @@ export default async function SupportPage() {
               <LifeBuoy size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No support tickets</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Raise a query and The People Office will respond within one business day.
+                Raise a query and The People System will respond within one business day.
               </p>
               <Link prefetch={false} href="/support/new" className="btn-cta mt-2">Raise a Query</Link>
             </div>
@@ -133,7 +133,7 @@ export default async function SupportPage() {
                             <tr key={t.id}>
                               <td style={{ color: 'var(--ink-soft)' }}>{t.subject}</td>
                               <td><span className={`badge ${statusBadge[t.status]}`}>{t.status}</span></td>
-                              <td style={{ color: 'var(--ink-faint)' }}>{t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '—'}</td>
+                              <td style={{ color: 'var(--ink-faint)' }}>{t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '-'}</td>
                               <td><Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
                             </tr>
                           ))}
@@ -198,7 +198,7 @@ export default async function SupportPage() {
                               style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.2)' }}
                             >
                               <p className="text-xs font-semibold mb-1" style={{ color: 'var(--emerald)' }}>
-                                Response from The People Office
+                                Response from The People System
                               </p>
                               <p className="text-sm" style={{ color: 'var(--ink)' }}>{r.response_notes}</p>
                             </div>
@@ -223,11 +223,11 @@ export default async function SupportPage() {
                           {srDone.map((r: any) => (
                             <tr key={r.id}>
                               <td style={{ color: 'var(--ink-soft)' }}>{humanType(r.type ?? r.request_type)}</td>
-                              <td style={{ color: 'var(--ink-soft)' }}>{r.subject ?? '—'}</td>
+                              <td style={{ color: 'var(--ink-soft)' }}>{r.subject ?? '-'}</td>
                               <td className="max-w-[280px]">
                                 {r.response_notes
                                   ? <p className="truncate text-sm" style={{ color: 'var(--ink)' }}>{r.response_notes}</p>
-                                  : <span style={{ color: 'var(--ink-faint)' }}>—</span>
+                                  : <span style={{ color: 'var(--ink-faint)' }}>-</span>
                                 }
                               </td>
                               <td style={{ color: 'var(--ink-faint)' }}>

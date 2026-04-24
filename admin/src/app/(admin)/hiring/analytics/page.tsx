@@ -235,7 +235,7 @@ export default async function AdminHiringAnalyticsPage() {
                             <AlertTriangle size={12} /> {c.highFriction}
                           </span>
                         ) : (
-                          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>—</span>
+                          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>-</span>
                         )}
                       </td>
                     </tr>

@@ -5,7 +5,7 @@
 // Response: { role_id, title, company, friction_score, clarity_score,
 //             overload_score, required_skills, recommendations }
 //
-// All scores 0.0–1.0. Color: red (>0.65), amber (0.35–0.65), green (<0.35)
+// All scores 0.0-1.0. Color: red (>0.65), amber (0.35-0.65), green (<0.35)
 // If IVYLENS_API_URL is not set, falls back to local heuristic.
 // Set in Vercel: IVYLENS_API_URL=https://api.ivylens.app (server-side only)
 
@@ -19,7 +19,7 @@ export interface RoleInput {
 
 export type { FrictionScore, FrictionLevel, ExtractedRole };
 
-// Server-side only — not NEXT_PUBLIC_ so never exposed to browser
+// Server-side only: not NEXT_PUBLIC_ so never exposed to browser
 const API_URL = process.env.IVYLENS_API_URL ?? '';
 const API_KEY = process.env.IVYLENS_API_KEY ?? '';
 
@@ -31,15 +31,15 @@ function levelFromScore(score: number): FrictionLevel {
 }
 
 function timeToFill(score: number): string {
-  if (score < 35) return '2–4 weeks';
-  if (score < 65) return '4–7 weeks';
-  if (score < 85) return '7–12 weeks';
+  if (score < 35) return '2-4 weeks';
+  if (score < 65) return '4-7 weeks';
+  if (score < 85) return '7-12 weeks';
   return '12+ weeks';
 }
 
 // ─── Map IvyLens response → our FrictionScore ────────────────────────────────
-// IvyLens returns scores as 0.0–1.0 floats. We multiply by 100 for display.
-// Thresholds per spec: >0.65 = high (red), 0.35–0.65 = moderate (amber), <0.35 = low (green)
+// IvyLens returns scores as 0.0-1.0 floats. We multiply by 100 for display.
+// Thresholds per spec: >0.65 = high (red), 0.35-0.65 = moderate (amber), <0.35 = low (green)
 function mapIvyLensResponse(data: any): FrictionScore {
   const frictionScore = Math.round((data.friction_score ?? 0) * 100);
   const clarityScore  = Math.round((data.clarity_score ?? 0) * 100);
@@ -83,7 +83,7 @@ function mapIvyLensResponse(data: any): FrictionScore {
 function generateRecommendations(friction: number, overload: number, clarity: number, skills: number): string[] {
   const recs: string[] = [];
   if (friction >= 65) recs.push('High market competition for this role type. Consider broadening location or working model flexibility.');
-  if (overload >= 65) recs.push(`${skills} required skills is above market norm. Reduce to 6–8 must-haves to widen the candidate pool.`);
+  if (overload >= 65) recs.push(`${skills} required skills is above market norm. Reduce to 6-8 must-haves to widen the candidate pool.`);
   if (clarity >= 65)  recs.push('The job description lacks clarity on responsibilities or requirements. A clearer brief attracts stronger candidates.');
   if (recs.length === 0) recs.push('Role looks well-positioned. Proceed to market with confidence.');
   return recs;

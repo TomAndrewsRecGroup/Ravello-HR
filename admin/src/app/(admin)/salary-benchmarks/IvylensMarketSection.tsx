@@ -26,7 +26,7 @@ interface Response {
 }
 
 function fmtK(n: number | null): string {
-  if (!n) return '—';
+  if (!n) return '-';
   return `£${Math.round(n / 1000)}k`;
 }
 
@@ -92,9 +92,9 @@ export default function IvylensMarketSection() {
             </p>
           </div>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Derived from IvyLens BD feed — salary percentiles and hiring pressure by role type.
+            Derived from IvyLens BD feed: salary percentiles and hiring pressure by role type.
             {data?.fetched_at && <> Last synced <strong>{relative(data.fetched_at)}</strong>.</>}
-            {data?.stale && <span className="ml-1 font-semibold" style={{ color: 'var(--gold)' }}>Cache stale — IvyLens unavailable</span>}
+            {data?.stale && <span className="ml-1 font-semibold" style={{ color: 'var(--gold)' }}>Cache stale: IvyLens unavailable</span>}
           </p>
         </div>
         <button

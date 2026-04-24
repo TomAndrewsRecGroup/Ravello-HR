@@ -36,7 +36,7 @@ export default async function BDIntelligencePage() {
     return { min: Math.min(...parsed), max: Math.max(...parsed) };
   }
 
-  // Merge IvyLens BD leads — add any companies not already tracked locally
+  // Merge IvyLens BD leads: add any companies not already tracked locally
   const localNames = new Set(companies.map((c: any) => c.company_name?.toLowerCase()));
   const mergedFromIvylens = ivylensLeads
     .filter((l: any) => l.company_name && !localNames.has(l.company_name.toLowerCase()))

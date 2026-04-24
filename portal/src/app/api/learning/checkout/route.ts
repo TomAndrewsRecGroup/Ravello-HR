@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // Derive userId and companyId from the authenticated session — never trust the client
+    // Derive userId and companyId from the authenticated session: never trust the client
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
 
-    // Free content — shouldn't reach here but handle gracefully
+    // Free content: shouldn't reach here but handle gracefully
     if (content.price_pence === 0 || !content.stripe_price_id) {
       return NextResponse.json({ error: 'Use direct access for free content' }, { status: 400 });
     }

@@ -171,15 +171,15 @@ export default function HiringClient({ reqs, companies }: Props) {
                           className="font-medium hover:underline"
                           style={{ color: 'var(--purple)' }}
                         >
-                          {r.companies?.name ?? '—'}
+                          {r.companies?.name ?? '-'}
                         </Link>
                       ) : (
-                        <span style={{ color: 'var(--ink-soft)' }}>{r.companies?.name ?? '—'}</span>
+                        <span style={{ color: 'var(--ink-soft)' }}>{r.companies?.name ?? '-'}</span>
                       )}
                     </td>
                     <td className="font-medium">{r.title}</td>
-                    <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
-                    <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '—'}</td>
+                    <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
+                    <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '-'}</td>
                     <td>
                       <span
                         className="font-medium"

@@ -118,14 +118,14 @@ export default async function RevenuePage() {
                               {s.service_name}
                             </span>
                           ))}
-                          {c.serviceCount === 0 && <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>—</span>}
+                          {c.serviceCount === 0 && <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>-</span>}
                         </div>
                       </td>
                       <td className="text-right text-sm font-semibold" style={{ color: c.mrr > 0 ? 'var(--ink)' : 'var(--ink-faint)' }}>
-                        {c.mrr > 0 ? fmt(c.mrr) : '—'}
+                        {c.mrr > 0 ? fmt(c.mrr) : '-'}
                       </td>
                       <td className="text-right text-xs" style={{ color: 'var(--ink-soft)' }}>
-                        {c.arr > 0 ? fmt(c.arr) : '—'}
+                        {c.arr > 0 ? fmt(c.arr) : '-'}
                       </td>
                       <td>
                         {totalMRR > 0 && c.mrr > 0 && (

@@ -1,6 +1,6 @@
 // Thin Redis client wrapper shared across admin server routes.
 //
-// Uses node-redis (`redis` package) which requires the Node runtime —
+// Uses node-redis (`redis` package) which requires the Node runtime -
 // any route that calls getJSON/setJSON/del must not set runtime='edge'.
 // Falls back to null when REDIS_URL is unset so local dev without the
 // env var degrades gracefully to DB-only reads.

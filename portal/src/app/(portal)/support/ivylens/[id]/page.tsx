@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 
 const CATEGORIES: Record<string, { label: string; Icon: any; color: string }> = {
-  friction_lens_role:     { label: 'Friction Lens — Role',     Icon: BarChart2,  color: '#a855f7' },
-  friction_lens_business: { label: 'Friction Lens — Business', Icon: Building2,  color: '#06b6d4' },
+  friction_lens_role:     { label: 'Friction Lens: Role',     Icon: BarChart2,  color: '#a855f7' },
+  friction_lens_business: { label: 'Friction Lens: Business', Icon: Building2,  color: '#06b6d4' },
   score_connection:       { label: 'Score Connection',          Icon: Plug,       color: 'var(--warning)' },
   bd_leads:              { label: 'BD Leads',                  Icon: Target,     color: 'var(--success)' },
   bug_report:            { label: 'Bug Report',                Icon: Bug,        color: 'var(--danger)' },

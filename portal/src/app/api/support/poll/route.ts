@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 
-// GET /api/support/poll — check for ticket updates and create notifications
+// GET /api/support/poll: check for ticket updates and create notifications
 export async function GET() {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

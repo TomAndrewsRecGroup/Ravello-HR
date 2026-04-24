@@ -127,7 +127,7 @@ function PeopleGraphic({ color, width = 130 }: { color: string; width?: number }
   );
 }
 
-/* ─── CardModal — simple centered fade-in modal ─── */
+/* ─── CardModal: simple centered fade-in modal ─── */
 function CardModal({
   card,
   onClose,
@@ -320,7 +320,7 @@ function HeroCard({
         {card.desc}
       </p>
 
-      {/* Read More button — visible on hover, click opens modal */}
+      {/* Read More button: visible on hover, click opens modal */}
       <button
         onClick={onOpen}
         style={{
@@ -421,7 +421,7 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Right: 4 cards — hover captures position and triggers modal */}
+            {/* Right: 4 cards: hover captures position and triggers modal */}
             <div className="hidden lg:flex items-stretch gap-3">
               {CARDS.map((card) => (
                 <HeroCard
@@ -436,7 +436,7 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* Modal rendered outside section — morphs from card to viewport centre */}
+      {/* Modal rendered outside section: morphs from card to viewport centre */}
       {activeCardDef && (
         <CardModal
           card={activeCardDef}

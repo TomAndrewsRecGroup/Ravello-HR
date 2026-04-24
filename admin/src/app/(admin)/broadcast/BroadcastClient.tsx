@@ -65,7 +65,7 @@ export default function BroadcastClient({ companies }: Props) {
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
 
-      {/* Left — compose */}
+      {/* Left: compose */}
       <div className="space-y-5">
         <div className="card p-6">
           <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Compose Action</h2>
@@ -143,7 +143,7 @@ export default function BroadcastClient({ companies }: Props) {
         </div>
       </div>
 
-      {/* Right — client selector */}
+      {/* Right: client selector */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>

@@ -93,7 +93,7 @@ export default function SupportClient({ tickets }: Props) {
               {filtered.map(t => (
                 <tr key={t.id}>
                   <td className="font-medium" style={{ color: 'var(--ink)' }}>{t.subject}</td>
-                  <td style={{ color: 'var(--ink-soft)' }}>{t.companies?.name ?? '—'}</td>
+                  <td style={{ color: 'var(--ink-soft)' }}>{t.companies?.name ?? '-'}</td>
                   <td><span className={`badge ${prioBadge[t.priority] ?? 'badge-normal'}`}>{t.priority}</span></td>
                   <td><span className={`badge ${statusBadge[t.status] ?? 'badge-normal'}`}>{t.status.replace('_', ' ')}</span></td>
                   <td style={{ color: 'var(--ink-faint)' }}>{new Date(t.created_at).toLocaleDateString('en-GB')}</td>

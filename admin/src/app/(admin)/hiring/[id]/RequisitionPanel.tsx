@@ -64,7 +64,7 @@ function FrictionCard({ frictionScore }: { frictionScore: any }) {
         </div>
         <div className="text-right">
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Score</p>
-          <p className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{frictionScore?.overall_score ?? '—'}/100</p>
+          <p className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{frictionScore?.overall_score ?? '-'}/100</p>
           {frictionScore?.time_to_fill_estimate && (
             <>
               <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>Est. time to fill</p>
@@ -132,7 +132,7 @@ const CONTRACT_TYPES = ['permanent', 'fixed_term', 'contract', 'interim'];
 const WORKING_MODELS = ['office', 'hybrid', 'remote'];
 
 function fmtSalary(pence: number | null): string {
-  if (!pence) return '—';
+  if (!pence) return '-';
   return `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 0 })}`;
 }
 
@@ -276,7 +276,7 @@ function AdminOfferPanel({ requisitionId, companyId }: { requisitionId: string; 
               <div key={o.id} className="rounded-[10px] p-3" style={{ border: '1px solid var(--line)', borderLeft: `3px solid ${cfg.color}` }}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{o.candidates?.full_name ?? '—'}</p>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{o.candidates?.full_name ?? '-'}</p>
                     {o.base_salary && <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{fmtSalary(o.base_salary)}</p>}
                   </div>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: cfg.bg, color: cfg.color }}>

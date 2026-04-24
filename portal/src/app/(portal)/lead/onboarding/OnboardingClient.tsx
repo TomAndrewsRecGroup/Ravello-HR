@@ -449,7 +449,7 @@ export default function OnboardingClient({ companyId, userId, isAdmin, templates
                 <select className="input" value={selectedEmployee} onChange={e => setSelectedEmployee(e.target.value)}>
                   <option value="">Select employee...</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} — {emp.job_title}</option>
+                    <option key={emp.id} value={emp.id}>{emp.full_name}: {emp.job_title}</option>
                   ))}
                 </select>
               </div>

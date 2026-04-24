@@ -48,8 +48,8 @@ const DOCS = [
   { name: 'Disciplinary Policy',  size: '320 KB', review: false },
 ];
 
-const BROWSER_CLOSED = 54;   // px — URL bar only
-const BROWSER_OPEN   = 640;  // px — full portal
+const BROWSER_CLOSED = 54;   // px: URL bar only
+const BROWSER_OPEN   = 640;  // px: full portal
 
 /* ─── Portal content ─── */
 function PortalContent() {
@@ -110,7 +110,7 @@ function PortalContent() {
         {/* Row 2: Friction Lens role + company score + HR overview */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 180px', gap: 10 }}>
 
-          {/* Friction Lens — Role */}
+          {/* Friction Lens: Role */}
           <div style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 10, padding: '12px 14px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
@@ -141,7 +141,7 @@ function PortalContent() {
             </p>
           </div>
 
-          {/* Friction Lens — Company */}
+          {/* Friction Lens: Company */}
           <div style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column' }}>
             <p style={{ fontSize: 8.5, fontWeight: 700, color: '#3B6FFF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
               Friction Lens: Company
@@ -237,7 +237,7 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
       background: '#EFF0F7',
       transition: 'box-shadow 0.8s ease',
     }}>
-      {/* URL bar — always visible */}
+      {/* URL bar: always visible */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', height: BROWSER_CLOSED, background: '#FAFAFD', borderBottom: '1px solid rgba(10,15,30,0.07)', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 5 }}>
           {['#FF5F57','#FFBD2E','#28C840'].map((c) => (
@@ -249,7 +249,7 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
         </div>
       </div>
 
-      {/* Portal content area — fixed height, curtain slides up to reveal */}
+      {/* Portal content area: fixed height, curtain slides up to reveal */}
       {/* No height animation = no GPU compositing / border-radius flicker */}
       <div style={{ height: BROWSER_OPEN - BROWSER_CLOSED, position: 'relative', overflow: 'hidden' }}>
         <PortalContent />
@@ -276,7 +276,7 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
 
 /* ─── Main component ─── */
 export default function PortalShowcase() {
-  // Observe just the browser frame — fires as soon as the URL bar scrolls into view
+  // Observe just the browser frame: fires as soon as the URL bar scrolls into view
   const browserRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
 
@@ -326,7 +326,7 @@ export default function PortalShowcase() {
           </p>
         </div>
 
-        {/* Browser reveal — full container width */}
+        {/* Browser reveal: full container width */}
         <div ref={browserRef} style={{ position: 'relative', marginBottom: '4rem' }}>
           <div style={{
             position: 'absolute', left: '50%', top: '50%',

@@ -1,7 +1,7 @@
 // Cache layer for the /clients/[id] page.
 //
 // Single layer: unstable_cache with a service-role Supabase client.
-// All TPO staff see the same client detail (row-level access is gated
+// All The People System staff see the same client detail (row-level access is gated
 // at the sidebar, not per row), so a shared cache keyed by id is safe.
 // TTL 60s; invalidated via revalidateTag(`client:<id>`) from
 // admin/src/app/actions.ts whenever a mutation touches the client.

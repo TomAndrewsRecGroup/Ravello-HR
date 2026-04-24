@@ -213,7 +213,7 @@
 - **Issue:** `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are used in code but not documented in any `.env.example` file. Cannot configure Stripe without external documentation.
 - **Fix:** Add to `portal/.env.example`
 
-### ENV-002: Tawk.to Chat Widget [RESOLVED — REMOVED]
+### ENV-002: Tawk.to Chat Widget [RESOLVED: REMOVED]
 - **Resolution:** Tawk.to chat widget removed entirely. ChatWidget component deleted, import removed from layout.
 
 ---
@@ -351,12 +351,12 @@
 
 | Item | What's Needed | Owner |
 |------|--------------|-------|
-| MKT-001 | Google Calendar appointment scheduling URL | TPO team |
-| MKT-007 | Correct LinkedIn company profile URL | TPO team |
-| MKT-006 | Privacy Policy & Terms of Service content | Legal/TPO team |
-| ENV-001 | Stripe API keys for production | TPO team |
+| MKT-001 | Google Calendar appointment scheduling URL | The People System team |
+| MKT-007 | Correct LinkedIn company profile URL | The People System team |
+| MKT-006 | Privacy Policy & Terms of Service content | Legal/The People System team |
+| ENV-001 | Stripe API keys for production | The People System team |
 | ~~ENV-002~~ | ~~Tawk.to~~ Removed | N/A |
-| Lead capture | Decision: Resend vs Make webhook vs other | TPO team |
+| Lead capture | Decision: Resend vs Make webhook vs other | The People System team |
 
 ---
 
@@ -479,13 +479,13 @@ Complete every unfinished marketing feature and legal requirement.
 
 | # | ID | Issue | Severity |
 |---|-----|-------|----------|
-| 1 | MKT-001 | Configure Google Calendar booking URL (BLOCKED -- needs TPO input) | CRITICAL |
+| 1 | MKT-001 | Configure Google Calendar booking URL (BLOCKED -- needs The People System input) | CRITICAL |
 | 2 | MKT-002 | Implement lead capture API backend (Supabase `leads` table + insert) | HIGH |
 | 3 | MKT-003 | Wire ExitIntentPopup to email provider (Resend/Make) | HIGH |
 | 4 | MKT-004 | Wire EmailGate to email provider | HIGH |
 | 5 | MKT-005 | Wire all 4 tool form backends to leads API | HIGH |
 | 6 | MKT-006 | Create `/privacy` and `/terms` pages (BLOCKED -- needs legal content) | HIGH |
-| 7 | MKT-007 | Fix LinkedIn URL to correct company profile (BLOCKED -- needs TPO input) | HIGH |
+| 7 | MKT-007 | Fix LinkedIn URL to correct company profile (BLOCKED -- needs The People System input) | HIGH |
 | 8 | MKT-008 | Create `leads` table migration (required by MKT-002) | HIGH |
 | 9 | ENV-003a | Implement Resend integration OR remove `RESEND_API_KEY` from .env.example | MEDIUM |
 | 10 | ENV-003b | Remove unused `EMAIL_FROM`, `LEAD_NOTIFY_EMAIL`, `NEXT_PUBLIC_SITE_URL` from .env.example OR implement them | MEDIUM |
@@ -502,7 +502,7 @@ Environment docs, production hardening, and final cleanup.
 | # | ID | Issue | Severity |
 |---|-----|-------|----------|
 | 1 | ENV-001 | Add `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` to portal/.env.example | HIGH |
-| 2 | ~~ENV-002~~ | ~~Tawk.to~~ Removed — chat widget deleted | N/A |
+| 2 | ~~ENV-002~~ | ~~Tawk.to~~ Removed: chat widget deleted | N/A |
 | 3 | ENV-004 | Add startup validation -- throw error instead of fallback in Supabase client configs | MEDIUM |
 | 4 | ENV-005 | Document all required env vars in a single setup guide | MEDIUM |
 | 5 | API-010 | Add audit logging for user creation, role changes, payment events | MEDIUM |
@@ -535,12 +535,12 @@ Environment docs, production hardening, and final cleanup.
 
 | Item | What's Needed | Owner | Sprint |
 |------|--------------|-------|--------|
-| MKT-001 | Google Calendar appointment scheduling URL | TPO team | Sprint 6 |
-| MKT-007 | Correct LinkedIn company profile URL | TPO team | Sprint 6 |
-| MKT-006 | Privacy Policy & Terms of Service content | Legal/TPO team | Sprint 6 |
-| ENV-001 | Stripe API keys for production | TPO team | Sprint 7 |
+| MKT-001 | Google Calendar appointment scheduling URL | The People System team | Sprint 6 |
+| MKT-007 | Correct LinkedIn company profile URL | The People System team | Sprint 6 |
+| MKT-006 | Privacy Policy & Terms of Service content | Legal/The People System team | Sprint 6 |
+| ENV-001 | Stripe API keys for production | The People System team | Sprint 7 |
 | ~~ENV-002~~ | ~~Tawk.to~~ Removed | N/A | Sprint 7 |
-| MKT-003/004 | Decision: Resend vs Make webhook vs other for email | TPO team | Sprint 6 |
+| MKT-003/004 | Decision: Resend vs Make webhook vs other for email | The People System team | Sprint 6 |
 
 ---
 

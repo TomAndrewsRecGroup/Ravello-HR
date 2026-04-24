@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Activate the purchase — configurable access window (default 7 days)
+    // Activate the purchase: configurable access window (default 7 days)
     const accessDays = parseInt(process.env.LEARNING_ACCESS_DAYS ?? '7', 10);
     const expiresAt = new Date(Date.now() + accessDays * 86400000).toISOString();
 

@@ -46,7 +46,7 @@ export default async function AdminDocumentsPage() {
                       <td><span className={`badge ${catBadge[d.category]}`}>{d.category}</span></td>
                       <td style={{ color: 'var(--ink-faint)' }}>v{d.version}</td>
                       <td style={{ color: urgent ? 'var(--red)' : 'var(--ink-faint)' }}>
-                        {due ? due.toLocaleDateString('en-GB', { day:'numeric',month:'short',year:'numeric' }) : '—'}
+                        {due ? due.toLocaleDateString('en-GB', { day:'numeric',month:'short',year:'numeric' }) : '-'}
                         {urgent && <span className="ml-1 text-[10px]">⚠</span>}
                       </td>
                       <td>

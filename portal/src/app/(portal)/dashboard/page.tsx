@@ -32,11 +32,11 @@ export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
   const { user, profile, companyId } = await getSessionProfile();
 
-  // Feature flags are already in the session cookie — use them to avoid a waterfall
+  // Feature flags are already in the session cookie: use them to avoid a waterfall
   const { featureFlags: sessionFlags } = await getSessionProfile();
   const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 
-  // Single parallel batch — no waterfall
+  // Single parallel batch: no waterfall
   const [{ data: company }, { data: fullProfile },
     reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
     trainingRes, absenceRes, frictionRes] = await Promise.all([
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
       .eq('company_id', companyId ?? '')
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
-    // LEAD module — use session flags (available immediately, no waterfall)
+    // LEAD module: use session flags (available immediately, no waterfall)
     flagsFromSession.lead !== false
       ? supabase.from('training_needs').select('id,title,status,employee_name').eq('company_id', companyId ?? '').eq('status', 'open').limit(4)
       : Promise.resolve({ data: null }),
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
 
       <main className="portal-page flex-1">
 
-        {/* ── Hero context — one sentence summary ────────────────── */}
+        {/* ── Hero context: one sentence summary ────────────────── */}
         <div className="mb-6 p-5 rounded-xl" style={{ background: 'var(--gradient-soft)' }}>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--ink)' }}>
             You have <strong style={{ color: 'var(--purple)' }}>{requisitions.length} active role{requisitions.length !== 1 ? 's' : ''}</strong>
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* ── Stat pills — compact, scannable ────────────────────── */}
+        {/* ── Stat pills: compact, scannable ────────────────────── */}
         <div className="flex flex-wrap gap-2 mb-6">
           {[
             { label: 'Active Roles',     val: requisitions.length,    href: '/hire/hiring',         color: 'var(--purple)' },
@@ -224,7 +224,7 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* ── Needs Attention — actionable row ─────────────────────── */}
+        {/* ── Needs Attention: actionable row ─────────────────────── */}
         {(actions.length > 0 || frictionAlerts.length > 0) && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -243,14 +243,14 @@ export default async function DashboardPage() {
               {frictionAlerts.slice(0, 3).map((r: any) => (
                 <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction — review details</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction: review details</p>
                 </Link>
               ))}
             </div>
           </section>
         )}
 
-        {/* ── Live Roles — horizontal card row ──────────────────────── */}
+        {/* ── Live Roles: horizontal card row ──────────────────────── */}
         {requisitions.length > 0 && (
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -280,7 +280,7 @@ export default async function DashboardPage() {
               <Link prefetch={false} href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
             </div>
             {complianceItems.length === 0 ? (
-              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>All clear — no upcoming items</p>
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>All clear: no upcoming items</p>
             ) : (
               <div className="space-y-1.5">
                 {complianceItems.slice(0, 5).map((c: any) => {
@@ -320,7 +320,7 @@ export default async function DashboardPage() {
           </section>
         </div>
 
-        {/* ── Services + Documents — compact ──────────────────────── */}
+        {/* ── Services + Documents: compact ──────────────────────── */}
         <div className="grid lg:grid-cols-2 gap-5">
           {services.length > 0 && (
             <section className="card p-5">
@@ -330,7 +330,7 @@ export default async function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {services.map((s: any) => (
                   <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,0.12)' }}>
-                    {s.service_name}{s.service_tier ? ` — ${s.service_tier}` : ''}
+                    {s.service_name}{s.service_tier ? `: ${s.service_tier}` : ''}
                   </span>
                 ))}
               </div>
@@ -359,8 +359,8 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* ── Remove old grid content below — replaced above ──────── */}
-        {/* Old content removed — was: Active Services, Friction Alerts,
+        {/* ── Remove old grid content below: replaced above ──────── */}
+        {/* Old content removed: was: Active Services, Friction Alerts,
             Live Roles, Outstanding Actions, Compliance, HR Support,
             LEAD/PROTECT modules, Recent Documents, Locked features */}
       </main>
