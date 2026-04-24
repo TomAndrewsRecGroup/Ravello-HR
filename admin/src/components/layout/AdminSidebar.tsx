@@ -11,7 +11,7 @@ import {
   FolderOpen, LifeBuoy, LogOut,
   Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
   X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper,
+  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper, Trophy,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -58,6 +58,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/support',         label: 'Tickets',        icon: LifeBuoy },
       { href: '/broadcast',       label: 'Broadcast',      icon: Radio },
       { href: '/compliance',      label: 'Compliance',     icon: ShieldCheck },
+    ],
+  },
+  {
+    label: 'Programmes',
+    defaultOpen: false,
+    items: [
+      { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy },
     ],
   },
   {

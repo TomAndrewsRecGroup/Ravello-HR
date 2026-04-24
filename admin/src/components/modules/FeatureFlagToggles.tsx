@@ -65,6 +65,13 @@ const FLAG_GROUPS: FlagGroup[] = [
       { key: 'calendar',   label: 'Company Calendar' },
     ],
   },
+  {
+    label: 'Programmes',
+    description: 'Optional channels added to the portal sidebar',
+    flags: [
+      { key: 'athletes_to_industry', label: 'Athletes To Industry' },
+    ],
+  },
 ];
 
 interface Props {
