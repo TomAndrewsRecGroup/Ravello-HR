@@ -48,6 +48,7 @@ interface CustomItem {
   'content:encoded'?: string;
   creator?: string;
   'dc:creator'?: string;
+  author?: string;
 }
 
 const parser = new Parser<CustomFeed, CustomItem>({
@@ -96,6 +97,10 @@ export async function fetchFeed(feedUrl: string): Promise<ParsedFeed> {
   for (const it of feed.items ?? []) {
     const url = (it.link ?? '').trim();
     if (!url) continue;
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+    } catch { continue; }
 
     const image =
       firstUrl(it['media:content']) ??
@@ -121,7 +126,7 @@ export async function fetchFeed(feedUrl: string): Promise<ParsedFeed> {
       description,
       image_url: image,
       site_name: feed.title ?? null,
-      author: it.creator ?? it['dc:creator'] ?? null,
+      author: it.creator ?? it['dc:creator'] ?? it.author ?? null,
       published_at,
       raw: { guid: it.guid, categories: it.categories },
     });

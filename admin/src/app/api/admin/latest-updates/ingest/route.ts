@@ -31,6 +31,10 @@ export async function POST(req: NextRequest) {
   let canonical: string;
   let hash: string;
   try {
+    const u = new URL(body.url.trim());
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return NextResponse.json({ error: 'URL must be http(s)' }, { status: 400 });
+    }
     canonical = canonicaliseUrl(body.url);
     hash = urlHash(body.url);
   } catch {

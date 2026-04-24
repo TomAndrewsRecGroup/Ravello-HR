@@ -52,7 +52,11 @@ const DEFAULTS = {
 
 function resolveUrl(href: string | undefined, base: string): string | null {
   if (!href) return null;
-  try { return new URL(href, base).toString(); } catch { return null; }
+  try {
+    const u = new URL(href, base);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return u.toString();
+  } catch { return null; }
 }
 
 function parseDate(raw: string | undefined | null): string | null {

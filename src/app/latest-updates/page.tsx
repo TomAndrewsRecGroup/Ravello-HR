@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen } from 'lucide-react';
 import { getPublicSupabase } from '@/lib/supabase/server';
 import FeaturedCarousel from './FeaturedCarousel';
 import UpdateCard, { type UpdateItem } from './UpdateCard';
+import UpdateEmbed from './UpdateEmbed';
 import FeedFilters, { type FilterOption } from './FeedFilters';
 import Pagination from './Pagination';
 
@@ -45,7 +46,10 @@ export default async function LatestUpdatesPage({
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  const like = query ? `%${query.replace(/[%_]/g, '\\$&')}%` : null;
+  // Strip chars that would break postgrest's .or() filter syntax, then
+  // escape ilike wildcards.
+  const sanitisedQuery = query.replace(/[,()"*]/g, ' ').trim();
+  const like = sanitisedQuery ? `%${sanitisedQuery.replace(/[%_]/g, '\\$&')}%` : null;
 
   let mainQuery = supabase
     .from('latest_updates')
@@ -164,7 +168,11 @@ export default async function LatestUpdatesPage({
           {main.length > 0 ? (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {main.map(item => <UpdateCard key={item.id} item={item} variant="grid" />)}
+                {main.map(item =>
+                  item.render_mode === 'embed' && item.embed_html
+                    ? <UpdateEmbed key={item.id} embedHtml={item.embed_html} />
+                    : <UpdateCard key={item.id} item={item} variant="grid" />
+                )}
               </div>
               <Pagination page={page} totalPages={totalPages} />
             </>
