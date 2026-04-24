@@ -4,6 +4,8 @@ import { ArrowRight, BookOpen } from 'lucide-react';
 import { getPublicSupabase } from '@/lib/supabase/server';
 import FeaturedCarousel from './FeaturedCarousel';
 import UpdateCard, { type UpdateItem } from './UpdateCard';
+import FeedFilters, { type FilterOption } from './FeedFilters';
+import Pagination from './Pagination';
 
 export const metadata: Metadata = {
   title: 'Latest Updates | HR News and Insight | The People System',
@@ -15,13 +17,57 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 const SELECT = 'id, source_url, title, description, image_url, site_name, published_at, created_at, source_type, render_mode, embed_html';
+const PAGE_SIZE = 24;
 
-export default async function LatestUpdatesPage() {
+interface SearchParams {
+  category?: string;
+  source?: string;
+  q?: string;
+  page?: string;
+}
+
+export default async function LatestUpdatesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = getPublicSupabase();
 
-  const [featuredRes, mainRes] = supabase
-    ? await Promise.all([
-        supabase
+  const category = searchParams.category?.trim() || null;
+  const source = searchParams.source?.trim() || null;
+  const query = searchParams.q?.trim() || '';
+  const page = Math.max(1, parseInt(searchParams.page ?? '1', 10) || 1);
+  const hasFilters = Boolean(category || source || query);
+
+  if (!supabase) {
+    return <EmptyState />;
+  }
+
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+  const like = query ? `%${query.replace(/[%_]/g, '\\$&')}%` : null;
+
+  let mainQuery = supabase
+    .from('latest_updates')
+    .select(SELECT)
+    .eq('status', 'published');
+  if (category) mainQuery = mainQuery.eq('category', category);
+  if (source) mainQuery = mainQuery.eq('feed_source_id', source);
+  if (like) mainQuery = mainQuery.or(`title.ilike.${like},description.ilike.${like}`);
+
+  let countQuery = supabase
+    .from('latest_updates')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'published');
+  if (category) countQuery = countQuery.eq('category', category);
+  if (source) countQuery = countQuery.eq('feed_source_id', source);
+  if (like) countQuery = countQuery.or(`title.ilike.${like},description.ilike.${like}`);
+
+  const [featuredRes, mainRes, countRes, catsRes, sourcesRes] = await Promise.all([
+    // Carousel only shown when there are no active filters
+    hasFilters
+      ? Promise.resolve({ data: [] as UpdateItem[] })
+      : supabase
           .from('latest_updates')
           .select(SELECT)
           .eq('status', 'published')
@@ -29,24 +75,41 @@ export default async function LatestUpdatesPage() {
           .order('featured_order', { ascending: true, nullsFirst: false })
           .order('published_at', { ascending: false, nullsFirst: false })
           .limit(12),
-        supabase
-          .from('latest_updates')
-          .select(SELECT)
-          .eq('status', 'published')
-          .order('published_at', { ascending: false, nullsFirst: false })
-          .order('created_at', { ascending: false })
-          .limit(60),
-      ])
-    : [{ data: [] }, { data: [] }];
+
+    mainQuery
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .range(from, to),
+
+    countQuery,
+
+    supabase
+      .from('latest_updates')
+      .select('category')
+      .eq('status', 'published')
+      .not('category', 'is', null),
+
+    supabase
+      .from('feed_sources')
+      .select('id, display_name')
+      .eq('active', true)
+      .order('display_name', { ascending: true }),
+  ]);
 
   const featured = (featuredRes?.data ?? []) as UpdateItem[];
   const main = (mainRes?.data ?? []) as UpdateItem[];
+  const totalCount = countRes?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const categories: FilterOption[] = dedupeCounts((catsRes?.data ?? []) as { category: string | null }[]);
+  const sources: FilterOption[] = ((sourcesRes?.data ?? []) as { id: string; display_name: string }[])
+    .map(s => ({ value: s.id, label: s.display_name }));
 
   return (
     <div className="pt-28">
 
       {/* Hero */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '3rem' }}>
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '2rem' }}>
         <div className="max-w-4xl mx-auto">
           <p className="eyebrow mb-5">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
@@ -70,30 +133,51 @@ export default async function LatestUpdatesPage() {
         </div>
       </section>
 
-      {/* Featured carousel */}
-      {featured.length > 0 && <FeaturedCarousel items={featured} />}
+      {/* Featured carousel: only on page 1 with no filters */}
+      {!hasFilters && page === 1 && featured.length > 0 && (
+        <FeaturedCarousel items={featured} />
+      )}
 
-      {/* Main feed */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: featured.length > 0 ? '2rem' : '3rem' }}>
-        <div className="container-wide">
+      {/* Filters + main feed */}
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '2rem' }}>
+        <div className="container-wide space-y-8">
+
+          <div>
+            <div className="flex items-baseline justify-between gap-4 mb-6">
+              <h2 className="font-display section-title" style={{ marginBottom: 0 }}>
+                {hasFilters ? 'Filtered updates' : 'All updates'}
+              </h2>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                {totalCount === 1 ? '1 result' : `${totalCount.toLocaleString()} results`}
+              </p>
+            </div>
+
+            <FeedFilters
+              categories={categories}
+              sources={sources}
+              activeCategory={category}
+              activeSource={source}
+              activeQuery={query}
+            />
+          </div>
 
           {main.length > 0 ? (
             <>
-              <div className="mb-8">
-                <h2 className="font-display section-title" style={{ marginBottom: 0 }}>All updates</h2>
-              </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {main.map(item => <UpdateCard key={item.id} item={item} variant="grid" />)}
               </div>
+              <Pagination page={page} totalPages={totalPages} />
             </>
           ) : (
             <div className="card max-w-xl mx-auto text-center py-10">
               <BookOpen className="mx-auto mb-3" size={32} style={{ color: 'var(--ink-faint)' }} />
               <p className="font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>
-                Nothing here yet
+                {hasFilters ? 'No matches' : 'Nothing here yet'}
               </p>
               <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
-                New entries will appear here as they&apos;re published.
+                {hasFilters
+                  ? 'Try clearing a filter or broadening your search.'
+                  : "New entries will appear here as they're published."}
               </p>
             </div>
           )}
@@ -114,6 +198,33 @@ export default async function LatestUpdatesPage() {
           </Link>
         </div>
       </section>
+    </div>
+  );
+}
+
+function dedupeCounts(rows: { category: string | null }[]): FilterOption[] {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.category) continue;
+    counts.set(r.category, (counts.get(r.category) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([value, count]) => ({ value, label: value, count }));
+}
+
+function EmptyState() {
+  return (
+    <div className="pt-28 pb-24">
+      <div className="container-narrow text-center">
+        <BookOpen className="mx-auto mb-3" size={32} style={{ color: 'var(--ink-faint)' }} />
+        <p className="font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>
+          Feed temporarily unavailable
+        </p>
+        <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+          Check back in a moment.
+        </p>
+      </div>
     </div>
   );
 }

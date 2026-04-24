@@ -105,6 +105,7 @@ export async function ingestFeed(
       site_name: item.site_name ?? parsed.feed_title ?? source.display_name,
       author: item.author,
       published_at: item.published_at,
+      category: source.category,
       render_mode: 'card',
       embed_html: null,
       status: 'published',
