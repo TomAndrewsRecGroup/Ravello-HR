@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'LEAD Services | Fractional People Leadership | The People System',
-  description: 'Four LEAD packages: Lead Foundations, Lead Optimiser, Lead Partner, Lead Build. Fractional HR leadership and manager enablement: The People System.',
+  title: 'LEAD Services | L&D, Leadership and People Development | The People System',
+  description: 'Three LEAD packages: Lead Foundations, Lead Partner, Lead Build. Behavioural skills, leadership capability, manager training and L&D strategy: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/lead' },
 };
 
@@ -27,117 +27,93 @@ type Package = {
 const packages: Package[] = [
   {
     name: 'Lead Foundations',
-    tag: 'Starting point · ongoing',
+    tag: 'Starting point · your L&D floor',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses that need a senior HR voice available on a regular basis: someone to call when a people question comes up, to sanity-check decisions, and to prevent small issues from becoming expensive ones. Not a full fractional engagement. A reliable floor.',
+      who: 'Every month we work with you on the stuff that actually builds a learning culture: structured check-ins that drive real decisions, hands-on support for managers dealing with live capability challenges, and a clear view of where your people development gaps are sitting before they start costing you.',
       includes: [
-        'Monthly strategic HR check-in (60 min)',
-        'Ad-hoc advice on people decisions and live situations',
-        'Manager guidance on individual cases',
-        'Access to us via email between sessions',
-        'Escalation to higher packages where a situation requires it',
+        'Monthly 60 minute strategic L&D session with clear actions and follow through',
+        'Behavioural coaching support for managers dealing with live people challenges',
+        'Audit of your current approach to learning, feedback and development',
+        'Practical guidance on career development and progression conversations',
+        'Access to us between sessions when something needs addressing now',
+        'Escalation to higher packages where the work requires it',
       ],
     },
     corporate: {
-      who: 'For corporate leaders or functional heads who need an independent senior people advisor sitting outside the central HR team. When you want an objective voice to pressure-test decisions that the in-house HRBP is too close to.',
+      who: 'For corporate HR functions that want an external L&D partner on retainer: supporting managers with live capability challenges, pressure-testing internal L&D decisions, and surfacing development gaps across a specific business unit or region.',
       includes: [
-        'Monthly strategic advisory session (60 min)',
-        'Ad-hoc advice on people decisions and live situations',
-        'Independent pressure-testing of HRBP or HRD recommendations',
-        'Access to us via email between sessions',
-        'Escalation to higher packages where a situation requires it',
-      ],
-    },
-  },
-  {
-    name: 'Lead Optimiser',
-    tag: 'Project · fix a specific problem',
-    highlight: false,
-    cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      who: 'For businesses with a specific people challenge that needs fixing properly. A manager who is struggling. A performance process that is not working. A team structure that needs redesigning. A culture issue that has been ignored too long. Fixed scope, clear deliverable.',
-      includes: [
-        'Problem diagnosis and root cause analysis',
-        'Manager coaching (up to 3 sessions)',
-        'Process or framework design (one area)',
-        'Written recommendations and implementation guide',
-        'One follow-up review session',
-      ],
-    },
-    corporate: {
-      who: 'For leaders inheriting a BU, function, or region with a specific people challenge that internal HR has struggled to fix. Fixed scope, outside-in diagnosis, delivered to the business line rather than the central HR team.',
-      includes: [
-        'Problem diagnosis and root cause analysis scoped to the BU or region',
-        'Leadership coaching (up to 3 sessions)',
-        'Framework or redesign work (one focus area)',
-        'Written recommendations and implementation guide',
-        'One follow-up review session with the business lead',
+        'Monthly 60 minute strategic L&D session aligned to the BU or region',
+        'Behavioural coaching support for managers dealing with live capability challenges',
+        'Audit of the current L&D approach in the focus area against group standards',
+        'Practical guidance on career development and progression conversations',
+        'Access to us between sessions when something needs addressing now',
+        'Escalation to higher packages where the work requires it',
       ],
     },
   },
   {
     name: 'Lead Partner',
-    tag: 'Most popular · embedded fractional HR',
+    tag: 'Most popular · embedded fractional L&D',
     highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses that need a proper people function without the cost of a full-time CPO or HRD. We act as your fractional People lead: attending leadership team meetings, owning the people agenda, running manager capability work, and building the infrastructure your business needs to scale.',
+      who: 'For businesses that know their people need to develop but do not have the internal resource to make it happen properly. We act as your fractional L&D lead, owning the development agenda across your whole business, not just the senior team. This is not a course or a one-off workshop. It is a structured, ongoing programme that builds behavioural skills, leadership capability and a culture where people actually grow.',
       includes: [
-        'Weekly leadership team attendance (where relevant)',
-        'People strategy development and quarterly roadmap',
-        'Manager enablement programme: structured, not one-off',
-        'Performance framework design and implementation',
-        'Engagement and retention planning',
-        'Succession and talent planning (where relevant)',
-        'Escalation point for all senior HR matters',
+        'People development strategy and quarterly roadmap with clear milestones',
+        'Leadership and manager capability programme, structured and ongoing not ad hoc',
+        'Behavioural skills development across all levels of the business',
+        'Performance and feedback culture design and embedding',
+        'Career development and progression frameworks bespoke to your business',
+        'Team effectiveness and ways of working programmes',
+        'Culture and values programmes',
         'Direct line to us throughout',
       ],
     },
     corporate: {
-      who: 'For divisions, regions, or portfolio companies that need senior people leadership on a dedicated basis without adding a permanent CPO-level headcount. We sit on the divisional leadership team, own the people agenda for that part of the business, and operate alongside group HR.',
+      who: 'For corporate groups, divisions or portfolio companies that need dedicated L&D leadership without adding a permanent headcount. We embed as your fractional L&D lead for the BU, region, or programme, own the development agenda, and work alongside group L&D.',
       includes: [
-        'Weekly divisional leadership team attendance',
-        'Divisional people strategy and quarterly roadmap',
-        'Senior-manager enablement programme',
-        'Performance framework aligned to group standards',
-        'Engagement and retention planning for the division',
-        'Succession and talent planning at senior-manager level',
-        'Escalation point for senior HR matters within the division',
-        'Interface with group HR and the exec team',
+        'People development strategy for the BU or region with quarterly roadmap',
+        'Leadership and manager capability programme, structured and ongoing',
+        'Behavioural skills development across all levels of the division',
+        'Performance and feedback culture design aligned to group frameworks',
+        'Career development frameworks bespoke to the business unit',
+        'Team effectiveness and ways of working programmes',
+        'Culture and values programmes aligned to group',
+        'Interface with group L&D and the divisional leadership team',
       ],
     },
   },
   {
     name: 'Lead Build',
-    tag: 'Scale · building your people function',
+    tag: 'Scale · building your L&D function',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses scaling rapidly that need a people function built from scratch or completely rebuilt. We design the structure, hire into it, build the processes, and hand over a fully operational people function. This is not a retainer: it is a transformation engagement.',
+      who: 'You are scaling and your people function needs to keep up. Lead Build is for businesses that need L&D designed, built and embedded properly, with the infrastructure, programmes and capability to run independently once we hand it over. We do not just design a strategy and leave. We build the whole thing, develop your people at every level and make sure whoever runs it after us has everything they need to keep it going.',
       includes: [
-        'Full people function design and build',
-        'HRIS selection and implementation support',
-        'HR hire scoping and interview support',
-        'Manager capability programme (full cohort)',
-        'Culture and values framework',
-        'People strategy aligned to 12-24 month business plan',
-        'Board-level people reporting framework',
-        'Transition plan to in-house team',
+        'Full L&D function design, build and hire',
+        'Leadership capability programme for your full management cohort',
+        'Behavioural and skills development programmes across the business',
+        'Culture, values and ways of working framework',
+        'L&D strategy aligned to your 12 to 24 month business plan',
+        'Career development and succession frameworks',
+        'Board level people development reporting',
+        'Transition plan and handover to your in-house team',
       ],
     },
     corporate: {
-      who: 'For corporate groups spinning up a new entity, integrating an acquisition, or rebuilding a failing people function in a specific region or BU. We design the structure, hire into it, build the processes, and transition to the permanent leadership.',
+      who: 'For corporate groups standing up a new entity, integrating an acquisition, or rebuilding a failing L&D function in a specific region or BU. We design the operating model, build the programmes and transition to the permanent in-house team.',
       includes: [
-        'Target operating model design for the function',
-        'HRIS selection or integration with group systems',
-        'Senior HR hire scoping and interview support',
-        'Manager capability programme (full cohort)',
-        'Culture and values framework aligned to group',
-        'People strategy aligned to a 12-24 month plan',
-        'Board or ExCo-level people reporting framework',
-        'Transition plan to permanent in-house leadership',
+        'Target operating model design for the L&D function',
+        'Leadership capability programme for your full management cohort',
+        'Behavioural and skills development programmes across the business',
+        'Culture, values and ways of working framework aligned to group',
+        'L&D strategy aligned to the 12 to 24 month business plan',
+        'Career development and succession frameworks',
+        'Board or ExCo level people development reporting',
+        'Transition plan and handover to permanent in-house leadership',
       ],
     },
   },
@@ -154,7 +130,7 @@ export default function LeadPage() {
             <div>
               <p className="eyebrow mb-5">
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-                LEAD: Services and Pricing
+                LEAD: L&amp;D, Leadership and People Development
               </p>
               <h1
                 className="font-display mb-5"
@@ -166,14 +142,14 @@ export default function LeadPage() {
                   color: 'var(--ink)',
                 }}
               >
-                Four ways to work with us<br />
-                <span className="text-gradient">on your people leadership.</span>
+                Your people are your competitive advantage.<br />
+                <span className="text-gradient">LEAD is how you develop them.</span>
               </h1>
               <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-                Most growing businesses reach a point where the founder is making too many people decisions, managers are not equipped to lead properly, and the business is scaling without the infrastructure to support it. That is where LEAD starts.
+                From behavioural skills and leadership capability through to culture and strategy, LEAD is everything an effective L&amp;D function does, built around what your business actually needs right now.
               </p>
               <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-                From a reliable floor of strategic HR advice through to a full fractional CPO engagement: the right model depends on where the biggest gap is sitting. Not sure? A scoping call takes thirty minutes.
+                We work with everyone in your organisation, not just your managers. Because great businesses are built by people who keep getting better at what they do. Thirty minutes is all it takes to figure out where to start.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/book" className="btn-gradient">
@@ -199,14 +175,14 @@ export default function LeadPage() {
             </h2>
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
               {[
-                'Fractional People leadership (CPO / HRD level)',
-                'People strategy and quarterly roadmap',
-                'Manager enablement and coaching',
-                'Performance and development frameworks',
-                'Culture and engagement programmes',
-                'Succession and talent planning',
-                'HRIS selection and implementation',
-                'Building and transitioning to an in-house team',
+                'Leadership capability and behavioural skills development',
+                'Manager training and equipping people to manage day to day effectively',
+                'Culture building and engagement programmes',
+                'L&D strategy aligned to business goals',
+                'Learning programmes for all levels, including technical skills',
+                'Performance management and feedback skills',
+                'Team effectiveness and ways of working',
+                'Career development and progression frameworks',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3 py-1">
                   <CheckCircle className="flex-shrink-0 mt-0.5" size={14} style={{ color: 'var(--brand-purple)' }} />
@@ -299,11 +275,11 @@ export default function LeadPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'What is fractional People leadership?', a: 'We act as your CPO or HRD on a part-time basis: typically one to three days per week depending on the package. You get senior-level people leadership without the cost of a full-time executive hire.' },
-        { q: 'What is the difference between LEAD and PROTECT?', a: 'PROTECT builds the foundations: contracts, handbook, policies, compliance. LEAD is about leadership: strategy, culture, manager capability, people function design. Many clients need both. They can run in parallel or sequence depending on priority.' },
-        { q: 'Do we need to have a people function already?', a: 'No. Lead Build is specifically designed for businesses building their people function from scratch. Lead Foundations and Lead Optimiser work well for businesses that have no formal HR function at all.' },
+        { q: 'What is fractional L&D leadership?', a: 'We act as your L&D lead on a part-time basis, owning the development agenda across the business: leadership capability, behavioural skills, culture and career progression. You get senior-level L&D leadership without the cost of a full-time hire.' },
+        { q: 'What is the difference between LEAD and PROTECT?', a: 'PROTECT covers HR generalist and compliance: contracts, handbooks, policies, ER, fractional CPO. LEAD is about learning and development: leadership capability, behavioural skills, culture and career progression. Many clients need both. They can run in parallel or sequence depending on priority.' },
+        { q: 'Do we need to have an L&D function already?', a: 'No. Lead Build is specifically designed for businesses setting up an L&D function from scratch. Lead Foundations and Lead Partner work well for businesses with no formal L&D function who want to start building the capability properly.' },
         { q: 'How involved are you on a day-to-day basis?', a: 'It depends on the package. Lead Foundations is one structured session per month plus ad-hoc access. Lead Partner typically involves weekly involvement including leadership team meetings. Lead Build is more intensive, particularly in the early months.' },
-        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. We work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
+        { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. We work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership development, and HR foundations, run by people who actually talk to each other.' },
       ]} />
 
     </div>

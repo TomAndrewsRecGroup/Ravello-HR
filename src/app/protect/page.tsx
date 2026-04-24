@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'PROTECT Services | HR Foundations and Compliance | The People System',
-  description: 'Five PROTECT packages: Essentials, Core, Partner, Enterprise, Transaction. Contracts, handbooks, compliance, Employment Rights Bill readiness: The People System.',
+  title: 'PROTECT Services | HR Foundations, Compliance and Fractional CPO | The People System',
+  description: 'Three PROTECT packages: Protect Foundations, Protect Partner, Protect CPO. Contracts, handbooks, compliance, ER case management and fractional CPO leadership: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/protect' },
 };
 
@@ -26,143 +26,102 @@ type Package = {
 
 const packages: Package[] = [
   {
-    name: 'Protect Essentials',
-    tag: 'Starting point',
+    name: 'Protect Foundations',
+    tag: 'Starting point · documentation and ongoing check-in',
     highlight: false,
-    cta: { label: 'Get Started', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses that need the absolute basics in place: written contracts, a holiday and absence policy, and a basic disciplinary procedure. Fast, clean, done properly.',
+      who: 'Your contracts are probably out of date. Your policies may not reflect current employment law. When something goes wrong with an employee, you are figuring it out as you go. Protect Foundations fixes that. We build the documentation and compliance your business needs and stay on hand when people issues come up, so you are never making it up under pressure.',
       includes: [
-        'Employment contract template (suited to your business)',
-        'Offer letter template',
-        'Basic disciplinary and grievance procedure',
-        'Holiday and absence policy',
-        '1-hour implementation call',
+        'Full audit of existing contracts, policies and HR documentation',
+        'Employment contracts drafted or updated to current legal standards',
+        'Employee handbook covering disciplinaries, grievances, absence, performance and conduct',
+        'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
+        'Monthly HR check-in (60 min): live ER issues, compliance updates, people questions',
+        'Up to 2 escalation calls per month for urgent or time-sensitive situations',
       ],
     },
     corporate: {
-      who: 'For corporate teams or newly incorporated subsidiaries that need core employment documentation in place quickly while group policy is being adapted. Fast, clean, written to a standard your parent legal team will accept.',
+      who: 'For corporate subsidiaries or acquired entities that need core HR documentation and compliance aligned to group standards, with hands-on support for local ER issues as they come up.',
       includes: [
-        'Employment contract template aligned to group standards',
-        'Offer letter template',
-        'Basic disciplinary and grievance procedure',
-        'Holiday and absence policy',
-        '1-hour implementation call with the local lead',
-      ],
-    },
-  },
-  {
-    name: 'Protect Core',
-    tag: 'Most popular',
-    highlight: true,
-    cta: { label: 'Get a Free HR Audit', href: '/book' },
-    sme: {
-      who: 'For growing businesses that have outgrown the basics. You need a handbook that covers how your business actually works, a proper policy library, and managers who know how to apply the rules consistently.',
-      includes: [
-        'Full employment contract suite (permanent, fixed-term, part-time)',
-        'Bespoke staff handbook (written around your business)',
-        'Core policy library: 12 policies including remote working, AI use, mental health',
-        'Manager guide and FAQ document',
-        'Gap analysis of existing documentation',
-        '2 review and sign-off sessions',
-        'Employment Rights Bill compliance check included',
-        'Optional ongoing update retainer',
-      ],
-    },
-    corporate: {
-      who: 'For divisions, regions, or acquired entities that need a localised handbook and policy set sitting alongside group policy. Bespoke to local law and operating reality, aligned to group governance and tone.',
-      includes: [
-        'Full local employment contract suite',
-        'Bespoke localised handbook aligned to group tone of voice',
-        'Core policy library: 12 policies including remote working, AI use, mental health',
-        'Manager guide and FAQ document',
-        'Gap analysis against existing group and local documentation',
-        '2 review and sign-off sessions',
-        'Employment Rights Bill compliance check included',
-        'Optional ongoing update retainer',
+        'Audit of existing contracts, policies and HR documentation against group standards',
+        'Employment contracts drafted or updated to current UK law and group templates',
+        'Localised handbook covering disciplinaries, grievances, absence, performance and conduct',
+        'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
+        'Monthly HR check-in (60 min) with the local HR lead',
+        'Up to 2 escalation calls per month for urgent or time-sensitive situations',
       ],
     },
   },
   {
     name: 'Protect Partner',
-    tag: 'Ongoing',
-    highlight: false,
+    tag: 'Most popular · ongoing HR generalist support',
+    highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses that need ongoing HR documentation support: new policies as the business evolves, regular compliance reviews, manager guidance on live situations, and Employment Rights Bill readiness built in.',
+      who: 'For businesses that need a proper HR function on an ongoing basis. Not just documents and compliance but active, hands-on support across everything people related: ER cases, org design, skills mapping, restructures and the strategic infrastructure to support a growing business.',
       includes: [
-        'Everything in Protect Core',
-        'Full bespoke policy library (ongoing)',
-        'Employment Rights Bill implementation support',
-        'Monthly compliance review call',
-        'Manager guidance on live HR situations (documentation focus)',
-        'Priority turnaround on new policies and contract variations',
+        'Everything in Protect Foundations',
+        'Fortnightly HR session (60 min): ER cases, people decisions, priorities and planning',
+        'Up to 4 escalation calls per month for complex or urgent situations',
+        'End-to-end ER case management: disciplinaries, grievances, performance management, redundancy and TUPE',
+        'Organisational design, workforce planning and restructuring support',
+        'Skills mapping and capability gap analysis across your workforce',
+        'HRIS selection and implementation guidance',
+        'Onboarding and offboarding processes designed and embedded',
+        'People data and monthly HR reporting',
       ],
     },
     corporate: {
-      who: 'For corporate entities or divisions that need ongoing HR documentation support layered onto group policy: localisation, evolving policies, regular compliance reviews, and manager guidance on live situations.',
+      who: 'For divisions, regions or portfolio companies that need dedicated HR generalist support on an ongoing basis, sitting alongside group HR and covering everything people related from ER to org design.',
       includes: [
-        'Everything in Protect Core (corporate variant)',
-        'Localised policy library maintained against group standards',
-        'Employment Rights Bill implementation support',
-        'Monthly compliance review call with the local HR lead',
-        'Manager guidance on live HR situations (documentation focus)',
-        'Priority turnaround on new policies and contract variations',
+        'Everything in Protect Foundations (corporate variant)',
+        'Fortnightly HR session (60 min) with the divisional lead: ER cases, decisions, priorities',
+        'Up to 4 escalation calls per month for complex or urgent situations',
+        'End-to-end ER case management: disciplinaries, grievances, performance, redundancy, TUPE',
+        'Organisational design, workforce planning and restructuring support',
+        'Skills mapping and capability gap analysis across the division',
+        'HRIS selection and integration with group systems',
+        'Onboarding and offboarding processes designed and embedded',
+        'People data and monthly HR reporting to divisional and group leadership',
       ],
     },
   },
   {
-    name: 'Protect Enterprise',
-    tag: 'Complex · bespoke scope',
+    name: 'Protect CPO',
+    tag: 'Executive · fractional CPO',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'For businesses with multi-site, multi-contract, or multi-country complexity. Where the policy library is large, the manager population is significant, and consistency across the business requires ongoing active management.',
+      who: 'For businesses that need someone operating at CPO or HRD level without the full-time cost. We sit at your leadership table, own the people agenda, hold the compliance and ER risk and build the people strategy your business needs to scale. This is not a support service. It is executive-level people leadership.',
       includes: [
-        'Full policy library design and management',
-        'Multi-site or multi-contract harmonisation',
-        'Regular legal compliance monitoring',
-        'HR documentation governance framework',
-        'Quarterly board-level people risk summary',
-        'Direct access to us throughout',
+        'Everything in Protect Partner',
+        'Weekly fractional CPO session (60 min) plus leadership team and board attendance',
+        'People strategy design aligned to your 12 to 36 month business plan',
+        'Skills mapping, succession planning and talent pipeline development',
+        'Reward and compensation strategy including grading and pay structures',
+        'DEI strategy and implementation',
+        'Culture and values design and embedding',
+        'Employment tribunal risk management and legal liaison',
+        'Investor and board-level people reporting',
+        'Change management and transformation programmes',
+        'Transition planning when you are ready to hire in-house',
       ],
     },
     corporate: {
-      who: 'For large, multi-entity organisations where the policy estate is extensive, manager populations run into the hundreds or thousands, and consistency across business units requires active governance.',
+      who: 'For corporate divisions or portfolio companies that need CPO-level people leadership without adding a permanent role. We sit on the divisional exec, own the people agenda, carry the ER and compliance risk, and interface with group HR.',
       includes: [
-        'Enterprise-wide policy library design and management',
-        'Multi-entity, multi-contract, multi-jurisdiction harmonisation',
-        'Regular legal compliance monitoring',
-        'HR documentation governance framework',
-        'Quarterly board and audit-committee people risk summary',
-        'Dedicated lead and response SLA',
-      ],
-    },
-  },
-  {
-    name: 'Protect Transaction',
-    tag: 'Project · M&A and TUPE',
-    highlight: false,
-    cta: { label: 'Book a Call about your deal', href: '/book' },
-    sme: {
-      who: 'For businesses going through an acquisition, merger, or TUPE transfer. People documentation and compliance risk needs specific, transaction-aware review. This is a scoped project: not a retainer.',
-      includes: [
-        'Contract and documentation review against transaction terms',
-        'TUPE compliance check and letter suite',
-        'Redundancy documentation (if required)',
-        'Contract harmonisation post-transfer',
-        'People risk summary written for board and legal team use',
-      ],
-    },
-    corporate: {
-      who: 'For corporate groups running acquisitions, disposals, or integrations where people documentation and compliance risk needs transaction-grade review. Scoped to sit alongside your M&A counsel and HR integration lead.',
-      includes: [
-        'Pre-deal people documentation and compliance review',
-        'TUPE compliance check and letter suite across entities',
-        'Redundancy documentation (if required)',
-        'Day-1 and post-close contract harmonisation plan',
-        'People risk summary for board, audit committee and legal team',
-        'Integration governance for the HR workstream',
+        'Everything in Protect Partner (corporate variant)',
+        'Weekly fractional CPO session (60 min) plus divisional leadership team attendance',
+        'Divisional people strategy aligned to 12 to 36 month plan and group direction',
+        'Skills mapping, succession planning and talent pipeline development',
+        'Reward and compensation strategy aligned to group grading and pay structures',
+        'DEI strategy and implementation aligned to group policy',
+        'Culture and values design and embedding',
+        'Employment tribunal risk management and legal liaison with group counsel',
+        'Investor, board and group HR reporting',
+        'Change management and transformation programmes',
+        'Transition planning when you are ready to hire in-house',
       ],
     },
   },
@@ -179,7 +138,7 @@ export default function ProtectPage() {
             <div>
               <p className="eyebrow mb-5">
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-                PROTECT: Services and Pricing
+                PROTECT: HR Foundations, Compliance and Fractional CPO
               </p>
               <h1
                 className="font-display mb-5"
@@ -191,8 +150,8 @@ export default function ProtectPage() {
                   color: 'var(--ink)',
                 }}
               >
-                Five ways to work with us<br />
-                <span className="text-gradient">on your HR foundations.</span>
+                Keeping your business compliant, your people protected, and your{' '}
+                <span className="text-gradient">HR Infrastructure built for your own journey.</span>
               </h1>
               <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
                 Documented. Protected. Ready to scale. Every PROTECT engagement is built around what your business genuinely needs: not a copy-paste from a template library. Written by us. Compliant with current UK law, including Employment Rights Bill changes.
@@ -226,7 +185,7 @@ export default function ProtectPage() {
             <div>
               <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)' }}>Employment Rights Bill: compliance pressure is building now</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                The Employment Rights Bill introduces significant changes for UK employers: expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every Protect Core engagement and above includes an Employment Rights Bill compliance check as standard.
+                The Employment Rights Bill introduces significant changes for UK employers: expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every Protect Foundations engagement and above includes an Employment Rights Bill compliance check as standard.
               </p>
             </div>
           </div>
@@ -314,10 +273,10 @@ export default function ProtectPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'How are PROTECT packages scoped?', a: 'Protect Essentials and Protect Transaction run as one-off scoped projects. Protect Core can run as a one-off or with an optional ongoing retainer. Protect Partner and Protect Enterprise are ongoing engagements. Pricing is shaped to scope and organisation size: book a call and we will put it in writing.' },
-        { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. We review every Protect Core engagement and above against current and upcoming legislation.' },
-        { q: 'How long does a PROTECT engagement take?', a: 'Protect Essentials typically completes within one week. Protect Core takes two to four weeks depending on the state of your existing documentation. Protect Transaction is scoped per deal: typically two to four weeks from kickoff.' },
-        { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. We will do a gap analysis as part of Protect Core before any rewriting begins.' },
+        { q: 'How are PROTECT packages scoped?', a: 'Protect Foundations, Protect Partner and Protect CPO are all ongoing engagements: Foundations runs on a monthly rhythm, Partner on a fortnightly rhythm, and CPO weekly plus leadership team and board attendance. Pricing is shaped to scope and organisation size: book a call and we will put it in writing.' },
+        { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. We review every Protect Foundations engagement and above against current and upcoming legislation.' },
+        { q: 'How long does the initial setup take?', a: 'Once you start on Protect Foundations, the audit, contract and handbook rebuild typically completes within two to four weeks depending on the state of your existing documentation. Ongoing check-ins begin from month one.' },
+        { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. We will do a gap analysis as part of Protect Foundations before any rewriting begins.' },
         { q: 'Is this legal advice?', a: 'PROTECT covers HR documentation and employment compliance: contracts, handbooks, policies, and procedures. For active litigation or complex legal disputes, we work alongside your employment solicitor rather than replacing them.' },
       ]} />
 
