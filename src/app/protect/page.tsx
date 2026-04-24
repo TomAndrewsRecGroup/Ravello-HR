@@ -10,86 +10,161 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://thepeoplesystem.co.uk/protect' },
 };
 
-const packages = [
+type Variant = {
+  who: string;
+  includes: string[];
+};
+
+type Package = {
+  name: string;
+  tag: string;
+  highlight: boolean;
+  cta: { label: string; href: string };
+  sme: Variant;
+  corporate: Variant;
+};
+
+const packages: Package[] = [
   {
     name: 'Protect Essentials',
     tag: 'Starting point',
-    price: 'From £495 · one-off',
     highlight: false,
-    who: 'For businesses under 10 people that need the absolute basics in place: written contracts, a holiday and absence policy, and a basic disciplinary procedure. Fast, clean, done properly.',
-    includes: [
-      'Employment contract template (suited to your business)',
-      'Offer letter template',
-      'Basic disciplinary and grievance procedure',
-      'Holiday and absence policy',
-      '1-hour implementation call',
-    ],
     cta: { label: 'Get Started', href: '/book' },
+    sme: {
+      who: 'For businesses that need the absolute basics in place: written contracts, a holiday and absence policy, and a basic disciplinary procedure. Fast, clean, done properly.',
+      includes: [
+        'Employment contract template (suited to your business)',
+        'Offer letter template',
+        'Basic disciplinary and grievance procedure',
+        'Holiday and absence policy',
+        '1-hour implementation call',
+      ],
+    },
+    corporate: {
+      who: 'For corporate teams or newly incorporated subsidiaries that need core employment documentation in place quickly while group policy is being adapted. Fast, clean, written to a standard your parent legal team will accept.',
+      includes: [
+        'Employment contract template aligned to group standards',
+        'Offer letter template',
+        'Basic disciplinary and grievance procedure',
+        'Holiday and absence policy',
+        '1-hour implementation call with the local lead',
+      ],
+    },
   },
   {
     name: 'Protect Core',
-    tag: 'Most popular · 10-50 people',
-    price: 'From £1,200 one-off · optional retainer £500-£750/month',
+    tag: 'Most popular',
     highlight: true,
-    who: 'For growing businesses that have outgrown the basics. You need a handbook that covers how your business actually works, a proper policy library, and managers who know how to apply the rules consistently.',
-    includes: [
-      'Full employment contract suite (permanent, fixed-term, part-time)',
-      'Bespoke staff handbook (written around your business)',
-      'Core policy library: 12 policies including remote working, AI use, mental health',
-      'Manager guide and FAQ document',
-      'Gap analysis of existing documentation',
-      '2 review and sign-off sessions',
-      'Employment Rights Bill compliance check included',
-      'Optional: add an ongoing update retainer at £500-£750/month',
-    ],
     cta: { label: 'Get a Free HR Audit', href: '/book' },
+    sme: {
+      who: 'For growing businesses that have outgrown the basics. You need a handbook that covers how your business actually works, a proper policy library, and managers who know how to apply the rules consistently.',
+      includes: [
+        'Full employment contract suite (permanent, fixed-term, part-time)',
+        'Bespoke staff handbook (written around your business)',
+        'Core policy library: 12 policies including remote working, AI use, mental health',
+        'Manager guide and FAQ document',
+        'Gap analysis of existing documentation',
+        '2 review and sign-off sessions',
+        'Employment Rights Bill compliance check included',
+        'Optional ongoing update retainer',
+      ],
+    },
+    corporate: {
+      who: 'For divisions, regions, or acquired entities that need a localised handbook and policy set sitting alongside group policy. Bespoke to local law and operating reality, aligned to group governance and tone.',
+      includes: [
+        'Full local employment contract suite',
+        'Bespoke localised handbook aligned to group tone of voice',
+        'Core policy library: 12 policies including remote working, AI use, mental health',
+        'Manager guide and FAQ document',
+        'Gap analysis against existing group and local documentation',
+        '2 review and sign-off sessions',
+        'Employment Rights Bill compliance check included',
+        'Optional ongoing update retainer',
+      ],
+    },
   },
   {
     name: 'Protect Partner',
-    tag: 'Ongoing · 50+ people',
-    price: '£1,500-£2,500/month',
+    tag: 'Ongoing',
     highlight: false,
-    who: 'For businesses that need ongoing HR documentation support: new policies as the business evolves, regular compliance reviews, manager guidance on live situations, and Employment Rights Bill readiness built in.',
-    includes: [
-      'Everything in Protect Core',
-      'Full bespoke policy library (ongoing)',
-      'Employment Rights Bill implementation support',
-      'Monthly compliance review call',
-      'Manager guidance on live HR situations (documentation focus)',
-      'Priority turnaround on new policies and contract variations',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses that need ongoing HR documentation support: new policies as the business evolves, regular compliance reviews, manager guidance on live situations, and Employment Rights Bill readiness built in.',
+      includes: [
+        'Everything in Protect Core',
+        'Full bespoke policy library (ongoing)',
+        'Employment Rights Bill implementation support',
+        'Monthly compliance review call',
+        'Manager guidance on live HR situations (documentation focus)',
+        'Priority turnaround on new policies and contract variations',
+      ],
+    },
+    corporate: {
+      who: 'For corporate entities or divisions that need ongoing HR documentation support layered onto group policy: localisation, evolving policies, regular compliance reviews, and manager guidance on live situations.',
+      includes: [
+        'Everything in Protect Core (corporate variant)',
+        'Localised policy library maintained against group standards',
+        'Employment Rights Bill implementation support',
+        'Monthly compliance review call with the local HR lead',
+        'Manager guidance on live HR situations (documentation focus)',
+        'Priority turnaround on new policies and contract variations',
+      ],
+    },
   },
   {
     name: 'Protect Enterprise',
     tag: 'Complex · bespoke scope',
-    price: '£3,000-£5,000+/month',
     highlight: false,
-    who: 'For businesses with multi-site, multi-contract, or multi-country complexity. Where the policy library is large, the manager population is significant, and consistency across the business requires ongoing active management.',
-    includes: [
-      'Full policy library design and management',
-      'Multi-site or multi-contract harmonisation',
-      'Regular legal compliance monitoring',
-      'HR documentation governance framework',
-      'Quarterly board-level people risk summary',
-      'Direct access to us throughout',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses with multi-site, multi-contract, or multi-country complexity. Where the policy library is large, the manager population is significant, and consistency across the business requires ongoing active management.',
+      includes: [
+        'Full policy library design and management',
+        'Multi-site or multi-contract harmonisation',
+        'Regular legal compliance monitoring',
+        'HR documentation governance framework',
+        'Quarterly board-level people risk summary',
+        'Direct access to us throughout',
+      ],
+    },
+    corporate: {
+      who: 'For large, multi-entity organisations where the policy estate is extensive, manager populations run into the hundreds or thousands, and consistency across business units requires active governance.',
+      includes: [
+        'Enterprise-wide policy library design and management',
+        'Multi-entity, multi-contract, multi-jurisdiction harmonisation',
+        'Regular legal compliance monitoring',
+        'HR documentation governance framework',
+        'Quarterly board and audit-committee people risk summary',
+        'Dedicated lead and response SLA',
+      ],
+    },
   },
   {
     name: 'Protect Transaction',
     tag: 'Project · M&A and TUPE',
-    price: 'From £3,500 · one-off project',
     highlight: false,
-    who: 'For businesses going through an acquisition, merger, or TUPE transfer. People documentation and compliance risk needs specific, transaction-aware review. This is a scoped project: not a retainer.',
-    includes: [
-      'Contract and documentation review against transaction terms',
-      'TUPE compliance check and letter suite',
-      'Redundancy documentation (if required)',
-      'Contract harmonisation post-transfer',
-      'People risk summary written for board and legal team use',
-    ],
     cta: { label: 'Book a Call about your deal', href: '/book' },
+    sme: {
+      who: 'For businesses going through an acquisition, merger, or TUPE transfer. People documentation and compliance risk needs specific, transaction-aware review. This is a scoped project: not a retainer.',
+      includes: [
+        'Contract and documentation review against transaction terms',
+        'TUPE compliance check and letter suite',
+        'Redundancy documentation (if required)',
+        'Contract harmonisation post-transfer',
+        'People risk summary written for board and legal team use',
+      ],
+    },
+    corporate: {
+      who: 'For corporate groups running acquisitions, disposals, or integrations where people documentation and compliance risk needs transaction-grade review. Scoped to sit alongside your M&A counsel and HR integration lead.',
+      includes: [
+        'Pre-deal people documentation and compliance review',
+        'TUPE compliance check and letter suite across entities',
+        'Redundancy documentation (if required)',
+        'Day-1 and post-close contract harmonisation plan',
+        'People risk summary for board, audit committee and legal team',
+        'Integration governance for the HR workstream',
+      ],
+    },
   },
 ];
 
@@ -166,78 +241,25 @@ export default function ProtectPage() {
               PROTECT <span className="text-gradient">packages</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              From a fast one-off essentials fix to fully managed ongoing compliance. All written by us, not by a template generator.
+              From a fast one-off essentials fix to fully managed ongoing compliance. Each engagement shapes differently depending on the size and shape of your organisation: choose the column that matches.
             </p>
           </div>
-          <div className="space-y-6">
+
+          {/* Column headers (desktop) */}
+          <div className="hidden lg:grid grid-cols-2 gap-6 mb-4">
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
+              For growing businesses
+            </p>
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
+              For corporate organisations
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <div
-                key={pkg.name}
-                className="rounded-[22px] p-8"
-                style={pkg.highlight
-                  ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
-                  : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
-                }
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <h3
-                        className="font-bold text-2xl"
-                        style={{ color: pkg.highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
-                      >
-                        {pkg.name}
-                      </h3>
-                      <span
-                        className="text-xs font-semibold px-3 py-1 rounded-full"
-                        style={pkg.highlight
-                          ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
-                          : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
-                        }
-                      >
-                        {pkg.tag}
-                      </span>
-                    </div>
-                    <p
-                      className="font-bold text-lg mb-4"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.9)' : 'var(--brand-purple)' }}
-                    >
-                      {pkg.price}
-                    </p>
-                    <p
-                      className="text-sm leading-relaxed mb-6"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                    >
-                      {pkg.who}
-                    </p>
-                    <ul className="space-y-2">
-                      {pkg.includes.map((item) => (
-                        <li key={item} className="flex items-start gap-3">
-                          <CheckCircle
-                            className="flex-shrink-0 mt-0.5"
-                            size={15}
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
-                          />
-                          <span
-                            className="text-sm"
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                          >
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="lg:w-48 flex-shrink-0">
-                    <Link
-                      href={pkg.cta.href}
-                      className={pkg.highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
-                    >
-                      {pkg.cta.label} <ArrowRight size={14} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <PackagePair key={pkg.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -283,13 +305,99 @@ export default function ProtectPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'How are PROTECT packages priced?', a: 'Protect Essentials is from £495 as a one-off project. Protect Core is from £1,200 one-off with an optional ongoing retainer at £500-£750/month. Protect Partner runs at £1,500-£2,500/month. Protect Enterprise is bespoke, typically £3,000-£5,000+/month. Protect Transaction starts from £3,500 as a scoped project.' },
+        { q: 'How are PROTECT packages scoped?', a: 'Protect Essentials and Protect Transaction run as one-off scoped projects. Protect Core can run as a one-off or with an optional ongoing retainer. Protect Partner and Protect Enterprise are ongoing engagements. Pricing is shaped to scope and organisation size: book a call and we will put it in writing.' },
         { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. We review every Protect Core engagement and above against current and upcoming legislation.' },
         { q: 'How long does a PROTECT engagement take?', a: 'Protect Essentials typically completes within one week. Protect Core takes two to four weeks depending on the state of your existing documentation. Protect Transaction is scoped per deal: typically two to four weeks from kickoff.' },
         { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. We will do a gap analysis as part of Protect Core before any rewriting begins.' },
         { q: 'Is this legal advice?', a: 'PROTECT covers HR documentation and employment compliance: contracts, handbooks, policies, and procedures. For active litigation or complex legal disputes, we work alongside your employment solicitor rather than replacing them.' },
       ]} />
 
+    </div>
+  );
+}
+
+function PackagePair({ pkg }: { pkg: Package }) {
+  return (
+    <>
+      <PackageCard pkg={pkg} variant="sme" audienceLabel="For growing businesses" />
+      <PackageCard pkg={pkg} variant="corporate" audienceLabel="For corporate organisations" />
+    </>
+  );
+}
+
+function PackageCard({
+  pkg,
+  variant,
+  audienceLabel,
+}: {
+  pkg: Package;
+  variant: 'sme' | 'corporate';
+  audienceLabel: string;
+}) {
+  const v = pkg[variant];
+  const highlight = pkg.highlight;
+  return (
+    <div
+      className="rounded-[22px] p-8 flex flex-col h-full"
+      style={highlight
+        ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
+        : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
+      }
+    >
+      <p
+        className="text-xs font-semibold uppercase tracking-wider mb-3 lg:hidden"
+        style={{ color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--ink-faint)', letterSpacing: '0.08em' }}
+      >
+        {audienceLabel}
+      </p>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <h3
+          className="font-bold text-2xl"
+          style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
+        >
+          {pkg.name}
+        </h3>
+        <span
+          className="text-xs font-semibold px-3 py-1 rounded-full"
+          style={highlight
+            ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
+            : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
+          }
+        >
+          {pkg.tag}
+        </span>
+      </div>
+      <p
+        className="text-sm leading-relaxed mb-6"
+        style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+      >
+        {v.who}
+      </p>
+      <ul className="space-y-2 mb-8">
+        {v.includes.map((item) => (
+          <li key={item} className="flex items-start gap-3">
+            <CheckCircle
+              className="flex-shrink-0 mt-0.5"
+              size={15}
+              style={{ color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
+            />
+            <span
+              className="text-sm"
+              style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+            >
+              {item}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto">
+        <Link
+          href={pkg.cta.href}
+          className={highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
+        >
+          {pkg.cta.label} <ArrowRight size={14} />
+        </Link>
+      </div>
     </div>
   );
 }

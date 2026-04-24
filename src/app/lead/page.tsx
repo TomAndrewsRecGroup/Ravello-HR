@@ -10,72 +10,136 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://thepeoplesystem.co.uk/lead' },
 };
 
-const packages = [
+type Variant = {
+  who: string;
+  includes: string[];
+};
+
+type Package = {
+  name: string;
+  tag: string;
+  highlight: boolean;
+  cta: { label: string; href: string };
+  sme: Variant;
+  corporate: Variant;
+};
+
+const packages: Package[] = [
   {
     name: 'Lead Foundations',
     tag: 'Starting point · ongoing',
-    price: '£1,000/month',
     highlight: false,
-    who: 'For businesses that need a senior HR voice available on a regular basis: someone to call when a people question comes up, to sanity-check decisions, and to prevent small issues from becoming expensive ones. Not a full fractional engagement. A reliable floor.',
-    includes: [
-      'Monthly strategic HR check-in (60 min)',
-      'Ad-hoc advice on people decisions and live situations',
-      'Manager guidance on individual cases',
-      'Access to us via email between sessions',
-      'Escalation to higher packages where a situation requires it',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses that need a senior HR voice available on a regular basis: someone to call when a people question comes up, to sanity-check decisions, and to prevent small issues from becoming expensive ones. Not a full fractional engagement. A reliable floor.',
+      includes: [
+        'Monthly strategic HR check-in (60 min)',
+        'Ad-hoc advice on people decisions and live situations',
+        'Manager guidance on individual cases',
+        'Access to us via email between sessions',
+        'Escalation to higher packages where a situation requires it',
+      ],
+    },
+    corporate: {
+      who: 'For corporate leaders or functional heads who need an independent senior people advisor sitting outside the central HR team. When you want an objective voice to pressure-test decisions that the in-house HRBP is too close to.',
+      includes: [
+        'Monthly strategic advisory session (60 min)',
+        'Ad-hoc advice on people decisions and live situations',
+        'Independent pressure-testing of HRBP or HRD recommendations',
+        'Access to us via email between sessions',
+        'Escalation to higher packages where a situation requires it',
+      ],
+    },
   },
   {
     name: 'Lead Optimiser',
     tag: 'Project · fix a specific problem',
-    price: '£2,500 one-off, or £1,500/month × 3',
     highlight: false,
-    who: 'For businesses with a specific people challenge that needs fixing properly. A manager who is struggling. A performance process that is not working. A team structure that needs redesigning. A culture issue that has been ignored too long. Fixed scope, clear deliverable.',
-    includes: [
-      'Problem diagnosis and root cause analysis',
-      'Manager coaching (up to 3 sessions)',
-      'Process or framework design (one area)',
-      'Written recommendations and implementation guide',
-      'One follow-up review session',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses with a specific people challenge that needs fixing properly. A manager who is struggling. A performance process that is not working. A team structure that needs redesigning. A culture issue that has been ignored too long. Fixed scope, clear deliverable.',
+      includes: [
+        'Problem diagnosis and root cause analysis',
+        'Manager coaching (up to 3 sessions)',
+        'Process or framework design (one area)',
+        'Written recommendations and implementation guide',
+        'One follow-up review session',
+      ],
+    },
+    corporate: {
+      who: 'For leaders inheriting a BU, function, or region with a specific people challenge that internal HR has struggled to fix. Fixed scope, outside-in diagnosis, delivered to the business line rather than the central HR team.',
+      includes: [
+        'Problem diagnosis and root cause analysis scoped to the BU or region',
+        'Leadership coaching (up to 3 sessions)',
+        'Framework or redesign work (one focus area)',
+        'Written recommendations and implementation guide',
+        'One follow-up review session with the business lead',
+      ],
+    },
   },
   {
     name: 'Lead Partner',
     tag: 'Most popular · embedded fractional HR',
-    price: '£3,000-£4,500/month',
     highlight: true,
-    who: 'For businesses that need a proper people function without the cost of a full-time CPO or HRD. We act as your fractional People lead: attending leadership team meetings, owning the people agenda, running manager capability work, and building the infrastructure your business needs to scale.',
-    includes: [
-      'Weekly leadership team attendance (where relevant)',
-      'People strategy development and quarterly roadmap',
-      'Manager enablement programme: structured, not one-off',
-      'Performance framework design and implementation',
-      'Engagement and retention planning',
-      'Succession and talent planning (where relevant)',
-      'Escalation point for all senior HR matters',
-      'Direct line to us throughout',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses that need a proper people function without the cost of a full-time CPO or HRD. We act as your fractional People lead: attending leadership team meetings, owning the people agenda, running manager capability work, and building the infrastructure your business needs to scale.',
+      includes: [
+        'Weekly leadership team attendance (where relevant)',
+        'People strategy development and quarterly roadmap',
+        'Manager enablement programme: structured, not one-off',
+        'Performance framework design and implementation',
+        'Engagement and retention planning',
+        'Succession and talent planning (where relevant)',
+        'Escalation point for all senior HR matters',
+        'Direct line to us throughout',
+      ],
+    },
+    corporate: {
+      who: 'For divisions, regions, or portfolio companies that need senior people leadership on a dedicated basis without adding a permanent CPO-level headcount. We sit on the divisional leadership team, own the people agenda for that part of the business, and operate alongside group HR.',
+      includes: [
+        'Weekly divisional leadership team attendance',
+        'Divisional people strategy and quarterly roadmap',
+        'Senior-manager enablement programme',
+        'Performance framework aligned to group standards',
+        'Engagement and retention planning for the division',
+        'Succession and talent planning at senior-manager level',
+        'Escalation point for senior HR matters within the division',
+        'Interface with group HR and the exec team',
+      ],
+    },
   },
   {
     name: 'Lead Build',
     tag: 'Scale · building your people function',
-    price: '£5,000-£7,500+/month',
     highlight: false,
-    who: 'For businesses scaling rapidly that need a people function built from scratch or completely rebuilt. We design the structure, hire into it, build the processes, and hand over a fully operational people function. This is not a retainer: it is a transformation engagement.',
-    includes: [
-      'Full people function design and build',
-      'HRIS selection and implementation support',
-      'HR hire scoping and interview support',
-      'Manager capability programme (full cohort)',
-      'Culture and values framework',
-      'People strategy aligned to 12-24 month business plan',
-      'Board-level people reporting framework',
-      'Transition plan to in-house team',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      who: 'For businesses scaling rapidly that need a people function built from scratch or completely rebuilt. We design the structure, hire into it, build the processes, and hand over a fully operational people function. This is not a retainer: it is a transformation engagement.',
+      includes: [
+        'Full people function design and build',
+        'HRIS selection and implementation support',
+        'HR hire scoping and interview support',
+        'Manager capability programme (full cohort)',
+        'Culture and values framework',
+        'People strategy aligned to 12-24 month business plan',
+        'Board-level people reporting framework',
+        'Transition plan to in-house team',
+      ],
+    },
+    corporate: {
+      who: 'For corporate groups spinning up a new entity, integrating an acquisition, or rebuilding a failing people function in a specific region or BU. We design the structure, hire into it, build the processes, and transition to the permanent leadership.',
+      includes: [
+        'Target operating model design for the function',
+        'HRIS selection or integration with group systems',
+        'Senior HR hire scoping and interview support',
+        'Manager capability programme (full cohort)',
+        'Culture and values framework aligned to group',
+        'People strategy aligned to a 12-24 month plan',
+        'Board or ExCo-level people reporting framework',
+        'Transition plan to permanent in-house leadership',
+      ],
+    },
   },
 ];
 
@@ -162,78 +226,25 @@ export default function LeadPage() {
               LEAD <span className="text-gradient">packages</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              From a reliable HR floor to a full people function build. No tables: here is what each engagement actually looks like.
+              From a reliable HR floor to a full people function build. Each engagement shapes differently depending on the size and shape of your organisation: choose the column that matches.
             </p>
           </div>
-          <div className="space-y-6">
+
+          {/* Column headers (desktop) */}
+          <div className="hidden lg:grid grid-cols-2 gap-6 mb-4">
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              For growing businesses
+            </p>
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              For corporate organisations
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <div
-                key={pkg.name}
-                className="rounded-[22px] p-8"
-                style={pkg.highlight
-                  ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
-                  : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
-                }
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <h3
-                        className="font-bold text-2xl"
-                        style={{ color: pkg.highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
-                      >
-                        {pkg.name}
-                      </h3>
-                      <span
-                        className="text-xs font-semibold px-3 py-1 rounded-full"
-                        style={pkg.highlight
-                          ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
-                          : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
-                        }
-                      >
-                        {pkg.tag}
-                      </span>
-                    </div>
-                    <p
-                      className="font-bold text-lg mb-4"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.9)' : 'var(--brand-purple)' }}
-                    >
-                      {pkg.price}
-                    </p>
-                    <p
-                      className="text-sm leading-relaxed mb-6"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                    >
-                      {pkg.who}
-                    </p>
-                    <ul className="space-y-2">
-                      {pkg.includes.map((item) => (
-                        <li key={item} className="flex items-start gap-3">
-                          <CheckCircle
-                            className="flex-shrink-0 mt-0.5"
-                            size={15}
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
-                          />
-                          <span
-                            className="text-sm"
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                          >
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="lg:w-48 flex-shrink-0">
-                    <Link
-                      href={pkg.cta.href}
-                      className={pkg.highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
-                    >
-                      {pkg.cta.label} <ArrowRight size={14} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <PackagePair key={pkg.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -286,6 +297,92 @@ export default function LeadPage() {
         { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. We work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership, and compliance, run by people who actually talk to each other.' },
       ]} />
 
+    </div>
+  );
+}
+
+function PackagePair({ pkg }: { pkg: Package }) {
+  return (
+    <>
+      <PackageCard pkg={pkg} variant="sme" audienceLabel="For growing businesses" />
+      <PackageCard pkg={pkg} variant="corporate" audienceLabel="For corporate organisations" />
+    </>
+  );
+}
+
+function PackageCard({
+  pkg,
+  variant,
+  audienceLabel,
+}: {
+  pkg: Package;
+  variant: 'sme' | 'corporate';
+  audienceLabel: string;
+}) {
+  const v = pkg[variant];
+  const highlight = pkg.highlight;
+  return (
+    <div
+      className="rounded-[22px] p-8 flex flex-col h-full"
+      style={highlight
+        ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
+        : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
+      }
+    >
+      <p
+        className="text-xs font-semibold uppercase tracking-wider mb-3 lg:hidden"
+        style={{ color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--ink-faint)', letterSpacing: '0.08em' }}
+      >
+        {audienceLabel}
+      </p>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <h3
+          className="font-bold text-2xl"
+          style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
+        >
+          {pkg.name}
+        </h3>
+        <span
+          className="text-xs font-semibold px-3 py-1 rounded-full"
+          style={highlight
+            ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
+            : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
+          }
+        >
+          {pkg.tag}
+        </span>
+      </div>
+      <p
+        className="text-sm leading-relaxed mb-6"
+        style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+      >
+        {v.who}
+      </p>
+      <ul className="space-y-2 mb-8">
+        {v.includes.map((item) => (
+          <li key={item} className="flex items-start gap-3">
+            <CheckCircle
+              className="flex-shrink-0 mt-0.5"
+              size={15}
+              style={{ color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
+            />
+            <span
+              className="text-sm"
+              style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+            >
+              {item}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto">
+        <Link
+          href={pkg.cta.href}
+          className={highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
+        >
+          {pkg.cta.label} <ArrowRight size={14} />
+        </Link>
+      </div>
     </div>
   );
 }
