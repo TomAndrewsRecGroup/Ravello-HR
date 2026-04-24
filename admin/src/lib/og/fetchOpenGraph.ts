@@ -1,28 +1,5 @@
 import ogs from 'open-graph-scraper';
-import { promises as dns } from 'dns';
-
-const PRIVATE_IP_RE = [
-  /^10\./,
-  /^127\./,
-  /^169\.254\./,
-  /^172\.(1[6-9]|2\d|3[0-1])\./,
-  /^192\.168\./,
-  /^::1$/,
-  /^fe80:/i,
-  /^f[cd][0-9a-f]{2}:/i,
-];
-
-async function assertPublicHost(hostname: string): Promise<void> {
-  if (hostname === 'localhost' || hostname === '0.0.0.0') {
-    throw new Error('Refusing to fetch local host');
-  }
-  const addresses = await dns.lookup(hostname, { all: true });
-  for (const a of addresses) {
-    if (PRIVATE_IP_RE.some(re => re.test(a.address))) {
-      throw new Error(`Refusing to fetch private IP ${a.address}`);
-    }
-  }
-}
+import { assertPublicHost } from '@/lib/net/assertPublicHost';
 
 export interface OgResult {
   title: string | null;
@@ -71,9 +48,10 @@ export function isLinkedInUrl(url: string): boolean {
   }
 }
 
-export function buildLinkedInEmbed(url: string): string | null {
+// Extracts the numeric activity ID from a LinkedIn post URL. The
+// public site renders a fixed iframe template around this ID — we
+// deliberately never store HTML in the DB.
+export function extractLinkedInActivityId(url: string): string | null {
   const m = url.match(/activity[-:]?(\d{10,})/i) ?? url.match(/urn:li:activity:(\d+)/i);
-  if (!m) return null;
-  const activityId = m[1];
-  return `<iframe src="https://www.linkedin.com/embed/feed/update/urn:li:activity:${activityId}" height="600" width="100%" frameborder="0" allowfullscreen title="Embedded LinkedIn post"></iframe>`;
+  return m ? m[1] : null;
 }

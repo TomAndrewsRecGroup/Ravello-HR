@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-const SELECT = 'id, source_url, title, description, image_url, site_name, published_at, created_at, source_type, render_mode, embed_html';
+const SELECT = 'id, source_url, title, description, image_url, site_name, published_at, created_at, source_type, render_mode, embed_kind, embed_ref';
 const PAGE_SIZE = 24;
 
 interface SearchParams {
@@ -87,11 +87,7 @@ export default async function LatestUpdatesPage({
 
     countQuery,
 
-    supabase
-      .from('latest_updates')
-      .select('category')
-      .eq('status', 'published')
-      .not('category', 'is', null),
+    supabase.rpc('latest_updates_category_counts'),
 
     supabase
       .from('feed_sources')
@@ -105,7 +101,8 @@ export default async function LatestUpdatesPage({
   const totalCount = countRes?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const categories: FilterOption[] = dedupeCounts((catsRes?.data ?? []) as { category: string | null }[]);
+  const categories: FilterOption[] = ((catsRes?.data ?? []) as { category: string; count: number | string }[])
+    .map(c => ({ value: c.category, label: c.category, count: Number(c.count) }));
   const sources: FilterOption[] = ((sourcesRes?.data ?? []) as { id: string; display_name: string }[])
     .map(s => ({ value: s.id, label: s.display_name }));
 
@@ -169,8 +166,8 @@ export default async function LatestUpdatesPage({
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {main.map(item =>
-                  item.render_mode === 'embed' && item.embed_html
-                    ? <UpdateEmbed key={item.id} embedHtml={item.embed_html} />
+                  item.render_mode === 'embed' && item.embed_kind && item.embed_ref
+                    ? <UpdateEmbed key={item.id} kind={item.embed_kind} ref={item.embed_ref} />
                     : <UpdateCard key={item.id} item={item} variant="grid" />
                 )}
               </div>
@@ -208,17 +205,6 @@ export default async function LatestUpdatesPage({
       </section>
     </div>
   );
-}
-
-function dedupeCounts(rows: { category: string | null }[]): FilterOption[] {
-  const counts = new Map<string, number>();
-  for (const r of rows) {
-    if (!r.category) continue;
-    counts.set(r.category, (counts.get(r.category) ?? 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([value, count]) => ({ value, label: value, count }));
 }
 
 function EmptyState() {

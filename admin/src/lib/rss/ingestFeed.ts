@@ -107,7 +107,6 @@ export async function ingestFeed(
       published_at: item.published_at,
       category: source.category,
       render_mode: 'card',
-      embed_html: null,
       status: 'published',
       featured: false,
       raw: item.raw,

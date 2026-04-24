@@ -17,7 +17,8 @@ export interface UpdateRow {
   site_name: string | null;
   published_at: string | null;
   render_mode: 'card' | 'embed';
-  embed_html: string | null;
+  embed_kind: 'linkedin' | null;
+  embed_ref: string | null;
   status: 'draft' | 'published' | 'hidden';
   featured: boolean;
   featured_order: number | null;

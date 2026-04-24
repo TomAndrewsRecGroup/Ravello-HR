@@ -12,7 +12,8 @@ export interface UpdateItem {
   created_at: string;
   source_type: 'manual' | 'rss' | 'html';
   render_mode: 'card' | 'embed';
-  embed_html: string | null;
+  embed_kind: 'linkedin' | null;
+  embed_ref: string | null;
 }
 
 interface Props {

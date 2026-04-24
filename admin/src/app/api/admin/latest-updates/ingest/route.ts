@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { canonicaliseUrl, urlHash } from '@/lib/og/canonicaliseUrl';
-import { fetchOpenGraph, isLinkedInUrl, buildLinkedInEmbed } from '@/lib/og/fetchOpenGraph';
+import { fetchOpenGraph, isLinkedInUrl, extractLinkedInActivityId } from '@/lib/og/fetchOpenGraph';
 
 export const runtime = 'nodejs';
 
@@ -61,15 +61,17 @@ export async function POST(req: NextRequest) {
 
   const description = body.description_override?.trim() ?? og?.description ?? null;
 
-  const embed_html = renderMode === 'embed' && isLinkedIn
-    ? buildLinkedInEmbed(canonical)
-    : null;
-
-  if (renderMode === 'embed' && isLinkedIn && !embed_html) {
-    return NextResponse.json(
-      { error: 'Could not extract LinkedIn activity ID from URL' },
-      { status: 400 },
-    );
+  let embedKind: 'linkedin' | null = null;
+  let embedRef: string | null = null;
+  if (renderMode === 'embed' && isLinkedIn) {
+    embedRef = extractLinkedInActivityId(canonical);
+    if (!embedRef) {
+      return NextResponse.json(
+        { error: 'Could not extract LinkedIn activity ID from URL' },
+        { status: 400 },
+      );
+    }
+    embedKind = 'linkedin';
   }
 
   const supabase = createServerSupabaseClient();
@@ -88,7 +90,8 @@ export async function POST(req: NextRequest) {
         author: og?.author ?? null,
         published_at: og?.published_at ?? null,
         render_mode: renderMode,
-        embed_html,
+        embed_kind: embedKind,
+        embed_ref: embedRef,
         status: 'published',
         raw: og?.raw ?? null,
         created_by: auth.userId,

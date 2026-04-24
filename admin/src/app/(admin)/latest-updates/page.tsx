@@ -13,7 +13,7 @@ export default async function LatestUpdatesAdminPage() {
   const [updatesRes, sourcesRes] = await Promise.all([
     supabase
       .from('latest_updates')
-      .select('id, source_type, source_url, title, description, image_url, site_name, published_at, render_mode, embed_html, status, featured, featured_order, created_at')
+      .select('id, source_type, source_url, title, description, image_url, site_name, published_at, render_mode, embed_kind, embed_ref, status, featured, featured_order, created_at')
       .order('featured', { ascending: false })
       .order('featured_order', { ascending: true, nullsFirst: false })
       .order('published_at', { ascending: false, nullsFirst: false })

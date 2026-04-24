@@ -14,7 +14,6 @@ interface PatchBody {
   title?: string;
   description?: string | null;
   image_url?: string | null;
-  embed_html?: string | null;
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -51,7 +50,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.title !== undefined) patch.title = body.title;
   if (body.description !== undefined) patch.description = body.description;
   if (body.image_url !== undefined) patch.image_url = body.image_url;
-  if (body.embed_html !== undefined) patch.embed_html = body.embed_html;
 
   const supabase = createServerSupabaseClient();
   const { error } = await supabase
