@@ -6,17 +6,17 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'LEAD Services | L&D, Leadership and People Development | The People System',
-  description: 'Three LEAD packages: Lead Foundations, Lead Partner, Lead Build. Behavioural skills, leadership capability, manager training and L&D strategy: The People System.',
+  description: 'Three LEAD packages for growing businesses (Foundations, Partner, Build) with matching corporate tracks (Advisory, Programme, Transformation). Behavioural skills, leadership capability, manager training and L&D strategy: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/lead' },
 };
 
 type Variant = {
+  name: string;
   who: string;
   includes: string[];
 };
 
 type Package = {
-  name: string;
   tag: string;
   highlight: boolean;
   cta: { label: string; href: string };
@@ -26,11 +26,11 @@ type Package = {
 
 const packages: Package[] = [
   {
-    name: 'Lead Foundations',
     tag: 'Starting point · your L&D floor',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'LEAD Foundations',
       who: 'Every month we work with you on the stuff that actually builds a learning culture: structured check-ins that drive real decisions, hands-on support for managers dealing with live capability challenges, and a clear view of where your people development gaps are sitting before they start costing you.',
       includes: [
         'Monthly 60 minute strategic L&D session with clear actions and follow through',
@@ -42,6 +42,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'LEAD Advisory',
       who: 'For corporate HR functions that want an external L&D partner on retainer: supporting managers with live capability challenges, pressure-testing internal L&D decisions, and surfacing development gaps across a specific business unit or region.',
       includes: [
         'Monthly 60 minute strategic L&D session aligned to the BU or region',
@@ -54,11 +55,11 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Lead Partner',
     tag: 'Most popular · embedded fractional L&D',
     highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'LEAD Partner',
       who: 'For businesses that know their people need to develop but do not have the internal resource to make it happen properly. We act as your fractional L&D lead, owning the development agenda across your whole business, not just the senior team. This is not a course or a one-off workshop. It is a structured, ongoing programme that builds behavioural skills, leadership capability and a culture where people actually grow.',
       includes: [
         'People development strategy and quarterly roadmap with clear milestones',
@@ -72,6 +73,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'LEAD Programme',
       who: 'For corporate groups, divisions or portfolio companies that need dedicated L&D leadership without adding a permanent headcount. We embed as your fractional L&D lead for the BU, region, or programme, own the development agenda, and work alongside group L&D.',
       includes: [
         'People development strategy for the BU or region with quarterly roadmap',
@@ -86,12 +88,12 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Lead Build',
     tag: 'Scale · building your L&D function',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'You are scaling and your people function needs to keep up. Lead Build is for businesses that need L&D designed, built and embedded properly, with the infrastructure, programmes and capability to run independently once we hand it over. We do not just design a strategy and leave. We build the whole thing, develop your people at every level and make sure whoever runs it after us has everything they need to keep it going.',
+      name: 'LEAD Build',
+      who: 'You are scaling and your people function needs to keep up. LEAD Build is for businesses that need L&D designed, built and embedded properly, with the infrastructure, programmes and capability to run independently once we hand it over. We do not just design a strategy and leave. We build the whole thing, develop your people at every level and make sure whoever runs it after us has everything they need to keep it going.',
       includes: [
         'Full L&D function design, build and hire',
         'Leadership capability programme for your full management cohort',
@@ -104,6 +106,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'LEAD Transformation',
       who: 'For corporate groups standing up a new entity, integrating an acquisition, or rebuilding a failing L&D function in a specific region or BU. We design the operating model, build the programmes and transition to the permanent in-house team.',
       includes: [
         'Target operating model design for the L&D function',
@@ -229,7 +232,7 @@ export default function LeadPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <PackagePair key={pkg.name} pkg={pkg} />
+              <PackagePair key={pkg.sme.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -277,8 +280,8 @@ export default function LeadPage() {
       <FaqBlock items={[
         { q: 'What is fractional L&D leadership?', a: 'We act as your L&D lead on a part-time basis, owning the development agenda across the business: leadership capability, behavioural skills, culture and career progression. You get senior-level L&D leadership without the cost of a full-time hire.' },
         { q: 'What is the difference between LEAD and PROTECT?', a: 'PROTECT covers HR generalist and compliance: contracts, handbooks, policies, ER, fractional CPO. LEAD is about learning and development: leadership capability, behavioural skills, culture and career progression. Many clients need both. They can run in parallel or sequence depending on priority.' },
-        { q: 'Do we need to have an L&D function already?', a: 'No. Lead Build is specifically designed for businesses setting up an L&D function from scratch. Lead Foundations and Lead Partner work well for businesses with no formal L&D function who want to start building the capability properly.' },
-        { q: 'How involved are you on a day-to-day basis?', a: 'It depends on the package. Lead Foundations is one structured session per month plus ad-hoc access. Lead Partner typically involves weekly involvement including leadership team meetings. Lead Build is more intensive, particularly in the early months.' },
+        { q: 'Do we need to have an L&D function already?', a: 'No. LEAD Build is specifically designed for businesses setting up an L&D function from scratch. LEAD Foundations and LEAD Partner work well for businesses with no formal L&D function who want to start building the capability properly.' },
+        { q: 'How involved are you on a day-to-day basis?', a: 'It depends on the package. LEAD Foundations is one structured session per month plus ad-hoc access. LEAD Partner typically involves weekly involvement including leadership team meetings. LEAD Build is more intensive, particularly in the early months.' },
         { q: 'Can we combine LEAD with HIRE or PROTECT?', a: 'Yes, and many clients do. We work together on accounts that span multiple pillars. The People System is set up specifically for this: a joined-up people function across hiring, leadership development, and HR foundations, run by people who actually talk to each other.' },
       ]} />
 
@@ -325,7 +328,7 @@ function PackageCard({
           className="font-bold text-2xl"
           style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
         >
-          {pkg.name}
+          {v.name}
         </h3>
         <span
           className="text-xs font-semibold px-3 py-1 rounded-full"

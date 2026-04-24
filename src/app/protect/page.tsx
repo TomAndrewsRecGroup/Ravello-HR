@@ -6,17 +6,17 @@ import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'PROTECT Services | HR Foundations, Compliance and Fractional CPO | The People System',
-  description: 'Three PROTECT packages: Protect Foundations, Protect Partner, Protect CPO. Contracts, handbooks, compliance, ER case management and fractional CPO leadership: The People System.',
+  description: 'Three PROTECT packages: PROTECT Foundations, PROTECT Partner, PROTECT CPO. Contracts, handbooks, compliance, ER case management and fractional CPO leadership: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/protect' },
 };
 
 type Variant = {
+  name: string;
   who: string;
   includes: string[];
 };
 
 type Package = {
-  name: string;
   tag: string;
   highlight: boolean;
   cta: { label: string; href: string };
@@ -26,12 +26,12 @@ type Package = {
 
 const packages: Package[] = [
   {
-    name: 'Protect Foundations',
     tag: 'Starting point · documentation and ongoing check-in',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
-      who: 'Your contracts are probably out of date. Your policies may not reflect current employment law. When something goes wrong with an employee, you are figuring it out as you go. Protect Foundations fixes that. We build the documentation and compliance your business needs and stay on hand when people issues come up, so you are never making it up under pressure.',
+      name: 'PROTECT Foundations',
+      who: 'Your contracts are probably out of date. Your policies may not reflect current employment law. When something goes wrong with an employee, you are figuring it out as you go. PROTECT Foundations fixes that. We build the documentation and compliance your business needs and stay on hand when people issues come up, so you are never making it up under pressure.',
       includes: [
         'Full audit of existing contracts, policies and HR documentation',
         'Employment contracts drafted or updated to current legal standards',
@@ -42,6 +42,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'PROTECT Governance',
       who: 'For corporate subsidiaries or acquired entities that need core HR documentation and compliance aligned to group standards, with hands-on support for local ER issues as they come up.',
       includes: [
         'Audit of existing contracts, policies and HR documentation against group standards',
@@ -54,14 +55,14 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Protect Partner',
     tag: 'Most popular · ongoing HR generalist support',
     highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'PROTECT Partner',
       who: 'For businesses that need a proper HR function on an ongoing basis. Not just documents and compliance but active, hands-on support across everything people related: ER cases, org design, skills mapping, restructures and the strategic infrastructure to support a growing business.',
       includes: [
-        'Everything in Protect Foundations',
+        'Everything in PROTECT Foundations',
         'Fortnightly HR session (60 min): ER cases, people decisions, priorities and planning',
         'Up to 4 escalation calls per month for complex or urgent situations',
         'End-to-end ER case management: disciplinaries, grievances, performance management, redundancy and TUPE',
@@ -73,9 +74,10 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'PROTECT Operations',
       who: 'For divisions, regions or portfolio companies that need dedicated HR generalist support on an ongoing basis, sitting alongside group HR and covering everything people related from ER to org design.',
       includes: [
-        'Everything in Protect Foundations (corporate variant)',
+        'Everything in PROTECT Governance',
         'Fortnightly HR session (60 min) with the divisional lead: ER cases, decisions, priorities',
         'Up to 4 escalation calls per month for complex or urgent situations',
         'End-to-end ER case management: disciplinaries, grievances, performance, redundancy, TUPE',
@@ -88,14 +90,14 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Protect CPO',
     tag: 'Executive · fractional CPO',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'PROTECT CPO',
       who: 'For businesses that need someone operating at CPO or HRD level without the full-time cost. We sit at your leadership table, own the people agenda, hold the compliance and ER risk and build the people strategy your business needs to scale. This is not a support service. It is executive-level people leadership.',
       includes: [
-        'Everything in Protect Partner',
+        'Everything in PROTECT Partner',
         'Weekly fractional CPO session (60 min) plus leadership team and board attendance',
         'People strategy design aligned to your 12 to 36 month business plan',
         'Skills mapping, succession planning and talent pipeline development',
@@ -109,9 +111,10 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'PROTECT Executive',
       who: 'For corporate divisions or portfolio companies that need CPO-level people leadership without adding a permanent role. We sit on the divisional exec, own the people agenda, carry the ER and compliance risk, and interface with group HR.',
       includes: [
-        'Everything in Protect Partner (corporate variant)',
+        'Everything in PROTECT Operations',
         'Weekly fractional CPO session (60 min) plus divisional leadership team attendance',
         'Divisional people strategy aligned to 12 to 36 month plan and group direction',
         'Skills mapping, succession planning and talent pipeline development',
@@ -185,7 +188,7 @@ export default function ProtectPage() {
             <div>
               <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--ink)' }}>Employment Rights Bill: compliance pressure is building now</h2>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                The Employment Rights Bill introduces significant changes for UK employers: expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every Protect Foundations engagement and above includes an Employment Rights Bill compliance check as standard.
+                The Employment Rights Bill introduces significant changes for UK employers: expanded day-one rights, reformed zero-hours protections, and tighter dismissal requirements. Many SMEs are not ready. Every PROTECT Foundations engagement and above includes an Employment Rights Bill compliance check as standard.
               </p>
             </div>
           </div>
@@ -227,7 +230,7 @@ export default function ProtectPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <PackagePair key={pkg.name} pkg={pkg} />
+              <PackagePair key={pkg.sme.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -273,10 +276,10 @@ export default function ProtectPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'How are PROTECT packages scoped?', a: 'Protect Foundations, Protect Partner and Protect CPO are all ongoing engagements: Foundations runs on a monthly rhythm, Partner on a fortnightly rhythm, and CPO weekly plus leadership team and board attendance. Pricing is shaped to scope and organisation size: book a call and we will put it in writing.' },
-        { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. We review every Protect Foundations engagement and above against current and upcoming legislation.' },
-        { q: 'How long does the initial setup take?', a: 'Once you start on Protect Foundations, the audit, contract and handbook rebuild typically completes within two to four weeks depending on the state of your existing documentation. Ongoing check-ins begin from month one.' },
-        { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. We will do a gap analysis as part of Protect Foundations before any rewriting begins.' },
+        { q: 'How are PROTECT packages scoped?', a: 'PROTECT Foundations, PROTECT Partner and PROTECT CPO are all ongoing engagements: Foundations runs on a monthly rhythm, Partner on a fortnightly rhythm, and CPO weekly plus leadership team and board attendance. Pricing is shaped to scope and organisation size: book a call and we will put it in writing.' },
+        { q: 'Does the Employment Rights Bill affect us?', a: 'Almost certainly yes, if you employ people in the UK. The Bill extends day-one rights, reforms zero-hours protections, and tightens the rules around dismissal and redundancy. The changes are staggered through 2025 and 2026. We review every PROTECT Foundations engagement and above against current and upcoming legislation.' },
+        { q: 'How long does the initial setup take?', a: 'Once you start on PROTECT Foundations, the audit, contract and handbook rebuild typically completes within two to four weeks depending on the state of your existing documentation. Ongoing check-ins begin from month one.' },
+        { q: 'We already have a basic handbook. Do we need this?', a: 'If it was written more than two years ago, probably yes. Employment law changes, working practices change, and gaps that seemed minor become claims. We will do a gap analysis as part of PROTECT Foundations before any rewriting begins.' },
         { q: 'Is this legal advice?', a: 'PROTECT covers HR documentation and employment compliance: contracts, handbooks, policies, and procedures. For active litigation or complex legal disputes, we work alongside your employment solicitor rather than replacing them.' },
       ]} />
 
@@ -323,7 +326,7 @@ function PackageCard({
           className="font-bold text-2xl"
           style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
         >
-          {pkg.name}
+          {v.name}
         </h3>
         <span
           className="text-xs font-semibold px-3 py-1 rounded-full"

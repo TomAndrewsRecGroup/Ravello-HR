@@ -6,17 +6,17 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'HIRE Services | Embedded Recruitment and Talent Strategy | The People System',
-  description: 'Four HIRE packages: Hire Foundations, Hire Optimiser, Hire Embedded, Hire Build. Embedded recruitment delivery with Friction Lens role scoring: The People System.',
+  description: 'Four HIRE packages for growing businesses (Foundations, Optimiser, Embedded, Build) with matching corporate tracks (Advisory, Diagnostic, Delivery, Transformation). Embedded recruitment delivery with Friction Lens role scoring: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/hire' },
 };
 
 type Variant = {
+  name: string;
   who: string;
   includes: string[];
 };
 
 type Package = {
-  name: string;
   tag: string;
   highlight: boolean;
   cta: { label: string; href: string };
@@ -26,11 +26,11 @@ type Package = {
 
 const packages: Package[] = [
   {
-    name: 'Hire Foundations',
     tag: 'Starting point · 3-month minimum',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'HIRE Foundations',
       who: 'For founder-led businesses that are hiring sporadically and want an expert involved without a full embedded commitment. You need someone who can advise on the role, review the process, and make sure the basics are right.',
       includes: [
         'Friction Lens scoring on every active role',
@@ -42,6 +42,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'HIRE Advisory',
       who: 'For corporate teams or divisions running occasional senior hires outside the central talent function. You want embedded recruitment expertise on specific roles without pulling in the global TA team or engaging a full search firm.',
       includes: [
         'Friction Lens scoring on every active role',
@@ -54,11 +55,11 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Hire Optimiser',
     tag: 'Project · Fix the process',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'HIRE Optimiser',
       who: 'For businesses that have a hiring process but it is not working well. Too slow. Too inconsistent. Too dependent on agencies. This is a fixed-scope engagement to find and fix the specific failure points.',
       includes: [
         'Full hiring process audit',
@@ -71,6 +72,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'HIRE Diagnostic',
       who: 'For corporate TA functions where a specific region, business unit, or role family is consistently underperforming. A fixed-scope engagement to diagnose failure points and deliver a remediation plan the internal team can execute.',
       includes: [
         'Process audit across the focus region, BU, or role family',
@@ -84,11 +86,11 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Hire Embedded',
     tag: 'Most popular · 6-month minimum',
     highlight: true,
     cta: { label: 'Start with a Hiring Audit', href: '/book' },
     sme: {
+      name: 'HIRE Embedded',
       who: 'For businesses with a consistent hiring need: typically 3-8 roles over the engagement period. We work inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
       includes: [
         'Full embedded recruitment delivery',
@@ -102,6 +104,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'HIRE Delivery',
       who: 'For corporate TA functions that need embedded specialist delivery on a programme, region, or function: typically 10-30 roles across the engagement. We plug into your ATS, operate to your governance, and report into your TA leadership while delivering against the plan.',
       includes: [
         'Embedded delivery against an agreed hiring plan',
@@ -116,11 +119,11 @@ const packages: Package[] = [
     },
   },
   {
-    name: 'Hire Build',
     tag: 'Scale · 6-month minimum',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
     sme: {
+      name: 'HIRE Build',
       who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. We lead the talent function end-to-end, build the internal infrastructure, and design the process your in-house team will eventually run independently.',
       includes: [
         'Full talent function leadership',
@@ -134,6 +137,7 @@ const packages: Package[] = [
       ],
     },
     corporate: {
+      name: 'HIRE Transformation',
       who: 'For corporate organisations standing up a new TA capability, transforming an underperforming one, or running a large-scale hiring programme in a new market. We lead delivery while designing the operating model, tooling, and capability your in-house team will run.',
       includes: [
         'Delivery leadership across a defined hiring programme',
@@ -270,7 +274,7 @@ export default function HirePage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <PackagePair key={pkg.name} pkg={pkg} />
+              <PackagePair key={pkg.sme.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -382,7 +386,7 @@ function PackageCard({
           className="font-bold text-2xl"
           style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
         >
-          {pkg.name}
+          {v.name}
         </h3>
         <span
           className="text-xs font-semibold px-3 py-1 rounded-full"
