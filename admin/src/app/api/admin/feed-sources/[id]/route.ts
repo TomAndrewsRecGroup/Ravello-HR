@@ -11,6 +11,7 @@ interface PatchBody {
   feed_url?: string;
   category?: string | null;
   active?: boolean;
+  scrape_config?: unknown;
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -46,6 +47,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (body.category !== undefined) patch.category = body.category?.trim() || null;
   if (body.active !== undefined) patch.active = !!body.active;
+  if (body.scrape_config !== undefined) {
+    if (body.scrape_config === null) {
+      patch.scrape_config = null;
+    } else if (typeof body.scrape_config === 'object' && !Array.isArray(body.scrape_config)) {
+      const c = body.scrape_config as Record<string, unknown>;
+      if (c.item !== undefined && (typeof c.item !== 'string' || !c.item.trim())) {
+        return NextResponse.json({ error: 'scrape_config.item must be a non-empty CSS selector' }, { status: 400 });
+      }
+      patch.scrape_config = c;
+    } else {
+      return NextResponse.json({ error: 'scrape_config must be a JSON object or null' }, { status: 400 });
+    }
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ ok: true });

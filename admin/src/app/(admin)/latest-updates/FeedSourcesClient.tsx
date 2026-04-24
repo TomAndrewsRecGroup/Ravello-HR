@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Rss, Loader2, Plus, Trash2, RefreshCw, Power, PowerOff, AlertCircle, CheckCircle2,
+  Rss, Loader2, Plus, Trash2, RefreshCw, Power, PowerOff, AlertCircle, CheckCircle2, Code, ChevronDown, ChevronRight,
 } from 'lucide-react';
 
 export interface FeedSourceRow {
@@ -17,9 +17,20 @@ export interface FeedSourceRow {
   last_fetched_at: string | null;
   last_error: string | null;
   created_at: string;
+  scrape_config: Record<string, unknown> | null;
 }
 
 interface Props { initial: FeedSourceRow[] }
+
+const EXAMPLE_CONFIG = `{
+  "list_url": "https://www.cipd.org/knowledge/",
+  "item": "article.card",
+  "title": "h3",
+  "link": "a",
+  "image": "img",
+  "date": "time",
+  "description": "p.summary"
+}`;
 
 function timeAgo(iso: string | null): string {
   if (!iso) return 'never';
@@ -37,14 +48,17 @@ export default function FeedSourcesClient({ initial }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
+  const [sourceType, setSourceType] = useState<'rss' | 'html'>('rss');
   const [slug, setSlug] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [feedUrl, setFeedUrl] = useState('');
   const [category, setCategory] = useState('');
+  const [scrapeConfig, setScrapeConfig] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [rowBusy, setRowBusy] = useState<Set<string>>(new Set());
   const [rowFlash, setRowFlash] = useState<Record<string, string>>({});
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const rows = initial;
 
@@ -60,10 +74,35 @@ export default function FeedSourcesClient({ initial }: Props) {
     });
   }
 
+  function toggleExpand(id: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   async function create() {
     if (!slug.trim() || !displayName.trim() || !feedUrl.trim()) return;
     setSubmitting(true);
     setFormError('');
+
+    let parsedConfig: unknown = undefined;
+    if (sourceType === 'html') {
+      if (!scrapeConfig.trim()) {
+        setFormError('Scrape config is required for HTML sources');
+        setSubmitting(false);
+        return;
+      }
+      try {
+        parsedConfig = JSON.parse(scrapeConfig);
+      } catch {
+        setFormError('Scrape config must be valid JSON');
+        setSubmitting(false);
+        return;
+      }
+    }
+
     try {
       const res = await fetch('/api/admin/feed-sources', {
         method: 'POST',
@@ -72,12 +111,15 @@ export default function FeedSourcesClient({ initial }: Props) {
           slug: slug.trim(),
           display_name: displayName.trim(),
           feed_url: feedUrl.trim(),
+          source_type: sourceType,
           category: category.trim() || null,
+          scrape_config: parsedConfig,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to add feed');
-      setSlug(''); setDisplayName(''); setFeedUrl(''); setCategory('');
+      setSlug(''); setDisplayName(''); setFeedUrl(''); setCategory(''); setScrapeConfig('');
+      setSourceType('rss');
       refresh();
     } catch (e) {
       setFormError((e as Error).message);
@@ -103,6 +145,12 @@ export default function FeedSourcesClient({ initial }: Props) {
     } finally {
       busy(id, false);
     }
+  }
+
+  async function saveScrapeConfig(id: string, raw: string) {
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch { alert('Config must be valid JSON'); return; }
+    await patch(id, { scrape_config: parsed });
   }
 
   async function refreshSource(id: string) {
@@ -151,16 +199,27 @@ export default function FeedSourcesClient({ initial }: Props) {
       <div className="flex items-center gap-2">
         <Rss size={15} style={{ color: 'var(--purple)' }} />
         <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-          RSS feed sources
+          Feed sources
         </h2>
         <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-          Auto-ingested every hour into the public feed.
+          RSS feeds and HTML scrapers are pulled into the public feed every hour.
         </span>
       </div>
 
       {/* Create form */}
-      <div className="card p-5">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-[160px_1fr_1fr_140px_auto] gap-3 items-end">
+      <div className="card p-5 space-y-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-[110px_140px_1fr_1fr_140px] gap-3 items-end">
+          <div>
+            <label className="label">Type</label>
+            <select
+              className="input"
+              value={sourceType}
+              onChange={e => setSourceType(e.target.value as 'rss' | 'html')}
+            >
+              <option value="rss">RSS</option>
+              <option value="html">HTML</option>
+            </select>
+          </div>
           <div>
             <label className="label">Slug</label>
             <input
@@ -180,10 +239,14 @@ export default function FeedSourcesClient({ initial }: Props) {
             />
           </div>
           <div>
-            <label className="label">Feed URL</label>
+            <label className="label">
+              {sourceType === 'rss' ? 'Feed URL' : 'Page URL'}
+            </label>
             <input
               className="input"
-              placeholder="https://www.cipd.org/rss/news.xml"
+              placeholder={sourceType === 'rss'
+                ? 'https://www.example.com/rss.xml'
+                : 'https://www.cipd.org/knowledge/'}
               value={feedUrl}
               onChange={e => setFeedUrl(e.target.value)}
             />
@@ -197,21 +260,40 @@ export default function FeedSourcesClient({ initial }: Props) {
               onChange={e => setCategory(e.target.value)}
             />
           </div>
+        </div>
+
+        {sourceType === 'html' && (
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <Code size={12} /> Scrape config (JSON)
+            </label>
+            <textarea
+              className="input font-mono text-xs"
+              rows={8}
+              placeholder={EXAMPLE_CONFIG}
+              value={scrapeConfig}
+              onChange={e => setScrapeConfig(e.target.value)}
+              style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+            />
+            <p className="text-[11px] mt-2" style={{ color: 'var(--ink-faint)' }}>
+              CSS selectors run against the page. <code>item</code> is required; the rest default to <code>h1-h4</code> for title, <code>a</code> for link, <code>img</code> for image, <code>time</code> for date, <code>p</code> for description.
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          {formError && (
+            <p className="text-xs" style={{ color: 'var(--red)' }}>{formError}</p>
+          )}
           <button
-            className="btn-cta flex items-center gap-2"
+            className="btn-cta flex items-center gap-2 ml-auto"
             onClick={create}
             disabled={submitting || !slug.trim() || !displayName.trim() || !feedUrl.trim()}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Add feed
+            Add source
           </button>
         </div>
-        {formError && (
-          <p className="text-xs mt-3" style={{ color: 'var(--red)' }}>{formError}</p>
-        )}
-        <p className="text-xs mt-3" style={{ color: 'var(--ink-faint)' }}>
-          Only RSS / Atom feeds are supported here. HTML scrapers are configured in Phase 3.
-        </p>
       </div>
 
       {/* Feed list */}
@@ -224,13 +306,14 @@ export default function FeedSourcesClient({ initial }: Props) {
 
         {rows.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm" style={{ color: 'var(--ink-faint)' }}>
-            No RSS feeds yet. Add one above.
+            No feeds yet. Add one above.
           </div>
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--line)' }}>
             {rows.map(r => {
               const isBusy = rowBusy.has(r.id);
               const flash = rowFlash[r.id];
+              const isExpanded = expanded.has(r.id);
               return (
                 <li key={r.id} className="p-4 flex gap-4 items-start">
 
@@ -242,7 +325,10 @@ export default function FeedSourcesClient({ initial }: Props) {
                       <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
                         /{r.slug}
                       </span>
-                      <span className="badge" style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}>
+                      <span className="badge" style={{
+                        background: r.source_type === 'html' ? 'rgba(59,111,255,0.08)' : 'var(--surface-alt)',
+                        color: r.source_type === 'html' ? 'var(--blue)' : 'var(--ink-soft)',
+                      }}>
                         {r.source_type}
                       </span>
                       {r.category && (
@@ -277,9 +363,27 @@ export default function FeedSourcesClient({ initial }: Props) {
                           <CheckCircle2 size={11} /> ok
                         </span>
                       ) : null}
+                      {r.source_type === 'html' && (
+                        <button
+                          onClick={() => toggleExpand(r.id)}
+                          className="flex items-center gap-0.5 hover:underline"
+                          style={{ color: 'var(--purple)' }}
+                        >
+                          {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                          Scrape config
+                        </button>
+                      )}
                     </div>
                     {flash && (
                       <p className="text-[11px] mt-1" style={{ color: 'var(--ink-soft)' }}>{flash}</p>
+                    )}
+
+                    {isExpanded && r.source_type === 'html' && (
+                      <ScrapeConfigEditor
+                        id={r.id}
+                        initial={r.scrape_config}
+                        onSave={saveScrapeConfig}
+                      />
                     )}
                   </div>
 
@@ -315,6 +419,40 @@ export default function FeedSourcesClient({ initial }: Props) {
             })}
           </ul>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ScrapeConfigEditor({
+  id, initial, onSave,
+}: {
+  id: string;
+  initial: Record<string, unknown> | null;
+  onSave: (id: string, raw: string) => Promise<void>;
+}) {
+  const [val, setVal] = useState(initial ? JSON.stringify(initial, null, 2) : '');
+  const [saving, setSaving] = useState(false);
+  return (
+    <div className="mt-3 rounded-[10px] p-3" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+      <textarea
+        className="input font-mono text-xs w-full"
+        rows={8}
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+      />
+      <div className="flex justify-end mt-2">
+        <button
+          className="btn-secondary btn-sm"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            try { await onSave(id, val); } finally { setSaving(false); }
+          }}
+        >
+          {saving ? 'Saving…' : 'Save config'}
+        </button>
       </div>
     </div>
   );

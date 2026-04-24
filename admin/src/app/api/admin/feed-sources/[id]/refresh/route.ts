@@ -19,7 +19,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const supabase = createServerSupabaseClient();
   const { data: source, error } = await supabase
     .from('feed_sources')
-    .select('id, slug, display_name, feed_url, source_type, category, active')
+    .select('id, slug, display_name, feed_url, source_type, category, active, scrape_config')
     .eq('id', params.id)
     .single();
 

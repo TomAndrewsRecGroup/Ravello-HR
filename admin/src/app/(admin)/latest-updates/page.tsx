@@ -21,7 +21,7 @@ export default async function LatestUpdatesAdminPage() {
       .limit(200),
     supabase
       .from('feed_sources')
-      .select('id, slug, display_name, feed_url, source_type, category, active, last_fetched_at, last_error, created_at')
+      .select('id, slug, display_name, feed_url, source_type, category, active, last_fetched_at, last_error, created_at, scrape_config')
       .order('active', { ascending: false })
       .order('display_name', { ascending: true }),
   ]);

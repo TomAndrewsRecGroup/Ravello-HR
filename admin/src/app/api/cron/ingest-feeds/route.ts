@@ -30,9 +30,9 @@ async function run(req: NextRequest) {
   const supabase = serviceClient();
   const { data: sources, error } = await supabase
     .from('feed_sources')
-    .select('id, slug, display_name, feed_url, source_type, category, active')
+    .select('id, slug, display_name, feed_url, source_type, category, active, scrape_config')
     .eq('active', true)
-    .eq('source_type', 'rss');
+    .in('source_type', ['rss', 'html']);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

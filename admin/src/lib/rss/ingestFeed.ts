@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { canonicaliseUrl, urlHash } from '@/lib/og/canonicaliseUrl';
-import { fetchFeed } from './fetchFeed';
+import { fetchFeed, type ParsedFeedItem } from './fetchFeed';
+import { fetchHtml, type ScrapeConfig } from '@/lib/scrape/fetchHtml';
 
 interface FeedSourceRow {
   id: string;
@@ -10,6 +11,7 @@ interface FeedSourceRow {
   source_type: 'rss' | 'html' | 'manual';
   category: string | null;
   active: boolean;
+  scrape_config?: ScrapeConfig | null;
 }
 
 export interface IngestResult {
@@ -23,6 +25,23 @@ export interface IngestResult {
 }
 
 const MAX_ITEMS_PER_FEED = 25;
+
+async function fetchItems(source: FeedSourceRow): Promise<{ items: ParsedFeedItem[]; feed_title: string | null }> {
+  if (source.source_type === 'rss') {
+    const { items, feed_title } = await fetchFeed(source.feed_url);
+    return { items, feed_title };
+  }
+  if (source.source_type === 'html') {
+    const config = source.scrape_config;
+    if (!config || !config.item) {
+      throw new Error('HTML sources require scrape_config with an "item" selector');
+    }
+    const pageUrl = config.list_url ?? source.feed_url;
+    const { items, site_title } = await fetchHtml(pageUrl, config);
+    return { items, feed_title: site_title };
+  }
+  throw new Error(`Unsupported source_type: ${source.source_type}`);
+}
 
 export async function ingestFeed(
   supabase: SupabaseClient,
@@ -38,14 +57,9 @@ export async function ingestFeed(
     error: null,
   };
 
-  if (source.source_type !== 'rss') {
-    result.error = `Unsupported source_type: ${source.source_type}`;
-    return result;
-  }
-
-  let parsed;
+  let parsed: Awaited<ReturnType<typeof fetchItems>>;
   try {
-    parsed = await fetchFeed(source.feed_url);
+    parsed = await fetchItems(source);
   } catch (e) {
     result.error = (e as Error).message.slice(0, 500);
     await supabase
@@ -71,7 +85,7 @@ export async function ingestFeed(
 
     const { data: existing } = await supabase
       .from('latest_updates')
-      .select('id, source_type')
+      .select('id')
       .eq('url_hash', hash)
       .maybeSingle();
 
@@ -81,7 +95,7 @@ export async function ingestFeed(
     }
 
     const { error } = await supabase.from('latest_updates').insert({
-      source_type: 'rss',
+      source_type: source.source_type,
       feed_source_id: source.id,
       source_url: canonical,
       url_hash: hash,
