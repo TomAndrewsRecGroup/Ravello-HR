@@ -37,10 +37,10 @@ export default function BookPage() {
           <h1
             className="font-display mb-5"
             style={{
-              fontSize: 'clamp(2.4rem, 5vw, 3.8rem)',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
               fontWeight: 800,
-              lineHeight: 1.05,
-              letterSpacing: '-0.035em',
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
             }}
           >
@@ -63,7 +63,18 @@ export default function BookPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Clock size={20} style={{ color: 'var(--brand-purple)' }} />
-                  <h2 className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>What happens next</h2>
+                  <h3
+                    className="font-display"
+                    style={{
+                      fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                      fontWeight: 800,
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.035em',
+                      color: 'var(--ink)',
+                    }}
+                  >
+                    What happens next
+                  </h3>
                 </div>
                 <ul className="space-y-3">
                   {whatHappensNext.map((item) => (
@@ -78,7 +89,18 @@ export default function BookPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <MessageSquare size={20} style={{ color: 'var(--brand-purple)' }} />
-                  <h2 className="text-2xl font-bold" style={{ color: 'var(--ink)' }}>Who picks it up</h2>
+                  <h3
+                    className="font-display"
+                    style={{
+                      fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                      fontWeight: 800,
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.035em',
+                      color: 'var(--ink)',
+                    }}
+                  >
+                    Who picks it up
+                  </h3>
                 </div>
                 <div className="space-y-3">
                   <div

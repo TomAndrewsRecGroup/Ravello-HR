@@ -48,16 +48,23 @@ export default function AboutPage() {
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
             About The People System
           </p>
-          <h1 className="font-display mb-5">
+          <h1
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
+              color: 'var(--ink)',
+            }}
+          >
             Not HR with a bit of recruitment.<br />
-            <span className="text-gradient">
-              Not recruitment pretending to do HR.
-            </span>
+            <span className="text-gradient">Not recruitment pretending to do HR.</span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+          <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, and a track record across every sector a founder-led business is likely to sit in.
           </p>
-          <p className="text-base leading-relaxed mt-4 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+          <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             A proper blend. One partner. No handoffs. No juniors. Just two people who know how to fix it.
           </p>
         </div>
@@ -68,19 +75,22 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="eyebrow mb-3">Co-Founder: HR and People</p>
-              <h2
+              <p className="eyebrow mb-3">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Co-Founder: HR and People
+              </p>
+              <h3
+                className="font-display mb-5"
                 style={{
-                  fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 300,
-                  fontSize: '2.25rem',
-                  letterSpacing: '-0.02em',
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
                   color: 'var(--ink)',
-                  marginBottom: '1.25rem',
                 }}
               >
                 Lucy
-              </h2>
+              </h3>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
                   Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
@@ -137,19 +147,22 @@ export default function AboutPage() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="eyebrow mb-3">Co-Founder: Talent and Recruitment</p>
-              <h2
+              <p className="eyebrow mb-3">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Co-Founder: Talent and Recruitment
+              </p>
+              <h3
+                className="font-display mb-5"
                 style={{
-                  fontFamily: 'var(--font-cormorant), serif',
-                  fontWeight: 300,
-                  fontSize: '2.25rem',
-                  letterSpacing: '-0.02em',
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
                   color: 'var(--ink)',
-                  marginBottom: '1.25rem',
                 }}
               >
                 Tom
-              </h2>
+              </h3>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
                   Tom is a serial entrepreneur in recruitment and technology. His true passion is recruitment: built and led through Andrews Recruitment Group, embedding inside founder-led and PE-backed businesses as a hands-on talent lead for over a decade.
@@ -204,19 +217,18 @@ export default function AboutPage() {
       {/* Combined positioning */}
       <section className="section-padding" style={{ background: 'var(--brand-navy)' }}>
         <div className="container-narrow text-center">
-          <h2
+          <h3
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), serif',
-              fontWeight: 300,
-              fontSize: 'clamp(1.75rem, 4vw, 3rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
               color: '#fff',
-              marginBottom: '1.5rem',
             }}
           >
             &ldquo;Hire. Lead. Protect.&rdquo;
-          </h2>
+          </h3>
           <p className="text-lg leading-relaxed max-w-2xl mx-auto mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
             Most businesses separate hiring from HR. They use an agency for one, a consultant for the other, and nobody joins the dots. The People System is built around the idea that a great people function needs both: working together, from the same starting point, towards the same business outcome.
           </p>

@@ -89,15 +89,17 @@ export default function WhyRavelloPage() {
             Why The People System
           </p>
           <h1
-            style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.5rem,5vw,4.2rem)', fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.05, color: 'var(--ink)', marginBottom: '1.25rem' }}
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
+              color: 'var(--ink)',
+            }}
           >
             Senior HR expertise.<br />
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 600 }}
-            >
-              Built differently.
-            </span>
+            <span className="text-gradient">Built differently.</span>
           </h1>
           <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
             Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root: across hiring, HR leadership, and compliance.

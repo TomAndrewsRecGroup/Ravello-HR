@@ -156,7 +156,16 @@ export default function LeadPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 LEAD: Services and Pricing
               </p>
-              <h1 className="font-display mb-5">
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
                 Four ways to work with us<br />
                 <span className="text-gradient">on your people leadership.</span>
               </h1>

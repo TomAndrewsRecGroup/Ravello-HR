@@ -186,7 +186,16 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Insights
               </p>
-              <h1 className="font-display mb-6">
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
                 Your people function,{' '}
                 <span className="text-gradient">live in your portal</span>
               </h1>

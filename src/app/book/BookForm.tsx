@@ -106,9 +106,18 @@ export default function BookForm() {
         >
           <CheckCircle2 size={28} className="text-white" />
         </div>
-        <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--ink)' }}>
+        <h3
+          className="font-display mb-3"
+          style={{
+            fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+            fontWeight: 800,
+            lineHeight: 1.05,
+            letterSpacing: '-0.035em',
+            color: 'var(--ink)',
+          }}
+        >
           Got it. We&apos;ll be in touch.
-        </h2>
+        </h3>
         <p className="text-sm leading-relaxed mb-6 max-w-[420px] mx-auto" style={{ color: 'var(--ink-soft)' }}>
           Lucy or Tom will reply within one business day to set a time that works.
           Check your inbox: if you don&apos;t hear back, drop us a note at{' '}
@@ -130,9 +139,18 @@ export default function BookForm() {
       className="rounded-[20px] p-6 lg:p-8"
       style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)', boxShadow: '0 4px 24px rgba(14,22,51,0.06)' }}
     >
-      <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--ink)' }}>
+      <h3
+        className="font-display mb-1"
+        style={{
+          fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+          fontWeight: 800,
+          lineHeight: 1.05,
+          letterSpacing: '-0.035em',
+          color: 'var(--ink)',
+        }}
+      >
         Tell us about your challenge
-      </h2>
+      </h3>
       <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
         Send us the form. Lucy or Tom will be back in touch within one business day to set a time.
       </p>

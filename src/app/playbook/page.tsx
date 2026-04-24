@@ -107,11 +107,23 @@ export default function PlaybookPage() {
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
         <div className="max-w-4xl mx-auto">
-          <span className="eyebrow mb-5">People Ops Playbook</span>
-          <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontSize: 'clamp(2.2rem,4vw,3.5rem)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-0.035em', color: 'var(--ink)', marginBottom: '1rem' }}>
-            Straight-talking HR for leaders
+          <p className="eyebrow mb-5">
+            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+            People Ops Playbook
+          </p>
+          <h1
+            className="font-display mb-5"
+            style={{
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
+              color: 'var(--ink)',
+            }}
+          >
+            Straight-talking HR <span className="text-gradient">for leaders</span>
           </h1>
-          <p className="text-xl max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Scripts, frameworks and honest answers on the people challenges that actually slow businesses down.
           </p>
         </div>
