@@ -31,7 +31,7 @@ export default async function OffboardingPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('offboarding_instances')
-      .select('*, employee_records(full_name, job_title), offboarding_task_progress(*)')
+      .select('id,company_id,employee_id,template_id,status,reason,exit_interview_notes,last_working_day,started_at,completed_at,employee_records(full_name, job_title),offboarding_task_progress(id,task_title,task_description,category,due_date,status,completed_at,sort_order)')
       .eq('company_id', companyId)
       .order('started_at', { ascending: false }),
     supabase
@@ -49,7 +49,7 @@ export default async function OffboardingPage() {
         userId={user.id}
         isAdmin={isAdmin}
         templates={templatesRes.data ?? []}
-        instances={instancesRes.data ?? []}
+        instances={(instancesRes.data ?? []) as any}
         employees={employeesRes.data ?? []}
       />
     </main>

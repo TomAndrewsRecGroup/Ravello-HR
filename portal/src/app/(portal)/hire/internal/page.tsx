@@ -32,7 +32,7 @@ export default async function InternalHiringPage() {
     // Internal roles
     const { data: roles } = await supabase
       .from('requisitions')
-      .select('*')
+      .select('id,title,department,location,salary_min,salary_max,description,stage,internal_applicants,created_at')
       .eq('company_id', companyId)
       .eq('managed_by', 'internal')
       .order('created_at', { ascending: false });

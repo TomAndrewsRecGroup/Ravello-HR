@@ -20,7 +20,7 @@ export default async function AdminNewRolePage({
     supabase.from('companies').select('id,name').eq('active', true).order('name'),
     supabase.from('profiles').select('id,full_name').in('role', ['tps_admin', 'tps_client']).order('full_name'),
     templateId
-      ? supabase.from('jd_templates').select('*').eq('id', templateId).single()
+      ? supabase.from('jd_templates').select('id,title,department,seniority,working_model,description,must_haves,benefits,tags').eq('id', templateId).single()
       : Promise.resolve({ data: null }),
   ]);
 

@@ -15,7 +15,7 @@ export default async function RevenuePage() {
   const supabase = createServerSupabaseClient();
 
   const [servicesRes, compRes] = await Promise.all([
-    supabase.from('client_services').select('*, companies(name, active)').order('company_id'),
+    supabase.from('client_services').select('id,company_id,service_name,monthly_fee,status,renewal_date,companies(name, active)').order('company_id').limit(2000),
     supabase.from('companies').select('id, name, active').eq('active', true).order('name'),
   ]);
 

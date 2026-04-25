@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { ivylensRequest } from '@/lib/ivylens';
+import { ivylensRequest, IVYLENS_TAGS } from '@/lib/ivylens';
 import { listCompanyTickets } from '@/lib/support/tickets';
 
 /** Strip HTML tags and script content to prevent stored XSS */
@@ -77,6 +78,10 @@ export async function POST(req: NextRequest) {
       created_by: user.id,
     });
   }
+
+  // Bust the ticket-list cache so the new ticket appears on next read
+  // instead of waiting up to 60s for the natural revalidation.
+  revalidateTag(IVYLENS_TAGS.TICKETS);
 
   return NextResponse.json(data, { status: 201 });
 }

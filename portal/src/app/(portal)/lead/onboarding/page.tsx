@@ -48,7 +48,7 @@ export default async function OnboardingPage() {
         companyId={companyId}
         userId={user.id}
         isAdmin={isAdmin}
-        templates={(templatesRes.data ?? []) as any}
+        templates={templatesRes.data ?? []}
         instances={(instancesRes.data ?? []) as any}
         employees={employeesRes.data ?? []}
       />

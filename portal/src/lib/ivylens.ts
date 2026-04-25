@@ -13,13 +13,26 @@ interface FetchOptions {
    * Default: 60s for GETs, no-store for POSTs. Pass 0 to opt out of cache.
    */
   revalidate?: number;
+  /**
+   * Cache tags for selective revalidation. Mutating routes can call
+   * revalidateTag('ivylens-tickets') after a POST to bust the list cache
+   * so newly-created tickets appear immediately in the next read.
+   */
+  tags?: string[];
 }
+
+/** Cache tag families used by ivylensRequest. Mutation routes import these. */
+export const IVYLENS_TAGS = {
+  TICKETS: 'ivylens-tickets',
+  TICKET_DETAIL: 'ivylens-ticket-detail',
+  COMPANY_RESULTS: 'ivylens-company-results',
+} as const;
 
 export async function ivylensRequest<T = any>(
   path: string,
   opts: FetchOptions = {},
 ): Promise<{ data: T | null; error: string | null; status: number }> {
-  const { method = 'GET', body, timeout = 20_000, revalidate } = opts;
+  const { method = 'GET', body, timeout = 20_000, revalidate, tags } = opts;
 
   if (!API_URL) {
     return { data: null, error: 'IVYLENS_API_URL not configured', status: 503 };
@@ -40,7 +53,7 @@ export async function ivylensRequest<T = any>(
     method === 'GET'
       ? revalidate === 0
         ? { cache: 'no-store' as const }
-        : { next: { revalidate: revalidate ?? 60 } }
+        : { next: { revalidate: revalidate ?? 60, ...(tags?.length ? { tags } : {}) } }
       : { cache: 'no-store' as const };
 
   try {

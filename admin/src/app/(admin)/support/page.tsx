@@ -10,8 +10,9 @@ export default async function AdminSupportPage() {
   const supabase = createServerSupabaseClient();
   const { data: tickets } = await supabase
     .from('tickets')
-    .select('*, companies(name)')
-    .order('created_at', { ascending: false });
+    .select('id,subject,status,priority,created_at,resolved_at,companies(name)')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   const all  = tickets ?? [];
   const open = all.filter((t: any) => !['resolved', 'closed'].includes(t.status));
@@ -23,7 +24,7 @@ export default async function AdminSupportPage() {
         subtitle={`${open.length} open ticket${open.length !== 1 ? 's' : ''}`}
       />
       <main className="admin-page flex-1">
-        <SupportClient tickets={all} />
+        <SupportClient tickets={all as any} />
       </main>
     </>
   );

@@ -46,7 +46,7 @@ export default async function BDRolesPage() {
   const supabase = createServerSupabaseClient();
 
   const [localRolesRes, bdCompaniesRes, ivylensRes] = await Promise.all([
-    supabase.from('bd_scanned_roles').select('*').order('scanned_at', { ascending: false }),
+    supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
     supabase.from('bd_companies').select('id,company_name'),
     ivylensRequest<{ leads?: any[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);

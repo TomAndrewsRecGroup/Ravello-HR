@@ -21,7 +21,7 @@ export default async function LearningDetailPage({ params }: { params: { id: str
   const [{ data: content }, { data: allContent }, { data: purchase }] = await Promise.all([
     supabase
       .from('learning_content')
-      .select('*')
+      .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,stripe_price_id,tags,is_featured,view_count,created_at')
       .eq('id', params.id)
       .eq('is_published', true)
       .single(),

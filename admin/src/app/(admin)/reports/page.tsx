@@ -13,7 +13,7 @@ export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
   const [reportsRes, companiesRes, reqsRes, candsRes, compRes, ticketsRes] = await Promise.all([
-    supabase.from('reports').select('*, companies(id,name)').order('created_at', { ascending: false }),
+    supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,name)').order('created_at', { ascending: false }).limit(500),
     supabase.from('companies').select('id,name').eq('active', true).order('name'),
     supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }),

@@ -1,5 +1,5 @@
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { ivylensRequest } from '@/lib/ivylens';
+import { ivylensRequest, IVYLENS_TAGS } from '@/lib/ivylens';
 
 export interface IvyLensTicket {
   id: string;
@@ -30,7 +30,7 @@ export async function listCompanyTickets(): Promise<{
       .from('ivylens_tickets')
       .select('ivylens_ticket_id')
       .eq('company_id', companyId),
-    ivylensRequest<{ tickets: IvyLensTicket[] }>('/tickets'),
+    ivylensRequest<{ tickets: IvyLensTicket[] }>('/tickets', { tags: [IVYLENS_TAGS.TICKETS] }),
   ]);
 
   if (ivylensRes.error) return { tickets: [], error: ivylensRes.error };

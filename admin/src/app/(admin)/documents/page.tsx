@@ -13,8 +13,9 @@ export default async function AdminDocumentsPage() {
   const supabase = createServerSupabaseClient();
   const { data: docs } = await supabase
     .from('documents')
-    .select('*, companies(name)')
-    .order('created_at', { ascending: false });
+    .select('id,name,category,version,review_due_at,file_url,file_size,created_at,companies(name)')
+    .order('created_at', { ascending: false })
+    .limit(2000);
 
   const all = docs ?? [];
 

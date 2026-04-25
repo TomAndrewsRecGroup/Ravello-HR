@@ -15,8 +15,8 @@ export default async function AdminTicketPage({ params }: { params: { id: string
   const { data: { user } } = await supabase.auth.getUser();
 
   const [{ data: ticket }, { data: messages }] = await Promise.all([
-    supabase.from('tickets').select('*, companies(name)').eq('id', params.id).single(),
-    supabase.from('ticket_messages').select('*').eq('ticket_id', params.id).order('created_at'),
+    supabase.from('tickets').select('id,subject,description,status,priority,created_at,resolved_at,company_id,companies(name)').eq('id', params.id).single(),
+    supabase.from('ticket_messages').select('id,ticket_id,sender_id,body,is_internal,created_at').eq('ticket_id', params.id).order('created_at'),
   ]);
   if (!ticket) notFound();
 

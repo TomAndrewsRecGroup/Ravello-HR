@@ -40,9 +40,10 @@ export default async function AdminRoadmapPage() {
   const [milestonesRes, companiesRes] = await Promise.all([
     supabase
       .from('milestones')
-      .select('*, companies(id,name)')
+      .select('id,company_id,track,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,name)')
       .order('quarter')
-      .order('track'),
+      .order('track')
+      .limit(2000),
     supabase
       .from('companies')
       .select('id,name')

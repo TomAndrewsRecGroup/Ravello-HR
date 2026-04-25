@@ -46,7 +46,7 @@ export default async function RequisitionDetailPage({
       .order('created_at', { ascending: false }),
     supabase
       .from('offers')
-      .select('*, candidates(full_name)')
+      .select('id,status,base_salary,bonus,benefits,contract_type,location,working_model,start_date,deadline,notice_period,sent_at,verbal_accepted_at,written_accepted_at,declined_at,notes,candidates(full_name)')
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false }),
     supabase

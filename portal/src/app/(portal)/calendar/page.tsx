@@ -63,7 +63,7 @@ export default async function CalendarPage() {
         <CalendarClient
           companyId={companyId}
           isAdmin={isAdmin}
-          initialEvents={(eventsRes.data ?? []) as any}
+          initialEvents={eventsRes.data ?? []}
           initialLeave={(leaveRes.data ?? []) as any}
           employees={employeesRes.data ?? []}
         />

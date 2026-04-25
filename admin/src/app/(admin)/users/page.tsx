@@ -11,8 +11,9 @@ export default async function UsersPage() {
   const supabase = createServerSupabaseClient();
   const { data: users } = await supabase
     .from('profiles')
-    .select('*, companies(id,name)')
-    .order('created_at', { ascending: false });
+    .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
+    .order('created_at', { ascending: false })
+    .limit(2000);
 
   return (
     <>
