@@ -1,17 +1,16 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, BookOpen, Users,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
-  GripVertical, Eye, EyeOff, Pencil, Check,
+  Eye, EyeOff, Pencil, Check,
   ArrowUp, ArrowDown, Trophy, ExternalLink,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
-import { createClient } from '@/lib/supabase/client';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -51,35 +50,13 @@ interface Props {
   userId?: string;
 }
 
-export default function Sidebar({ flags = {}, counts: initialCounts = {}, companyId, userId }: Props) {
+export default function Sidebar({ flags = {}, counts = {}, companyId, userId }: Props) {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
   const [editMode, setEditMode] = useState(false);
-  const [counts, setCounts] = useState<Record<string, number>>(initialCounts);
-
-  // Fetch badge counts once on mount (not on every navigation)
-  useEffect(() => {
-    if (!companyId) return;
-    const supabase = createClient();
-    const now = new Date().toISOString();
-
-    Promise.all([
-      supabase.from('actions').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('status', 'active')
-        .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
-      supabase.from('tickets').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).in('status', ['open', 'in_progress']),
-      supabase.from('candidates').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
-    ]).then(([actRes, tickRes, candRes]) => {
-      setCounts({
-        actions: actRes.count ?? 0,
-        tickets: tickRes.count ?? 0,
-        candidates: candRes.count ?? 0,
-      });
-    }).catch(() => {});
-  }, [companyId]); // only on mount, not on path change
+  // Counts are pre-computed in the layout SSR pass and refreshed on every
+  // navigation by Next's data revalidation — no client-side fetch needed.
 
   // Build ordered, visible nav items
   const orderedItems = useMemo(() => {

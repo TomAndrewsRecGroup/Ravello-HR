@@ -68,15 +68,21 @@ async function manatalFetch(
   const url = new URL(`${API_URL}${path}`);
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
+  // Read-only GETs are deduplicated via Next's fetch cache for 60s.
+  // Mutating verbs always bypass.
+  const method = options?.method ?? 'GET';
+  const cacheConfig = method === 'GET' ? { next: { revalidate: 60 } } : { cache: 'no-store' as const };
+
   try {
     const res = await fetch(url.toString(), {
-      method:  options?.method ?? 'GET',
+      method,
       headers: {
         'Authorization': `Token ${API_KEY}`,
         'Content-Type':  'application/json',
       },
       body:   options?.body ? JSON.stringify(options.body) : undefined,
       signal: AbortSignal.timeout(10_000),
+      ...cacheConfig,
     });
     if (!res.ok) {
       console.warn('[Manatal] API error', res.status, path);
