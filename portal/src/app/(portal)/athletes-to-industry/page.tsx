@@ -32,7 +32,9 @@ export default async function AthletesToIndustryPage() {
         .limit(200),
       supabase
         .from('athlete_partner_interests')
-        .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at'),
+        .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2000),
     ]);
 
   const athletes = (athletesData ?? []) as AthleteRow[];
@@ -54,6 +56,7 @@ export default async function AthletesToIndustryPage() {
           />
           <PartnersPanel
             partners={partners}
+            athletes={athletes}
             interests={interests}
           />
         </div>

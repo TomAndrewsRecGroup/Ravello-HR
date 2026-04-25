@@ -39,6 +39,25 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
 
   const supabase = createServerSupabaseClient();
+
+  // Best-effort cleanup of CV/avatar files in storage before the row.
+  try {
+    const { data: athlete } = await supabase
+      .from('athletes')
+      .select('id, company_id')
+      .eq('id', params.id)
+      .single();
+    if (athlete) {
+      const folder = `athletes/${athlete.company_id}/${athlete.id}`;
+      const { data: files } = await supabase.storage.from('documents').list(folder);
+      if (files && files.length > 0) {
+        await supabase.storage
+          .from('documents')
+          .remove(files.map(f => `${folder}/${f.name}`));
+      }
+    }
+  } catch { /* non-fatal */ }
+
   const { error } = await supabase.from('athletes').delete().eq('id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

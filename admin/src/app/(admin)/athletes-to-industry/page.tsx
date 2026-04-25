@@ -26,7 +26,9 @@ export default async function AthletesToIndustryAdminPage() {
       .limit(200),
     supabase
       .from('athlete_partner_interests')
-      .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at'),
+      .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5000),
     supabase
       .from('companies')
       .select('id, name')

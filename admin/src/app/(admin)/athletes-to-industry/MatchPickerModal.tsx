@@ -27,11 +27,12 @@ const STATUS_LABEL: Record<InterestStatus, string> = {
 };
 
 export default function MatchPickerModal({ athlete, partners, initialInterests, onClose, onChanged }: Props) {
-  useModalShell(true, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalShell(true, onClose, dialogRef);
 
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [pending, setPending] = useState<Set<PendingKey>>(new Set());
+  const [pending, setPending] = useState<Map<PendingKey, { partnerId: string; roleId: string | null }>>(new Map());
   const [interests, setInterests] = useState<InterestRow[]>(initialInterests);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -82,8 +83,9 @@ export default function MatchPickerModal({ athlete, partners, initialInterests, 
     const key = k(partnerId, roleId);
     if (existingByKey.has(key)) return;
     setPending(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      const next = new Map(prev);
+      if (next.has(key)) next.delete(key);
+      else next.set(key, { partnerId, roleId });
       return next;
     });
   }
@@ -93,13 +95,13 @@ export default function MatchPickerModal({ athlete, partners, initialInterests, 
     setSaving(true);
     setError('');
     try {
-      const items = Array.from(pending).map(key => {
-        const [partner_id, roleRaw] = key.split('::');
-        return { partner_id, role_opportunity_id: roleRaw === 'null' ? null : roleRaw };
-      });
+      const items = Array.from(pending.values()).map(v => ({
+        partner_id: v.partnerId,
+        role_opportunity_id: v.roleId,
+      }));
       const inserted = await interestApi.bulkCreate(athlete.id, items);
       setInterests(prev => [...prev, ...inserted]);
-      setPending(new Set());
+      setPending(new Map());
       onChanged?.();
     } catch (e) {
       setError((e as Error).message);
@@ -158,15 +160,17 @@ export default function MatchPickerModal({ athlete, partners, initialInterests, 
       onClick={close}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="card w-full max-w-[720px] max-h-[88vh] flex flex-col overflow-hidden p-0"
         style={{ boxShadow: '0 24px 64px rgba(7,11,29,0.28)' }}
         onClick={(e) => e.stopPropagation()}
-        role="dialog" aria-modal="true"
+        role="dialog" aria-modal="true" aria-labelledby="admin-match-picker-title"
       >
         <div className="px-6 py-5 flex items-center gap-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <AvatarInitials name={athlete.full_name} size={44} />
           <div className="flex-1 min-w-0">
-            <h2 className="font-display text-lg font-semibold leading-tight" style={{ color: 'var(--ink)' }}>
+            <h2 id="admin-match-picker-title" className="font-display text-lg font-semibold leading-tight" style={{ color: 'var(--ink)' }}>
               Match {athlete.full_name} to a role
             </h2>
             <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--ink-soft)' }}>
@@ -309,15 +313,29 @@ export default function MatchPickerModal({ athlete, partners, initialInterests, 
 
 function Checkbox({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
-    <span onClick={e => { e.preventDefault(); if (!disabled) onChange(); }}
-          className="inline-flex items-center justify-center"
-          style={{
-            width: 16, height: 16, borderRadius: 4,
-            border: `1.5px solid ${checked ? 'var(--purple)' : 'var(--line)'}`,
-            background: checked ? 'var(--purple)' : 'var(--surface)',
-            color: '#fff',
-          }}>
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      onClick={e => { e.preventDefault(); e.stopPropagation(); if (!disabled) onChange(); }}
+      onKeyDown={e => {
+        if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+          e.preventDefault();
+          onChange();
+        }
+      }}
+      className="inline-flex items-center justify-center"
+      style={{
+        width: 16, height: 16, borderRadius: 4,
+        border: `1.5px solid ${checked ? 'var(--purple)' : 'var(--line)'}`,
+        background: checked ? 'var(--purple)' : 'var(--surface)',
+        color: '#fff',
+        padding: 0,
+        cursor: disabled ? 'default' : 'pointer',
+      }}>
       {checked && <Check size={10} strokeWidth={3} />}
-    </span>
+    </button>
   );
 }

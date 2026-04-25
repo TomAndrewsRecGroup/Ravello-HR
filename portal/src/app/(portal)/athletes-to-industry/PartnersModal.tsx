@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { X, Search, ChevronDown, ChevronRight, Globe, MapPin, ExternalLink } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
@@ -17,7 +17,8 @@ interface Props {
 export default function PartnersModal({
   partners, interests, interestsByPartner, onClose, onOpenRole,
 }: Props) {
-  useModalShell(true, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalShell(true, onClose, dialogRef);
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -54,12 +55,14 @@ export default function PartnersModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="card w-full max-w-2xl max-h-[88vh] flex flex-col p-0 overflow-hidden"
         onClick={e => e.stopPropagation()}
-        role="dialog" aria-modal="true"
+        role="dialog" aria-modal="true" aria-labelledby="partners-modal-title"
       >
         <div className="px-6 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--line)' }}>
-          <h2 className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
+          <h2 id="partners-modal-title" className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
             Partners ({partners.length})
           </h2>
           <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>

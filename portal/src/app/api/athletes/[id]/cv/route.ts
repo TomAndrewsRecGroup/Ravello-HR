@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { data: { publicUrl } } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
 
-  const { error: updateError } = await supabase
+  const { data: row, error: updateError } = await supabase
     .from('athletes')
     .update({
       cv_kind: 'file',
@@ -71,10 +71,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       cv_text: null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', athlete.id);
+    .eq('id', athlete.id)
+    .select('id, company_id, full_name, email, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at')
+    .single();
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ url: publicUrl, filename: file.name });
+  return NextResponse.json({ url: publicUrl, filename: file.name, row });
 }

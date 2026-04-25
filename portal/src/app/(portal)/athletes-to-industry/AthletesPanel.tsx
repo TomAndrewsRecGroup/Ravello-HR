@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Plus, Trophy, ArrowRight, Sparkles } from 'lucide-react';
@@ -20,6 +20,8 @@ interface Props {
 
 export default function AthletesPanel({ athletes, partners, interests }: Props) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
+  const refresh = () => startTransition(() => router.refresh());
   const [showAll, setShowAll] = useState(false);
   const [editing, setEditing] = useState<AthleteRow | null>(null);
   const [creating, setCreating] = useState(false);
@@ -108,7 +110,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
           onClose={() => setCreating(false)}
           onSaved={(saved, openMatch) => {
             setCreating(false);
-            router.refresh();
+            refresh();
             if (openMatch) setMatching(saved);
           }}
         />
@@ -119,7 +121,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
           mode="edit"
           athlete={editing}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); router.refresh(); }}
+          onSaved={() => { setEditing(null); refresh(); }}
         />
       )}
 
@@ -130,7 +132,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
           initialInterests={interests.filter(i => i.athlete_id === matching.id)}
           apiBase="/api"
           onClose={() => setMatching(null)}
-          onChanged={() => router.refresh()}
+          onChanged={refresh}
         />
       )}
 

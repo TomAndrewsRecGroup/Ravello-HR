@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { X, Loader2, FileText, Type as TypeIcon, Upload, Trash2 } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import { CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
@@ -18,7 +18,8 @@ interface Props {
 const ACCEPT = '.pdf,.doc,.docx,.txt';
 
 export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Props) {
-  useModalShell(true, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalShell(true, onClose, dialogRef);
 
   const [fullName, setFullName] = useState(athlete?.full_name ?? '');
   const [email, setEmail] = useState(athlete?.email ?? '');
@@ -90,34 +91,21 @@ export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Pr
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Save failed');
-      const id: string = mode === 'create' ? json.id : athlete!.id;
 
-      // Upload CV file if provided.
+      let saved: AthleteRow = json.row as AthleteRow;
+      if (!saved?.id) throw new Error('Server did not return saved row');
+
+      // Upload CV file if provided. The CV route returns the updated row,
+      // which supersedes the row from the create/patch.
       if (cvFile) {
         const fd = new FormData();
         fd.append('file', cvFile);
-        const upRes = await fetch(`/api/athletes/${id}/cv`, { method: 'POST', body: fd });
+        const upRes = await fetch(`/api/athletes/${saved.id}/cv`, { method: 'POST', body: fd });
         const upJson = await upRes.json();
         if (!upRes.ok) throw new Error(upJson.error ?? 'CV upload failed');
+        if (upJson.row) saved = upJson.row as AthleteRow;
       }
 
-      const saved: AthleteRow = {
-        id,
-        company_id: athlete?.company_id ?? '',
-        full_name: fullName.trim(),
-        email: email.trim() || null,
-        sport: sport.trim() || null,
-        previous_role: previousRole.trim() || null,
-        bio: bio.trim() || null,
-        linkedin_url: linkedinUrl.trim() || null,
-        avatar_url: athlete?.avatar_url ?? null,
-        cv_kind: cvFile ? 'file' : (cvKind === null ? null : cvKind),
-        cv_url: cvFile ? null : (athlete?.cv_url ?? null),
-        cv_filename: cvFile?.name ?? athlete?.cv_filename ?? null,
-        cv_mime: cvFile?.type ?? athlete?.cv_mime ?? null,
-        cv_text: cvKind === 'text' ? cvText.trim() || null : null,
-        created_at: athlete?.created_at ?? new Date().toISOString(),
-      };
       onSaved(saved, thenMatch);
     } catch (e) {
       setError((e as Error).message);
@@ -133,12 +121,14 @@ export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Pr
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="card w-full max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden"
         onClick={e => e.stopPropagation()}
-        role="dialog" aria-modal="true"
+        role="dialog" aria-modal="true" aria-labelledby="athlete-form-title"
       >
         <div className="px-6 py-5 flex items-center" style={{ borderBottom: '1px solid var(--line)' }}>
-          <h2 className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
+          <h2 id="athlete-form-title" className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
             {mode === 'create' ? 'Add an athlete' : `Edit ${athlete?.full_name}`}
           </h2>
           <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>

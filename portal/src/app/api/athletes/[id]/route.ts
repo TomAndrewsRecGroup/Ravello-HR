@@ -38,9 +38,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if ('error' in patch) return NextResponse.json({ error: patch.error }, { status: 400 });
   patch.updated_at = new Date().toISOString();
 
-  const { error } = await supabase.from('athletes').update(patch).eq('id', params.id);
+  const { data: row, error } = await supabase
+    .from('athletes')
+    .update(patch)
+    .eq('id', params.id)
+    .select('id, company_id, full_name, email, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at')
+    .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, row });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -50,6 +55,19 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const supabase = createServerSupabaseClient();
   const guard = await loadCompanyAthlete(supabase, params.id);
   if ('error' in guard) return guard.error;
+  const { athlete } = guard;
+
+  // Best-effort: list and delete CV/avatar files in storage before the row.
+  // List failures are non-fatal — the row delete still goes through.
+  try {
+    const folder = `athletes/${athlete.company_id}/${athlete.id}`;
+    const { data: files } = await supabase.storage.from('documents').list(folder);
+    if (files && files.length > 0) {
+      await supabase.storage
+        .from('documents')
+        .remove(files.map(f => `${folder}/${f.name}`));
+    }
+  } catch { /* swallow: orphaned files are tolerable, orphaned interests are not */ }
 
   const { error } = await supabase.from('athletes').delete().eq('id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,22 +1,33 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Building2, ArrowRight, Globe } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import type { InterestRow, PartnerRow, RoleOpportunity } from './types';
+import type { AthleteRow, InterestRow, PartnerRow, RoleOpportunity } from './types';
 
 const PartnersModal      = dynamic(() => import('./PartnersModal'),      { ssr: false });
 const RoleInterestsPanel = dynamic(() => import('./RoleInterestsPanel'), { ssr: false });
 
 interface Props {
   partners: PartnerRow[];
+  athletes: AthleteRow[];
   interests: InterestRow[];
 }
 
-export default function PartnersPanel({ partners, interests }: Props) {
+export default function PartnersPanel({ partners, athletes, interests }: Props) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const refresh = () => startTransition(() => router.refresh());
   const [showAll, setShowAll] = useState(false);
   const [viewingRole, setViewingRole] = useState<{ partner: PartnerRow; role: RoleOpportunity | null } | null>(null);
+
+  const athletesById = useMemo(() => {
+    const m = new Map<string, AthleteRow>();
+    for (const a of athletes) m.set(a.id, a);
+    return m;
+  }, [athletes]);
 
   const interestsByPartner = useMemo(() => {
     const m = new Map<string, number>();
@@ -88,9 +99,12 @@ export default function PartnersPanel({ partners, interests }: Props) {
         <RoleInterestsPanel
           partner={viewingRole.partner}
           role={viewingRole.role}
+          allInterests={interests}
+          athletesById={athletesById}
           apiBase="/api"
           staffView={false}
           onClose={() => setViewingRole(null)}
+          onChanged={refresh}
         />
       )}
     </>
