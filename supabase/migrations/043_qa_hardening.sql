@@ -25,10 +25,22 @@
 -- per (athlete, partner) pair because NULL != NULL.
 -- ─────────────────────────────────────────────────────────────
 
-ALTER TABLE athlete_partner_interests
-  DROP CONSTRAINT IF EXISTS athlete_partner_interests_athlete_id_partner_id_role_oppor_key;
-ALTER TABLE athlete_partner_interests
-  DROP CONSTRAINT IF EXISTS athlete_partner_interests_athlete_id_partner_id_role_opportu_key;
+-- Drop the auto-named UNIQUE constraint on the three columns regardless of
+-- how Postgres truncated the name (varies between 14/15/16).
+DO $$
+DECLARE
+  cons_name text;
+BEGIN
+  SELECT conname INTO cons_name
+    FROM pg_constraint
+   WHERE conrelid = 'athlete_partner_interests'::regclass
+     AND contype = 'u'
+     AND array_length(conkey, 1) = 3
+   LIMIT 1;
+  IF cons_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE athlete_partner_interests DROP CONSTRAINT %I', cons_name);
+  END IF;
+END $$;
 
 -- De-dupe any existing rows that the old constraint missed
 -- (general-interest duplicates) before adding the new constraint.
@@ -99,9 +111,9 @@ CREATE POLICY "Authenticated upload to documents bucket"
       -- Non-athletes paths: keep the existing permissive behaviour.
       NOT (name LIKE 'athletes/%')
       -- TPS staff can upload anywhere.
-      OR is_tps_staff()
+      OR public.is_tps_staff()
       -- Otherwise enforce the company segment matches caller's company.
-      OR (storage.foldername(name))[2] = my_company_id()::text
+      OR (storage.foldername(name))[2] = public.my_company_id()::text
     )
   );
 
@@ -130,43 +142,41 @@ BEGIN
   WHERE (elem ->> 'id') IS NOT NULL;
 
   -- Promote orphaned specific-role interests to general interest.
-  -- (Insert-or-do-nothing pattern: if a general-interest row already
-  -- exists for the same (athlete, partner), drop the orphaned one
-  -- instead of duplicating.)
+  -- For each (athlete, partner) pair with orphans, at most ONE can be
+  -- promoted to NULL (the lowest-id orphan) because the new
+  -- UNIQUE NULLS NOT DISTINCT constraint forbids duplicate
+  -- (athlete, partner, NULL) rows. The rest are deleted, along with
+  -- any orphan whose (athlete, partner) already has a general-interest row.
   WITH orphans AS (
-    SELECT id, athlete_id, partner_id
-      FROM athlete_partner_interests
-     WHERE partner_id = NEW.id
-       AND role_opportunity_id IS NOT NULL
-       AND NOT (role_opportunity_id = ANY (current_role_ids))
-  ),
-  promotable AS (
-    SELECT o.id
-      FROM orphans o
-     WHERE NOT EXISTS (
-       SELECT 1 FROM athlete_partner_interests x
-        WHERE x.athlete_id = o.athlete_id
-          AND x.partner_id = o.partner_id
-          AND x.role_opportunity_id IS NULL
-     )
-  ),
-  deletable AS (
-    SELECT o.id
-      FROM orphans o
-     WHERE EXISTS (
-       SELECT 1 FROM athlete_partner_interests x
-        WHERE x.athlete_id = o.athlete_id
-          AND x.partner_id = o.partner_id
-          AND x.role_opportunity_id IS NULL
-     )
+    SELECT
+      id,
+      athlete_id,
+      partner_id,
+      ROW_NUMBER() OVER (PARTITION BY athlete_id, partner_id ORDER BY id) AS rn,
+      EXISTS (
+        SELECT 1 FROM athlete_partner_interests x
+         WHERE x.athlete_id = api.athlete_id
+           AND x.partner_id = api.partner_id
+           AND x.role_opportunity_id IS NULL
+      ) AS has_general
+    FROM athlete_partner_interests api
+   WHERE partner_id = NEW.id
+     AND role_opportunity_id IS NOT NULL
+     AND NOT (role_opportunity_id = ANY (current_role_ids))
   ),
   promoted AS (
-    UPDATE athlete_partner_interests SET role_opportunity_id = NULL
-     WHERE id IN (SELECT id FROM promotable)
+    UPDATE athlete_partner_interests
+       SET role_opportunity_id = NULL
+     WHERE id IN (
+       SELECT id FROM orphans WHERE rn = 1 AND has_general = false
+     )
     RETURNING 1
   )
   DELETE FROM athlete_partner_interests
-   WHERE id IN (SELECT id FROM deletable);
+   WHERE id IN (
+     SELECT id FROM orphans
+      WHERE rn > 1 OR has_general = true
+   );
 
   RETURN NEW;
 END;
