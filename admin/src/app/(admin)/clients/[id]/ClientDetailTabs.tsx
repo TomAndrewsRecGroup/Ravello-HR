@@ -5,6 +5,9 @@ import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 import FrictionTab from './tabs/FrictionTab';
+import LeadTab from './tabs/LeadTab';
+import ProtectTab from './tabs/ProtectTab';
+import CandidatesTab from './tabs/CandidatesTab';
 
 /* ─── Helpers ─────────────────────────────────────── */
 
@@ -277,39 +280,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
     }
   }
 
-  /* ── Candidates state ── */
-  const [candidates,    setCandidates]   = useState<any[]>([]);
-  const [showCandForm,  setShowCandForm] = useState(false);
-  const [candForm,      setCandForm]     = useState({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
-  const [savingCand,    setSavingCand]   = useState(false);
-  const [togglingCand,  setTogglingCand] = useState<string | null>(null);
-
-  async function saveCandidate() {
-    if (!candForm.full_name || !candForm.requisition_id) return;
-    setSavingCand(true);
-    const { data, error } = await supabase
-      .from('candidates')
-      .insert({ ...candForm, company_id: company.id })
-      .select()
-      .single();
-    if (!error && data) {
-      setCandidates(prev => [data, ...prev]);
-      revalidateAdminPath('/clients');
-    }
-    setSavingCand(false);
-    setShowCandForm(false);
-    setCandForm({ full_name: '', email: '', phone: '', summary: '', cv_url: '', recruiter_notes: '', requisition_id: '', approved_for_client: false });
-  }
-
-  async function toggleApproved(id: string, current: boolean) {
-    setTogglingCand(id);
-    const { error } = await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
-    if (!error) {
-      setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
-      revalidateAdminPath('/clients');
-    }
-    setTogglingCand(null);
-  }
+  // Candidates state lives inside CandidatesTab.
 
   /* ── Compliance state ── */
   const [compliance,    setCompliance]   = useState<any[]>([]);
@@ -354,36 +325,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   const [svcForm,       setSvcForm]       = useState({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
   const [savingSvc,     setSavingSvc]     = useState(false);
 
-  /* ── LEAD state ── */
-  const [trainingNeeds, setTrainingNeeds] = useState<any[]>([]);
-  const [perfReviews,   setPerfReviews]   = useState<any[]>([]);
-
-  async function updateTrainingStatus(id: string, status: string) {
-    const { error } = await supabase.from('training_needs').update({ status }).eq('id', id);
-    if (!error) {
-      setTrainingNeeds(prev => prev.map(n => n.id === id ? { ...n, status } : n));
-      revalidateAdminPath('/clients');
-    }
-  }
-
-  async function updateReviewStatus(id: string, status: string) {
-    const extra: Record<string, string> = {};
-    if (status === 'completed') extra.completed_at = new Date().toISOString();
-    const { error } = await supabase.from('performance_reviews').update({ status, ...extra }).eq('id', id);
-    if (!error) {
-      setPerfReviews(prev => prev.map(r => r.id === id ? { ...r, status, ...extra } : r));
-      revalidateAdminPath('/clients');
-    }
-  }
-
-  /* ── PROTECT state ── */
-  const [absenceRecords, setAbsenceRecords] = useState<any[]>([]);
-  const [empDocs,        setEmpDocs]        = useState<any[]>([]);
+  // LEAD + PROTECT state lives inside their respective tab components now.
 
   // Sync lazy-loaded tab data into component state
-  useEffect(() => {
-    if (tabData['Candidates']?.candidates) setCandidates(tabData['Candidates'].candidates);
-  }, [tabData['Candidates']]);
+  // (Candidates / LEAD / PROTECT data is consumed directly by their tab
+  //  components via tabData[...] in render; no parent setState bridge needed.)
   useEffect(() => {
     if (tabData['Documents']?.documents) setDocuments(tabData['Documents'].documents);
   }, [tabData['Documents']]);
@@ -396,29 +342,11 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
   useEffect(() => {
     if (tabData['Compliance']?.compliance) setCompliance(tabData['Compliance'].compliance);
   }, [tabData['Compliance']]);
-  useEffect(() => {
-    if (tabData['LEAD']) {
-      setTrainingNeeds(tabData['LEAD'].trainingNeeds ?? []);
-      setPerfReviews(tabData['LEAD'].perfReviews ?? []);
-    }
-  }, [tabData['LEAD']]);
-  useEffect(() => {
-    if (tabData['PROTECT']) {
-      setAbsenceRecords(tabData['PROTECT'].absenceRecords ?? []);
-      setEmpDocs(tabData['PROTECT'].empDocs ?? []);
-    }
-  }, [tabData['PROTECT']]);
+  // LEAD + PROTECT data is consumed directly by the extracted tab components
+  // via tabData[...] in render — no parent-level setState bridge needed.
   useEffect(() => {
     if (tabData['Services']?.services) setServices(tabData['Services'].services);
   }, [tabData['Services']]);
-
-  async function updateAbsenceStatus(id: string, status: string) {
-    const { error } = await supabase.from('absence_records').update({ status }).eq('id', id);
-    if (!error) {
-      setAbsenceRecords(prev => prev.map(a => a.id === id ? { ...a, status } : a));
-      revalidateAdminPath('/clients');
-    }
-  }
 
   /* ── Doc approve ── */
   const [approvingDoc,  setApprovingDoc]  = useState<string | null>(null);
@@ -630,7 +558,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         <td>
                           <button
                             className="btn-ghost btn-sm"
-                            onClick={() => { handleTabChange('Candidates'); setCandForm(f => ({ ...f, requisition_id: r.id })); setShowCandForm(true); }}
+                            onClick={() => handleTabChange('Candidates')}
                           >
                             <Plus size={12} /> Add Candidate
                           </button>
@@ -646,144 +574,12 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       )}
 
       {/* ─── CANDIDATES ───────────────────────────────── */}
-      {tab === 'Candidates' && (
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-              Candidates ({candidates.length})
-            </h2>
-            <button onClick={() => setShowCandForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
-              <Plus size={13} /> Add Candidate
-            </button>
-          </div>
-
-          {/* Add candidate form */}
-          {showCandForm && (
-            <div className="card p-5 space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Full name *</label>
-                  <input className="input" placeholder="Jane Smith" value={candForm.full_name} onChange={e => setCandForm(f => ({ ...f, full_name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Role *</label>
-                  <select className="input" value={candForm.requisition_id} onChange={e => setCandForm(f => ({ ...f, requisition_id: e.target.value }))}>
-                    <option value="">Select role…</option>
-                    {reqs.filter((r: any) => !['filled','cancelled'].includes(r.stage)).map((r: any) => (
-                      <option key={r.id} value={r.id}>{r.title}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Email</label>
-                  <input type="email" className="input" placeholder="jane@example.com" value={candForm.email} onChange={e => setCandForm(f => ({ ...f, email: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Phone</label>
-                  <input className="input" placeholder="+44 7700 000000" value={candForm.phone} onChange={e => setCandForm(f => ({ ...f, phone: e.target.value }))} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label">Summary</label>
-                  <textarea className="input h-20 resize-none" placeholder="Brief candidate overview…" value={candForm.summary} onChange={e => setCandForm(f => ({ ...f, summary: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">CV / LinkedIn URL</label>
-                  <input type="url" className="input" placeholder="https://…" value={candForm.cv_url} onChange={e => setCandForm(f => ({ ...f, cv_url: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Recruiter notes</label>
-                  <input className="input" placeholder="Internal notes (not shown to client)" value={candForm.recruiter_notes} onChange={e => setCandForm(f => ({ ...f, recruiter_notes: e.target.value }))} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={candForm.approved_for_client} onChange={e => setCandForm(f => ({ ...f, approved_for_client: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
-                    <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Share with client immediately</span>
-                  </label>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={saveCandidate} disabled={savingCand || !candForm.full_name || !candForm.requisition_id} className="btn-cta btn-sm flex items-center gap-1.5">
-                  {savingCand ? <Loader2 size={12} className="animate-spin" /> : null} Save Candidate
-                </button>
-                <button onClick={() => setShowCandForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {/* Candidate list grouped by role */}
-          {candidates.length === 0 && !showCandForm ? (
-            <div className="card empty-state">No candidates added yet.</div>
-          ) : (
-            <div className="space-y-6">
-              {reqs.map((r: any) => {
-                const rCands = candidates.filter((c: any) => c.requisition_id === r.id);
-                if (rCands.length === 0) return null;
-                return (
-                  <div key={r.id}>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
-                      {r.title}: {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
-                    </p>
-                    <div className="card overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
-                            {['Name', 'Summary', 'CV', 'Client Status', 'Feedback', 'Share'].map(h => (
-                              <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rCands.map((c: any) => (
-                            <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
-                                    <User size={13} style={{ color: 'var(--purple)' }} />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-xs" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
-                                    {c.email && <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 max-w-[200px]">
-                                <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '-'}</p>
-                              </td>
-                              <td className="px-4 py-3">
-                                {c.cv_url ? (
-                                  <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1 w-fit">
-                                    <ExternalLink size={11} /> CV
-                                  </a>
-                                ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
-                                  {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 max-w-[160px]">
-                                <p className="text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{c.client_feedback ?? '-'}</p>
-                              </td>
-                              <td className="px-4 py-3">
-                                <button
-                                  onClick={() => toggleApproved(c.id, c.approved_for_client)}
-                                  disabled={togglingCand === c.id}
-                                  className={`text-[11px] font-semibold px-2 py-1 rounded-full transition-all ${c.approved_for_client ? 'btn-secondary' : 'btn-cta'} btn-sm`}
-                                >
-                                  {togglingCand === c.id ? <Loader2 size={10} className="animate-spin" /> : c.approved_for_client ? 'Unshare' : 'Share'}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+      {tab === 'Candidates' && tabData['Candidates'] && (
+        <CandidatesTab
+          companyId={company.id}
+          initialCandidates={tabData['Candidates'].candidates ?? []}
+          reqs={reqs}
+        />
       )}
 
       {/* ─── DOCUMENTS ────────────────────────────────── */}
@@ -1160,268 +956,22 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       )}
 
       {/* ─── LEAD ─────────────────────────────────────── */}
-      {tab === 'LEAD' && (
-        <div className="space-y-8">
-          {/* Training Needs */}
-          <div>
-            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-              Training Needs
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
-                {trainingNeeds.filter(n => n.status === 'open').length} open
-              </span>
-            </h2>
-            {trainingNeeds.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No training needs flagged.</p>
-            ) : (
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Skill Gap</th>
-                      <th>Employee</th>
-                      <th>Priority</th>
-                      <th>Target Date</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trainingNeeds.map((n: any) => (
-                      <tr key={n.id}>
-                        <td>
-                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{n.skill_gap}</p>
-                          {n.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{n.notes}</p>}
-                        </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{[n.employee_name, n.department].filter(Boolean).join(' · ') || '-'}</td>
-                        <td>
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={PRIORITY_STYLE[n.priority] ?? PRIORITY_STYLE.medium}>
-                            {n.priority}
-                          </span>
-                        </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{n.target_date ? new Date(n.target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
-                        <td>
-                          <select
-                            className="text-xs rounded-[6px] px-2 py-1 border"
-                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
-                            value={n.status}
-                            onChange={e => updateTrainingStatus(n.id, e.target.value)}
-                          >
-                            {['open', 'in_progress', 'resolved', 'deferred'].map(s => (
-                              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Performance Reviews */}
-          <div>
-            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-              Performance Reviews
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: 'var(--purple)' }}>
-                {perfReviews.filter(r => ['pending', 'in_progress'].includes(r.status)).length} pending
-              </span>
-            </h2>
-            {perfReviews.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No performance reviews recorded.</p>
-            ) : (
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Employee</th>
-                      <th>Period</th>
-                      <th>Type</th>
-                      <th>Due Date</th>
-                      <th>Rating</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perfReviews.map((r: any) => (
-                      <tr key={r.id}>
-                        <td>
-                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{r.employee_name}</p>
-                          {r.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.department}</p>}
-                        </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.review_period}</td>
-                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{r.review_type?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.overall_rating ?? '-'}</td>
-                        <td>
-                          <select
-                            className="text-xs rounded-[6px] px-2 py-1 border"
-                            style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
-                            value={r.status}
-                            onChange={e => updateReviewStatus(r.id, e.target.value)}
-                          >
-                            {['pending', 'in_progress', 'completed', 'cancelled'].map(s => (
-                              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+      {tab === 'LEAD' && tabData['LEAD'] && (
+        <LeadTab
+          initialTrainingNeeds={tabData['LEAD'].trainingNeeds ?? []}
+          initialPerfReviews={tabData['LEAD'].perfReviews ?? []}
+        />
       )}
 
       {/* ─── PROTECT ───────────────────────────────────── */}
-      {tab === 'PROTECT' && (
-        <div className="space-y-8">
-          {/* Absence Records */}
-          <div>
-            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-              Absence Records
-              <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--amber)' }}>
-                {absenceRecords.filter(a => a.status === 'pending').length} pending approval
-              </span>
-            </h2>
-            {absenceRecords.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No absence records.</p>
-            ) : (
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Employee</th>
-                      <th>Type</th>
-                      <th>Start</th>
-                      <th>End</th>
-                      <th>Days</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {absenceRecords.map((a: any) => (
-                      <tr key={a.id}>
-                        <td>
-                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{a.employee_name}</p>
-                          {a.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{a.department}</p>}
-                        </td>
-                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{a.absence_type?.replace(/_/g, ' ')}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.start_date ? new Date(a.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.end_date ? new Date(a.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{a.days ?? '-'}</td>
-                        <td>
-                          {a.status === 'pending' ? (
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => updateAbsenceStatus(a.id, 'approved')}
-                                className="btn-sm btn-secondary text-[11px] flex items-center gap-1"
-                                style={{ color: 'var(--emerald)' }}
-                              >
-                                <Check size={11} /> Approve
-                              </button>
-                              <button
-                                onClick={() => updateAbsenceStatus(a.id, 'rejected')}
-                                className="btn-sm btn-ghost text-[11px]"
-                                style={{ color: 'var(--rose)' }}
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span
-                              className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
-                              style={
-                                a.status === 'approved' ? { background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)' } :
-                                a.status === 'rejected' ? { background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' } :
-                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
-                              }
-                            >
-                              {a.status}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Employee Documents */}
-          <div>
-            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-              Employee Documents
-              {empDocs.filter(d => d.status === 'expired').length > 0 && (
-                <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: 'var(--rose)' }}>
-                  {empDocs.filter(d => d.status === 'expired').length} expired
-                </span>
-              )}
-            </h2>
-            {empDocs.length === 0 ? (
-              <div className="card p-12 empty-state"><p className="text-sm">No employee documents yet.</p></div>
-            ) : (
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Employee</th>
-                      <th>Document</th>
-                      <th>Type</th>
-                      <th>Expiry</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {empDocs.map((d: any) => {
-                      const isExpired = d.status === 'expired' || (d.expiry_date && new Date(d.expiry_date) < new Date());
-                      return (
-                        <tr key={d.id}>
-                          <td>
-                            <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
-                            {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
-                          </td>
-                          <td>
-                            {d.file_url ? (
-                              <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
-                                {d.title} <ExternalLink size={11} />
-                              </a>
-                            ) : (
-                              <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
-                            )}
-                          </td>
-                          <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
-                          <td style={{ color: isExpired ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
-                            {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
-                            {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
-                          </td>
-                          <td>
-                            <span
-                              className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
-                              style={
-                                d.status === 'active'           ? { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' } :
-                                d.status === 'expired'          ? { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' } :
-                                d.status === 'pending_renewal'  ? { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' } :
-                                { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
-                              }
-                            >
-                              {d.status?.replace(/_/g, ' ')}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+      {tab === 'PROTECT' && tabData['PROTECT'] && (
+        <ProtectTab
+          initialAbsenceRecords={tabData['PROTECT'].absenceRecords ?? []}
+          initialEmpDocs={tabData['PROTECT'].empDocs ?? []}
+        />
       )}
 
-      {/* ─── SERVICES ─────────────────────────────────── */}
+      {/* ─── FRICTION ─────────────────────────────────── */}
       {tab === 'Friction' && (
         tabLoading === 'Friction' ? (
           <div className="flex items-center justify-center py-12">
