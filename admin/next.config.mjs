@@ -1,3 +1,8 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -11,6 +16,13 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'haaqtnq6favvrbuh.public.blob.vercel-storage.com' },
     ],
+  },
+  // @shared/* path imports cross the project boundary into ../shared/. Without
+  // this webpack alias, Next 14 resolves the TS path but webpack can't find
+  // the modules at compile time.
+  webpack: (config) => {
+    config.resolve.alias['@shared'] = path.resolve(__dirname, '..', 'shared');
+    return config;
   },
   async headers() {
     return [
