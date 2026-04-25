@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import AdminTicketActions from '@/components/modules/AdminTicketActions';
 import AdminTicketReply from '@/components/modules/AdminTicketReply';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Ticket' };
 export const revalidate = 30;
@@ -21,8 +22,7 @@ export default async function AdminTicketPage({ params }: { params: { id: string
 
   const t    = ticket as any;
   const msgs = messages ?? [];
-  const prioBadge: Record<string,string>   = { urgent:'badge-urgent',high:'badge-high',normal:'badge-normal',low:'badge-normal' };
-  const statusBadge: Record<string,string> = { open:'badge-open',in_progress:'badge-inprogress',resolved:'badge-resolved',closed:'badge-normal' };
+  const prioBadge: Record<string,string> = { urgent:'badge-urgent',high:'badge-high',normal:'badge-normal',low:'badge-normal' };
 
   return (
     <>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { buildPatch, type AthleteFields } from '@/lib/athletes/validate';
 
 export const runtime = 'nodejs';
@@ -7,16 +7,14 @@ export const runtime = 'nodejs';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function loadCompanyAthlete(supabase: ReturnType<typeof createServerSupabaseClient>, athleteId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) {
+  if (!companyId) {
     return { error: NextResponse.json({ error: 'no company' }, { status: 403 }) };
   }
   const { data: athlete } = await supabase
     .from('athletes').select('id, company_id').eq('id', athleteId).single();
-  if (!athlete || athlete.company_id !== profile.company_id) {
+  if (!athlete || athlete.company_id !== companyId) {
     return { error: NextResponse.json({ error: 'not found' }, { status: 404 }) };
   }
   return { user, athlete };

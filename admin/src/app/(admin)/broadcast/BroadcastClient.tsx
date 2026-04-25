@@ -1,10 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { CheckSquare, Square, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import type { CompanyRef } from '@/lib/supabase/types';
 
-interface Company { id: string; name: string; active: boolean; }
-
-interface Props { companies: Company[] }
+interface Props { companies: CompanyRef[] }
 
 const ACTION_TYPES = [
   'compliance_update', 'policy_change', 'document_review', 'training_required',

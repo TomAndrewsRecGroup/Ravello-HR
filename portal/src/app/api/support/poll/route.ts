@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 
 // GET /api/support/poll: check for ticket updates and create notifications.
@@ -8,23 +8,20 @@ import { ivylensRequest } from '@/lib/ivylens';
 // fetch, 1 local status select, 1 update, 1-2 notification inserts).
 // Now: 4 parallel waves total regardless of ticket count.
 export async function GET() {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!companyId) return NextResponse.json({ updated: 0 });
 
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) return NextResponse.json({ updated: 0 });
-
+  const supabase = createServerSupabaseClient();
   // ── Step 1: ticket list + last-poll timestamp + owned ticket ids in parallel.
-  const pollKey = `ticket_poll_${profile.company_id}`;
+  const pollKey = `ticket_poll_${companyId}`;
   const [{ data: syncRow }, ticketsResult, { data: companyTickets }] = await Promise.all([
     supabase.from('sync_state').select('value').eq('key', pollKey).single(),
     // Poll wants the freshest data — opt out of the 60s default cache.
     ivylensRequest<{ tickets: any[] }>('/tickets', { revalidate: 0 }),
     supabase.from('ivylens_tickets')
       .select('ivylens_ticket_id, status')
-      .eq('company_id', profile.company_id),
+      .eq('company_id', companyId),
   ]);
 
   if (ticketsResult.error || !ticketsResult.data?.tickets) {
@@ -72,7 +69,7 @@ export async function GET() {
     if (newAdminReplies.length > 0) {
       notifications.push({
         user_id: user.id,
-        company_id: profile.company_id,
+        company_id: companyId,
         type: 'ivylens_ticket_reply',
         title: `New reply on: ${ticket.subject}`,
         body: newAdminReplies[0].message?.slice(0, 200) ?? 'IvyLens support replied to your ticket.',
@@ -86,7 +83,7 @@ export async function GET() {
       if (ticket.status === 'resolved') {
         notifications.push({
           user_id: user.id,
-          company_id: profile.company_id,
+          company_id: companyId,
           type: 'ivylens_ticket_resolved',
           title: `Ticket resolved: ${ticket.subject}`,
           body: 'Your support ticket has been resolved by IvyLens.',

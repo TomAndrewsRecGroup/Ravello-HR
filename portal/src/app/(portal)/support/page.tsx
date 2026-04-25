@@ -3,12 +3,12 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
 import { LifeBuoy, Plus, Headphones } from 'lucide-react';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Support' };
 export const revalidate = 30;
 
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
-const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'badge-inprogress', resolved:'badge-resolved', closed:'badge-normal' };
 
 const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
   new:         { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' },

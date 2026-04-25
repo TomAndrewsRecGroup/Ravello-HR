@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { CV_MIME_ALLOW, CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
 
 export const runtime = 'nodejs';
@@ -20,18 +20,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) {
+  if (!companyId) {
     return NextResponse.json({ error: 'no company' }, { status: 403 });
   }
+  const supabase = createServerSupabaseClient();
   const { data: athlete } = await supabase
     .from('athletes').select('id, company_id').eq('id', params.id).single();
-  if (!athlete || athlete.company_id !== profile.company_id) {
+  if (!athlete || athlete.company_id !== companyId) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 import { listCompanyTickets } from '@/lib/support/tickets';
 
@@ -24,8 +24,7 @@ export async function GET() {
 
 // POST /api/support/tickets: create an IvyLens ticket
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
@@ -42,9 +41,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message must be at least 20 characters' }, { status: 400 });
   }
 
-  // Get user context for metadata
+  const supabase = createServerSupabaseClient();
+  // full_name isn't in the session cookie — still need a profiles lookup for it.
+  // company_id and user.email come from the cookie.
   const { data: profile } = await supabase
-    .from('profiles').select('company_id, email, full_name').eq('id', user.id).single();
+    .from('profiles').select('full_name').eq('id', user.id).single();
 
   const { data, error } = await ivylensRequest('/ticket', {
     method: 'POST',
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       reference_id: reference_id || undefined,
       metadata: {
         ...metadata,
-        user_email: profile?.email ?? user.email,
+        user_email: user.email,
         user_name: profile?.full_name,
       },
     },
@@ -65,9 +66,9 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status: 502 });
 
   // Store local mapping
-  if (data?.ticket_id && profile?.company_id) {
+  if (data?.ticket_id && companyId) {
     await supabase.from('ivylens_tickets').insert({
-      company_id: profile.company_id,
+      company_id: companyId,
       ivylens_ticket_id: data.ticket_id,
       category,
       subject: cleanSubject,

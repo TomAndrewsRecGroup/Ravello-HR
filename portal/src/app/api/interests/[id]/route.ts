@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { UUID_RE, parsePatch } from '@/lib/interests/validate';
 
 export const runtime = 'nodejs';
 
 async function ensureOwn(supabase: ReturnType<typeof createServerSupabaseClient>, interestId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) {
+  if (!companyId) {
     return { error: NextResponse.json({ error: 'no company' }, { status: 403 }) };
   }
   const { data: row } = await supabase
@@ -18,7 +16,7 @@ async function ensureOwn(supabase: ReturnType<typeof createServerSupabaseClient>
     .eq('id', interestId)
     .single();
   const ownedCompany = (row as { athletes?: { company_id?: string } } | null)?.athletes?.company_id;
-  if (!row || ownedCompany !== profile.company_id) {
+  if (!row || ownedCompany !== companyId) {
     return { error: NextResponse.json({ error: 'not found' }, { status: 404 }) };
   }
   return { ok: true as const };

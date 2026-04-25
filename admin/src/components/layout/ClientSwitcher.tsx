@@ -2,11 +2,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Building2, ChevronDown, X, Search } from 'lucide-react';
-
-interface Company {
-  id: string;
-  name: string;
-}
+import type { CompanyRef as Company } from '@/lib/supabase/types';
 
 interface ClientSwitcherContextValue {
   selectedClientId: string | null;

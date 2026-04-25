@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { buildPatch } from '@/lib/athletes/validate';
 
 export const runtime = 'nodejs';
@@ -16,13 +16,11 @@ interface PostBody {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Read user + company from the middleware-stamped session cookie:
+  // saves an auth.getUser() round-trip and a profiles.select() call.
+  const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) {
+  if (!companyId) {
     return NextResponse.json({ error: 'no company assigned to profile' }, { status: 403 });
   }
 
@@ -39,10 +37,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: patch.error }, { status: 400 });
   }
 
+  const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
     .from('athletes')
     .insert({
-      company_id: profile.company_id,
+      company_id: companyId,
       ...patch,
       created_by: user.id,
     })

@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { parseBulkBody } from '@/lib/interests/validate';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) {
+  if (!companyId) {
     return NextResponse.json({ error: 'no company' }, { status: 403 });
   }
 
@@ -22,13 +18,14 @@ export async function POST(req: NextRequest) {
   const parsed = parseBulkBody(raw);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
+  const supabase = createServerSupabaseClient();
   // Verify the target athlete belongs to the caller's company.
   const { data: athlete } = await supabase
     .from('athletes')
     .select('id, company_id')
     .eq('id', parsed.value.athlete_id)
     .single();
-  if (!athlete || athlete.company_id !== profile.company_id) {
+  if (!athlete || athlete.company_id !== companyId) {
     return NextResponse.json({ error: 'athlete not found' }, { status: 404 });
   }
 

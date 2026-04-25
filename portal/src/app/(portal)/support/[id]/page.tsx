@@ -4,12 +4,12 @@ import Topbar from '@/components/layout/Topbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import TicketReplyForm from '@/components/modules/TicketReplyForm';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Ticket' };
 export const revalidate = 30;
 
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
-const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'badge-inprogress', resolved:'badge-resolved', closed:'badge-normal' };
 
 export default async function TicketDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();

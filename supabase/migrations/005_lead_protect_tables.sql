@@ -2,6 +2,16 @@
 -- Migration 005: LEAD + PROTECT tables
 -- Training needs, performance reviews, skills matrix,
 -- employee documents, HR dashboard data
+--
+-- HISTORY NOTES (added during phase 50 cleanup):
+--   • The six admin_* policies near the end of this file were
+--     dropped + recreated by migration 010_rls_audit_fixes.sql
+--     (contype FOR ALL with USING is_ravello_staff()). The
+--     statements here are technically dead, but kept for
+--     historical accuracy when re-applying from scratch.
+--   • The six client_* policies (FOR ALL) were further narrowed
+--     to per-operation FOR SELECT/INSERT/UPDATE in migration
+--     043_qa_hardening.sql. DELETE is intentionally not granted.
 -- ============================================================
 
 -- ── LEAD: Training needs log ─────────────────────────────────

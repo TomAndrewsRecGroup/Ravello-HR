@@ -1,12 +1,8 @@
 // Shared types for the Athletes To Industry channel (admin side).
-
-export interface RoleOpportunity {
-  id: string;
-  title: string;
-  description?: string | null;
-  location?: string | null;
-  url?: string | null;
-}
+// `RoleOpportunity` is re-exported from the API layer (single source of truth)
+// so the JSON validator and the UI consumers stay in sync.
+export type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
+import type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
 
 export interface PartnerRow {
   id: string;

@@ -3,15 +3,12 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { BarChart3, Clock, Users, CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react';
+import { HIRING_STAGE_LABELS as STAGE_LABELS } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
 
 const STAGE_ORDER = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled', 'cancelled'];
-const STAGE_LABELS: Record<string, string> = {
-  submitted: 'Submitted', in_progress: 'In Progress', shortlist_ready: 'Shortlist Ready',
-  interview: 'Interview', offer: 'Offer', filled: 'Filled', cancelled: 'Cancelled',
-};
 const FRICTION_COLORS: Record<string, string> = {
   Low: 'var(--success)', Medium: 'var(--amber)', High: 'var(--danger)', Critical: '#7F1D1D', Unknown: '#94A3B8',
 };

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 
 export interface IvyLensTicket {
@@ -20,19 +20,16 @@ export async function listCompanyTickets(): Promise<{
   tickets: IvyLensTicket[];
   error: string | null;
 }> {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, companyId } = await getSessionProfile();
   if (!user) return { tickets: [], error: 'Unauthorized' };
+  if (!companyId) return { tickets: [], error: null };
 
-  const { data: profile } = await supabase
-    .from('profiles').select('company_id').eq('id', user.id).single();
-  if (!profile?.company_id) return { tickets: [], error: null };
-
+  const supabase = createServerSupabaseClient();
   const [{ data: companyTicketRows }, ivylensRes] = await Promise.all([
     supabase
       .from('ivylens_tickets')
       .select('ivylens_ticket_id')
-      .eq('company_id', profile.company_id),
+      .eq('company_id', companyId),
     ivylensRequest<{ tickets: IvyLensTicket[] }>('/tickets'),
   ]);
 
