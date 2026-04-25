@@ -30,10 +30,7 @@ function priorityBadge(priority: string) {
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
-  const { user, profile, companyId } = await getSessionProfile();
-
-  // Feature flags are already in the session cookie: use them to avoid a waterfall
-  const { featureFlags: sessionFlags } = await getSessionProfile();
+  const { user, profile, companyId, featureFlags: sessionFlags } = await getSessionProfile();
   const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 
   // Single parallel batch: no waterfall

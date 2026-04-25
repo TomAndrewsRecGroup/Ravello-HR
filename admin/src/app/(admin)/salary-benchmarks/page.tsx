@@ -10,7 +10,10 @@ export default async function SalaryBenchmarksPage() {
   const supabase = createServerSupabaseClient();
   const [{ data: { user } }, { data: benchmarks }] = await Promise.all([
     supabase.auth.getUser(),
-    supabase.from('salary_benchmarks').select('*').order('role_type', { ascending: true }),
+    supabase
+      .from('salary_benchmarks')
+      .select('id,role_type,location,seniority,working_model,salary_p25,salary_p50,salary_p75,salary_p90,currency,source,effective_date,notes')
+      .order('role_type', { ascending: true }),
   ]);
 
   return (

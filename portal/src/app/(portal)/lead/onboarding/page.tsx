@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('onboarding_instances')
-      .select('*, employee_records(full_name, job_title, start_date), onboarding_task_progress(*)')
+      .select('id,company_id,employee_id,template_id,status,started_at,completed_at,employee_records(full_name, job_title, start_date),onboarding_task_progress(id,task_title,task_description,category,due_date,status,completed_at,sort_order)')
       .eq('company_id', companyId)
       .order('started_at', { ascending: false }),
     supabase
@@ -48,8 +48,8 @@ export default async function OnboardingPage() {
         companyId={companyId}
         userId={user.id}
         isAdmin={isAdmin}
-        templates={templatesRes.data ?? []}
-        instances={instancesRes.data ?? []}
+        templates={(templatesRes.data ?? []) as any}
+        instances={(instancesRes.data ?? []) as any}
         employees={employeesRes.data ?? []}
       />
     </main>

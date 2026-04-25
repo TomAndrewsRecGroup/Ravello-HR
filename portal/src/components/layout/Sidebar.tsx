@@ -238,7 +238,7 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <Link prefetch={false} href="/dashboard" className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" priority />
+            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>Portal</span>
           <button onClick={close} className="lg:hidden ml-auto flex items-center justify-center w-7 h-7 rounded-md" style={{ color: 'var(--ink-faint)' }} aria-label="Close">

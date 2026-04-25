@@ -8,25 +8,27 @@ export const revalidate = 60;
 
 export default async function ReportsPage() {
   const supabase = createServerSupabaseClient();
-  const { companyId } = await getSessionProfile();
-  const { data: company } = await supabase.from('companies').select('feature_flags, name').eq('id', companyId).single();
-  const companyName: string = (company as any)?.name ?? 'company';
-  const flags: Record<string, boolean> = (company as any)?.feature_flags ?? {};
+  const { companyId, featureFlags } = await getSessionProfile();
+  const flags: Record<string, boolean> = featureFlags ?? {};
   const enabled = flags.reports !== false;
 
   const [
+    { data: company },
     { data: reports },
     { data: reqs },
     { data: candidates },
     { data: complianceItems },
     { data: actions },
   ] = await Promise.all([
-    supabase.from('reports').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
+    supabase.from('companies').select('name').eq('id', companyId).single(),
+    supabase.from('reports').select('id,title,period,file_url,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     supabase.from('requisitions').select('title,department,seniority,location,working_model,stage,salary_min,salary_max,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     supabase.from('candidates').select('full_name,email,requisition_id,client_status,approved_for_client,created_at').eq('company_id', companyId).eq('approved_for_client', true).order('created_at', { ascending: false }),
     supabase.from('compliance_items').select('title,category,status,due_date').eq('company_id', companyId).order('due_date', { ascending: true }),
     supabase.from('actions').select('title,priority,status,due_date,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
   ]);
+
+  const companyName: string = (company as any)?.name ?? 'company';
 
   const all = reports ?? [];
 

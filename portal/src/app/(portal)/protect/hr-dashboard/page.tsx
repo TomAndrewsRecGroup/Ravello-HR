@@ -29,7 +29,7 @@ export default async function HRDashboardPage() {
     { count: openTraining },
     { count: pendingReviews },
   ] = await Promise.all([
-    supabase.from('hr_metrics').select('*').eq('company_id', companyId).order('period', { ascending: false }).limit(4),
+    supabase.from('hr_metrics').select('id,period,headcount,headcount_target,turnover_rate,absence_rate,gender_m_pct,gender_f_pct,gender_other_pct,avg_tenure_months,notes').eq('company_id', companyId).order('period', { ascending: false }).limit(4),
     supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
     supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'expired'),
     supabase.from('absence_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),

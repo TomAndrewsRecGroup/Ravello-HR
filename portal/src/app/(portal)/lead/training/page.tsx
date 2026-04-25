@@ -23,7 +23,7 @@ export default async function TrainingNeedsPage() {
 
   const { data: needs } = await supabase
     .from('training_needs')
-    .select('*')
+    .select('id,employee_name,department,skill_gap,priority,target_date,status,notes,created_at')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
 

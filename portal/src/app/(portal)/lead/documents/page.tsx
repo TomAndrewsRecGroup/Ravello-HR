@@ -73,7 +73,7 @@ export default async function DocumentsPage() {
 
   const { data: docs } = await supabase
     .from('documents')
-    .select('*')
+    .select('id,name,category,file_path,file_url,file_size,version,status,requires_approval,approved_at,review_due_at,created_at')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
 

@@ -29,7 +29,7 @@ export default function OnboardingPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('*, companies(*)')
+        .select('id,full_name,onboarding_completed,company_id,companies(id,name,sector,size_band,feature_flags)')
         .eq('id', user.id)
         .single();
 

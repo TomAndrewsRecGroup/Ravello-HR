@@ -118,7 +118,7 @@ export default function AdminSidebar() {
           style={{ borderBottom: '1px solid var(--line)' }}
         >
           <Link href="/dashboard" prefetch={false} className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" priority />
+            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
             Admin

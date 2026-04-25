@@ -61,9 +61,9 @@ export default async function HiringAnalyticsPage() {
   );
 
   const [{ data: reqs }, { data: candidates }, { data: offers }] = await Promise.all([
-    supabase.from('requisitions').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
-    supabase.from('candidates').select('*').eq('company_id', companyId),
-    supabase.from('offers').select('*').eq('company_id', companyId),
+    supabase.from('requisitions').select('id,stage,created_at,friction_level,working_model').eq('company_id', companyId).order('created_at', { ascending: false }).limit(2000),
+    supabase.from('candidates').select('id,client_status,approved_for_client').eq('company_id', companyId).limit(5000),
+    supabase.from('offers').select('id,status').eq('company_id', companyId).limit(2000),
   ]);
 
   const allReqs = reqs ?? [];

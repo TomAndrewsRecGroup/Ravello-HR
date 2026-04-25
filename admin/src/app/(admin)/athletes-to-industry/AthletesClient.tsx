@@ -2,12 +2,14 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   Trophy, Plus, Trash2, Loader2, Save, X, UserRoundSearch, FileText, ExternalLink,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import MatchPickerModal from './MatchPickerModal';
 import type { AthleteRow, InterestRow, PartnerRow } from './types';
+
+const MatchPickerModal = dynamic(() => import('./MatchPickerModal'), { ssr: false });
 
 interface CompanyRow { id: string; name: string }
 

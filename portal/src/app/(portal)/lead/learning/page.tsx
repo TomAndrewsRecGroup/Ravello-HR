@@ -14,7 +14,7 @@ export default async function LearningPage() {
   const [{ data: content }, { data: purchases }] = await Promise.all([
     supabase
       .from('learning_content')
-      .select('*')
+      .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,tags,is_featured,view_count')
       .eq('is_published', true)
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false }),

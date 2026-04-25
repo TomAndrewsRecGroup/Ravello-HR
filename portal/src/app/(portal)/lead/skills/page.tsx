@@ -23,7 +23,7 @@ export default async function SkillsMatrixPage() {
 
   const { data: skills } = await supabase
     .from('skills_matrix')
-    .select('*')
+    .select('id,employee_name,department,role_title,skill_category,skill_name,current_level,target_level,last_assessed,notes')
     .eq('company_id', companyId)
     .order('employee_name', { ascending: true });
 

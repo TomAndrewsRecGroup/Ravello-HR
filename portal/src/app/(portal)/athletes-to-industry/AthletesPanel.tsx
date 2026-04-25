@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Plus, Trophy, ArrowRight, Sparkles } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import AthleteCard from './AthleteCard';
-import AthletesModal from './AthletesModal';
-import AthleteFormModal from './AthleteFormModal';
-import MatchPickerModal from './MatchPickerModal';
 import type { AthleteRow, InterestRow, PartnerRow } from './types';
+
+const AthletesModal     = dynamic(() => import('./AthletesModal'),     { ssr: false });
+const AthleteFormModal  = dynamic(() => import('./AthleteFormModal'),  { ssr: false });
+const MatchPickerModal  = dynamic(() => import('./MatchPickerModal'),  { ssr: false });
 
 interface Props {
   athletes: AthleteRow[];

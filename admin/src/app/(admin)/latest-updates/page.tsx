@@ -5,7 +5,7 @@ import LatestUpdatesClient, { type UpdateRow } from './LatestUpdatesClient';
 import FeedSourcesClient, { type FeedSourceRow } from './FeedSourcesClient';
 
 export const metadata: Metadata = { title: 'Latest Updates' };
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function LatestUpdatesAdminPage() {
   const supabase = createServerSupabaseClient();

@@ -36,7 +36,7 @@ export default async function BenchmarksPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('salary_benchmarks')
-      .select('*')
+      .select('id,role_type,location,seniority,working_model,salary_p25,salary_p50,salary_p75,salary_p90,source,effective_date')
       .order('role_type'),
   ]);
 

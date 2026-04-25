@@ -20,13 +20,13 @@ export default async function AdminDashboardPage() {
   const in30ISO  = in30.toISOString();
 
   const [
-    compRes, userRes, reqRes, ticketRes,
+    activeClientCountRes, userCountRes, reqRes, ticketRes,
     overdueComplianceRes, expDocsRes, pendingAbsenceRes, serviceReqRes,
     highFrictionRes, unassessedRes,
     activeRoleCountRes, openTicketCountRes,
   ] = await Promise.all([
-    supabase.from('companies').select('id,name,active').order('name'),
-    supabase.from('profiles').select('id,role').neq('role', 'tps_admin'),
+    supabase.from('companies').select('id', { count: 'exact', head: true }).eq('active', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'tps_admin'),
     supabase.from('requisitions')
       .select('id,title,stage,companies(name)')
       .neq('stage', 'filled').neq('stage', 'cancelled')
@@ -72,8 +72,6 @@ export default async function AdminDashboardPage() {
       .neq('status', 'closed'),
   ]);
 
-  const companies      = compRes.data           ?? [];
-  const users          = userRes.data           ?? [];
   const reqs           = reqRes.data            ?? [];
   const tickets        = ticketRes.data         ?? [];
   const overdueComp    = overdueComplianceRes.data ?? [];
@@ -84,7 +82,8 @@ export default async function AdminDashboardPage() {
   const unassessedCount = unassessedRes.count   ?? 0;
   const activeRoleCount  = activeRoleCountRes.count ?? 0;
   const openTicketCount  = openTicketCountRes.count ?? 0;
-  const active         = companies.filter((c: any) => c.active).length;
+  const active         = activeClientCountRes.count ?? 0;
+  const userCount      = userCountRes.count ?? 0;
 
   const stageBadge: Record<string, string> = {
     submitted: 'badge-submitted', in_progress: 'badge-inprogress',
@@ -112,7 +111,7 @@ export default async function AdminDashboardPage() {
           <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
-              { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
+              { icon: Users,         label: 'Client Users',   val: userCount,      href: '/users',    color: 'var(--blue)' },
               { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
               { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
             ].map(s => (

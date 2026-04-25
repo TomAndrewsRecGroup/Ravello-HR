@@ -27,13 +27,14 @@ export default async function LearningDetailPage({ params }: { params: { id: str
       .single(),
     supabase
       .from('learning_content')
-      .select('*')
+      .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,stripe_price_id,tags,is_featured,view_count')
       .eq('is_published', true)
-      .neq('id', params.id),
+      .neq('id', params.id)
+      .limit(100),
     companyId
       ? supabase
           .from('learning_purchases')
-          .select('*')
+          .select('id,status,access_expires_at,created_at')
           .eq('content_id', params.id)
           .eq('company_id', companyId)
           .eq('status', 'active')

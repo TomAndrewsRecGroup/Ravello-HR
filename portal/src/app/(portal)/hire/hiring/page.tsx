@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import FrictionAlert from '@/components/FrictionAlert';
-import ManatalPipeline from '@/components/modules/ManatalPipeline';
 import Link from 'next/link';
 import { Briefcase, Plus, ChevronDown } from 'lucide-react';
 import { isManatalConfigured } from '@/lib/manatal';
+
+const ManatalPipeline = dynamic(() => import('@/components/modules/ManatalPipeline'));
 
 export const metadata: Metadata = { title: 'Hiring' };
 export const revalidate = 30;
@@ -60,18 +62,19 @@ export default async function HiringPage({
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
-  // Fetch manatal_client_id separately from companies table
-  const { data: company } = companyId
-    ? await supabase.from('companies').select('manatal_client_id').eq('id', companyId).single()
-    : { data: null };
+  // Parallel: company manatal_client_id + requisitions
+  const [{ data: company }, { data: requisitions }] = await Promise.all([
+    companyId
+      ? supabase.from('companies').select('manatal_client_id').eq('id', companyId).single()
+      : Promise.resolve({ data: null as { manatal_client_id?: string } | null }),
+    supabase
+      .from('requisitions')
+      .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,friction_score,friction_level,friction_recommendations,description,must_haves,created_at,updated_at')
+      .eq('company_id', companyId ?? '')
+      .order('created_at', { ascending: false }),
+  ]);
   const manatalClientId: string = (company as any)?.manatal_client_id ?? '';
   const hasManatal = isManatalConfigured() && Boolean(manatalClientId);
-
-  const { data: requisitions } = await supabase
-    .from('requisitions')
-    .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,friction_score,friction_level,friction_recommendations,description,must_haves,created_at,updated_at')
-    .eq('company_id', companyId ?? '')
-    .order('created_at', { ascending: false });
 
   const reqs = requisitions ?? [];
   const active   = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage));

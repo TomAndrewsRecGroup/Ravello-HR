@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Building2, ArrowRight, Globe } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import PartnersModal from './PartnersModal';
-import RoleInterestsPanel from './RoleInterestsPanel';
 import type { InterestRow, PartnerRow, RoleOpportunity } from './types';
+
+const PartnersModal      = dynamic(() => import('./PartnersModal'),      { ssr: false });
+const RoleInterestsPanel = dynamic(() => import('./RoleInterestsPanel'), { ssr: false });
 
 interface Props {
   partners: PartnerRow[];

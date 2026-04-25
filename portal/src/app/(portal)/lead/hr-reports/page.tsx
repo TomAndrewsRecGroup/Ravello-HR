@@ -29,7 +29,7 @@ export default async function HRReportsPage() {
       .order('start_date'),
     supabase
       .from('leave_records')
-      .select('*, employee_records(full_name, department)')
+      .select('id,employee_id,leave_type,start_date,end_date,days_count,status,employee_records(full_name, department)')
       .eq('company_id', companyId)
       .order('start_date'),
   ]);
@@ -38,7 +38,7 @@ export default async function HRReportsPage() {
     <main className="portal-page flex-1">
       <HRReportsClient
         employees={empRes.data ?? []}
-        leaveRecords={leaveRes.data ?? []}
+        leaveRecords={(leaveRes.data ?? []) as any}
       />
     </main>
   );
