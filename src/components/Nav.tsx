@@ -17,7 +17,6 @@ const tools = [
   { href: '/tools/hr-risk-score',           label: 'HR Risk Score' },
   { href: '/tools/policy-healthcheck',      label: 'Policy Healthcheck' },
   { href: '/tools/due-diligence-checklist', label: 'DD Checklist' },
-  { href: '/friction-lens',                 label: 'Friction Lens' },
 ];
 // Top-level links that sit between the two dropdowns and the Portal/CTA.
 // Single source of truth: anything added here renders in BOTH the desktop

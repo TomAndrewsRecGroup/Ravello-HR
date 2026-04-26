@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, MapPin, PoundSterling, Layers, Monitor, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'HIRE Services | Embedded Recruitment and Talent Strategy | The People System',
@@ -141,32 +141,78 @@ export default function HirePage() {
         </div>
       </section>
 
-      {/* Friction Lens callout */}
-      <section style={{ background: 'var(--surface)', padding: '2.5rem 1.5rem' }} className="lg:px-10">
-        <div className="container-narrow">
-          <div className="rounded-[18px] p-8 flex flex-col sm:flex-row gap-6 items-start" style={{ background: 'linear-gradient(135deg, rgba(123,47,190,0.08), rgba(75,110,245,0.08))', border: '1px solid rgba(123,47,190,0.15)' }}>
-            <div className="flex-1">
-              <p className="eyebrow mb-2" style={{ color: 'var(--brand-purple)' }}>Built into every engagement</p>
-              <h3
-                className="font-display mb-5"
-                style={{
-                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
-                  fontWeight: 800,
-                  lineHeight: 1.05,
-                  letterSpacing: '-0.035em',
-                  color: 'var(--ink)',
-                }}
-              >
-                Friction Lens scores every role<br />
-                <span className="text-gradient">before it goes live</span>
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Five dimensions: Location, Salary, Skills, Working Model, and Process: scored against live market data. Low, Medium, High, or Critical friction. Specific recommendations attached. No more blind launches.
-              </p>
+      {/* Friction Lens deep-dive */}
+      <section style={{ background: 'var(--surface)', padding: '3rem 1.5rem' }} className="lg:px-10">
+        <div className="container-wide">
+          <div className="max-w-[640px] mb-10">
+            <p className="eyebrow mb-3" style={{ color: 'var(--brand-purple)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              Built into every engagement
+            </p>
+            <h3
+              className="font-display mb-4"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Friction Lens scores every role<br />
+              <span className="text-gradient">before it goes live.</span>
+            </h3>
+            <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--ink-soft)' }}>
+              Most businesses launch roles and then discover the problems. Wrong salary. Wrong location. Too many must-haves. A process so slow that every strong candidate has accepted elsewhere before you reach offer stage.
+            </p>
+            <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              Friction Lens is a structured scoring framework developed by IvyLens Technology, applied by Tom with direct market knowledge. Every role is assessed across five dimensions, scored independently, and combined into a single Friction Score with specific recommendations attached.
+            </p>
+          </div>
+
+          {/* Five dimensions */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+            {[
+              { icon: MapPin,        name: 'Location',      color: '#7B2FBE', desc: 'Candidate pool density versus your commutable distance and working model.' },
+              { icon: PoundSterling, name: 'Salary',        color: '#4B6EF5', desc: 'Live market rate for the specific role type, seniority, and location.' },
+              { icon: Layers,        name: 'Skills',        color: '#E04898', desc: 'Stack complexity. How many of your must-haves are genuinely must-haves.' },
+              { icon: Monitor,       name: 'Working Model', color: '#2E8B7A', desc: 'Office, hybrid, or remote, against the market norm for this role type.' },
+              { icon: Clock,         name: 'Process',       color: '#B45309', desc: 'Interview stages and time-to-offer versus what candidates expect.' },
+            ].map((dim) => {
+              const Icon = dim.icon;
+              return (
+                <div key={dim.name} className="rounded-[16px] p-5" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>
+                  <div
+                    className="w-10 h-10 rounded-[10px] flex items-center justify-center mb-3"
+                    style={{ background: `${dim.color}15`, border: `1px solid ${dim.color}30` }}
+                  >
+                    <Icon size={18} style={{ color: dim.color }} />
+                  </div>
+                  <p className="font-bold text-sm mb-1.5" style={{ color: 'var(--ink)' }}>{dim.name}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{dim.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Four score levels */}
+          <div className="rounded-[18px] p-7" style={{ background: 'linear-gradient(135deg, rgba(123,47,190,0.05), rgba(75,110,245,0.05))', border: '1px solid rgba(123,47,190,0.15)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--ink-faint)', letterSpacing: '0.08em' }}>
+              The score output
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { level: 'Low',      colour: '#16A34A', meaning: 'Well-positioned. Proceed to market.' },
+                { level: 'Medium',   colour: '#D97706', meaning: 'One or two friction points. Addressable changes recommended.' },
+                { level: 'High',     colour: '#DC2626', meaning: 'Multiple friction points. Meaningful revision needed before launch.' },
+                { level: 'Critical', colour: '#7F1D1D', meaning: 'Will fail to market as-is. Strategic review before any recruitment.' },
+              ].map((s) => (
+                <div key={s.level} style={{ borderLeft: `3px solid ${s.colour}`, paddingLeft: 14 }}>
+                  <p className="text-xs font-bold mb-1.5" style={{ color: s.colour, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.level} friction</p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{s.meaning}</p>
+                </div>
+              ))}
             </div>
-            <Link href="/friction-lens" className="btn-secondary flex-shrink-0 self-start">
-              Learn more <ArrowRight size={14} />
-            </Link>
           </div>
         </div>
       </section>
@@ -256,7 +302,9 @@ export default function HirePage() {
       <FaqBlock items={[
         { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. Hire Optimiser can also be scoped as a one-off engagement with no ongoing commitment.' },
         { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
-        { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It assesses every active role across five dimensions: Location, Salary, Skills, Working Model, and Process: against live market data and produces a friction score (Low to Critical) with specific recommendations. It is integrated into every HIRE package as standard.' },
+        { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring framework developed by IvyLens Technology. It assesses every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) against live market data and produces a friction score from Low to Critical with specific recommendations. It is integrated into every HIRE package as standard.' },
+        { q: 'Is Friction Lens automated or manual?', a: 'It is a structured scoring framework. The value is in how it is applied: Tom uses it with direct market knowledge to interpret why a salary range is problematic for this specific role in this specific geography, not just flag that it is below average.' },
+        { q: 'What happens if a role comes back Critical?', a: 'Tom will work with you to address the specific friction points before the role goes to market. This typically involves salary repositioning, working model negotiation, or a brief rewrite. Roles that launch at Critical rarely fill without significant rework anyway, better to do it upfront.' },
         { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
         { q: 'Do you replace our existing recruiters or agencies?', a: 'We typically work alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6-12 months of working with us.' },
       ]} />

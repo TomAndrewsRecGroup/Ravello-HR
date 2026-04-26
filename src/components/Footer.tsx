@@ -94,7 +94,6 @@ export default function Footer() {
                 ['Smart Hiring System™',   '/smart-hiring-system'],
                 ['PolicySafe™',            '/policysafe'],
                 ['DealReady People™',      '/dealready-people'],
-                ['Friction Lens',          '/friction-lens'],
                 ['Cost of Doing Nothing',  '/cost-of-doing-nothing'],
               ].map(([label, href]) => (
                 <li key={href}>
