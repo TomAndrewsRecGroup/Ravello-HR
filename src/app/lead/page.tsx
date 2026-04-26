@@ -6,22 +6,17 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'LEAD Services | L&D, Leadership and People Development | The People System',
-  description: 'Three LEAD packages for growing businesses (Foundations, Partner, Build) with matching corporate tracks (Advisory, Programme, Transformation). Behavioural skills, leadership capability, manager training and L&D strategy: The People System.',
+  description: 'Three LEAD packages: Foundations, Partner, Build. Behavioural skills, leadership capability, manager training, and L&D strategy. The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/lead' },
-};
-
-type Variant = {
-  name: string;
-  who: string;
-  includes: string[];
 };
 
 type Package = {
   tag: string;
   highlight: boolean;
   cta: { label: string; href: string };
-  sme: Variant;
-  corporate: Variant;
+  name: string;
+  who: string;
+  includes: string[];
 };
 
 const packages: Package[] = [
@@ -29,96 +24,50 @@ const packages: Package[] = [
     tag: 'Starting point · your L&D floor',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'LEAD Foundations',
-      who: 'Every month we work with you on the stuff that actually builds a learning culture: structured check-ins that drive real decisions, hands-on support for managers dealing with live capability challenges, and a clear view of where your people development gaps are sitting before they start costing you.',
-      includes: [
-        'Monthly strategic L&D session with clear actions and follow through',
-        'Behavioural coaching support for managers dealing with live people challenges',
-        'Audit of your current approach to learning, feedback and development',
-        'Practical guidance on career development and progression conversations',
-        'Access to us between sessions when something needs addressing now',
-        'Escalation to higher packages where the work requires it',
-      ],
-    },
-    corporate: {
-      name: 'LEAD Advisory',
-      who: 'For corporate HR functions that want an external L&D partner on retainer: supporting managers with live capability challenges, pressure-testing internal L&D decisions, and surfacing development gaps across a specific business unit or region.',
-      includes: [
-        'Monthly strategic L&D session aligned to the BU or region',
-        'Behavioural coaching support for managers dealing with live capability challenges',
-        'Audit of the current L&D approach in the focus area against group standards',
-        'Practical guidance on career development and progression conversations',
-        'Access to us between sessions when something needs addressing now',
-        'Escalation to higher packages where the work requires it',
-      ],
-    },
+    name: 'LEAD Foundations',
+    who: 'A monthly partnership built around the work that actually shifts a learning culture. Structured sessions that drive real decisions, hands-on support for managers dealing with live capability challenges, and a clear view of where the development gaps are sitting before they start costing you. Right for businesses without a formal L&D function and for divisions that want an external partner on retainer.',
+    includes: [
+      'Monthly strategic L&D session with clear actions and follow through',
+      'Behavioural coaching support for managers dealing with live people challenges',
+      'Audit of the current approach to learning, feedback, and development',
+      'Practical guidance on career development and progression conversations',
+      'Access to us between sessions when something needs addressing now',
+      'Escalation to higher packages where the work requires it',
+    ],
   },
   {
     tag: 'Most popular · embedded fractional L&D',
     highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'LEAD Partner',
-      who: 'For businesses that know their people need to develop but do not have the internal resource to make it happen properly. We act as your fractional L&D lead, owning the development agenda across your whole business, not just the senior team. This is not a course or a one-off workshop. It is a structured, ongoing programme that builds behavioural skills, leadership capability and a culture where people actually grow.',
-      includes: [
-        'People development strategy and quarterly roadmap with clear milestones',
-        'Leadership and manager capability programme, structured and ongoing not ad hoc',
-        'Behavioural skills development across all levels of the business',
-        'Performance and feedback culture design and embedding',
-        'Career development and progression frameworks bespoke to your business',
-        'Team effectiveness and ways of working programmes',
-        'Culture and values programmes',
-        'Direct line to us throughout',
-      ],
-    },
-    corporate: {
-      name: 'LEAD Programme',
-      who: 'For corporate groups, divisions or portfolio companies that need dedicated L&D leadership without adding a permanent headcount. We embed as your fractional L&D lead for the BU, region, or programme, own the development agenda, and work alongside group L&D.',
-      includes: [
-        'People development strategy for the BU or region with quarterly roadmap',
-        'Leadership and manager capability programme, structured and ongoing',
-        'Behavioural skills development across all levels of the division',
-        'Performance and feedback culture design aligned to group frameworks',
-        'Career development frameworks bespoke to the business unit',
-        'Team effectiveness and ways of working programmes',
-        'Culture and values programmes aligned to group',
-        'Interface with group L&D and the divisional leadership team',
-      ],
-    },
+    name: 'LEAD Partner',
+    who: 'For teams that know their people need to develop but do not have the internal resource to make it happen properly. We act as your fractional L&D lead, owning the development agenda across the business or business unit. This is not a course or a one-off workshop. It is a structured, ongoing programme that builds behavioural skills, leadership capability, and a culture where people actually grow.',
+    includes: [
+      'People development strategy and quarterly roadmap with clear milestones',
+      'Leadership and manager capability programme, structured and ongoing',
+      'Behavioural skills development across all levels of the business',
+      'Performance and feedback culture design and embedding',
+      'Career development and progression frameworks bespoke to your business',
+      'Team effectiveness and ways of working programmes',
+      'Culture and values programmes',
+      'Direct line to us throughout',
+    ],
   },
   {
     tag: 'Scale · building your L&D function',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'LEAD Build',
-      who: 'You are scaling and your people function needs to keep up. LEAD Build is for businesses that need L&D designed, built and embedded properly, with the infrastructure, programmes and capability to run independently once we hand it over. We do not just design a strategy and leave. We build the whole thing, develop your people at every level and make sure whoever runs it after us has everything they need to keep it going.',
-      includes: [
-        'Full L&D function design, build and hire',
-        'Leadership capability programme for your full management cohort',
-        'Behavioural and skills development programmes across the business',
-        'Culture, values and ways of working framework',
-        'L&D strategy aligned to your 12 to 24 month business plan',
-        'Career development and succession frameworks',
-        'Board level people development reporting',
-        'Transition plan and handover to your in-house team',
-      ],
-    },
-    corporate: {
-      name: 'LEAD Transformation',
-      who: 'For corporate groups standing up a new entity, integrating an acquisition, or rebuilding a failing L&D function in a specific region or BU. We design the operating model, build the programmes and transition to the permanent in-house team.',
-      includes: [
-        'Target operating model design for the L&D function',
-        'Leadership capability programme for your full management cohort',
-        'Behavioural and skills development programmes across the business',
-        'Culture, values and ways of working framework aligned to group',
-        'L&D strategy aligned to the 12 to 24 month business plan',
-        'Career development and succession frameworks',
-        'Board or ExCo level people development reporting',
-        'Transition plan and handover to permanent in-house leadership',
-      ],
-    },
+    name: 'LEAD Build',
+    who: 'For businesses that need L&D designed, built, and embedded properly, with the infrastructure, programmes, and capability to run independently once we step back. Right for first-time L&D builds, integrations after acquisition, and rebuilds of underperforming functions. We do the whole thing and hand it over running.',
+    includes: [
+      'Target operating model and full L&D function design',
+      'Leadership capability programme for your full management cohort',
+      'Behavioural and skills development programmes across the business',
+      'Culture, values, and ways of working framework',
+      'L&D strategy aligned to your 12 to 24 month business plan',
+      'Career development and succession frameworks',
+      'Board or leadership-level people development reporting',
+      'Transition plan and handover to your in-house team',
+    ],
   },
 ];
 
@@ -212,25 +161,13 @@ export default function LeadPage() {
               LEAD <span className="text-gradient">packages</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              From a reliable HR floor to a full people function build. Each engagement shapes differently depending on the size and shape of your organisation: choose the column that matches.
+              From a reliable L&amp;D floor to a full function build. Each engagement is scoped to the size and shape of your organisation. Talk to us about which one fits and we will shape the detail.
             </p>
           </div>
 
-          {/* Column headers (desktop) */}
-          <div className="hidden lg:grid grid-cols-2 gap-6 mb-4">
-            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-              For growing businesses
-            </p>
-            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-              For corporate organisations
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {packages.map((pkg) => (
-              <PackagePair key={pkg.sme.name} pkg={pkg} />
+              <PackageCard key={pkg.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -255,7 +192,7 @@ export default function LeadPage() {
                 <span className="text-gradient">where the biggest gap is?</span>
               </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
-                Book thirty minutes with us. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
+                Book a call with us. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
               </p>
               <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
@@ -285,25 +222,7 @@ export default function LeadPage() {
   );
 }
 
-function PackagePair({ pkg }: { pkg: Package }) {
-  return (
-    <>
-      <PackageCard pkg={pkg} variant="sme" audienceLabel="For growing businesses" />
-      <PackageCard pkg={pkg} variant="corporate" audienceLabel="For corporate organisations" />
-    </>
-  );
-}
-
-function PackageCard({
-  pkg,
-  variant,
-  audienceLabel,
-}: {
-  pkg: Package;
-  variant: 'sme' | 'corporate';
-  audienceLabel: string;
-}) {
-  const v = pkg[variant];
+function PackageCard({ pkg }: { pkg: Package }) {
   const highlight = pkg.highlight;
   return (
     <div
@@ -313,18 +232,12 @@ function PackageCard({
         : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
       }
     >
-      <p
-        className="text-xs font-semibold uppercase tracking-wider mb-3 lg:hidden"
-        style={{ color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--ink-faint)', letterSpacing: '0.08em' }}
-      >
-        {audienceLabel}
-      </p>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <h3
           className="font-bold text-2xl"
           style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
         >
-          {v.name}
+          {pkg.name}
         </h3>
         <span
           className="text-xs font-semibold px-3 py-1 rounded-full"
@@ -340,10 +253,10 @@ function PackageCard({
         className="text-sm leading-relaxed mb-6"
         style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
       >
-        {v.who}
+        {pkg.who}
       </p>
       <ul className="space-y-2 mb-8">
-        {v.includes.map((item) => (
+        {pkg.includes.map((item) => (
           <li key={item} className="flex items-start gap-3">
             <CheckCircle
               className="flex-shrink-0 mt-0.5"

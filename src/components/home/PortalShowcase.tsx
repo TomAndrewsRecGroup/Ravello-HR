@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   Briefcase, ShieldCheck, BookOpen, Users, FolderOpen, BarChart3,
   TrendingUp, LifeBuoy, ArrowRight, Upload, AlertTriangle,
-  ChevronRight, FileText, Activity,
+  ChevronRight, FileText, Activity, Maximize2, X,
 } from 'lucide-react';
 
 /* ─── Feature grid ─── */
@@ -279,6 +279,10 @@ export default function PortalShowcase() {
   // Observe just the browser frame: fires as soon as the URL bar scrolls into view
   const browserRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
+  // Mobile-only modal: the full preview is too dense to render usefully
+  // at <1024px, so on mobile we show a tappable thumbnail and expand the
+  // full BrowserWindow into a fullscreen modal on tap.
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const el = browserRef.current;
@@ -296,6 +300,19 @@ export default function PortalShowcase() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // Esc-to-close + body scroll lock while modal is open
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setModalOpen(false); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [modalOpen]);
 
   return (
     <section style={{ background: 'var(--bg)' }} className="section-padding">
@@ -326,8 +343,8 @@ export default function PortalShowcase() {
           </p>
         </div>
 
-        {/* Browser reveal: full container width */}
-        <div ref={browserRef} style={{ position: 'relative', marginBottom: '4rem' }}>
+        {/* Browser reveal: full container width — DESKTOP ONLY */}
+        <div ref={browserRef} className="hidden lg:block" style={{ position: 'relative', marginBottom: '4rem' }}>
           <div style={{
             position: 'absolute', left: '50%', top: '50%',
             transform: 'translate(-50%,-50%)',
@@ -336,6 +353,127 @@ export default function PortalShowcase() {
           }} />
           <BrowserWindow revealed={revealed} />
         </div>
+
+        {/* Mobile thumbnail: tap to expand */}
+        <div className="lg:hidden mb-12">
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            aria-label="Open full portal preview"
+            className="w-full rounded-[18px] overflow-hidden text-left"
+            style={{
+              border: '1px solid rgba(10,15,30,0.10)',
+              boxShadow: '0 8px 32px rgba(10,15,30,0.08)',
+              background: '#EFF0F7',
+              cursor: 'pointer',
+            }}
+          >
+            {/* Browser URL bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', height: 44, background: '#FAFAFD', borderBottom: '1px solid rgba(10,15,30,0.07)' }}>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {['#FF5F57','#FFBD2E','#28C840'].map((c) => (
+                  <span key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'block' }} />
+                ))}
+              </div>
+              <div style={{ flex: 1, marginLeft: 8, padding: '5px 10px', borderRadius: 6, background: '#EDEEF5', fontSize: 10, fontWeight: 500, color: '#748099', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                www.portal.thepeoplesystem.co.uk
+              </div>
+            </div>
+
+            {/* Static preview body — abstracted layout to suggest the real portal */}
+            <div style={{ padding: '14px 14px 16px', display: 'flex', flexDirection: 'column', gap: 10, background: '#EFF0F7' }}>
+              {/* stat row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                {[
+                  { val: '4',   color: '#7C3AED', label: 'Roles' },
+                  { val: '96%', color: '#14B8A6', label: 'Compliance' },
+                  { val: '7',   color: '#3B6FFF', label: 'Actions' },
+                  { val: '47',  color: '#070B1D', label: 'Headcount' },
+                ].map((s) => (
+                  <div key={s.label} style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 8, padding: '8px 6px' }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: s.color, lineHeight: 1, letterSpacing: '-0.03em' }}>{s.val}</p>
+                    <p style={{ fontSize: 8, color: '#748099', fontWeight: 500, marginTop: 3 }}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* main card row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <div style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 8, padding: '8px 10px' }}>
+                  <p style={{ fontSize: 7.5, fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Friction Lens</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: '#7C3AED', lineHeight: 1 }}>72</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6 }}>
+                    {[78, 62, 45].map((w, i) => (
+                      <div key={i} style={{ height: 3, background: '#EFF0F7', borderRadius: 99 }}>
+                        <div style={{ width: `${w}%`, height: '100%', background: ['#D94444','#E8954A','#28C840'][i], borderRadius: 99 }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid rgba(10,15,30,0.07)', borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <p style={{ fontSize: 7.5, fontWeight: 700, color: '#3B6FFF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Compliance</p>
+                  {[
+                    { dot: '#28C840' },
+                    { dot: '#E8954A' },
+                    { dot: '#28C840' },
+                    { dot: '#28C840' },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: r.dot, flexShrink: 0 }} />
+                      <span style={{ flex: 1, height: 4, background: '#EFF0F7', borderRadius: 99 }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* tap-to-expand hint */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                marginTop: 4, padding: '8px 12px', borderRadius: 99,
+                background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(59,111,255,0.08))',
+                border: '1px solid rgba(124,58,237,0.20)',
+              }}>
+                <Maximize2 size={12} style={{ color: '#7C3AED' }} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#7C3AED' }}>Tap to view full portal</span>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Mobile expand modal */}
+        {modalOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Portal preview"
+            className="fixed inset-0 z-[200] flex flex-col"
+            style={{ background: 'rgba(7,11,32,0.92)', backdropFilter: 'blur(8px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
+          >
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+              <p className="text-white text-sm font-semibold">Portal preview</p>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                aria-label="Close preview"
+                className="p-2 rounded-lg"
+                style={{ color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.06)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {/* The real portal preview is wider than mobile viewports.
+                  Wrap in min-width so the user can horizontal-scroll. */}
+              <div style={{ minWidth: 980 }}>
+                <BrowserWindow revealed />
+              </div>
+              <p className="text-center text-xs mt-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                Pinch to zoom or scroll horizontally to explore.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Feature grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
