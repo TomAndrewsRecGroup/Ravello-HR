@@ -7,22 +7,38 @@ import UsersClient from './UsersClient';
 export const metadata: Metadata = { title: 'Users' };
 export const revalidate = 30;
 
+// Cap on initial fetch — see /candidates/page.tsx for the same pattern.
+const PAGE_CAP = 500;
+
 export default async function UsersPage() {
   const supabase = createServerSupabaseClient();
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
-    .order('created_at', { ascending: false })
-    .limit(2000);
+  const [{ data: users }, { count: totalUsers }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
+      .order('created_at', { ascending: false })
+      .limit(PAGE_CAP),
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true }),
+  ]);
+
+  const rows = users ?? [];
+  const grand = totalUsers ?? rows.length;
+  const isCapped = grand > PAGE_CAP;
 
   return (
     <>
       <AdminTopbar
         title="Users"
-        subtitle={`${(users ?? []).length} accounts`}
+        subtitle={
+          isCapped
+            ? `Showing ${rows.length} most recent of ${grand} accounts`
+            : `${grand} accounts`
+        }
       />
       <main className="admin-page flex-1">
-        <UsersClient users={users ?? []} />
+        <UsersClient users={rows} />
       </main>
     </>
   );

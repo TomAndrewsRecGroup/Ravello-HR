@@ -35,7 +35,10 @@ export default function LatestUpdatesClient({ initial }: Props) {
   const [renderMode, setRenderMode] = useState<'card' | 'embed'>('card');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
-  const [rows] = useState<UpdateRow[]>(initial);
+  // Local mirror so single-row patches + deletes update instantly without
+  // re-running the server component. router.refresh() is only used after
+  // ingest, where the server fills in title/og-data we can't predict.
+  const [rows, setRows] = useState<UpdateRow[]>(initial);
   const [rowBusy, setRowBusy] = useState<Set<string>>(new Set());
 
   function refresh() {
@@ -74,6 +77,10 @@ export default function LatestUpdatesClient({ initial }: Props) {
 
   async function patch(id: string, body: Record<string, unknown>) {
     busy(id, true);
+    const prev = rows.find(r => r.id === id);
+    if (prev) {
+      setRows(curr => curr.map(r => r.id === id ? { ...r, ...body } as UpdateRow : r));
+    }
     try {
       const res = await fetch(`/api/admin/latest-updates/${id}`, {
         method: 'PATCH',
@@ -81,11 +88,11 @@ export default function LatestUpdatesClient({ initial }: Props) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
+        if (prev) setRows(curr => curr.map(r => r.id === id ? prev : r));
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Update failed');
         return;
       }
-      refresh();
     } finally {
       busy(id, false);
     }
@@ -94,14 +101,16 @@ export default function LatestUpdatesClient({ initial }: Props) {
   async function remove(id: string) {
     if (!confirm('Delete this entry? This cannot be undone.')) return;
     busy(id, true);
+    const prev = rows;
+    setRows(curr => curr.filter(r => r.id !== id));
     try {
       const res = await fetch(`/api/admin/latest-updates/${id}`, { method: 'DELETE' });
       if (!res.ok) {
+        setRows(prev);
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Delete failed');
         return;
       }
-      refresh();
     } finally {
       busy(id, false);
     }
