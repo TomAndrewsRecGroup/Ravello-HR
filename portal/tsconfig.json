@@ -14,27 +14,8 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"],
-      // /shared lives outside the project root so TS's bundler-style module
-      // resolution can't walk up into portal/node_modules to find react.
-      // Map runtime + types explicitly so files in ../shared resolve them
-      // against portal/node_modules — required on Vercel where the repo-root
-      // node_modules is not installed (each app is built as its own project).
-      "react": ["./node_modules/@types/react", "./node_modules/react"],
-      "react/*": ["./node_modules/react/*"],
-      "react-dom": ["./node_modules/@types/react-dom", "./node_modules/react-dom"],
-      "react-dom/*": ["./node_modules/react-dom/*"]
-    }
+    "paths": { "@/*": ["./src/*"] }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../shared/**/*.ts",
-    "../shared/**/*.tsx"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
