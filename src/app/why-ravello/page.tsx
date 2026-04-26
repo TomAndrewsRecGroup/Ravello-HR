@@ -34,7 +34,7 @@ const OBJECTIONS = [
   },
   {
     q: 'We can\u2019t afford a consultant right now.',
-    a: 'A single tribunal claim costs an average of \u00a38,500 to \u00a330,000 or more. One bad hire costs three times the annual salary. PROTECT and HIRE typically pay for themselves within six months.',
+    a: 'A single unfair dismissal tribunal award averages \u00a313,749, with discrimination claims averaging \u00a345,000 or more (MoJ, 2023/24). One bad mid-level hire costs over \u00a3132,000 (REC). PROTECT and HIRE typically pay for themselves within six months.',
   },
 ];
 

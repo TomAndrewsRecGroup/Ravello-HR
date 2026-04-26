@@ -8,7 +8,7 @@ const funnels = [
     pill: 'HIRE',
     pillStyle: 'pill-purple',
     headline: 'Your hiring is broken. We fix it before it costs you.',
-    body: 'The average bad hire costs £27,500. Agency fees on repeat. Roles that never stay filled. We score every role against live market data before it goes live, so you know exactly where it will struggle and what to fix first.',
+    body: 'The true cost of a bad mid-level hire: £132,000 (REC). Agency fees on repeat. Roles that never stay filled. We score every role against live market data before it goes live, so you know exactly where it will struggle and what to fix first.',
     pains: [
       'Roles filled, then vacant again in 6 months, costing 3x what a structured hire would',
       'Agency bills growing with nothing to show for them',

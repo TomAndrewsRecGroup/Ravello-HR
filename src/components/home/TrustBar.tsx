@@ -1,5 +1,5 @@
 const SIGNALS = [
-  { text: 'Lucy: 18+ years senior HR and People leadership' },
+  { text: 'Lucy: 20+ years senior HR and People leadership' },
   { text: 'Tom: 10+ years in Talent and Recruitment' },
   { text: '100% confidential engagements' },
   { text: 'Fixed-scope, no surprise invoices' },

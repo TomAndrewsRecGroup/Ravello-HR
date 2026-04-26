@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { ArrowRight, Quote } from 'lucide-react';
 
 const CREDENTIALS = [
-  'Lucy: 18+ years senior HR and People leadership',
+  'Lucy: 20+ years senior HR and People leadership',
   'Tom: 10+ years in Talent and Recruitment',
   'CIPD qualified (Lucy)',
   'Tom: Founder of Andrews Recruitment Group, RecXchange, IvyLens Technology, AMIVY Designs',
@@ -143,7 +143,7 @@ export default function FounderSection() {
             <span className="accent-line-lg mb-8" style={{ display: 'block' }} />
             <div className="space-y-5 mb-10">
               <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                Lucy brings 18+ years of senior HR and People leadership. Tom brings 10+ years
+                Lucy brings 20+ years of senior HR and People leadership. Tom brings 10+ years
                 in Talent and Recruitment: founder of Andrews Recruitment Group, RecXchange,
                 IvyLens Technology, and AMIVY Designs. You get both: on your account, from day one.
               </p>

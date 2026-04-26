@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About | Lucy and Tom | The People System',
-  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom: 18+ years HR leadership and 10+ years talent expertise, working together.',
+  description: 'Not HR with a bit of recruitment. Not recruitment pretending to do HR. The People System is Lucy and Tom: 20+ years HR leadership and 10+ years talent expertise, working together.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/about' },
 };
 
@@ -62,7 +62,7 @@ export default function AboutPage() {
             <span className="text-gradient">Not recruitment pretending to do HR.</span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
-            The People System is Lucy and Tom. Between them: 18+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, and a track record across every sector a founder-led business is likely to sit in.
+            The People System is Lucy and Tom. Between them: 20+ years of senior HR and People leadership, 10+ years of talent and recruitment expertise, and a track record across every sector a founder-led business is likely to sit in.
           </p>
           <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
             A proper blend. One partner. No handoffs. No juniors. Just two people who know how to fix it.

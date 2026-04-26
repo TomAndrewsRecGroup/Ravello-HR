@@ -44,7 +44,7 @@ const packages = [
 ];
 
 const included = [
-  'Written by Lucy: 18+ years senior HR and People leadership, not a template service',
+  'Written by Lucy: 20+ years senior HR and People leadership, not a template service',
   'Fully compliant with current UK employment legislation, including Employment Rights Bill changes',
   'Written in plain English your managers will actually read and apply',
   'Branded and formatted to match your business',

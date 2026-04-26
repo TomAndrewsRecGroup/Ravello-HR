@@ -27,7 +27,7 @@ const PAINS = [
   {
     icon: Scale,
     stat: '£13,749',
-    headline: 'Mean unfair dismissal award — and that is just the cheaper claim',
+    headline: 'Mean unfair dismissal award. And that is just the cheaper claim.',
     detail:
       "Mean award for unfair dismissal at tribunal: £13,749. Mean for race discrimination: £45,094. Mean for disability discrimination: £45,876. None of those numbers include your legal fees, the 12-18 months of management distraction, or the reputational damage.",
     source: 'Tribunal Statistics Quarterly, Ministry of Justice, 2023/24',
@@ -38,12 +38,12 @@ const PAINS = [
     headline: 'What a bad mid-level hire actually costs you',
     detail:
       "REC research puts the true cost of a bad hire at a £42k salary at over £132,000 once you count recruitment, onboarding, lost productivity, management time, and the cost of replacing them. The cheapest bad hire you make this year still costs you a year's profit on the role.",
-    source: 'REC: Perfect Match — making the right hire',
+    source: 'REC, Perfect Match research',
   },
   {
     icon: Clock,
     stat: '49 days',
-    headline: 'Average UK time-to-hire — and senior roles take twice that',
+    headline: 'Average UK time-to-hire. Senior roles take twice that.',
     detail:
       "Median time-to-hire across UK roles is 49 days. Specialist and senior roles routinely run 90-120 days. Every week without the right person costs output, momentum, and team morale. The 14-week senior search is the silent killer of growth-stage Q-by-Q targets.",
     source: 'LinkedIn Talent Insights / Reed UK Salary Guide 2025',
@@ -53,7 +53,7 @@ const PAINS = [
     stat: '+17%',
     headline: 'Two years of National Living Wage rises baked into payroll',
     detail:
-      "The National Living Wage went up 9.8% in April 2024 (£11.44/hr) and 6.7% in April 2025 (£12.21/hr) — over 17% compounded. For a 25-person workforce on or near the wage floor, that is roughly £60,000 of additional payroll cost a year, with no productivity gain attached.",
+      "The National Living Wage went up 9.8% in April 2024 (£11.44/hr) and 6.7% in April 2025 (£12.21/hr). Over 17% compounded. For a 25-person workforce on or near the wage floor, that is roughly £60,000 of additional payroll cost a year, with no productivity gain attached.",
     source: 'Low Pay Commission / HMRC',
   },
 ];

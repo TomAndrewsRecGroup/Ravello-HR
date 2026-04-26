@@ -39,7 +39,7 @@ export default function CostTeaser() {
             </h3>
 
             <p className="text-base leading-relaxed max-w-[640px]" style={{ color: 'var(--ink-soft)' }}>
-              Five 2026 numbers most UK founders don&apos;t know — with sources,
+              Five 2026 numbers most UK founders don&apos;t know. With sources,
               what they cost over 12 months, and how we fix each one.
             </p>
           </div>
