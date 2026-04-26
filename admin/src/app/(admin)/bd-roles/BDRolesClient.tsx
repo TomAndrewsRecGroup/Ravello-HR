@@ -8,16 +8,16 @@ interface Props { roles: FlatRole[]; }
 
 function fmtSalary(r: FlatRole): string {
   if (r.salary_min && r.salary_max && r.salary_min !== r.salary_max) {
-    return `£${Math.round(r.salary_min / 1000)}k – £${Math.round(r.salary_max / 1000)}k`;
+    return `£${Math.round(r.salary_min / 1000)}k: £${Math.round(r.salary_max / 1000)}k`;
   }
   if (r.salary_min || r.salary_max) {
     return `£${Math.round((r.salary_min ?? r.salary_max!) / 1000)}k`;
   }
-  return r.salary_text ?? '—';
+  return r.salary_text ?? '-';
 }
 
 function relative(ts: string | null): string {
-  if (!ts) return '—';
+  if (!ts) return '-';
   const diff = Date.now() - new Date(ts).getTime();
   const days = Math.floor(diff / 86_400_000);
   if (days === 0) return 'Today';
@@ -120,7 +120,7 @@ export default function BDRolesClient({ roles }: Props) {
               {filtered.map(r => (
                 <tr key={r.id}>
                   <td className="font-medium" style={{ color: 'var(--ink)' }}>
-                    {r.role_title ?? '—'}
+                    {r.role_title ?? '-'}
                     {!r.still_active && <span className="badge badge-inactive text-[10px] ml-2">Closed</span>}
                   </td>
                   <td style={{ color: 'var(--ink-soft)' }}>
@@ -133,8 +133,8 @@ export default function BDRolesClient({ roles }: Props) {
                     )}
                   </td>
                   <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r)}</td>
-                  <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
-                  <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '—'}</td>
+                  <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
+                  <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '-'}</td>
                   <td style={{ color: 'var(--ink-faint)' }}>{relative(r.scanned_at)}</td>
                   <td>
                     {r.company_source === 'ivylens' ? (
@@ -152,7 +152,7 @@ export default function BDRolesClient({ roles }: Props) {
                       <a href={r.source_url} target="_blank" rel="noopener noreferrer" className="btn-icon" title="Open listing">
                         <ExternalLink size={13} />
                       </a>
-                    ) : '—'}
+                    ) : '-'}
                   </td>
                 </tr>
               ))}

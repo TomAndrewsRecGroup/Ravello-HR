@@ -3,46 +3,167 @@ import Link from 'next/link';
 import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
 import {
-  ArrowRight, TrendingUp, Briefcase, FileText, ShieldCheck,
-  BarChart3, Target, Zap, CheckCircle2,
+  ArrowRight, TrendingUp, Briefcase, BookOpen, Users, ShieldCheck,
+  BarChart3, Target, Zap, CheckCircle2, FileText, Scale,
+  PoundSterling, Calculator, GraduationCap, CalendarDays, Star, Play,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Insights | Documents, Scores, and Intelligence | The People System',
-  description: 'Your client portal gives you real-time visibility into your people function. Documents, compliance tracking, Friction Lens role scores, and a company-wide People Score benchmarked against your industry.',
+  title: 'Insights | Portal, Role Scores and People Intelligence | The People System',
+  description: 'Your client portal is a live view of your people function across HIRE, LEAD and PROTECT. Friction Lens role scores, salary and market benchmarks, compliance tracking, HR reports, and a company-wide People Score benchmarked against your industry.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/insights' },
 };
 
-const PORTAL_FEATURES = [
+const PILLARS = [
   {
-    icon: FileText,
-    title: 'Documents and Policies',
-    desc: 'Every contract, handbook, and policy we build for you lives in your portal. Versioned, organised by category, always current.',
+    name: 'HIRE',
+    tagline: 'Recruit with insight, not instinct.',
+    icon: Briefcase,
     color: 'var(--brand-purple)',
     bg: 'rgba(124,58,237,0.08)',
+    desc: 'Every live role scored for friction before it launches, with salary benchmarks, cost models and pipeline metrics running alongside.',
+    features: [
+      'Live requisitions and candidate pipeline',
+      'Friction Lens score on every role before launch',
+      'Salary benchmarks across the market range',
+      'Vacancy cost calculator',
+      'Cost modeller for offers and scenarios',
+      'Hiring metrics, cycle times and feedback rates',
+      'Internal-role tracking vs. The People System benchmarks',
+    ],
   },
   {
-    icon: ShieldCheck,
-    title: 'Compliance Tracking',
-    desc: 'See every compliance item, its due date, and its status. Overdue items flagged automatically so nothing slips through.',
-    color: '#28C840',
-    bg: 'rgba(40,200,64,0.08)',
-  },
-  {
-    icon: BarChart3,
-    title: 'Metrics Dashboard',
-    desc: 'Hiring performance, compliance health, support activity, and salary benchmarks. All the data you need for board reporting.',
-    color: 'var(--brand-blue)',
-    bg: 'rgba(59,111,255,0.08)',
-  },
-  {
-    icon: Briefcase,
-    title: 'Hiring Pipeline',
-    desc: 'Track every role from brief to offer. Candidate stages, interview schedules, and feedback loops all visible in real time.',
+    name: 'LEAD',
+    tagline: 'Run the people function day to day.',
+    icon: BookOpen,
     color: 'var(--brand-pink)',
     bg: 'rgba(234,61,196,0.08)',
+    desc: 'Documents, employee records, reviews, training, skills and the org chart: versioned, audit-ready, and in one place.',
+    features: [
+      'Documents and policies, versioned by category',
+      'Employee records with leave and demographics',
+      'Performance review cycles and templates',
+      'Training needs and the learning library',
+      'Skills matrix and capability gaps',
+      'Org chart with reporting lines',
+      'Policy acknowledgements and sign-off tracking',
+      'HR reports: headcount, leave, absence, demographics',
+      'Onboarding workflows and checklists',
+      'Roadmap and quarterly milestones',
+    ],
+  },
+  {
+    name: 'PROTECT',
+    tagline: 'Stay compliant, stay protected.',
+    icon: Users,
+    color: 'var(--brand-blue)',
+    bg: 'rgba(59,111,255,0.08)',
+    desc: 'Compliance, absence, employee-doc expiry, actions and offboarding: tracked against due dates with everything overdue flagged.',
+    features: [
+      'Compliance tracker with RAG status and due dates',
+      'Absence management with approval workflows',
+      'Employee document expiry alerts (30-day window)',
+      'HR dashboard: records, reviews, training at a glance',
+      'Actions from The People System, prioritised',
+      'Offboarding workflows and knowledge transfer',
+      'Live CSV exports: roles, candidates, compliance, actions',
+    ],
   },
 ];
+
+const INSIGHT_TOOLS = [
+  { icon: Target,        title: 'Friction Lens Role Scores', desc: 'Every role scored on five dimensions against live market data before it goes live.' },
+  { icon: Scale,         title: 'Salary Benchmarks',         desc: 'Market compensation benchmarks across the full range by role type, location and seniority.' },
+  { icon: PoundSterling, title: 'Vacancy Cost',              desc: 'Quantify the true cost of an open role: salary, productivity loss, fees, time.' },
+  { icon: Calculator,    title: 'Hiring Cost Modeller',      desc: 'Model offers, counter-offers and recruitment scenarios before you commit.' },
+  { icon: BarChart3,     title: 'Hiring Metrics',            desc: 'Time-to-fill, pipeline conversion, feedback rates, friction distribution.' },
+  { icon: FileText,      title: 'HR Reports',                desc: 'Headcount, leave, absence and demographics: exportable for board reporting.' },
+  { icon: ShieldCheck,   title: 'Compliance Tracker',        desc: 'Every compliance item tracked against due dates, with overdue items auto-flagged.' },
+  { icon: TrendingUp,    title: 'Company People Score',      desc: 'Your entire people function benchmarked against your sector and size.' },
+];
+
+type CalCell =
+  | { blank: true }
+  | {
+      day: number;
+      today?: boolean;
+      events?: { type: 'leave' | 'sick' | 'holiday' | 'event'; label?: string }[];
+    };
+
+const CALENDAR_MOCK: CalCell[] = [
+  // Week 1 (Apr 2026 starts Wed, so Mon & Tue blank)
+  { blank: true }, { blank: true },
+  { day: 1 }, { day: 2 },
+  { day: 3, events: [{ type: 'leave' }] },
+  { day: 4 }, { day: 5 },
+  // Week 2
+  { day: 6, events: [{ type: 'holiday' }] },
+  { day: 7 }, { day: 8 },
+  { day: 9, events: [{ type: 'leave' }] },
+  { day: 10, events: [{ type: 'sick' }] },
+  { day: 11 }, { day: 12 },
+  // Week 3
+  { day: 13 },
+  { day: 14, events: [{ type: 'leave' }] },
+  { day: 15 },
+  { day: 16, today: true, events: [{ type: 'event' }] },
+  { day: 17, events: [{ type: 'leave' }] },
+  { day: 18 }, { day: 19 },
+  // Week 4
+  { day: 20 }, { day: 21 },
+  { day: 22, events: [{ type: 'sick' }] },
+  { day: 23 }, { day: 24 },
+  { day: 25, events: [{ type: 'event' }] },
+  { day: 26 },
+  // Week 5
+  { day: 27 }, { day: 28 },
+  { day: 29, events: [{ type: 'leave' }] },
+  { day: 30 },
+  { blank: true }, { blank: true }, { blank: true },
+];
+
+const EVENT_COLOURS: Record<'leave' | 'sick' | 'holiday' | 'event', { dot: string; bg: string }> = {
+  leave:   { dot: '#10B981', bg: 'rgba(16,185,129,0.14)' },
+  sick:    { dot: '#F59E0B', bg: 'rgba(245,158,11,0.14)' },
+  holiday: { dot: '#7C3AED', bg: 'rgba(124,58,237,0.12)' },
+  event:   { dot: '#3B6FFF', bg: 'rgba(59,111,255,0.12)' },
+};
+
+function CalendarCell({ cell }: { cell: CalCell }) {
+  if ('blank' in cell) {
+    return <div className="aspect-square rounded-[6px]" style={{ background: 'transparent' }} />;
+  }
+  const ev = cell.events?.[0];
+  const colour = ev ? EVENT_COLOURS[ev.type] : null;
+  return (
+    <div
+      className="aspect-square rounded-[6px] flex flex-col items-center justify-center relative"
+      style={{
+        background: ev ? colour!.bg : 'var(--surface)',
+        border: '1px solid var(--brand-line)',
+      }}
+    >
+      {cell.today ? (
+        <span
+          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+          style={{ background: 'var(--brand-purple)' }}
+        >
+          {cell.day}
+        </span>
+      ) : (
+        <span className="text-[10px] font-semibold" style={{ color: 'var(--ink-soft)' }}>
+          {cell.day}
+        </span>
+      )}
+      {ev && (
+        <span
+          className="absolute bottom-1 w-1.5 h-1.5 rounded-full"
+          style={{ background: colour!.dot }}
+        />
+      )}
+    </div>
+  );
+}
 
 const FRICTION_DIMENSIONS = [
   { name: 'Location', desc: 'Is your location requirement realistic for the talent pool?', color: '#7B2FBE' },
@@ -65,14 +186,23 @@ export default function InsightsPage() {
                 <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
                 Insights
               </p>
-              <h1 className="font-display mb-6">
-                All your documents and{' '}
-                <span className="text-gradient">insights</span> in one place
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Your people function,{' '}
+                <span className="text-gradient">live in your portal</span>
               </h1>
               <p className="text-lg leading-relaxed mb-6 max-w-[520px]" style={{ color: 'var(--ink-soft)' }}>
-                Your portal is not a file store. It is a live view of your people function.
-                Role scores, company benchmarks, and the data you need to make decisions
-                with confidence.
+                Three working modules: HIRE, LEAD and PROTECT. Friction Lens role scores
+                and market benchmarks sit alongside the documents, records, reviews,
+                compliance and reports your team uses every day.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/book" className="btn-gradient">
@@ -100,10 +230,10 @@ export default function InsightsPage() {
         </div>
       </section>
 
-      {/* Portal features overview */}
+      {/* Portal pillars */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
-          <div className="max-w-[600px] mb-14">
+          <div className="max-w-[640px] mb-14">
             <p className="eyebrow mb-5">
               <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Your portal
@@ -118,32 +248,70 @@ export default function InsightsPage() {
                 color: 'var(--ink)',
               }}
             >
-              Everything lives<br />
-              <span className="text-gradient">in one place</span>
+              Built around{' '}
+              <span className="text-gradient">HIRE, LEAD &amp; PROTECT</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              No more scattered emails, shared drives, or chasing updates. Your portal is the single source of truth.
+              Your portal mirrors the way we structure your people function. Three
+              working modules, each with its own records, workflows and reporting,
+              plus scoring and benchmarks cutting across all of them.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {PORTAL_FEATURES.map((f) => {
-              const Icon = f.icon;
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {PILLARS.map((p) => {
+              const Icon = p.icon;
               return (
-                <div key={f.title} className="card" style={{ padding: '1.5rem' }}>
-                  <div
-                    className="w-11 h-11 rounded-[14px] flex items-center justify-center mb-4"
-                    style={{ background: f.bg }}
-                  >
-                    <Icon size={20} style={{ color: f.color }} />
+                <div
+                  key={p.name}
+                  className="card flex flex-col"
+                  style={{ padding: '1.75rem', borderTop: `3px solid ${p.color}` }}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                      style={{ background: p.bg }}
+                    >
+                      <Icon size={20} style={{ color: p.color }} />
+                    </div>
+                    <div>
+                      <p className="eyebrow" style={{ color: p.color, margin: 0 }}>{p.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{p.tagline}</p>
+                    </div>
                   </div>
-                  <h4 className="font-bold text-[0.95rem] mb-2" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
-                    {f.title}
-                  </h4>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{f.desc}</p>
+                  <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-soft)' }}>
+                    {p.desc}
+                  </p>
+                  <ul className="space-y-2">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" style={{ color: p.color }} />
+                        <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               );
             })}
+          </div>
+
+          {/* Standalone tools strip */}
+          <div
+            className="mt-8 rounded-[16px] px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-2"
+            style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}
+          >
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)', letterSpacing: '0.08em' }}>
+              Running across everything
+            </span>
+            <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              <strong style={{ color: 'var(--ink)' }}>Dashboard</strong>: live snapshot of roles, actions, compliance and score
+            </span>
+            <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              <strong style={{ color: 'var(--ink)' }}>Calendar</strong>: company events, closures and leave
+            </span>
+            <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              <strong style={{ color: 'var(--ink)' }}>Support</strong>: raise HR queries direct to us
+            </span>
           </div>
         </div>
       </section>
@@ -264,8 +432,59 @@ export default function InsightsPage() {
         </div>
       </section>
 
-      {/* Company-wide People Score */}
+      {/* Insight & decision-support tools */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
+        <div className="container-wide">
+          <div className="max-w-[640px] mb-12">
+            <p className="eyebrow mb-5">
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              Insights and intelligence
+            </p>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              The tools that turn your portal{' '}
+              <span className="text-gradient">into decisions</span>
+            </h3>
+            <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              Scoring, benchmarks, costing and reporting: the analytical layer that
+              sits over every record in your portal and tells you what to do next.
+              Friction Lens leads the way, with a stack of commercial tools
+              alongside it.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {INSIGHT_TOOLS.map((t) => {
+              const Icon = t.icon;
+              return (
+                <div key={t.title} className="card flex flex-col" style={{ padding: '1.5rem' }}>
+                  <div
+                    className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-4"
+                    style={{ background: 'rgba(124,58,237,0.08)' }}
+                  >
+                    <Icon size={18} style={{ color: 'var(--brand-purple)' }} />
+                  </div>
+                  <h4 className="font-bold text-[0.95rem] mb-2" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+                    {t.title}
+                  </h4>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{t.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Company-wide People Score */}
+      <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
@@ -324,7 +543,7 @@ export default function InsightsPage() {
               <div
                 className="rounded-[24px] p-8"
                 style={{
-                  background: 'var(--bg)',
+                  background: 'var(--surface)',
                   border: '1px solid var(--brand-line)',
                   boxShadow: '0 4px 32px rgba(10,15,30,0.06)',
                 }}
@@ -395,6 +614,273 @@ export default function InsightsPage() {
         </div>
       </section>
 
+      {/* Learning & Calendar */}
+      <section className="section-padding" style={{ background: 'var(--surface)' }}>
+        <div className="container-wide">
+          <div className="max-w-[640px] mb-16">
+            <p className="eyebrow mb-5">
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-pink)', verticalAlign: 'middle' }} />
+              Beyond the scores
+            </p>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: 'var(--ink)',
+              }}
+            >
+              Tools your team{' '}
+              <span className="text-gradient">actually uses</span>
+            </h3>
+            <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              Your portal is not just an HR analytics layer. It is where your team
+              picks up the guides you publish and where managers see who is in,
+              who is off, and what is coming.
+            </p>
+          </div>
+
+          {/* Row 1: Learning */}
+          <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
+
+            {/* Learning mockup */}
+            <div>
+              <div
+                className="rounded-[24px] p-6"
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 32px rgba(10,15,30,0.06)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="eyebrow" style={{ margin: 0 }}>
+                    <GraduationCap size={12} className="inline mr-1.5" style={{ verticalAlign: 'middle', color: 'var(--brand-purple)' }} />
+                    Learning Library
+                  </span>
+                  <span
+                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--brand-purple)' }}
+                  >
+                    12 items
+                  </span>
+                </div>
+
+                {/* Featured hero tile */}
+                <div
+                  className="rounded-[16px] overflow-hidden mb-4 relative"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #4B6EF5 60%, #EA3DC4 100%)', height: 140 }}
+                >
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full inline-flex items-center gap-1"
+                      style={{ background: 'rgba(253,243,214,0.95)', color: '#7E5A10' }}
+                    >
+                      <Star size={9} fill="#BF8F28" style={{ color: '#BF8F28' }} /> Featured
+                    </span>
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)' }}
+                    >
+                      Video
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,0.95)' }}
+                    >
+                      <Play size={12} fill="#7C3AED" style={{ color: '#7C3AED' }} />
+                    </span>
+                  </div>
+                  <div className="absolute inset-x-4 bottom-3">
+                    <p className="font-bold text-white text-sm mb-0.5 leading-tight">
+                      Difficult Conversations for Managers
+                    </p>
+                    <p className="text-white/75 text-[11px]">Lucy Andrews · 45 min</p>
+                  </div>
+                </div>
+
+                {/* Smaller cards */}
+                <div className="space-y-2">
+                  {[
+                    { title: 'Onboarding Playbook', meta: 'PDF · 24 pages', badge: 'Shared', badgeBg: 'rgba(34,197,94,0.10)', badgeColor: '#16A34A', thumbBg: 'linear-gradient(135deg, #3B6FFF, #7C3AED)' },
+                    { title: 'Performance Review Framework', meta: 'Video · 32 min', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
+                    { title: 'AI at Work Policy', meta: 'PDF · 8 pages', badge: 'New', badgeBg: 'rgba(245,158,11,0.12)', badgeColor: '#92400E', thumbBg: 'linear-gradient(135deg, #BF8F28, #7C3AED)' },
+                  ].map((c) => (
+                    <div
+                      key={c.title}
+                      className="flex items-center gap-3 p-2 rounded-[10px]"
+                      style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}
+                    >
+                      <div className="w-10 h-10 rounded-[8px] flex-shrink-0" style={{ background: c.thumbBg }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--ink)' }}>{c.title}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{c.meta}</p>
+                      </div>
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: c.badgeBg, color: c.badgeColor }}
+                      >
+                        {c.badge}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Learning copy */}
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Learning content
+              </p>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.6rem, 2.6vw, 2.4rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Build a library{' '}
+                <span className="text-gradient">your team actually uses</span>
+              </h3>
+              <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
+                Upload videos, PDFs, playbooks and policies and share them with
+                your whole team or a specific group. We keep the library stocked
+                with practical guides on the things managers usually struggle
+                with: performance reviews, difficult conversations, onboarding,
+                AI at work. You add your own on top.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                {[
+                  'Upload your own content: videos, PDFs, interactive modules',
+                  'A curated starter library maintained by The People System',
+                  'Share with everyone or with a specific team',
+                  'Track who has opened, started and completed each item',
+                  'Bundle content into your engagement or sell it per seat',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--brand-purple)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/book" className="btn-secondary">
+                See the library <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Row 2: Calendar */}
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+            {/* Calendar copy */}
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
+                Company calendar
+              </p>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.6rem, 2.6vw, 2.4rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                One view of who is in,{' '}
+                <span className="text-gradient">who is out, and what is coming</span>
+              </h3>
+              <p className="text-lg leading-relaxed mb-6" style={{ color: 'var(--ink-soft)' }}>
+                Annual leave, sick days, bank holidays, company-wide events and
+                office closures all on one shared calendar. Managers plan around
+                it, the team can see what is coming, and everything is
+                colour-coded by type so the view stays readable.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                {[
+                  'Log annual leave, sick days, maternity, paternity and more',
+                  'Bank holidays pre-loaded for your jurisdiction',
+                  'Company events, all-hands and office closures',
+                  'Team-wide visibility with clear colour coding',
+                  'Approval workflow for leave requests',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--brand-blue)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/book" className="btn-secondary">
+                See the calendar <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            {/* Calendar mockup */}
+            <div>
+              <div
+                className="rounded-[24px] p-6"
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--brand-line)',
+                  boxShadow: '0 4px 32px rgba(10,15,30,0.06)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <span className="eyebrow" style={{ margin: 0 }}>
+                    <CalendarDays size={12} className="inline mr-1.5" style={{ verticalAlign: 'middle', color: 'var(--brand-blue)' }} />
+                    Company Calendar
+                  </span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--ink-soft)' }}>April 2026</span>
+                </div>
+
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-1 mb-1">
+                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                    <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: 'var(--ink-faint)' }}>{d}</div>
+                  ))}
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {CALENDAR_MOCK.map((cell, i) => (
+                    <CalendarCell key={i} cell={cell} />
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--brand-line)' }}>
+                  {[
+                    { color: '#10B981', label: 'Annual Leave' },
+                    { color: '#F59E0B', label: 'Sick Day' },
+                    { color: '#7C3AED', label: 'Bank Holiday' },
+                    { color: '#3B6FFF', label: 'Company Event' },
+                  ].map((l) => (
+                    <div key={l.label} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: l.color }} />
+                      <span className="text-[11px] font-medium" style={{ color: 'var(--ink-soft)' }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How the scores work together */}
       <section className="section-sm" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
@@ -428,9 +914,9 @@ export default function InsightsPage() {
                 <div className="w-12 h-12 rounded-[14px] flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(234,61,196,0.10)' }}>
                   <Zap size={22} style={{ color: 'var(--brand-pink)' }} />
                 </div>
-                <h4 className="font-bold text-base mb-2" style={{ color: 'var(--ink)' }}>Track Your Improvement</h4>
+                <h4 className="font-bold text-base mb-2" style={{ color: 'var(--ink)' }}>Tracked Across the Portal</h4>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                  Watch both scores improve as we work together. Every improvement is visible, measurable, and yours to keep.
+                  Both scores move as your portal fills up with real data: roles, hires, compliance, reviews. Every improvement is visible, measurable, and yours to keep.
                 </p>
               </div>
             </div>
@@ -471,10 +957,13 @@ export default function InsightsPage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'What is the Company People Score?', a: 'It is a benchmark of your entire people function, scored against businesses of similar size and sector. It measures hiring efficiency, compliance health, people development maturity, and employee relations. You can track your score over time in your portal.' },
+        { q: 'What is Friction Lens?', a: 'Friction Lens is a role-level scoring tool built by Tom Andrews through IvyLens Technology. It scores every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) before it goes to market. It is included in every HIRE engagement and lives in your portal under HIRE.' },
+        { q: 'What is the Company People Score?', a: 'A benchmark of your entire people function, scored against businesses of similar size and sector. It measures hiring efficiency, compliance health, people development maturity, and employee relations. You can track your score over time on your dashboard.' },
         { q: 'How is the People Score calculated?', a: 'We assess your current state across four pillars: hiring, compliance, people development, and employee relations. Each pillar is weighted and scored based on real data from your portal, then compared against industry benchmarks.' },
-        { q: 'What is Friction Lens?', a: 'Friction Lens is a role-level scoring tool built by Tom Andrews through IvyLens Technology. It scores every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) before it goes to market. It is included in every HIRE engagement.' },
-        { q: 'Can I get my People Score without a full engagement?', a: 'Book a free call and we will give you an indicative score based on a short assessment. The full tracked score is available through the client portal as part of any engagement.' },
+        { q: 'What actually lives in the portal?', a: 'Three working modules. HIRE holds your requisitions, candidate pipeline, friction scores, benchmarks, vacancy cost and hiring metrics. LEAD holds your documents, employee records, reviews, training, skills, org chart, policy acknowledgements and HR reports. PROTECT holds compliance, absence, employee-doc expiry, actions, offboarding and exports. On top of that: a live dashboard, a shared calendar, and a direct support channel to us.' },
+        { q: 'Do I need every module, or can I start with one?', a: 'You can start with one. Each module is feature-flagged and scoped to your engagement. Most clients begin with HIRE or PROTECT, then layer on LEAD as the people function matures.' },
+        { q: 'What commercial tools sit inside the portal?', a: 'Salary benchmarks across the market range, a vacancy cost calculator, a hiring cost modeller, full hiring metrics, and exportable HR reports covering headcount, leave, absence and demographics. All live, all tied to the records in your portal.' },
+        { q: 'Can I get my People Score without a full engagement?', a: 'Book a free call and we will give you an indicative score based on a short assessment. The full tracked score sits in the portal as part of any engagement.' },
         { q: 'How quickly does the score improve?', a: 'Most clients see a 15 to 25 point improvement within the first 3 months. Compliance and documentation improvements show the fastest gains. Hiring efficiency improvements typically follow in months 3 to 6.' },
       ]} />
 

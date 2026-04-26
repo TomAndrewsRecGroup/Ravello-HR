@@ -22,18 +22,17 @@ export default function HRRiskScorePage() {
             Free Tool: PolicySafe™
           </p>
           <h1
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
-              marginBottom: '1.25rem',
             }}
           >
             Your HR risk is hidden.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span className="text-gradient">
               We surface it before it costs you.
             </span>
           </h1>

@@ -78,7 +78,7 @@ export default async function MetricsPage() {
               <BarChart3 size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>Metrics not enabled</p>
               <p className="text-sm max-w-[300px] text-center" style={{ color: 'var(--ink-faint)' }}>
-                Analytics and reporting insights are available on higher-tier plans. Contact The People Office to upgrade.
+                Analytics and reporting insights are available on higher-tier plans. Contact The People System to upgrade.
               </p>
               <a href="mailto:hello@thepeopleoffice.co.uk?subject=Metrics module" className="btn-cta btn-sm mt-1">
                 Get in touch
@@ -435,7 +435,7 @@ export default async function MetricsPage() {
         {/* LEAD Module metrics */}
         {flags.lead !== false && trainNeeds.length + perfReviews.length > 0 && (
           <div className="card p-6 mt-6">
-            <SectionHeader icon={TrendingUp} title="LEAD — People Development" color="var(--teal)" />
+            <SectionHeader icon={TrendingUp} title="LEAD: People Development" color="var(--teal)" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <StatCard label="Open Training Needs"      value={openTraining}      color="var(--teal)" />
               <StatCard label="Completed Training"       value={completedTraining} color="var(--teal)" />
@@ -450,7 +450,7 @@ export default async function MetricsPage() {
         {/* PROTECT Module metrics */}
         {flags.protect !== false && absences.length + empDocs.length > 0 && (
           <div className="card p-6 mt-6">
-            <SectionHeader icon={ShieldCheck} title="PROTECT — HR Risk & Compliance" color="var(--blue)" />
+            <SectionHeader icon={ShieldCheck} title="PROTECT: HR Risk & Compliance" color="var(--blue)" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard label="Pending Absence Requests"  value={pendingAbsences}  color="var(--blue)" />
               <StatCard label="Approved Absences"         value={approvedAbsences} color="var(--teal)" />

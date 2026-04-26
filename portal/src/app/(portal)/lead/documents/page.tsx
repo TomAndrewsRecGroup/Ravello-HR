@@ -49,7 +49,7 @@ function statusBadge(status: string, requiresApproval: boolean, approvedAt: stri
 }
 
 function fileSize(bytes: number | null): string {
-  if (!bytes) return '—';
+  if (!bytes) return '-';
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
@@ -73,7 +73,7 @@ export default async function DocumentsPage() {
 
   const { data: docs } = await supabase
     .from('documents')
-    .select('*')
+    .select('id,name,category,file_path,file_url,file_size,version,status,requires_approval,approved_at,review_due_at,created_at')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
 
@@ -97,7 +97,7 @@ export default async function DocumentsPage() {
   return (
       <main className="portal-page flex-1">
 
-        {/* Upload form — client component */}
+        {/* Upload form: client component */}
         <DocumentUpload companyId={companyId} userId={user?.id ?? ''} />
 
         {/* Document list */}
@@ -107,7 +107,7 @@ export default async function DocumentsPage() {
               <FolderOpen size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No documents yet</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Upload your first document above, or The People Office will share documents with you here.
+                Upload your first document above, or The People System will share documents with you here.
               </p>
             </div>
           </div>

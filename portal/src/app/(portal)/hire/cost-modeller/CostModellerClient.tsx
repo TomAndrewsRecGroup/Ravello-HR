@@ -12,7 +12,7 @@ interface HireRow {
 const EMPLOYER_NI_RATE = 0.15;
 const EMPLOYER_NI_THRESHOLD = 5000; // annual secondary threshold 2025/26
 const DEFAULT_PENSION_RATE = 0.03;
-const EMPLOYMENT_ALLOWANCE = 10500; // annual employment allowance 2025/26 — most SMEs can claim
+const EMPLOYMENT_ALLOWANCE = 10500; // annual employment allowance 2025/26: most SMEs can claim
 
 function calcEmployerNI(salary: number): number {
   if (salary <= EMPLOYER_NI_THRESHOLD) return 0;
@@ -70,7 +70,7 @@ export default function CostModellerClient() {
         <div>
           <h2 className="section-title text-xl">Employment Cost Modeller</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Employer costs only — salary + employer NI (15%) + pension + benefits (2025/26 rates)
+            Employer costs only: salary + employer NI (15%) + pension + benefits (2025/26 rates)
           </p>
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function CostModellerClient() {
         <div className="card p-5">
           <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--ink-faint)' }}>Avg Cost per Head</p>
           <p className="font-display font-bold text-2xl" style={{ color: 'var(--teal)' }}>
-            {totalHeads > 0 ? formatCurrency(grandTotal / totalHeads) : '—'}
+            {totalHeads > 0 ? formatCurrency(grandTotal / totalHeads) : '-'}
           </p>
         </div>
       </div>

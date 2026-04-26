@@ -157,7 +157,7 @@ export function CompanyProfileForm({ company }: CompanyFormProps) {
     setLoading(false);
   }
 
-  const SIZE_BANDS = ['1–10', '11–25', '26–50', '51–100', '101–250', '251–500', '500+'];
+  const SIZE_BANDS = ['1-10', '11-25', '26-50', '51-100', '101-250', '251-500', '500+'];
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
@@ -483,7 +483,7 @@ export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
                   type="button"
                   disabled
                   className="btn-icon opacity-30"
-                  title="Contact The People Office to remove team members"
+                  title="Contact The People System to remove team members"
                   aria-label="Remove"
                 >
                   <Trash2 size={13} />
@@ -500,7 +500,7 @@ export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
       >
         To add team members, contact{' '}
         <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>
-          The People Office
+          The People System
         </a>
         .
       </div>
@@ -568,7 +568,7 @@ export function NotificationPrefs() {
         {saved && <SavedBadge />}
       </div>
       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-        Saved locally — full email preferences coming soon.
+        Saved locally: full email preferences coming soon.
       </p>
     </form>
   );

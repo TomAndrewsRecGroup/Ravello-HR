@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // Invite via Supabase Auth Admin API — sends a magic-link invite email
+  // Invite via Supabase Auth Admin API: sends a magic-link invite email
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id, role: safeRole },
     redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/onboarding`,

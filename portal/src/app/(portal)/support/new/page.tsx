@@ -36,7 +36,7 @@ const REQUEST_TYPES = [
   {
     id:          'strategic_review',
     label:       'Book a Strategic Review',
-    description: 'Schedule time with The People Office to plan ahead.',
+    description: 'Schedule time with The People System to plan ahead.',
     icon:        Calendar,
     color:       'var(--warning)',
   },
@@ -60,7 +60,7 @@ type RequestTypeId = typeof REQUEST_TYPES[number]['id'];
 
 const URGENCY_OPTIONS = ['Low', 'Normal', 'High', 'Urgent'];
 const SENIORITY_OPTIONS = ['Junior', 'Mid', 'Senior', 'Lead', 'Head of', 'Director', 'C-Level'];
-const COMPANY_SIZES = ['Under 20', '20–50', '50–150', '150+'];
+const COMPANY_SIZES = ['Under 20', '20-50', '50-150', '150+'];
 
 // ── Per-type form fields ─────────────────────────────────────────────────────
 
@@ -296,7 +296,7 @@ export default function NewServiceRequestPage() {
                 Request received
               </p>
               <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-                The People Office will respond within 1 business day.
+                The People System will respond within 1 business day.
               </p>
               <a href="/support" className="btn-secondary btn-sm flex items-center gap-1.5 mt-2">
                 <ArrowLeft size={13} /> Back to Support

@@ -13,8 +13,9 @@ export default async function CandidatesPage() {
   const [{ data: candidates }, { data: companies }] = await Promise.all([
     supabase
       .from('candidates')
-      .select('*, requisitions(title, companies(name))')
-      .order('created_at', { ascending: false }),
+      .select('id,full_name,email,cv_url,cv_file_path,client_status,pipeline_stage,screening_score,source,requisition_id,requisitions(title, companies(name))')
+      .order('created_at', { ascending: false })
+      .limit(2000),
     supabase
       .from('companies')
       .select('id, name')

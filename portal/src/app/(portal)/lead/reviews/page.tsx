@@ -23,7 +23,7 @@ export default async function PerformanceReviewsPage() {
 
   const { data: reviews } = await supabase
     .from('performance_reviews')
-    .select('*')
+    .select('id,employee_name,employee_email,department,review_type,review_period,reviewer_name,due_date,completed_at,status,overall_rating,notes,created_at')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
 

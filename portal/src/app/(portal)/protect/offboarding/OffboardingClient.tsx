@@ -436,7 +436,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                 <label className="label">Employee *</label>
                 <select className="input" value={selectedEmployee} onChange={e => setSelectedEmployee(e.target.value)}>
                   <option value="">Select...</option>
-                  {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name} — {emp.job_title}</option>)}
+                  {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.full_name}: {emp.job_title}</option>)}
                 </select>
               </div>
               <div className="form-group">

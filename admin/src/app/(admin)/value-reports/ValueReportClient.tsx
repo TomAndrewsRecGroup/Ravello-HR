@@ -93,7 +93,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     if (!report) return;
     const r = report;
     const lines = [
-      `THE PEOPLE SYSTEM — CLIENT VALUE REPORT`,
+      `THE PEOPLE SYSTEM: CLIENT VALUE REPORT`,
       `${r.company?.name} | ${r.month}`,
       `Generated: ${new Date().toLocaleDateString('en-GB')}`,
       ``,
@@ -168,7 +168,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
               <h2 className="font-display text-xl" style={{ color: 'var(--ink)' }}>{report.company?.name}</h2>
               <span className="eyebrow">{report.month}</span>
             </div>
-            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary — The People System</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: The People System</p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-5">
@@ -265,7 +265,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Monthly Fee</p>
                 <p className="text-lg font-bold mt-1" style={{ color: 'var(--purple)' }}>
-                  {report.usage.mrr > 0 ? `£${report.usage.mrr.toLocaleString()}` : '—'}
+                  {report.usage.mrr > 0 ? `£${report.usage.mrr.toLocaleString()}` : '-'}
                 </p>
               </div>
             </div>

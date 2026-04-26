@@ -3,11 +3,11 @@
 // Manatal docs: https://developers.manatal.com/reference
 //
 // Key endpoints used:
-//   GET    /jobs/              — list job postings
-//   GET    /pipeline/          — pipeline stage definitions
-//   GET    /matches/           — candidate–job pairings (with stage)
-//   PATCH  /matches/:id/       — move candidate to a different stage
-//   GET    /applications/      — applications/candidates per job
+//   GET    /jobs/             : list job postings
+//   GET    /pipeline/         : pipeline stage definitions
+//   GET    /matches/          : candidate-job pairings (with stage)
+//   PATCH  /matches/:id/      : move candidate to a different stage
+//   GET    /applications/     : applications/candidates per job
 //
 // All filtered by department_id = company.manatal_client_id
 
@@ -68,15 +68,21 @@ async function manatalFetch(
   const url = new URL(`${API_URL}${path}`);
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
+  // Read-only GETs are deduplicated via Next's fetch cache for 60s.
+  // Mutating verbs always bypass.
+  const method = options?.method ?? 'GET';
+  const cacheConfig = method === 'GET' ? { next: { revalidate: 60 } } : { cache: 'no-store' as const };
+
   try {
     const res = await fetch(url.toString(), {
-      method:  options?.method ?? 'GET',
+      method,
       headers: {
         'Authorization': `Token ${API_KEY}`,
         'Content-Type':  'application/json',
       },
       body:   options?.body ? JSON.stringify(options.body) : undefined,
       signal: AbortSignal.timeout(10_000),
+      ...cacheConfig,
     });
     if (!res.ok) {
       console.warn('[Manatal] API error', res.status, path);
@@ -103,7 +109,7 @@ export async function getManatalStages(): Promise<ManatalStage[]> {
   return (data?.results ?? data ?? []) as ManatalStage[];
 }
 
-/* ─── Matches (candidate–job with stage) ──────────── */
+/* ─── Matches (candidate-job with stage) ──────────── */
 
 export async function getManatalMatches(departmentId: string): Promise<ManatalMatch[]> {
   // Fetch all matches for this client in a single API call.

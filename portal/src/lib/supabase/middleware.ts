@@ -5,7 +5,7 @@ const PUBLIC_ROUTES = [
   /^\/auth\//,
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
-  // debug-session removed from public routes — now requires TPO staff auth
+  // debug-session removed from public routes: now requires The People System staff auth
 ];
 
 const SESSION_COOKIE = 'tps_portal_session';
@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
 
-  // Check for cached session cookie — if valid, skip auth
+  // Check for cached session cookie: if valid, skip auth
   const cachedSession = request.cookies.get(SESSION_COOKIE)?.value;
   if (cachedSession && !isPublicRoute) {
     try {
@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest) {
         return supabaseResponse;
       }
     } catch {}
-    // Cookie exists but invalid — fall through to re-validate
+    // Cookie exists but invalid: fall through to re-validate
   }
 
   // Validate with Supabase (first load, or every 15 min when cookie expires)
@@ -66,7 +66,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Stamp session cookie with fresh data from DB — all queries in parallel
+  // Stamp session cookie with fresh data from DB: all queries in parallel
   // Uses SECURITY DEFINER functions to bypass RLS (avoids circular dependency)
   if (user && !isPublicRoute) {
     const [{ data: rpcRole, error: roleErr }, { data: profileRows, error: profErr }] = await Promise.all([

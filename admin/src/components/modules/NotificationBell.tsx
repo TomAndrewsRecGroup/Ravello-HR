@@ -122,17 +122,19 @@ export default function NotificationBell() {
   }
 
   async function markAllRead() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
+    // userIdRef is populated by loadNotifications() on mount; markAllRead is
+    // only reachable via a button rendered after that completes.
+    const userId = userIdRef.current;
+    if (!userId) return;
+    await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false);
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   }
 
   async function clearAll() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from('notifications').delete().eq('user_id', user.id).eq('read', true);
+    const userId = userIdRef.current;
+    if (!userId) return;
+    await supabase.from('notifications').delete().eq('user_id', userId).eq('read', true);
     setNotifications(prev => prev.filter(n => !n.read));
   }
 

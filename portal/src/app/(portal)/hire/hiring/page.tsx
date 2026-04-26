@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import FrictionAlert from '@/components/FrictionAlert';
-import ManatalPipeline from '@/components/modules/ManatalPipeline';
 import Link from 'next/link';
 import { Briefcase, Plus, ChevronDown } from 'lucide-react';
 import { isManatalConfigured } from '@/lib/manatal';
+
+const ManatalPipeline = dynamic(() => import('@/components/modules/ManatalPipeline'));
 
 export const metadata: Metadata = { title: 'Hiring' };
 export const revalidate = 30;
@@ -39,7 +41,7 @@ function daysOpen(createdAt: string): number {
 }
 
 function WorkingModelPill({ model }: { model: string | null }) {
-  if (!model) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+  if (!model) return <span style={{ color: 'var(--ink-faint)' }}>-</span>;
   const cfg = MODEL_PILL[model.toLowerCase()] ?? { label: model, dot: 'var(--ink-faint)' };
   return (
     <span
@@ -60,18 +62,19 @@ export default async function HiringPage({
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
-  // Fetch manatal_client_id separately from companies table
-  const { data: company } = companyId
-    ? await supabase.from('companies').select('manatal_client_id').eq('id', companyId).single()
-    : { data: null };
+  // Parallel: company manatal_client_id + requisitions
+  const [{ data: company }, { data: requisitions }] = await Promise.all([
+    companyId
+      ? supabase.from('companies').select('manatal_client_id').eq('id', companyId).single()
+      : Promise.resolve({ data: null as { manatal_client_id?: string } | null }),
+    supabase
+      .from('requisitions')
+      .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,friction_score,friction_level,friction_recommendations,description,must_haves,created_at,updated_at')
+      .eq('company_id', companyId ?? '')
+      .order('created_at', { ascending: false }),
+  ]);
   const manatalClientId: string = (company as any)?.manatal_client_id ?? '';
   const hasManatal = isManatalConfigured() && Boolean(manatalClientId);
-
-  const { data: requisitions } = await supabase
-    .from('requisitions')
-    .select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,friction_score,friction_level,friction_recommendations,description,must_haves,created_at,updated_at')
-    .eq('company_id', companyId ?? '')
-    .order('created_at', { ascending: false });
 
   const reqs = requisitions ?? [];
   const active   = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage));
@@ -180,7 +183,7 @@ export default async function HiringPage({
                         <td>
                           <WorkingModelPill model={r.working_model} />
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                         <td style={{ color: 'var(--ink-soft)' }}>
                           {daysOpen(r.created_at)}d
                         </td>
@@ -209,7 +212,7 @@ export default async function HiringPage({
           </>
         )}
 
-        {/* Live ATS Pipeline — interactive candidate stage management */}
+        {/* Live ATS Pipeline: interactive candidate stage management */}
         {hasManatal && (
           <div className="mt-10">
             <div className="flex items-center gap-2 mb-4">
@@ -235,7 +238,7 @@ export default async function HiringPage({
                 style={{ color: 'var(--ink-faint)' }}
               />
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Archived — Filled &amp; Cancelled ({archived.length})
+                Archived: Filled &amp; Cancelled ({archived.length})
               </span>
             </summary>
             <div className="table-wrapper">
@@ -259,7 +262,7 @@ export default async function HiringPage({
                         </Link>
                       </td>
                       <td><WorkingModelPill model={r.working_model} /></td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                       <td>
                         <span className={`badge ${stageBadge[r.stage] ?? ''}`}>{r.stage}</span>
                       </td>

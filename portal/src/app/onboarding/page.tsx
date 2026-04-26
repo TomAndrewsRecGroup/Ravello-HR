@@ -7,7 +7,7 @@ import { Loader2, CheckCircle2, ArrowRight, Briefcase, FolderOpen, LifeBuoy } fr
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
-const SIZES   = ['10–24','25–49','50–99','100–249','250+'];
+const SIZES   = ['10-24','25-49','50-99','100-249','250+'];
 
 type Step = 1 | 2 | 3;
 
@@ -29,7 +29,7 @@ export default function OnboardingPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('*, companies(*)')
+        .select('id,full_name,onboarding_completed,company_id,companies(id,name,sector,size_band,feature_flags)')
         .eq('id', user.id)
         .single();
 
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
       <div className="relative w-full max-w-[520px]">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="The People Office" width={130} height={44} className="h-10 w-auto brightness-110" priority />
+          <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto brightness-110" priority />
         </div>
 
         {/* Progress dots */}
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
               What would you like to do first?
             </h1>
             <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
-              You can do all of this from your dashboard — pick where to start.
+              You can do all of this from your dashboard: pick where to start.
             </p>
 
             <div className="space-y-3">
@@ -243,12 +243,12 @@ export default function OnboardingPage() {
               className="w-full mt-4 text-xs text-center"
               style={{ color: 'var(--ink-faint)' }}
             >
-              Skip — take me to the dashboard
+              Skip: take me to the dashboard
             </button>
           </div>
         )}
 
-        {/* ── Step 3: (complete — redirect fires automatically) ── */}
+        {/* ── Step 3: (complete: redirect fires automatically) ── */}
         {step === 3 && (
           <div className="flex flex-col items-center gap-4 py-12">
             <CheckCircle2 size={40} style={{ color: 'var(--teal)' }} />

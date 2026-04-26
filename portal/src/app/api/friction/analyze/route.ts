@@ -5,12 +5,12 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 // POST /api/friction/analyze
 // Body: { jd_text: string }
 // Returns: FrictionScore
-// Server-side proxy — calls IvyLens via POST /api/partner/roles/analyze pattern
+// Server-side proxy: calls IvyLens via POST /api/partner/roles/analyze pattern
 // (scoreFriction already calls IVYLENS_API_URL/api/partner/roles/analyze when API key is set)
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth check — only authenticated users may call this route
+    // Auth check: only authenticated users may call this route
     const supabase = createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

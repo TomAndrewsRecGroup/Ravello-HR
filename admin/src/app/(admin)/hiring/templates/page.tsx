@@ -12,8 +12,9 @@ export default async function JDTemplatesPage() {
 
   const { data } = await supabase
     .from('jd_templates')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('id,title,department,seniority,working_model,description,must_haves,benefits,tags,created_at')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   return (
     <>

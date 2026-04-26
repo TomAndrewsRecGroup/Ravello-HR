@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ivylensRequest } from '@/lib/ivylens';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 5 }); // 5 assessments per minute
@@ -31,9 +31,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const supabase = createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, companyId } = await getSessionProfile();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!companyId) {
+      return NextResponse.json({ error: 'No company associated' }, { status: 400 });
+    }
+    const supabase = createServerSupabaseClient();
 
     const body = await req.json();
     const parsed = AssessmentSchema.safeParse(body);
@@ -41,12 +44,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues.map(i => i.message).join('; ') }, { status: 400 });
     }
     const { company_id: ivylensCompanyId, form_responses, employee_count } = parsed.data;
-
-    // Get user's company
-    const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
-    if (!profile?.company_id) {
-      return NextResponse.json({ error: 'No company associated' }, { status: 400 });
-    }
 
     // Submit to IvyLens
     const { data: result, error: apiError } = await ivylensRequest('/company/assessment', {
@@ -65,7 +62,7 @@ export async function POST(req: NextRequest) {
     const { data: assessment, error: dbErr } = await supabase
       .from('company_assessments')
       .insert({
-        company_id:         profile.company_id,
+        company_id:         companyId,
         ivylens_company_id: ivylensCompanyId ?? null,
         employee_count:     empCount || null,
         employee_band:      band,
@@ -91,7 +88,7 @@ export async function POST(req: NextRequest) {
         friction_band: result?.overall?.band ?? null,
         friction_assessment_id: assessment?.id ?? null,
       })
-      .eq('id', profile.company_id);
+      .eq('id', companyId);
 
     // Generate friction items (things they don't have) for admin checklist
     if (result?.dimensions) {
@@ -99,7 +96,7 @@ export async function POST(req: NextRequest) {
       for (const dim of result.dimensions) {
         for (const signal of dim.signals ?? []) {
           items.push({
-            company_id:    profile.company_id,
+            company_id:    companyId,
             assessment_id: assessment?.id,
             dimension:     dim.name,
             field_key:     signal.signal_type?.toLowerCase().replace(/\s+/g, '_') ?? 'unknown',
@@ -110,7 +107,7 @@ export async function POST(req: NextRequest) {
       }
       if (items.length) {
         // Clear old items for this company, insert new ones
-        await supabase.from('company_friction_items').delete().eq('company_id', profile.company_id);
+        await supabase.from('company_friction_items').delete().eq('company_id', companyId);
         await supabase.from('company_friction_items').insert(items);
       }
     }

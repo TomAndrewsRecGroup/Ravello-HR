@@ -1,13 +1,13 @@
 # Data Privacy, GDPR & ICO Compliance
 
-**The People System — Admin Portal & Client Portal**
+**The People System: Admin Portal & Client Portal**
 Last updated: April 2026
 
 ---
 
 ## Overview
 
-The People System processes personal data on behalf of client companies (SMEs with 10–250 employees). This document outlines the technical and organisational measures implemented across both portals to ensure compliance with the **UK General Data Protection Regulation (UK GDPR)**, the **Data Protection Act 2018**, and guidance from the **Information Commissioner's Office (ICO)**.
+The People System processes personal data on behalf of client companies (SMEs with 10-250 employees). This document outlines the technical and organisational measures implemented across both portals to ensure compliance with the **UK General Data Protection Regulation (UK GDPR)**, the **Data Protection Act 2018**, and guidance from the **Information Commissioner's Office (ICO)**.
 
 The People System acts as a **Data Processor** on behalf of its clients (the **Data Controllers**). Where The People System manages its own client relationships and business data, it acts as a **Data Controller** in its own right.
 
@@ -32,9 +32,9 @@ The People System acts as a **Data Processor** on behalf of its clients (the **D
 
 The portals only collect data that is necessary for HR service delivery:
 
-- **Employee records**: Personal identifiers, employment details, emergency contacts, and leave configuration — all standard for UK employment management
-- **Candidate data**: Name, contact details, and application status — minimum required for recruitment
-- **Financial data**: Salary and NI numbers — required for payroll and tax compliance
+- **Employee records**: Personal identifiers, employment details, emergency contacts, and leave configuration: all standard for UK employment management
+- **Candidate data**: Name, contact details, and application status: minimum required for recruitment
+- **Financial data**: Salary and NI numbers: required for payroll and tax compliance
 - **No excessive collection**: Fields like gender, ethnicity, and disability status are optional with explicit "Prefer not to say" options
 
 ### What we don't collect
@@ -76,7 +76,7 @@ The `employee_records` table includes:
 
 ---
 
-## 4. Data Subject Rights (GDPR Articles 15–22)
+## 4. Data Subject Rights (GDPR Articles 15-22)
 
 The platform implements a formal **Subject Access Request (SAR)** system via the `data_access_requests` table:
 
@@ -183,7 +183,7 @@ When a data erasure request is processed:
 |-----------|---------|-------------|------------|
 | **Supabase** | Database hosting, authentication, file storage | All application data | SOC 2 Type II certified. Data encrypted at rest and in transit. EU/UK data residency available. |
 | **Vercel** | Application hosting and deployment | Application code, session data | SOC 2 Type II certified. GDPR DPA available. |
-| **Stripe** | E-learning payment processing | Payment details (not stored in our DB) | PCI DSS Level 1 certified. We do not store card numbers — Stripe handles all payment data directly. |
+| **Stripe** | E-learning payment processing | Payment details (not stored in our DB) | PCI DSS Level 1 certified. We do not store card numbers: Stripe handles all payment data directly. |
 | **IvyLens** | Friction scoring and job analysis | Job description text only (no personal data) | No personal data is shared. Only anonymised role data is transmitted. |
 | **Manatal** | ATS integration | Candidate pipeline data | Data processing agreement in place. |
 

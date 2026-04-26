@@ -11,7 +11,7 @@ import {
   FolderOpen, LifeBuoy, LogOut,
   Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
   X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight, Radar, Activity, Target,
+  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper, Trophy,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -61,6 +61,13 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Programmes',
+    defaultOpen: false,
+    items: [
+      { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy },
+    ],
+  },
+  {
     label: 'Business',
     defaultOpen: false,
     items: [
@@ -68,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/value-reports',   label: 'Value Reports',  icon: BarChart3 },
       { href: '/reports',         label: 'CSV Exports',    icon: FolderOpen },
       { href: '/documents',       label: 'Documents',      icon: FileText },
+      { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
       { href: '/learning',        label: 'Learning',       icon: BookOpen },
     ],
   },
@@ -110,7 +118,7 @@ export default function AdminSidebar() {
           style={{ borderBottom: '1px solid var(--line)' }}
         >
           <Link href="/dashboard" prefetch={false} className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" priority />
+            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
             Admin
@@ -121,7 +129,7 @@ export default function AdminSidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-2">
-          {/* Dashboard — always top-level */}
+          {/* Dashboard: always top-level */}
           <Link
             href="/dashboard"
             prefetch={false}

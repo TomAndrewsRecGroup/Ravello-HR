@@ -7,11 +7,9 @@ import { TrendingUp, Clock, Users, CheckCircle2, AlertTriangle, BarChart3 } from
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
 
+import { HIRING_STAGE_LABELS as STAGE_LABELS } from '@/lib/ui/statusMaps';
+
 const STAGE_ORDER = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled', 'cancelled'];
-const STAGE_LABELS: Record<string, string> = {
-  submitted: 'Submitted', in_progress: 'In Progress', shortlist_ready: 'Shortlist Ready',
-  interview: 'Interview', offer: 'Offer', filled: 'Filled', cancelled: 'Cancelled',
-};
 const FRICTION_COLORS: Record<string, string> = {
   Low: 'var(--success)', Medium: 'var(--amber)', High: 'var(--danger)', Critical: '#7F1D1D', Unknown: '#94A3B8',
 };
@@ -61,9 +59,9 @@ export default async function HiringAnalyticsPage() {
   );
 
   const [{ data: reqs }, { data: candidates }, { data: offers }] = await Promise.all([
-    supabase.from('requisitions').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
-    supabase.from('candidates').select('*').eq('company_id', companyId),
-    supabase.from('offers').select('*').eq('company_id', companyId),
+    supabase.from('requisitions').select('id,stage,created_at,friction_level,working_model').eq('company_id', companyId).order('created_at', { ascending: false }).limit(2000),
+    supabase.from('candidates').select('id,client_status,approved_for_client').eq('company_id', companyId).limit(5000),
+    supabase.from('offers').select('id,status').eq('company_id', companyId).limit(2000),
   ]);
 
   const allReqs = reqs ?? [];
@@ -270,7 +268,7 @@ export default async function HiringAnalyticsPage() {
                 {frictionCounts.High + frictionCounts.Critical} role{(frictionCounts.High + frictionCounts.Critical) > 1 ? 's' : ''} with High or Critical friction
               </p>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                These roles are at risk of taking significantly longer to fill. Your consultant at The People Office will have recommendations — check the individual role pages for details.
+                These roles are at risk of taking significantly longer to fill. Your consultant at The People System will have recommendations: check the individual role pages for details.
               </p>
               <Link prefetch={false} href="/hire/hiring" className="btn-secondary btn-sm mt-3 inline-flex">
                 View Roles →

@@ -9,7 +9,16 @@ export default function TermsPage() {
   return (
     <div className="pt-28 pb-20 px-4 sm:px-6 lg:px-8">
       <article className="max-w-3xl mx-auto prose prose-sm" style={{ color: 'var(--ink)' }}>
-        <h1 style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: 'clamp(2rem,4vw,3rem)', letterSpacing: '-0.02em' }}>
+        <h1
+          className="font-display mb-5"
+          style={{
+            fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+            fontWeight: 800,
+            lineHeight: 1.02,
+            letterSpacing: '-0.04em',
+            color: 'var(--ink)',
+          }}
+        >
           Terms of Service
         </h1>
         <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>Last updated: April 2026</p>
@@ -17,8 +26,8 @@ export default function TermsPage() {
         <h2>1. About these terms</h2>
         <p>
           These terms govern your use of thepeoplesystem.co.uk (the &ldquo;Website&rdquo;) and any
-          services provided by The People System (trading as The People Office Ltd),
-          registered in England &amp; Wales (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
+          services provided by The People System, registered in England &amp; Wales
+          (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
         </p>
 
         <h2>2. Use of our website</h2>

@@ -35,11 +35,11 @@ export default async function AdminComplianceDashboard() {
   ] = await Promise.all([
     supabase
       .from('compliance_items')
-      .select('*, companies(id, name)')
+      .select('id,company_id,title,description,category,status,due_date,companies(id, name)')
       .order('due_date', { ascending: true }),
     supabase
       .from('employee_documents')
-      .select('*, companies(id, name)')
+      .select('id,company_id,employee_name,doc_type,title,file_url,expiry_date,status,companies(id, name)')
       .not('expiry_date', 'is', null)
       .in('status', ['active', 'expired', 'pending_renewal'])
       .order('expiry_date', { ascending: true }),
@@ -60,7 +60,7 @@ export default async function AdminComplianceDashboard() {
       ...ci,
       daysUntil,
       rag: ragFromDays(daysUntil, ci.status),
-      companyName: ci.companies?.name ?? '—',
+      companyName: ci.companies?.name ?? '-',
       companyId:   ci.companies?.id ?? '',
     };
   });
@@ -74,7 +74,7 @@ export default async function AdminComplianceDashboard() {
       ...d,
       daysUntil,
       rag: d.status === 'expired' ? 'red' : docStatus,
-      companyName: d.companies?.name ?? '—',
+      companyName: d.companies?.name ?? '-',
       companyId:   d.companies?.id ?? '',
     };
   });

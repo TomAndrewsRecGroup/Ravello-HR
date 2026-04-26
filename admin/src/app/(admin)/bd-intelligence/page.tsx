@@ -13,8 +13,16 @@ export default async function BDIntelligencePage() {
   const supabase = createServerSupabaseClient();
 
   const [companiesRes, rolesRes, ivylensRes] = await Promise.all([
-    supabase.from('bd_companies').select('*').order('last_seen_at', { ascending: false }),
-    supabase.from('bd_scanned_roles').select('*').order('scanned_at', { ascending: false }),
+    supabase
+      .from('bd_companies')
+      .select('id,company_name,domain,company_location,status,total_roles_seen,last_seen_at,first_seen_at,friction_intel,ivylens_roles,notes')
+      .order('last_seen_at', { ascending: false })
+      .limit(500),
+    supabase
+      .from('bd_scanned_roles')
+      .select('id,company_id,role_title,location,salary_min,salary_max,salary_text,source,source_board,source_url,scanned_at,still_active,working_model')
+      .order('scanned_at', { ascending: false })
+      .limit(2000),
     ivylensRequest('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);
 
@@ -36,7 +44,7 @@ export default async function BDIntelligencePage() {
     return { min: Math.min(...parsed), max: Math.max(...parsed) };
   }
 
-  // Merge IvyLens BD leads — add any companies not already tracked locally
+  // Merge IvyLens BD leads: add any companies not already tracked locally
   const localNames = new Set(companies.map((c: any) => c.company_name?.toLowerCase()));
   const mergedFromIvylens = ivylensLeads
     .filter((l: any) => l.company_name && !localNames.has(l.company_name.toLowerCase()))

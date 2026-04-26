@@ -23,14 +23,14 @@ export function createServerSupabaseClient() {
           cookieStore.set({ name, value, ...options });
         } catch {
           // set can be called from Server Components where cookies are read-only.
-          // This is safe to ignore — the middleware will handle refreshing the session.
+          // This is safe to ignore: the middleware will handle refreshing the session.
         }
       },
       remove(name: string, options: Record<string, unknown>) {
         try {
           cookieStore.set({ name, value: '', ...options });
         } catch {
-          // Same as above — safe to ignore in read-only contexts.
+          // Same as above: safe to ignore in read-only contexts.
         }
       },
     },

@@ -55,20 +55,17 @@ export default function DealReadyPeoplePage() {
             DealReady People™: Specialist Project Service
           </p>
           <h1
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
-              marginBottom: '1.25rem',
             }}
           >
             People due diligence and integration support<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              for M&A and restructures.
-            </span>
+            <span className="text-gradient">for M&amp;A and restructures.</span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             For acquirers, founders going through deals, and PE-backed businesses managing integration or restructure. This is a specialist project service: not a retainer product.

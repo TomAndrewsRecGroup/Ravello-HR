@@ -4,12 +4,12 @@ import Topbar from '@/components/layout/Topbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import TicketReplyForm from '@/components/modules/TicketReplyForm';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Ticket' };
 export const revalidate = 30;
 
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
-const statusBadge:   Record<string,string> = { open:'badge-open', in_progress:'badge-inprogress', resolved:'badge-resolved', closed:'badge-normal' };
 
 export default async function TicketDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
@@ -27,7 +27,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
     <>
       <Topbar
         title={t.subject}
-        subtitle={`Ticket — ${t.status.replace('_',' ')}`}
+        subtitle={`Ticket: ${t.status.replace('_',' ')}`}
         actions={<Link prefetch={false} href="/support" className="btn-secondary btn-sm">← All Tickets</Link>}
       />
       <main className="portal-page flex-1 max-w-[740px]">
@@ -61,7 +61,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold" style={{ color: m.sender_id === user?.id ? 'var(--purple)' : 'var(--teal)' }}>
-                    {m.sender_id === user?.id ? 'You' : 'The People Office'}
+                    {m.sender_id === user?.id ? 'You' : 'The People System'}
                   </span>
                   <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                     {new Date(m.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}

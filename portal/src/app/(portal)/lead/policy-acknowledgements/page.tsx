@@ -32,7 +32,7 @@ export default async function PolicyAcksPage() {
       .order('name'),
     supabase
       .from('policy_acknowledgements')
-      .select('*, documents(name, category, version), employee_records(full_name, job_title)')
+      .select('id,company_id,document_id,employee_id,status,sent_at,acknowledged_at,documents(name, category, version),employee_records(full_name, job_title)')
       .eq('company_id', companyId)
       .order('sent_at', { ascending: false }),
     supabase
@@ -49,7 +49,7 @@ export default async function PolicyAcksPage() {
         companyId={companyId}
         isAdmin={isAdmin}
         documents={docsRes.data ?? []}
-        acknowledgements={acksRes.data ?? []}
+        acknowledgements={(acksRes.data ?? []) as any}
         employees={employeesRes.data ?? []}
       />
     </main>

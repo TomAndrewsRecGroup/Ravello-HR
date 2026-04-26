@@ -61,6 +61,9 @@ export interface Company {
   feature_flags: FeatureFlags;
 }
 
+/** Light reference shape used by UI components that only need id+name(+active). */
+export type CompanyRef = Pick<Company, 'id' | 'name'> & { active?: boolean };
+
 export interface FeatureFlags {
   hiring:        boolean;
   documents:     boolean;

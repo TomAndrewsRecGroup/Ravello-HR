@@ -27,7 +27,7 @@ const MODELS       = ['', 'office', 'hybrid', 'remote'];
 const MODEL_LABELS = { '': 'All', office: 'Office', hybrid: 'Hybrid', remote: 'Remote' };
 
 function fmtK(p: number | null): string {
-  if (!p) return '—';
+  if (!p) return '-';
   return `£${Math.round(p / 1000)}k`;
 }
 
@@ -108,7 +108,7 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
 
       <div className="flex items-center justify-between">
         <p className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-          TPO curated benchmarks
+          The People System curated benchmarks
         </p>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
           Manually-entered salary data that overrides or supplements IvyLens
@@ -222,13 +222,13 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
                 <tr key={b.id}>
                   <td className="font-medium" style={{ color: 'var(--ink)' }}>{b.role_type}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{b.location ?? 'Any'}</td>
-                  <td style={{ color: 'var(--ink-soft)' }}>{b.seniority ?? '—'}</td>
+                  <td style={{ color: 'var(--ink-soft)' }}>{b.seniority ?? '-'}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{fmtK(b.salary_p25)}</td>
                   <td className="font-semibold" style={{ color: 'var(--ink)' }}>{fmtK(b.salary_p50)}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{fmtK(b.salary_p75)}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{fmtK(b.salary_p90)}</td>
                   <td className="text-xs" style={{ color: 'var(--ink-faint)', maxWidth: 140 }}>
-                    {b.source ?? '—'}
+                    {b.source ?? '-'}
                     {b.effective_date && <span className="block">{new Date(b.effective_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>}
                   </td>
                   <td>

@@ -3,9 +3,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 /**
- * GET /api/debug-session — comprehensive auth debug
+ * GET /api/debug-session: comprehensive auth debug
  *
- * PROTECTED: requires authenticated TPO staff (tps_admin / tps_client).
+ * PROTECTED: requires authenticated The People System staff (tps_admin / tps_client).
  * Returns diagnostic info about the current session and profile state.
  */
 export async function GET() {
@@ -35,17 +35,17 @@ export async function GET() {
     return NextResponse.json({
       authenticated: false,
       authError: authError?.message ?? null,
-      diagnosis: 'Not authenticated — log in first to use this endpoint',
+      diagnosis: 'Not authenticated: log in first to use this endpoint',
     }, { status: 401 });
   }
 
-  // ── Role gate: must be TPO staff ──
+  // ── Role gate: must be The People System staff ──
   const { data: roleData } = await supabase.rpc('get_my_role');
   if (!roleData || !['tps_admin', 'tps_client'].includes(roleData)) {
-    return NextResponse.json({ error: 'Forbidden — TPO staff only' }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden: The People System staff only' }, { status: 403 });
   }
 
-  // Session cookie (names only for security — no raw values)
+  // Session cookie (names only for security: no raw values)
   const allCookieNames = cookieStore.getAll().map(c => c.name);
   const sessionRaw = cookieStore.get('tps_portal_session')?.value;
   let sessionData = null;
@@ -79,15 +79,15 @@ export async function GET() {
     rpcProfileError: profileErr?.message ?? null,
     companyData,
     diagnosis: profileErr
-      ? 'get_my_profile() failed — check migration 029. Error: ' + profileErr.message
+      ? 'get_my_profile() failed: check migration 029. Error: ' + profileErr.message
       : !profile
-      ? 'Profile row missing — INSERT INTO profiles required'
+      ? 'Profile row missing: INSERT INTO profiles required'
       : !profile.company_id
-      ? 'No company_id on profile — UPDATE profiles SET company_id = ...'
+      ? 'No company_id on profile: UPDATE profiles SET company_id = ...'
       : !companyData
-      ? 'Company query returned null — RLS may be blocking. Check migration 028.'
+      ? 'Company query returned null: RLS may be blocking. Check migration 028.'
       : !sessionData?.companyId
-      ? 'DB OK but session cookie stale — navigate to /dashboard to force middleware refresh'
-      : 'All good — profile, company, and session cookie are correct',
+      ? 'DB OK but session cookie stale: navigate to /dashboard to force middleware refresh'
+      : 'All good: profile, company, and session cookie are correct',
   });
 }

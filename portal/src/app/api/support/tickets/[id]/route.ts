@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { ivylensRequest } from '@/lib/ivylens';
+import { ivylensRequest, IVYLENS_TAGS } from '@/lib/ivylens';
 
-// GET /api/support/tickets/:id — get ticket with conversation
+// GET /api/support/tickets/:id: get ticket with conversation
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await ivylensRequest(`/tickets/${params.id}`);
+  const { data, error } = await ivylensRequest(`/tickets/${params.id}`, {
+    tags: [IVYLENS_TAGS.TICKET_DETAIL],
+  });
   if (error) return NextResponse.json({ error }, { status: 502 });
 
   return NextResponse.json(data);
 }
 
-// POST /api/support/tickets/:id — reply to a ticket
+// POST /api/support/tickets/:id: reply to a ticket
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -31,6 +34,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   if (error) return NextResponse.json({ error }, { status: 502 });
+
+  // A new reply changes the detail (responses array) and the list
+  // (updated_at). Bust both so subsequent reads see fresh data.
+  revalidateTag(IVYLENS_TAGS.TICKET_DETAIL);
+  revalidateTag(IVYLENS_TAGS.TICKETS);
 
   return NextResponse.json(data);
 }

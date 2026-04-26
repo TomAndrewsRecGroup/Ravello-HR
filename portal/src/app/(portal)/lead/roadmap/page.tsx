@@ -18,7 +18,7 @@ export default async function RoadmapPage() {
 
   const { data: milestonesData } = await supabase
     .from('milestones')
-    .select('*')
+    .select('id,pillar,title,description,quarter,due_date,status,owner,sort_order')
     .eq('company_id', companyId)
     .order('sort_order');
 

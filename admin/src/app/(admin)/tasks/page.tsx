@@ -12,8 +12,9 @@ export default async function TasksPage() {
 
   const [tasksRes, staffRes, companiesRes] = await Promise.all([
     supabase.from('internal_tasks')
-      .select('*, profiles!internal_tasks_assigned_to_fkey(full_name), companies(name)')
-      .order('created_at', { ascending: false }),
+      .select('id,title,description,priority,status,due_date,company_id,assigned_to,completed_at,created_at,profiles!internal_tasks_assigned_to_fkey(full_name),companies(name)')
+      .order('created_at', { ascending: false })
+      .limit(2000),
     supabase.from('profiles')
       .select('id, full_name, role')
       .in('role', ['tps_admin', 'tps_client'])
@@ -30,7 +31,7 @@ export default async function TasksPage() {
       <main className="admin-page flex-1">
         <TaskBoardClient
           userId={user?.id ?? ''}
-          tasks={tasksRes.data ?? []}
+          tasks={(tasksRes.data ?? []) as any}
           staff={staffRes.data ?? []}
           companies={companiesRes.data ?? []}
         />

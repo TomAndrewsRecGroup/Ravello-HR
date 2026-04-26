@@ -42,7 +42,7 @@ export default function UnauthorisedPage() {
             href="https://thepeopleoffice.co.uk"
             className="btn-secondary block w-full text-center py-2.5"
           >
-            Return to The People Office
+            Return to The People System
           </a>
         </div>
 

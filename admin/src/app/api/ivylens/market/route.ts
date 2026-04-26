@@ -40,7 +40,7 @@ interface MarketAggregate {
   salary_p50:      number | null;
   salary_p75:      number | null;
   salary_p90:      number | null;
-  pressure_score:  number;       // 0–100: higher = more market friction
+  pressure_score:  number;       // 0-100: higher = more market friction
   pressure_band:   'low' | 'moderate' | 'high';
   signal_counts:   { high_repost: number; long_vacancy: number; volume_hiring: number };
 }
@@ -70,7 +70,7 @@ function percentile(sorted: number[], p: number): number | null {
 function normaliseRoleType(title: string | undefined): string {
   if (!title) return 'other';
   const lower = title.toLowerCase();
-  // Coarse buckets — keeps sample sizes meaningful given small daily feed volumes
+  // Coarse buckets: keeps sample sizes meaningful given small daily feed volumes
   if (/(engineer|developer|swe|sde)/.test(lower))   return 'software-engineer';
   if (/(designer|ux|product design)/.test(lower))   return 'product-designer';
   if (/(data|analyst|scientist)/.test(lower))       return 'data';

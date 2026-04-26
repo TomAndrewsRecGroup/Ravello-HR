@@ -82,7 +82,7 @@ export default function FrictionScoreCard({ score, compact = false }: Props) {
         <div className="text-right flex-shrink-0">
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Est. time to fill</p>
           <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--ink)' }}>
-            {score.time_to_fill_estimate ?? '—'}
+            {score.time_to_fill_estimate ?? '-'}
           </p>
         </div>
       </div>

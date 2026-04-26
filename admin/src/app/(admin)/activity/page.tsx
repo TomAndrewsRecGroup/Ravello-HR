@@ -130,7 +130,7 @@ export default async function ActivityPage() {
 
   return (
     <>
-      <AdminTopbar title="Activity Feed" subtitle="What's happening across all clients — last 7 days" />
+      <AdminTopbar title="Activity Feed" subtitle="What's happening across all clients: last 7 days" />
       <main className="admin-page flex-1 max-w-[720px]">
         {feed.length === 0 ? (
           <div className="empty-state">

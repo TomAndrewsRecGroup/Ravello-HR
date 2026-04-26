@@ -3,7 +3,7 @@
  *
  * Uses a sliding window approach. Each key (typically IP or user ID) gets
  * a counter that resets after the window expires. Not suitable for distributed
- * deployments with multiple instances — use Vercel KV or Upstash for that.
+ * deployments with multiple instances: use Vercel KV or Upstash for that.
  *
  * Usage:
  *   const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
@@ -51,7 +51,7 @@ export function createRateLimiter({ windowMs, max }: RateLimiterOptions) {
       const now = Date.now();
       const entry = store.get(key);
 
-      // Window expired or first request — start fresh
+      // Window expired or first request: start fresh
       if (!entry || now >= entry.resetAt) {
         store.set(key, { count: 1, resetAt: now + windowMs });
         return { allowed: true, remaining: max - 1, resetAt: now + windowMs };

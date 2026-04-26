@@ -1,6 +1,13 @@
 -- ======================================================================
 --  Migration 028: Fix circular RLS on profiles table
 --
+--  HISTORY NOTE (added during phase 50 cleanup): the four profile
+--  policies created near the end of this file (profiles_select /
+--  profiles_update / profiles_insert / profiles_delete) are
+--  superseded by 030_complete_fix.sql, which drops + recreates them
+--  with the same shape. Treat 028 as "establishes the helper
+--  functions" and 030 as the final policy state on a fresh apply.
+--
 --  Problem: profiles RLS policy calls is_tps_staff() which queries
 --  profiles table → triggers RLS → calls is_tps_staff() → infinite
 --  recursion → "stack depth limit exceeded" error.

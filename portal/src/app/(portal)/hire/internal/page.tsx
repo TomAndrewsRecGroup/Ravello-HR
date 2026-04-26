@@ -32,13 +32,13 @@ export default async function InternalHiringPage() {
     // Internal roles
     const { data: roles } = await supabase
       .from('requisitions')
-      .select('*')
+      .select('id,title,department,location,salary_min,salary_max,description,stage,internal_applicants,created_at')
       .eq('company_id', companyId)
       .eq('managed_by', 'internal')
       .order('created_at', { ascending: false });
     internalRoles = roles ?? [];
 
-    // TPO-managed stats for comparison
+    // The People System-managed stats for comparison
     const [tpoActiveRes, tpoFilledRes] = await Promise.all([
       supabase.from('requisitions')
         .select('id, created_at', { count: 'exact' })

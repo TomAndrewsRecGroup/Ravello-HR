@@ -56,7 +56,7 @@ const STATUSES = ['scheduled', 'completed', 'cancelled', 'rescheduled', 'no_show
 const OUTCOMES = ['pending', 'pass', 'fail', 'hold'];
 
 function fmtDt(dt: string | null): string {
-  if (!dt) return '—';
+  if (!dt) return '-';
   return new Date(dt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -232,7 +232,7 @@ export default function InterviewSchedulePanel({ requisitionId, companyId, candi
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-medium" style={{ color: 'var(--ink)' }}>
-                              Stage {iv.stage_number}{iv.stage_label ? ` — ${iv.stage_label}` : ''}
+                              Stage {iv.stage_number}{iv.stage_label ? `: ${iv.stage_label}` : ''}
                             </span>
                             <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={STATUS_STYLE[iv.status] ?? STATUS_STYLE.scheduled}>
                               {iv.status}

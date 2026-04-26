@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ivylensRequest } from '@/lib/ivylens';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 
 // POST /api/company/register
 // Registers company with IvyLens and stores the ivylens_company_id.
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, companyId } = await getSessionProfile();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
@@ -28,12 +27,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Store ivylens_company_id on the company record
-    const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
-    if (profile?.company_id && data?.company_id) {
+    if (companyId && data?.company_id) {
+      const supabase = createServerSupabaseClient();
       await supabase
         .from('companies')
         .update({ ivylens_company_id: data.company_id })
-        .eq('id', profile.company_id);
+        .eq('id', companyId);
     }
 
     return NextResponse.json(data);

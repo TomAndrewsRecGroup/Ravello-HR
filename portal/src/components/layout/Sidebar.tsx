@@ -1,17 +1,16 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, BookOpen, Users,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
-  GripVertical, Eye, EyeOff, Pencil, Check,
-  ArrowUp, ArrowDown,
+  Eye, EyeOff, Pencil, Check,
+  ArrowUp, ArrowDown, Trophy, ExternalLink,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
-import { createClient } from '@/lib/supabase/client';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -21,15 +20,25 @@ const COUNT_KEY: Record<string, string> = {
   '/hire':    'candidates',
 };
 
-/* All possible nav items — order/visibility controlled by user prefs */
-const ALL_NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, flag: null,      fixed: true },
-  { href: '/hire',      label: 'HIRE',      icon: Briefcase,       flag: 'hiring',  fixed: false },
-  { href: '/lead',      label: 'LEAD',      icon: BookOpen,        flag: 'lead',    fixed: false },
-  { href: '/protect',   label: 'PROTECT',   icon: Users,           flag: 'protect', fixed: false },
-  { href: '/calendar',  label: 'Calendar',  icon: CalendarDays,    flag: null,      fixed: false },
-  { href: '/support',   label: 'Support',   icon: LifeBuoy,        flag: 'support', fixed: false },
-  { href: '/settings',  label: 'Settings',  icon: Settings,        flag: null,      fixed: false },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  flag: string | null;
+  fixed: boolean;
+  showWhenDisabled?: boolean;
+}
+
+/* All possible nav items: order/visibility controlled by user prefs */
+const ALL_NAV_ITEMS: NavItem[] = [
+  { href: '/dashboard',            label: 'Dashboard',            icon: LayoutDashboard, flag: null,                    fixed: true  },
+  { href: '/hire',                 label: 'HIRE',                 icon: Briefcase,       flag: 'hiring',                fixed: false },
+  { href: '/lead',                 label: 'LEAD',                 icon: BookOpen,        flag: 'lead',                  fixed: false },
+  { href: '/protect',              label: 'PROTECT',              icon: Users,           flag: 'protect',               fixed: false },
+  { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true },
+  { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: null,                    fixed: false },
+  { href: '/support',              label: 'Support',              icon: LifeBuoy,        flag: 'support',               fixed: false },
+  { href: '/settings',             label: 'Settings',             icon: Settings,        flag: null,                    fixed: false },
 ];
 
 const DEFAULT_ORDER = ALL_NAV_ITEMS.map(i => i.href);
@@ -41,35 +50,13 @@ interface Props {
   userId?: string;
 }
 
-export default function Sidebar({ flags = {}, counts: initialCounts = {}, companyId, userId }: Props) {
+export default function Sidebar({ flags = {}, counts = {}, companyId, userId }: Props) {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
   const [editMode, setEditMode] = useState(false);
-  const [counts, setCounts] = useState<Record<string, number>>(initialCounts);
-
-  // Fetch badge counts once on mount (not on every navigation)
-  useEffect(() => {
-    if (!companyId) return;
-    const supabase = createClient();
-    const now = new Date().toISOString();
-
-    Promise.all([
-      supabase.from('actions').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('status', 'active')
-        .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
-      supabase.from('tickets').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).in('status', ['open', 'in_progress']),
-      supabase.from('candidates').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
-    ]).then(([actRes, tickRes, candRes]) => {
-      setCounts({
-        actions: actRes.count ?? 0,
-        tickets: tickRes.count ?? 0,
-        candidates: candRes.count ?? 0,
-      });
-    }).catch(() => {});
-  }, [companyId]); // only on mount, not on path change
+  // Counts are pre-computed in the layout SSR pass and refreshed on every
+  // navigation by Next's data revalidation — no client-side fetch needed.
 
   // Build ordered, visible nav items
   const orderedItems = useMemo(() => {
@@ -90,7 +77,9 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
     }));
   }, [prefs, flags]);
 
-  const visibleItems = orderedItems.filter(i => !i.hidden && !i.disabled);
+  const visibleItems = orderedItems.filter(i =>
+    !i.hidden && (!i.disabled || i.showWhenDisabled),
+  );
 
   async function moveItem(href: string, direction: 'up' | 'down') {
     const currentOrder = orderedItems.map(i => i.href);
@@ -118,6 +107,50 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
     const active = !item.disabled && !item.hidden && path.startsWith(item.href);
     const countKey = COUNT_KEY[item.href];
     const count = countKey ? (counts[countKey] ?? 0) : 0;
+
+    // Disabled + showWhenDisabled: render greyed-out row with hover tooltip.
+    if (item.disabled && item.showWhenDisabled && !editMode) {
+      return (
+        <div key={item.href} className="relative group/tooltip">
+          <div
+            className="nav-link flex-1 cursor-not-allowed"
+            style={{ opacity: 0.45 }}
+            aria-disabled="true"
+          >
+            <item.icon size={15} />
+            <span className="flex-1">{item.label}</span>
+            <Lock size={11} style={{ color: 'var(--ink-faint)' }} />
+          </div>
+          <div
+            className="hidden group-hover/tooltip:block hover:block absolute left-full top-0 ml-2 w-64 rounded-[12px] p-3.5 z-50"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              boxShadow: '0 12px 32px rgba(7,11,29,0.18)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+               style={{ color: 'var(--purple)' }}>
+              <Trophy size={10} className="inline mr-1 -mt-0.5" />
+              Programme partner
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+              Proudly supporting the Athletes To Industry programme. Find out more here —
+            </p>
+            <a
+              href="https://www.athletestoindustry.co.uk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+              style={{ color: 'var(--purple)' }}
+            >
+              athletestoindustry.co.uk <ExternalLink size={10} />
+            </a>
+          </div>
+        </div>
+      );
+    }
 
     if (item.disabled && !editMode) return null;
 
@@ -182,7 +215,7 @@ export default function Sidebar({ flags = {}, counts: initialCounts = {}, compan
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <Link prefetch={false} href="/dashboard" className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" priority />
+            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>Portal</span>
           <button onClick={close} className="lg:hidden ml-auto flex items-center justify-center w-7 h-7 rounded-md" style={{ color: 'var(--ink-faint)' }} aria-label="Close">

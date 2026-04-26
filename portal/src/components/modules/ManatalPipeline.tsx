@@ -144,7 +144,7 @@ export default function ManatalPipeline() {
           <Users size={24} />
           <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>ATS not connected</p>
           <p className="text-xs max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-            Your Manatal ATS is not linked yet. The People Office will set this up for you.
+            Your Manatal ATS is not linked yet. The People System will set this up for you.
           </p>
         </div>
       </div>
@@ -293,7 +293,7 @@ function JobSection({
                     </td>
                     <td>
                       <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                        {m.candidate.email ?? '—'}
+                        {m.candidate.email ?? '-'}
                       </span>
                     </td>
                     <td>

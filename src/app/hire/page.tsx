@@ -6,79 +6,150 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'HIRE Services | Embedded Recruitment and Talent Strategy | The People System',
-  description: 'Four HIRE packages: Hire Foundations, Hire Optimiser, Hire Embedded, Hire Build. Embedded recruitment delivery with Friction Lens role scoring: The People System.',
+  description: 'Four HIRE packages for growing businesses (Foundations, Optimiser, Embedded, Build) with matching corporate tracks (Advisory, Diagnostic, Delivery, Transformation). Embedded recruitment delivery with Friction Lens role scoring: The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/hire' },
 };
 
-const packages = [
+type Variant = {
+  name: string;
+  who: string;
+  includes: string[];
+};
+
+type Package = {
+  tag: string;
+  highlight: boolean;
+  cta: { label: string; href: string };
+  sme: Variant;
+  corporate: Variant;
+};
+
+const packages: Package[] = [
   {
-    name: 'Hire Foundations',
     tag: 'Starting point · 3-month minimum',
-    price: '£1,000/month + 10% placement fee',
     highlight: false,
-    who: 'For founder-led businesses that are hiring sporadically and want an expert involved without a full embedded commitment. You need someone who can advise on the role, review the process, and make sure the basics are right.',
-    includes: [
-      'Friction Lens scoring on every active role',
-      'Role definition review and brief writing',
-      'Interview structure and scorecard templates',
-      'Hiring manager guidance',
-      'Weekly hiring review (30 min)',
-      'Placement fee applies at 10% on successful hires',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      name: 'HIRE Foundations',
+      who: 'For founder-led businesses that are hiring sporadically and want an expert involved without a full embedded commitment. You need someone who can advise on the role, review the process, and make sure the basics are right.',
+      includes: [
+        'Friction Lens scoring on every active role',
+        'Role definition review and brief writing',
+        'Interview structure and scorecard templates',
+        'Hiring manager guidance',
+        'Weekly hiring review (30 min)',
+        'Placement fee applies at 10% on successful hires',
+      ],
+    },
+    corporate: {
+      name: 'HIRE Advisory',
+      who: 'For corporate teams or divisions running occasional senior hires outside the central talent function. You want embedded recruitment expertise on specific roles without pulling in the global TA team or engaging a full search firm.',
+      includes: [
+        'Friction Lens scoring on every active role',
+        'Role definition and market calibration',
+        'Interview structure aligned to competency frameworks',
+        'Stakeholder alignment across hiring panels',
+        'Weekly hiring review with the hiring lead',
+        'Placement fee applies at 10% on successful hires',
+      ],
+    },
   },
   {
-    name: 'Hire Optimiser',
     tag: 'Project · Fix the process',
-    price: '£2,500 one-off, or £1,500/month × 3',
     highlight: false,
-    who: 'For businesses that have a hiring process but it is not working well. Too slow. Too inconsistent. Too dependent on agencies. This is a fixed-scope engagement to find and fix the specific failure points.',
-    includes: [
-      'Full hiring process audit',
-      'Friction Lens scoring on up to 3 live roles',
-      'Role definition rebuild (up to 3 roles)',
-      'Interview scorecard suite',
-      'Manager interview training session',
-      'Written process map with recommendations',
-      'Reduced placement fee if additional roles filled during engagement',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      name: 'HIRE Optimiser',
+      who: 'For businesses that have a hiring process but it is not working well. Too slow. Too inconsistent. Too dependent on agencies. This is a fixed-scope engagement to find and fix the specific failure points.',
+      includes: [
+        'Full hiring process audit',
+        'Friction Lens scoring on up to 3 live roles',
+        'Role definition rebuild (up to 3 roles)',
+        'Interview scorecard suite',
+        'Manager interview training session',
+        'Written process map with recommendations',
+        'Reduced placement fee if additional roles filled during engagement',
+      ],
+    },
+    corporate: {
+      name: 'HIRE Diagnostic',
+      who: 'For corporate TA functions where a specific region, business unit, or role family is consistently underperforming. A fixed-scope engagement to diagnose failure points and deliver a remediation plan the internal team can execute.',
+      includes: [
+        'Process audit across the focus region, BU, or role family',
+        'Friction Lens scoring on up to 10 live roles',
+        'Role definition rebuild for priority roles',
+        'Interview scorecard suite aligned to internal frameworks',
+        'Hiring manager calibration workshops',
+        'Written process map with recommendations',
+        'Handover pack for internal TA leadership',
+      ],
+    },
   },
   {
-    name: 'Hire Embedded',
     tag: 'Most popular · 6-month minimum',
-    price: '£5,000/month · fees included in scope',
     highlight: true,
-    who: 'For businesses with a consistent hiring need: typically 3-8 roles over the engagement period. We work inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
-    includes: [
-      'Full embedded recruitment delivery',
-      'Friction Lens scoring on every role before launch',
-      'Direct sourcing via LinkedIn Recruiter and targeted outreach',
-      'Screening and shortlisting to agreed criteria',
-      'Interview design and hiring manager support',
-      'Offer management and candidate experience',
-      'No additional placement fees',
-      'Internal capability building throughout',
-    ],
     cta: { label: 'Start with a Hiring Audit', href: '/book' },
+    sme: {
+      name: 'HIRE Embedded',
+      who: 'For businesses with a consistent hiring need: typically 3-8 roles over the engagement period. We work inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
+      includes: [
+        'Full embedded recruitment delivery',
+        'Friction Lens scoring on every role before launch',
+        'Direct sourcing via LinkedIn Recruiter and targeted outreach',
+        'Screening and shortlisting to agreed criteria',
+        'Interview design and hiring manager support',
+        'Offer management and candidate experience',
+        'No additional placement fees',
+        'Internal capability building throughout',
+      ],
+    },
+    corporate: {
+      name: 'HIRE Delivery',
+      who: 'For corporate TA functions that need embedded specialist delivery on a programme, region, or function: typically 10-30 roles across the engagement. We plug into your ATS, operate to your governance, and report into your TA leadership while delivering against the plan.',
+      includes: [
+        'Embedded delivery against an agreed hiring plan',
+        'Friction Lens scoring on every role before launch',
+        'Direct sourcing via LinkedIn Recruiter and targeted outreach',
+        'Screening and shortlisting to agreed criteria',
+        'Integration with internal ATS and reporting cadence',
+        'Offer management and candidate experience',
+        'No additional placement fees',
+        'Weekly programme reporting to TA leadership',
+      ],
+    },
   },
   {
-    name: 'Hire Build',
     tag: 'Scale · 6-month minimum',
-    price: '£6,500-£8,500+/month',
     highlight: false,
-    who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. We lead the talent function end-to-end, build the internal infrastructure, and design the process your in-house team will eventually run independently.',
-    includes: [
-      'Full talent function leadership',
-      'Friction Lens built into every active role',
-      'Employer brand development and job ad frameworks',
-      'ATS setup and hiring workflow design',
-      'Recruiter hiring and onboarding support (if building in-house team)',
-      'Hiring manager training programme',
-      'Talent market intelligence reporting',
-      'Direct line to us throughout',
-    ],
     cta: { label: 'Book a Call', href: '/book' },
+    sme: {
+      name: 'HIRE Build',
+      who: 'For businesses scaling rapidly: typically 8+ roles at a time, or preparing to build a people function from scratch. We lead the talent function end-to-end, build the internal infrastructure, and design the process your in-house team will eventually run independently.',
+      includes: [
+        'Full talent function leadership',
+        'Friction Lens built into every active role',
+        'Employer brand development and job ad frameworks',
+        'ATS setup and hiring workflow design',
+        'Recruiter hiring and onboarding support (if building in-house team)',
+        'Hiring manager training programme',
+        'Talent market intelligence reporting',
+        'Direct line to us throughout',
+      ],
+    },
+    corporate: {
+      name: 'HIRE Transformation',
+      who: 'For corporate organisations standing up a new TA capability, transforming an underperforming one, or running a large-scale hiring programme in a new market. We lead delivery while designing the operating model, tooling, and capability your in-house team will run.',
+      includes: [
+        'Delivery leadership across a defined hiring programme',
+        'Friction Lens built into every active role',
+        'Employer brand and job ad frameworks',
+        'ATS and hiring workflow design or redesign',
+        'TA org design and recruiter onboarding support',
+        'Hiring manager training programme',
+        'Talent market intelligence reporting',
+        'Steering committee engagement with senior stakeholders',
+      ],
+    },
   },
 ];
 
@@ -185,78 +256,25 @@ export default function HirePage() {
               HIRE <span className="text-gradient">packages</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              All packages include Friction Lens scoring as standard. No tables: here is what each one means in practice.
+              All packages include Friction Lens scoring as standard. Each engagement shapes differently depending on the size and shape of your organisation: choose the column that matches.
             </p>
           </div>
-          <div className="space-y-6">
+
+          {/* Column headers (desktop) */}
+          <div className="hidden lg:grid grid-cols-2 gap-6 mb-4">
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              For growing businesses
+            </p>
+            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              For corporate organisations
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {packages.map((pkg) => (
-              <div
-                key={pkg.name}
-                className="rounded-[22px] p-8"
-                style={pkg.highlight
-                  ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
-                  : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
-                }
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start gap-8">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <h3
-                        className="font-bold text-2xl"
-                        style={{ color: pkg.highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
-                      >
-                        {pkg.name}
-                      </h3>
-                      <span
-                        className="text-xs font-semibold px-3 py-1 rounded-full"
-                        style={pkg.highlight
-                          ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
-                          : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
-                        }
-                      >
-                        {pkg.tag}
-                      </span>
-                    </div>
-                    <p
-                      className="font-bold text-lg mb-4"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.9)' : 'var(--brand-purple)' }}
-                    >
-                      {pkg.price}
-                    </p>
-                    <p
-                      className="text-sm leading-relaxed mb-6"
-                      style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                    >
-                      {pkg.who}
-                    </p>
-                    <ul className="space-y-2">
-                      {pkg.includes.map((item) => (
-                        <li key={item} className="flex items-start gap-3">
-                          <CheckCircle
-                            className="flex-shrink-0 mt-0.5"
-                            size={15}
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
-                          />
-                          <span
-                            className="text-sm"
-                            style={{ color: pkg.highlight ? 'rgba(255,255,255,0.8)' : 'var(--ink-soft)' }}
-                          >
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="lg:w-48 flex-shrink-0">
-                    <Link
-                      href={pkg.cta.href}
-                      className={pkg.highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
-                    >
-                      {pkg.cta.label} <ArrowRight size={14} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <PackagePair key={pkg.sme.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -318,13 +336,99 @@ export default function HirePage() {
 
       {/* FAQ */}
       <FaqBlock items={[
-        { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. For Hire Optimiser, the one-off option (£2,500) has no ongoing commitment.' },
+        { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. Hire Optimiser can also be scoped as a one-off engagement with no ongoing commitment.' },
         { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
         { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It assesses every active role across five dimensions: Location, Salary, Skills, Working Model, and Process: against live market data and produces a friction score (Low to Critical) with specific recommendations. It is integrated into every HIRE package as standard.' },
         { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
         { q: 'Do you replace our existing recruiters or agencies?', a: 'We typically work alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6-12 months of working with us.' },
       ]} />
 
+    </div>
+  );
+}
+
+function PackagePair({ pkg }: { pkg: Package }) {
+  return (
+    <>
+      <PackageCard pkg={pkg} variant="sme" audienceLabel="For growing businesses" />
+      <PackageCard pkg={pkg} variant="corporate" audienceLabel="For corporate organisations" />
+    </>
+  );
+}
+
+function PackageCard({
+  pkg,
+  variant,
+  audienceLabel,
+}: {
+  pkg: Package;
+  variant: 'sme' | 'corporate';
+  audienceLabel: string;
+}) {
+  const v = pkg[variant];
+  const highlight = pkg.highlight;
+  return (
+    <div
+      className="rounded-[22px] p-8 flex flex-col h-full"
+      style={highlight
+        ? { background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff', boxShadow: '0 8px 40px rgba(123,47,190,0.25)' }
+        : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
+      }
+    >
+      <p
+        className="text-xs font-semibold uppercase tracking-wider mb-3 lg:hidden"
+        style={{ color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--ink-faint)', letterSpacing: '0.08em' }}
+      >
+        {audienceLabel}
+      </p>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <h3
+          className="font-bold text-2xl"
+          style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
+        >
+          {v.name}
+        </h3>
+        <span
+          className="text-xs font-semibold px-3 py-1 rounded-full"
+          style={highlight
+            ? { background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }
+            : { background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--brand-line)' }
+          }
+        >
+          {pkg.tag}
+        </span>
+      </div>
+      <p
+        className="text-sm leading-relaxed mb-6"
+        style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+      >
+        {v.who}
+      </p>
+      <ul className="space-y-2 mb-8">
+        {v.includes.map((item) => (
+          <li key={item} className="flex items-start gap-3">
+            <CheckCircle
+              className="flex-shrink-0 mt-0.5"
+              size={15}
+              style={{ color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-purple)' }}
+            />
+            <span
+              className="text-sm"
+              style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
+            >
+              {item}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto">
+        <Link
+          href={pkg.cta.href}
+          className={highlight ? 'btn-outline-white w-full justify-center' : 'btn-gradient w-full justify-center'}
+        >
+          {pkg.cta.label} <ArrowRight size={14} />
+        </Link>
+      </div>
     </div>
   );
 }

@@ -4,13 +4,13 @@ import { AlertTriangle, Clock, TrendingDown, PoundSterling, Briefcase } from 'lu
 
 /* ─── Vacancy cost model ──────────────────────────────────────────────
    This calculates the REVENUE LOSS to the business from an empty seat.
-   An employee typically generates 2–4× their salary in revenue/output.
+   An employee typically generates 2-4× their salary in revenue/output.
    When a role sits vacant, the business loses that revenue AND incurs
    hidden costs: overtime, contractor cover, missed targets, churn.
 
-   Revenue multiplier = base (2.5x) + friction adjustment (0–1.5x).
+   Revenue multiplier = base (2.5x) + friction adjustment (0-1.5x).
    Higher friction = harder to fill = role likely more specialised =
-   higher revenue impact. The friction_score (0–100) from Friction
+   higher revenue impact. The friction_score (0-100) from Friction
    Lens is used directly for a continuous scale rather than buckets.
 
    Sources: Oxford Economics, CIPD Cost of Vacancy research, Cebr.
@@ -91,7 +91,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
         <div>
           <h2 className="section-title text-xl">Cost of an Empty Seat</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Estimated revenue loss from unfilled roles — powered by your Friction Lens data
+            Estimated revenue loss from unfilled roles: powered by your Friction Lens data
           </p>
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
       {/* Disclaimer */}
       <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> An employee typically generates 2.5–4× their salary in revenue and output. When a seat is empty, that value is lost — plus hidden costs like overtime, contractor cover, and missed targets. Multipliers are adjusted by your Friction Lens score (higher friction = more specialised role = greater revenue impact). Based on Oxford Economics and CIPD research. Actual figures vary by business model.
+          <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> An employee typically generates 2.5-4× their salary in revenue and output. When a seat is empty, that value is lost: plus hidden costs like overtime, contractor cover, and missed targets. Multipliers are adjusted by your Friction Lens score (higher friction = more specialised role = greater revenue impact). Based on Oxford Economics and CIPD research. Actual figures vary by business model.
         </p>
       </div>
 
@@ -237,7 +237,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
           <div className="mt-5 rounded-lg p-4" style={{ background: 'var(--surface-soft)' }}>
             <p className="text-xs font-bold mb-2" style={{ color: 'var(--ink-soft)' }}>How it works</p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-              Daily revenue loss = (salary ÷ 260 working days) × revenue multiplier. An employee generates 2.5–4× their salary in value — when that seat is empty, the business loses that output. Your Friction Lens score adjusts the multiplier: higher-friction roles are more specialised, harder to backfill, and cost more per day vacant. Hidden costs (overtime, temp cover, missed targets) add ~15% on top.
+              Daily revenue loss = (salary ÷ 260 working days) × revenue multiplier. An employee generates 2.5-4× their salary in value: when that seat is empty, the business loses that output. Your Friction Lens score adjusts the multiplier: higher-friction roles are more specialised, harder to backfill, and cost more per day vacant. Hidden costs (overtime, temp cover, missed targets) add ~15% on top.
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
               {[

@@ -43,7 +43,7 @@ function daysUntilExpiry(d: string | null): number | null {
 }
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -114,7 +114,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
               <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--danger)' }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{expired.length} expired document{expired.length > 1 ? 's' : ''}</p>
-                <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expired.map(d => `${d.employee_name} – ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expired.map(d => `${d.employee_name}: ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
               </div>
             </div>
           )}
@@ -123,7 +123,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
               <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--amber)' }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{expiringWithin30.length} document{expiringWithin30.length > 1 ? 's' : ''} expiring within 30 days</p>
-                <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expiringWithin30.map(d => `${d.employee_name} – ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
+                <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{expiringWithin30.map(d => `${d.employee_name}: ${DOC_TYPE_LABELS[d.doc_type]}`).join(', ')}</p>
               </div>
             </div>
           )}
@@ -187,7 +187,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
             </div>
             <div className="sm:col-span-2">
               <label className="label">Document Title *</label>
-              <input className="input" placeholder="e.g. Employment Contract – Sarah Jones" value={form.title} onChange={e => set('title', e.target.value)} />
+              <input className="input" placeholder="e.g. Employment Contract: Sarah Jones" value={form.title} onChange={e => set('title', e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <label className="label">File URL</label>
@@ -252,7 +252,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
                           {isExpiringSoon && !isExpired && ` (${days}d)`}
                         </span>
                       ) : (
-                        <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>—</span>
+                        <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>-</span>
                       )}
                     </td>
                     <td>

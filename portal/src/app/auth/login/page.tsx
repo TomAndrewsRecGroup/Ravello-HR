@@ -18,7 +18,7 @@ export default function LoginPage() {
         <div className="flex justify-center mb-8">
           <Image
             src={LOGO}
-            alt="The People Office"
+            alt="The People System"
             width={140}
             height={48}
             className="h-10 w-auto object-contain brightness-110"

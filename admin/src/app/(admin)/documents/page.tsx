@@ -13,8 +13,9 @@ export default async function AdminDocumentsPage() {
   const supabase = createServerSupabaseClient();
   const { data: docs } = await supabase
     .from('documents')
-    .select('*, companies(name)')
-    .order('created_at', { ascending: false });
+    .select('id,name,category,version,review_due_at,file_url,file_size,created_at,companies(name)')
+    .order('created_at', { ascending: false })
+    .limit(2000);
 
   const all = docs ?? [];
 
@@ -46,7 +47,7 @@ export default async function AdminDocumentsPage() {
                       <td><span className={`badge ${catBadge[d.category]}`}>{d.category}</span></td>
                       <td style={{ color: 'var(--ink-faint)' }}>v{d.version}</td>
                       <td style={{ color: urgent ? 'var(--red)' : 'var(--ink-faint)' }}>
-                        {due ? due.toLocaleDateString('en-GB', { day:'numeric',month:'short',year:'numeric' }) : '—'}
+                        {due ? due.toLocaleDateString('en-GB', { day:'numeric',month:'short',year:'numeric' }) : '-'}
                         {urgent && <span className="ml-1 text-[10px]">⚠</span>}
                       </td>
                       <td>

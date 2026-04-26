@@ -46,7 +46,7 @@ export default async function RequisitionDetailPage({
       .order('created_at', { ascending: false }),
     supabase
       .from('offers')
-      .select('*, candidates(full_name)')
+      .select('id,status,base_salary,bonus,benefits,contract_type,location,working_model,start_date,deadline,notice_period,sent_at,verbal_accepted_at,written_accepted_at,declined_at,notes,candidates(full_name)')
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -61,7 +61,7 @@ export default async function RequisitionDetailPage({
   const cands = candidates ?? [];
   const ivs   = interviews ?? [];
 
-  // Parse friction_score — may be stored as stringified JSON or as an object
+  // Parse friction_score: may be stored as stringified JSON or as an object
   let frictionScore: FrictionScore | null = null;
   if (r.friction_score) {
     try {
@@ -105,7 +105,7 @@ export default async function RequisitionDetailPage({
                     Friction Lens not yet scored
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-                    Contact your consultant at The People Office to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
+                    Contact your consultant at The People System to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
                   </p>
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default async function RequisitionDetailPage({
                   <div key={label as string}>
                     <dt className="text-xs" style={{ color: 'var(--ink-faint)' }}>{label}</dt>
                     <dd className="text-sm font-medium mt-0.5" style={{ color: val ? 'var(--ink)' : 'var(--ink-faint)' }}>
-                      {val || '—'}
+                      {val || '-'}
                     </dd>
                   </div>
                 ))}
@@ -191,11 +191,11 @@ export default async function RequisitionDetailPage({
                 Candidates ({cands.length})
               </h2>
               <p className="text-xs mb-5" style={{ color: 'var(--ink-faint)' }}>
-                Only candidates approved by The People Office are shown here.
+                Only candidates approved by The People System are shown here.
               </p>
               {cands.length === 0 ? (
                 <div className="empty-state py-8">
-                  <p className="text-sm">No candidates yet — The People Office will add them as sourcing progresses.</p>
+                  <p className="text-sm">No candidates yet: The People System will add them as sourcing progresses.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -253,12 +253,12 @@ export default async function RequisitionDetailPage({
                             <div className="space-y-1.5">
                               {candIvs.map((iv: any, idx: number) => {
                                 const TypeIcon = iv.interview_type === 'video' ? Video : iv.interview_type === 'phone' ? Phone : iv.interview_type === 'in_person' ? MapPin : Calendar;
-                                const dt = iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+                                const dt = iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                                 return (
                                   <div key={idx} className="flex items-center gap-2 text-xs">
                                     <TypeIcon size={11} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
                                     <span style={{ color: 'var(--ink-soft)' }}>
-                                      Stage {iv.stage_number}{iv.stage_label ? ` — ${iv.stage_label}` : ''} · {dt}
+                                      Stage {iv.stage_number}{iv.stage_label ? `: ${iv.stage_label}` : ''} · {dt}
                                     </span>
                                     {iv.outcome && iv.outcome !== 'pending' && (
                                       <span
@@ -342,7 +342,7 @@ export default async function RequisitionDetailPage({
                     className="rounded-[8px] p-3 text-xs leading-relaxed"
                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                   >
-                    To re-score this role against updated market data, contact your consultant at The People Office.
+                    To re-score this role against updated market data, contact your consultant at The People System.
                   </div>
                 </div>
               ) : (
@@ -350,7 +350,7 @@ export default async function RequisitionDetailPage({
                   className="rounded-[8px] p-3 text-xs leading-relaxed"
                   style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                 >
-                  This role has not yet been scored. Contact your consultant at The People Office to run Friction Lens.
+                  This role has not yet been scored. Contact your consultant at The People System to run Friction Lens.
                 </div>
               )}
             </div>

@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const ALLOWED_ROLES = ['tps_admin', 'tps_client'];
-const ROLE_CACHE_SECONDS = 60 * 15; // 15 minutes — short enough to revoke access promptly
+const ROLE_CACHE_SECONDS = 60 * 15; // 15 minutes: short enough to revoke access promptly
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -73,7 +73,7 @@ export async function updateSession(request: NextRequest) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
 
     if (cachedRole && typeof cachedRole === 'string' && ALLOWED_ROLES.includes(cachedRole)) {
-      // Valid cached role — proceed
+      // Valid cached role: proceed
     } else {
       // Use SECURITY DEFINER function to bypass RLS circular dependency
       // (profiles RLS calls is_tps_staff() which queries profiles again)
@@ -102,12 +102,12 @@ export async function updateSession(request: NextRequest) {
   if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
     if (cachedRole && ALLOWED_ROLES.includes(cachedRole)) {
-      // Role confirmed — safe to redirect to dashboard
+      // Role confirmed: safe to redirect to dashboard
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
-    // No confirmed role — don't redirect, let them stay on the auth page
+    // No confirmed role: don't redirect, let them stay on the auth page
     // This prevents the loop: dashboard rejects → login → dashboard rejects → ...
   }
 

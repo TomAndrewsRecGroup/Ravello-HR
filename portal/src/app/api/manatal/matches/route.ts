@@ -7,9 +7,11 @@ import {
 } from '@/lib/manatal';
 
 // GET /api/manatal/matches
-// Returns all candidate–job matches from Manatal for the authenticated client,
+// Returns all candidate-job matches from Manatal for the authenticated client,
 // grouped by job, plus available pipeline stages.
 
+// Per-user dynamic (reads cookies + profile) — but the upstream fetches are
+// cached for 60s by manatalFetch's revalidate config.
 export const dynamic = 'force-dynamic';
 
 export async function GET(_req: NextRequest) {
@@ -37,5 +39,15 @@ export async function GET(_req: NextRequest) {
     getManatalStages(),
   ]);
 
-  return NextResponse.json({ matches, stages, configured: true });
+  return NextResponse.json(
+    { matches, stages, configured: true },
+    {
+      headers: {
+        // Browser caches for 30s; CDN holds for 60s and serves stale-while-revalidate
+        // up to 5 minutes. Mutations come through move-stage which busts via
+        // router.refresh() on the client.
+        'Cache-Control': 'private, max-age=30, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }

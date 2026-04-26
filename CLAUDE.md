@@ -1,11 +1,11 @@
-# Ravello HR — Claude Code Context
+# Ravello HR: Claude Code Context
 
 ## Project Overview
 
-**Ravello HR** is a two-app HR SaaS platform built for **The People Office** (TPO), an HR consultancy. TPO's clients are SME companies who access a client portal; TPO's internal staff use an admin portal to manage those clients.
+**Ravello HR** is a two-app HR SaaS platform built for **The People System** (The People System), an HR consultancy. The People System's clients are SME companies who access a client portal; The People System's internal staff use an admin portal to manage those clients.
 
-- **Admin app** — internal TPO staff only. Manage clients, BD pipeline, hiring, compliance, service requests.
-- **Portal app** — client companies. See their hiring pipeline, compliance, actions, documents, support, metrics.
+- **Admin app**: internal The People System staff only. Manage clients, BD pipeline, hiring, compliance, service requests.
+- **Portal app**: client companies. See their hiring pipeline, compliance, actions, documents, support, metrics.
 
 ---
 
@@ -13,8 +13,8 @@
 
 ```
 /home/user/Ravello-HR/
-├── admin/          # Next.js 14 app — internal TPO admin
-├── portal/         # Next.js 14 app — client portal
+├── admin/          # Next.js 14 app: internal The People System admin
+├── portal/         # Next.js 14 app: client portal
 ├── supabase/
 │   └── migrations/ # SQL migration files
 └── CLAUDE.md
@@ -28,11 +28,11 @@ Both apps share a single **Supabase** project (same DB, same auth).
 
 - **Framework**: Next.js 14 App Router (server components for data, client components for interactivity)
 - **Database**: Supabase (PostgreSQL + RLS + Auth)
-- **Storage**: Supabase Storage (files/documents) — Vercel Blob available for large video
+- **Storage**: Supabase Storage (files/documents): Vercel Blob available for large video
 - **Styling**: Tailwind CSS + CSS custom properties (no component library)
 - **TypeScript**: strict throughout
 - **Icons**: lucide-react
-- **Payments**: Stripe (not yet integrated — needed for e-learning Phase 22)
+- **Payments**: Stripe (not yet integrated: needed for e-learning Phase 22)
 - **Deployment**: Vercel Pro
 
 ---
@@ -41,19 +41,19 @@ Both apps share a single **Supabase** project (same DB, same auth).
 
 ### Server vs Client components
 ```tsx
-// Server component — data fetching (default)
+// Server component: data fetching (default)
 export default async function Page() {
   const supabase = createServerSupabaseClient();
   const { data } = await supabase.from('table').select('*');
   return <ClientComponent data={data} />;
 }
 
-// Client component — interactivity
+// Client component: interactivity
 'use client';
 export default function ClientComponent({ data }: Props) { ... }
 ```
 
-### Parallel data fetching (always do this — no waterfalls)
+### Parallel data fetching (always do this: no waterfalls)
 ```tsx
 const [{ data: a }, { data: b }, { data: c }] = await Promise.all([
   supabase.from('table_a').select('*'),
@@ -72,7 +72,7 @@ const supabase = createServerSupabaseClient();
 import { createClient } from '@/lib/supabase/client';
 const supabase = createClient();
 
-// Admin operations (invite users etc) — service role key
+// Admin operations (invite users etc): service role key
 // Used in: admin/src/app/api/invite/route.ts
 ```
 
@@ -105,7 +105,7 @@ router.refresh(); // re-runs server component data fetch
 
 ## CSS Design System
 
-Both apps use CSS custom properties. Always use these — never hardcode colours.
+Both apps use CSS custom properties. Always use these: never hardcode colours.
 
 ```css
 /* Colours */
@@ -136,20 +136,20 @@ Both apps use CSS custom properties. Always use these — never hardcode colours
 
 ### CSS utility classes (defined in globals.css)
 ```
-.card            — white rounded card with border
-.btn-cta         — purple gradient primary button
-.btn-secondary   — bordered secondary button
-.btn-ghost       — transparent ghost button
-.btn-icon        — square icon button
-.btn-sm          — small size modifier
-.input           — form input / select / textarea
-.label           — form field label
-.table-wrapper   — scrollable table container
-.table           — styled table
-.badge           — inline status pill
-.empty-state     — centered empty state block
-.portal-page     — portal main content padding
-font-display     — Plus Jakarta Sans (headings)
+.card           : white rounded card with border
+.btn-cta        : purple gradient primary button
+.btn-secondary  : bordered secondary button
+.btn-ghost      : transparent ghost button
+.btn-icon       : square icon button
+.btn-sm         : small size modifier
+.input          : form input / select / textarea
+.label          : form field label
+.table-wrapper  : scrollable table container
+.table          : styled table
+.badge          : inline status pill
+.empty-state    : centered empty state block
+.portal-page    : portal main content padding
+font-display    : Plus Jakarta Sans (headings)
 ```
 
 ### Badge variants
@@ -229,7 +229,7 @@ admin/src/
 │   │   ├── roadmap/page.tsx
 │   │   └── support/page.tsx
 │   ├── api/
-│   │   └── invite/route.ts      # POST — creates auth user + profile
+│   │   └── invite/route.ts      # POST: creates auth user + profile
 │   └── auth/                    # login pages
 ├── components/
 │   ├── layout/
@@ -323,12 +323,12 @@ portal/src/
 
 ## Friction Lens
 
-Scoring system for requisitions. Scores 0–100 on 5 dimensions:
-- `location` — remote/hybrid score better
-- `salary` — above-market scores better
-- `skills` — fewer must-haves scores better
-- `working_model` — flexibility score
-- `process` — stage/speed score
+Scoring system for requisitions. Scores 0-100 on 5 dimensions:
+- `location`: remote/hybrid score better
+- `salary`: above-market scores better
+- `skills`: fewer must-haves scores better
+- `working_model`: flexibility score
+- `process`: stage/speed score
 
 ```tsx
 import { scoreFriction } from '@/lib/frictionLens';
@@ -350,15 +350,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 # Admin only
 SUPABASE_SERVICE_ROLE_KEY=    # for auth admin operations
 
-# Portal only — IvyLens Friction Lens
-IVYLENS_API_URL=              # Phase 21 — e.g. https://ivylens.yourdomain.com
+# Portal only: IvyLens Friction Lens
+IVYLENS_API_URL=              # Phase 21: e.g. https://ivylens.yourdomain.com
 
-# Portal only — Manatal ATS integration
-MANATAL_API_KEY=              # Phase 29 — set in Vercel env vars
-MANATAL_API_URL=              # Phase 29 — defaults to https://api.manatal.com/open/v1
+# Portal only: Manatal ATS integration
+MANATAL_API_KEY=              # Phase 29: set in Vercel env vars
+MANATAL_API_URL=              # Phase 29: defaults to https://api.manatal.com/open/v1
 
-# Portal only — Stripe (e-learning payments)
-STRIPE_SECRET_KEY=            # Phase 18 — e-learning purchases
+# Portal only: Stripe (e-learning payments)
+STRIPE_SECRET_KEY=            # Phase 18: e-learning purchases
 STRIPE_WEBHOOK_SECRET=        # Phase 18
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 ```
@@ -374,42 +374,42 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 
 ---
 
-## What Has Been Built (Phases 1–31)
+## What Has Been Built (Phases 1-31)
 
 | Phase | What |
 |-------|------|
-| 1–4 | Project scaffold, auth, Supabase setup, design system |
+| 1-4 | Project scaffold, auth, Supabase setup, design system |
 | 5 | Portal dashboard, sidebar with feature flags, topbar |
 | 6 | Admin clients list + detail page with tabs (Overview, Roles, Documents, Roadmap, Services) |
 | 7 | Portal hiring page (requisitions, friction score display, candidate feedback) |
 | 8 | Candidate pipeline tab in admin client detail; Actions tab with priority/due date |
-| 9 | Compliance tracker — admin tab + portal `/compliance` page with status advancement |
+| 9 | Compliance tracker: admin tab + portal `/compliance` page with status advancement |
 | 10 | Admin requisition detail page `/hiring/[id]` with RequisitionPanel (friction, stage select, recruiter) |
 | 11 | Notification badges in portal sidebar; Admin `/hiring/new` with full role form + friction scoring |
 | 12 | User invite panel (admin); Users management page with inline role editing; Dashboard link fix |
-| 13 | Portal `/metrics` analytics page — 6 stat cards, hiring/candidate/compliance/support/documents/actions breakdowns |
+| 13 | Portal `/metrics` analytics page: 6 stat cards, hiring/candidate/compliance/support/documents/actions breakdowns |
 | 14 | BD "Convert to Client" full flow in BDCompanyModal; service request response notes in admin; portal support page shows service requests with response notes |
 | 15 | Hire phase enhancements: offer management, interview scheduling DB, hiring analytics, `interview_schedules` + `offers` migration |
-| 16–18 | LEAD module (training needs, performance reviews, skills matrix); PROTECT module (absence records, employee docs, HR dashboard); E-learning marketplace with Stripe |
-| 21 | IvyLens Friction Lens integration — proxy route `/api/friction/analyze`, updated `FrictionScoreCard`, JD text column in requisitions |
+| 16-18 | LEAD module (training needs, performance reviews, skills matrix); PROTECT module (absence records, employee docs, HR dashboard); E-learning marketplace with Stripe |
+| 21 | IvyLens Friction Lens integration: proxy route `/api/friction/analyze`, updated `FrictionScoreCard`, JD text column in requisitions |
 | 22 | Admin LEAD + PROTECT tabs in client detail; `ManatalIdField` in Overview tab |
-| 23 | Interview scheduling UI in admin `RequisitionPanel` — full CRUD for `interview_schedules` |
-| 24 | Admin `/compliance` cross-client RAG dashboard — overdue/amber/on-track cards + employee doc expiry alerts |
-| 25 | Salary benchmarks — `salary_benchmarks` migration, admin CRUD page `/salary-benchmarks`, portal `/benchmarks` comparison page |
-| 26 | BD pipeline Kanban view — HTML5 drag-and-drop, 4 status columns, inline status update |
-| 28 | Reporting CSV exports — portal `/reports` with 4 export cards; admin `/reports` with cross-client exports |
-| 29 | Manatal ATS integration — `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
-| 30 | RLS audit fixes — `is_ravello_staff()` corrected to include `tps_client`; 8 policies rewritten; client insert policies tightened |
+| 23 | Interview scheduling UI in admin `RequisitionPanel`: full CRUD for `interview_schedules` |
+| 24 | Admin `/compliance` cross-client RAG dashboard: overdue/amber/on-track cards + employee doc expiry alerts |
+| 25 | Salary benchmarks: `salary_benchmarks` migration, admin CRUD page `/salary-benchmarks`, portal `/benchmarks` comparison page |
+| 26 | BD pipeline Kanban view: HTML5 drag-and-drop, 4 status columns, inline status update |
+| 28 | Reporting CSV exports: portal `/reports` with 4 export cards; admin `/reports` with cross-client exports |
+| 29 | Manatal ATS integration: `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
+| 30 | RLS audit fixes: `is_ravello_staff()` corrected to include `tps_client`; 8 policies rewritten; client insert policies tightened |
 | 31 | Feature flag toggles expanded to include LEAD, PROTECT, Learning, Benchmarks; Manatal ATS pipeline surfaced in portal hiring page |
 | 32 | Admin dashboard enhanced with PROTECT alerts (overdue compliance, expiring docs, pending absences, open service requests) |
 | 33 | Portal dashboard: LEAD/PROTECT module cards when those flags enabled (open training needs, pending absences) |
 | 34 | JD Templates page (admin `/hiring/templates`); All Candidates page (admin `/candidates`) with screening scores and pipeline stage |
 | 35 | New role form pre-fills from JD template when `?template=ID` query param present |
 | 36 | Portal new role form: template selector dropdown (client-side fetch from `jd_templates`) |
-| 37 | Admin Broadcast page — push action items to multiple clients at once; `actions.created_by_admin` + `actions.due_date` columns |
+| 37 | Admin Broadcast page: push action items to multiple clients at once; `actions.created_by_admin` + `actions.due_date` columns |
 | 38 | Auto-seed standard compliance items + welcome action when BD company converted to client |
-| 39 | Portal metrics page — LEAD/PROTECT module analytics sections (training completion, reviews, absences, employee doc expiry) |
-| 40 | Admin clients list — per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
+| 39 | Portal metrics page: LEAD/PROTECT module analytics sections (training completion, reviews, absences, employee doc expiry) |
+| 40 | Admin clients list: per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
 
 ---
 
@@ -418,7 +418,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 1. **Always read a file before editing it**
 2. **Server components fetch data, pass to client components as props**
 3. **All fetches in parallel via Promise.all**
-4. **Use CSS vars — never hardcode hex colours**
+4. **Use CSS vars: never hardcode hex colours**
 5. **New portal sidebar items need adding to both `Sidebar.tsx` and the counts map if they need badges**
 6. **New feature-flag-gated pages check `flags.X === false` not `!flags.X`**
 7. **New DB tables go in a new migration file in `supabase/migrations/`**

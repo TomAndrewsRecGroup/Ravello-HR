@@ -187,7 +187,7 @@ export default function NewRequisitionPage() {
             </div>
           )}
 
-          {/* Step 1 — JD Import */}
+          {/* Step 1: JD Import */}
           <div className="card overflow-hidden">
             <button type="button" onClick={() => setJdOpen(o => !o)}
               className="w-full flex items-center justify-between px-6 py-4"
@@ -201,7 +201,7 @@ export default function NewRequisitionPage() {
                 <div className="text-left">
                   <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                     Import Job Description
-                    <span className="ml-2 text-xs font-normal" style={{ color: 'var(--ink-faint)' }}>optional — recommended for Friction Lens scoring</span>
+                    <span className="ml-2 text-xs font-normal" style={{ color: 'var(--ink-faint)' }}>optional: recommended for Friction Lens scoring</span>
                   </p>
                   {autoFilled && !jdOpen && <p className="text-xs mt-0.5" style={{ color: 'var(--success)' }}>Form auto-filled from JD</p>}
                 </div>
@@ -220,7 +220,7 @@ export default function NewRequisitionPage() {
                     </label>
                   </div>
                   <textarea className="input h-36 resize-none text-sm"
-                    placeholder="Paste the full job description here — IvyLens will extract role details and score against live market data…"
+                    placeholder="Paste the full job description here: IvyLens will extract role details and score against live market data…"
                     value={jdText}
                     onChange={e => { setJdText(e.target.value); setFrictionScore(null); setAutoFilled(false); }} />
                 </div>
@@ -238,7 +238,7 @@ export default function NewRequisitionPage() {
                       <Wand2 size={12} /> Auto-fill form fields
                     </button>
                   )}
-                  {autoFilled && <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>✓ Form fields auto-filled — review and edit below</span>}
+                  {autoFilled && <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>✓ Form fields auto-filled: review and edit below</span>}
                 </div>
 
                 {frictionScore && <div className="mt-2"><FrictionScoreCard score={frictionScore} /></div>}
@@ -246,7 +246,7 @@ export default function NewRequisitionPage() {
             )}
           </div>
 
-          {/* Step 2 — Role Details */}
+          {/* Step 2: Role Details */}
           <div className="card p-6 space-y-6">
             <div className="flex items-center gap-2.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"

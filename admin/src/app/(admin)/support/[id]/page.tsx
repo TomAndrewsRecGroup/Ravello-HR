@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import AdminTicketActions from '@/components/modules/AdminTicketActions';
 import AdminTicketReply from '@/components/modules/AdminTicketReply';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Ticket' };
 export const revalidate = 30;
@@ -14,15 +15,14 @@ export default async function AdminTicketPage({ params }: { params: { id: string
   const { data: { user } } = await supabase.auth.getUser();
 
   const [{ data: ticket }, { data: messages }] = await Promise.all([
-    supabase.from('tickets').select('*, companies(name)').eq('id', params.id).single(),
-    supabase.from('ticket_messages').select('*').eq('ticket_id', params.id).order('created_at'),
+    supabase.from('tickets').select('id,subject,description,status,priority,created_at,resolved_at,company_id,companies(name)').eq('id', params.id).single(),
+    supabase.from('ticket_messages').select('id,ticket_id,sender_id,body,is_internal,created_at').eq('ticket_id', params.id).order('created_at'),
   ]);
   if (!ticket) notFound();
 
   const t    = ticket as any;
   const msgs = messages ?? [];
-  const prioBadge: Record<string,string>   = { urgent:'badge-urgent',high:'badge-high',normal:'badge-normal',low:'badge-normal' };
-  const statusBadge: Record<string,string> = { open:'badge-open',in_progress:'badge-inprogress',resolved:'badge-resolved',closed:'badge-normal' };
+  const prioBadge: Record<string,string> = { urgent:'badge-urgent',high:'badge-high',normal:'badge-normal',low:'badge-normal' };
 
   return (
     <>
@@ -60,7 +60,7 @@ export default async function AdminTicketPage({ params }: { params: { id: string
                 >
                   <div className="flex justify-between mb-2">
                     <span className="text-xs font-semibold" style={{ color: isTPO ? 'var(--purple)' : 'var(--teal)' }}>
-                      {isTPO ? 'The People Office' : 'Client'}
+                      {isTPO ? 'The People System' : 'Client'}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                       {new Date(m.created_at).toLocaleString('en-GB', { day:'numeric',month:'short',hour:'2-digit',minute:'2-digit' })}

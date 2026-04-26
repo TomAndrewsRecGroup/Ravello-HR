@@ -34,6 +34,6 @@ export function auditLog(entry: AuditEntry): void {
     ...entry,
   };
 
-  // Structured JSON log — picked up by Vercel log drain
+  // Structured JSON log: picked up by Vercel log drain
   console.log(JSON.stringify(log));
 }

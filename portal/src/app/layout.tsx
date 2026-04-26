@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: { default: 'The People System Portal', template: '%s | The People System' },
-  description: 'Your People System client workspace — hiring, HR, documents, and support.',
+  description: 'Your People System client workspace: hiring, HR, documents, and support.',
   robots: { index: false, follow: false },
   manifest: '/manifest.json',
   appleWebApp: {

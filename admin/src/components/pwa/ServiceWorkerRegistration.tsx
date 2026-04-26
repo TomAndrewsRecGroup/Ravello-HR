@@ -9,7 +9,7 @@ import { Download, X } from 'lucide-react';
  * - Only registers in production (no SW in dev to avoid caching issues)
  * - Checks navigator.serviceWorker exists before registering
  * - Install prompt is non-intrusive (dismissable banner)
- * - No data is stored — only captures the beforeinstallprompt event
+ * - No data is stored: only captures the beforeinstallprompt event
  */
 export default function ServiceWorkerRegistration() {
   const [installPrompt, setInstallPrompt] = useState<any>(null);

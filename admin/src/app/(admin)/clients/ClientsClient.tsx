@@ -78,7 +78,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                   <tbody>
                     {usersModal.users.map(u => (
                       <tr key={u.id}>
-                        <td className="font-medium" style={{ color: 'var(--ink)' }}>{u.full_name ?? '—'}</td>
+                        <td className="font-medium" style={{ color: 'var(--ink)' }}>{u.full_name ?? '-'}</td>
                         <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                         <td>
                           <span className={`badge badge-${u.role?.includes('admin') ? 'admin' : 'client'}`}>
@@ -147,8 +147,8 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.contact_email}</p>
                       )}
                     </td>
-                    <td style={{ color: 'var(--ink-soft)' }}>{c.sector ?? '—'}</td>
-                    <td style={{ color: 'var(--ink-soft)' }}>{c.size_band ?? '—'}</td>
+                    <td style={{ color: 'var(--ink-soft)' }}>{c.sector ?? '-'}</td>
+                    <td style={{ color: 'var(--ink-soft)' }}>{c.size_band ?? '-'}</td>
                     <td>
                       <span className={`badge ${c.active ? 'badge-active' : 'badge-inactive'}`}>
                         {c.active ? 'Active' : 'Inactive'}
@@ -161,7 +161,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         style={{ color: users.length > 0 ? 'var(--purple)' : 'var(--ink-faint)' }}
                       >
                         <Users size={12} />
-                        {users.length > 0 ? users.length : '—'}
+                        {users.length > 0 ? users.length : '-'}
                       </button>
                     </td>
                     <td>
@@ -169,21 +169,21 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--purple)' }}>
                           <Briefcase size={12} /> {activeRoles}
                         </span>
-                      ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                      ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                     </td>
                     <td>
                       {openTickets > 0 ? (
                         <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--warning)' }}>
                           <LifeBuoy size={12} /> {openTickets}
                         </span>
-                      ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                      ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                     </td>
                     <td>
                       {overdueComp > 0 ? (
                         <span className="inline-flex items-center gap-1 text-sm font-medium" style={{ color: 'var(--red)' }}>
                           <AlertTriangle size={12} /> {overdueComp}
                         </span>
-                      ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                      ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                     </td>
                     <td>
                       {c.friction_band ? (
@@ -197,10 +197,10 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         >
                           {c.friction_band.replace(' Friction', '')}
                         </span>
-                      ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                      ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                     </td>
                     <td style={{ color: 'var(--ink-soft)' }}>
-                      {total > 0 ? `${on}/${total} on` : '—'}
+                      {total > 0 ? `${on}/${total} on` : '-'}
                     </td>
                     <td>
                       <Link href={`/clients/${c.id}`} prefetch={false} className="btn-ghost btn-sm">

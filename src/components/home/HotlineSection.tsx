@@ -17,7 +17,7 @@ export default function HotlineSection() {
         style={{ opacity: 0.14 }}
       />
 
-      {/* Gradient overlay — keeps text legible */}
+      {/* Gradient overlay: keeps text legible */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

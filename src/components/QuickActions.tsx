@@ -95,7 +95,7 @@ export default function QuickActions() {
         </div>
       </div>
 
-      {/* Toggle tab — compact vertical gradient pill */}
+      {/* Toggle tab: compact vertical gradient pill */}
       <button
         onClick={() => setOpen(!open)}
         className="flex flex-col items-center justify-center gap-1.5 transition-all duration-200"

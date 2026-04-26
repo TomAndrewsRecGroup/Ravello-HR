@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
 
 interface Ticket {
   id: string;
@@ -14,8 +15,7 @@ interface Ticket {
 
 interface Props { tickets: Ticket[] }
 
-const prioBadge:   Record<string, string> = { urgent: 'badge-urgent', high: 'badge-high', normal: 'badge-normal', low: 'badge-normal' };
-const statusBadge: Record<string, string> = { open: 'badge-open', in_progress: 'badge-inprogress', resolved: 'badge-resolved', closed: 'badge-normal' };
+const prioBadge: Record<string, string> = { urgent: 'badge-urgent', high: 'badge-high', normal: 'badge-normal', low: 'badge-normal' };
 
 type Filter = 'all' | 'open' | 'in_progress' | 'resolved';
 
@@ -93,7 +93,7 @@ export default function SupportClient({ tickets }: Props) {
               {filtered.map(t => (
                 <tr key={t.id}>
                   <td className="font-medium" style={{ color: 'var(--ink)' }}>{t.subject}</td>
-                  <td style={{ color: 'var(--ink-soft)' }}>{t.companies?.name ?? '—'}</td>
+                  <td style={{ color: 'var(--ink-soft)' }}>{t.companies?.name ?? '-'}</td>
                   <td><span className={`badge ${prioBadge[t.priority] ?? 'badge-normal'}`}>{t.priority}</span></td>
                   <td><span className={`badge ${statusBadge[t.status] ?? 'badge-normal'}`}>{t.status.replace('_', ' ')}</span></td>
                   <td style={{ color: 'var(--ink-faint)' }}>{new Date(t.created_at).toLocaleDateString('en-GB')}</td>

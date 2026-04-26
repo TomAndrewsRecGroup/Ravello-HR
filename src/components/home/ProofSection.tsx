@@ -4,7 +4,7 @@ import { TrendingDown, Clock, ShieldCheck, Users } from 'lucide-react';
 const stats = [
   {
     icon: TrendingDown,
-    value: '40–60%',
+    value: '40-60%',
     label: 'Agency spend reduction',
     sub: 'on repeatable roles within 12 months',
     color: '#A67DFF',

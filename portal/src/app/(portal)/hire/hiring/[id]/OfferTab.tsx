@@ -48,12 +48,12 @@ const CONTRACT_TYPES = ['permanent', 'fixed_term', 'contract', 'interim'];
 const WORKING_MODELS = ['office', 'hybrid', 'remote'];
 
 function fmtSalary(pence: number | null): string {
-  if (!pence) return '—';
+  if (!pence) return '-';
   return `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 0 })}`;
 }
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -112,7 +112,7 @@ function OfferCard({ offer, onStatusChange }: { offer: Offer; onStatusChange: (i
           ['Start Date', fmtDate(offer.start_date)],
           ['Notice Period', offer.notice_period],
           ['Bonus', offer.bonus],
-        ] as [string, string | null | undefined][]).filter(([, v]) => v && v !== '—').map(([label, val]) => (
+        ] as [string, string | null | undefined][]).filter(([, v]) => v && v !== '-').map(([label, val]) => (
           <div key={label}>
             <dt className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{label}</dt>
             <dd className="text-sm mt-0.5" style={{ color: 'var(--ink-soft)' }}>{val}</dd>

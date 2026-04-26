@@ -9,7 +9,7 @@ import {
 
 export const metadata: Metadata = { title: 'Dashboard' };
 export const runtime    = 'edge';
-export const revalidate = 30; // cache page for 30s — revalidates in background
+export const revalidate = 30; // cache page for 30s: revalidates in background
 
 export default async function AdminDashboardPage() {
   const supabase = createServerSupabaseClient();
@@ -20,13 +20,13 @@ export default async function AdminDashboardPage() {
   const in30ISO  = in30.toISOString();
 
   const [
-    compRes, userRes, reqRes, ticketRes,
+    activeClientCountRes, userCountRes, reqRes, ticketRes,
     overdueComplianceRes, expDocsRes, pendingAbsenceRes, serviceReqRes,
     highFrictionRes, unassessedRes,
     activeRoleCountRes, openTicketCountRes,
   ] = await Promise.all([
-    supabase.from('companies').select('id,name,active').order('name'),
-    supabase.from('profiles').select('id,role').neq('role', 'tps_admin'),
+    supabase.from('companies').select('id', { count: 'exact', head: true }).eq('active', true),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'tps_admin'),
     supabase.from('requisitions')
       .select('id,title,stage,companies(name)')
       .neq('stage', 'filled').neq('stage', 'cancelled')
@@ -72,8 +72,6 @@ export default async function AdminDashboardPage() {
       .neq('status', 'closed'),
   ]);
 
-  const companies      = compRes.data           ?? [];
-  const users          = userRes.data           ?? [];
   const reqs           = reqRes.data            ?? [];
   const tickets        = ticketRes.data         ?? [];
   const overdueComp    = overdueComplianceRes.data ?? [];
@@ -84,7 +82,8 @@ export default async function AdminDashboardPage() {
   const unassessedCount = unassessedRes.count   ?? 0;
   const activeRoleCount  = activeRoleCountRes.count ?? 0;
   const openTicketCount  = openTicketCountRes.count ?? 0;
-  const active         = companies.filter((c: any) => c.active).length;
+  const active         = activeClientCountRes.count ?? 0;
+  const userCount      = userCountRes.count ?? 0;
 
   const stageBadge: Record<string, string> = {
     submitted: 'badge-submitted', in_progress: 'badge-inprogress',
@@ -101,18 +100,18 @@ export default async function AdminDashboardPage() {
     <>
       <AdminTopbar
         title="Admin Dashboard"
-        subtitle="The People Office — internal operations"
+        subtitle="The People System: internal operations"
         actions={<Link prefetch={false} href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
 
-        {/* Stats — with mesh background */}
+        {/* Stats: with mesh background */}
         <div className="relative mb-8">
           <div className="app-mesh" style={{ opacity: 0.6 }} />
           <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
-              { icon: Users,         label: 'Client Users',   val: users.length,   href: '/users',    color: 'var(--blue)' },
+              { icon: Users,         label: 'Client Users',   val: userCount,      href: '/users',    color: 'var(--blue)' },
               { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
               { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
             ].map(s => (
@@ -136,7 +135,7 @@ export default async function AdminDashboardPage() {
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 2 }} />
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-                {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention —
+                {alertCount} PROTECT alert{alertCount !== 1 ? 's' : ''} require attention -
                 {overdueComp.length > 0 && ` ${overdueComp.length} overdue compliance items,`}
                 {expiringDocs.length > 0 && ` ${expiringDocs.length} documents expiring within 30 days,`}
                 {pendingAbsence.length > 0 && ` ${pendingAbsence.length} pending absence requests`}
@@ -154,7 +153,7 @@ export default async function AdminDashboardPage() {
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0, marginTop: 2 }} />
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-                Company Friction Health —
+                Company Friction Health -
                 {highFriction.length > 0 && (
                   <span style={{ color: 'var(--red)' }}> {highFriction.length} high friction ({highFriction.map((c: any) => c.name).join(', ')})</span>
                 )}

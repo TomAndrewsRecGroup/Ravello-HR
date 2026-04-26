@@ -273,11 +273,11 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                       <td className="font-medium">{r.month}</td>
                       <td>
                         {r.joined > 0 && <span style={{ color: 'var(--emerald)' }}>+{r.joined}</span>}
-                        {r.joined === 0 && <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                        {r.joined === 0 && <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                       </td>
                       <td>
                         {r.left > 0 && <span style={{ color: 'var(--rose)' }}>-{r.left}</span>}
-                        {r.left === 0 && <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                        {r.left === 0 && <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                       </td>
                       <td className="font-bold">{r.headcount}</td>
                     </tr>
@@ -414,7 +414,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                     <tr key={employee.id}>
                       <td>
                         <p className="font-medium">{employee.full_name}</p>
-                        <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{employee.department ?? '—'}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{employee.department ?? '-'}</p>
                       </td>
                       <td>{balance.annualLeaveAllowance}d</td>
                       <td>{balance.annualLeaveTaken}d</td>
@@ -422,13 +422,13 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                         {balance.annualLeaveRemaining}d
                       </td>
                       <td>{balance.sickDaysTaken}d</td>
-                      <td>{balance.sickDaysRemaining != null ? `${balance.sickDaysRemaining}d` : '—'}</td>
+                      <td>{balance.sickDaysRemaining != null ? `${balance.sickDaysRemaining}d` : '-'}</td>
                       <td>
                         {balance.leaveYear.isProRata ? (
                           <span className="badge" style={{ background: 'rgba(59,111,255,0.08)', color: 'var(--blue)' }}>
                             {Math.round(balance.leaveYear.proRataFraction * 100)}%
                           </span>
-                        ) : '—'}
+                        ) : '-'}
                       </td>
                     </tr>
                   ))}

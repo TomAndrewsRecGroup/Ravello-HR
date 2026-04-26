@@ -46,7 +46,7 @@ export default async function BDRolesPage() {
   const supabase = createServerSupabaseClient();
 
   const [localRolesRes, bdCompaniesRes, ivylensRes] = await Promise.all([
-    supabase.from('bd_scanned_roles').select('*').order('scanned_at', { ascending: false }),
+    supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
     supabase.from('bd_companies').select('id,company_name'),
     ivylensRequest<{ leads?: any[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);
@@ -60,7 +60,7 @@ export default async function BDRolesPage() {
   // Flatten local roles
   const local: FlatRole[] = localRoles.map((r: any) => ({
     id:             r.id,
-    company_name:   companyById.get(r.company_id) ?? '—',
+    company_name:   companyById.get(r.company_id) ?? '-',
     company_id:     r.company_id,
     company_source: 'local',
     role_title:     r.role_title ?? null,
@@ -81,7 +81,7 @@ export default async function BDRolesPage() {
       const { min, max } = parseSalary(r.salary);
       return {
         id:             `ivylens-${lead.id ?? lead.company_name}-${idx}`,
-        company_name:   lead.company_name ?? '—',
+        company_name:   lead.company_name ?? '-',
         company_id:     null,
         company_source: 'ivylens' as const,
         role_title:     r.title ?? null,

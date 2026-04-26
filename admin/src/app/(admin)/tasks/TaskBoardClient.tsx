@@ -6,6 +6,7 @@ import {
   Plus, X, Loader2, CheckCircle2, Clock, Circle,
   AlertTriangle, Filter, Building2,
 } from 'lucide-react';
+import type { CompanyRef } from '@/lib/supabase/types';
 
 interface Task {
   id: string; title: string; description: string | null;
@@ -16,10 +17,9 @@ interface Task {
   companies?: { name: string } | null;
 }
 interface Staff { id: string; full_name: string; role: string; }
-interface Company { id: string; name: string; }
 
 interface Props {
-  userId: string; tasks: Task[]; staff: Staff[]; companies: Company[];
+  userId: string; tasks: Task[]; staff: Staff[]; companies: CompanyRef[];
 }
 
 const PRIORITY: Record<string, { label: string; bg: string; color: string }> = {

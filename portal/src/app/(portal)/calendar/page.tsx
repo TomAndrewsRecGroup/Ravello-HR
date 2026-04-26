@@ -36,14 +36,14 @@ export default async function CalendarPage() {
   const [eventsRes, leaveRes, employeesRes] = await Promise.all([
     supabase
       .from('company_calendar_events')
-      .select('*')
+      .select('id,title,event_type,start_date,end_date,all_day,start_time,end_time,recurring_yearly,notes')
       .eq('company_id', companyId)
       .gte('end_date', yearStart)
       .lte('start_date', yearEnd)
       .order('start_date'),
     supabase
       .from('leave_records')
-      .select('*, employee_records(full_name, job_title)')
+      .select('id,employee_id,leave_type,start_date,end_date,days_count,status,notes,employee_records(full_name, job_title)')
       .eq('company_id', companyId)
       .gte('end_date', yearStart)
       .lte('start_date', yearEnd)
@@ -64,7 +64,7 @@ export default async function CalendarPage() {
           companyId={companyId}
           isAdmin={isAdmin}
           initialEvents={eventsRes.data ?? []}
-          initialLeave={leaveRes.data ?? []}
+          initialLeave={(leaveRes.data ?? []) as any}
           employees={employeesRes.data ?? []}
         />
       </main>

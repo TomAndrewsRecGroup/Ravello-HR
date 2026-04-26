@@ -11,7 +11,7 @@ interface Props {
 }
 
 function relativeTime(dateStr: string | null): string {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   const diff = Date.now() - new Date(dateStr).getTime();
   const days = Math.floor(diff / 86400000);
   if (days === 0) return 'Today';
@@ -75,11 +75,11 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
 
   function getSalaryRange(companyRoles: any[]) {
     const salaries = companyRoles.filter(r => r.still_active).flatMap(r => [r.salary_min, r.salary_max]).filter(Boolean) as number[];
-    if (!salaries.length) return '—';
+    if (!salaries.length) return '-';
     const min = Math.min(...salaries);
     const max = Math.max(...salaries);
     const fmt = (n: number) => `£${(n / 1000).toFixed(0)}k`;
-    return min === max ? fmt(min) : `${fmt(min)} – ${fmt(max)}`;
+    return min === max ? fmt(min) : `${fmt(min)}: ${fmt(max)}`;
   }
 
   async function moveToStatus(companyId: string, newStatus: string) {
@@ -190,7 +190,7 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                   return (
                     <tr key={c.id}>
                       <td>
-                        <p className="font-semibold" style={{ color: 'var(--ink)' }}>{c.company_name ?? '—'}</p>
+                        <p className="font-semibold" style={{ color: 'var(--ink)' }}>{c.company_name ?? '-'}</p>
                         {c.domain && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.domain}</p>}
                       </td>
                       <td>
@@ -201,7 +201,7 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                       <td style={{ color: 'var(--ink-soft)' }}>{c.total_roles_seen ?? 0}</td>
                       <td>
                         <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-                          {topRoles || '—'}
+                          {topRoles || '-'}
                           {moreCount > 0 && <span className="ml-1 text-xs" style={{ color: 'var(--ink-faint)' }}>+{moreCount} more</span>}
                         </span>
                       </td>

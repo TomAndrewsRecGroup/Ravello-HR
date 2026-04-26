@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const risks = [
   { icon: AlertTriangle, title: 'No written contracts',           description: 'Employing someone without a written statement is a legal risk from day one. Tribunal claims are expensive to defend. Prevention costs a fraction of that.' },
-  { icon: FileText,      title: 'Outdated or non-existent handbook', description: 'A handbook written in 2019 does not cover remote working, AI use, mental health leave or the Employment Rights Bill changes coming in 2025–26. Those gaps become grievances.' },
+  { icon: FileText,      title: 'Outdated or non-existent handbook', description: 'A handbook written in 2019 does not cover remote working, AI use, mental health leave or the Employment Rights Bill changes coming in 2025-26. Those gaps become grievances.' },
   { icon: Users,         title: 'Managers applying different rules', description: 'Without clear policies, managers invent their own version. Inconsistency creates resentment, discrimination risk, and the kind of tribunal claims that are hardest to defend.' },
   { icon: Shield,        title: 'No disciplinary framework',       description: 'One poorly handled disciplinary can cost over £10,000 at tribunal. A documented process, followed properly, is your most reliable protection. Most businesses do not have one.' },
 ];
@@ -27,16 +27,16 @@ const packages = [
   },
   {
     name: 'Protect Core',
-    tag: 'Most popular · 10–50 people',
+    tag: 'Most popular · 10-50 people',
     price: 'From £1,200',
     highlight: true,
-    items: ['Full employment contract suite', 'Staff handbook (bespoke)', 'Core policy set (12 policies)', 'Manager guide & FAQ document', 'Gap analysis against current docs', '2 x review sessions', 'Optional retainer: £500–£750/month'],
+    items: ['Full employment contract suite', 'Staff handbook (bespoke)', 'Core policy set (12 policies)', 'Manager guide & FAQ document', 'Gap analysis against current docs', '2 x review sessions', 'Optional retainer: £500-£750/month'],
     cta: { label: 'Get a Free HR Audit', href: '/book' },
   },
   {
     name: 'Protect Partner',
     tag: 'Ongoing · 50+ people',
-    price: '£1,500–£2,500/month',
+    price: '£1,500-£2,500/month',
     highlight: false,
     items: ['Everything in Core', 'Full bespoke policy library', 'Employment Rights Bill compliance review', 'Manager training session', 'Ongoing update retainer included', 'Priority response SLA'],
     cta: { label: 'Book a Call', href: '/book' },
@@ -64,20 +64,17 @@ export default function PolicySafePage() {
             PROTECT: The People System
           </p>
           <h1
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
-              marginBottom: '1.25rem',
             }}
           >
             Get your HR foundations right.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Before something goes wrong.
-            </span>
+            <span className="text-gradient">Before something goes wrong.</span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Most HR compliance gaps are invisible until something breaks. Missing contracts. An outdated handbook. No disciplinary process. Managers applying different rules. The Employment Rights Bill is making this more urgent, not less.
@@ -129,9 +126,18 @@ export default function PolicySafePage() {
         <div className="container-narrow">
           <div className="rounded-[18px] p-8 lg:p-12 text-white text-center" style={{ background: 'var(--brand-navy)' }}>
             <BookOpen className="mx-auto mb-4" size={36} style={{ color: '#9B6FD8' }} />
-            <h2 style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.75rem', marginBottom: '0.75rem' }}>
+            <h3
+              className="font-display mb-5"
+              style={{
+                fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                fontWeight: 800,
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
+                color: '#fff',
+              }}
+            >
               Free Starter Handbook Template
-            </h2>
+            </h3>
             <p className="text-sm leading-relaxed mb-6 max-w-lg mx-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
               A lightweight staff handbook template that covers the essentials. Use it, adapt it, build on it. Completely free. When you are ready for the full bespoke version written by Lucy, we are here.
             </p>
@@ -199,7 +205,18 @@ export default function PolicySafePage() {
               </ul>
             </div>
             <div className="rounded-[18px] p-8" style={{ background: 'linear-gradient(135deg, #7B2FBE, #4B6EF5)', color: '#fff' }}>
-              <h3 style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem', marginBottom: '0.75rem' }}>Not sure what your compliance exposure looks like?</h3>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: '#fff',
+                }}
+              >
+                Not sure what your compliance exposure looks like?
+              </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
                 Book a free HR audit with Lucy. Thirty minutes. You will leave with a clear, prioritised picture of what is missing and what to fix first.
               </p>
@@ -214,7 +231,7 @@ export default function PolicySafePage() {
       {/* FAQ */}
       <FaqBlock items={[
           { q: 'What is PROTECT?', a: 'The foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs: compliant, practical, and written in plain English your managers will actually follow.' },
-          { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500–£750/month), Protect Partner (£1,500–£2,500/month), Protect Enterprise (bespoke, £3,000–£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
+          { q: 'What packages are available?', a: 'Protect Essentials (from £495 one-off), Protect Core (from £1,200 one-off, optional retainer £500-£750/month), Protect Partner (£1,500-£2,500/month), Protect Enterprise (bespoke, £3,000-£5,000+/month), and Protect Transaction (from £3,500, for M&A and TUPE work).' },
           { q: 'What about the Employment Rights Bill?', a: 'The Employment Rights Bill introduces significant changes for UK employers: particularly around zero-hours contracts, day-one rights, and dismissal processes. Lucy reviews every engagement against current and upcoming legislation so your documentation is ready, not reactive.' },
           { q: 'Who is PROTECT for?', a: 'Any business that has been moving fast without building proper HR foundations. This is especially common in founder-led SMEs, VC-backed businesses post-raise, and businesses that have not reviewed their HR documentation in more than two years.' },
           { q: 'How long does it take?', a: 'Most PROTECT engagements complete within two to four weeks depending on the package and the state of your existing documentation.' },

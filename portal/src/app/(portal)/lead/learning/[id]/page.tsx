@@ -21,19 +21,20 @@ export default async function LearningDetailPage({ params }: { params: { id: str
   const [{ data: content }, { data: allContent }, { data: purchase }] = await Promise.all([
     supabase
       .from('learning_content')
-      .select('*')
+      .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,stripe_price_id,tags,is_featured,view_count,created_at')
       .eq('id', params.id)
       .eq('is_published', true)
       .single(),
     supabase
       .from('learning_content')
-      .select('*')
+      .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,stripe_price_id,tags,is_featured,view_count')
       .eq('is_published', true)
-      .neq('id', params.id),
+      .neq('id', params.id)
+      .limit(100),
     companyId
       ? supabase
           .from('learning_purchases')
-          .select('*')
+          .select('id,status,access_expires_at,created_at')
           .eq('content_id', params.id)
           .eq('company_id', companyId)
           .eq('status', 'active')
@@ -45,7 +46,7 @@ export default async function LearningDetailPage({ params }: { params: { id: str
 
   const hasAccess = purchase && (!purchase.access_expires_at || new Date(purchase.access_expires_at) > new Date());
 
-  // "You May Like" — tag similarity, top 5
+  // "You May Like": tag similarity, top 5
   const related = (allContent ?? [])
     .map(c => ({ c, score: tagScore(content.tags, c.tags) + (c.category === content.category ? 1 : 0) }))
     .filter(({ score }) => score > 0)
@@ -53,7 +54,7 @@ export default async function LearningDetailPage({ params }: { params: { id: str
     .slice(0, 5)
     .map(({ c }) => c);
 
-  // "More From This Coach" — same creator, top 4
+  // "More From This Coach": same creator, top 4
   const byCreator = content.creator_name
     ? (allContent ?? [])
         .filter(c => c.creator_name === content.creator_name)

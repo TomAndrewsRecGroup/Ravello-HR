@@ -77,7 +77,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
         form.seniority   ? `Seniority: ${form.seniority}` : '',
         form.location    ? `Location: ${form.location}` : '',
         form.working_model ? `Working model: ${form.working_model}` : '',
-        salary_min || salary_max ? `Salary: £${salary_min?.toLocaleString()}–£${salary_max?.toLocaleString()}` : '',
+        salary_min || salary_max ? `Salary: £${salary_min?.toLocaleString()}-£${salary_max?.toLocaleString()}` : '',
         must_haves.length ? `Requirements:\n${must_haves.map(s => `- ${s}`).join('\n')}` : '',
         form.description ? `\n${form.description}` : '',
       ].filter(Boolean).join('\n');
@@ -141,7 +141,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
           style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
           <Loader2 size={14} className="animate-spin flex-shrink-0" style={{ color: 'var(--purple)' }} />
           <span className="text-sm font-medium" style={{ color: 'var(--purple)' }}>
-            Running Friction Lens — scoring against live market data…
+            Running Friction Lens: scoring against live market data…
           </span>
         </div>
       )}
@@ -173,7 +173,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
           <div>
             <label className="label">Assigned Recruiter</label>
             <select className="input" value={form.assigned_recruiter} onChange={e => set('assigned_recruiter', e.target.value)}>
-              <option value="">— unassigned —</option>
+              <option value="">- unassigned -</option>
               {recruiters.map(name => <option key={name}>{name}</option>)}
             </select>
           </div>
@@ -242,7 +242,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
           <textarea className="input h-28 resize-none" placeholder="Overview of the role and responsibilities…" value={form.description} onChange={e => set('description', e.target.value)} />
         </div>
         <div>
-          <label className="label">Must-haves <span className="ml-1 font-normal" style={{ color: 'var(--ink-faint)' }}>(one per line — used in Friction Lens scoring)</span></label>
+          <label className="label">Must-haves <span className="ml-1 font-normal" style={{ color: 'var(--ink-faint)' }}>(one per line: used in Friction Lens scoring)</span></label>
           <textarea className="input h-24 resize-none font-mono text-sm" placeholder={"5+ years in operations\nStrong Excel / data analysis\nTeam leadership experience"} value={form.must_haves_raw} onChange={e => set('must_haves_raw', e.target.value)} />
         </div>
       </div>

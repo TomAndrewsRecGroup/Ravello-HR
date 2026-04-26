@@ -9,17 +9,17 @@ interface Props {
 }
 
 const STATUS_OPTIONS = ['Prospect', 'Contacted', 'Client', 'Not Relevant'];
-const SIZE_BANDS     = ['Micro (1–9)', 'Small (10–49)', 'SME (50–249)', 'Mid-Market (250–999)', 'Enterprise (1000+)'];
+const SIZE_BANDS     = ['Micro (1-9)', 'Small (10-49)', 'SME (50-249)', 'Mid-Market (250-999)', 'Enterprise (1000+)'];
 
 function fmtSalary(min: number | null, max: number | null, fallback?: string | null): string {
-  if (!min && !max) return fallback ?? '—';
+  if (!min && !max) return fallback ?? '-';
   const fmt = (n: number) => `£${(n / 1000).toFixed(0)}k`;
-  if (min && max && min !== max) return `${fmt(min)} – ${fmt(max)}`;
+  if (min && max && min !== max) return `${fmt(min)}: ${fmt(max)}`;
   return fmt((min ?? max)!);
 }
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -37,7 +37,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
   const [showConvert,       setShowConvert]       = useState(false);
   const [convForm,          setConvForm]          = useState({
     sector:        '',
-    size_band:     'SME (50–249)',
+    size_band:     'SME (50-249)',
     contact_email: '',
     contact_name:  '',
   });
@@ -53,7 +53,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
     async function fetchRoles() {
       setLoadingRoles(true);
       if (isIvylensCompany) {
-        // Synthetic company from IvyLens feed — roles come inline, no DB lookup needed
+        // Synthetic company from IvyLens feed: roles come inline, no DB lookup needed
         const inlineRoles = (company.ivylens_roles ?? []).map((r: any, idx: number) => ({
           id:           `${company.id}-role-${idx}`,
           role_title:   r.title ?? null,
@@ -149,7 +149,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
       await supabase.from('actions').insert({
         company_id: newClient.id,
         action_type: 'general',
-        title: 'Welcome to The People Office portal',
+        title: 'Welcome to The People System portal',
         description: 'Your HR portal is now active. Start by completing the initial compliance checklist and adding your team members.',
         priority: 'normal',
         status: 'active',
@@ -351,7 +351,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                       {company.friction_intel.signals.slice(0, 4).map((s: any, idx: number) => (
                         <li key={idx} className="text-xs flex items-start gap-2" style={{ color: 'var(--ink-soft)' }}>
                           <span className="inline-block w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--purple)' }} />
-                          <span><strong>{s.role_title ?? s.signal_type}</strong> — {s.signal_type}{s.severity ? ` (${s.severity})` : ''}</span>
+                          <span><strong>{s.role_title ?? s.signal_type}</strong>: {s.signal_type}{s.severity ? ` (${s.severity})` : ''}</span>
                         </li>
                       ))}
                     </ul>
@@ -364,7 +364,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                   style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
                   <AlertCircle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--purple)' }} />
                   <p className="text-sm" style={{ color: 'var(--purple)' }}>
-                    <strong>Active hiring</strong> — potential HIRE Foundations or Embedded client
+                    <strong>Active hiring</strong>: potential HIRE Foundations or Embedded client
                   </p>
                 </div>
               )}
@@ -438,16 +438,16 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                           <tr key={r.id}>
                             <td className="font-medium">
                               <div className="flex items-center gap-2">
-                                {r.role_title ?? '—'}
+                                {r.role_title ?? '-'}
                                 {!r.still_active && (
                                   <span className="badge badge-inactive text-[10px]">Closed</span>
                                 )}
                               </div>
                             </td>
                             <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max, r.salary_text)}</td>
-                            <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '—'}</td>
-                            <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '—'}</td>
-                            <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '—'}</td>
+                            <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
+                            <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '-'}</td>
+                            <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '-'}</td>
                             <td style={{ color: 'var(--ink-faint)' }}>{fmtDate(r.scanned_at)}</td>
                             <td>
                               {r.source_url ? (
@@ -460,7 +460,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                                 >
                                   <ExternalLink size={13} />
                                 </a>
-                              ) : '—'}
+                              ) : '-'}
                             </td>
                           </tr>
                         ))}

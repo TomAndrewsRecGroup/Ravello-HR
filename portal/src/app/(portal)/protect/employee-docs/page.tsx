@@ -23,7 +23,7 @@ export default async function EmployeeDocsPage() {
 
   const { data: docs } = await supabase
     .from('employee_documents')
-    .select('*')
+    .select('id,employee_name,employee_email,department,doc_type,title,file_url,expiry_date,status,notes,created_at')
     .eq('company_id', companyId)
     .order('employee_name', { ascending: true });
 

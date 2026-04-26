@@ -107,7 +107,7 @@ export default function QuickActions() {
             })}
           </div>
           <div className="px-4 py-2" style={{ borderTop: '1px solid var(--line)' }}>
-            <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>Select 1–6 actions</p>
+            <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>Select 1-6 actions</p>
           </div>
         </div>
       )}

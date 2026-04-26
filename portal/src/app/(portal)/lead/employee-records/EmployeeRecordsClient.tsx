@@ -63,7 +63,7 @@ const EMP_TYPE_LABELS: Record<string, string> = {
 };
 
 function fmtDate(d: string | null): string {
-  if (!d) return '—';
+  if (!d) return '-';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -369,7 +369,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                     </p>
                   </div>
 
-                  {/* Meta — hidden on mobile */}
+                  {/* Meta: hidden on mobile */}
                   <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
                     {emp.email && (
                       <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -401,7 +401,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Sick</span>
                         <span className="text-xs font-semibold" style={{ color: bal.sickDaysRemaining != null && bal.sickDaysRemaining <= 1 ? 'var(--rose)' : 'var(--ink-soft)' }}>
-                          {bal.sickDaysRemaining ?? '—'}
+                          {bal.sickDaysRemaining ?? '-'}
                         </span>
                         <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>/ {bal.sickDayAllowance} left</span>
                       </div>
@@ -460,7 +460,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   <div className="form-group">
                     <label className="label">Gender</label>
                     <select className="input" value={form.gender} onChange={e => setField('gender', e.target.value)}>
-                      <option value="">—</option>
+                      <option value="">-</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Non-binary">Non-binary</option>
@@ -470,7 +470,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   <div className="form-group">
                     <label className="label">Ethnicity</label>
                     <select className="input" value={form.ethnicity} onChange={e => setField('ethnicity', e.target.value)}>
-                      <option value="">—</option>
+                      <option value="">-</option>
                       <option value="White British">White British</option>
                       <option value="White Irish">White Irish</option>
                       <option value="White Other">White Other</option>
@@ -489,7 +489,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   <div className="form-group">
                     <label className="label">Disability Status</label>
                     <select className="input" value={form.disability_status} onChange={e => setField('disability_status', e.target.value)}>
-                      <option value="">—</option>
+                      <option value="">-</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
                       <option value="Prefer not to say">Prefer not to say</option>

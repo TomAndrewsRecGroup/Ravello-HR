@@ -46,20 +46,17 @@ export default function SmartHiringSystemPage() {
             Free Tool: Smart Hiring System™
           </p>
           <h1
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
-              marginBottom: '1.25rem',
             }}
           >
             Your hiring is broken.<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              We fix it before it costs you.
-            </span>
+            <span className="text-gradient">We fix it before it costs you.</span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Agency fees on repeat. Bad hires. Roles that keep coming back. Managers who have never been taught to interview. The problem is not the talent market. It is the process: and the fact that no one has fixed it properly.
@@ -151,7 +148,16 @@ export default function SmartHiringSystemPage() {
             </div>
             <div className="rounded-[18px] p-8" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(155,111,216,0.9)' }}>Next step</p>
-              <h3 className="font-bold text-xl mb-4 text-white" style={{ fontFamily: 'var(--font-cormorant), serif', fontWeight: 300, fontSize: '1.6rem' }}>
+              <h3
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: '#fff',
+                }}
+              >
                 Start with a hiring audit. Find out exactly what is broken.
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -184,8 +190,8 @@ export default function SmartHiringSystemPage() {
       <FaqBlock
         items={[
           { q: 'What is Friction Lens?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It scores every role across five dimensions: Location, Salary, Skills, Working Model, and Process: before it goes live, telling you exactly where the role will struggle and giving you specific recommendations to fix it. Low, Medium, High, or Critical friction. Integrated into every HIRE engagement as standard.' },
-          { q: 'What HIRE packages do you offer?', a: 'Hire Foundations (£1,000/month + 10% fee, 3-month minimum), Hire Optimiser (£2,500 one-off or £1,500/month x 3), Hire Embedded (£5,000/month, 6-month minimum, fees included), and Hire Build (£6,500–£8,500+/month, 6-month minimum). Full details on the services page.' },
-          { q: 'Who is HIRE for?', a: 'Founder-led businesses scaling 20–150 people, VC or PE-backed businesses post-raise, and any business with a history of bad hires, rising agency spend, or inconsistent hiring managers.' },
+          { q: 'What HIRE packages do you offer?', a: 'Hire Foundations (£1,000/month + 10% fee, 3-month minimum), Hire Optimiser (£2,500 one-off or £1,500/month x 3), Hire Embedded (£5,000/month, 6-month minimum, fees included), and Hire Build (£6,500-£8,500+/month, 6-month minimum). Full details on the services page.' },
+          { q: 'Who is HIRE for?', a: 'Founder-led businesses scaling 20-150 people, VC or PE-backed businesses post-raise, and any business with a history of bad hires, rising agency spend, or inconsistent hiring managers.' },
           { q: 'Do we need to use a recruitment agency?', a: 'No. HIRE is designed to reduce agency dependency by building internal sourcing capability and fixing the process so you do not need to outsource everything.' },
           { q: 'How quickly can you start?', a: 'Typically within 48 hours of scoping. Tom embeds fast: no lengthy discovery phase. We learn your business by working inside it.' },
         ]}

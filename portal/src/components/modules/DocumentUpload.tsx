@@ -157,7 +157,7 @@ export default function DocumentUpload({ companyId, userId, onUploaded }: Props)
               Drag &amp; drop or <span style={{ color: 'var(--purple)' }}>browse</span>
             </p>
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-              PDF, Word, Excel, PNG, JPG — max 50MB
+              PDF, Word, Excel, PNG, JPG: max 50MB
             </p>
           </>
         )}

@@ -11,8 +11,9 @@ export default async function ServiceRequestsPage() {
 
   const { data } = await supabase
     .from('service_requests')
-    .select('*, companies(name)')
-    .order('created_at', { ascending: false });
+    .select('id,subject,request_type,status,urgency,details,response_notes,responded_at,created_at,companies(name)')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   const requests: any[] = data ?? [];
 

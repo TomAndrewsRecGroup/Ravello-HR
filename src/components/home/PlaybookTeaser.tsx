@@ -46,11 +46,11 @@ export default function PlaybookTeaser() {
             <h2 className="font-display section-title">The People System Playbook</h2>
           </div>
           <Link
-            href="/playbook"
+            href="/latest-updates"
             className="inline-flex items-center gap-2 text-sm font-semibold flex-shrink-0 transition-all duration-150 group"
             style={{ color: 'var(--brand-purple)' }}
           >
-            View all resources{' '}
+            View all updates{' '}
             <ArrowRight
               size={14}
               className="transition-transform duration-200 group-hover:translate-x-1"

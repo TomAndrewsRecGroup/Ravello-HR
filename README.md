@@ -1,6 +1,6 @@
 # Ravello HR
 
-Next.js website for Ravello HR — lead generation platform with 3 conversion funnels, interactive scorecards, and sales psychology baked in throughout.
+Next.js website for Ravello HR: lead generation platform with 3 conversion funnels, interactive scorecards, and sales psychology baked in throughout.
 
 ## Stack
 - Next.js 14 (App Router)

@@ -13,7 +13,7 @@ export default async function AdminHiringPage() {
 
   const { data } = await supabase
     .from('requisitions')
-    .select('*, companies(name, id)')
+    .select('id,title,stage,location,working_model,friction_level,created_at,companies(id,name)')
     .neq('stage', 'filled')
     .neq('stage', 'cancelled')
     .order('created_at', { ascending: false });

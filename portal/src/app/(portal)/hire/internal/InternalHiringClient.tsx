@@ -182,7 +182,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
 
   return (
     <div>
-      {/* ── TPO Upsell Banner ─────────────────────────── */}
+      {/* ── The People System Upsell Banner ─────────────────────────── */}
       <div
         className="card p-5 mb-6 relative overflow-hidden"
         style={{
@@ -233,7 +233,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
         <div>
           <h2 className="section-title text-xl">Internal Roles</h2>
           <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-            Self-managed hiring — basic job creation and candidate tracking
+            Self-managed hiring: basic job creation and candidate tracking
           </p>
         </div>
         {isAdmin && (
@@ -309,7 +309,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                       )}
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
-                      {role.department ?? '—'}
+                      {role.department ?? '-'}
                       {role.location ? ` · ${role.location}` : ''}
                       {!isStale ? ` · ${days}d open` : ''}
                       {candidates.length > 0 ? ` · ${candidates.length} candidate${candidates.length !== 1 ? 's' : ''}` : ''}
@@ -330,7 +330,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                   </div>
                 </div>
 
-                {/* Expanded — Candidate Pipeline */}
+                {/* Expanded: Candidate Pipeline */}
                 {isExpanded && (
                   <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--line)' }}>
                     {role.description && (

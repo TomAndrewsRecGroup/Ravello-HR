@@ -267,7 +267,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         </span>
       </div>
 
-      {/* Calendar Grid — needs horizontal scroll on mobile */}
+      {/* Calendar Grid: needs horizontal scroll on mobile */}
       <div className="card overflow-hidden overflow-x-auto">
         {/* Day headers */}
         <div className="grid grid-cols-7 min-w-[600px]">
@@ -372,7 +372,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                       <p className="text-sm font-medium" style={{ color: c.text }}>{ev.title}</p>
                       <p className="text-xs" style={{ color: c.text, opacity: 0.7 }}>
                         {ev.event_type.replace(/_/g, ' ')}
-                        {ev.start_date !== ev.end_date ? ` · ${ev.start_date} — ${ev.end_date}` : ''}
+                        {ev.start_date !== ev.end_date ? ` · ${ev.start_date}: ${ev.end_date}` : ''}
                       </p>
                     </div>
                   </div>
@@ -478,7 +478,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                 <select className="input" value={leaveForm.employee_id} onChange={e => setLeaveForm(f => ({ ...f, employee_id: e.target.value }))}>
                   <option value="">Select employee...</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} — {emp.job_title}</option>
+                    <option key={emp.id} value={emp.id}>{emp.full_name}: {emp.job_title}</option>
                   ))}
                 </select>
               </div>

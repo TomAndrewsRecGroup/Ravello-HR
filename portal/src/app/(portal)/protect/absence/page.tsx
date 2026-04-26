@@ -23,7 +23,7 @@ export default async function AbsencePage() {
 
   const { data: records } = await supabase
     .from('absence_records')
-    .select('*')
+    .select('id,employee_name,employee_email,department,absence_type,start_date,end_date,days,status,notes,approved_by,created_at')
     .eq('company_id', companyId)
     .order('start_date', { ascending: false });
 

@@ -22,7 +22,7 @@ const dimensions = [
     name: 'Salary',
     color: '#4B6EF5',
     description: 'Competitiveness against live market rates for the specific role type, seniority, and location. Not last year\'s benchmarks. The market as it is right now.',
-    examples: ['Salary 15–20% below live market rate', 'Range too narrow for the seniority expected', 'No benchmarking done since previous hire in this role'],
+    examples: ['Salary 15-20% below live market rate', 'Range too narrow for the seniority expected', 'No benchmarking done since previous hire in this role'],
   },
   {
     icon: Layers,
@@ -36,7 +36,7 @@ const dimensions = [
     name: 'Working Model',
     color: '#2E8B7A',
     description: 'Office, hybrid, or remote: and how that compares to the market norm for this specific role type. The gap between your expectation and candidate expectation is often the biggest source of friction.',
-    examples: ['5-days office when market norm for role is 2–3 days hybrid', 'No flexibility stated when competitors offer full remote', 'Policy inconsistency between advertised model and manager expectation'],
+    examples: ['5-days office when market norm for role is 2-3 days hybrid', 'No flexibility stated when competitors offer full remote', 'Policy inconsistency between advertised model and manager expectation'],
   },
   {
     icon: Clock,
@@ -60,7 +60,7 @@ const scoreLevels = [
     colour: '#D97706',
     bg: 'rgba(217,119,6,0.08)',
     border: 'rgba(217,119,6,0.2)',
-    meaning: '1–2 friction points identified. Specific recommendations provided. Addressable changes recommended before going live. Role can proceed with adjustments.',
+    meaning: '1-2 friction points identified. Specific recommendations provided. Addressable changes recommended before going live. Role can proceed with adjustments.',
   },
   {
     level: 'High',
@@ -90,20 +90,17 @@ export default function FrictionLensPage() {
             Friction Lens: built by Tom Andrews · IvyLens Technology
           </p>
           <h1
+            className="font-display mb-5"
             style={{
-              fontFamily: 'var(--font-cormorant), "Cormorant Garamond", Georgia, serif',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+              fontWeight: 800,
+              lineHeight: 1.02,
+              letterSpacing: '-0.04em',
               color: 'var(--ink)',
-              marginBottom: '1.25rem',
             }}
           >
             Before a role goes live, you should know<br />
-            <span style={{ fontWeight: 600, backgroundImage: 'var(--gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              where it will struggle.
-            </span>
+            <span className="text-gradient">where it will struggle.</span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
             Most businesses launch roles and then discover the problems. Wrong salary. Wrong location requirement. Too many must-haves. A process so slow that every strong candidate has accepted elsewhere before you reach offer stage.
@@ -141,7 +138,7 @@ export default function FrictionLensPage() {
               <span className="text-gradient">Now one does.</span>
             </h3>
             <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--ink-soft)' }}>
-              Enterprise systems like Gartner TalentNeuron and LinkedIn Talent Insights give large businesses live market intelligence against job roles. They cost £50,000+/year and require a dedicated analyst to operate. They are not built for businesses hiring 3–20 roles a year.
+              Enterprise systems like Gartner TalentNeuron and LinkedIn Talent Insights give large businesses live market intelligence against job roles. They cost £50,000+/year and require a dedicated analyst to operate. They are not built for businesses hiring 3-20 roles a year.
             </p>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
               Friction Lens brings the same principle to founder-led and PE-backed businesses: role-level market intelligence, pre-launch, built into every HIRE engagement from day one. No enterprise contract required.
