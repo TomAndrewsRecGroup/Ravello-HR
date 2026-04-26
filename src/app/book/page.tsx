@@ -19,8 +19,8 @@ const whatHappensNext = [
 
 const notFor = [
   'General career advice',
-  'Employment law queries requiring a solicitor',
-  'Requests for free ongoing support',
+  'A cheap paper-over-the-cracks solution',
+  'A consultant who will just tell you what you want to hear',
 ];
 
 export default function BookPage() {

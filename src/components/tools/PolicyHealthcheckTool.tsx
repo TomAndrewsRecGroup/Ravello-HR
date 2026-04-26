@@ -53,7 +53,7 @@ export default function PolicyHealthcheckTool() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-8">
           <p className="text-[var(--ink-soft)] text-sm mb-1">Your policy gap report</p>
-          <h2 className=" text-2xl font-bold text-[var(--ink)]">You\'re missing <span className="text-red-500">{missing.length}</span> of {policies.length} documents</h2>
+          <h2 className=" text-2xl font-bold text-[var(--ink)]">You&rsquo;re missing <span className="text-red-500">{missing.length}</span> of {policies.length} documents</h2>
           {critical.length > 0 && <p className="text-red-600 font-semibold mt-2">{critical.length} critical gaps with immediate legal risk</p>}
         </div>
 

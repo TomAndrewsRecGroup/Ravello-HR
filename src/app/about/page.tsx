@@ -10,12 +10,12 @@ export const metadata: Metadata = {
 };
 
 const lucyCredentials = [
-  '18+ years senior HR and People leadership',
-  'Managed HR through acquisitions, restructures, and rapid scale-ups',
+  '20+ years senior HR and People leadership',
+  'Led tricky acquisitions, restructures, and rapid scale-ups',
   'Built hiring frameworks that reduced agency spend by 40-60% in 12 months',
   'Designed HR infrastructure adopted across multi-site, multi-country operations',
-  'Advised leadership teams on change affecting hundreds of employees',
-  'Zero tribunal outcomes across every disciplinary, redundancy, and TUPE process',
+  'Advised boards on change affecting thousands of employees',
+  'Never lost a tribunal she has built a case for',
 ];
 
 const tomCredentials = [
@@ -93,13 +93,13 @@ export default function AboutPage() {
               </h3>
               <div className="space-y-4 text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <p>
-                  Lucy spent over 18 years inside large, complex organisations: leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. CIPD qualified. TUPE specialist. Zero tribunal outcomes across her entire career.
+                  Lucy spent over 18 years inside large, complex organisations, leading People functions through acquisitions, rapid growth, restructures, and the kind of people challenges that rarely appear in the same form twice. She then moved into consultancy with high-growth startups, helping them scale sustainably by applying tested HR practice to the messy reality of a young business.
                 </p>
                 <p>
-                  She founded The People System because she kept seeing the same pattern: brilliant businesses held back by missing documentation, managers making it up, and compliance exposure that no one had properly reviewed. The fix was never complicated: but it required someone senior enough to do it properly.
+                  She founded The People System because she kept seeing the same pattern: brilliant businesses held back by missing systems, no written people strategy, and no senior HR voice in the room. The fix was never complicated. It needed someone experienced enough to do it properly, with the right tools.
                 </p>
                 <p>
-                  Lucy leads PROTECT and LEAD at The People System. Contracts, handbooks, compliance, fractional HR leadership, manager enablement, people strategy. If it sits in the HR function, it goes through Lucy.
+                  Lucy leads PROTECT and LEAD at The People System. People strategy, manager enablement, contracts, handbooks, compliance, fractional HR leadership. If it sits in the HR function, it goes through Lucy.
                 </p>
               </div>
               <div className="rounded-[18px] p-6 mt-8" style={{ background: 'var(--bg)', border: '1px solid var(--brand-line)' }}>

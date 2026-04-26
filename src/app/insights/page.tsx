@@ -38,7 +38,7 @@ const PILLARS = [
     icon: BookOpen,
     color: 'var(--brand-pink)',
     bg: 'rgba(234,61,196,0.08)',
-    desc: 'Documents, employee records, reviews, training, skills and the org chart: versioned, audit-ready, and in one place.',
+    desc: 'The tools and frameworks to build manager capability from the inside out, so your managers lead well and your people see where the business is going.',
     features: [
       'Documents and policies, versioned by category',
       'Employee records with leave and demographics',
@@ -58,7 +58,7 @@ const PILLARS = [
     icon: Users,
     color: 'var(--brand-blue)',
     bg: 'rgba(59,111,255,0.08)',
-    desc: 'Compliance, absence, employee-doc expiry, actions and offboarding: tracked against due dates with everything overdue flagged.',
+    desc: 'Everything that keeps your business legally sound and your records watertight. Tracked, flagged, and never left to chance.',
     features: [
       'Compliance tracker with RAG status and due dates',
       'Absence management with approval workflows',
@@ -626,13 +626,13 @@ export default function InsightsPage() {
                 color: 'var(--ink)',
               }}
             >
-              Tools your team{' '}
-              <span className="text-gradient">actually uses</span>
+              Finally, a tool your team{' '}
+              <span className="text-gradient">will actually use.</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Your portal is not just an HR analytics layer. It is where your team
-              picks up the guides you publish and where managers see who is in,
-              who is off, and what is coming.
+              This isn&rsquo;t a system you log into once a quarter. It&rsquo;s where your
+              managers stay on top of their team, your people find what they need, and
+              nothing gets missed.
             </p>
           </div>
 
