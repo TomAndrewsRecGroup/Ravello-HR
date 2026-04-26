@@ -19,6 +19,16 @@ const tools = [
   { href: '/tools/due-diligence-checklist', label: 'DD Checklist' },
   { href: '/friction-lens',                 label: 'Friction Lens' },
 ];
+// Top-level links that sit between the two dropdowns and the Portal/CTA.
+// Single source of truth: anything added here renders in BOTH the desktop
+// nav and the mobile hamburger automatically. Don't hardcode a top-level
+// Link inline in either block — add it here.
+const topLinks = [
+  { label: 'Cost of Doing Nothing', href: '/cost-of-doing-nothing' },
+  { label: 'Why TPS',               href: '/why-tps' },
+  { label: 'Latest Updates',        href: '/latest-updates' },
+  { label: 'About',                 href: '/about' },
+];
 
 export default function Nav() {
   const [open, setOpen]         = useState(false);
@@ -171,12 +181,7 @@ export default function Nav() {
               )}
             </div>
 
-            {[
-              { label: 'Cost of Doing Nothing', href: '/cost-of-doing-nothing' },
-              { label: 'Why TPS',               href: '/why-tps' },
-              { label: 'Latest Updates',        href: '/latest-updates' },
-              { label: 'About',                 href: '/about' },
-            ].map((link) => (
+            {topLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -272,10 +277,17 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <Link href="/cost-of-doing-nothing" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Cost of Doing Nothing</Link>
-            <Link href="/why-tps"               className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Why TPS</Link>
-            <Link href="/latest-updates"        className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
-            <Link href="/about"                 className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
+            {topLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block px-3 py-2.5 rounded-xl text-sm"
+                style={{ color: 'var(--ink-soft)' }}
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
             <div className="my-3 brand-divider" />
             <a
               href="https://www.portal.thepeoplesystem.co.uk"
