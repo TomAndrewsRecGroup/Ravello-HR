@@ -24,7 +24,8 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: '/playbook', destination: '/latest-updates', permanent: true },
+      { source: '/playbook',     destination: '/latest-updates', permanent: true },
+      { source: '/why-ravello',  destination: '/why-tps',         permanent: true },
     ];
   },
   typescript: {

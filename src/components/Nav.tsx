@@ -17,6 +17,7 @@ const tools = [
   { href: '/tools/hr-risk-score',           label: 'HR Risk Score' },
   { href: '/tools/policy-healthcheck',      label: 'Policy Healthcheck' },
   { href: '/tools/due-diligence-checklist', label: 'DD Checklist' },
+  { href: '/friction-lens',                 label: 'Friction Lens' },
 ];
 
 export default function Nav() {
@@ -172,6 +173,7 @@ export default function Nav() {
 
             {[
               { label: 'Cost of Doing Nothing', href: '/cost-of-doing-nothing' },
+              { label: 'Why TPS',               href: '/why-tps' },
               { label: 'Latest Updates',        href: '/latest-updates' },
               { label: 'About',                 href: '/about' },
             ].map((link) => (
@@ -271,6 +273,7 @@ export default function Nav() {
             ))}
             <div className="my-3 brand-divider" />
             <Link href="/cost-of-doing-nothing" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Cost of Doing Nothing</Link>
+            <Link href="/why-tps"               className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Why TPS</Link>
             <Link href="/latest-updates"        className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
             <Link href="/about"                 className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />

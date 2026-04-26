@@ -33,7 +33,7 @@ const CARDS: CardDef[] = [
     Icon: Network,
     title: 'Strategic HR Advisory',
     desc: 'We sit alongside your leadership team and help you build a people function that actually works. Strategy, structure, and the day-to-day support that means you are never guessing.',
-    href: '/why-ravello',
+    href: '/why-tps',
     large: true,
     accentColor: '#7C3AED',
     accentBg: 'rgba(124,58,237,0.09)',

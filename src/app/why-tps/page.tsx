@@ -1,73 +1,73 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CalendarCheck, CheckCircle2, XCircle, Minus } from 'lucide-react';
+import { ArrowRight, CheckCircle2, XCircle, Minus } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Why The People System | The People System',
-  description: 'Why ambitious UK businesses choose The People System over traditional agencies, in-house HR, and generic consultants. One partner. Total control of your people function.',
-  alternates: { canonical: 'https://thepeoplesystem.co.uk/why-ravello' },
+  description: 'Why ambitious UK businesses choose The People System over recruitment agencies, in-house HR, and generic consultants. One partner. Senior throughout. Fixed scope.',
+  alternates: { canonical: 'https://thepeoplesystem.co.uk/why-tps' },
 };
 
 const COMPARISON = [
-  { feature: 'Named, outcome-led system',                          ravello: true,  agency: false,   inhouse: false,   generic: false },
-  { feature: 'Senior expert on your account (day 1 to end)',       ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
-  { feature: 'Fixed scope: no billing surprises',                 ravello: true,  agency: false,   inhouse: true,    generic: false },
-  { feature: 'Fast embedding, no discovery phase',                 ravello: true,  agency: false,   inhouse: false,   generic: false },
-  { feature: 'Covers hiring, compliance AND transformation',        ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
-  { feature: 'No long-term retainer required',                     ravello: true,  agency: false,   inhouse: false,   generic: false },
-  { feature: 'CIPD qualified & TUPE specialist',                   ravello: true,  agency: false,   inhouse: 'maybe', generic: 'maybe' },
-  { feature: '0 tribunal outcomes track record',                   ravello: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Named, outcome-led system',                          tps: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Senior expert on your account, day 1 to end',        tps: true,  agency: false,   inhouse: 'maybe', generic: false },
+  { feature: 'Fixed scope. No billing surprises.',                 tps: true,  agency: false,   inhouse: true,    generic: false },
+  { feature: 'Embedded fast, no discovery phase',                  tps: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Covers hiring, compliance AND transformation',       tps: true,  agency: false,   inhouse: 'maybe', generic: false },
+  { feature: 'No long-term retainer required',                     tps: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'CIPD qualified and TUPE specialist',                 tps: true,  agency: false,   inhouse: 'maybe', generic: 'maybe' },
+  { feature: '0 tribunal outcomes track record',                   tps: true,  agency: false,   inhouse: false,   generic: false },
 ];
 
 const OBJECTIONS = [
   {
     q: 'We already use a recruitment agency.',
-    a: 'Agencies fill roles. They do not fix why roles keep reopening. HIRE addresses the root cause: Friction Lens, better role definition, faster process. Most clients reduce their agency spend by 40% or more within a year.',
+    a: 'Agencies fill roles. They do not fix why roles keep reopening. HIRE addresses the root cause: Friction Lens, better role definition, faster process. Most clients cut agency spend by 40-60% within a year.',
   },
   {
     q: 'We have an in-house HR person.',
-    a: 'We work alongside them, not over them. The People System brings specialist depth in areas like TUPE, M&A and compliance architecture that most generalist HR professionals do not cover day-to-day.',
+    a: 'We work alongside them, not over them. We bring depth in TUPE, M&A, and compliance architecture that most generalist HR professionals do not cover day-to-day. Your in-house person stays close to the team. We sit underneath them on the hard, specialist work.',
   },
   {
-    q: 'We\u2019ve used HR consultants before and it didn\u2019t work.',
-    a: 'That is usually because you got junior delivery on a senior pitch, or vague advice with nothing concrete attached. Every People System engagement has a named system, a fixed scope and a senior lead throughout.',
+    q: 'We’ve used HR consultants before and it didn’t work.',
+    a: 'Usually because you got junior delivery on a senior pitch, or vague advice with nothing concrete attached. Every engagement here has a named system, a fixed scope, and a senior lead from start to end. Lucy and Tom only.',
   },
   {
-    q: 'We can\u2019t afford a consultant right now.',
-    a: 'A single unfair dismissal tribunal award averages \u00a313,749, with discrimination claims averaging \u00a345,000 or more (MoJ, 2023/24). One bad mid-level hire costs over \u00a3132,000 (REC). PROTECT and HIRE typically pay for themselves within six months.',
+    q: 'We can’t afford a consultant right now.',
+    a: 'A single unfair dismissal tribunal award averages £13,749, with discrimination claims averaging £45,000 or more (MoJ, 2023/24). One bad mid-level hire costs over £132,000 (REC). PROTECT and HIRE typically pay for themselves within six months.',
   },
 ];
 
 const REASONS = [
   {
-    icon: '\uD83C\uDFAF',
+    icon: '🎯', // 🎯
     title: 'A system, not a service',
-    body: 'Every engagement is built around one of three named systems. You always know exactly what you are getting, why it matters and when it is done.',
+    body: 'Every engagement is built around one of three named systems: HIRE, LEAD, or PROTECT. You always know what you are getting and when it is done.',
   },
   {
-    icon: '\uD83D\uDC64',
+    icon: '👤', // 👤
     title: 'One senior expert, start to finish',
-    body: 'You get the same senior lead throughout, not a junior who was briefed by someone you met once. Senior thinking on every call and every deliverable.',
+    body: 'Same senior lead the whole way through. Not a junior briefed by someone you met once. Senior thinking on every call, every deliverable.',
   },
   {
-    icon: '\u26A1',
+    icon: '⚡', // ⚡
     title: 'Embedded fast',
-    body: 'Active fast. No lengthy onboarding, no drawn-out discovery phase. We learn your business by working inside it.',
+    body: 'No discovery phase. We learn your business by working inside it, not by sitting through workshops.',
   },
   {
-    icon: '\uD83D\uDCCB',
+    icon: '📋', // 📋
     title: 'Fixed scope, clear cost',
-    body: 'You know the investment before we start. No open-ended retainers, no scope creep and no invoices that catch you off guard.',
+    body: 'You know the investment before we start. No open-ended retainers. No scope creep. No invoices that catch you off guard.',
   },
   {
-    icon: '\uD83D\uDD12',
+    icon: '🔒', // 🔒
     title: 'Fully confidential',
-    body: 'All engagements are handled with complete discretion. Client names never appear in case studies without explicit consent.',
+    body: 'Every engagement is handled with discretion. Your name never appears in our case studies without explicit consent.',
   },
   {
-    icon: '\uD83C\uDFC6',
-    title: '0 tribunal outcomes',
-    body: 'Across every restructure, TUPE transfer and disciplinary process ever handled. That is not luck. It is the result of doing things properly.',
+    icon: '🏆', // 🏆
+    title: 'Zero tribunal outcomes',
+    body: 'Across every restructure, TUPE transfer, and disciplinary process Lucy has built a case for. That is not luck. It is the result of doing things properly.',
   },
 ];
 
@@ -77,13 +77,13 @@ function Cell({ val }: { val: boolean | string }) {
   return <Minus size={20} className="mx-auto" style={{ color: 'var(--ink-faint)' }} />;
 }
 
-export default function WhyRavelloPage() {
+export default function WhyTPSPage() {
   return (
     <main>
 
       {/* Hero */}
       <section className="relative overflow-hidden" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-wide section-padding py-0 text-center px-6" style={{ paddingLeft: "1.5rem", paddingRight: "1.5rem" }}>
+        <div className="container-wide section-padding py-0 text-center px-6" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
           <p className="eyebrow justify-center mb-6">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#9B7FF8' }} />
             Why The People System
@@ -98,11 +98,11 @@ export default function WhyRavelloPage() {
               color: 'var(--ink)',
             }}
           >
-            Senior HR expertise.<br />
+            Senior HR. <br />
             <span className="text-gradient">Built differently.</span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-[540px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root: across hiring, HR leadership, and compliance.
+          <p className="text-lg leading-relaxed max-w-[560px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
+            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix the real problems at the root, across hiring, HR leadership, and compliance.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient">Book a Call</Link>
@@ -166,7 +166,7 @@ export default function WhyRavelloPage() {
               How we<br />
               <span className="text-gradient">compare.</span>
             </h3>
-            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>A side-by-side look at The People System versus the alternatives.</p>
+            <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>The People System against the alternatives. Side by side.</p>
           </div>
 
           <div className="overflow-x-auto rounded-[22px]" style={{ border: '1px solid var(--brand-line)', boxShadow: '0 2px 20px rgba(13,21,53,0.05)' }}>
@@ -187,7 +187,7 @@ export default function WhyRavelloPage() {
                     style={{ background: i % 2 === 0 ? 'var(--bg)' : 'var(--surface-alt)', borderTop: '1px solid var(--brand-line)' }}
                   >
                     <td className="px-8 py-4 font-medium" style={{ color: 'var(--ink)' }}>{row.feature}</td>
-                    <td className="px-6 py-4 text-center" style={{ background: 'rgba(124,92,246,0.04)' }}><Cell val={row.ravello} /></td>
+                    <td className="px-6 py-4 text-center" style={{ background: 'rgba(124,92,246,0.04)' }}><Cell val={row.tps} /></td>
                     <td className="px-6 py-4 text-center"><Cell val={row.agency} /></td>
                     <td className="px-6 py-4 text-center"><Cell val={row.inhouse} /></td>
                     <td className="px-6 py-4 text-center"><Cell val={row.generic} /></td>
