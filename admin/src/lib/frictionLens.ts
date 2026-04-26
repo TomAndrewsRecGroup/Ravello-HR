@@ -117,8 +117,16 @@ export async function scoreFriction(input: RoleInput): Promise<FrictionScore> {
   });
 
   if (!res.ok) {
-    throw new Error(`IvyLens API returned ${res.status}. Please try again or raise a support ticket.`);
+    const errText = await res.text().catch(() => '');
+    throw new Error(`IvyLens API returned ${res.status}: ${errText || 'Unknown error'}. Please try again or raise a support ticket.`);
   }
 
-  return mapIvyLensResponse(await res.json());
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('IvyLens API returned invalid JSON. Please try again.');
+  }
+
+  return mapIvyLensResponse(data);
 }
