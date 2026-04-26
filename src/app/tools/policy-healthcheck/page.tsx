@@ -43,12 +43,8 @@ export default function PolicyHealthcheckPage() {
             Check off what you have, flag what is missing, and get a prioritised fix list you can act on immediately.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Book a Free Policy Review <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>

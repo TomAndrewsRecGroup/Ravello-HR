@@ -35,7 +35,10 @@ export default function PartnersClient({ initial, interests }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const partners = initial;
+  // Local mirror so single-row patch + delete update instantly without
+  // re-running the server component. Save (create/edit) still calls
+  // refresh() because the new row needs server-generated id + timestamps.
+  const [partners, setPartners] = useState<PartnerRow[]>(initial);
   const refresh = () => startTransition(() => router.refresh());
 
   function setBusyFor(id: string, on: boolean) {
@@ -105,6 +108,10 @@ export default function PartnersClient({ initial, interests }: Props) {
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusyFor(id, true);
+    const prev = partners.find(p => p.id === id);
+    if (prev) {
+      setPartners(curr => curr.map(p => p.id === id ? { ...p, ...body } as PartnerRow : p));
+    }
     try {
       const res = await fetch(`/api/admin/partners/${id}`, {
         method: 'PATCH',
@@ -112,11 +119,11 @@ export default function PartnersClient({ initial, interests }: Props) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
+        if (prev) setPartners(curr => curr.map(p => p.id === id ? prev : p));
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Update failed');
         return;
       }
-      refresh();
     } finally {
       setBusyFor(id, false);
     }
@@ -125,14 +132,16 @@ export default function PartnersClient({ initial, interests }: Props) {
   async function remove(id: string) {
     if (!confirm('Delete this partner? Existing matches will be removed too.')) return;
     setBusyFor(id, true);
+    const prev = partners;
+    setPartners(curr => curr.filter(p => p.id !== id));
     try {
       const res = await fetch(`/api/admin/partners/${id}`, { method: 'DELETE' });
       if (!res.ok) {
+        setPartners(prev);
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Delete failed');
         return;
       }
-      refresh();
     } finally {
       setBusyFor(id, false);
     }

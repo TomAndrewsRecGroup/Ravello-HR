@@ -65,12 +65,8 @@ export default function SmartHiringSystemPage() {
             Before any role goes live, we score it. Friction Lens tells you exactly where it will struggle and what to fix. Then we deliver: embedded alongside your team, building capability that lasts beyond the engagement.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Start with a Hiring Audit <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>
@@ -95,9 +91,7 @@ export default function SmartHiringSystemPage() {
                 <h3 className="font-bold text-lg mb-2">Know which ones apply to you?</h3>
                 <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.8)' }}>Book a hiring audit. We will tell you exactly where the process is breaking down and what it is costing you.</p>
               </div>
-              <Link href="/book" className="btn-outline-white text-sm mt-2 justify-center">
-                Start with a Hiring Audit <ArrowRight size={14} />
-              </Link>
+              <Link href="/book" className="btn-outline-white text-sm mt-2 justify-center">Book a Call</Link>
             </div>
           </div>
         </div>
@@ -163,10 +157,8 @@ export default function SmartHiringSystemPage() {
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.6)' }}>
                 We will look at your current process, score a live or recent role through Friction Lens, and give you a clear picture of what needs fixing and in what order.
               </p>
-              <Link href="/book" className="btn-gradient w-full justify-center">
-                Start with a Hiring Audit <ArrowRight size={16} />
-              </Link>
-              <p className="text-center text-xs mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Free · No obligation · Typically 30 minutes</p>
+              <Link href="/book" className="btn-gradient w-full justify-center">Book a Call</Link>
+              <p className="text-center text-xs mt-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Free · No obligation · No pitch</p>
             </div>
           </div>
         </div>
@@ -177,11 +169,9 @@ export default function SmartHiringSystemPage() {
         <div className="container-narrow text-center">
           <h2 className="font-display section-title mb-4">Already know<br /><span className="text-gradient">your hiring needs fixing?</span></h2>
           <p className="text-lg mb-8" style={{ color: 'var(--ink-soft)' }}>
-            Skip the audit. Book 30 minutes with Tom. Bring the role or the challenge and leave with a clear plan.
+            Skip the audit. Book a call with Tom. Bring the role or the challenge and leave with a clear plan.
           </p>
-          <Link href="/book" className="btn-gradient">
-            Book a Call about HIRE <ArrowRight size={16} />
-          </Link>
+          <Link href="/book" className="btn-gradient">Book a Call</Link>
         </div>
       </section>
 
@@ -193,7 +183,7 @@ export default function SmartHiringSystemPage() {
           { q: 'What HIRE packages do you offer?', a: 'Hire Foundations (£1,000/month + 10% fee, 3-month minimum), Hire Optimiser (£2,500 one-off or £1,500/month x 3), Hire Embedded (£5,000/month, 6-month minimum, fees included), and Hire Build (£6,500-£8,500+/month, 6-month minimum). Full details on the services page.' },
           { q: 'Who is HIRE for?', a: 'Founder-led businesses scaling 20-150 people, VC or PE-backed businesses post-raise, and any business with a history of bad hires, rising agency spend, or inconsistent hiring managers.' },
           { q: 'Do we need to use a recruitment agency?', a: 'No. HIRE is designed to reduce agency dependency by building internal sourcing capability and fixing the process so you do not need to outsource everything.' },
-          { q: 'How quickly can you start?', a: 'Typically within 48 hours of scoping. Tom embeds fast: no lengthy discovery phase. We learn your business by working inside it.' },
+          { q: 'How quickly can you start?', a: 'Fast. Tom embeds with no lengthy discovery phase. We learn your business by working inside it.' },
         ]}
       />
 

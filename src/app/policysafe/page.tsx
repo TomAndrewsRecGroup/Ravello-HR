@@ -22,8 +22,8 @@ const packages = [
     tag: 'Starting point',
     price: 'From £495',
     highlight: false,
-    items: ['Employment contract template', 'Offer letter template', 'Basic disciplinary & grievance procedure', 'Holiday & absence policy', '1-hour implementation call'],
-    cta: { label: 'Get Started', href: '/book' },
+    items: ['Employment contract template', 'Offer letter template', 'Basic disciplinary & grievance procedure', 'Holiday & absence policy', 'Implementation call'],
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Protect Core',
@@ -31,7 +31,7 @@ const packages = [
     price: 'From £1,200',
     highlight: true,
     items: ['Full employment contract suite', 'Staff handbook (bespoke)', 'Core policy set (12 policies)', 'Manager guide & FAQ document', 'Gap analysis against current docs', '2 x review sessions', 'Optional retainer: £500-£750/month'],
-    cta: { label: 'Get a Free HR Audit', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
   },
   {
     name: 'Protect Partner',
@@ -44,7 +44,7 @@ const packages = [
 ];
 
 const included = [
-  'Written by Lucy: 18+ years senior HR and People leadership, not a template service',
+  'Written by Lucy: 20+ years senior HR and People leadership, not a template service',
   'Fully compliant with current UK employment legislation, including Employment Rights Bill changes',
   'Written in plain English your managers will actually read and apply',
   'Branded and formatted to match your business',
@@ -83,12 +83,8 @@ export default function PolicySafePage() {
             Three outcomes: Documented. Protected. Ready to scale. Lucy builds the foundations your business genuinely needs: written properly, not copy-pasted from a template site.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Get a Free HR Audit <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>
@@ -218,11 +214,9 @@ export default function PolicySafePage() {
                 Not sure what your compliance exposure looks like?
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                Book a free HR audit with Lucy. Thirty minutes. You will leave with a clear, prioritised picture of what is missing and what to fix first.
+                Book a free HR audit with Lucy. You will leave with a clear, prioritised picture of what is missing and what to fix first.
               </p>
-              <Link href="/book" className="btn-outline-white justify-center w-full">
-                Get a Free HR Audit <ArrowRight size={16} />
-              </Link>
+              <Link href="/book" className="btn-outline-white justify-center w-full">Book a Call</Link>
             </div>
           </div>
         </div>

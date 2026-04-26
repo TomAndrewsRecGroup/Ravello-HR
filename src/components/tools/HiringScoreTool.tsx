@@ -201,9 +201,7 @@ export default function HiringScoreTool() {
         <div className="bg-[var(--brand-navy)] rounded-xl p-6 text-center">
           <p className="text-white font-semibold mb-2">Want us to implement this with you?</p>
           <p className="text-white/70 text-sm mb-4">Book a 20-min scoping call and we’ll walk through your specific results.</p>
-          <a href="/book" className="btn-gradient">
-            Book Your Scoping Call <ArrowRight size={16} />
-          </a>
+          <a href="/book" className="btn-gradient">Book a Call</a>
         </div>
       </div>
     );

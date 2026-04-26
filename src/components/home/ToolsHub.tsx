@@ -6,7 +6,7 @@ const TOOLS = [
     icon: BarChart2,
     href: '/tools/hiring-score',
     name: 'Smart Hiring Score',
-    problem: 'Find out in 3 minutes why roles keep reopening and where your process is leaking time and money.',
+    problem: 'Find out exactly why roles keep reopening and where your process is leaking time and money.',
     color: '#7B2FBE',
     bg: 'rgba(123,47,190,0.08)',
     hoverBorder: 'rgba(123,47,190,0.25)',
@@ -15,7 +15,7 @@ const TOOLS = [
     icon: ShieldAlert,
     href: '/tools/hr-risk-score',
     name: 'HR Risk Score',
-    problem: 'Score your compliance exposure in 2 minutes. Most businesses score worse than they expect.',
+    problem: 'Score your compliance exposure now. Most businesses score worse than they expect.',
     color: '#4B6EF5',
     bg: 'rgba(75,110,245,0.08)',
     hoverBorder: 'rgba(75,110,245,0.25)',
@@ -78,7 +78,7 @@ export default function ToolsHub() {
             </h2>
           </div>
           <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-            Under 3 minutes each. No account needed. No email required. Instant results.
+            No account needed. No email required. Instant results.
           </p>
         </div>
 

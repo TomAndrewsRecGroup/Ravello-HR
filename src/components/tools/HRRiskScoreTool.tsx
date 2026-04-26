@@ -183,7 +183,7 @@ export default function HRRiskScoreTool() {
 
         <div className="bg-[var(--brand-navy)] rounded-xl p-6 text-center">
           <p className="text-white font-semibold mb-2">Want a full compliance gap report?</p>
-          <p className="text-white/70 text-sm mb-4">We\'ll review your top exposures and give you a prioritised fix list in one call.</p>
+          <p className="text-white/70 text-sm mb-4">We&rsquo;ll review your top exposures and give you a prioritised fix list in one call.</p>
           <a href="/policysafe" className="btn-gradient">
             Explore PolicySafe™ <ArrowRight size={16} />
           </a>
@@ -208,7 +208,7 @@ export default function HRRiskScoreTool() {
           <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
             {submitting ? 'Unlocking…' : 'Unlock My Risk Report'} <ArrowRight size={16} />
           </button>
-          <p className="text-center text-xs text-gray-400">We\'ll send your report by email. No spam, ever.</p>
+          <p className="text-center text-xs text-gray-400">We&rsquo;ll send your report by email. No spam, ever.</p>
         </form>
       </div>
     );

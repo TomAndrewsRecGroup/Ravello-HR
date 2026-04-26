@@ -7,15 +7,25 @@ import { Users2 } from 'lucide-react';
 export const metadata: Metadata = { title: 'Candidates' };
 export const revalidate = 30;
 
+// Cap on initial fetch. 500 keeps client-side search/filter snappy for the
+// admin's typical use, while cutting initial DOM + transfer ~75% vs. the
+// previous 2000 limit. If the candidate volume grows past this cap the
+// stage-counter cards (which use a separate count query below) will still
+// reflect the true total — only the table will be capped, with a hint.
+const PAGE_CAP = 500;
+
 export default async function CandidatesPage() {
   const supabase = createServerSupabaseClient();
 
-  const [{ data: candidates }, { data: companies }] = await Promise.all([
+  const [{ data: candidates }, { count: totalCandidates }, { data: companies }] = await Promise.all([
     supabase
       .from('candidates')
       .select('id,full_name,email,cv_url,cv_file_path,client_status,pipeline_stage,screening_score,source,requisition_id,requisitions(title, companies(name))')
       .order('created_at', { ascending: false })
-      .limit(2000),
+      .limit(PAGE_CAP),
+    supabase
+      .from('candidates')
+      .select('*', { count: 'exact', head: true }),
     supabase
       .from('companies')
       .select('id, name')
@@ -25,7 +35,13 @@ export default async function CandidatesPage() {
 
   const allCandidates = candidates ?? [];
   const companyList   = companies ?? [];
+  const grandTotal    = totalCandidates ?? allCandidates.length;
+  const isCapped      = grandTotal > PAGE_CAP;
 
+  // Stage stats are derived from the *current page* of results. With
+  // PAGE_CAP=500 these match reality unless the dataset is very large;
+  // the topbar subtitle below makes the cap explicit so the user isn't
+  // surprised by stale-looking numbers.
   const statsByStage = ['applied','screening','interviewing','offer','hired','rejected'].map(stage => ({
     stage,
     count: allCandidates.filter((c: any) => (c.pipeline_stage ?? 'applied') === stage).length,
@@ -40,7 +56,11 @@ export default async function CandidatesPage() {
     <>
       <AdminTopbar
         title="Candidates"
-        subtitle={`${allCandidates.length} total candidates across all roles`}
+        subtitle={
+          isCapped
+            ? `Showing ${allCandidates.length} most recent of ${grandTotal} total · refine with filters to see older entries`
+            : `${grandTotal} total candidates across all roles`
+        }
       />
       <main className="admin-page flex-1">
 

@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle, Clock, MessageSquare, Zap } from 'lucide-react
 import BookForm from './BookForm';
 
 export const metadata: Metadata = {
-  title: 'Book a Free Call | The People System',
+  title: 'Book a Call | The People System',
   description:
     'Tell us about your people challenge: hiring, HR foundations, or a deal. Send the form and Lucy or Tom will be in touch within one business day. Straight answers. No pitch.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/book' },
@@ -19,8 +19,8 @@ const whatHappensNext = [
 
 const notFor = [
   'General career advice',
-  'Employment law queries requiring a solicitor',
-  'Requests for free ongoing support',
+  'A cheap paper-over-the-cracks solution',
+  'A consultant who will just tell you what you want to hear',
 ];
 
 export default function BookPage() {
@@ -32,7 +32,7 @@ export default function BookPage() {
         <div className="max-w-3xl mx-auto">
           <p className="eyebrow mb-6">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            The People System: Free Call
+            The People System: Book a Call
           </p>
           <h1
             className="font-display mb-5"
@@ -161,8 +161,8 @@ export default function BookPage() {
           <p className="eyebrow mb-8">Not quite ready to book? Use one of these first.</p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { href: '/tools/hiring-score',         label: 'Smart Hiring Score',  sub: '3 mins, free, instant results' },
-              { href: '/tools/hr-risk-score',        label: 'HR Risk Score',        sub: '2 mins, free, gap report' },
+              { href: '/tools/hiring-score',         label: 'Smart Hiring Score',  sub: 'Free, instant results' },
+              { href: '/tools/hr-risk-score',        label: 'HR Risk Score',        sub: 'Free, gap report' },
               { href: '/tools/due-diligence-checklist', label: 'DD Checklist',     sub: 'M&A, free, downloadable' },
             ].map((t) => (
               <Link key={t.href} href={t.href}

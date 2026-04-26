@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Phone, Linkedin, ExternalLink } from 'lucide-react';
+import { Mail, Linkedin, ExternalLink } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -22,7 +22,7 @@ export default function Footer() {
       />
 
       <div className="relative z-10 container-wide section-padding">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
 
           {/* Brand column */}
           <div className="lg:col-span-1">
@@ -59,6 +59,28 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Pillars */}
+          <div>
+            <h4
+              className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            >
+              Pillars
+            </h4>
+            <ul className="space-y-3">
+              {[
+                ['HIRE',     '/hire'],
+                ['LEAD',     '/lead'],
+                ['PROTECT',  '/protect'],
+                ['Insights', '/insights'],
+              ].map(([label, href]) => (
+                <li key={href}>
+                  <Link href={href} className="footer-link text-sm">{label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Solutions */}
           <div>
             <h4
@@ -69,10 +91,10 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                ['Smart Hiring System™', '/smart-hiring-system'],
-                ['PolicySafe™',          '/policysafe'],
-                ['DealReady People™',    '/dealready-people'],
-                ['Change Management',    '/dealready-people#change'],
+                ['Smart Hiring System™',   '/smart-hiring-system'],
+                ['PolicySafe™',            '/policysafe'],
+                ['DealReady People™',      '/dealready-people'],
+                ['Cost of Doing Nothing',  '/cost-of-doing-nothing'],
               ].map(([label, href]) => (
                 <li key={href}>
                   <Link href={href} className="footer-link text-sm">{label}</Link>
@@ -104,20 +126,25 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Get Started */}
+          {/* Company / Get Started */}
           <div>
             <h4
               className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
               style={{ color: 'rgba(255,255,255,0.30)' }}
             >
-              Get Started
+              Company
             </h4>
             <ul className="space-y-3 mb-6">
-              <li>
-                <Link href="/book" className="footer-link text-sm flex items-center gap-2">
-                  <Phone size={12} /> Book a Free Call
-                </Link>
-              </li>
+              {[
+                ['Why TPS',         '/why-tps'],
+                ['About',           '/about'],
+                ['Latest Updates',  '/latest-updates'],
+                ['Book a Call',     '/book'],
+              ].map(([label, href]) => (
+                <li key={href}>
+                  <Link href={href} className="footer-link text-sm">{label}</Link>
+                </li>
+              ))}
               <li>
                 <a href="mailto:info@thepeoplesystem.co.uk" className="footer-link text-sm flex items-center gap-2">
                   <Mail size={12} /> info@thepeoplesystem.co.uk
@@ -151,7 +178,7 @@ export default function Footer() {
                 HR Hotline
               </p>
               <p className="text-sm font-semibold text-white mb-3 leading-snug">
-                30 minutes. No pitch.<br />Leave with a clear plan.
+                No pitch. No slides.<br />Leave with a clear plan.
               </p>
               <Link
                 href="/book"
@@ -161,7 +188,7 @@ export default function Footer() {
                   boxShadow: '0 2px 14px rgba(124,58,237,0.35)',
                 }}
               >
-                Book Now
+                Book a Call
               </Link>
             </div>
           </div>

@@ -196,11 +196,9 @@ export default async function LatestUpdatesPage({
             Want advice tailored to your business?
           </h2>
           <p className="text-white/70 text-lg mb-8 max-w-lg mx-auto">
-            Book 15 minutes with Lucy. Bring your specific situation and leave with a clear, practical path forward.
+            Book a call with Lucy. Bring your specific situation and leave with a clear, practical path forward.
           </p>
-          <Link href="/book" className="btn-primary">
-            Book the HR Hotline <ArrowRight size={18} />
-          </Link>
+          <Link href="/book" className="btn-primary">Book a Call</Link>
         </div>
       </section>
     </div>

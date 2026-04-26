@@ -10,18 +10,13 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://thepeoplesystem.co.uk/protect' },
 };
 
-type Variant = {
-  name: string;
-  who: string;
-  includes: string[];
-};
-
 type Package = {
   tag: string;
   highlight: boolean;
   cta: { label: string; href: string };
-  sme: Variant;
-  corporate: Variant;
+  name: string;
+  who: string;
+  includes: string[];
 };
 
 const packages: Package[] = [
@@ -29,104 +24,54 @@ const packages: Package[] = [
     tag: 'Starting point · documentation and ongoing check-in',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'PROTECT Foundations',
-      who: 'Your contracts are probably out of date. Your policies may not reflect current employment law. When something goes wrong with an employee, you are figuring it out as you go. PROTECT Foundations fixes that. We build the documentation and compliance your business needs and stay on hand when people issues come up, so you are never making it up under pressure.',
-      includes: [
-        'Full audit of existing contracts, policies and HR documentation',
-        'Employment contracts drafted or updated to current legal standards',
-        'Employee handbook covering disciplinaries, grievances, absence, performance and conduct',
-        'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
-        'Monthly HR check-in (60 min): live ER issues, compliance updates, people questions',
-        'Up to 2 escalation calls per month for urgent or time-sensitive situations',
-      ],
-    },
-    corporate: {
-      name: 'PROTECT Governance',
-      who: 'For corporate subsidiaries or acquired entities that need core HR documentation and compliance aligned to group standards, with hands-on support for local ER issues as they come up.',
-      includes: [
-        'Audit of existing contracts, policies and HR documentation against group standards',
-        'Employment contracts drafted or updated to current UK law and group templates',
-        'Localised handbook covering disciplinaries, grievances, absence, performance and conduct',
-        'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
-        'Monthly HR check-in (60 min) with the local HR lead',
-        'Up to 2 escalation calls per month for urgent or time-sensitive situations',
-      ],
-    },
+    name: 'PROTECT Foundations',
+    who: 'Your contracts are probably out of date. Your policies may not reflect current employment law. When something goes wrong with an employee, you are figuring it out as you go. PROTECT Foundations fixes that. We build the documentation and compliance your business needs and stay on hand when people issues come up, so you are never making it up under pressure.',
+    includes: [
+      'Full audit of existing contracts, policies, and HR documentation',
+      'Employment contracts drafted or updated to current legal standards',
+      'Handbook covering disciplinaries, grievances, absence, performance, and conduct',
+      'Statutory policies aligned to UK employment law including the Employment Rights Act',
+      'Monthly HR check-in: live ER issues, compliance updates, people questions',
+      'Up to 2 escalation calls per month for urgent or time-sensitive situations',
+    ],
   },
   {
     tag: 'Most popular · ongoing HR generalist support',
     highlight: true,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'PROTECT Partner',
-      who: 'For businesses that need a proper HR function on an ongoing basis. Not just documents and compliance but active, hands-on support across everything people related: ER cases, org design, skills mapping, restructures and the strategic infrastructure to support a growing business.',
-      includes: [
-        'Everything in PROTECT Foundations',
-        'Fortnightly HR session (60 min): ER cases, people decisions, priorities and planning',
-        'Up to 4 escalation calls per month for complex or urgent situations',
-        'End-to-end ER case management: disciplinaries, grievances, performance management, redundancy and TUPE',
-        'Organisational design, workforce planning and restructuring support',
-        'Skills mapping and capability gap analysis across your workforce',
-        'HRIS selection and implementation guidance',
-        'Onboarding and offboarding processes designed and embedded',
-        'People data and monthly HR reporting',
-      ],
-    },
-    corporate: {
-      name: 'PROTECT Operations',
-      who: 'For divisions, regions or portfolio companies that need dedicated HR generalist support on an ongoing basis, sitting alongside group HR and covering everything people related from ER to org design.',
-      includes: [
-        'Everything in PROTECT Governance',
-        'Fortnightly HR session (60 min) with the divisional lead: ER cases, decisions, priorities',
-        'Up to 4 escalation calls per month for complex or urgent situations',
-        'End-to-end ER case management: disciplinaries, grievances, performance, redundancy, TUPE',
-        'Organisational design, workforce planning and restructuring support',
-        'Skills mapping and capability gap analysis across the division',
-        'HRIS selection and integration with group systems',
-        'Onboarding and offboarding processes designed and embedded',
-        'People data and monthly HR reporting to divisional and group leadership',
-      ],
-    },
+    name: 'PROTECT Partner',
+    who: 'For teams that need a proper HR function on an ongoing basis. Not just documents and compliance but hands-on support across everything people-related: ER cases, org design, skills mapping, restructures, and the strategic infrastructure to support a business that is growing or changing shape.',
+    includes: [
+      'Everything in PROTECT Foundations',
+      'Fortnightly HR session: ER cases, people decisions, priorities and planning',
+      'Up to 4 escalation calls per month for complex or urgent situations',
+      'End-to-end ER case management: disciplinaries, grievances, performance, redundancy, and TUPE',
+      'Organisational design, workforce planning, and restructuring support',
+      'Skills mapping and capability gap analysis across the workforce',
+      'HRIS selection and implementation guidance',
+      'Onboarding and offboarding processes designed and embedded',
+      'People data and monthly HR reporting',
+    ],
   },
   {
     tag: 'Executive · fractional CPO',
     highlight: false,
     cta: { label: 'Book a Call', href: '/book' },
-    sme: {
-      name: 'PROTECT CPO',
-      who: 'For businesses that need someone operating at CPO or HRD level without the full-time cost. We sit at your leadership table, own the people agenda, hold the compliance and ER risk and build the people strategy your business needs to scale. This is not a support service. It is executive-level people leadership.',
-      includes: [
-        'Everything in PROTECT Partner',
-        'Weekly fractional CPO session (60 min) plus leadership team and board attendance',
-        'People strategy design aligned to your 12 to 36 month business plan',
-        'Skills mapping, succession planning and talent pipeline development',
-        'Reward and compensation strategy including grading and pay structures',
-        'DEI strategy and implementation',
-        'Culture and values design and embedding',
-        'Employment tribunal risk management and legal liaison',
-        'Investor and board-level people reporting',
-        'Change management and transformation programmes',
-        'Transition planning when you are ready to hire in-house',
-      ],
-    },
-    corporate: {
-      name: 'PROTECT Executive',
-      who: 'For corporate divisions or portfolio companies that need CPO-level people leadership without adding a permanent role. We sit on the divisional exec, own the people agenda, carry the ER and compliance risk, and interface with group HR.',
-      includes: [
-        'Everything in PROTECT Operations',
-        'Weekly fractional CPO session (60 min) plus divisional leadership team attendance',
-        'Divisional people strategy aligned to 12 to 36 month plan and group direction',
-        'Skills mapping, succession planning and talent pipeline development',
-        'Reward and compensation strategy aligned to group grading and pay structures',
-        'DEI strategy and implementation aligned to group policy',
-        'Culture and values design and embedding',
-        'Employment tribunal risk management and legal liaison with group counsel',
-        'Investor, board and group HR reporting',
-        'Change management and transformation programmes',
-        'Transition planning when you are ready to hire in-house',
-      ],
-    },
+    name: 'PROTECT CPO',
+    who: 'For teams that need someone operating at CPO or HRD level without the full-time cost. We sit at your leadership table, own the people agenda, hold the compliance and ER risk, and build the people strategy your business needs to scale. This is not a support service. It is executive-level people leadership.',
+    includes: [
+      'Everything in PROTECT Partner',
+      'Weekly fractional CPO session plus leadership team and board attendance',
+      'People strategy aligned to your 12 to 36 month business plan',
+      'Skills mapping, succession planning, and talent pipeline development',
+      'Reward and compensation strategy including grading and pay structures',
+      'DEI strategy and implementation',
+      'Culture and values design and embedding',
+      'Employment tribunal risk management and legal liaison',
+      'Investor and board-level people reporting',
+      'Change management and transformation programmes',
+      'Transition planning when you are ready to hire in-house',
+    ],
   },
 ];
 
@@ -160,12 +105,10 @@ export default function ProtectPage() {
                 Documented. Protected. Ready to scale. Every PROTECT engagement is built around what your business genuinely needs: not a copy-paste from a template library. Written by us. Compliant with current UK law, including Employment Rights Bill changes.
               </p>
               <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-                Not sure where to start? A free HR audit takes thirty minutes and gives you a clear, prioritised picture of your compliance exposure and what to fix first.
+                Not sure where to start? A free HR audit gives you a clear, prioritised picture of your compliance exposure and what to fix first.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/book" className="btn-gradient">
-                  Get a Free HR Audit <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/policysafe" className="btn-secondary">
                   How PROTECT works
                 </Link>
@@ -212,25 +155,13 @@ export default function ProtectPage() {
               PROTECT <span className="text-gradient">packages</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              From a fast one-off essentials fix to fully managed ongoing compliance. Each engagement shapes differently depending on the size and shape of your organisation: choose the column that matches.
+              From a fast one-off essentials fix to fully managed ongoing compliance. Each engagement is scoped to the size and shape of your organisation. Talk to us about which one fits and we will shape the detail.
             </p>
           </div>
 
-          {/* Column headers (desktop) */}
-          <div className="hidden lg:grid grid-cols-2 gap-6 mb-4">
-            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-              For growing businesses
-            </p>
-            <p className="eyebrow" style={{ color: 'var(--ink-faint)' }}>
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-blue)', verticalAlign: 'middle' }} />
-              For corporate organisations
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {packages.map((pkg) => (
-              <PackagePair key={pkg.sme.name} pkg={pkg} />
+              <PackageCard key={pkg.name} pkg={pkg} />
             ))}
           </div>
         </div>
@@ -255,11 +186,9 @@ export default function ProtectPage() {
                 <span className="text-gradient">a free HR audit</span>
               </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
-                Thirty minutes with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
+                One conversation with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
               </p>
-              <Link href="/book" className="btn-gradient">
-                Book a Free HR Audit <ArrowRight size={16} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
@@ -287,25 +216,7 @@ export default function ProtectPage() {
   );
 }
 
-function PackagePair({ pkg }: { pkg: Package }) {
-  return (
-    <>
-      <PackageCard pkg={pkg} variant="sme" audienceLabel="For growing businesses" />
-      <PackageCard pkg={pkg} variant="corporate" audienceLabel="For corporate organisations" />
-    </>
-  );
-}
-
-function PackageCard({
-  pkg,
-  variant,
-  audienceLabel,
-}: {
-  pkg: Package;
-  variant: 'sme' | 'corporate';
-  audienceLabel: string;
-}) {
-  const v = pkg[variant];
+function PackageCard({ pkg }: { pkg: Package }) {
   const highlight = pkg.highlight;
   return (
     <div
@@ -315,18 +226,12 @@ function PackageCard({
         : { background: 'var(--surface)', border: '1px solid var(--brand-line)' }
       }
     >
-      <p
-        className="text-xs font-semibold uppercase tracking-wider mb-3 lg:hidden"
-        style={{ color: highlight ? 'rgba(255,255,255,0.75)' : 'var(--ink-faint)', letterSpacing: '0.08em' }}
-      >
-        {audienceLabel}
-      </p>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <h3
           className="font-bold text-2xl"
           style={{ color: highlight ? '#fff' : 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, letterSpacing: '-0.02em' }}
         >
-          {v.name}
+          {pkg.name}
         </h3>
         <span
           className="text-xs font-semibold px-3 py-1 rounded-full"
@@ -342,10 +247,10 @@ function PackageCard({
         className="text-sm leading-relaxed mb-6"
         style={{ color: highlight ? 'rgba(255,255,255,0.85)' : 'var(--ink-soft)' }}
       >
-        {v.who}
+        {pkg.who}
       </p>
       <ul className="space-y-2 mb-8">
-        {v.includes.map((item) => (
+        {pkg.includes.map((item) => (
           <li key={item} className="flex items-start gap-3">
             <CheckCircle
               className="flex-shrink-0 mt-0.5"

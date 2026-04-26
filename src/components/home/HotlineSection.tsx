@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { CalendarCheck, ArrowRight, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function HotlineSection() {
   return (
@@ -52,7 +52,7 @@ export default function HotlineSection() {
           className="text-lg leading-relaxed mb-4 max-w-[520px] mx-auto"
           style={{ color: 'var(--ink-soft)' }}
         >
-          Thirty minutes with Lucy and Tom. No pitch. No slides. You describe the situation,
+          One conversation with Lucy and Tom. No pitch. No slides. You describe the situation,
           we tell you exactly what the problem is and what to do about it.
         </p>
 
@@ -60,14 +60,14 @@ export default function HotlineSection() {
           className="text-sm leading-relaxed mb-10 max-w-[480px] mx-auto"
           style={{ color: 'var(--ink-faint)' }}
         >
-          Most clients say this is the most useful 30 minutes they&rsquo;ve had on their people
+          Most clients say this is the most useful conversation they&rsquo;ve had about their people
           function. You leave with 1-3 specific next steps you can act on immediately,
           whether you work with us or not.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link href="/book" className="btn-gradient">
-            <CalendarCheck size={16} /> Book a Free 30-min Call
+            Book a Call
           </Link>
           <a href="mailto:info@thepeoplesystem.co.uk?subject=I'd like to talk about my people function" className="btn-secondary">
             <Mail size={14} /> Email Us Directly
@@ -75,7 +75,7 @@ export default function HotlineSection() {
         </div>
 
         <p className="mt-8 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-          Free · No obligation · We typically respond within 4 hours ·{' '}
+          Free · No obligation · Quick to respond ·{' '}
           <a
             href="mailto:info@thepeoplesystem.co.uk"
             className="underline hover:no-underline"

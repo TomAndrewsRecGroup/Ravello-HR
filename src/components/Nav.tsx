@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, CalendarCheck, LogIn } from 'lucide-react';
+import { Menu, X, ChevronDown, LogIn } from 'lucide-react';
 
 const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -17,6 +17,16 @@ const tools = [
   { href: '/tools/hr-risk-score',           label: 'HR Risk Score' },
   { href: '/tools/policy-healthcheck',      label: 'Policy Healthcheck' },
   { href: '/tools/due-diligence-checklist', label: 'DD Checklist' },
+];
+// Top-level links that sit between the two dropdowns and the Portal/CTA.
+// Single source of truth: anything added here renders in BOTH the desktop
+// nav and the mobile hamburger automatically. Don't hardcode a top-level
+// Link inline in either block — add it here.
+const topLinks = [
+  { label: 'Cost of Doing Nothing', href: '/cost-of-doing-nothing' },
+  { label: 'Why TPS',               href: '/why-tps' },
+  { label: 'Latest Updates',        href: '/latest-updates' },
+  { label: 'About',                 href: '/about' },
 ];
 
 export default function Nav() {
@@ -170,10 +180,7 @@ export default function Nav() {
               )}
             </div>
 
-            {[
-              { label: 'Latest Updates', href: '/latest-updates' },
-              { label: 'About',          href: '/about' },
-            ].map((link) => (
+            {topLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -205,7 +212,7 @@ export default function Nav() {
 
             {/* Primary CTA */}
             <Link href="/book" className="btn-gradient">
-              <CalendarCheck size={15} /> Get Started
+              Book a Call
             </Link>
           </div>
 
@@ -269,8 +276,17 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <Link href="/latest-updates" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
-            <Link href="/about"          className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
+            {topLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block px-3 py-2.5 rounded-xl text-sm"
+                style={{ color: 'var(--ink-soft)' }}
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
             <div className="my-3 brand-divider" />
             <a
               href="https://www.portal.thepeoplesystem.co.uk"
@@ -284,7 +300,7 @@ export default function Nav() {
             </a>
             <div className="pt-4">
               <Link href="/book" className="btn-gradient w-full" onClick={() => setOpen(false)}>
-                <CalendarCheck size={15} /> Get Started
+                Book a Call
               </Link>
             </div>
           </div>

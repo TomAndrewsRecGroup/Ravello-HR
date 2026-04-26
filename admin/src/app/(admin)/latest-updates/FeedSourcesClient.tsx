@@ -60,7 +60,11 @@ export default function FeedSourcesClient({ initial }: Props) {
   const [rowFlash, setRowFlash] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const rows = initial;
+  // Local mirror of server data so single-row edits + deletes can update
+  // the UI instantly. router.refresh() is only used when we need the
+  // server to compute fields we can't derive client-side (create timestamps,
+  // refresh-source result counts).
+  const [rows, setRows] = useState<FeedSourceRow[]>(initial);
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -130,6 +134,12 @@ export default function FeedSourcesClient({ initial }: Props) {
 
   async function patch(id: string, body: Record<string, unknown>) {
     busy(id, true);
+    // Optimistic: apply the patch to the local row immediately.
+    // The body shape here is always a partial of FeedSourceRow.
+    const prev = rows.find(r => r.id === id);
+    if (prev) {
+      setRows(curr => curr.map(r => r.id === id ? { ...r, ...body } as FeedSourceRow : r));
+    }
     try {
       const res = await fetch(`/api/admin/feed-sources/${id}`, {
         method: 'PATCH',
@@ -137,11 +147,12 @@ export default function FeedSourcesClient({ initial }: Props) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
+        // Roll back the optimistic mutation
+        if (prev) setRows(curr => curr.map(r => r.id === id ? prev : r));
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Update failed');
         return;
       }
-      refresh();
     } finally {
       busy(id, false);
     }
@@ -179,14 +190,18 @@ export default function FeedSourcesClient({ initial }: Props) {
   async function remove(id: string) {
     if (!confirm('Delete this feed source? Existing entries will stay but the source link will clear.')) return;
     busy(id, true);
+    // Optimistic: drop the row from the local list immediately.
+    const prev = rows;
+    setRows(curr => curr.filter(r => r.id !== id));
     try {
       const res = await fetch(`/api/admin/feed-sources/${id}`, { method: 'DELETE' });
       if (!res.ok) {
+        // Roll back
+        setRows(prev);
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Delete failed');
         return;
       }
-      refresh();
     } finally {
       busy(id, false);
     }

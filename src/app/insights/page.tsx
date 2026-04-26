@@ -38,7 +38,7 @@ const PILLARS = [
     icon: BookOpen,
     color: 'var(--brand-pink)',
     bg: 'rgba(234,61,196,0.08)',
-    desc: 'Documents, employee records, reviews, training, skills and the org chart: versioned, audit-ready, and in one place.',
+    desc: 'The tools and frameworks to build manager capability from the inside out, so your managers lead well and your people see where the business is going.',
     features: [
       'Documents and policies, versioned by category',
       'Employee records with leave and demographics',
@@ -58,7 +58,7 @@ const PILLARS = [
     icon: Users,
     color: 'var(--brand-blue)',
     bg: 'rgba(59,111,255,0.08)',
-    desc: 'Compliance, absence, employee-doc expiry, actions and offboarding: tracked against due dates with everything overdue flagged.',
+    desc: 'Everything that keeps your business legally sound and your records watertight. Tracked, flagged, and never left to chance.',
     features: [
       'Compliance tracker with RAG status and due dates',
       'Absence management with approval workflows',
@@ -205,9 +205,7 @@ export default function InsightsPage() {
                 compliance and reports your team uses every day.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/book" className="btn-gradient">
-                  See the portal in action <ArrowRight size={15} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/smart-hiring-system" className="btn-secondary">
                   Explore HIRE packages
                 </Link>
@@ -424,9 +422,7 @@ export default function InsightsPage() {
                 Built by Tom Andrews through IvyLens Technology. Included in every HIRE engagement as standard.
               </p>
 
-              <Link href="/book" className="btn-gradient">
-                See it on a live role <ArrowRight size={15} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
           </div>
         </div>
@@ -533,9 +529,7 @@ export default function InsightsPage() {
                 directly in your portal.
               </p>
 
-              <Link href="/book" className="btn-gradient">
-                Get your score <ArrowRight size={15} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
 
             {/* Company score mockup */}
@@ -632,13 +626,13 @@ export default function InsightsPage() {
                 color: 'var(--ink)',
               }}
             >
-              Tools your team{' '}
-              <span className="text-gradient">actually uses</span>
+              Finally, a tool your team{' '}
+              <span className="text-gradient">will actually use.</span>
             </h3>
             <p className="text-lg leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Your portal is not just an HR analytics layer. It is where your team
-              picks up the guides you publish and where managers see who is in,
-              who is off, and what is coming.
+              This isn&rsquo;t a system you log into once a quarter. It&rsquo;s where your
+              managers stay on top of their team, your people find what they need, and
+              nothing gets missed.
             </p>
           </div>
 
@@ -699,7 +693,7 @@ export default function InsightsPage() {
                     <p className="font-bold text-white text-sm mb-0.5 leading-tight">
                       Difficult Conversations for Managers
                     </p>
-                    <p className="text-white/75 text-[11px]">Lucy Andrews · 45 min</p>
+                    <p className="text-white/75 text-[11px]">Lucy Andrews</p>
                   </div>
                 </div>
 
@@ -707,7 +701,7 @@ export default function InsightsPage() {
                 <div className="space-y-2">
                   {[
                     { title: 'Onboarding Playbook', meta: 'PDF · 24 pages', badge: 'Shared', badgeBg: 'rgba(34,197,94,0.10)', badgeColor: '#16A34A', thumbBg: 'linear-gradient(135deg, #3B6FFF, #7C3AED)' },
-                    { title: 'Performance Review Framework', meta: 'Video · 32 min', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
+                    { title: 'Performance Review Framework', meta: 'Video', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
                     { title: 'AI at Work Policy', meta: 'PDF · 8 pages', badge: 'New', badgeBg: 'rgba(245,158,11,0.12)', badgeColor: '#92400E', thumbBg: 'linear-gradient(135deg, #BF8F28, #7C3AED)' },
                   ].map((c) => (
                     <div
@@ -774,9 +768,7 @@ export default function InsightsPage() {
                 ))}
               </div>
 
-              <Link href="/book" className="btn-secondary">
-                See the library <ArrowRight size={14} />
-              </Link>
+              <Link href="/book" className="btn-secondary">Book a Call</Link>
             </div>
           </div>
 
@@ -824,9 +816,7 @@ export default function InsightsPage() {
                 ))}
               </div>
 
-              <Link href="/book" className="btn-secondary">
-                See the calendar <ArrowRight size={14} />
-              </Link>
+              <Link href="/book" className="btn-secondary">Book a Call</Link>
             </div>
 
             {/* Calendar mockup */}
@@ -945,9 +935,7 @@ export default function InsightsPage() {
             and show you where your people function sits against your industry.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/book" className="btn-gradient">
-              Book a Free Call <ArrowRight size={15} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/smart-hiring-system" className="btn-secondary">
               Explore HIRE packages
             </Link>

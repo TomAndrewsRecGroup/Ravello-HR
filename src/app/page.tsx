@@ -1,6 +1,6 @@
 import Hero           from '@/components/home/Hero';
 import TrustBar       from '@/components/home/TrustBar';
-import CostOfProblem  from '@/components/home/CostOfProblem';
+import CostTeaser     from '@/components/home/CostTeaser';
 import FunnelCards    from '@/components/home/FunnelCards';
 import PortalShowcase from '@/components/home/PortalShowcase';
 import HotlineSection from '@/components/home/HotlineSection';
@@ -10,7 +10,7 @@ export default function HomePage() {
     <main>
       <Hero />
       <TrustBar />
-      <CostOfProblem />
+      <CostTeaser />
       <FunnelCards />
       <PortalShowcase />
       <HotlineSection />

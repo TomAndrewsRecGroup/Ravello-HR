@@ -46,6 +46,10 @@ export default function AthletesClient({ initial, partners, interests, companies
   const [matching, setMatching] = useState<AthleteRow | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
+  // Local mirror of the server-fetched athletes list so deletes
+  // remove the row instantly without re-running the server component.
+  const [athletes, setAthletes] = useState<AthleteRow[]>(initial);
+
   const refresh = () => startTransition(() => router.refresh());
 
   const interestsByAthlete = useMemo(() => {
@@ -56,9 +60,9 @@ export default function AthletesClient({ initial, partners, interests, companies
 
   const filtered = useMemo(() => {
     return filterCompany
-      ? initial.filter(a => a.company_id === filterCompany)
-      : initial;
-  }, [initial, filterCompany]);
+      ? athletes.filter(a => a.company_id === filterCompany)
+      : athletes;
+  }, [athletes, filterCompany]);
 
   function setBusyFor(id: string, on: boolean) {
     setBusy(prev => {
@@ -102,14 +106,16 @@ export default function AthletesClient({ initial, partners, interests, companies
   async function remove(id: string) {
     if (!confirm('Delete this athlete? Their CV file and match records go too.')) return;
     setBusyFor(id, true);
+    const prev = athletes;
+    setAthletes(curr => curr.filter(a => a.id !== id));
     try {
       const res = await fetch(`/api/admin/athletes/${id}`, { method: 'DELETE' });
       if (!res.ok) {
+        setAthletes(prev);
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Delete failed');
         return;
       }
-      refresh();
     } finally {
       setBusyFor(id, false);
     }

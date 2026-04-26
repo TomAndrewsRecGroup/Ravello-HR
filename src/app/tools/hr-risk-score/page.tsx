@@ -43,12 +43,8 @@ export default function HRRiskScorePage() {
             Answer a few quick questions about your current HR setup. Get a scored risk profile with specific recommendations on what to fix first.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Book a Free HR Review <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>

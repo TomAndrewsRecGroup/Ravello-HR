@@ -6,7 +6,7 @@ import HiringScoreTool from '@/components/tools/HiringScoreTool';
 export const metadata: Metadata = {
   title: 'Hiring Score | Diagnose Your Hiring Problems | The People System',
   description:
-    'Find out exactly where your hiring is breaking down. Get your Hiring Score in under 3 minutes: instant results, no fluff. Free diagnostic from The People System.',
+    'Find out exactly where your hiring is breaking down. Get your Hiring Score: instant results, no fluff. Free diagnostic from The People System.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/tools/hiring-score' },
 };
 
@@ -33,7 +33,7 @@ export default function HiringScorePage() {
           >
             How strong is your hiring process?<br />
             <span className="text-gradient">
-              Find out in 3 minutes.
+              Find out now.
             </span>
           </h1>
           <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
@@ -43,12 +43,8 @@ export default function HiringScorePage() {
             Your score highlights the specific failure points in your current process and tells you what to fix first.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Start with a Hiring Audit <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>

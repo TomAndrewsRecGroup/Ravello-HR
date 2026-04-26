@@ -101,7 +101,7 @@ export default async function AdminDashboardPage() {
       <AdminTopbar
         title="Admin Dashboard"
         subtitle="The People System: internal operations"
-        actions={<Link prefetch={false} href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
+        actions={<Link href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
 
@@ -115,7 +115,7 @@ export default async function AdminDashboardPage() {
               { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
               { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
             ].map(s => (
-              <Link key={s.label} prefetch={false} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
+              <Link key={s.label} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
                   <s.icon size={15} style={{ color: s.color }} />
                   <span className="eyebrow" style={{ fontSize: '10px' }}>{s.label}</span>
@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
                 {pendingAbsence.length > 0 && ` ${pendingAbsence.length} pending absence requests`}
               </p>
             </div>
-            <Link prefetch={false} href="/compliance" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>
+            <Link href="/compliance" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>
               View Compliance
             </Link>
           </div>
@@ -162,7 +162,7 @@ export default async function AdminDashboardPage() {
                 )}
               </p>
             </div>
-            <Link prefetch={false} href="/clients" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>View Clients</Link>
+            <Link href="/clients" className="btn-secondary btn-sm self-start sm:self-auto sm:ml-auto" style={{ flexShrink: 0 }}>View Clients</Link>
           </div>
         )}
 
@@ -174,14 +174,14 @@ export default async function AdminDashboardPage() {
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Active Hiring Roles</h2>
                 <span className="accent-line mt-1.5" />
               </div>
-              <Link prefetch={false} href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
+              <Link href="/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
             </div>
             {reqs.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No active roles</p>
             ) : (
               <div className="space-y-2">
                 {reqs.slice(0, 8).map((r: any) => (
-                  <Link key={r.id} prefetch={false} href={`/hiring/${r.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
+                  <Link key={r.id} href={`/hiring/${r.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
                       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{(r.companies as any)?.name}</p>
@@ -200,14 +200,14 @@ export default async function AdminDashboardPage() {
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Support Tickets</h2>
                 <span className="accent-line mt-1.5" />
               </div>
-              <Link prefetch={false} href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
+              <Link href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
             </div>
             {tickets.length === 0 ? (
               <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
             ) : (
               <div className="space-y-2">
                 {tickets.slice(0, 8).map((t: any) => (
-                  <Link key={t.id} prefetch={false} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
+                  <Link key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
                     <div>
                       <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--ink)' }}>{t.subject}</p>
                       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{(t.companies as any)?.name}</p>
@@ -227,7 +227,7 @@ export default async function AdminDashboardPage() {
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle size={14} style={{ color: 'var(--red)' }} />
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Overdue Compliance</h2>
-                <Link prefetch={false} href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
+                <Link href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
               </div>
               <div className="space-y-2">
                 {overdueComp.map((c: any) => (
@@ -248,7 +248,7 @@ export default async function AdminDashboardPage() {
               <div className="flex items-center gap-2 mb-4">
                 <FileWarning size={14} style={{ color: 'var(--warning)' }} />
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Docs Expiring Soon</h2>
-                <Link prefetch={false} href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
+                <Link href="/compliance" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
               </div>
               <div className="space-y-2">
                 {expiringDocs.map((d: any) => (
@@ -289,7 +289,7 @@ export default async function AdminDashboardPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={14} style={{ color: 'var(--teal)' }} />
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Service Requests</h2>
-                <Link prefetch={false} href="/requests" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
+                <Link href="/requests" className="text-xs ml-auto" style={{ color: 'var(--purple)' }}>All →</Link>
               </div>
               <div className="space-y-2">
                 {serviceReqs.map((sr: any) => (
