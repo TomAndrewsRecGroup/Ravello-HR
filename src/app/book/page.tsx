@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle, Clock, MessageSquare, Zap } from 'lucide-react
 import BookForm from './BookForm';
 
 export const metadata: Metadata = {
-  title: 'Book a Free Call | The People System',
+  title: 'Book a Call | The People System',
   description:
     'Tell us about your people challenge: hiring, HR foundations, or a deal. Send the form and Lucy or Tom will be in touch within one business day. Straight answers. No pitch.',
   alternates: { canonical: 'https://thepeoplesystem.co.uk/book' },
@@ -32,7 +32,7 @@ export default function BookPage() {
         <div className="max-w-3xl mx-auto">
           <p className="eyebrow mb-6">
             <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            The People System: Free Call
+            The People System: Book a Call
           </p>
           <h1
             className="font-display mb-5"

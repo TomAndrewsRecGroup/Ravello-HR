@@ -3,11 +3,9 @@
 import Link from 'next/link';
 
 // Floating Book-a-Call affordance, anchored bottom-right on every page
-// of the marketing site. Used to be a Calendly iframe popup; now it
-// just routes the user to /book where the booking form lives. Filename
-// kept as CalendlyWidget for import-graph stability — it's referenced
-// from src/app/layout.tsx.
-export default function CalendlyWidget() {
+// of the marketing site. Routes the user to /book where the booking
+// form lives.
+export default function BookCallButton() {
   return (
     <Link
       href="/book"

@@ -8,7 +8,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import QuickActions from '@/components/QuickActions';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
-import CalendlyWidget from '@/components/CalendlyWidget';
+import BookCallButton from '@/components/BookCallButton';
 import ConditionalTicker from '@/components/ConditionalTicker';
 
 const cormorant = Cormorant_Garamond({
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ConditionalTicker />
         <Footer />
         <QuickActions />
-        <CalendlyWidget />
+        <BookCallButton />
         <ExitIntentPopup />
       </body>
     </html>
