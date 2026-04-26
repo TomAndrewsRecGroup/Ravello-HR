@@ -156,9 +156,7 @@ export default function FounderSection() {
               <Link href="/about" className="btn-primary">
                 About The People System <ArrowRight size={15} />
               </Link>
-              <Link href="/book" className="btn-secondary">
-                Book a Free Call
-              </Link>
+              <Link href="/book" className="btn-secondary">Book a Call</Link>
             </div>
           </div>
 

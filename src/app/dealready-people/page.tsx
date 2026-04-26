@@ -74,9 +74,7 @@ export default function DealReadyPeoplePage() {
             Financial due diligence finds the numbers. People due diligence finds the problems. Most acquirers skip the second one and pay for it after the deal closes. Lucy handles this from pre-deal risk through to post-deal integration.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Talk to us about your deal <ArrowRight size={16} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/tools/due-diligence-checklist" className="btn-secondary">
               Get the People DD Checklist
             </Link>
@@ -162,9 +160,7 @@ export default function DealReadyPeoplePage() {
             ))}
           </div>
           <div className="mt-10 text-center flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">
-              Talk to us about your deal <ArrowRight size={16} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/tools/due-diligence-checklist" className="btn-secondary">
               Run the Full DD Checklist
             </Link>
@@ -180,9 +176,7 @@ export default function DealReadyPeoplePage() {
             The right time to bring in people advisory is before heads of terms are signed. If you are already past that point, the second best time is right now.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">
-              Talk to us about your deal <ArrowRight size={16} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/tools/due-diligence-checklist" className="btn-outline-white">
               Download DD Checklist
             </Link>

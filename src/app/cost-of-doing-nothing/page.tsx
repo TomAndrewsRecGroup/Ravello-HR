@@ -128,9 +128,7 @@ export default function CostOfDoingNothingPage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <Link href="/book" className="btn-gradient">
-                  Fix this now: book a free call <ArrowRight size={15} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/tools/hr-risk-score" className="btn-secondary">
                   Find your gaps in 2 minutes <ArrowRight size={14} />
                 </Link>
@@ -368,9 +366,7 @@ export default function CostOfDoingNothingPage() {
             whether you need us. No retainer, no hard sell.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">
-              Book the call <ArrowRight size={15} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/tools/hr-risk-score" className="btn-secondary">
               Run the 2-minute risk score <ArrowRight size={14} />
             </Link>

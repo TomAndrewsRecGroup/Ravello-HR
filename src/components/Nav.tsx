@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, CalendarCheck, LogIn } from 'lucide-react';
+import { Menu, X, ChevronDown, LogIn } from 'lucide-react';
 
 const LOGO_MARK = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -171,8 +171,9 @@ export default function Nav() {
             </div>
 
             {[
-              { label: 'Latest Updates', href: '/latest-updates' },
-              { label: 'About',          href: '/about' },
+              { label: 'Cost of Doing Nothing', href: '/cost-of-doing-nothing' },
+              { label: 'Latest Updates',        href: '/latest-updates' },
+              { label: 'About',                 href: '/about' },
             ].map((link) => (
               <Link
                 key={link.href}
@@ -205,7 +206,7 @@ export default function Nav() {
 
             {/* Primary CTA */}
             <Link href="/book" className="btn-gradient">
-              <CalendarCheck size={15} /> Get Started
+              Book a Call
             </Link>
           </div>
 
@@ -269,8 +270,9 @@ export default function Nav() {
               </Link>
             ))}
             <div className="my-3 brand-divider" />
-            <Link href="/latest-updates" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
-            <Link href="/about"          className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
+            <Link href="/cost-of-doing-nothing" className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Cost of Doing Nothing</Link>
+            <Link href="/latest-updates"        className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>Latest Updates</Link>
+            <Link href="/about"                 className="block px-3 py-2.5 rounded-xl text-sm" style={{ color: 'var(--ink-soft)' }} onClick={() => setOpen(false)}>About</Link>
             <div className="my-3 brand-divider" />
             <a
               href="https://www.portal.thepeoplesystem.co.uk"
@@ -284,7 +286,7 @@ export default function Nav() {
             </a>
             <div className="pt-4">
               <Link href="/book" className="btn-gradient w-full" onClick={() => setOpen(false)}>
-                <CalendarCheck size={15} /> Get Started
+                Book a Call
               </Link>
             </div>
           </div>

@@ -43,12 +43,8 @@ export default function HiringScorePage() {
             Your score highlights the specific failure points in your current process and tells you what to fix first.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              Start with a Hiring Audit <ArrowRight size={16} />
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              Book a Scoping Call
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
+            <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
         </div>
       </section>

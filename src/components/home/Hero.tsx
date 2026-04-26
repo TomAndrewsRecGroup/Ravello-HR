@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect, type ElementType } from 'react';
-import { CalendarCheck, ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Briefcase, Users, ShieldCheck, Network, CheckCircle2 } from 'lucide-react';
 
 const BARS = [
   { label: 'Location',      val: 78, color: '#D94444' },
@@ -413,7 +413,7 @@ export default function Hero() {
 
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link href="/book" className="btn-gradient">
-                  <CalendarCheck size={16} /> Book a Free 30-min Call
+                  Book a Call
                 </Link>
                 <Link href="/tools/hiring-score" className="btn-secondary">
                   Get your free Hiring Score <ArrowRight size={15} />

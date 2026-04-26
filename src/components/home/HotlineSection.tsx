@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { CalendarCheck, ArrowRight, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function HotlineSection() {
   return (
@@ -67,7 +67,7 @@ export default function HotlineSection() {
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link href="/book" className="btn-gradient">
-            <CalendarCheck size={16} /> Book a Free 30-min Call
+            Book a Call
           </Link>
           <a href="mailto:info@thepeoplesystem.co.uk?subject=I'd like to talk about my people function" className="btn-secondary">
             <Mail size={14} /> Email Us Directly

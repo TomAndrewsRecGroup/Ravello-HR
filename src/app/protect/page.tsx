@@ -163,9 +163,7 @@ export default function ProtectPage() {
                 Not sure where to start? A free HR audit takes thirty minutes and gives you a clear, prioritised picture of your compliance exposure and what to fix first.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/book" className="btn-gradient">
-                  Get a Free HR Audit <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/policysafe" className="btn-secondary">
                   How PROTECT works
                 </Link>
@@ -257,9 +255,7 @@ export default function ProtectPage() {
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Thirty minutes with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
               </p>
-              <Link href="/book" className="btn-gradient">
-                Book a Free HR Audit <ArrowRight size={16} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>

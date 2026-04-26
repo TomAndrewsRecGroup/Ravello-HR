@@ -205,9 +205,7 @@ export default function InsightsPage() {
                 compliance and reports your team uses every day.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/book" className="btn-gradient">
-                  See the portal in action <ArrowRight size={15} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/smart-hiring-system" className="btn-secondary">
                   Explore HIRE packages
                 </Link>
@@ -424,9 +422,7 @@ export default function InsightsPage() {
                 Built by Tom Andrews through IvyLens Technology. Included in every HIRE engagement as standard.
               </p>
 
-              <Link href="/book" className="btn-gradient">
-                See it on a live role <ArrowRight size={15} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
           </div>
         </div>
@@ -533,9 +529,7 @@ export default function InsightsPage() {
                 directly in your portal.
               </p>
 
-              <Link href="/book" className="btn-gradient">
-                Get your score <ArrowRight size={15} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
 
             {/* Company score mockup */}
@@ -774,9 +768,7 @@ export default function InsightsPage() {
                 ))}
               </div>
 
-              <Link href="/book" className="btn-secondary">
-                See the library <ArrowRight size={14} />
-              </Link>
+              <Link href="/book" className="btn-secondary">Book a Call</Link>
             </div>
           </div>
 
@@ -824,9 +816,7 @@ export default function InsightsPage() {
                 ))}
               </div>
 
-              <Link href="/book" className="btn-secondary">
-                See the calendar <ArrowRight size={14} />
-              </Link>
+              <Link href="/book" className="btn-secondary">Book a Call</Link>
             </div>
 
             {/* Calendar mockup */}
@@ -945,9 +935,7 @@ export default function InsightsPage() {
             and show you where your people function sits against your industry.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/book" className="btn-gradient">
-              Book a Free Call <ArrowRight size={15} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/smart-hiring-system" className="btn-secondary">
               Explore HIRE packages
             </Link>

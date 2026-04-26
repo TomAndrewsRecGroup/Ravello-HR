@@ -88,7 +88,7 @@ const packages: Package[] = [
   {
     tag: 'Most popular · 6-month minimum',
     highlight: true,
-    cta: { label: 'Start with a Hiring Audit', href: '/book' },
+    cta: { label: 'Book a Call', href: '/book' },
     sme: {
       name: 'HIRE Embedded',
       who: 'For businesses with a consistent hiring need: typically 3-8 roles over the engagement period. We work inside your team: sourcing, screening, advising on decisions, and building capability as you go. Agency fees are included in the monthly rate.',
@@ -186,9 +186,7 @@ export default function HirePage() {
                 Not sure which one fits? Start with a free hiring audit. Thirty minutes with us. You will leave with a clear picture of what is broken and which engagement model makes sense.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/book" className="btn-gradient">
-                  Start with a Hiring Audit <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/smart-hiring-system" className="btn-secondary">
                   How HIRE works
                 </Link>
@@ -301,9 +299,7 @@ export default function HirePage() {
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Start with a hiring audit. We will look at what you are hiring for, how the current process is working, run a Friction Lens score on a live role, and tell you exactly which engagement makes sense.
               </p>
-              <Link href="/book" className="btn-gradient">
-                Book a Free Hiring Audit <ArrowRight size={16} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>

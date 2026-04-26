@@ -22,7 +22,7 @@ export default function CalendlyWidget() {
               : 'linear-gradient(135deg, #EA3DC4 0%, #7C3AED 50%, #3B6FFF 100%)',
             boxShadow: '0 4px 26px rgba(124,58,237,0.48)',
           }}
-          aria-label={open ? 'Close booking' : 'Book a free call'}
+          aria-label={open ? 'Close booking' : 'Book a Call'}
         >
           {open ? <X size={22} /> : <CalendarCheck size={22} />}
         </button>
@@ -56,7 +56,7 @@ export default function CalendlyWidget() {
               style={{ background: 'var(--gradient)' }}
             />
             <div>
-              <p className="text-sm font-semibold text-white">Book a Free 30-Min Call</p>
+              <p className="text-sm font-semibold text-white">Book a Call</p>
               <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.42)' }}>
                 No pitch. No obligation.
               </p>

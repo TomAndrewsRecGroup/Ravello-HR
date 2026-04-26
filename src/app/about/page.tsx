@@ -133,9 +133,7 @@ export default function AboutPage() {
                 />
               </div>
               <div className="mt-6">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
               </div>
             </div>
           </div>
@@ -205,9 +203,7 @@ export default function AboutPage() {
                 />
               </div>
               <div className="mt-6">
-                <Link href="/book" className="btn-gradient">
-                  Book a Free Discovery Call <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
               </div>
             </div>
           </div>
@@ -291,9 +287,7 @@ export default function AboutPage() {
           <p className="text-lg mb-8 max-w-xl mx-auto" style={{ color: 'var(--ink-soft)' }}>
             Book a free call. Bring your current people challenge: whether it is hiring, compliance, or leadership: and leave with a clear, actionable next step.
           </p>
-          <Link href="/book" className="btn-gradient">
-            Book a Free Call <ArrowRight size={16} />
-          </Link>
+          <Link href="/book" className="btn-gradient">Book a Call</Link>
         </div>
       </section>
 

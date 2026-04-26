@@ -155,9 +155,7 @@ export default function LeadPage() {
                 We work with everyone in your organisation, not just your managers. Because great businesses are built by people who keep getting better at what they do. Thirty minutes is all it takes to figure out where to start.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/book" className="btn-gradient">
-                  Book a Call <ArrowRight size={16} />
-                </Link>
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
               </div>
             </div>
             <div className="hidden lg:block">
@@ -259,9 +257,7 @@ export default function LeadPage() {
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
                 Book thirty minutes with us. Bring your current people challenge and leave with a clear view of what needs fixing and which engagement makes sense.
               </p>
-              <Link href="/book" className="btn-gradient">
-                Book a Free Call <ArrowRight size={16} />
-              </Link>
+              <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>
             <div className="hidden lg:block">
               <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>

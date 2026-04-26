@@ -109,9 +109,7 @@ export default function FrictionLensPage() {
             Friction Lens scores every active role across five dimensions before it goes to market. You see the friction score, the specific failure points, and exactly what to change. Not after four weeks of wasted effort. Before day one.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/book" className="btn-gradient">
-              See it in action: Start with a Hiring Audit <ArrowRight size={16} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/hire" className="btn-secondary">
               HIRE packages
             </Link>
@@ -273,9 +271,7 @@ export default function FrictionLensPage() {
             Start with a hiring audit. Tom will run a Friction Lens score on one of your current or upcoming roles and walk you through the output. Free. No obligation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">
-              See it in action <ArrowRight size={16} />
-            </Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/hire" className="btn-outline-white">
               HIRE packages and pricing
             </Link>

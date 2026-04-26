@@ -105,7 +105,7 @@ export default function WhyRavelloPage() {
             Not a recruitment agency. Not a retainer consultancy. A people practice built to fix real problems at the root: across hiring, HR leadership, and compliance.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free 30-min Call</Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="#comparison" className="btn-secondary">See the comparison <ArrowRight size={15} /></Link>
           </div>
         </div>
@@ -241,7 +241,7 @@ export default function WhyRavelloPage() {
             Thirty minutes. No pitch. A straight conversation about what is holding your business back and what to do about it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient"><CalendarCheck size={16} /> Book a Free 30-min Call</Link>
+            <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/about" className="btn-secondary">Meet Lucy and Tom <ArrowRight size={14} /></Link>
           </div>
         </div>
