@@ -12,7 +12,7 @@ const COMPARISON = [
   { feature: 'Named, outcome-led system',                          ravello: true,  agency: false,   inhouse: false,   generic: false },
   { feature: 'Senior expert on your account (day 1 to end)',       ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
   { feature: 'Fixed scope: no billing surprises',                 ravello: true,  agency: false,   inhouse: true,    generic: false },
-  { feature: 'Embeds within 48 hours',                             ravello: true,  agency: false,   inhouse: false,   generic: false },
+  { feature: 'Fast embedding, no discovery phase',                 ravello: true,  agency: false,   inhouse: false,   generic: false },
   { feature: 'Covers hiring, compliance AND transformation',        ravello: true,  agency: false,   inhouse: 'maybe', generic: false },
   { feature: 'No long-term retainer required',                     ravello: true,  agency: false,   inhouse: false,   generic: false },
   { feature: 'CIPD qualified & TUPE specialist',                   ravello: true,  agency: false,   inhouse: 'maybe', generic: 'maybe' },
@@ -52,7 +52,7 @@ const REASONS = [
   {
     icon: '\u26A1',
     title: 'Embedded fast',
-    body: 'Typically active within 48 hours. No lengthy onboarding and no six-week discovery phase. We learn your business by working inside it.',
+    body: 'Active fast. No lengthy onboarding, no drawn-out discovery phase. We learn your business by working inside it.',
   },
   {
     icon: '\uD83D\uDCCB',
@@ -238,7 +238,7 @@ export default function WhyRavelloPage() {
         <div className="relative z-10 container-narrow text-center">
           <h2 className="font-display section-title mb-6">Ready to have an honest conversation?</h2>
           <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Thirty minutes. No pitch. A straight conversation about what is holding your business back and what to do about it.
+            No pitch. A straight conversation about what is holding your business back and what to do about it.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="/book" className="btn-gradient">Book a Call</Link>

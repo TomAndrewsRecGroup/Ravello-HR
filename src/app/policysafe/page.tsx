@@ -22,7 +22,7 @@ const packages = [
     tag: 'Starting point',
     price: 'From £495',
     highlight: false,
-    items: ['Employment contract template', 'Offer letter template', 'Basic disciplinary & grievance procedure', 'Holiday & absence policy', '1-hour implementation call'],
+    items: ['Employment contract template', 'Offer letter template', 'Basic disciplinary & grievance procedure', 'Holiday & absence policy', 'Implementation call'],
     cta: { label: 'Book a Call', href: '/book' },
   },
   {
@@ -214,7 +214,7 @@ export default function PolicySafePage() {
                 Not sure what your compliance exposure looks like?
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                Book a free HR audit with Lucy. Thirty minutes. You will leave with a clear, prioritised picture of what is missing and what to fix first.
+                Book a free HR audit with Lucy. You will leave with a clear, prioritised picture of what is missing and what to fix first.
               </p>
               <Link href="/book" className="btn-outline-white justify-center w-full">Book a Call</Link>
             </div>

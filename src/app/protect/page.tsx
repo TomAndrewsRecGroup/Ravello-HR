@@ -37,7 +37,7 @@ const packages: Package[] = [
         'Employment contracts drafted or updated to current legal standards',
         'Employee handbook covering disciplinaries, grievances, absence, performance and conduct',
         'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
-        'Monthly HR check-in (60 min): live ER issues, compliance updates, people questions',
+        'Monthly HR check-in: live ER issues, compliance updates, people questions',
         'Up to 2 escalation calls per month for urgent or time-sensitive situations',
       ],
     },
@@ -49,7 +49,7 @@ const packages: Package[] = [
         'Employment contracts drafted or updated to current UK law and group templates',
         'Localised handbook covering disciplinaries, grievances, absence, performance and conduct',
         'Statutory policies ensuring compliance with UK employment law including the Employment Rights Act',
-        'Monthly HR check-in (60 min) with the local HR lead',
+        'Monthly HR check-in with the local HR lead',
         'Up to 2 escalation calls per month for urgent or time-sensitive situations',
       ],
     },
@@ -63,7 +63,7 @@ const packages: Package[] = [
       who: 'For businesses that need a proper HR function on an ongoing basis. Not just documents and compliance but active, hands-on support across everything people related: ER cases, org design, skills mapping, restructures and the strategic infrastructure to support a growing business.',
       includes: [
         'Everything in PROTECT Foundations',
-        'Fortnightly HR session (60 min): ER cases, people decisions, priorities and planning',
+        'Fortnightly HR session: ER cases, people decisions, priorities and planning',
         'Up to 4 escalation calls per month for complex or urgent situations',
         'End-to-end ER case management: disciplinaries, grievances, performance management, redundancy and TUPE',
         'Organisational design, workforce planning and restructuring support',
@@ -78,7 +78,7 @@ const packages: Package[] = [
       who: 'For divisions, regions or portfolio companies that need dedicated HR generalist support on an ongoing basis, sitting alongside group HR and covering everything people related from ER to org design.',
       includes: [
         'Everything in PROTECT Governance',
-        'Fortnightly HR session (60 min) with the divisional lead: ER cases, decisions, priorities',
+        'Fortnightly HR session with the divisional lead: ER cases, decisions, priorities',
         'Up to 4 escalation calls per month for complex or urgent situations',
         'End-to-end ER case management: disciplinaries, grievances, performance, redundancy, TUPE',
         'Organisational design, workforce planning and restructuring support',
@@ -98,7 +98,7 @@ const packages: Package[] = [
       who: 'For businesses that need someone operating at CPO or HRD level without the full-time cost. We sit at your leadership table, own the people agenda, hold the compliance and ER risk and build the people strategy your business needs to scale. This is not a support service. It is executive-level people leadership.',
       includes: [
         'Everything in PROTECT Partner',
-        'Weekly fractional CPO session (60 min) plus leadership team and board attendance',
+        'Weekly fractional CPO session plus leadership team and board attendance',
         'People strategy design aligned to your 12 to 36 month business plan',
         'Skills mapping, succession planning and talent pipeline development',
         'Reward and compensation strategy including grading and pay structures',
@@ -115,7 +115,7 @@ const packages: Package[] = [
       who: 'For corporate divisions or portfolio companies that need CPO-level people leadership without adding a permanent role. We sit on the divisional exec, own the people agenda, carry the ER and compliance risk, and interface with group HR.',
       includes: [
         'Everything in PROTECT Operations',
-        'Weekly fractional CPO session (60 min) plus divisional leadership team attendance',
+        'Weekly fractional CPO session plus divisional leadership team attendance',
         'Divisional people strategy aligned to 12 to 36 month plan and group direction',
         'Skills mapping, succession planning and talent pipeline development',
         'Reward and compensation strategy aligned to group grading and pay structures',
@@ -253,7 +253,7 @@ export default function ProtectPage() {
                 <span className="text-gradient">a free HR audit</span>
               </h3>
               <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
-                Thirty minutes with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
+                One conversation with us. You will leave with a clear, prioritised view of your compliance exposure, what is missing, and which PROTECT package is the right starting point.
               </p>
               <Link href="/book" className="btn-gradient">Book a Call</Link>
             </div>

@@ -130,7 +130,7 @@ export default function CostOfDoingNothingPage() {
               <div className="flex flex-wrap gap-4">
                 <Link href="/book" className="btn-gradient">Book a Call</Link>
                 <Link href="/tools/hr-risk-score" className="btn-secondary">
-                  Find your gaps in 2 minutes <ArrowRight size={14} />
+                  Find your gaps now <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -362,7 +362,7 @@ export default function CostOfDoingNothingPage() {
             The cheapest fix is the one you make before the bill arrives.
           </h2>
           <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--ink-soft)' }}>
-            30 minutes on a call. We tell you what is exposed, what to fix first, and
+            One honest call. We tell you what is exposed, what to fix first, and
             whether you need us. No retainer, no hard sell.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">

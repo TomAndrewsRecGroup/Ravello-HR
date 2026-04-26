@@ -83,7 +83,7 @@ export default function ExitIntentPopup() {
                 <Download size={24} style={{ color: 'var(--brand-purple)' }} />
               </div>
 
-              <p className="eyebrow mb-4">Free guide: takes 5 minutes to read</p>
+              <p className="eyebrow mb-4">Free guide: a quick read</p>
               <h3
                 className="font-display mb-5"
                 style={{

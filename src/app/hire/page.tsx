@@ -37,7 +37,7 @@ const packages: Package[] = [
         'Role definition review and brief writing',
         'Interview structure and scorecard templates',
         'Hiring manager guidance',
-        'Weekly hiring review (30 min)',
+        'Weekly hiring review',
         'Placement fee applies at 10% on successful hires',
       ],
     },
@@ -183,7 +183,7 @@ export default function HirePage() {
                 Every HIRE engagement starts with Friction Lens: a role scoring system that tells you exactly where each vacancy will struggle before it goes to market. From there, the right package depends on your hiring volume and how broken the current process is.
               </p>
               <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-                Not sure which one fits? Start with a free hiring audit. Thirty minutes with us. You will leave with a clear picture of what is broken and which engagement model makes sense.
+                Not sure which one fits? Start with a free hiring audit. One conversation with us. You will leave with a clear picture of what is broken and which engagement model makes sense.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/book" className="btn-gradient">Book a Call</Link>

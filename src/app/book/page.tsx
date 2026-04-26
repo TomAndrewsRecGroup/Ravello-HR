@@ -161,8 +161,8 @@ export default function BookPage() {
           <p className="eyebrow mb-8">Not quite ready to book? Use one of these first.</p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { href: '/tools/hiring-score',         label: 'Smart Hiring Score',  sub: '3 mins, free, instant results' },
-              { href: '/tools/hr-risk-score',        label: 'HR Risk Score',        sub: '2 mins, free, gap report' },
+              { href: '/tools/hiring-score',         label: 'Smart Hiring Score',  sub: 'Free, instant results' },
+              { href: '/tools/hr-risk-score',        label: 'HR Risk Score',        sub: 'Free, gap report' },
               { href: '/tools/due-diligence-checklist', label: 'DD Checklist',     sub: 'M&A, free, downloadable' },
             ].map((t) => (
               <Link key={t.href} href={t.href}

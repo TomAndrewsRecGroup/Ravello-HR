@@ -693,7 +693,7 @@ export default function InsightsPage() {
                     <p className="font-bold text-white text-sm mb-0.5 leading-tight">
                       Difficult Conversations for Managers
                     </p>
-                    <p className="text-white/75 text-[11px]">Lucy Andrews · 45 min</p>
+                    <p className="text-white/75 text-[11px]">Lucy Andrews</p>
                   </div>
                 </div>
 
@@ -701,7 +701,7 @@ export default function InsightsPage() {
                 <div className="space-y-2">
                   {[
                     { title: 'Onboarding Playbook', meta: 'PDF · 24 pages', badge: 'Shared', badgeBg: 'rgba(34,197,94,0.10)', badgeColor: '#16A34A', thumbBg: 'linear-gradient(135deg, #3B6FFF, #7C3AED)' },
-                    { title: 'Performance Review Framework', meta: 'Video · 32 min', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
+                    { title: 'Performance Review Framework', meta: 'Video', badge: 'Active', badgeBg: 'rgba(124,58,237,0.10)', badgeColor: 'var(--brand-purple)', thumbBg: 'linear-gradient(135deg, #EA3DC4, #7C3AED)' },
                     { title: 'AI at Work Policy', meta: 'PDF · 8 pages', badge: 'New', badgeBg: 'rgba(245,158,11,0.12)', badgeColor: '#92400E', thumbBg: 'linear-gradient(135deg, #BF8F28, #7C3AED)' },
                   ].map((c) => (
                     <div

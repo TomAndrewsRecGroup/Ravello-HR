@@ -8,7 +8,7 @@ import {
 
 const actions = [
   { icon: Phone,          label: 'Book a Call',      sub: 'No pitch, just a plan', href: '/book',                          type: 'link'  },
-  { icon: Zap,            label: 'Hiring Score',     sub: '3 min diagnostic',     href: '/tools/hiring-score',             type: 'link'  },
+  { icon: Zap,            label: 'Hiring Score',     sub: 'Free diagnostic',       href: '/tools/hiring-score',             type: 'link'  },
   { icon: BarChart2,      label: 'HR Risk Score',    sub: 'Find your gaps',       href: '/tools/hr-risk-score',            type: 'link'  },
   { icon: ClipboardCheck, label: 'Policy Check',     sub: 'Free healthcheck',     href: '/tools/policy-healthcheck',       type: 'link'  },
   { icon: FileText,       label: 'DD Checklist',     sub: 'M&A people risk',      href: '/tools/due-diligence-checklist',  type: 'link'  },

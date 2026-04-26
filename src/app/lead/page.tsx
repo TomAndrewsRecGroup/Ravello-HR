@@ -33,7 +33,7 @@ const packages: Package[] = [
       name: 'LEAD Foundations',
       who: 'Every month we work with you on the stuff that actually builds a learning culture: structured check-ins that drive real decisions, hands-on support for managers dealing with live capability challenges, and a clear view of where your people development gaps are sitting before they start costing you.',
       includes: [
-        'Monthly 60 minute strategic L&D session with clear actions and follow through',
+        'Monthly strategic L&D session with clear actions and follow through',
         'Behavioural coaching support for managers dealing with live people challenges',
         'Audit of your current approach to learning, feedback and development',
         'Practical guidance on career development and progression conversations',
@@ -45,7 +45,7 @@ const packages: Package[] = [
       name: 'LEAD Advisory',
       who: 'For corporate HR functions that want an external L&D partner on retainer: supporting managers with live capability challenges, pressure-testing internal L&D decisions, and surfacing development gaps across a specific business unit or region.',
       includes: [
-        'Monthly 60 minute strategic L&D session aligned to the BU or region',
+        'Monthly strategic L&D session aligned to the BU or region',
         'Behavioural coaching support for managers dealing with live capability challenges',
         'Audit of the current L&D approach in the focus area against group standards',
         'Practical guidance on career development and progression conversations',
@@ -152,7 +152,7 @@ export default function LeadPage() {
                 From behavioural skills and leadership capability through to culture and strategy, LEAD is everything an effective L&amp;D function does, built around what your business actually needs right now.
               </p>
               <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
-                We work with everyone in your organisation, not just your managers. Because great businesses are built by people who keep getting better at what they do. Thirty minutes is all it takes to figure out where to start.
+                We work with everyone in your organisation, not just your managers. Because great businesses are built by people who keep getting better at what they do. One conversation is all it takes to figure out where to start.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/book" className="btn-gradient">Book a Call</Link>

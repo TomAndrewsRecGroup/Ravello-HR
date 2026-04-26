@@ -52,7 +52,7 @@ export default function HotlineSection() {
           className="text-lg leading-relaxed mb-4 max-w-[520px] mx-auto"
           style={{ color: 'var(--ink-soft)' }}
         >
-          Thirty minutes with Lucy and Tom. No pitch. No slides. You describe the situation,
+          One conversation with Lucy and Tom. No pitch. No slides. You describe the situation,
           we tell you exactly what the problem is and what to do about it.
         </p>
 
@@ -60,7 +60,7 @@ export default function HotlineSection() {
           className="text-sm leading-relaxed mb-10 max-w-[480px] mx-auto"
           style={{ color: 'var(--ink-faint)' }}
         >
-          Most clients say this is the most useful 30 minutes they&rsquo;ve had on their people
+          Most clients say this is the most useful conversation they&rsquo;ve had about their people
           function. You leave with 1-3 specific next steps you can act on immediately,
           whether you work with us or not.
         </p>
@@ -75,7 +75,7 @@ export default function HotlineSection() {
         </div>
 
         <p className="mt-8 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-          Free · No obligation · We typically respond within 4 hours ·{' '}
+          Free · No obligation · Quick to respond ·{' '}
           <a
             href="mailto:info@thepeoplesystem.co.uk"
             className="underline hover:no-underline"
