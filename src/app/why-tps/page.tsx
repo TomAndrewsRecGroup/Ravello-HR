@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, XCircle, Minus } from 'lucide-react';
+import {
+  ArrowRight, CheckCircle2, XCircle, Minus,
+  Layers, Users, Zap, ClipboardCheck, Lock, Award,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Why The People System | The People System',
@@ -40,32 +44,38 @@ const OBJECTIONS = [
 
 const REASONS = [
   {
-    icon: '🎯', // 🎯
+    icon: Layers,
+    color: '#7B2FBE',
     title: 'A system, not a service',
     body: 'Every engagement is built around one of three named systems: HIRE, LEAD, or PROTECT. You always know what you are getting and when it is done.',
   },
   {
-    icon: '👤', // 👤
+    icon: Users,
+    color: '#4B6EF5',
     title: 'One senior expert, start to finish',
     body: 'Same senior lead the whole way through. Not a junior briefed by someone you met once. Senior thinking on every call, every deliverable.',
   },
   {
-    icon: '⚡', // ⚡
+    icon: Zap,
+    color: '#EA3DC4',
     title: 'Embedded fast',
     body: 'No discovery phase. We learn your business by working inside it, not by sitting through workshops.',
   },
   {
-    icon: '📋', // 📋
+    icon: ClipboardCheck,
+    color: '#2E8B7A',
     title: 'Fixed scope, clear cost',
     body: 'You know the investment before we start. No open-ended retainers. No scope creep. No invoices that catch you off guard.',
   },
   {
-    icon: '🔒', // 🔒
+    icon: Lock,
+    color: '#B45309',
     title: 'Fully confidential',
     body: 'Every engagement is handled with discretion. Your name never appears in our case studies without explicit consent.',
   },
   {
-    icon: '🏆', // 🏆
+    icon: Award,
+    color: '#16A34A',
     title: 'Zero tribunal outcomes',
     body: 'Across every restructure, TUPE transfer, and disciplinary process Lucy has built a case for. That is not luck. It is the result of doing things properly.',
   },
@@ -79,47 +89,65 @@ function Cell({ val }: { val: boolean | string }) {
 
 export default function WhyTPSPage() {
   return (
-    <main>
+    <div className="pt-28">
 
-      {/* Hero */}
-      <section className="relative overflow-hidden" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
-        <div className="container-wide section-padding py-0 text-center px-6" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-          <p className="eyebrow justify-center mb-6">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#9B7FF8' }} />
-            Why The People System
-          </p>
-          <h1
-            className="font-display mb-5"
-            style={{
-              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
-              fontWeight: 800,
-              lineHeight: 1.02,
-              letterSpacing: '-0.04em',
-              color: 'var(--ink)',
-            }}
-          >
-            Senior HR. <br />
-            <span className="text-gradient">Built differently.</span>
-          </h1>
-          <p className="text-lg leading-relaxed max-w-[560px] mx-auto mb-10" style={{ color: 'var(--ink-soft)' }}>
-            Not a recruitment agency. Not a retainer consultancy. A people practice built to fix the real problems at the root, across hiring, HR leadership, and compliance.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">Book a Call</Link>
-            <Link href="#comparison" className="btn-secondary">See the comparison <ArrowRight size={15} /></Link>
+      {/* Hero — matches /hire and /protect layout (text + image) */}
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Why The People System
+              </p>
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Senior HR.<br />
+                <span className="text-gradient">Built differently.</span>
+              </h1>
+              <p className="text-lg leading-relaxed mb-3 max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+                Not a recruitment agency. Not a retainer consultancy. A people practice built to fix the real problems at the root, across hiring, HR leadership, and compliance.
+              </p>
+              <p className="text-base leading-relaxed mb-10 max-w-2xl" style={{ color: 'var(--ink-faint)' }}>
+                One partner. Senior throughout. Fixed scope. The same senior lead from day one to handover.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
+                <Link href="#comparison" className="btn-secondary">See the comparison <ArrowRight size={15} /></Link>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=960&h=960&fit=crop&crop=faces"
+                  alt="Senior consultants discussing a client's people strategy"
+                  fill
+                  className="object-cover"
+                  sizes="420px"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 6 Reasons */}
-      <section className="section-padding" style={{ background: 'var(--bg)' }}>
+      {/* Six reasons — lucide icons in tinted bg circles, matches /hire dimensions style */}
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
-          <div className="max-w-[560px] mb-16">
+          <div className="max-w-[600px] mb-12">
             <p className="eyebrow mb-5">
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               What makes us different
             </p>
-            <h3
+            <h2
               className="font-display mb-5"
               style={{
                 fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
@@ -131,29 +159,39 @@ export default function WhyTPSPage() {
             >
               Six reasons businesses choose<br />
               <span className="text-gradient">The People System.</span>
-            </h3>
+            </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {REASONS.map((r) => (
-              <div key={r.title} className="card">
-                <span className="text-3xl mb-5 block">{r.icon}</span>
-                <h3 className="font-bold text-lg mb-3" style={{ color: 'var(--ink)', letterSpacing: '-0.015em' }}>{r.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{r.body}</p>
-              </div>
-            ))}
+            {REASONS.map((r) => {
+              const Icon = r.icon;
+              return (
+                <div key={r.title} className="rounded-[18px] p-7" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
+                  <div
+                    className="w-11 h-11 rounded-[12px] flex items-center justify-center mb-5"
+                    style={{ background: `${r.color}15`, border: `1px solid ${r.color}30` }}
+                  >
+                    <Icon size={20} style={{ color: r.color }} />
+                  </div>
+                  <h3 className="font-bold text-lg mb-3" style={{ color: 'var(--ink)', fontFamily: 'var(--font-cormorant), serif', fontWeight: 600, fontSize: '1.35rem', letterSpacing: '-0.015em' }}>
+                    {r.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{r.body}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Comparison table */}
-      <section id="comparison" className="section-padding" style={{ background: 'var(--surface-alt)' }}>
+      {/* Comparison table — kept in tone with /hire and /protect packages section */}
+      <section id="comparison" style={{ background: 'var(--surface-alt)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
-          <div className="max-w-[560px] mb-14">
+          <div className="max-w-[600px] mb-12">
             <p className="eyebrow mb-5">
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Why not an agency
             </p>
-            <h3
+            <h2
               className="font-display mb-5"
               style={{
                 fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
@@ -165,7 +203,7 @@ export default function WhyTPSPage() {
             >
               How we<br />
               <span className="text-gradient">compare.</span>
-            </h3>
+            </h2>
             <p className="text-lg mt-5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>The People System against the alternatives. Side by side.</p>
           </div>
 
@@ -200,14 +238,14 @@ export default function WhyTPSPage() {
       </section>
 
       {/* Objection handling */}
-      <section className="section-padding" style={{ background: 'var(--bg)' }}>
+      <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem' }} className="lg:px-10">
         <div className="container-wide">
-          <div className="max-w-[560px] mb-14">
+          <div className="max-w-[600px] mb-12">
             <p className="eyebrow mb-5">
-              <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+              <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
               Common questions
             </p>
-            <h3
+            <h2
               className="font-display mb-5"
               style={{
                 fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
@@ -219,11 +257,11 @@ export default function WhyTPSPage() {
             >
               We hear these a lot.<br />
               <span className="text-gradient">Here are the honest answers.</span>
-            </h3>
+            </h2>
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {OBJECTIONS.map((o) => (
-              <div key={o.q} className="card">
+              <div key={o.q} className="rounded-[18px] p-7" style={{ background: 'var(--surface)', border: '1px solid var(--brand-line)' }}>
                 <p className="font-bold text-base mb-4" style={{ color: 'var(--ink)' }}>&ldquo;{o.q}&rdquo;</p>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{o.a}</p>
               </div>
@@ -232,21 +270,55 @@ export default function WhyTPSPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section-padding relative overflow-hidden" style={{ background: 'var(--surface-alt)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(124,92,246,0.08) 0%, transparent 65%)' }} />
-        <div className="relative z-10 container-narrow text-center">
-          <h2 className="font-display section-title mb-6">Ready to have an honest conversation?</h2>
-          <p className="text-lg leading-relaxed mb-10" style={{ color: 'var(--ink-soft)' }}>
-            No pitch. A straight conversation about what is holding your business back and what to do about it.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/book" className="btn-gradient">Book a Call</Link>
-            <Link href="/about" className="btn-secondary">Meet Lucy and Tom <ArrowRight size={14} /></Link>
+      {/* CTA — matches the rest of the site's closing CTA pattern (split image / text) */}
+      <section style={{ background: 'var(--surface-alt)', padding: '3rem 1.5rem' }} className="lg:px-10">
+        <div className="container-wide">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-14 items-center">
+            <div>
+              <h2
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  letterSpacing: '-0.035em',
+                  color: 'var(--ink)',
+                }}
+              >
+                Ready to have an<br />
+                <span className="text-gradient">honest conversation?</span>
+              </h2>
+              <p className="text-lg mb-8 max-w-xl" style={{ color: 'var(--ink-soft)' }}>
+                No pitch. A straight conversation about what is holding your business back and what to do about it. You leave with one to three specific next steps you can act on, whether you work with us or not.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/book" className="btn-gradient">Book a Call</Link>
+                <Link href="/about" className="btn-secondary">Meet Lucy and Tom <ArrowRight size={14} /></Link>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=960&h=960&fit=crop&crop=faces"
+                  alt="Business professionals having a focused conversation"
+                  fill
+                  className="object-cover"
+                  sizes="420px"
+                />
+                <div className="absolute inset-x-0 bottom-0 p-6" style={{ background: 'linear-gradient(to top, rgba(5,8,16,0.88) 0%, rgba(5,8,16,0.45) 60%, transparent 100%)' }}>
+                  <p className="text-white text-sm leading-relaxed mb-2" style={{ fontStyle: 'italic', opacity: 0.95 }}>
+                    &ldquo;Not HR from a textbook. People results from operators who have done the real work.&rdquo;
+                  </p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Lucy &amp; Tom, The People System
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-    </main>
+    </div>
   );
 }
