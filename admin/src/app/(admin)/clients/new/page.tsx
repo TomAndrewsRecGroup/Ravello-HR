@@ -2,21 +2,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminTopbar from '@/components/layout/AdminTopbar';
-import { createClient } from '@/lib/supabase/client';
-import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, CheckCircle2, PoundSterling, AlertTriangle } from 'lucide-react';
 
-const DEFAULT_FLAGS = { hiring: true, documents: true, reports: false, support: true, metrics: false, compliance: false };
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
 const SIZES   = ['10-24','25-49','50-99','100-249','250+'];
 
 export default function NewClientPage() {
   const router   = useRouter();
-  const supabase = createClient();
-  const [form,       setForm]       = useState({ name: '', slug: '', sector: '', size_band: '', contact_email: '' });
-  const [sendInvite, setSendInvite] = useState(true);
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState('');
-  const [inviteNote, setInviteNote] = useState('');
+  const [form,             setForm]             = useState({ name: '', slug: '', sector: '', size_band: '', contact_email: '' });
+  const [retainerPounds,   setRetainerPounds]   = useState('');
+  const [sendInvite,       setSendInvite]       = useState(true);
+  const [loading,          setLoading]          = useState(false);
+  const [error,            setError]            = useState('');
+  const [inviteNote,       setInviteNote]       = useState('');
+  const [stripeNote,       setStripeNote]       = useState('');
 
   function set(k: string, v: string) { setForm(p => ({ ...p, [k]: v })); }
 
@@ -25,21 +24,46 @@ export default function NewClientPage() {
     setLoading(true);
     setError('');
     setInviteNote('');
+    setStripeNote('');
 
-    // 1. Create the company
-    const { data, error: err } = await supabase.from('companies').insert({
-      name:          form.name,
-      slug:          form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      sector:        form.sector    || null,
-      size_band:     form.size_band || null,
-      contact_email: form.contact_email || null,
-      active:        true,
-      feature_flags: DEFAULT_FLAGS,
-    }).select().single();
+    // Convert retainer pounds → pence; allow blank/zero (admin can
+    // skip Stripe setup at create time and add billing later).
+    const retainerPounds_n = parseFloat(retainerPounds);
+    const retainerPence    = !isNaN(retainerPounds_n) && retainerPounds_n > 0
+      ? Math.round(retainerPounds_n * 100)
+      : null;
 
-    if (err) { setError(err.message); setLoading(false); return; }
-
-    const companyId = (data as any).id;
+    // 1. Create the company (server-side: handles Stripe customer +
+    // subscription creation atomically when retainer > 0).
+    let companyId: string;
+    try {
+      const res = await fetch('/api/admin/clients', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          name:                    form.name,
+          slug:                    form.slug,
+          sector:                  form.sector       || null,
+          size_band:               form.size_band    || null,
+          contact_email:           form.contact_email || null,
+          monthly_retainer_pence:  retainerPence,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Could not create client.');
+        setLoading(false);
+        return;
+      }
+      companyId = data.company_id;
+      if (data.stripe?.error) {
+        setStripeNote(`Client created, but Stripe billing setup failed: ${data.stripe.error}. You can retry from the client detail page.`);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Network error.');
+      setLoading(false);
+      return;
+    }
 
     // 2. Optionally send portal invite
     if (sendInvite && form.contact_email) {
@@ -71,8 +95,8 @@ export default function NewClientPage() {
             <input required value={form.name} onChange={e => set('name', e.target.value)} className="input" placeholder="Acme Ltd" />
           </div>
           <div className="form-group">
-            <label className="label">Slug (URL-safe ID)</label>
-            <input value={form.slug} onChange={e => set('slug', e.target.value)} className="input" placeholder="acme-ltd (auto-generated if blank)" />
+            <label className="label">URL slug</label>
+            <input value={form.slug} onChange={e => set('slug', e.target.value)} className="input" placeholder="e.g. acme-ltd (auto-generated if blank)" />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">
@@ -102,6 +126,40 @@ export default function NewClientPage() {
             />
           </div>
 
+          {/* Monthly retainer — sets up the Stripe subscription on save */}
+          <div
+            className="rounded-[12px] p-4"
+            style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.18)' }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <PoundSterling size={14} style={{ color: 'var(--purple)' }} />
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Monthly retainer</p>
+            </div>
+            <div className="form-group mb-2">
+              <div className="relative">
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium"
+                  style={{ color: 'var(--ink-faint)' }}
+                >£</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={retainerPounds}
+                  onChange={e => setRetainerPounds(e.target.value)}
+                  className="input"
+                  style={{ paddingLeft: 24 }}
+                  placeholder="2500.00"
+                />
+              </div>
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
+              We&rsquo;ll create the Stripe customer and subscription with this monthly amount.
+              Leave blank or set to 0 to skip billing setup for now &mdash; you can add it later.
+              The client will receive a separate email from Stripe to add their payment method.
+            </p>
+          </div>
+
           {/* Invite toggle */}
           {form.contact_email && (
             <label
@@ -126,6 +184,12 @@ export default function NewClientPage() {
           )}
 
           {error      && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.08)',  color: 'var(--danger)' }}>{error}</p>}
+          {stripeNote && (
+            <p className="text-xs p-3 rounded-[8px] flex items-start gap-2" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--amber)' }}>
+              <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+              {stripeNote}
+            </p>
+          )}
           {inviteNote && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,119,6,0.08)', color: 'var(--amber)' }}>{inviteNote}</p>}
 
           <button type="submit" disabled={loading} className="btn-cta w-full justify-center">

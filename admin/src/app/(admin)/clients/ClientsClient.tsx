@@ -9,6 +9,27 @@ interface Company {
   sector: string | null; size_band: string | null; active: boolean;
   feature_flags: Record<string, boolean> | null;
   friction_band: string | null;
+  monthly_retainer_pence: number | null;
+  subscription_status: string | null;
+  billing_currency: string | null;
+}
+
+const SUB_STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  active:             { label: 'Active',          bg: 'rgba(22,163,74,0.10)',  color: 'var(--emerald)' },
+  trialing:           { label: 'Trialing',        bg: 'rgba(59,111,255,0.10)', color: 'var(--blue)' },
+  past_due:           { label: 'Past due',        bg: 'rgba(217,68,68,0.08)',  color: 'var(--rose)' },
+  canceled:           { label: 'Cancelled',       bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+  incomplete:         { label: 'Setup incomplete', bg: 'rgba(245,158,11,0.10)', color: '#92400E' },
+  incomplete_expired: { label: 'Setup expired',   bg: 'rgba(217,68,68,0.08)',  color: 'var(--rose)' },
+  unpaid:             { label: 'Unpaid',          bg: 'rgba(217,68,68,0.10)',  color: 'var(--rose)' },
+  paused:             { label: 'Paused',          bg: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
+};
+
+function fmtRetainer(pence: number | null, currency: string | null): string {
+  if (!pence || pence <= 0) return '—';
+  const amount = pence / 100;
+  const symbol = (currency ?? 'gbp').toLowerCase() === 'gbp' ? '£' : (currency?.toUpperCase() + ' ');
+  return `${symbol}${amount.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 interface Profile { id: string; full_name: string | null; email: string; role: string; created_at: string; }
 interface Props {
@@ -114,6 +135,8 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                 <th>Sector</th>
                 <th>Size</th>
                 <th>Status</th>
+                <th>Retainer</th>
+                <th>Billing</th>
                 <th>Users</th>
                 <th>Active Roles</th>
                 <th>Open Tickets</th>
@@ -154,6 +177,24 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                       <span className={`badge ${c.active ? 'badge-active' : 'badge-inactive'}`}>
                         {c.active ? 'Active' : 'Inactive'}
                       </span>
+                    </td>
+                    <td className="font-medium" style={{ color: c.monthly_retainer_pence ? 'var(--ink)' : 'var(--ink-faint)' }}>
+                      {fmtRetainer(c.monthly_retainer_pence, c.billing_currency)}
+                      {c.monthly_retainer_pence ? <span className="text-[10px] font-normal ml-0.5" style={{ color: 'var(--ink-faint)' }}>/mo</span> : null}
+                    </td>
+                    <td>
+                      {(() => {
+                        const conf = c.subscription_status ? SUB_STATUS_BADGE[c.subscription_status] : null;
+                        if (!conf) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+                        return (
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: conf.bg, color: conf.color }}
+                          >
+                            {conf.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td>
                       <button
