@@ -29,11 +29,15 @@
 
 -- ────────────────────────────────────────────────────────────────────────
 -- 1. Drop the demo-company trigger from migration 027
+--    (Trigger name varies across environments — trg_link_tps_staff in
+--    most, link_tps_staff_to_demo_trigger in older envs. Use CASCADE on
+--    the function drop so any dependent trigger comes off too.)
 -- ────────────────────────────────────────────────────────────────────────
 
+DROP TRIGGER  IF EXISTS trg_link_tps_staff             ON profiles;
 DROP TRIGGER  IF EXISTS link_tps_staff_to_demo_trigger ON profiles;
 DROP TRIGGER  IF EXISTS link_tps_staff_to_demo         ON profiles;
-DROP FUNCTION IF EXISTS link_tps_staff_to_demo();
+DROP FUNCTION IF EXISTS link_tps_staff_to_demo() CASCADE;
 
 
 -- ────────────────────────────────────────────────────────────────────────
