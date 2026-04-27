@@ -137,9 +137,15 @@ interface Props {
     contact_email: string | null;
     ivylens_company_id: string | null;
   } | null;
+  /**
+   * Optional callback fired after a new assessment is successfully created.
+   * Used by the onboarding wizard to advance to the next step.
+   * Default: no-op (the standalone /hire/friction-lens page doesn't need it).
+   */
+  onAssessmentCreated?: (assessment: CompanyAssessment) => void;
 }
 
-export default function FrictionLensClient({ initialAssessment, company }: Props) {
+export default function FrictionLensClient({ initialAssessment, company, onAssessmentCreated }: Props) {
   const supabase = createClient();
 
   const [assessment, setAssessment] = useState<CompanyAssessment | null>(initialAssessment);
@@ -231,6 +237,9 @@ export default function FrictionLensClient({ initialAssessment, company }: Props
       setAssessment(data.assessment);
       setShowForm(false);
       revalidatePortalPath('/hire/friction-lens');
+      // Notify the embedding context (e.g. the onboarding wizard) so
+      // it can advance to the next step. No-op for the standalone page.
+      onAssessmentCreated?.(data.assessment);
     } catch (err: any) {
       setSubmitError(err.message ?? 'Something went wrong');
     } finally {
