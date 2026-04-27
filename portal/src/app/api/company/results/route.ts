@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
 
+// Force dynamic — this route reads cookies via supabase.auth.getUser(),
+// so it can never be statically prerendered. Without this, Next 14
+// emits a build warning and may attempt a static render at deploy time.
+export const dynamic = 'force-dynamic';
+
 // GET /api/company/results
 // Returns the latest company assessment. Tries IvyLens first (if company has
 // an ivylens_company_id), falls back to local DB.

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
+import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
@@ -11,20 +12,6 @@ import CandidatesTab from './tabs/CandidatesTab';
 
 import { HIRING_STAGE_LABELS, COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 /* ─── Helpers ─────────────────────────────────────── */
-
-const FLAG_LABELS: Record<string, string> = {
-  hiring:     'Hiring Module',
-  lead:       'LEAD Module',
-  protect:    'PROTECT Module',
-  documents:  'Document Management',
-  reports:    'Reports',
-  support:    'HR Support Requests',
-  metrics:    'Metrics Dashboard',
-  compliance: 'Compliance Tracking',
-  learning:      'E-Learning Marketplace',
-  benchmarks:    'Salary Benchmarks',
-  friction_lens: 'Friction Lens',
-};
 
 const STAGE_BADGE: Record<string, string> = {
   submitted:       'badge-submitted',
@@ -58,55 +45,6 @@ function fmtBytes(bytes: number | null): string {
 }
 
 /* ─── Sub-components ─────────────────────────────── */
-
-function FeatureFlagToggles({ companyId, flags }: { companyId: string; flags: Record<string, boolean> }) {
-  const supabase = createClient();
-  const [localFlags, setLocalFlags] = useState<Record<string, boolean>>(flags);
-  const [saving, setSaving] = useState<string | null>(null);
-
-  async function toggle(key: string) {
-    const newVal = !localFlags[key];
-    setSaving(key);
-    const { error } = await supabase
-      .from('companies')
-      .update({ feature_flags: { ...localFlags, [key]: newVal } })
-      .eq('id', companyId);
-    if (!error) {
-      setLocalFlags(prev => ({ ...prev, [key]: newVal }));
-      revalidateAdminPath('/clients');
-    }
-    setSaving(null);
-  }
-
-  return (
-    <div className="space-y-3">
-      {Object.keys(FLAG_LABELS).map((key) => {
-        const on = !!localFlags[key];
-        return (
-          <div key={key} className="flex items-center justify-between py-2">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{FLAG_LABELS[key]}</p>
-              <span className={`badge mt-0.5 ${on ? 'badge-on' : 'badge-off'}`}>{on ? 'On' : 'Off'}</span>
-            </div>
-            <button
-              onClick={() => toggle(key)}
-              disabled={saving === key}
-              aria-label={`Toggle ${FLAG_LABELS[key]}`}
-            >
-              {saving === key ? (
-                <Loader2 size={16} className="animate-spin" style={{ color: 'var(--purple)' }} />
-              ) : (
-                <div className={`toggle ${on ? 'toggle-on' : 'toggle-off'}`}>
-                  <div className={`toggle-knob ${on ? 'toggle-knob-on' : 'toggle-knob-off'}`} />
-                </div>
-              )}
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function ManatalIdField({ companyId, currentId }: { companyId: string; currentId: string }) {
   const supabase = createClient();
@@ -676,8 +614,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
           </div>
 
           {/* Feature flags sidebar */}
-          <div className="card p-6 h-fit">
-            <h2 className="font-display font-semibold text-sm mb-5" style={{ color: 'var(--ink)' }}>Feature Flags</h2>
+          <div className="card p-5 h-fit">
             <FeatureFlagToggles companyId={company.id} flags={company.feature_flags ?? {}} />
           </div>
         </div>

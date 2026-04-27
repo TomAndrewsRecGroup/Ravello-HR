@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -20,7 +20,24 @@ const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20peop
 // exchanged the auth code). It just calls supabase.auth.updateUser to
 // set the password on the existing session.
 
+// Next 14 requires useSearchParams() to be wrapped in <Suspense> when
+// the route is statically prerendered — without the boundary the build
+// bails out with a CSR-bailout error. The default export is a thin
+// wrapper; the real component is UpdatePasswordInner.
+
 export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFFFFF' }}>
+        <Loader2 size={20} className="animate-spin" style={{ color: 'var(--purple)' }} />
+      </div>
+    }>
+      <UpdatePasswordInner />
+    </Suspense>
+  );
+}
+
+function UpdatePasswordInner() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const supabase     = createClient();
