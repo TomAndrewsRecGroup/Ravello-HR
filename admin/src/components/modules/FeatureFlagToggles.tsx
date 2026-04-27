@@ -2,77 +2,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, ChevronDown, ChevronRight } from 'lucide-react';
-
-/* ─── Flag structure: grouped by module ─────────────── */
-interface FlagGroup {
-  label: string;
-  description: string;
-  flags: { key: string; label: string }[];
-}
-
-const FLAG_GROUPS: FlagGroup[] = [
-  {
-    label: 'HIRE',
-    description: 'Recruitment and talent acquisition',
-    flags: [
-      { key: 'hiring',          label: 'Hiring Pipeline' },
-      { key: 'friction_lens',   label: 'Friction Lens Scoring' },
-      { key: 'benchmarks',      label: 'Salary Benchmarks' },
-      { key: 'ivylens_market',  label: 'IvyLens Market Access' },
-      { key: 'hiring_analytics', label: 'Hiring Analytics' },
-      { key: 'jd_templates',    label: 'JD Templates' },
-      { key: 'manatal_ats',     label: 'Manatal ATS Integration' },
-    ],
-  },
-  {
-    label: 'LEAD',
-    description: 'People development and learning',
-    flags: [
-      { key: 'lead',              label: 'LEAD Module (master)' },
-      { key: 'employee_records',  label: 'Employee Records' },
-      { key: 'hr_reports',        label: 'HR Reports' },
-      { key: 'training',          label: 'Training Needs' },
-      { key: 'reviews',           label: 'Performance Reviews' },
-      { key: 'skills_matrix',     label: 'Skills Matrix' },
-      { key: 'learning',          label: 'E-Learning Marketplace' },
-      { key: 'onboarding',        label: 'Onboarding Workflows' },
-      { key: 'org_chart',         label: 'Organisation Chart' },
-      { key: 'documents',         label: 'Document Management' },
-      { key: 'roadmap',           label: 'Roadmap' },
-    ],
-  },
-  {
-    label: 'PROTECT',
-    description: 'Compliance, absence and risk',
-    flags: [
-      { key: 'protect',              label: 'PROTECT Module (master)' },
-      { key: 'compliance',           label: 'Compliance Tracking' },
-      { key: 'absence',              label: 'Absence Management' },
-      { key: 'employee_docs',        label: 'Employee Documents' },
-      { key: 'offboarding',          label: 'Offboarding Workflows' },
-      { key: 'policy_acknowledgement', label: 'Policy Acknowledgements' },
-      { key: 'protect_dashboard',    label: 'HR Dashboard' },
-      { key: 'protect_reports',      label: 'PROTECT Reports' },
-    ],
-  },
-  {
-    label: 'General',
-    description: 'Platform-wide features',
-    flags: [
-      { key: 'support',    label: 'HR Support & Tickets' },
-      { key: 'metrics',    label: 'Metrics Dashboard' },
-      { key: 'reports',    label: 'CSV Reports' },
-      { key: 'calendar',   label: 'Company Calendar' },
-    ],
-  },
-  {
-    label: 'Programmes',
-    description: 'Optional channels added to the portal sidebar',
-    flags: [
-      { key: 'athletes_to_industry', label: 'Athletes To Industry' },
-    ],
-  },
-];
+import { FLAG_GROUPS, type FlagGroup } from '@/lib/featureFlags';
 
 interface Props {
   companyId: string;
@@ -166,7 +96,15 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
                   ? <ChevronRight size={13} style={{ color: 'var(--ink-faint)' }} />
                   : <ChevronDown size={13} style={{ color: 'var(--ink-faint)' }} />}
                 <div>
-                  <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{group.label}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{group.label}</p>
+                    {group.tier === 'free' && (
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-wide px-1 py-px rounded"
+                        style={{ background: 'rgba(52,211,153,0.12)', color: 'var(--emerald)' }}
+                      >Free</span>
+                    )}
+                  </div>
                   <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{group.description}</p>
                 </div>
               </div>

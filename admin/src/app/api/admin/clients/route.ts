@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 import { stripeConfigured, createCustomer, createPrice, createSubscription } from '@/lib/stripe';
+import { hasPaidFlag } from '@/lib/featureFlags';
 
 const DEFAULT_FLAGS = {
   hiring: true, documents: true, reports: false, support: true,
@@ -16,6 +17,7 @@ interface CreateClientBody {
   size_band?: string | null;
   contact_email?: string | null;
   monthly_retainer_pence?: number | null;
+  feature_flags?: Record<string, boolean>;
 }
 
 interface CreateClientResult {
@@ -50,6 +52,22 @@ export async function POST(request: NextRequest) {
 
   const slug = (body.slug ?? '').trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+  // Use the flags the admin selected on the create form, falling back
+  // to a sensible default for callers that don't pass them. The form
+  // always passes them today; the fallback covers programmatic create
+  // calls and old clients of this endpoint.
+  const flags: Record<string, boolean> =
+    body.feature_flags && typeof body.feature_flags === 'object'
+      ? { ...body.feature_flags }
+      : { ...DEFAULT_FLAGS };
+
+  // Free-only clients (no paid module ticked) don't go through the
+  // portal onboarding wizard — none of its 5 steps (Friction Lens,
+  // first employee, etc.) make sense for an A2I-only client. Skip
+  // the wizard for them by writing the company-level "skip onboarding"
+  // hint that the portal layout reads.
+  const paidEnabled = hasPaidFlag(flags);
+
   // ── 1. Create the company row first (without Stripe IDs).
   // If Stripe creation fails afterwards, the company still exists and
   // admin can retry billing setup later. Avoids orphaning Stripe state
@@ -63,8 +81,8 @@ export async function POST(request: NextRequest) {
       size_band:               body.size_band     ?? null,
       contact_email:           body.contact_email ?? null,
       active:                  true,
-      feature_flags:           DEFAULT_FLAGS,
-      monthly_retainer_pence:  retainerPence,
+      feature_flags:           flags,
+      monthly_retainer_pence:  paidEnabled ? retainerPence : null,
     })
     .select('id')
     .single();
@@ -75,9 +93,10 @@ export async function POST(request: NextRequest) {
 
   const result: CreateClientResult = { company_id: company.id };
 
-  // ── 2. Stripe billing setup, only if a non-zero retainer was set
-  // AND Stripe is configured. Skips entirely if either is missing.
-  if (retainerPence && retainerPence > 0 && stripeConfigured()) {
+  // ── 2. Stripe billing setup, only if a non-zero retainer was set,
+  // at least one paid module is enabled, AND Stripe is configured.
+  // Skips entirely otherwise — free-only clients never touch Stripe.
+  if (paidEnabled && retainerPence && retainerPence > 0 && stripeConfigured()) {
     try {
       const customerId = await createCustomer({
         companyName:       name,
