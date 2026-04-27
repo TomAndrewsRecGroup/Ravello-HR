@@ -18,42 +18,22 @@ For each file in this directory:
 4. Paste the **rest of the file** (the `<!DOCTYPE html>` block onwards) into the message body
 5. Click **Save**
 
-## How the link is built (and why it matters)
-
-The button URL in each template is constructed manually like:
-
-```
-{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=<TYPE>&redirect_to={{ .RedirectTo }}
-```
-
-The `<TYPE>` differs per template:
-
-| Template | type value |
-|---|---|
-| Confirm signup | `signup` |
-| Invite user | `invite` |
-| Magic Link | `magiclink` |
-| Reset Password | `recovery` |
-| Change Email | `email_change` |
-
-We use this explicit form rather than `{{ .ConfirmationURL }}` because
-Supabase's auto-built URL doesn't always honour the `redirect_to` we
-pass via the API call (most notably on the recovery flow). Building
-the URL manually with `{{ .RedirectTo }}` baked in guarantees the
-user lands at the right page after Supabase verifies the token.
-
 ## URL Configuration prerequisites
 
 In **Authentication → URL Configuration**:
 
-- **Site URL** = `https://portal.thepeoplesystem.co.uk`
-- **Redirect URLs** must include (or match via wildcard):
-  - `https://portal.thepeoplesystem.co.uk/auth/callback`
-  - `https://portal.thepeoplesystem.co.uk/auth/update-password`
-  - simplest: `https://portal.thepeoplesystem.co.uk/**`
+- **Site URL** must include the `https://` scheme. Bare hostnames like
+  `www.portal.thepeoplesystem.co.uk` will not work — Supabase needs a
+  full absolute URL. Set it to `https://www.portal.thepeoplesystem.co.uk`
+  (no trailing slash).
+- **Redirect URLs** must also include `https://`. Examples:
+  - `https://www.portal.thepeoplesystem.co.uk/auth/update-password`
+  - `https://www.portal.thepeoplesystem.co.uk/auth/callback`
+  - simplest catch-all: `https://www.portal.thepeoplesystem.co.uk/**`
 
-Without these, Supabase strips the `redirect_to` and falls back to
-the Site URL.
+Site URL and `NEXT_PUBLIC_PORTAL_URL` (Vercel admin project env var)
+must match exactly — same scheme, same www/non-www. Mismatch causes
+Supabase to drop the redirect_to and fall back to the Site URL.
 
 ## Notes
 
