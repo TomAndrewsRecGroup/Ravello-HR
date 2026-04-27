@@ -4,6 +4,7 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 import { stripeConfigured, createCustomer, createPrice, createSubscription } from '@/lib/stripe';
 import { hasPaidFlag } from '@/lib/featureFlags';
+import { sendEmail, clientWelcomeEmail } from '@/lib/email';
 
 const DEFAULT_FLAGS = {
   hiring: true, documents: true, reports: false, support: true,
@@ -158,6 +159,19 @@ export async function POST(request: NextRequest) {
       stripe_customer_id: result.stripe?.customer_id,
     },
   });
+
+  // Welcome email — fire-and-forget. If the contact_email is missing or
+  // Resend isn't configured, sendEmail() logs and returns null without
+  // throwing, so the API response is unaffected.
+  if (body.contact_email) {
+    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+    await sendEmail(clientWelcomeEmail({
+      to:             body.contact_email,
+      companyName:    name,
+      portalUrl,
+      hasPaidModules: paidEnabled,
+    }));
+  }
 
   return NextResponse.json({ success: true, ...result });
 }

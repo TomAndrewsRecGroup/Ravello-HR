@@ -10,6 +10,7 @@ import {
   createSubscription,
   updateSubscriptionPrice,
 } from '@/lib/stripe';
+import { sendEmail, billingSetupEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -177,5 +178,26 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   }
 
   await revalidateClientDetail(params.id);
+
+  // Send the billing-setup email only on the first-time setup path —
+  // a retainer change shouldn't email the client every month with
+  // "billing activated", and Stripe sends the actual receipts via its
+  // own customer-emails setting.
+  const isFirstTimeSetup =
+    !company.stripe_subscription_id &&
+    typeof stripeUpdate.stripe_subscription_id === 'string';
+
+  if (isFirstTimeSetup && company.contact_email && newPence) {
+    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+    const retainerLabel = `£${(newPence / 100).toFixed(2)} / month`;
+    await sendEmail(billingSetupEmail({
+      to:            company.contact_email,
+      companyName:   company.name,
+      retainerLabel,
+      firstChargeOn: 'Today',
+      billingUrl:    `${portalUrl}/billing`,
+    }));
+  }
+
   return NextResponse.json({ success: true, stripe: stripeUpdate });
 }
