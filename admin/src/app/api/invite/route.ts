@@ -43,10 +43,15 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // Invite via Supabase Auth Admin API: sends a magic-link invite email
+  // Invite via Supabase Auth Admin API: sends a magic-link invite email.
+  // We always send invitees through /dashboard rather than /onboarding —
+  // the portal layout decides whether to bounce them to the wizard based
+  // on hasPaidFlag(featureFlags). That keeps free-tier clients (no paid
+  // module) out of the wizard entirely instead of flashing it for the
+  // duration of the first cookie stamp.
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id, role: safeRole },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/onboarding`,
+    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/dashboard`,
   });
 
   if (error) {

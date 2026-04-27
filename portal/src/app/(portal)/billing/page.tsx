@@ -38,6 +38,29 @@ export default async function BillingPage() {
   // honest.
   if (!isTpsStaff && role !== 'client_admin') redirect('/dashboard');
 
+  // TPS staff can land here without a companyId (browsing the portal as
+  // staff with no client picked). Avoid the empty .eq('id', '') query —
+  // surface a clear "no company linked" message instead of the misleading
+  // "Billing not set up yet" empty state.
+  if (!companyId) {
+    return (
+      <>
+        <Topbar title="Billing" subtitle="Manage retainer and invoices" />
+        <main className="portal-page flex-1 max-w-[720px]">
+          <div className="card p-7">
+            <h2 className="font-display font-semibold text-base mb-1" style={{ color: 'var(--ink)' }}>
+              No company linked
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              Your account is not linked to a client company. Open the admin
+              dashboard to manage clients and their billing.
+            </p>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   const supabase = createServerSupabaseClient();
   const { data: company } = await supabase
     .from('companies')
