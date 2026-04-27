@@ -16,8 +16,13 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    // Recovery emails need to land directly on /auth/update-password.
+    // The /auth/callback route is server-side, so it can't see hash-fragment
+    // tokens that Supabase's recovery flow sometimes emits — skipping the
+    // hop means update-password handles whatever auth artefact the email
+    // arrives with (PKCE ?code= or implicit #access_token=).
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`,
+      redirectTo: `${window.location.origin}/auth/update-password`,
     });
     if (error) { setError(error.message); setLoading(false); return; }
     setSent(true);

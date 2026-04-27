@@ -51,15 +51,62 @@ function UpdatePasswordInner() {
   const [error,       setError]       = useState('');
   const [done,        setDone]        = useState(false);
 
-  // Confirm we have a session — if the user landed here without one
-  // (e.g. they bookmarked the URL or the magic-link expired), bounce
-  // them to login with a friendly reason.
+  // Bootstrap a session from whatever auth artefact the URL carries.
+  // Three landing modes are possible:
+  //   1. Invite flow: callback already exchanged the code → session
+  //      cookie is set → getUser() returns the user immediately.
+  //   2. Reset/recovery PKCE flow: URL has ?code=... — call
+  //      exchangeCodeForSession() to convert it.
+  //   3. Reset/recovery implicit flow: URL has #access_token=... —
+  //      supabase-js auto-detects this on client init and stamps
+  //      the session, but only AFTER it parses the hash. We give it
+  //      a tick by calling getUser() in a microtask.
+  // If none of the above produce a user, we show the "link expired"
+  // panel with a CTA to request a fresh link.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setHasSession(!!user);
-      setAuthChecked(true);
-    });
-  }, [supabase]);
+    let cancelled = false;
+
+    async function bootstrap() {
+      // Fast path: existing session (the invite flow goes through
+      // /auth/callback which has already exchanged the code).
+      let { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        if (!cancelled) { setHasSession(true); setAuthChecked(true); }
+        return;
+      }
+
+      // PKCE recovery: ?code=... on the URL.
+      const code = searchParams.get('code');
+      if (code) {
+        const { error: exchErr } = await supabase.auth.exchangeCodeForSession(code);
+        if (!exchErr) {
+          ({ data: { user } } = await supabase.auth.getUser());
+          if (user) {
+            if (!cancelled) { setHasSession(true); setAuthChecked(true); }
+            return;
+          }
+        }
+      }
+
+      // Implicit recovery: #access_token=... in the hash. supabase-js
+      // parses this on init via detectSessionInUrl=true (default).
+      // Wait one event-loop tick for that detection to settle, then
+      // re-check.
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        await new Promise(r => setTimeout(r, 50));
+        ({ data: { user } } = await supabase.auth.getUser());
+        if (user) {
+          if (!cancelled) { setHasSession(true); setAuthChecked(true); }
+          return;
+        }
+      }
+
+      if (!cancelled) { setHasSession(false); setAuthChecked(true); }
+    }
+
+    bootstrap();
+    return () => { cancelled = true; };
+  }, [supabase, searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
