@@ -12,7 +12,7 @@ export default async function EngagementPage() {
 
   const [compRes, profileRes, reqRes, ticketRes, docRes, notesRes] = await Promise.all([
     supabase.from('companies').select('id, name, last_portal_login, login_count_30d').eq('active', true).order('name'),
-    supabase.from('profiles').select('id, company_id').not('role', 'in', '("tps_admin","tps_client")'),
+    supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin'),
     supabase.from('requisitions').select('company_id, stage, created_at'),
     supabase.from('tickets').select('company_id, status, created_at'),
     supabase.from('documents').select('company_id', { count: 'exact', head: false }),

@@ -12,7 +12,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export interface AuthOk {
   ok:   true;
-  role: 'tps_admin' | 'tps_client';
+  role: 'tps_admin';
   userId: string;
 }
 export interface AuthFail {
@@ -28,9 +28,9 @@ export async function requireStaff(): Promise<AuthOk | AuthFail> {
   }
 
   const { data: role } = await supabase.rpc('get_my_role');
-  if (role !== 'tps_admin' && role !== 'tps_client') {
+  if (role !== 'tps_admin') {
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true, role: role as 'tps_admin' | 'tps_client', userId: user.id };
+  return { ok: true, role: 'tps_admin', userId: user.id };
 }

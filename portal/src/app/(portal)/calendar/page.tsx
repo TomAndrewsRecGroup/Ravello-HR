@@ -25,7 +25,7 @@ export default async function CalendarPage() {
     </>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin';
 
   // Fetch calendar events and leave records for the current view range
   // (client will fetch more as user navigates months)

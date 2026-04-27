@@ -100,7 +100,7 @@ export async function updateSession(request: NextRequest) {
       email: user.email,
       role,
       companyId,
-      isTpsStaff: role === 'tps_admin' || role === 'tps_client',
+      isTpsStaff: role === 'tps_admin',
       uiPreferences: (profile as any)?.ui_preferences ?? {},
       onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
       featureFlags,

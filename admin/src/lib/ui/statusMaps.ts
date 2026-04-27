@@ -202,10 +202,7 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
 export const ROLE_LABELS: Record<string, string> = {
   client_admin:  'Admin',
   client_editor: 'Editor',
-  client_user:   'Editor',     // legacy — migrated to client_editor in 045
-  client_viewer: 'Editor',     // legacy code reference; same effective role
   tps_admin:     'TPS Staff',
-  tps_client:    'TPS Staff',
 };
 
 /* ─── Athletes To Industry interest status ────────────────────── */

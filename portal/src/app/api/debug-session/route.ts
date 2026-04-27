@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 /**
  * GET /api/debug-session: comprehensive auth debug
  *
- * PROTECTED: requires authenticated The People System staff (tps_admin / tps_client).
+ * PROTECTED: requires authenticated The People System staff (tps_admin).
  * Returns diagnostic info about the current session and profile state.
  */
 export async function GET() {
@@ -41,7 +41,7 @@ export async function GET() {
 
   // ── Role gate: must be The People System staff ──
   const { data: roleData } = await supabase.rpc('get_my_role');
-  if (!roleData || !['tps_admin', 'tps_client'].includes(roleData)) {
+  if (roleData !== 'tps_admin') {
     return NextResponse.json({ error: 'Forbidden: The People System staff only' }, { status: 403 });
   }
 

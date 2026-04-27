@@ -40,7 +40,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true },
   { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: null,                    fixed: false },
   { href: '/support',              label: 'Support',              icon: LifeBuoy,        flag: 'support',               fixed: false },
-  { href: '/billing',              label: 'Billing',              icon: CreditCard,      flag: null,                    fixed: false, requireRole: ['client_admin', 'tps_admin', 'tps_client'] },
+  { href: '/billing',              label: 'Billing',              icon: CreditCard,      flag: null,                    fixed: false, requireRole: ['client_admin', 'tps_admin'] },
   { href: '/settings',             label: 'Settings',             icon: Settings,        flag: null,                    fixed: false },
 ];
 

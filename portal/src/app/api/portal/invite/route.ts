@@ -46,14 +46,14 @@ export async function POST(request: NextRequest) {
   );
 
   // ── Seat cap check: count current portal users on this company ──
-  // Counts every profile pinned to this company across all client_*
-  // roles — covers any legacy client_user rows that haven't been
-  // migrated yet by 045.
+  // Counts Admin + Editor profiles pinned to this company. Migration
+  // 049 retired client_user / client_viewer (any leftover rows are
+  // migrated to client_editor on apply).
   const { count: seatCount, error: countErr } = await adminClient
     .from('profiles')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId)
-    .in('role', ['client_admin', 'client_editor', 'client_user']);
+    .in('role', ['client_admin', 'client_editor']);
 
   if (countErr) {
     return NextResponse.json({ error: 'Could not check your seat count.' }, { status: 500 });

@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const ALLOWED_ROLES = ['tps_admin', 'tps_client'];
+const ALLOWED_ROLES = ['tps_admin'];
 const ROLE_CACHE_SECONDS = 60 * 15; // 15 minutes: short enough to revoke access promptly
 
 export async function updateSession(request: NextRequest) {

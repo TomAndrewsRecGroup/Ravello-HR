@@ -4,7 +4,7 @@
 // stale-while-revalidate=300 so second browser loads render instantly
 // from HTTP cache while a background refetch fills in fresh data.
 //
-// Auth: tps_admin / tps_client only.
+// Auth: tps_admin only.
 
 import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
@@ -38,7 +38,7 @@ export async function GET() {
     sb.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
     sb.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
     sb.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
-    sb.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_editor', 'client_user']).limit(200),
+    sb.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_editor']).limit(200),
   ]);
 
   const activeRolesMap: Record<string, number> = {};

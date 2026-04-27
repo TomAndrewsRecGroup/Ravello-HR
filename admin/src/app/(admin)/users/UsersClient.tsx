@@ -8,11 +8,8 @@ import { PORTAL_INVITE_ROLES, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps'
 
 const ROLE_BADGE: Record<string, string> = {
   tps_admin:     'badge-admin',
-  tps_client:    'badge-staff',
   client_admin:  'badge-admin',
   client_editor: 'badge-client',
-  client_user:   'badge-client',  // legacy
-  client_viewer: 'badge-client',  // legacy
 };
 
 function RoleCell({ userId, initialRole }: { userId: string; initialRole: string }) {
@@ -100,7 +97,7 @@ export default function UsersClient({ users }: { users: any[] }) {
                 <td className="font-medium">{u.full_name ?? '-'}</td>
                 <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                 <td>
-                  <RoleCell userId={u.id} initialRole={u.role ?? 'client_viewer'} />
+                  <RoleCell userId={u.id} initialRole={u.role ?? 'client_editor'} />
                 </td>
                 <td>
                   {u.companies?.id ? (

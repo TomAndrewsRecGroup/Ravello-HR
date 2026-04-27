@@ -21,7 +21,7 @@ export default async function EmployeeRecordsPage() {
     </main>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin';
   // Admin AND Editor can manage leave links — both can approve/deny
   // leave per the role spec, so both should be able to share the link.
   const canManageLeave = isAdmin || role === 'client_editor';

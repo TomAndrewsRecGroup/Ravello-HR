@@ -147,7 +147,7 @@ export default function NewRequisitionPage() {
     // Notify admin users about the new role awaiting approval
     const companyId = (profile as any).company_id;
     const { data: company } = await supabase.from('companies').select('name').eq('id', companyId).single();
-    const { data: admins } = await supabase.from('profiles').select('id').in('role', ['tps_admin', 'tps_client']);
+    const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'tps_admin');
     if (admins?.length) {
       const notifications = admins.map((admin: any) => ({
         user_id: admin.id,

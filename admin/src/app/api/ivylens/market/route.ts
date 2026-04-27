@@ -3,7 +3,7 @@
 // Returns derived market salary + friction aggregates from IvyLens /bd/leads.
 // IvyLens exposes no single /market endpoint, so we roll our own aggregates.
 //
-// Auth: tps_admin / tps_client only.
+// Auth: tps_admin only.
 // Cache: 24h TTL, keyed by role_type + location. force=true bypasses.
 
 import { NextResponse, type NextRequest } from 'next/server';

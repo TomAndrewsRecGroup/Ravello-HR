@@ -21,7 +21,7 @@ export default async function UsersPage() {
     supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .not('role', 'in', '(tps_admin,tps_client)'),
+      .neq('role', 'tps_admin'),
   ]);
 
   const rows = users ?? [];
