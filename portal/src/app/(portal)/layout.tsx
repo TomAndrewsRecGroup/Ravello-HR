@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import PortalShell from '@/components/layout/PortalShell';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, companyId, isTpsStaff, featureFlags } = await getSessionProfile();
+  const { user, profile, companyId, role, isTpsStaff, featureFlags } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
@@ -37,7 +37,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <PortalShell flags={flags} counts={counts} userId={user.id} companyId={companyId} uiPreferences={uiPreferences}>
+    <PortalShell flags={flags} counts={counts} userId={user.id} companyId={companyId} role={role} uiPreferences={uiPreferences}>
       {children}
     </PortalShell>
   );
