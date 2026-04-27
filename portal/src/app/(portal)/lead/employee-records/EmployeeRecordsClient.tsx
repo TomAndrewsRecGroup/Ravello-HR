@@ -1,11 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import {
   Plus, Search, Users, Mail,
-  Calendar, ChevronRight,
+  Calendar, ChevronRight, Link as LinkIcon, Copy, RefreshCw, Check, X, Loader2,
 } from 'lucide-react';
 import { calculateLeaveBalance } from '@/lib/leaveCalculations';
 import type { LeaveYearConfig } from '@/lib/leaveCalculations';
@@ -41,6 +41,7 @@ interface Employee {
   annual_leave_allowance: number;
   sick_day_allowance: number | null;
   leave_year_type: string;
+  leave_token: string | null;
   created_at: string;
 }
 
@@ -48,6 +49,8 @@ interface Props {
   companyId: string;
   userId: string;
   isAdmin: boolean;
+  /** Admin OR Editor — both can share + regenerate leave links. */
+  canManageLeave: boolean;
   initialEmployees: Employee[];
   leaveRecords: LeaveRecord[];
 }
@@ -73,7 +76,7 @@ function fmtDate(d: string | null): string {
 }
 
 /* ─── Component ─────────────────────────────────────── */
-export default function EmployeeRecordsClient({ companyId, userId, isAdmin, initialEmployees, leaveRecords }: Props) {
+export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canManageLeave, initialEmployees, leaveRecords }: Props) {
   const supabase = createClient();
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [search, setSearch] = useState('');
@@ -82,6 +85,75 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Leave-link modal: shows the public /leave/{token} URL for an
+  // employee, with Copy + Regenerate actions. Open-state is the
+  // employee whose link is being managed (null = closed).
+  const [linkEmp, setLinkEmp] = useState<Employee | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [linkError, setLinkError] = useState('');
+
+  // Public URL for an employee's leave-request form. window.origin is
+  // the running portal hostname; works for both prod and localhost.
+  function leaveUrl(token: string | null): string {
+    if (!token) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/leave/${token}`;
+  }
+
+  function openLeaveLink(emp: Employee) {
+    setLinkEmp(emp);
+    setCopied(false);
+    setLinkError('');
+  }
+
+  async function copyLink() {
+    if (!linkEmp?.leave_token) return;
+    try {
+      await navigator.clipboard.writeText(leaveUrl(linkEmp.leave_token));
+      setCopied(true);
+      // Reset the "Copied!" pill after a beat so re-copying re-flashes.
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setLinkError('Could not access the clipboard. Copy the URL manually.');
+    }
+  }
+
+  async function regenerateToken() {
+    if (!linkEmp) return;
+    if (!window.confirm(`Generate a new link for ${linkEmp.full_name}? The current link will stop working.`)) return;
+    setRegenerating(true);
+    setLinkError('');
+    try {
+      const res = await fetch(`/api/portal/employees/${linkEmp.id}/regenerate-token`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not regenerate the link.');
+      // Update both the modal state and the underlying list so the
+      // next time the user opens this employee they see the new token.
+      const newToken = data.leave_token as string;
+      setLinkEmp(emp => emp ? { ...emp, leave_token: newToken } : emp);
+      setEmployees(list => list.map(e => e.id === linkEmp.id ? { ...e, leave_token: newToken } : e));
+      setCopied(false);
+    } catch (e: any) {
+      setLinkError(e.message);
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  // Esc-to-close + body scroll lock for the leave-link modal.
+  useEffect(() => {
+    if (!linkEmp) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !regenerating) setLinkEmp(null); };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [linkEmp, regenerating]);
 
   // Derive departments for filter
   const departments = useMemo(() => {
@@ -386,6 +458,18 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
                   </span>
                 </div>
 
+                  {canManageLeave && emp.leave_token && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); openLeaveLink(emp); }}
+                      title="Share leave-request link"
+                      aria-label={`Share leave-request link for ${emp.full_name}`}
+                      className="flex-shrink-0 p-1.5 rounded-[8px] transition-colors"
+                      style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}
+                    >
+                      <LinkIcon size={14} />
+                    </button>
+                  )}
                   <ChevronRight size={14} style={{ color: 'var(--ink-faint)', flexShrink: 0 }} />
                 </div>
 
@@ -434,6 +518,97 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, init
           onClose={() => setShowForm(false)}
           onSave={handleSave}
         />
+      )}
+
+      {/* Leave-link modal — share + regenerate the public URL */}
+      {linkEmp && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Leave-request link for ${linkEmp.full_name}`}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(7,11,32,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget && !regenerating) setLinkEmp(null); }}
+        >
+          <div
+            className="card p-0 w-full max-w-md overflow-hidden"
+            style={{ background: 'var(--surface, #fff)', boxShadow: '0 24px 64px rgba(7,11,32,0.30)' }}
+          >
+            <div className="flex items-start justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--line)' }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.10)' }}>
+                  <LinkIcon size={16} style={{ color: 'var(--purple)' }} />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>
+                    {linkEmp.full_name}&rsquo;s leave link
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                    Share with {linkEmp.full_name.split(' ')[0]} so they can request leave without a portal account.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLinkEmp(null)}
+                disabled={regenerating}
+                aria-label="Close"
+                className="btn-icon"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {/* URL display + copy */}
+              <div>
+                <label className="label" style={{ color: 'var(--ink-soft)' }}>Link</label>
+                <div className="flex items-stretch gap-2">
+                  <input
+                    readOnly
+                    value={leaveUrl(linkEmp.leave_token)}
+                    className="input flex-1 font-mono text-xs"
+                    onFocus={(e) => e.currentTarget.select()}
+                    style={{ background: 'var(--surface-soft, #FAFAFD)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={copyLink}
+                    className="btn-cta btn-sm whitespace-nowrap"
+                    style={{ minWidth: 92 }}
+                  >
+                    {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+                  </button>
+                </div>
+              </div>
+
+              {linkError && (
+                <div
+                  className="rounded-[10px] p-3 text-sm"
+                  style={{ background: 'rgba(217,68,68,0.06)', border: '1px solid rgba(217,68,68,0.20)', color: 'var(--rose, #DC2626)' }}
+                >
+                  {linkError}
+                </div>
+              )}
+
+              {/* Regenerate */}
+              <div className="rounded-[10px] p-4" style={{ background: 'var(--surface-soft, #FAFAFD)', border: '1px solid var(--line)' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--ink)' }}>Lost the link or want to retire it?</p>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--ink-soft)' }}>
+                  Regenerate to create a new one. The old link will stop working immediately.
+                </p>
+                <button
+                  type="button"
+                  onClick={regenerateToken}
+                  disabled={regenerating}
+                  className="btn-secondary btn-sm"
+                >
+                  {regenerating ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                  {regenerating ? 'Generating…' : 'Regenerate link'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <style jsx>{`
