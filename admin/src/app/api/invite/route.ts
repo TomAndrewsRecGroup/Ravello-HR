@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
   );
 
   // Invite via Supabase Auth Admin API: sends a magic-link invite email.
-  // We always send invitees through /dashboard rather than /onboarding —
-  // the portal layout decides whether to bounce them to the wizard based
-  // on hasPaidFlag(featureFlags). That keeps free-tier clients (no paid
-  // module) out of the wizard entirely instead of flashing it for the
-  // duration of the first cookie stamp.
+  // After Supabase verifies the token, our /auth/callback exchanges
+  // the code for a session and forwards to /auth/update-password?welcome=1
+  // — that's where the invitee actually sets their password. Without
+  // this redirect they'd land on /dashboard authenticated but with no
+  // password set, forcing them to use magic links forever.
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id, role: safeRole },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/dashboard`,
+    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=${encodeURIComponent('/auth/update-password?welcome=1')}`,
   });
 
   if (error) {
