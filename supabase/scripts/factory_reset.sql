@@ -6,15 +6,19 @@
 -- want to wipe everything and go live with real client data.
 --
 -- This script:
---   • KEEPS  every profile with role IN ('tps_admin', 'tps_client')
---   • KEEPS  the company those staff profiles belong to (so you stay
---            logged in and your account isn't orphaned)
---   • DELETES every other company — cascades to their requisitions,
---            candidates, documents, tickets, employees, athletes, etc.
---   • DELETES every non-staff profile + matching auth.users row
+--   • DROPS   the legacy demo-link trigger (trg_link_tps_staff) and
+--             function (link_tps_staff_to_demo) if they still exist —
+--             they were retired in migration 049 but a stale env may
+--             still have them, and they break profile UPDATEs after
+--             the demo company is deleted.
+--   • KEEPS   every profile with role = 'tps_admin'
+--   • DELETES every other profile + matching auth.users row
+--   • DELETES every company (cascades to all client-scoped tables)
+--   • CLEARS  staff company_id refs to the deleted demo company so
+--             nothing is left pointing at a dead UUID
 --   • DELETES platform-wide test content: partners, salary_benchmarks,
---            jd_templates, latest_updates, feed_sources, bd_companies,
---            bd_scanned_roles, internal_tasks, client_notes
+--             jd_templates, latest_updates, feed_sources, bd_companies,
+--             bd_scanned_roles, internal_tasks, client_notes
 --   • LEAVES  the schema, RLS policies, indexes, helpers untouched
 --
 -- DOES NOT touch:
@@ -36,10 +40,45 @@
 -- positively confirmed there is no real client data to preserve.
 -- ════════════════════════════════════════════════════════════════════════
 
+
+-- ────────────────────────────────────────────────────────────────────────
+-- 0. Drop the legacy demo-link trigger + function if present
+--    (migration 049 retires these, but if the script is run on a DB
+--    where 049 hasn't been applied yet, the trigger would re-stamp
+--    company_id back to the dead demo UUID on every staff profile
+--    update and the reset would fail with an FK violation.)
+-- ────────────────────────────────────────────────────────────────────────
+
+DO $$
+DECLARE
+  trg RECORD;
+BEGIN
+  FOR trg IN
+    SELECT t.tgname
+      FROM pg_trigger t
+      JOIN pg_proc p ON p.oid = t.tgfoid
+     WHERE p.proname = 'link_tps_staff_to_demo'
+       AND NOT t.tgisinternal
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON profiles', trg.tgname);
+  END LOOP;
+END $$;
+
+DROP FUNCTION IF EXISTS link_tps_staff_to_demo() CASCADE;
+
+
+-- ────────────────────────────────────────────────────────────────────────
+-- 1. Migrate any deprecated-role rows so the staff-id capture is clean
+--    (skip client_viewer — never an enum value, code-only alias)
+-- ────────────────────────────────────────────────────────────────────────
+
+UPDATE profiles SET role = 'tps_admin'     WHERE role = 'tps_client';
+UPDATE profiles SET role = 'client_editor' WHERE role = 'client_user';
+
+
 DO $$
 DECLARE
   staff_user_ids   UUID[];
-  staff_company_id UUID;
   before_companies BIGINT;
   before_profiles  BIGINT;
   before_authusers BIGINT;
@@ -47,60 +86,49 @@ DECLARE
   after_profiles   BIGINT;
   after_authusers  BIGINT;
 BEGIN
-  -- ── 1. Capture what to preserve ──────────────────────────────────
+  -- ── 2. Capture which users to preserve ──────────────────────────
   SELECT array_agg(id) INTO staff_user_ids
     FROM profiles
-   WHERE role IN ('tps_admin', 'tps_client');
+   WHERE role = 'tps_admin';
 
   IF staff_user_ids IS NULL OR array_length(staff_user_ids, 1) = 0 THEN
-    RAISE EXCEPTION 'No tps_admin or tps_client profiles found — refusing to reset because you would be locked out. Create a staff profile first.';
+    RAISE EXCEPTION 'No tps_admin profiles found — refusing to reset because you would be locked out. Create a staff profile first.';
   END IF;
 
-  -- Pick the first staff user's company. If multiple staff belong to
-  -- different companies (unusual), they all stay because we delete
-  -- by NOT IN — see below.
-  SELECT company_id INTO staff_company_id
-    FROM profiles
-   WHERE id = staff_user_ids[1];
+  RAISE NOTICE 'Preserving % staff user(s)', array_length(staff_user_ids, 1);
 
-  RAISE NOTICE 'Preserving % staff user(s) and their company id %',
-    array_length(staff_user_ids, 1), staff_company_id;
-
-  -- ── 2. Snapshot row counts (for the report) ──────────────────────
+  -- ── 3. Snapshot row counts (for the report) ─────────────────────
   SELECT COUNT(*) INTO before_companies FROM companies;
   SELECT COUNT(*) INTO before_profiles  FROM profiles;
   SELECT COUNT(*) INTO before_authusers FROM auth.users;
 
-  -- ── 3. Delete non-staff companies ────────────────────────────────
-  -- All staff company_ids are exempt. Deleting a company cascades to
-  -- requisitions, candidates, documents, tickets, ticket_messages,
-  -- service_requests, actions, milestones, client_services,
-  -- compliance_items, athletes (and their interests via athlete_id),
-  -- training_needs, performance_reviews, skills_matrix,
-  -- absence_records, employee_documents, hr_metrics,
-  -- employee_records, onboarding_*, offboarding_*, policy_acks,
-  -- learning_purchases, ivylens_tickets, activity_log, client_notes,
-  -- internal_tasks (where company_id is set), and offers/interview
-  -- schedules via their requisitions.
-  DELETE FROM companies
-   WHERE id NOT IN (
-     SELECT company_id FROM profiles
-      WHERE id = ANY(staff_user_ids) AND company_id IS NOT NULL
-   );
+  -- ── 4. Null-out staff company_id refs first
+  --      Staff don't need a company_id (they browse all clients via
+  --      the picker). Clearing them up-front ensures step 5 can wipe
+  --      every company without leaving a dangling FK.
+  UPDATE profiles SET company_id = NULL WHERE id = ANY(staff_user_ids);
 
-  -- ── 4. Delete non-staff profiles ─────────────────────────────────
+  -- ── 5. Delete EVERY company ─────────────────────────────────────
+  -- Cascades to: requisitions, candidates, documents, tickets,
+  -- ticket_messages, service_requests, actions, milestones,
+  -- client_services, compliance_items, athletes (+ interests via
+  -- athlete_id), training_needs, performance_reviews, skills_matrix,
+  -- absence_records, employee_documents, hr_metrics, employee_records,
+  -- onboarding_*, offboarding_*, policy_acks, learning_purchases,
+  -- ivylens_tickets, activity_log, client_notes, internal_tasks
+  -- (where company_id is set), offers / interview_schedules via
+  -- their requisitions.
+  DELETE FROM companies;
+
+  -- ── 6. Delete non-staff profiles ────────────────────────────────
   DELETE FROM profiles WHERE id <> ALL(staff_user_ids);
 
-  -- ── 5. Delete the corresponding auth.users rows ──────────────────
-  -- This also clears refresh_tokens / sessions for those users.
+  -- ── 7. Delete the corresponding auth.users rows ─────────────────
+  -- Also clears refresh_tokens / sessions for those users.
   DELETE FROM auth.users WHERE id <> ALL(staff_user_ids);
 
-  -- ── 6. Wipe platform-wide test content ───────────────────────────
-  -- These are not company-scoped, so the cascade in step 3 didn't
-  -- touch them. TRUNCATE is faster than DELETE and resets sequences
-  -- where applicable. CASCADE handles any downstream FK constraints
-  -- (e.g. bd_scanned_roles → bd_companies, athlete_partner_interests
-  -- → partners — though athletes are already gone via step 3).
+  -- ── 8. Wipe platform-wide test content ──────────────────────────
+  -- Not company-scoped, so step 5's cascade didn't touch them.
   TRUNCATE TABLE
     partners,
     bd_companies,
@@ -113,15 +141,20 @@ BEGIN
     client_notes
   CASCADE;
 
-  -- ── 7. Optional: clear catch-all tables that may have rows tied
-  --      to test users we just deleted. Most of these cascade via
-  --      auth.users delete, but be explicit so the script is loud
-  --      about its intent.
-  DELETE FROM notifications        WHERE user_id <> ALL(staff_user_ids);
+  -- ── 9. Belt-and-braces: clear stragglers tied to deleted users
+  -- Most cascade via the auth.users delete in step 7, but being
+  -- explicit makes the script's intent loud.
+  DELETE FROM notifications WHERE user_id <> ALL(staff_user_ids);
   -- sync_state is a tiny key/value table for cron poll cursors —
   -- safe to leave; it'll repopulate on next ingest.
 
-  -- ── 8. Report ────────────────────────────────────────────────────
+  -- ── 10. Reset onboarding flags on staff so a re-test feels fresh
+  UPDATE profiles
+     SET onboarding_completed = true,
+         onboarding_step      = NULL
+   WHERE id = ANY(staff_user_ids);
+
+  -- ── 11. Report ──────────────────────────────────────────────────
   SELECT COUNT(*) INTO after_companies FROM companies;
   SELECT COUNT(*) INTO after_profiles  FROM profiles;
   SELECT COUNT(*) INTO after_authusers FROM auth.users;

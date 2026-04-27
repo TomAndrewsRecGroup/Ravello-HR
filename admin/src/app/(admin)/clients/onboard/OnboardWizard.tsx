@@ -1,211 +1,195 @@
 'use client';
-import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight, ArrowLeft, Loader2, CheckCircle2, Building2,
-  UserPlus, Sliders, Users, CreditCard, Sparkles, Copy, Eye, EyeOff,
+  Sliders, Users, PoundSterling, Mail, Sparkles,
+  Trophy, Lock, AlertTriangle,
 } from 'lucide-react';
+import { FLAG_GROUPS, hasPaidFlag } from '@/lib/featureFlags';
+
+// Onboard wizard — the SINGLE path for adding a new client.
+//
+// Calls the canonical /api/admin/clients endpoint, which handles:
+//   • feature_flags + PAID/FREE detection
+//   • Stripe customer + subscription setup (only when paid modules
+//     are on AND a non-zero retainer is set)
+//   • account_owner_id assignment
+//   • welcome email via Resend
+//
+// Then optionally calls /api/invite to send a branded magic-link
+// invite to the contact email — that lands the new admin on the
+// /auth/update-password?welcome=1 flow so they set their own password.
+//
+// The old /clients/new page redirects here.
 
 interface Staff { id: string; full_name: string; role: string; }
 interface Props { staff: Staff[]; }
 
 const STEPS = [
-  { num: 1, label: 'Company',    icon: Building2 },
-  { num: 2, label: 'Account',    icon: UserPlus },
-  { num: 3, label: 'Owner',      icon: Users },
-  { num: 4, label: 'Modules',    icon: Sliders },
-  { num: 5, label: 'Services',   icon: CreditCard },
-  { num: 6, label: 'Complete',   icon: Sparkles },
+  { num: 1, label: 'Company',  icon: Building2 },
+  { num: 2, label: 'Modules',  icon: Sliders },
+  { num: 3, label: 'Billing',  icon: PoundSterling },
+  { num: 4, label: 'Owner',    icon: Users },
+  { num: 5, label: 'Review',   icon: Mail },
+  { num: 6, label: 'Done',     icon: Sparkles },
 ];
 
-const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Education','Construction','Other'];
+const SECTORS = [
+  'Retail & Hospitality','Technology & SaaS','Professional Services','Finance',
+  'Manufacturing','Healthcare','Logistics','Education','Construction','Other',
+];
 const SIZES = ['1-9','10-24','25-49','50-99','100-249','250+'];
 
-const MODULE_FLAGS = [
-  { key: 'hiring',              label: 'HIRE: Recruitment Pipeline',    section: 'HIRE' },
-  { key: 'friction_lens',       label: 'Friction Lens Scoring',          section: 'HIRE' },
-  { key: 'benchmarks',          label: 'Salary Benchmarks',              section: 'HIRE' },
-  { key: 'lead',                label: 'LEAD: People Development',      section: 'LEAD' },
-  { key: 'employee_records',    label: 'Employee Records',               section: 'LEAD' },
-  { key: 'onboarding',          label: 'Onboarding Workflows',           section: 'LEAD' },
-  { key: 'org_chart',           label: 'Organisation Chart',             section: 'LEAD' },
-  { key: 'learning',            label: 'E-Learning Marketplace',         section: 'LEAD' },
-  { key: 'documents',           label: 'Document Management',            section: 'LEAD' },
-  { key: 'protect',             label: 'PROTECT: Compliance & Risk',    section: 'PROTECT' },
-  { key: 'compliance',          label: 'Compliance Tracking',            section: 'PROTECT' },
-  { key: 'offboarding',         label: 'Offboarding Workflows',          section: 'PROTECT' },
-  { key: 'policy_acknowledgement', label: 'Policy Acknowledgements',     section: 'PROTECT' },
-  { key: 'support',             label: 'HR Support & Tickets',           section: 'General' },
-  { key: 'calendar',            label: 'Company Calendar',               section: 'General' },
-  { key: 'reports',             label: 'CSV Reports',                    section: 'General' },
-  { key: 'metrics',             label: 'Metrics Dashboard',              section: 'General' },
-];
+// Sensible defaults for a typical paying client. Admin can tick more
+// in step 2; nothing is forced.
+const DEFAULT_PAID_ON: Record<string, boolean> = {
+  hiring: true, lead: true, protect: true,
+  documents: true, support: true, compliance: true,
+};
 
-function generatePassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  const special = '!@#$%&*';
-  let pw = '';
-  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
-  pw += special[Math.floor(Math.random() * special.length)];
-  return pw;
+function initialFlags(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const group of FLAG_GROUPS) {
+    for (const f of group.flags) {
+      out[f.key] = !!DEFAULT_PAID_ON[f.key];
+    }
+  }
+  return out;
 }
 
 export default function OnboardWizard({ staff }: Props) {
-  const supabase = createClient();
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [stripeNote, setStripeNote] = useState('');
+  const [inviteNote, setInviteNote] = useState('');
   const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  // Step 1: Company
   const [company, setCompany] = useState({
-    name: '', sector: '', size_band: '', contact_email: '', website: '',
+    name: '', slug: '', sector: '', size_band: '', contact_email: '',
   });
-
-  // Step 2: Portal Account
-  const [account, setAccount] = useState({
-    full_name: '', email: '', password: generatePassword(),
-  });
-
-  // Step 3: Account Owner
+  const [flags, setFlags] = useState<Record<string, boolean>>(initialFlags);
+  const [retainerPounds, setRetainerPounds] = useState('');
   const [ownerId, setOwnerId] = useState('');
+  const [sendInvite, setSendInvite] = useState(true);
 
-  // Step 4: Feature Flags
-  const [flags, setFlags] = useState<Record<string, boolean>>(() => {
-    const f: Record<string, boolean> = {};
-    MODULE_FLAGS.forEach(m => { f[m.key] = ['hiring', 'lead', 'protect', 'support', 'documents', 'compliance', 'employee_records', 'calendar'].includes(m.key); });
-    return f;
-  });
+  const paidEnabled = useMemo(() => hasPaidFlag(flags), [flags]);
+  const enabledFlags = useMemo(
+    () => FLAG_GROUPS.flatMap(g => g.flags).filter(f => flags[f.key]),
+    [flags],
+  );
 
-  // Step 5: Services
-  const [services, setServices] = useState<{ name: string; tier: string; fee: string }[]>([
-    { name: '', tier: '', fee: '' },
-  ]);
-
-  function toggleFlag(key: string) {
-    setFlags(prev => ({ ...prev, [key]: !prev[key] }));
+  function toggleFlag(k: string) {
+    setFlags(prev => ({ ...prev, [k]: !prev[k] }));
   }
-
-  function copyCredentials() {
-    const text = `Portal Login Credentials\nEmail: ${account.email}\nPassword: ${account.password}\nURL: ${window.location.origin.replace('admin', 'portal') || 'https://portal.thepeoplesystem.co.uk'}`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function createCompany() {
-    if (!company.name.trim()) { setError('Company name is required'); return false; }
-    setSaving(true); setError('');
-
-    const slug = company.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const { data, error: err } = await supabase.from('companies').insert({
-      name: company.name.trim(),
-      slug,
-      sector: company.sector || null,
-      size_band: company.size_band || null,
-      contact_email: company.contact_email || account.email || null,
-      active: true,
-      onboarding_status: 'in_progress',
-      account_owner_id: ownerId || null,
-    }).select().single();
-
-    if (err) { setError(err.message); setSaving(false); return false; }
-    setCreatedCompanyId((data as any).id);
-    setSaving(false);
-    return (data as any).id;
-  }
-
-  async function createUser(companyId: string) {
-    if (!account.email || !account.password) { setError('Email and password are required'); return false; }
-    setSaving(true); setError('');
-
-    const res = await fetch('/api/create-client-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: account.email,
-        password: account.password,
-        company_id: companyId,
-        full_name: account.full_name || null,
-      }),
+  function toggleGroup(groupLabel: string, on: boolean) {
+    const group = FLAG_GROUPS.find(g => g.label === groupLabel);
+    if (!group) return;
+    setFlags(prev => {
+      const next = { ...prev };
+      for (const f of group.flags) next[f.key] = on;
+      return next;
     });
-
-    if (!res.ok) {
-      const body = await res.json();
-      setError(body.error ?? 'Failed to create user');
-      setSaving(false);
-      return false;
-    }
-    setSaving(false);
-    return true;
-  }
-
-  async function saveServices(companyId: string) {
-    const validServices = services.filter(s => s.name.trim());
-    if (validServices.length === 0) return;
-
-    await supabase.from('client_services').insert(
-      validServices.map(s => ({
-        company_id: companyId,
-        service_name: s.name.trim(),
-        service_tier: s.tier || null,
-        monthly_fee: s.fee ? parseFloat(s.fee) : 0,
-        status: 'active',
-        start_date: new Date().toISOString().split('T')[0],
-      }))
-    );
-  }
-
-  async function completeOnboarding(companyId: string) {
-    await supabase.from('companies').update({
-      feature_flags: flags,
-      account_owner_id: ownerId || null,
-      onboarding_status: 'completed',
-    }).eq('id', companyId);
-  }
-
-  async function handleNext() {
-    setError('');
-
-    if (step === 1) {
-      if (!company.name.trim()) { setError('Company name is required'); return; }
-      setStep(2);
-    } else if (step === 2) {
-      if (!account.email) { setError('Email is required'); return; }
-      if (account.password.length < 8) { setError('Password must be at least 8 characters'); return; }
-      setStep(3);
-    } else if (step === 3) {
-      setStep(4);
-    } else if (step === 4) {
-      setStep(5);
-    } else if (step === 5) {
-      // Create everything
-      setSaving(true);
-      const companyId = createdCompanyId ?? await createCompany();
-      if (!companyId) return;
-
-      const userOk = await createUser(companyId);
-      if (!userOk) return;
-
-      await saveServices(companyId);
-      await completeOnboarding(companyId);
-      setSaving(false);
-      setStep(6);
-    }
   }
 
   function handleBack() {
     if (step > 1) setStep(step - 1);
   }
 
-  const sections = [...new Set(MODULE_FLAGS.map(f => f.section))];
+  function handleNext() {
+    setError('');
+    if (step === 1) {
+      if (!company.name.trim()) { setError('Company name is required.'); return; }
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (enabledFlags.length === 0) {
+        setError('Select at least one module. The client needs something in their portal.');
+        return;
+      }
+      // Skip the billing step entirely if no paid modules — free-only
+      // clients never see Stripe.
+      setStep(paidEnabled ? 3 : 4);
+      return;
+    }
+    if (step === 3) {
+      // Retainer is optional even when paid is on — admin can set it later.
+      setStep(4);
+      return;
+    }
+    if (step === 4) { setStep(5); return; }
+    if (step === 5) { handleSubmit(); }
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError('');
+    setStripeNote('');
+    setInviteNote('');
+
+    const retainerNum   = parseFloat(retainerPounds);
+    const retainerPence = paidEnabled && !isNaN(retainerNum) && retainerNum > 0
+      ? Math.round(retainerNum * 100)
+      : null;
+
+    let companyId: string;
+    try {
+      const res = await fetch('/api/admin/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:                   company.name.trim(),
+          slug:                   company.slug.trim() || undefined,
+          sector:                 company.sector || null,
+          size_band:              company.size_band || null,
+          contact_email:          company.contact_email || null,
+          monthly_retainer_pence: retainerPence,
+          feature_flags:          flags,
+          account_owner_id:       ownerId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Could not create client.');
+        setSubmitting(false);
+        return;
+      }
+      companyId = data.company_id;
+      setCreatedCompanyId(companyId);
+      if (data.stripe?.error) {
+        setStripeNote(`Client created but Stripe billing setup failed: ${data.stripe.error}. Retry from the client profile.`);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Network error.');
+      setSubmitting(false);
+      return;
+    }
+
+    if (sendInvite && company.contact_email) {
+      try {
+        const inv = await fetch('/api/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: company.contact_email, company_id: companyId }),
+        });
+        if (!inv.ok) {
+          const body = await inv.json();
+          setInviteNote(`Client created but invite failed: ${body.error ?? 'unknown error'}`);
+        }
+      } catch {
+        setInviteNote('Client created but the invite email could not be sent.');
+      }
+    }
+
+    setSubmitting(false);
+    setStep(6);
+  }
 
   return (
-    <div className="w-full max-w-[640px]">
+    <div className="w-full max-w-[680px]">
       {/* Progress bar */}
       <div className="flex items-center gap-1 mb-6">
         {STEPS.map((s, i) => {
@@ -218,14 +202,14 @@ export default function OnboardWizard({ staff }: Props) {
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
                   style={{
-                    background: isDone ? 'var(--success)' : isActive ? 'var(--purple)' : 'var(--surface-alt)',
+                    background: isDone ? 'var(--teal)' : isActive ? 'var(--purple)' : 'var(--surface-alt)',
                     color: isDone || isActive ? '#fff' : 'var(--ink-faint)',
                   }}
                 >
                   {isDone ? <CheckCircle2 size={14} /> : <Icon size={13} />}
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className="flex-1 h-0.5 mx-1" style={{ background: isDone ? 'var(--success)' : 'var(--line)' }} />
+                  <div className="flex-1 h-0.5 mx-1" style={{ background: isDone ? 'var(--teal)' : 'var(--line)' }} />
                 )}
               </div>
               <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: isActive ? 'var(--purple)' : 'var(--ink-faint)' }}>
@@ -237,276 +221,330 @@ export default function OnboardWizard({ staff }: Props) {
       </div>
 
       {/* Step content */}
-      <div className="card p-6">
+      <div className="card p-7">
 
-        {/* ── Step 1: Company ──────────────────────────── */}
+        {/* ── 1. Company ────────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-lg mb-1" style={{ color: 'var(--ink)' }}>Company Details</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Basic information about the client company.</p>
+              <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Company details</h3>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The basics. You can edit any of this later from the client profile.</p>
             </div>
             <div className="form-group">
-              <label className="label">Company Name *</label>
-              <input className="input" value={company.name} onChange={e => setCompany(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Acme Ltd" />
+              <label className="label">Company name *</label>
+              <input className="input" value={company.name} onChange={e => setCompany(f => ({ ...f, name: e.target.value }))} placeholder="Acme Ltd" />
+            </div>
+            <div className="form-group">
+              <label className="label">URL slug</label>
+              <input className="input" value={company.slug} onChange={e => setCompany(f => ({ ...f, slug: e.target.value }))} placeholder="acme-ltd (auto-generated if blank)" />
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="form-group">
                 <label className="label">Sector</label>
                 <select className="input" value={company.sector} onChange={e => setCompany(f => ({ ...f, sector: e.target.value }))}>
-                  <option value="">Select...</option>
+                  <option value="">Select…</option>
                   {SECTORS.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label className="label">Team Size</label>
+                <label className="label">Team size</label>
                 <select className="input" value={company.size_band} onChange={e => setCompany(f => ({ ...f, size_band: e.target.value }))}>
-                  <option value="">Select...</option>
+                  <option value="">Select…</option>
                   {SIZES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
             </div>
             <div className="form-group">
-              <label className="label">Contact Email</label>
+              <label className="label">Primary contact email</label>
               <input className="input" type="email" value={company.contact_email} onChange={e => setCompany(f => ({ ...f, contact_email: e.target.value }))} placeholder="contact@company.co.uk" />
+              <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+                We&rsquo;ll send the welcome email and (if enabled) the portal invite here.
+              </p>
             </div>
           </div>
         )}
 
-        {/* ── Step 2: Portal Account ──────────────────── */}
+        {/* ── 2. Modules ────────────────────────────────────── */}
         {step === 2 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div>
-              <h3 className="font-display text-lg mb-1" style={{ color: 'var(--ink)' }}>Portal Login</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Create the client's admin login. You can email these credentials to them externally.</p>
+              <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Module access</h3>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                Tick what this client gets in their portal. Free-tier modules don&rsquo;t trigger any billing.
+              </p>
             </div>
-            <div className="form-group">
-              <label className="label">Contact Full Name</label>
-              <input className="input" value={account.full_name} onChange={e => setAccount(f => ({ ...f, full_name: e.target.value }))} placeholder="e.g. Sarah Johnson" />
-            </div>
-            <div className="form-group">
-              <label className="label">Login Email *</label>
-              <input className="input" type="email" value={account.email} onChange={e => setAccount(f => ({ ...f, email: e.target.value }))} placeholder="sarah@company.co.uk" />
-            </div>
-            <div className="form-group">
-              <label className="label">Password *</label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input
-                    className="input pr-10"
-                    type={showPassword ? 'text' : 'password'}
-                    value={account.password}
-                    onChange={e => setAccount(f => ({ ...f, password: e.target.value }))}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: 'var(--ink-faint)' }}
-                  >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAccount(f => ({ ...f, password: generatePassword() }))}
-                  className="btn-secondary btn-sm"
+            {FLAG_GROUPS.map(group => {
+              const isFree = group.tier === 'free';
+              const groupOn   = group.flags.filter(f => flags[f.key]).length;
+              const allOn     = groupOn === group.flags.length;
+              return (
+                <div
+                  key={group.label}
+                  className="rounded-[10px] p-4"
+                  style={{
+                    background: isFree ? 'rgba(20,184,166,0.04)' : 'var(--surface-soft)',
+                    border:     `1px solid ${isFree ? 'rgba(20,184,166,0.18)' : 'var(--line)'}`,
+                  }}
                 >
-                  Generate
-                </button>
-              </div>
-            </div>
-
-            {/* Copy credentials box */}
-            <div className="rounded-lg p-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Login Credentials</p>
-                <button onClick={copyCredentials} className="text-[10px] font-bold flex items-center gap-1" style={{ color: 'var(--purple)' }}>
-                  <Copy size={10} /> {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="text-xs font-mono" style={{ color: 'var(--ink-soft)' }}>
-                Email: {account.email || '-'}<br />
-                Password: {account.password}
-              </p>
-              <p className="text-[10px] mt-2" style={{ color: 'var(--ink-faint)' }}>
-                Send these to the client via email. They can change their password after first login.
-              </p>
-            </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    {isFree
+                      ? <Trophy size={14} style={{ color: 'var(--teal)'   }} />
+                      : <Lock   size={14} style={{ color: 'var(--purple)' }} />}
+                    <p className="text-xs font-bold" style={{ color: 'var(--ink)' }}>{group.label}</p>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md"
+                      style={{
+                        background: isFree ? 'rgba(20,184,166,0.12)' : 'rgba(124,58,237,0.10)',
+                        color:      isFree ? 'var(--teal)'           : 'var(--purple)',
+                      }}
+                    >
+                      {isFree ? 'Free' : 'Paid'}
+                    </span>
+                    <span className="ml-auto text-[10px] font-medium" style={{ color: 'var(--ink-faint)' }}>
+                      {groupOn}/{group.flags.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.label, !allOn)}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                      style={{
+                        background: allOn ? 'rgba(217,68,68,0.08)' : 'rgba(20,184,166,0.10)',
+                        color:      allOn ? 'var(--red)'           : 'var(--teal)',
+                      }}
+                    >
+                      {allOn ? 'All off' : 'All on'}
+                    </button>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                    {group.flags.map(f => (
+                      <label key={f.key} className="flex items-center gap-2 cursor-pointer text-xs py-1">
+                        <input
+                          type="checkbox"
+                          checked={!!flags[f.key]}
+                          onChange={() => toggleFlag(f.key)}
+                          className="w-3.5 h-3.5 accent-purple-600"
+                        />
+                        <span style={{ color: flags[f.key] ? 'var(--ink)' : 'var(--ink-soft)' }}>
+                          {f.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* ── Step 3: Account Owner ───────────────────── */}
+        {/* ── 3. Billing (only if paid modules are on) ──────── */}
         {step === 3 && (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-lg mb-1" style={{ color: 'var(--ink)' }}>Account Manager</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Assign a TPS team member as the primary contact for this client.</p>
+              <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Monthly retainer</h3>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                We&rsquo;ll create the Stripe customer and subscription with this monthly amount. Leave blank to skip billing for now &mdash; you can add it later.
+              </p>
             </div>
-            <div className="space-y-2">
-              {staff.map(s => (
-                <label
-                  key={s.id}
-                  className="flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-                  style={{
-                    border: `1px solid ${ownerId === s.id ? 'var(--purple)' : 'var(--line)'}`,
-                    background: ownerId === s.id ? 'rgba(124,58,237,0.04)' : 'transparent',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="owner"
-                    value={s.id}
-                    checked={ownerId === s.id}
-                    onChange={() => setOwnerId(s.id)}
-                    className="w-4 h-4"
-                  />
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
-                  >
-                    {s.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{s.full_name || 'Unnamed'}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{s.role === 'tps_admin' ? 'Admin' : 'Recruiter'}</p>
-                  </div>
-                </label>
-              ))}
-              {staff.length === 0 && (
-                <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No TPS staff found. You can assign an owner later.</p>
-              )}
+            <div className="form-group">
+              <label className="label">Monthly fee (£)</label>
+              <div className="relative">
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium"
+                  style={{ color: 'var(--ink-faint)' }}
+                >£</span>
+                <input
+                  type="number" min="0" step="0.01"
+                  className="input"
+                  style={{ paddingLeft: 24 }}
+                  value={retainerPounds}
+                  onChange={e => setRetainerPounds(e.target.value)}
+                  placeholder="2500.00"
+                />
+              </div>
+            </div>
+            <div className="rounded-[10px] p-3 text-[12px]" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}>
+              The client will receive a separate email from Stripe to add their payment method on first login.
             </div>
           </div>
         )}
 
-        {/* ── Step 4: Modules / Feature Flags ─────────── */}
+        {/* ── 4. Account owner ──────────────────────────────── */}
         {step === 4 && (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-lg mb-1" style={{ color: 'var(--ink)' }}>Portal Modules</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Choose which features this client can access. Toggle on what they're paying for.</p>
+              <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Account manager</h3>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The TPS team member who looks after this client. Optional &mdash; you can assign later.</p>
             </div>
-            {sections.map(section => (
-              <div key={section}>
-                <p className="eyebrow mb-2">{section}</p>
-                <div className="space-y-1">
-                  {MODULE_FLAGS.filter(f => f.section === section).map(flag => (
-                    <label
-                      key={flag.key}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-[var(--surface-soft)]"
+            {staff.length === 0 ? (
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No TPS staff found. Skip and assign later.</p>
+            ) : (
+              <div className="space-y-2">
+                <label
+                  className="flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors"
+                  style={{
+                    border: `1px solid ${ownerId === '' ? 'var(--purple)' : 'var(--line)'}`,
+                    background: ownerId === '' ? 'rgba(124,58,237,0.04)' : 'transparent',
+                  }}
+                >
+                  <input type="radio" name="owner" value="" checked={ownerId === ''} onChange={() => setOwnerId('')} className="w-4 h-4" />
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Unassigned</p>
+                </label>
+                {staff.map(s => (
+                  <label
+                    key={s.id}
+                    className="flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors"
+                    style={{
+                      border: `1px solid ${ownerId === s.id ? 'var(--purple)' : 'var(--line)'}`,
+                      background: ownerId === s.id ? 'rgba(124,58,237,0.04)' : 'transparent',
+                    }}
+                  >
+                    <input type="radio" name="owner" value={s.id} checked={ownerId === s.id} onChange={() => setOwnerId(s.id)} className="w-4 h-4" />
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
                     >
-                      <span className="text-sm" style={{ color: flags[flag.key] ? 'var(--ink)' : 'var(--ink-faint)' }}>
-                        {flag.label}
-                      </span>
-                      <div
-                        className={`toggle ${flags[flag.key] ? 'toggle-on' : 'toggle-off'}`}
-                        style={{ transform: 'scale(0.85)' }}
-                        onClick={() => toggleFlag(flag.key)}
-                      >
-                        <div className={`toggle-knob ${flags[flag.key] ? 'toggle-knob-on' : 'toggle-knob-off'}`} />
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                      {s.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                    </div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{s.full_name || 'Unnamed'}</p>
+                  </label>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 
-        {/* ── Step 5: Services & Billing ──────────────── */}
+        {/* ── 5. Review & invite ────────────────────────────── */}
         {step === 5 && (
           <div className="space-y-5">
             <div>
-              <h3 className="font-display text-lg mb-1" style={{ color: 'var(--ink)' }}>Services & Billing</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Add the services this client is subscribed to. You can skip this and add later.</p>
+              <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Review &amp; create</h3>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Quick check before we set everything up.</p>
             </div>
-            <div className="space-y-3">
-              {services.map((svc, i) => (
-                <div key={i} className="grid grid-cols-3 gap-2">
-                  <input className="input" placeholder="Service name" value={svc.name} onChange={e => {
-                    const u = [...services]; u[i] = { ...u[i], name: e.target.value }; setServices(u);
-                  }} />
-                  <input className="input" placeholder="Tier (optional)" value={svc.tier} onChange={e => {
-                    const u = [...services]; u[i] = { ...u[i], tier: e.target.value }; setServices(u);
-                  }} />
-                  <input className="input" type="number" placeholder="Monthly fee £" value={svc.fee} onChange={e => {
-                    const u = [...services]; u[i] = { ...u[i], fee: e.target.value }; setServices(u);
-                  }} />
+
+            <div className="rounded-[10px] divide-y" style={{ border: '1px solid var(--line)', borderColor: 'var(--line)' }}>
+              <ReviewRow label="Company"        value={company.name} />
+              <ReviewRow label="Sector / size"  value={[company.sector, company.size_band].filter(Boolean).join(' · ') || '—'} />
+              <ReviewRow label="Contact"        value={company.contact_email || '— (no invite will be sent)'} />
+              <ReviewRow label="Modules"        value={`${enabledFlags.length} enabled`} />
+              <ReviewRow
+                label="Tier"
+                value={paidEnabled ? `Paid${retainerPounds ? ` · £${parseFloat(retainerPounds).toFixed(2)}/mo` : ' · no retainer set'}` : 'Free'}
+              />
+              <ReviewRow
+                label="Account manager"
+                value={staff.find(s => s.id === ownerId)?.full_name || 'Unassigned'}
+              />
+            </div>
+
+            {company.contact_email && (
+              <label
+                className="flex items-center gap-3 rounded-[10px] px-4 py-3 cursor-pointer"
+                style={{
+                  background: sendInvite ? 'rgba(124,58,237,0.06)' : 'var(--surface-soft)',
+                  border:     `1px solid ${sendInvite ? 'rgba(124,58,237,0.20)' : 'var(--line)'}`,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={sendInvite}
+                  onChange={e => setSendInvite(e.target.checked)}
+                  className="w-4 h-4 accent-purple-600"
+                />
+                <Mail size={14} style={{ color: sendInvite ? 'var(--purple)' : 'var(--ink-faint)' }} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>Send portal invite</p>
+                  <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                    Email {company.contact_email} a magic link &mdash; they&rsquo;ll set their own password on first sign-in.
+                  </p>
                 </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setServices(prev => [...prev, { name: '', tier: '', fee: '' }])}
-              className="btn-ghost btn-sm"
-            >
-              + Add another service
-            </button>
+                {sendInvite && <CheckCircle2 size={14} className="ml-auto" style={{ color: 'var(--purple)' }} />}
+              </label>
+            )}
+
+            {error      && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)',  color: 'var(--red)' }}>{error}</p>}
+            {stripeNote && (
+              <p className="text-xs p-3 rounded-[8px] flex items-start gap-2" style={{ background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' }}>
+                <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+                {stripeNote}
+              </p>
+            )}
+            {inviteNote && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' }}>{inviteNote}</p>}
           </div>
         )}
 
-        {/* ── Step 6: Complete ────────────────────────── */}
+        {/* ── 6. Complete ───────────────────────────────────── */}
         {step === 6 && (
           <div className="text-center py-6">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.12)' }}>
-              <CheckCircle2 size={28} style={{ color: 'var(--success)' }} />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(20,184,166,0.12)' }}>
+              <CheckCircle2 size={28} style={{ color: 'var(--teal)' }} />
             </div>
-            <h3 className="font-display text-xl mb-2" style={{ color: 'var(--ink)' }}>Client Onboarded</h3>
+            <h3 className="font-display text-xl font-semibold mb-2" style={{ color: 'var(--ink)' }}>Client created</h3>
             <p className="text-sm mb-1" style={{ color: 'var(--ink-soft)' }}>
-              <strong>{company.name}</strong> is ready to go.
+              <strong>{company.name}</strong> is set up.
             </p>
             <p className="text-xs mb-6" style={{ color: 'var(--ink-faint)' }}>
-              Portal account created for {account.email}. Send them the credentials to get started.
+              {sendInvite && company.contact_email
+                ? `Invite sent to ${company.contact_email}. They'll set their own password on first sign-in.`
+                : 'You can invite the contact from the client profile when ready.'}
             </p>
-
-            {/* Credentials reminder */}
-            <div className="rounded-lg p-4 mb-6 text-left mx-auto max-w-sm" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Credentials</p>
-                <button onClick={copyCredentials} className="text-[10px] font-bold flex items-center gap-1" style={{ color: 'var(--purple)' }}>
-                  <Copy size={10} /> {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="text-xs font-mono" style={{ color: 'var(--ink-soft)' }}>
-                Email: {account.email}<br />
-                Password: {account.password}
-              </p>
-            </div>
-
             <div className="flex items-center justify-center gap-3">
               <button onClick={() => router.push(`/clients/${createdCompanyId}`)} className="btn-cta btn-sm">
-                View Client Profile
+                View client profile
               </button>
-              <button onClick={() => { setStep(1); setCreatedCompanyId(null); setCompany({ name: '', sector: '', size_band: '', contact_email: '', website: '' }); setAccount({ full_name: '', email: '', password: generatePassword() }); }} className="btn-secondary btn-sm">
-                Onboard Another
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setCreatedCompanyId(null);
+                  setCompany({ name: '', slug: '', sector: '', size_band: '', contact_email: '' });
+                  setFlags(initialFlags());
+                  setRetainerPounds('');
+                  setOwnerId('');
+                  setSendInvite(true);
+                }}
+                className="btn-secondary btn-sm"
+              >
+                Onboard another
               </button>
             </div>
           </div>
         )}
 
-        {/* Error */}
-        {error && <p className="text-xs p-3 mt-4 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--danger)' }}>{error}</p>}
+        {/* Errors that need to render outside step 5 */}
+        {step !== 5 && error && (
+          <p className="text-xs p-3 mt-4 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--red)' }}>{error}</p>
+        )}
 
         {/* Navigation */}
         {step < 6 && (
           <div className="flex items-center justify-between mt-6 pt-5" style={{ borderTop: '1px solid var(--line)' }}>
             {step > 1 ? (
-              <button onClick={handleBack} className="btn-ghost btn-sm">
+              <button onClick={handleBack} className="btn-ghost btn-sm" disabled={submitting}>
                 <ArrowLeft size={13} /> Back
               </button>
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving}
+              disabled={submitting}
               className="btn-cta btn-sm"
             >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : null}
-              {step === 5 ? 'Create Client' : 'Next'}
-              {step < 5 && <ArrowRight size={13} />}
+              {submitting && <Loader2 size={13} className="animate-spin" />}
+              {step === 5
+                ? (submitting ? 'Creating…' : 'Create client')
+                : 'Next'}
+              {step < 5 && !submitting && <ArrowRight size={13} />}
             </button>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5">
+      <span className="text-[11px] font-medium" style={{ color: 'var(--ink-faint)' }}>{label}</span>
+      <span className="text-[13px] font-medium text-right" style={{ color: 'var(--ink)' }}>{value}</span>
     </div>
   );
 }

@@ -124,7 +124,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
       {companies.length === 0 ? (
         <div className="card p-12 empty-state">
           No clients yet.
-          <Link prefetch={false} href="/clients/new" className="btn-cta mt-2">Add first client</Link>
+          <Link prefetch={false} href="/clients/onboard" className="btn-cta mt-2">Add first client</Link>
         </div>
       ) : (
         <div className="table-wrapper">
