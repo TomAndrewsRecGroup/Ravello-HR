@@ -45,14 +45,16 @@ export async function POST(request: NextRequest) {
   );
 
   // Invite via Supabase Auth Admin API: sends a magic-link invite email.
-  // After Supabase verifies the token, our /auth/callback exchanges
-  // the code for a session and forwards to /auth/update-password?welcome=1
-  // — that's where the invitee actually sets their password. Without
-  // this redirect they'd land on /dashboard authenticated but with no
-  // password set, forcing them to use magic links forever.
+  // Supabase returns invite confirmations using IMPLICIT FLOW — auth
+  // tokens come back in the URL hash (#access_token=...). Server-side
+  // route handlers can't see hashes (browsers don't send them), so we
+  // skip /auth/callback and point directly at /auth/update-password.
+  // That page is a client component and detects the hash via supabase-js
+  // (detectSessionInUrl=true), creates the session, then shows the
+  // "Welcome — set your password" form.
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id, role: safeRole },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=${encodeURIComponent('/auth/update-password?welcome=1')}`,
+    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/update-password?welcome=1`,
   });
 
   if (error) {

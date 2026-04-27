@@ -69,12 +69,12 @@ export async function POST(request: NextRequest) {
   // Role is forced to 'client_editor' — clients can only invite Editors
   // from their portal. The original Admin seat is created when TPS
   // staff onboard the client through the admin app's invite endpoint.
-  // After the magic-link is verified, /auth/callback forwards the user
-  // to /auth/update-password?welcome=1 so they set a password instead
-  // of being stuck on magic-link sign-in forever.
+  // Supabase returns invites in IMPLICIT FLOW (auth tokens in the URL
+  // hash). Server-side routes can't read hashes, so we redirect direct
+  // to /auth/update-password where the client component handles it.
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id: companyId, role: 'client_editor' },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=${encodeURIComponent('/auth/update-password?welcome=1')}`,
+    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/update-password?welcome=1`,
   });
 
   if (error) {
