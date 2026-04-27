@@ -21,7 +21,7 @@ export default async function PolicyAcksPage() {
     </main>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin';
 
   const [docsRes, acksRes, employeesRes] = await Promise.all([
     supabase

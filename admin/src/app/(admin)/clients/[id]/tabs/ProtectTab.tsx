@@ -5,6 +5,7 @@ import { Check, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
+import { ABSENCE_TYPE_LABELS, EMPLOYEE_DOC_TYPE_LABELS, ABSENCE_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props {
   initialAbsenceRecords: any[];
   initialEmpDocs: any[];
@@ -55,7 +56,7 @@ export default function ProtectTab({ initialAbsenceRecords, initialEmpDocs }: Pr
                       <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{a.employee_name}</p>
                       {a.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{a.department}</p>}
                     </td>
-                    <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{a.absence_type?.replace(/_/g, ' ')}</td>
+                    <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{labelFor(ABSENCE_TYPE_LABELS, a.absence_type)}</td>
                     <td style={{ color: 'var(--ink-soft)' }}>{a.start_date ? new Date(a.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
                     <td style={{ color: 'var(--ink-soft)' }}>{a.end_date ? new Date(a.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
                     <td style={{ color: 'var(--ink-soft)' }}>{a.days ?? '-'}</td>
@@ -140,7 +141,7 @@ export default function ProtectTab({ initialAbsenceRecords, initialEmpDocs }: Pr
                           <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
                         )}
                       </td>
-                      <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{d.doc_type?.replace(/_/g, ' ')}</td>
+                      <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{labelFor(EMPLOYEE_DOC_TYPE_LABELS, d.doc_type)}</td>
                       <td style={{ color: isExpired ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isExpired ? 600 : undefined }}>
                         {d.expiry_date ? new Date(d.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                         {isExpired && d.expiry_date && <span className="ml-1 text-[10px]">EXPIRED</span>}
@@ -155,7 +156,7 @@ export default function ProtectTab({ initialAbsenceRecords, initialEmpDocs }: Pr
                             { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' }
                           }
                         >
-                          {d.status?.replace(/_/g, ' ')}
+                          {labelFor(ABSENCE_STATUS_LABELS, d.status)}
                         </span>
                       </td>
                     </tr>

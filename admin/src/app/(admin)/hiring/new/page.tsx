@@ -18,7 +18,7 @@ export default async function AdminNewRolePage({
   const [{ data: { user } }, { data: companies }, { data: tpoStaff }, templateResult] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from('companies').select('id,name').eq('active', true).order('name'),
-    supabase.from('profiles').select('id,full_name').in('role', ['tps_admin', 'tps_client']).order('full_name'),
+    supabase.from('profiles').select('id,full_name').eq('role', 'tps_admin').order('full_name'),
     templateId
       ? supabase.from('jd_templates').select('id,title,department,seniority,working_model,description,must_haves,benefits,tags').eq('id', templateId).single()
       : Promise.resolve({ data: null }),

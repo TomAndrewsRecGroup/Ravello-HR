@@ -17,7 +17,7 @@ export default async function TasksPage() {
       .limit(2000),
     supabase.from('profiles')
       .select('id, full_name, role')
-      .in('role', ['tps_admin', 'tps_client'])
+      .eq('role', 'tps_admin')
       .order('full_name'),
     supabase.from('companies')
       .select('id, name')

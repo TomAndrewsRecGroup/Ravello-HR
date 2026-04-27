@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
+import { PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { sendEmail, userInvitedEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   const auth = await requireStaff();
@@ -26,8 +28,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });
   }
 
-  const allowedRoles = ['client_admin', 'client_viewer'];
-  const safeRole = allowedRoles.includes(role) ? role : 'client_admin';
+  // Whitelist of accepted portal roles (Admin or Editor). Anything else
+  // falls back to Admin so an invite never lands a sub-user with a
+  // role we don't expect.
+  const safeRole = (PORTAL_INVITE_ROLES as readonly string[]).includes(role) ? role : 'client_admin';
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
@@ -40,10 +44,15 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // Invite via Supabase Auth Admin API: sends a magic-link invite email
+  // Invite via Supabase Auth Admin API: sends a magic-link invite email.
+  // We always send invitees through /dashboard rather than /onboarding —
+  // the portal layout decides whether to bounce them to the wizard based
+  // on hasPaidFlag(featureFlags). That keeps free-tier clients (no paid
+  // module) out of the wizard entirely instead of flashing it for the
+  // duration of the first cookie stamp.
   const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { company_id, role: safeRole },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/onboarding`,
+    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/callback?next=/dashboard`,
   });
 
   if (error) {
@@ -68,6 +77,20 @@ export async function POST(request: NextRequest) {
     target_type: 'profile',
     metadata: { email, company_id, role: safeRole },
   });
+
+  // Branded follow-up alongside Supabase's built-in magic-link email.
+  // Supabase's email is functional (the auth token); this one is the
+  // welcome — TPS branded, points at the portal sign-in, names the
+  // company and role.
+  const { data: companyRow } = await adminClient
+    .from('companies').select('name').eq('id', company_id).single();
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  await sendEmail(userInvitedEmail({
+    to:          email,
+    companyName: companyRow?.name ?? 'your company',
+    roleLabel:   ROLE_LABELS[safeRole] ?? 'Editor',
+    acceptUrl:   `${portalUrl}/auth/login`,
+  }));
 
   return NextResponse.json({ success: true, user_id: data.user.id });
 }

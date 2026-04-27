@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Plus, X, Loader2,
   CalendarDays, Palmtree, Thermometer, Building2, Star,
 } from 'lucide-react';
+import { ABSENCE_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 /* ─── Types ─────────────────────────────────────────── */
 interface CalendarEvent {
@@ -371,7 +372,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium" style={{ color: c.text }}>{ev.title}</p>
                       <p className="text-xs" style={{ color: c.text, opacity: 0.7 }}>
-                        {ev.event_type.replace(/_/g, ' ')}
+                        {ev.event_type.replace(/_/g, ' ')}{/* event_type is a small free-form set; left as-is for now */}
                         {ev.start_date !== ev.end_date ? ` · ${ev.start_date}: ${ev.end_date}` : ''}
                       </p>
                     </div>
@@ -388,7 +389,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium" style={{ color: c.text }}>{empName}</p>
                       <p className="text-xs" style={{ color: c.text, opacity: 0.7 }}>
-                        {l.leave_type.replace(/_/g, ' ')} · {l.days_count} day{l.days_count !== 1 ? 's' : ''}
+                        {labelFor(ABSENCE_TYPE_LABELS, l.leave_type)} · {l.days_count} day{l.days_count !== 1 ? 's' : ''}
                         {' · '}{l.status}
                       </p>
                     </div>

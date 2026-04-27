@@ -9,7 +9,13 @@ const PUBLIC_ROUTES = [
 ];
 
 const SESSION_COOKIE = 'tps_portal_session';
-const SESSION_TTL = 60 * 15; // 15 minutes
+// 15-minute TTL: feature-flag changes made in the admin portal won't
+// be visible to an active portal session until this cookie expires or
+// the user triggers a fresh auth (sign-out / sign-in). This is a
+// deliberate trade-off — a Supabase round-trip on every request is too
+// expensive at scale. If you need near-instant propagation, add a
+// server action that deletes the cookie and forces a re-stamp.
+const SESSION_TTL = 60 * 15;
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -94,7 +100,7 @@ export async function updateSession(request: NextRequest) {
       email: user.email,
       role,
       companyId,
-      isTpsStaff: role === 'tps_admin' || role === 'tps_client',
+      isTpsStaff: role === 'tps_admin',
       uiPreferences: (profile as any)?.ui_preferences ?? {},
       onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
       featureFlags,

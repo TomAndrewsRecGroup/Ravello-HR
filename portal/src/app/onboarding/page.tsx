@@ -1,85 +1,196 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, CheckCircle2, ArrowRight, Briefcase, FolderOpen, LifeBuoy } from 'lucide-react';
+import {
+  Loader2, CheckCircle2, ArrowRight, ArrowLeft, Send,
+  UserPlus, Users, Mail, Briefcase, Calendar, SkipForward,
+} from 'lucide-react';
+import FrictionLensClient from '../(portal)/hire/friction-lens/FrictionLensClient';
+import type { CompanyAssessment } from '@/lib/supabase/types';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
 const SIZES   = ['10-24','25-49','50-99','100-249','250+'];
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4 | 5;
+const TOTAL_STEPS = 5;
+
+// Each step has a label rendered in the progress bar (only shown ≥md to
+// keep mobile compact) and a "required to leave the step" flag — the
+// wizard refuses to advance past a required step until it succeeds.
+const STEPS: Array<{ n: Step; label: string; required: boolean }> = [
+  { n: 1, label: 'Welcome',         required: true  },
+  { n: 2, label: 'Friction Lens',   required: true  },
+  { n: 3, label: 'Invite Editor',   required: false },
+  { n: 4, label: 'First employee',  required: true  },
+  { n: 5, label: 'Done',            required: true  },
+];
 
 export default function OnboardingPage() {
   const router   = useRouter();
   const supabase = createClient();
 
-  const [step,       setStep]       = useState<Step>(1);
-  const [loading,    setLoading]    = useState(false);
-  const [init,       setInit]       = useState(true);
-  const [profile,    setProfile]    = useState<any>(null);
-  const [company,    setCompany]    = useState<any>(null);
-  const [form,       setForm]       = useState({ sector: '', size_band: '', full_name: '' });
+  const [step,    setStep]    = useState<Step>(1);
+  const [init,    setInit]    = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [company, setCompany] = useState<any>(null);
+  const [assessment, setAssessment] = useState<CompanyAssessment | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
 
+  // Step-1 form
+  const [welcome, setWelcome] = useState({ full_name: '', sector: '', size_band: '' });
+  // Step-3 form
+  const [invite,  setInvite]  = useState({ email: '', full_name: '' });
+  const [inviteSent, setInviteSent] = useState(false);
+  // Step-4 form
+  const [employee, setEmployee] = useState({ full_name: '', email: '', job_title: '', start_date: '' });
+
+  // ── Initial load: profile + company + any existing assessment ──
   useEffect(() => {
-    async function load() {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/auth/login'); return; }
 
-      const { data: p } = await supabase
-        .from('profiles')
-        .select('id,full_name,onboarding_completed,company_id,companies(id,name,sector,size_band,feature_flags)')
-        .eq('id', user.id)
-        .single();
+      // Pull the profile (with company) and the most recent assessment in parallel.
+      const [{ data: p }, { data: a }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id,full_name,onboarding_completed,onboarding_step,role,company_id,companies(id,name,sector,size_band,contact_email,ivylens_company_id)')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('company_assessments')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      if (p?.onboarding_completed) { router.replace('/dashboard'); return; }
+      if (p?.onboarding_completed) {
+        router.replace('/dashboard');
+        return;
+      }
 
-      setProfile(p);
       const c = (p as any)?.companies;
+      setProfile(p);
       setCompany(c);
-      setForm({
+      setAssessment((a ?? null) as CompanyAssessment | null);
+      setWelcome({
+        full_name: p?.full_name ?? '',
         sector:    c?.sector    ?? '',
         size_band: c?.size_band ?? '',
-        full_name: p?.full_name ?? '',
       });
+
+      // Resume on the saved step (clamped 1..5)
+      const saved = Math.max(1, Math.min(TOTAL_STEPS, p?.onboarding_step ?? 1)) as Step;
+      setStep(saved);
       setInit(false);
-    }
-    load();
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function set(k: string, v: string) {
-    setForm(prev => ({ ...prev, [k]: v }));
+  // Persist current step to profiles so a refresh resumes here.
+  async function persistStep(next: Step) {
+    if (!profile?.id) return;
+    await supabase.from('profiles').update({ onboarding_step: next }).eq('id', profile.id);
   }
 
+  function goTo(next: Step) {
+    setError('');
+    setStep(next);
+    persistStep(next);
+  }
+
+  // ── Step actions ─────────────────────────────────────────────
   async function handleStep1(e: React.FormEvent) {
     e.preventDefault();
+    if (!welcome.sector || !welcome.size_band) {
+      setError('Please pick a sector and team size.');
+      return;
+    }
     setLoading(true);
-
-    await Promise.all([
+    setError('');
+    const [pErr, cErr] = await Promise.all([
+      supabase.from('profiles').update({ full_name: welcome.full_name || null }).eq('id', profile.id).then(r => r.error),
       supabase.from('companies').update({
-        sector:    form.sector    || null,
-        size_band: form.size_band || null,
-      }).eq('id', company?.id),
-      supabase.from('profiles').update({
-        full_name:       form.full_name || null,
-        onboarding_step: 2,
-      }).eq('id', profile?.id),
+        sector:    welcome.sector,
+        size_band: welcome.size_band,
+      }).eq('id', company?.id).then(r => r.error),
     ]);
-
     setLoading(false);
-    setStep(2);
+    if (pErr || cErr) { setError(pErr?.message ?? cErr?.message ?? 'Could not save. Please try again.'); return; }
+    goTo(2);
   }
 
-  async function completeOnboarding(destination: string) {
+  function onAssessmentCreated(a: CompanyAssessment) {
+    setAssessment(a);
+    // Don't auto-advance — let them read the result, click Continue.
+  }
+
+  async function sendInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!invite.email) { setError('Email is required.'); return; }
     setLoading(true);
-    await supabase.from('profiles').update({
-      onboarding_completed: true,
-      onboarding_step:      3,
-    }).eq('id', profile?.id);
-    router.push(destination);
+    setError('');
+    try {
+      const res = await fetch('/api/portal/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invite),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not send invite.');
+      setInviteSent(true);
+      setTimeout(() => goTo(4), 800);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  async function addEmployee(e: React.FormEvent) {
+    e.preventDefault();
+    if (!employee.full_name.trim()) { setError('Employee name is required.'); return; }
+    if (!employee.start_date)        { setError('Start date is required.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/onboarding/employee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employee),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not save employee.');
+      goTo(5);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Step 5: mark complete + redirect.
+  const completedRef = useRef(false);
+  useEffect(() => {
+    if (step !== 5 || completedRef.current || !profile?.id) return;
+    completedRef.current = true;
+    (async () => {
+      await supabase.from('profiles').update({
+        onboarding_completed: true,
+        onboarding_step:      TOTAL_STEPS,
+      }).eq('id', profile.id);
+      // Tiny delay so the success state is visible.
+      setTimeout(() => router.push('/dashboard'), 1400);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, profile?.id]);
+
+  // ── Render ───────────────────────────────────────────────────
   if (init) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF8' }}>
@@ -89,174 +200,302 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ background: '#FAFAF8' }}
-    >
+    <div className="min-h-screen flex flex-col items-center py-10 px-4" style={{ background: '#FAFAF8' }}>
+      <div className="w-full max-w-[640px]">
 
-      <div className="relative w-full max-w-[520px]">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto brightness-110" priority />
+        <div className="flex justify-center mb-6">
+          <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto" priority />
         </div>
 
-        {/* Progress dots */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {([1, 2, 3] as Step[]).map((s) => (
+        {/* Progress bar */}
+        <div className="flex items-center justify-center gap-1.5 mb-7">
+          {STEPS.map((s) => (
             <div
-              key={s}
+              key={s.n}
               className="rounded-full transition-all duration-300"
               style={{
-                width:      step === s ? '24px' : '8px',
+                width:      step === s.n ? '28px' : (step > s.n ? '12px' : '8px'),
                 height:     '8px',
-                background: step >= s ? 'var(--purple)' : '#D1D5DB',
+                background: step >= s.n ? 'var(--purple)' : '#D1D5DB',
               }}
+              aria-label={`Step ${s.n}: ${s.label}`}
             />
           ))}
         </div>
 
-        {/* ── Step 1: Confirm details ── */}
+        {/* ── Step 1: Welcome / company confirm ── */}
         {step === 1 && (
-          <div
-            className="rounded-[20px] p-8"
-            style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--purple)' }}>
-              Step 1 of 3
-            </p>
+          <Card>
+            <Eyebrow>Step 1 of {TOTAL_STEPS}</Eyebrow>
             <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
               Welcome to your portal
             </h1>
-            <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
-              Let's confirm a few details about {company?.name ?? 'your organisation'}.
+            <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
+              Let&rsquo;s set you up properly. Five quick steps and you&rsquo;ll be ready to go.
             </p>
-
-            <form onSubmit={handleStep1} className="space-y-5">
-              <div className="form-group">
-                <label className="label" style={{ color: 'var(--ink-soft)' }}>Your name</label>
+            <form onSubmit={handleStep1} className="space-y-4">
+              <Field label="Your name">
                 <input
-                  value={form.full_name}
-                  onChange={e => set('full_name', e.target.value)}
                   className="input"
+                  value={welcome.full_name}
+                  onChange={e => setWelcome(w => ({ ...w, full_name: e.target.value }))}
                   placeholder="Jane Smith"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: 'var(--ink)' }}
                 />
-              </div>
-              <div className="form-group">
-                <label className="label" style={{ color: 'var(--ink-soft)' }}>Sector</label>
+              </Field>
+              <Field label="Sector">
                 <select
-                  value={form.sector}
-                  onChange={e => set('sector', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.sector ? 'var(--ink)' : 'var(--ink-faint)' }}
+                  value={welcome.sector}
+                  onChange={e => setWelcome(w => ({ ...w, sector: e.target.value }))}
                 >
                   <option value="">Select your sector…</option>
-                  {SECTORS.map(s => <option key={s} value={s} style={{ color: 'var(--ink)' }}>{s}</option>)}
+                  {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </div>
-              <div className="form-group">
-                <label className="label" style={{ color: 'var(--ink-soft)' }}>Team size</label>
+              </Field>
+              <Field label="Team size">
                 <select
-                  value={form.size_band}
-                  onChange={e => set('size_band', e.target.value)}
                   className="input"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)', color: form.size_band ? 'var(--ink)' : 'var(--ink-faint)' }}
+                  value={welcome.size_band}
+                  onChange={e => setWelcome(w => ({ ...w, size_band: e.target.value }))}
                 >
                   <option value="">Select team size…</option>
-                  {SIZES.map(s => <option key={s} value={s} style={{ color: 'var(--ink)' }}>{s}</option>)}
+                  {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </div>
-
+              </Field>
+              {error && <ErrorBanner>{error}</ErrorBanner>}
               <button type="submit" disabled={loading} className="btn-cta w-full justify-center mt-2">
                 {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                 {loading ? 'Saving…' : <>Continue <ArrowRight size={14} /></>}
               </button>
             </form>
-          </div>
+          </Card>
         )}
 
-        {/* ── Step 2: First action ── */}
+        {/* ── Step 2: Friction Lens ── */}
         {step === 2 && (
-          <div
-            className="rounded-[20px] p-8"
-            style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--purple)' }}>
-              Step 2 of 3
-            </p>
+          <Card>
+            <Eyebrow>Step 2 of {TOTAL_STEPS}</Eyebrow>
             <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
-              What would you like to do first?
+              Get your Company Friction Score
             </h1>
-            <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
-              You can do all of this from your dashboard: pick where to start.
+            <p className="text-sm mb-2" style={{ color: 'var(--ink-soft)' }}>
+              Five questions about your business. We&rsquo;ll score how hard hiring will be for you right now and tell you which dimensions are dragging you down.
+            </p>
+            <p className="text-xs mb-6" style={{ color: 'var(--ink-faint)' }}>
+              Takes about 5 minutes. You can update it any time from the portal.
             </p>
 
-            <div className="space-y-3">
-              {[
-                {
-                  icon:  Briefcase,
-                  label: 'Raise a role',
-                  desc:  'Submit a new vacancy and we\'ll score it with Friction Lens.',
-                  dest:  '/hire/hiring/new',
-                  color: 'var(--purple)',
-                },
-                {
-                  icon:  FolderOpen,
-                  label: 'Upload a document',
-                  desc:  'Add contracts, policies, or handbooks to your document centre.',
-                  dest:  '/lead/documents',
-                  color: 'var(--blue)',
-                },
-                {
-                  icon:  LifeBuoy,
-                  label: 'Raise a support query',
-                  desc:  'Get HR advice, raise an ER case, or request a contract review.',
-                  dest:  '/support/new',
-                  color: 'var(--teal)',
-                },
-              ].map(({ icon: Icon, label, desc, dest, color }) => (
-                <button
-                  key={dest}
-                  onClick={() => completeOnboarding(dest)}
-                  disabled={loading}
-                  className="w-full text-left rounded-[12px] p-4 flex items-center gap-4 transition-all"
-                  style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${color}22` }}
-                  >
-                    <Icon size={18} style={{ color }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: '#0A0F1E' }}>{label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>{desc}</p>
-                  </div>
-                  <ArrowRight size={14} className="ml-auto flex-shrink-0" style={{ color: 'var(--ink-faint)' }} />
-                </button>
-              ))}
+            {/* Embed the existing FrictionLensClient. It handles its own
+                form, IvyLens registration, and assessment storage. We
+                listen for completion via onAssessmentCreated. */}
+            <div className="-mx-2">
+              <FrictionLensClient
+                initialAssessment={assessment}
+                company={company}
+                onAssessmentCreated={onAssessmentCreated}
+              />
             </div>
 
-            <button
-              onClick={() => completeOnboarding('/dashboard')}
-              disabled={loading}
-              className="w-full mt-4 text-xs text-center"
-              style={{ color: 'var(--ink-faint)' }}
-            >
-              Skip: take me to the dashboard
-            </button>
-          </div>
+            <div className="flex items-center justify-between mt-6 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+              <button
+                onClick={() => goTo(1)}
+                className="text-xs flex items-center gap-1"
+                style={{ color: 'var(--ink-faint)' }}
+              >
+                <ArrowLeft size={12} /> Back
+              </button>
+              <button
+                onClick={() => goTo(3)}
+                disabled={!assessment}
+                className="btn-cta btn-sm"
+                title={!assessment ? 'Please complete the Friction Lens form first.' : ''}
+              >
+                Continue <ArrowRight size={14} />
+              </button>
+            </div>
+          </Card>
         )}
 
-        {/* ── Step 3: (complete: redirect fires automatically) ── */}
+        {/* ── Step 3: Invite Editor (optional) ── */}
         {step === 3 && (
+          <Card>
+            <Eyebrow>Step 3 of {TOTAL_STEPS} · Optional</Eyebrow>
+            <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
+              Invite a teammate
+            </h1>
+            <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
+              You can give one teammate Editor access. They can add and edit, but cannot delete documents or manage users. You can skip and come back to this later.
+            </p>
+            <form onSubmit={sendInvite} className="space-y-4">
+              <Field label="Their email">
+                <input
+                  type="email"
+                  className="input"
+                  value={invite.email}
+                  onChange={e => setInvite(i => ({ ...i, email: e.target.value }))}
+                  placeholder="teammate@yourcompany.com"
+                  required
+                />
+              </Field>
+              <Field label="Their name (optional)">
+                <input
+                  className="input"
+                  value={invite.full_name}
+                  onChange={e => setInvite(i => ({ ...i, full_name: e.target.value }))}
+                  placeholder="Sam Jones"
+                />
+              </Field>
+              {error && <ErrorBanner>{error}</ErrorBanner>}
+              {inviteSent && (
+                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--emerald)' }}>
+                  <CheckCircle2 size={16} /> Invite sent. Continuing…
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <button type="submit" disabled={loading || inviteSent} className="btn-cta flex-1 justify-center">
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  {loading ? 'Sending…' : 'Send invite'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(4)}
+                  disabled={loading}
+                  className="btn-secondary justify-center sm:w-auto"
+                >
+                  <SkipForward size={14} /> Skip for now
+                </button>
+              </div>
+            </form>
+            <button
+              onClick={() => goTo(2)}
+              className="mt-4 text-xs flex items-center gap-1"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              <ArrowLeft size={12} /> Back
+            </button>
+          </Card>
+        )}
+
+        {/* ── Step 4: Add first employee ── */}
+        {step === 4 && (
+          <Card>
+            <Eyebrow>Step 4 of {TOTAL_STEPS}</Eyebrow>
+            <h1 className="font-display font-bold text-2xl mb-1" style={{ color: '#0A0F1E' }}>
+              Add your first employee
+            </h1>
+            <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
+              We need at least one to enable leave requests, employee records, and reporting. Just the basics &mdash; you can fill in the rest later from the Employee Records page.
+            </p>
+            <form onSubmit={addEmployee} className="space-y-4">
+              <Field label="Full name *" icon={Users}>
+                <input
+                  className="input"
+                  value={employee.full_name}
+                  onChange={e => setEmployee(emp => ({ ...emp, full_name: e.target.value }))}
+                  placeholder="Alex Thompson"
+                  required
+                />
+              </Field>
+              <Field label="Job title" icon={Briefcase}>
+                <input
+                  className="input"
+                  value={employee.job_title}
+                  onChange={e => setEmployee(emp => ({ ...emp, job_title: e.target.value }))}
+                  placeholder="Operations Manager"
+                />
+              </Field>
+              <Field label="Email" icon={Mail}>
+                <input
+                  type="email"
+                  className="input"
+                  value={employee.email}
+                  onChange={e => setEmployee(emp => ({ ...emp, email: e.target.value }))}
+                  placeholder="alex@yourcompany.com"
+                />
+              </Field>
+              <Field label="Start date *" icon={Calendar}>
+                <input
+                  type="date"
+                  className="input"
+                  value={employee.start_date}
+                  onChange={e => setEmployee(emp => ({ ...emp, start_date: e.target.value }))}
+                  required
+                />
+              </Field>
+              {error && <ErrorBanner>{error}</ErrorBanner>}
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <button type="submit" disabled={loading} className="btn-cta flex-1 justify-center">
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                  {loading ? 'Saving…' : 'Save and finish'}
+                </button>
+              </div>
+            </form>
+            <button
+              onClick={() => goTo(3)}
+              className="mt-4 text-xs flex items-center gap-1"
+              style={{ color: 'var(--ink-faint)' }}
+            >
+              <ArrowLeft size={12} /> Back
+            </button>
+          </Card>
+        )}
+
+        {/* ── Step 5: Done ── */}
+        {step === 5 && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <CheckCircle2 size={40} style={{ color: 'var(--teal)' }} />
-            <p className="font-semibold text-lg" style={{ color: '#0A0F1E' }}>All set!</p>
-            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>Taking you there now…</p>
+            <CheckCircle2 size={48} style={{ color: 'var(--teal)' }} />
+            <p className="font-display font-bold text-2xl" style={{ color: '#0A0F1E' }}>You&rsquo;re all set.</p>
+            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              Welcome to The People System. Taking you to your dashboard now…
+            </p>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Small layout helpers ──────────────────────────── */
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-[20px] p-7"
+      style={{ background: '#FFFFFF', border: '1px solid var(--line)', boxShadow: '0 1px 3px rgba(13,21,53,0.04)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-bold uppercase tracking-[0.14em] mb-1.5" style={{ color: 'var(--purple)' }}>
+      {children}
+    </p>
+  );
+}
+
+function Field({ label, icon: Icon, children }: { label: string; icon?: React.ComponentType<any>; children: React.ReactNode }) {
+  return (
+    <div className="form-group">
+      <label className="label flex items-center gap-1.5" style={{ color: 'var(--ink-soft)' }}>
+        {Icon ? <Icon size={12} /> : null}
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ErrorBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-[10px] p-3 text-sm"
+      style={{ background: 'rgba(217,68,68,0.06)', border: '1px solid rgba(217,68,68,0.20)', color: 'var(--red)' }}
+    >
+      {children}
     </div>
   );
 }

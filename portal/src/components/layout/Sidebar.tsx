@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Briefcase, BookOpen, Users,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
   Eye, EyeOff, Pencil, Check,
-  ArrowUp, ArrowDown, Trophy, ExternalLink,
+  ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
@@ -27,6 +27,8 @@ interface NavItem {
   flag: string | null;
   fixed: boolean;
   showWhenDisabled?: boolean;
+  /** Roles allowed to see this item. Undefined = everyone. */
+  requireRole?: string[];
 }
 
 /* All possible nav items: order/visibility controlled by user prefs */
@@ -38,6 +40,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true },
   { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: null,                    fixed: false },
   { href: '/support',              label: 'Support',              icon: LifeBuoy,        flag: 'support',               fixed: false },
+  { href: '/billing',              label: 'Billing',              icon: CreditCard,      flag: null,                    fixed: false, requireRole: ['client_admin', 'tps_admin'] },
   { href: '/settings',             label: 'Settings',             icon: Settings,        flag: null,                    fixed: false },
 ];
 
@@ -48,9 +51,12 @@ interface Props {
   counts?: Record<string, number>;
   companyId?: string;
   userId?: string;
+  role?: string;
+  /** Hide the Billing nav entry when the company has nothing billable. */
+  showBilling?: boolean;
 }
 
-export default function Sidebar({ flags = {}, counts = {}, companyId, userId }: Props) {
+export default function Sidebar({ flags = {}, counts = {}, companyId, userId, role = '', showBilling = true }: Props) {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
@@ -63,8 +69,18 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId }: 
     const order = prefs.sidebar_order?.length > 0 ? prefs.sidebar_order : DEFAULT_ORDER;
     const hidden = new Set(prefs.sidebar_hidden ?? []);
 
-    // Sort ALL_NAV_ITEMS by user's saved order
-    const sorted = [...ALL_NAV_ITEMS].sort((a, b) => {
+    // Role-gated items drop out entirely for users who don't qualify
+    // (so an Editor's "Customise menu" view never even hints at Billing).
+    // Billing also drops out for free-only clients (no paid flag, no
+    // Stripe sub) so the surface stays clean.
+    const allowed = ALL_NAV_ITEMS.filter(item => {
+      if (item.requireRole && !item.requireRole.includes(role)) return false;
+      if (item.href === '/billing' && !showBilling) return false;
+      return true;
+    });
+
+    // Sort by user's saved order
+    const sorted = [...allowed].sort((a, b) => {
       const ai = order.indexOf(a.href);
       const bi = order.indexOf(b.href);
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
@@ -75,7 +91,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId }: 
       hidden: hidden.has(item.href),
       disabled: item.flag !== null && flags[item.flag] === false,
     }));
-  }, [prefs, flags]);
+  }, [prefs, flags, role, showBilling]);
 
   const visibleItems = orderedItems.filter(i =>
     !i.hidden && (!i.disabled || i.showWhenDisabled),

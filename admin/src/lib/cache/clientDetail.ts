@@ -42,7 +42,7 @@ async function fetchFromDb(id: string): Promise<ClientDetail | null> {
     { data: tickets },
     { count: docsCount },
   ] = await Promise.all([
-    sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency').eq('id', id).single(),
+    sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency,monthly_retainer_pence,subscription_status,stripe_subscription_id,stripe_customer_id,billing_currency').eq('id', id).single(),
     sb.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', id).order('created_at'),
     sb.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', id).order('created_at', { ascending: false }),
     sb.from('tickets').select('id,subject,status,priority').eq('company_id', id).neq('status', 'closed'),

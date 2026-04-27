@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 
+import { HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props {
   reqs: any[];
   companies: { id: string; name: string }[];
@@ -198,7 +199,7 @@ export default function HiringClient({ reqs, companies }: Props) {
                     </td>
                     <td>
                       <span className={`badge ${stageBadge[r.stage] ?? 'badge-normal'}`}>
-                        {r.stage?.replace(/_/g, ' ')}
+                        {labelFor(HIRING_STAGE_LABELS, r.stage)}
                       </span>
                     </td>
                     <td>

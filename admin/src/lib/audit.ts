@@ -14,6 +14,11 @@ type AuditAction =
   | 'user.role_changed'
   | 'company.created'
   | 'company.deleted'
+  // 'company.billing_setup' is distinct from 'company.created': it fires
+  // when the retainer / Stripe subscription is first attached or updated,
+  // which can happen well after the company row is created (e.g. a free-tier
+  // client later upgrading to a paid module).
+  | 'company.billing_setup'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'

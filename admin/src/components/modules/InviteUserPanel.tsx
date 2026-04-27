@@ -7,8 +7,8 @@ interface Props {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'client_admin',  label: 'Admin: full portal access' },
-  { value: 'client_viewer', label: 'Viewer: read-only access' },
+  { value: 'client_admin',  label: 'Admin: full portal access (edit, delete, manage users)' },
+  { value: 'client_editor', label: 'Editor: edit and add, but cannot delete or manage users' },
 ];
 
 export default function InviteUserPanel({ companyId }: Props) {

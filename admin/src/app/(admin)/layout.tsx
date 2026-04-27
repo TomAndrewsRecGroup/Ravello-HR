@@ -5,7 +5,7 @@ import { MobileMenuProvider } from '@/components/layout/MobileMenuContext';
 import { ClientSwitcherProvider } from '@/components/layout/ClientSwitcher';
 import { ToastProvider } from '@/components/modules/Toast';
 
-const ALLOWED_ROLES = ['tps_admin', 'tps_client'];
+const ALLOWED_ROLES = ['tps_admin'];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Middleware already validates auth + role and caches in tpo_admin_role cookie.

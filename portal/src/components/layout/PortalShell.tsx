@@ -10,17 +10,19 @@ interface Props {
   counts: Record<string, number>;
   userId: string;
   companyId: string;
+  role: string;
+  showBilling: boolean;
   uiPreferences: Record<string, any>;
   children: React.ReactNode;
 }
 
-export default function PortalShell({ flags, counts, userId, companyId, uiPreferences, children }: Props) {
+export default function PortalShell({ flags, counts, userId, companyId, role, showBilling, uiPreferences, children }: Props) {
   return (
     <MobileMenuProvider>
       <UserPreferencesProvider userId={userId} initialPrefs={uiPreferences}>
         <ToastProvider>
           <div className="flex min-h-screen">
-            <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} />
+            <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} role={role} showBilling={showBilling} />
             <div
               className="main-content flex-1 flex flex-col min-h-screen"
               style={{ marginLeft: 'var(--sidebar-w)' }}

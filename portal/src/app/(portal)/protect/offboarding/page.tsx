@@ -21,7 +21,7 @@ export default async function OffboardingPage() {
     </main>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin' || role === 'tps_client';
+  const isAdmin = role === 'client_admin' || role === 'tps_admin';
 
   const [templatesRes, instancesRes, employeesRes] = await Promise.all([
     supabase

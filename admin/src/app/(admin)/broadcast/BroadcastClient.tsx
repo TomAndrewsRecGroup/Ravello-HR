@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
-import { CheckSquare, Square, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckSquare, Square, Send, Loader2, CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import type { CompanyRef } from '@/lib/supabase/types';
 
+import { ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props { companies: CompanyRef[] }
 
 const ACTION_TYPES = [
@@ -22,6 +23,10 @@ export default function BroadcastClient({ companies }: Props) {
   const [sending,  setSending]  = useState(false);
   const [sent,     setSent]     = useState(false);
   const [error,    setError]    = useState('');
+  // Confirmation modal — broadcasting to multiple clients is destructive
+  // (creates a row in every client's actions table), so a typed confirm
+  // step prevents accidental mass sends.
+  const [confirming, setConfirming] = useState(false);
 
   function toggleAll() {
     if (selected.size === active.length) {
@@ -40,8 +45,13 @@ export default function BroadcastClient({ companies }: Props) {
     });
   }
 
-  async function send() {
+  function openConfirm() {
     if (!selected.size || !form.title || !form.action_type) return;
+    setError('');
+    setConfirming(true);
+  }
+
+  async function send() {
     setSending(true); setError('');
     try {
       const res = await fetch('/api/broadcast', {
@@ -54,12 +64,28 @@ export default function BroadcastClient({ companies }: Props) {
       setSent(true);
       setSelected(new Set());
       setForm({ title: '', description: '', action_type: 'compliance_update', priority: 'normal', due_date: '' });
+      setConfirming(false);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setSending(false);
     }
   }
+
+  // Esc to close + body scroll lock while modal is open
+  useEffect(() => {
+    if (!confirming) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !sending) setConfirming(false); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [confirming, sending]);
+
+  const selectedClients = active.filter(c => selected.has(c.id));
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
@@ -134,9 +160,9 @@ export default function BroadcastClient({ companies }: Props) {
           <button
             className="btn-cta flex items-center gap-2"
             disabled={!selected.size || !form.title || sending}
-            onClick={send}
+            onClick={openConfirm}
           >
-            {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            <Send size={14} />
             Broadcast to {selected.size || '…'} client{selected.size !== 1 ? 's' : ''}
           </button>
         </div>
@@ -184,6 +210,110 @@ export default function BroadcastClient({ companies }: Props) {
           )}
         </div>
       </div>
+
+      {/* Confirmation modal */}
+      {confirming && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm broadcast"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(7,11,32,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget && !sending) setConfirming(false); }}
+        >
+          <div
+            className="card p-0 w-full max-w-lg overflow-hidden"
+            style={{ background: 'var(--surface)', boxShadow: '0 24px 64px rgba(7,11,32,0.30)' }}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--line)' }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.10)' }}>
+                  <AlertTriangle size={17} style={{ color: '#D97706' }} />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>
+                    Confirm broadcast to {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''}
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                    This creates a new action in each selected client&rsquo;s portal. It cannot be undone in bulk.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => !sending && setConfirming(false)}
+                disabled={sending}
+                aria-label="Cancel"
+                className="btn-icon"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Action preview */}
+              <div className="rounded-[10px] p-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--ink-faint)' }}>Action</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{form.title}</p>
+                {form.description && (
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--ink-soft)' }}>{form.description}</p>
+                )}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}>
+                    {labelFor(ACTION_TYPE_LABELS, form.action_type)}
+                  </span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}>
+                    {form.priority} priority
+                  </span>
+                  {form.due_date && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}>
+                      due {form.due_date}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Recipient list */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
+                  Going to ({selectedClients.length})
+                </p>
+                <div className="rounded-[10px] max-h-48 overflow-y-auto" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                  {selectedClients.map((c, i) => (
+                    <div
+                      key={c.id}
+                      className="px-3 py-2 text-sm"
+                      style={{ color: 'var(--ink)', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}
+                    >
+                      {c.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-soft)' }}>
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={sending}
+                className="btn-secondary btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={send}
+                disabled={sending}
+                className="btn-cta btn-sm flex items-center gap-2"
+              >
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {sending ? 'Sending…' : `Send to ${selectedClients.length} client${selectedClients.length !== 1 ? 's' : ''}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

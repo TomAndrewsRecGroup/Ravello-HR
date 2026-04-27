@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
+import { sendEmail, actionAssignedEmail } from '@/lib/email';
+
+const PRIORITY_LABELS: Record<string, string> = {
+  low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
+};
+
+function formatDueDate(iso: string | null | undefined): string | undefined {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return undefined;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 // POST /api/broadcast
 // Creates an action item for each selected company.
@@ -60,6 +72,34 @@ export async function POST(req: NextRequest) {
     actor_id: auth.userId,
     metadata: { title, action_type, company_count: company_ids.length, created: data?.length ?? 0 },
   });
+
+  // Notify each company's client_admin users by email. We email Admins
+  // only (not Editors) so the inbox-flood for a 50-company broadcast
+  // stays manageable — the Action shows on the actions page for everyone.
+  // sendEmail is fire-and-forget; failures don't block the API response.
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const { data: recipients } = await supabase
+    .from('profiles')
+    .select('email, company_id, companies(name)')
+    .in('company_id', company_ids as string[])
+    .eq('role', 'client_admin');
+
+  if (recipients?.length) {
+    // Group emails by company so the per-email subject line names the
+    // right company. One Promise.all so they fire in parallel.
+    await Promise.all(recipients
+      .filter((r: any) => r.email)
+      .map((r: any) => sendEmail(actionAssignedEmail({
+        to:            r.email,
+        companyName:   r.companies?.name ?? 'your company',
+        title,
+        description:   description ?? undefined,
+        priorityLabel: PRIORITY_LABELS[priority] ?? priority,
+        dueDate:       formatDueDate(due_date),
+        actionsUrl:    `${portalUrl}/actions`,
+      })))
+    );
+  }
 
   return NextResponse.json({ created: data?.length ?? 0 });
 }

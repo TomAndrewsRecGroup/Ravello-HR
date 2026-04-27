@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, FileText, ExternalLink } from 'lucide-react';
+import { COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, EMPLOYEE_DOC_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Compliance Dashboard' };
 export const revalidate = 30;
@@ -168,7 +169,7 @@ export default async function AdminComplianceDashboard() {
                             <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
                           )}
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{d.doc_type?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{labelFor(EMPLOYEE_DOC_TYPE_LABELS, d.doc_type)}</td>
                         <td>
                           <p className="text-sm" style={{ color: d.rag === 'red' ? 'var(--rose)' : 'var(--amber)', fontWeight: 600 }}>
                             {fmtDate(d.expiry_date)}
@@ -231,7 +232,7 @@ export default async function AdminComplianceDashboard() {
                           <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{ci.title}</p>
                           {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }} className="capitalize text-sm">{ci.category?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: 'var(--ink-soft)' }} className="text-sm">{labelFor(COMPLIANCE_CATEGORY_LABELS, ci.category)}</td>
                         <td>
                           <p className="text-sm" style={{ color: ci.rag === 'red' ? 'var(--rose)' : ci.rag === 'amber' ? 'var(--amber)' : 'var(--ink-soft)', fontWeight: ci.rag === 'red' || ci.rag === 'amber' ? 600 : 400 }}>
                             {fmtDate(ci.due_date)}
@@ -252,7 +253,7 @@ export default async function AdminComplianceDashboard() {
                               { background: 'rgba(59,111,255,0.1)', color: 'var(--blue)' }
                             }
                           >
-                            {ci.status?.replace(/_/g, ' ')}
+                            {labelFor(COMPLIANCE_STATUS_LABELS, ci.status)}
                           </span>
                         </td>
                         <td>

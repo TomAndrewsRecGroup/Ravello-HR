@@ -445,9 +445,8 @@ interface TeamMembersProps {
 
 const ROLE_LABELS: Record<string, string> = {
   client_admin:   'Admin',
-  client_user:    'Member',
+  client_editor:  'Editor',
   tps_admin:      'The People System Admin',
-  tps_client:  'The People System Client',
 };
 
 export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
