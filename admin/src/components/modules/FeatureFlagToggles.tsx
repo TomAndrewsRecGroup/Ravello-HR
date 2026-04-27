@@ -86,6 +86,18 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   async function toggle(key: string) {
+    // Disabling a feature is destructive — it can take a paying client's
+    // module away. Require an explicit confirm. Enabling is constructive
+    // and stays one-click.
+    const turningOff = !!localFlags[key];
+    if (turningOff) {
+      const flagLabel = FLAG_GROUPS
+        .flatMap(g => g.flags)
+        .find(f => f.key === key)?.label ?? key;
+      if (!window.confirm(`Disable "${flagLabel}" for this client? They will lose access to this feature in the portal.`)) {
+        return;
+      }
+    }
     setSaving(key);
     setLocalFlags(prev => {
       const updated = { ...prev, [key]: !prev[key] };
@@ -99,6 +111,14 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
   }
 
   async function toggleGroup(group: FlagGroup, on: boolean) {
+    // Bulk disable is the most destructive action on this page — it can
+    // strip a whole module from a client in one click. Confirm with the
+    // module name and feature count.
+    if (!on) {
+      if (!window.confirm(`Disable all ${group.flags.length} ${group.label} feature${group.flags.length !== 1 ? 's' : ''} for this client? They will lose access to every ${group.label} feature in the portal.`)) {
+        return;
+      }
+    }
     setSaving(group.label);
     setLocalFlags(prev => {
       const updated = { ...prev };
