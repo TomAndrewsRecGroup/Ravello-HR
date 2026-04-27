@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { revalidateTag } from 'next/cache';
 import Stripe from 'stripe';
 
 // ─────────────────────────────────────────────────────────────────
@@ -135,8 +136,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err?.message ?? 'Handler failed' }, { status: 500 });
   }
 
+  // Flush the per-client unstable_cache entry so /clients/<id> reflects
+  // the new subscription_status / paid state on the next render rather
+  // than waiting up to 60s for the TTL to expire. Skipped for the noisy
+  // unhandled events (no DB write happened).
+  if (companyId && HANDLED_EVENT_TYPES.has(event.type)) {
+    revalidateTag(`client:${companyId}`);
+  }
+
   return NextResponse.json({ received: true });
 }
+
+const HANDLED_EVENT_TYPES = new Set([
+  'customer.subscription.created',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+  'invoice.paid',
+  'invoice.payment_failed',
+]);
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers

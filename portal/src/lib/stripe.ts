@@ -28,6 +28,11 @@ export function stripeConfigured(): boolean {
  * on the given subscription, or null if none. Used to surface a "Pay your
  * first invoice" CTA when a subscription was created with
  * payment_behavior: 'default_incomplete' and the customer hasn't paid yet.
+ *
+ * Best-effort: Stripe is eventually consistent across regions, so a
+ * brand-new invoice may not appear in this list for a few seconds after
+ * Stripe creates it. The hosted Stripe Customer Portal is the source of
+ * truth — surface this URL only as a one-click shortcut.
  */
 export async function getOpenInvoiceUrl(subscriptionId: string): Promise<string | null> {
   const sb = client();

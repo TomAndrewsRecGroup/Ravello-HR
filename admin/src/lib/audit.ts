@@ -14,6 +14,7 @@ type AuditAction =
   | 'user.role_changed'
   | 'company.created'
   | 'company.deleted'
+  | 'company.billing_setup'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'

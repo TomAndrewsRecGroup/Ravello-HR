@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
+import { revalidateClientDetail } from '@/app/actions';
 import {
   stripeConfigured,
   createCustomer,
@@ -75,6 +76,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       .update(localUpdate)
       .eq('id', params.id);
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    await revalidateClientDetail(params.id);
     return NextResponse.json({ success: true, stripe: null });
   }
 
@@ -121,7 +123,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       };
 
       auditLog({
-        action:      'company.created',
+        action:      'company.billing_setup',
         actor_id:    auth.userId,
         target_id:   company.id,
         target_type: 'company',
@@ -139,6 +141,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
         const { error: upErr } = await supabase
           .from('companies').update(localUpdate).eq('id', params.id);
         if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+        await revalidateClientDetail(params.id);
         return NextResponse.json({ success: true, unchanged: true });
       }
 
@@ -161,11 +164,18 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     .update({ ...localUpdate, ...stripeUpdate })
     .eq('id', params.id);
   if (upErr) {
+    // Stripe was already mutated (customer/sub/price ids exist remotely)
+    // but our local row didn't get the new ids. Surface the IDs and the
+    // commit flag so admin can either retry the local update by hand or
+    // reconcile in Stripe. Critical: do NOT roll back Stripe — that would
+    // create a worse state (orphaned rows + double-charged customer).
     return NextResponse.json({
-      error:  `Stripe state changed but local update failed: ${upErr.message}`,
-      stripe: stripeUpdate,
+      error:            `Stripe state changed but local update failed: ${upErr.message}`,
+      stripe_committed: true,
+      stripe:           stripeUpdate,
     }, { status: 500 });
   }
 
+  await revalidateClientDetail(params.id);
   return NextResponse.json({ success: true, stripe: stripeUpdate });
 }

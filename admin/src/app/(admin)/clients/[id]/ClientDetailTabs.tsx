@@ -236,12 +236,21 @@ function BillingPanel({
       });
       const json = await res.json();
       if (!res.ok || json.error) {
-        setError(json.error ?? 'Update failed.');
+        // Path A/B may have committed Stripe state but failed the DB
+        // write. Flag that explicitly so admin knows the £ amount is
+        // already live on Stripe and a manual reconcile is needed.
+        const prefix = json.stripe_committed
+          ? 'Stripe was updated but our copy failed to save: '
+          : '';
+        setError(prefix + (json.error ?? 'Update failed.'));
       } else {
         setPence(newPence);
         setEditing(false);
         if (json.stripe?.subscription_status) setStatusV(json.stripe.subscription_status);
-        revalidateAdminPath('/clients');
+        // Per-client path so the unstable_cache tag for this client is
+        // also invalidated (revalidateAdminPath inspects the path and
+        // calls revalidateTag(`client:<id>`) when it matches).
+        revalidateAdminPath(`/clients/${companyId}`);
       }
     } catch (e: any) {
       setError(e?.message ?? 'Update failed.');
