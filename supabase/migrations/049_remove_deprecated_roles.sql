@@ -7,7 +7,10 @@
 --                       distinct permission tier in practice)
 --   • client_user     → migrate to client_editor (already done in 046,
 --                       repeated here in case any rows leaked through)
---   • client_viewer   → migrate to client_editor (legacy code path)
+--   • client_viewer   → CODE-ONLY alias. Never added to the enum, so
+--                       no rows can ever have it; just remove the
+--                       label from app code (already done in 049's
+--                       sister commit). No DB migration needed.
 --
 -- This migration also DROPS the link_tps_staff_to_demo() function from
 -- migrations 025/027. That function backed a trigger (trg_link_tps_staff)
@@ -56,10 +59,13 @@ DROP FUNCTION IF EXISTS link_tps_staff_to_demo() CASCADE;
 
 -- ────────────────────────────────────────────────────────────────────────
 -- 2. Migrate any rows still using deprecated roles
+--    (client_viewer was a code-only alias — never added as an enum
+--    value — so we don't reference it here. Postgres rejects the
+--    literal at parse time even with a 0-row WHERE clause.)
 -- ────────────────────────────────────────────────────────────────────────
 
 UPDATE profiles SET role = 'tps_admin'     WHERE role = 'tps_client';
-UPDATE profiles SET role = 'client_editor' WHERE role IN ('client_user', 'client_viewer');
+UPDATE profiles SET role = 'client_editor' WHERE role = 'client_user';
 
 
 -- ────────────────────────────────────────────────────────────────────────
@@ -99,8 +105,7 @@ SELECT role, COUNT(*) AS n FROM profiles GROUP BY role ORDER BY role;
 
 SELECT
   COUNT(*) FILTER (WHERE role = 'tps_client')    AS leftover_tps_client,
-  COUNT(*) FILTER (WHERE role = 'client_user')   AS leftover_client_user,
-  COUNT(*) FILTER (WHERE role = 'client_viewer') AS leftover_client_viewer
+  COUNT(*) FILTER (WHERE role = 'client_user')   AS leftover_client_user
 FROM profiles;
 
 -- Confirm the demo-link function is gone (should return 0 rows)
