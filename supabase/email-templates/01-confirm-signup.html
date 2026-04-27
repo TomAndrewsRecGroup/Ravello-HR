@@ -1,20 +1,22 @@
+<!-- SUBJECT: Confirm your email — The People System -->
 <!--
-  Supabase Auth → Email Templates → Confirm signup
-  ─────────────────────────────────────────────────────────────
-  Tokens available:
-    {{ .ConfirmationURL }}  – the click-to-confirm link
-    {{ .Email }}            – the user's email
-    {{ .SiteURL }}          – your site URL
-
   HOW TO USE:
     1. Supabase dashboard → Authentication → Email Templates
-    2. Pick the matching template type from the dropdown
-    3. Set the Subject from the comment in each file
-    4. Paste the HTML below into the message body
+    2. Pick "Confirm signup" from the dropdown
+    3. Set the Subject from the comment above
+    4. Paste this entire HTML block (DOCTYPE onwards) into the message body
     5. Save
--->
 
-<!-- SUBJECT: Confirm your email — The People System -->
+  Tokens used:
+    {{ .SiteURL }}     – your project Site URL (set in URL Configuration)
+    {{ .TokenHash }}   – one-time hash that authenticates this link
+    {{ .RedirectTo }}  – the redirect URL passed via the auth API
+    {{ .Email }}       – the user's email
+
+  We construct the verify URL manually rather than using
+  {{ .ConfirmationURL }} so the redirect_to is always honoured —
+  Supabase's auto-built URL sometimes drops it on certain flows.
+-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -42,11 +44,11 @@
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
               <tr>
                 <td style="border-radius:10px;background:#7C3AED;">
-                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED 0%,#5A2AC8 100%);">Confirm email</a>
+                  <a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}" style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED 0%,#5A2AC8 100%);">Confirm email</a>
                 </td>
               </tr>
             </table>
-            <p style="margin:24px 0 0 0;font-size:13px;color:#38436A;">If the button doesn't work, copy and paste this URL into your browser:<br/><a href="{{ .ConfirmationURL }}" style="color:#7C3AED;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+            <p style="margin:24px 0 0 0;font-size:13px;color:#38436A;">If the button doesn't work, copy and paste this URL into your browser:<br/><a href="{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}" style="color:#7C3AED;word-break:break-all;">{{ .SiteURL }}/auth/v1/verify?token={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}</a></p>
             <p style="margin:16px 0 0 0;font-size:13px;color:#38436A;">If you didn't create an account, you can safely ignore this email.</p>
           </td>
         </tr>
