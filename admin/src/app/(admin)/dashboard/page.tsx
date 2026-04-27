@@ -27,7 +27,7 @@ export default async function AdminDashboardPage() {
     activeRoleCountRes, openTicketCountRes,
   ] = await Promise.all([
     supabase.from('companies').select('id', { count: 'exact', head: true }).eq('active', true),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'tps_admin'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).not('role', 'in', '(tps_admin,tps_client)'),
     supabase.from('requisitions')
       .select('id,title,stage,companies(name)')
       .neq('stage', 'filled').neq('stage', 'cancelled')

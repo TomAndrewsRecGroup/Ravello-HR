@@ -20,7 +20,8 @@ export default async function UsersPage() {
       .limit(PAGE_CAP),
     supabase
       .from('profiles')
-      .select('*', { count: 'exact', head: true }),
+      .select('*', { count: 'exact', head: true })
+      .not('role', 'in', '(tps_admin,tps_client)'),
   ]);
 
   const rows = users ?? [];
@@ -33,8 +34,8 @@ export default async function UsersPage() {
         title="Users"
         subtitle={
           isCapped
-            ? `Showing ${rows.length} most recent of ${grand} accounts`
-            : `${grand} accounts`
+            ? `Showing ${rows.length} most recent of ${grand} client accounts`
+            : `${grand} client accounts`
         }
       />
       <main className="admin-page flex-1">
