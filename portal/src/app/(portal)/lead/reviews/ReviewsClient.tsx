@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, Star, Clock, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
 
+import { REVIEW_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Review {
   id: string;
   employee_name: string;
@@ -210,7 +211,7 @@ export default function ReviewsClient({ companyId, initialReviews }: Props) {
                       {r.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.department}</p>}
                     </td>
                     <td className="text-sm">{r.review_period}</td>
-                    <td className="text-sm capitalize">{r.review_type.replace(/_/g, ' ')}</td>
+                    <td className="text-sm capitalize">{labelFor(REVIEW_TYPE_LABELS, r.review_type)}</td>
                     <td className="text-sm">{r.reviewer_name ?? '-'}</td>
                     <td className="text-sm">{fmtDate(r.due_date)}</td>
                     <td className="text-sm">{r.overall_rating ?? '-'}</td>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 export const metadata: Metadata = { title: 'Dashboard' };
 export const revalidate = 30;
 
@@ -258,7 +259,7 @@ export default async function DashboardPage() {
               {requisitions.slice(0, 8).map((r: any) => (
                 <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{r.stage.replace(/_/g, ' ')}</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{labelFor(HIRING_STAGE_LABELS, r.stage)}</span>
                     <FrictionAlert level={r.friction_level} />
                   </div>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>

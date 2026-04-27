@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Briefcase, LifeBuoy, AlertTriangle, Users, X } from 'lucide-react';
+import { ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 interface Company {
   id: string; name: string; contact_email: string | null;
@@ -82,7 +83,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                         <td>
                           <span className={`badge badge-${u.role?.includes('admin') ? 'admin' : 'client'}`}>
-                            {u.role?.replace(/_/g, ' ')}
+                            {labelFor(ROLE_LABELS, u.role)}
                           </span>
                         </td>
                         <td style={{ color: 'var(--ink-faint)' }}>

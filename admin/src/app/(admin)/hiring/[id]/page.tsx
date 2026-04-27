@@ -7,6 +7,7 @@ import RequisitionPanel from './RequisitionPanel';
 import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
+import { CANDIDATE_CLIENT_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 export const metadata: Metadata = { title: 'Requisition Detail' };
 export const runtime    = 'edge';
 export const revalidate = 30;
@@ -106,7 +107,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               <div>
                 <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Stage</p>
                 <span className={`badge ${STAGE_BADGE[r.stage] ?? 'badge-normal'}`}>
-                  {r.stage?.replace(/_/g, ' ')}
+                  {labelFor(HIRING_STAGE_LABELS, r.stage)}
                 </span>
               </div>
               <div>
@@ -205,7 +206,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                           </td>
                           <td className="py-3 pr-4">
                             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
-                              {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
+                              {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                             </span>
                           </td>
                           <td className="py-3">

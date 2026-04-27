@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { CheckSquare, Square, Send, Loader2, CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import type { CompanyRef } from '@/lib/supabase/types';
 
+import { ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props { companies: CompanyRef[] }
 
 const ACTION_TYPES = [
@@ -260,7 +261,7 @@ export default function BroadcastClient({ companies }: Props) {
                 )}
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}>
-                    {form.action_type.replace(/_/g, ' ')}
+                    {labelFor(ACTION_TYPE_LABELS, form.action_type)}
                   </span>
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--bg)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}>
                     {form.priority} priority

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { CheckCircle2, MessageSquare, Info, Calendar, Video, Phone, MapPin } from 'lucide-react';
 import type { FrictionScore } from '@/lib/supabase/types';
 
+import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
 export const metadata: Metadata = { title: 'Role Detail' };
 export const revalidate = 30;
 
@@ -210,7 +211,7 @@ export default async function RequisitionDetailPage({
                           <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
                           {c.email && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
                         </div>
-                        <span className={`badge badge-${c.client_status}`}>{c.client_status.replace(/_/g, ' ')}</span>
+                        <span className={`badge badge-${c.client_status}`}>{labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status)}</span>
                       </div>
                       {c.summary && (
                         <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>

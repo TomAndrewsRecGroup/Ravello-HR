@@ -4,14 +4,15 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
-
-const CLIENT_ROLES = ['client_admin', 'client_viewer'];
+import { PORTAL_INVITE_ROLES, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 const ROLE_BADGE: Record<string, string> = {
-  tps_admin:      'badge-admin',
-  tps_client:  'badge-staff',
-  client_admin:   'badge-admin',
-  client_viewer:  'badge-client',
+  tps_admin:     'badge-admin',
+  tps_client:    'badge-staff',
+  client_admin:  'badge-admin',
+  client_editor: 'badge-client',
+  client_user:   'badge-client',  // legacy
+  client_viewer: 'badge-client',  // legacy
 };
 
 function RoleCell({ userId, initialRole }: { userId: string; initialRole: string }) {
@@ -21,7 +22,7 @@ function RoleCell({ userId, initialRole }: { userId: string; initialRole: string
   const isInternal = role.startsWith('tps_');
 
   if (isInternal) {
-    return <span className={`badge ${ROLE_BADGE[role] ?? 'badge-client'}`}>{role.replace(/_/g,' ')}</span>;
+    return <span className={`badge ${ROLE_BADGE[role] ?? 'badge-client'}`}>{labelFor(ROLE_LABELS, role)}</span>;
   }
 
   async function change(newRole: string) {
@@ -43,8 +44,8 @@ function RoleCell({ userId, initialRole }: { userId: string; initialRole: string
         disabled={saving}
         onChange={e => change(e.target.value)}
       >
-        {CLIENT_ROLES.map(r => (
-          <option key={r} value={r}>{r.replace(/_/g,' ')}</option>
+        {PORTAL_INVITE_ROLES.map(r => (
+          <option key={r} value={r}>{labelFor(ROLE_LABELS, r)}</option>
         ))}
       </select>
       {saving && <Loader2 size={11} className="animate-spin" style={{ color: 'var(--purple)' }} />}

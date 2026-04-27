@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
+import { PORTAL_INVITE_ROLES } from '@/lib/ui/statusMaps';
 
 export async function POST(request: NextRequest) {
   const auth = await requireStaff();
@@ -26,8 +27,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });
   }
 
-  const allowedRoles = ['client_admin', 'client_viewer'];
-  const safeRole = allowedRoles.includes(role) ? role : 'client_admin';
+  // Whitelist of accepted portal roles (Admin or Editor). Anything else
+  // falls back to Admin so an invite never lands a sub-user with a
+  // role we don't expect.
+  const safeRole = (PORTAL_INVITE_ROLES as readonly string[]).includes(role) ? role : 'client_admin';
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {

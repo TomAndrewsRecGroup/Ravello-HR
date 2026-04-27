@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
+import { REVIEW_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
   high:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
   medium: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
@@ -127,7 +128,7 @@ export default function LeadTab({ initialTrainingNeeds, initialPerfReviews }: Pr
                       {r.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.department}</p>}
                     </td>
                     <td style={{ color: 'var(--ink-soft)' }}>{r.review_period}</td>
-                    <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{r.review_type?.replace(/_/g, ' ')}</td>
+                    <td style={{ color: 'var(--ink-soft)' }} className="capitalize">{labelFor(REVIEW_TYPE_LABELS, r.review_type)}</td>
                     <td style={{ color: 'var(--ink-soft)' }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</td>
                     <td style={{ color: 'var(--ink-soft)' }}>{r.overall_rating ?? '-'}</td>
                     <td>

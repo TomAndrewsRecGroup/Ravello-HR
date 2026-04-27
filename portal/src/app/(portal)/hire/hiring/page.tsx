@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Briefcase, Plus, ChevronDown } from 'lucide-react';
 import { isManatalConfigured } from '@/lib/manatal';
 
+import { HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 const ManatalPipeline = dynamic(() => import('@/components/modules/ManatalPipeline'));
 
 export const metadata: Metadata = { title: 'Hiring' };
@@ -189,7 +190,7 @@ export default async function HiringPage({
                         </td>
                         <td>
                           <span className={`badge ${stageBadge[r.stage] ?? ''}`}>
-                            {r.stage.replace(/_/g, ' ')}
+                            {labelFor(HIRING_STAGE_LABELS, r.stage)}
                           </span>
                         </td>
                         <td>

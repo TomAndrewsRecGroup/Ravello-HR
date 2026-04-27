@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
+import { HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import {
   Building2, Users, Briefcase, LifeBuoy,
   AlertTriangle, Clock, FileWarning, UserX, Gauge,
@@ -186,7 +187,7 @@ export default async function AdminDashboardPage() {
                       <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
                       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{(r.companies as any)?.name}</p>
                     </div>
-                    <span className={`badge ${stageBadge[r.stage]}`}>{r.stage.replace(/_/g, ' ')}</span>
+                    <span className={`badge ${stageBadge[r.stage]}`}>{labelFor(HIRING_STAGE_LABELS, r.stage)}</span>
                   </Link>
                 ))}
               </div>

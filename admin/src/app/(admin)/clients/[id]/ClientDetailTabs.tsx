@@ -9,6 +9,7 @@ import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
 import CandidatesTab from './tabs/CandidatesTab';
 
+import { HIRING_STAGE_LABELS, COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 /* ─── Helpers ─────────────────────────────────────── */
 
 const FLAG_LABELS: Record<string, string> = {
@@ -495,7 +496,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         <tr key={u.id}>
                           <td className="font-medium">{u.full_name ?? '-'}</td>
                           <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
-                          <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{u.role?.replace(/_/g,' ')}</span></td>
+                          <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{labelFor(ROLE_LABELS, u.role)}</span></td>
                           <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
                         </tr>
                       ))}
@@ -543,7 +544,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                         </td>
                         <td>
                           <span className={`badge ${STAGE_BADGE[r.stage] ?? 'badge-normal'}`}>
-                            {r.stage?.replace(/_/g, ' ')}
+                            {labelFor(HIRING_STAGE_LABELS, r.stage)}
                           </span>
                         </td>
                         <td>
@@ -925,14 +926,14 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                           <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{ci.title}</p>
                           {ci.description && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{ci.description}</p>}
                         </td>
-                        <td style={{ color: 'var(--ink-soft)' }}>{ci.category?.replace(/_/g, ' ')}</td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{labelFor(COMPLIANCE_CATEGORY_LABELS, ci.category)}</td>
                         <td style={{ color: isOverdue ? 'var(--rose)' : 'var(--ink-soft)', fontWeight: isOverdue ? 600 : undefined }}>
                           {new Date(ci.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {isOverdue && <span className="ml-1 text-[10px]">OVERDUE</span>}
                         </td>
                         <td>
                           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={COMP_STATUS_STYLE[ci.status] ?? COMP_STATUS_STYLE.pending}>
-                            {ci.status?.replace(/_/g, ' ')}
+                            {labelFor(COMPLIANCE_STATUS_LABELS, ci.status)}
                           </span>
                         </td>
                         <td>

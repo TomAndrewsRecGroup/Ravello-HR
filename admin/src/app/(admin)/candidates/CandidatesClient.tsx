@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { ExternalLink, ChevronDown, Star, Loader2 } from 'lucide-react';
 
+import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Candidate {
   id: string;
   full_name: string;
@@ -194,7 +195,7 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                       style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}
                     >
-                      {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
+                      {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                     </span>
                   </td>
                   <td>

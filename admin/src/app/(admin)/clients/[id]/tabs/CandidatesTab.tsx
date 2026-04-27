@@ -5,6 +5,7 @@ import { Loader2, Plus, X, User, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
+import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
 const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
   pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
   approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
@@ -166,7 +167,7 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
-                              {c.client_status?.replace(/_/g, ' ') ?? 'pending'}
+                              {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                             </span>
                           </td>
                           <td className="px-4 py-3 max-w-[160px]">
