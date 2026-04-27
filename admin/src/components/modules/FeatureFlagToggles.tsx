@@ -24,7 +24,11 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
       const flagLabel = FLAG_GROUPS
         .flatMap(g => g.flags)
         .find(f => f.key === key)?.label ?? key;
-      if (!window.confirm(`Disable "${flagLabel}" for this client? They will lose access to this feature in the portal.`)) {
+      const isLastEnabled = Object.values(localFlags).filter(Boolean).length === 1;
+      const msg = isLastEnabled
+        ? `Disable "${flagLabel}" for this client? This is the last enabled feature — they will have an empty portal until a feature is re-enabled.`
+        : `Disable "${flagLabel}" for this client? They will lose access to this feature in the portal.`;
+      if (!window.confirm(msg)) {
         return;
       }
     }
@@ -45,7 +49,14 @@ export default function FeatureFlagToggles({ companyId, flags }: Props) {
     // strip a whole module from a client in one click. Confirm with the
     // module name and feature count.
     if (!on) {
-      if (!window.confirm(`Disable all ${group.flags.length} ${group.label} feature${group.flags.length !== 1 ? 's' : ''} for this client? They will lose access to every ${group.label} feature in the portal.`)) {
+      const groupKeys = new Set(group.flags.map(f => f.key));
+      const remainingOn = Object.entries(localFlags)
+        .filter(([k, v]) => v && !groupKeys.has(k)).length;
+      const noFeaturesLeft = remainingOn === 0;
+      const suffix = noFeaturesLeft
+        ? ' This will leave the client with no features in their portal.'
+        : '';
+      if (!window.confirm(`Disable all ${group.flags.length} ${group.label} feature${group.flags.length !== 1 ? 's' : ''} for this client? They will lose access to every ${group.label} feature in the portal.${suffix}`)) {
         return;
       }
     }

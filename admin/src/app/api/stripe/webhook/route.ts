@@ -95,7 +95,12 @@ export async function POST(request: NextRequest) {
     companyId = await resolveCompanyId(sb, event);
   } catch (err: any) {
     // Soft fail: still record the event, just don't tag it.
-    console.error('[stripe webhook] resolveCompanyId failed', err?.message);
+    const obj = event.data.object as Record<string, any>;
+    const hint = [
+      obj.customer   && `customer=${obj.customer}`,
+      obj.id         && `id=${obj.id}`,
+    ].filter(Boolean).join(' ');
+    console.error(`[stripe webhook] resolveCompanyId failed (${hint || 'no ids'})`, err?.message);
   }
 
   // Tag the event row with the resolved company so admin can later
@@ -105,6 +110,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Dispatch.
+  // The casts below (as Stripe.Subscription / as Stripe.Invoice) are safe:
+  // Stripe types event.data.object as the generic `object`, but the switch
+  // branch guarantees the concrete type — subscription events always carry
+  // a Subscription object, invoice events always carry an Invoice object.
+  // This is a Stripe SDK limitation, not a narrowing gap in our code.
   try {
     switch (event.type) {
       case 'customer.subscription.created':
