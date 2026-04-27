@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
--- Migration 046: Per-employee leave tokens + employee notes log
+-- Migration 047: Per-employee leave tokens + employee notes log
 -- ────────────────────────────────────────────────────────────────────────
 -- Phase 3b of the onboarding/UX plan adds a public leave-request flow.
 -- Every employee gets a unique, regeneratable token; the public form at
@@ -9,9 +9,13 @@
 --
 -- Schema additions:
 --   1. employee_records.leave_token  — random unique 32-char token
---   2. employee_notes (new table)    — log of notes attached to an
+--   2. absence_records.employee_id   — FK link for the new public flow
+--   3. employee_notes (new table)    — log of notes attached to an
 --      employee (denial reasons, general HR notes, etc.) with author
 --      + timestamp + optional related row.
+--
+-- Run order: 045 → 046 → 047. The employee_notes RLS DELETE policy
+-- references is_company_super_user() which is defined in 046.
 --
 -- Idempotent. Safe to re-run.
 -- ════════════════════════════════════════════════════════════════════════
