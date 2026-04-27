@@ -9,13 +9,13 @@
 --                       repeated here in case any rows leaked through)
 --   • client_viewer   → migrate to client_editor (legacy code path)
 --
--- This migration also DROPS the link_tps_staff_to_demo() trigger and
--- function from migration 027. That trigger force-set every staff
--- profile's company_id to '00000000-0000-0000-0000-000000000001' on
+-- This migration also DROPS the link_tps_staff_to_demo() function from
+-- migrations 025/027. That function backed a trigger (trg_link_tps_staff)
+-- that force-set every staff profile's company_id to the demo UUID on
 -- every UPDATE. After the factory reset wiped the demo company, every
 -- attempt to update a staff profile failed the FK check because the
--- trigger kept stamping the dead UUID back in. Dropping it unblocks
--- ordinary profile maintenance.
+-- trigger kept stamping the dead UUID back in. Dropping the trigger and
+-- function unblocks ordinary profile maintenance.
 --
 -- NOTE on enum values: Postgres does not support DROP VALUE on enums
 -- without rebuilding the type (and re-pointing every column / policy /
@@ -28,15 +28,29 @@
 
 
 -- ────────────────────────────────────────────────────────────────────────
--- 1. Drop the demo-company trigger from migration 027
---    (Trigger name varies across environments — trg_link_tps_staff in
---    most, link_tps_staff_to_demo_trigger in older envs. Use CASCADE on
---    the function drop so any dependent trigger comes off too.)
+-- 1. Drop every trigger on profiles that depends on the demo-link
+--    function, then drop the function itself.
+--
+--    Belt-and-braces: query pg_trigger by function name (catches any
+--    rename), then DROP FUNCTION ... CASCADE as a final safety net.
 -- ────────────────────────────────────────────────────────────────────────
 
-DROP TRIGGER  IF EXISTS trg_link_tps_staff             ON profiles;
-DROP TRIGGER  IF EXISTS link_tps_staff_to_demo_trigger ON profiles;
-DROP TRIGGER  IF EXISTS link_tps_staff_to_demo         ON profiles;
+DO $$
+DECLARE
+  trg RECORD;
+BEGIN
+  FOR trg IN
+    SELECT t.tgname
+      FROM pg_trigger t
+      JOIN pg_proc p ON p.oid = t.tgfoid
+     WHERE p.proname = 'link_tps_staff_to_demo'
+       AND NOT t.tgisinternal
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON profiles', trg.tgname);
+    RAISE NOTICE 'Dropped trigger %', trg.tgname;
+  END LOOP;
+END $$;
+
 DROP FUNCTION IF EXISTS link_tps_staff_to_demo() CASCADE;
 
 
@@ -88,3 +102,6 @@ SELECT
   COUNT(*) FILTER (WHERE role = 'client_user')   AS leftover_client_user,
   COUNT(*) FILTER (WHERE role = 'client_viewer') AS leftover_client_viewer
 FROM profiles;
+
+-- Confirm the demo-link function is gone (should return 0 rows)
+SELECT proname FROM pg_proc WHERE proname = 'link_tps_staff_to_demo';
