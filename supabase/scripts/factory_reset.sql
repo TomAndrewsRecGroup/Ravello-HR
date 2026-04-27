@@ -149,9 +149,11 @@ BEGIN
   -- safe to leave; it'll repopulate on next ingest.
 
   -- ── 10. Reset onboarding flags on staff so a re-test feels fresh
+  --       (onboarding_step has a NOT NULL constraint; leave it alone
+  --       and just flip the completed flag — staff don't run the
+  --       wizard so the step value is irrelevant for them.)
   UPDATE profiles
-     SET onboarding_completed = true,
-         onboarding_step      = NULL
+     SET onboarding_completed = true
    WHERE id = ANY(staff_user_ids);
 
   -- ── 11. Report ──────────────────────────────────────────────────
