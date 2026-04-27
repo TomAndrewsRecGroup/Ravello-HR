@@ -1,8 +1,8 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
-import { Plus, X, Loader2, Calendar } from 'lucide-react';
+import { Plus, X, Loader2, Calendar, Check, AlertTriangle } from 'lucide-react';
 
 interface AbsenceRecord {
   id: string;
@@ -79,13 +79,77 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
     setSaving(false);
   }
 
-  async function updateStatus(id: string, status: string) {
-    const { error } = await supabase.from('absence_records').update({ status }).eq('id', id);
-    if (!error) {
-      setRecords(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-      revalidatePortalPath('/protect/absence');
+  // Approve / deny now route through the portal API endpoints, which
+  // also handle the denial-note flow (saving to employee_notes when an
+  // employee_id is attached). Optimistic update for snappy UX.
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [denyTarget, setDenyTarget] = useState<AbsenceRecord | null>(null);
+  const [denyNote, setDenyNote] = useState('');
+  const [actionError, setActionError] = useState('');
+
+  async function approve(id: string) {
+    setActionId(id);
+    const prev = records;
+    setRecords(rs => rs.map(r => r.id === id ? { ...r, status: 'approved' } : r));
+    try {
+      const res = await fetch(`/api/portal/leave/${id}/approve`, { method: 'POST' });
+      if (!res.ok) {
+        setRecords(prev);
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error ?? 'Could not approve.');
+      } else {
+        revalidatePortalPath('/protect/absence');
+      }
+    } finally {
+      setActionId(null);
     }
   }
+
+  function openDeny(record: AbsenceRecord) {
+    setDenyTarget(record);
+    setDenyNote('');
+    setActionError('');
+  }
+
+  async function confirmDeny() {
+    if (!denyTarget) return;
+    if (!denyNote.trim()) { setActionError('Please give a reason for declining.'); return; }
+    setActionId(denyTarget.id);
+    const targetId = denyTarget.id;
+    const prev = records;
+    setRecords(rs => rs.map(r => r.id === targetId ? { ...r, status: 'rejected' } : r));
+    try {
+      const res = await fetch(`/api/portal/leave/${targetId}/deny`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: denyNote.trim() }),
+      });
+      if (!res.ok) {
+        setRecords(prev);
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error ?? 'Could not decline.');
+        return;  // keep modal open so user can retry
+      }
+      setDenyTarget(null);
+      setDenyNote('');
+      revalidatePortalPath('/protect/absence');
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  // Esc-to-close on the deny modal
+  useEffect(() => {
+    if (!denyTarget) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && actionId !== denyTarget.id) setDenyTarget(null); };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [denyTarget, actionId]);
 
   const filtered = records.filter(r =>
     (filterType === 'all' || r.absence_type === filterType) &&
@@ -221,11 +285,21 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
                     <td>
                       {r.status === 'pending' && (
                         <div className="flex gap-1">
-                          <button onClick={() => updateStatus(r.id, 'approved')} className="btn-sm" style={{ background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
-                            Approve
+                          <button
+                            onClick={() => approve(r.id)}
+                            disabled={actionId === r.id}
+                            className="btn-sm"
+                            style={{ background: 'rgba(22,163,74,0.1)', color: 'var(--emerald)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}
+                          >
+                            {actionId === r.id ? <Loader2 size={10} className="animate-spin" /> : 'Approve'}
                           </button>
-                          <button onClick={() => updateStatus(r.id, 'rejected')} className="btn-sm" style={{ background: 'rgba(220,38,38,0.08)', color: 'var(--rose)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
-                            Reject
+                          <button
+                            onClick={() => openDeny(r)}
+                            disabled={actionId === r.id}
+                            className="btn-sm"
+                            style={{ background: 'rgba(220,38,38,0.08)', color: 'var(--rose)', border: 'none', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}
+                          >
+                            Decline
                           </button>
                         </div>
                       )}
@@ -235,6 +309,84 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Decline modal — captures the reason that gets logged on the
+          employee's profile (employee_notes table). */}
+      {denyTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Decline leave request"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{ background: 'rgba(7,11,32,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget && actionId !== denyTarget.id) setDenyTarget(null); }}
+        >
+          <div
+            className="card p-0 w-full max-w-md overflow-hidden"
+            style={{ background: 'var(--surface, #fff)', boxShadow: '0 24px 64px rgba(7,11,32,0.30)' }}
+          >
+            <div className="flex items-start justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--line)' }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(217,68,68,0.10)' }}>
+                  <AlertTriangle size={17} style={{ color: 'var(--rose, #DC2626)' }} />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>
+                    Decline {denyTarget.employee_name}&rsquo;s {ABSENCE_LABELS[denyTarget.absence_type] ?? denyTarget.absence_type.replace(/_/g, ' ')}
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                    {fmtDate(denyTarget.start_date)} → {fmtDate(denyTarget.end_date)} · {denyTarget.days ?? '—'} day{denyTarget.days === 1 ? '' : 's'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDenyTarget(null)}
+                disabled={actionId === denyTarget.id}
+                aria-label="Cancel"
+                className="btn-icon"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-3">
+              <label className="label" style={{ color: 'var(--ink-soft)' }}>Reason (saved on the employee&rsquo;s profile)</label>
+              <textarea
+                className="input"
+                rows={4}
+                value={denyNote}
+                onChange={e => setDenyNote(e.target.value)}
+                placeholder="e.g. Already two people off that week — please re-submit for an alternative date."
+                maxLength={1000}
+                autoFocus
+              />
+              {actionError && (
+                <div className="rounded-[10px] p-3 text-sm" style={{ background: 'rgba(217,68,68,0.06)', border: '1px solid rgba(217,68,68,0.20)', color: 'var(--rose, #DC2626)' }}>
+                  {actionError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-soft, #FAFAFD)' }}>
+              <button
+                onClick={() => setDenyTarget(null)}
+                disabled={actionId === denyTarget.id}
+                className="btn-secondary btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeny}
+                disabled={actionId === denyTarget.id || !denyNote.trim()}
+                className="btn-cta btn-sm"
+              >
+                {actionId === denyTarget.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                {actionId === denyTarget.id ? 'Sending…' : 'Decline and save reason'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
