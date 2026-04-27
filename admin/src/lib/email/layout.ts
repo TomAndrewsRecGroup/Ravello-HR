@@ -6,9 +6,15 @@
 //
 // Brand tokens are duplicated here from globals.css because email
 // has no CSS variables — every colour must be a literal hex.
+//
+// Deliverability note: the logo MUST be hosted on the same root domain
+// as the sending address (Resend's deliverability check flags any
+// off-domain image link). Default points to thepeoplesystem.co.uk;
+// override via EMAIL_LOGO_URL env var if you host it elsewhere on the
+// same root (e.g. assets.thepeoplesystem.co.uk).
 
 export const BRAND = {
-  logoUrl:   'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png',
+  logoUrl:   process.env.EMAIL_LOGO_URL ?? 'https://www.thepeoplesystem.co.uk/email-logo.png',
   purple:    '#7C3AED',
   purpleDk:  '#5A2AC8',
   ink:       '#070B1D',
