@@ -18,7 +18,7 @@ export default function ClientsPage() {
       <AdminTopbar
         title="Clients"
         subtitle="Live client roster"
-        actions={<Link href="/clients/new" prefetch={false} className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13} />New Client</Link>}
+        actions={<Link href="/clients/onboard" prefetch={false} className="btn-cta btn-sm flex items-center gap-1.5"><Plus size={13} />New Client</Link>}
       />
       <main className="admin-page flex-1">
         <ClientsFetcher />

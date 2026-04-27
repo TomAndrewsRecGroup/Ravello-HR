@@ -23,7 +23,7 @@ export default async function FeatureFlagsPage() {
       <main className="admin-page flex-1">
         {all.length === 0 ? (
           <div className="card p-12 empty-state">
-            No active clients. <Link prefetch={false} href="/clients/new" className="btn-cta mt-2">Add a client</Link>
+            No active clients. <Link prefetch={false} href="/clients/onboard" className="btn-cta mt-2">Add a client</Link>
           </div>
         ) : (
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">

@@ -19,6 +19,8 @@ interface CreateClientBody {
   contact_email?: string | null;
   monthly_retainer_pence?: number | null;
   feature_flags?: Record<string, boolean>;
+  /** TPS staff member who manages this client. */
+  account_owner_id?: string | null;
 }
 
 interface CreateClientResult {
@@ -78,9 +80,10 @@ export async function POST(request: NextRequest) {
     .insert({
       name,
       slug,
-      sector:                  body.sector        ?? null,
-      size_band:               body.size_band     ?? null,
-      contact_email:           body.contact_email ?? null,
+      sector:                  body.sector           ?? null,
+      size_band:               body.size_band        ?? null,
+      contact_email:           body.contact_email    ?? null,
+      account_owner_id:        body.account_owner_id ?? null,
       active:                  true,
       feature_flags:           flags,
       monthly_retainer_pence:  paidEnabled ? retainerPence : null,

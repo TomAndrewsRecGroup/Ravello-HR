@@ -102,7 +102,7 @@ export default async function AdminDashboardPage() {
       <AdminTopbar
         title="Admin Dashboard"
         subtitle="The People System: internal operations"
-        actions={<Link href="/clients/new" className="btn-cta btn-sm">+ New Client</Link>}
+        actions={<Link href="/clients/onboard" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
 
