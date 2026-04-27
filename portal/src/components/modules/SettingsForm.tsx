@@ -441,6 +441,7 @@ interface TeamMember {
 interface TeamMembersProps {
   members: TeamMember[];
   currentUserId: string;
+  currentUserRole: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -449,7 +450,15 @@ const ROLE_LABELS: Record<string, string> = {
   tps_admin:      'The People System Admin',
 };
 
-export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
+const PORTAL_SEAT_CAP = 2;
+
+export function TeamMembers({ members, currentUserId, currentUserRole }: TeamMembersProps) {
+  const isAdmin = currentUserRole === 'client_admin';
+  // Seats counted are client_admin + client_editor (TPS staff don't
+  // consume a seat). Same logic the API enforces server-side.
+  const seatsUsed   = members.filter(m => m.role === 'client_admin' || m.role === 'client_editor').length;
+  const canInvite   = isAdmin && seatsUsed < PORTAL_SEAT_CAP;
+
   return (
     <div className="space-y-4">
       <div className="divide-y" style={{ borderColor: 'var(--line)' }}>
@@ -493,16 +502,109 @@ export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
         })}
       </div>
 
-      <div
-        className="rounded-[10px] p-4 text-sm"
-        style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}
-      >
-        To add team members, contact{' '}
-        <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>
-          The People System
-        </a>
-        .
+      {/* Admin-only invite form. Editors and seat-cap-reached admins
+          fall through to the contact-us message instead. */}
+      {canInvite ? (
+        <InviteTeammateForm seatsUsed={seatsUsed} seatCap={PORTAL_SEAT_CAP} />
+      ) : (
+        <div
+          className="rounded-[10px] p-4 text-sm"
+          style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}
+        >
+          {isAdmin && seatsUsed >= PORTAL_SEAT_CAP ? (
+            <>You&rsquo;ve used both seats on your plan. Contact{' '}
+              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a> to add more.</>
+          ) : (
+            <>To add team members, contact{' '}
+              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a>.</>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Invite teammate form (Admin only) ──────────────────────────
+// Posts to /api/portal/invite which forces role to client_editor and
+// enforces the seat cap server-side. Sends the branded user-invited
+// email plus Supabase's magic-link; recipient lands on /auth/update-password
+// to set their own password.
+
+function InviteTeammateForm({ seatsUsed, seatCap }: { seatsUsed: number; seatCap: number }) {
+  const [email,    setEmail]    = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [sent,     setSent]     = useState(false);
+  const [error,    setError]    = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const res = await fetch('/api/portal/invite', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email: email.trim(), full_name: fullName.trim() || undefined }),
+    });
+    const body = await res.json().catch(() => ({}));
+
+    setLoading(false);
+    if (!res.ok) {
+      setError(body.error ?? 'Could not send the invite.');
+      return;
+    }
+    setSent(true);
+    setEmail('');
+    setFullName('');
+    // Refresh server data so the new pending member appears in the list
+    revalidatePortalPath('/settings');
+  }
+
+  return (
+    <div className="rounded-[10px] p-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+      <div className="flex items-center gap-2 mb-3">
+        <UserPlus size={14} style={{ color: 'var(--purple)' }} />
+        <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Invite a teammate</p>
+        <span className="ml-auto text-[10px] font-medium" style={{ color: 'var(--ink-faint)' }}>
+          {seatsUsed}/{seatCap} seats used
+        </span>
       </div>
+      <p className="text-xs mb-3" style={{ color: 'var(--ink-faint)' }}>
+        They&rsquo;ll get an Editor seat. We&rsquo;ll email them a sign-in link and they&rsquo;ll set their own password.
+      </p>
+      {sent && (
+        <div className="flex items-center gap-2 mb-3 text-xs p-2.5 rounded-[8px]" style={{ background: 'rgba(20,184,166,0.10)', color: 'var(--teal)' }}>
+          <CheckCircle2 size={13} className="flex-shrink-0" />
+          <span>Invitation sent. They&rsquo;ll receive an email shortly.</span>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-2.5">
+        <input
+          type="email"
+          required
+          className="input"
+          placeholder="teammate@company.co.uk"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          disabled={loading}
+        />
+        <input
+          type="text"
+          className="input"
+          placeholder="Full name (optional)"
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          disabled={loading}
+        />
+        {error && (
+          <p className="text-xs p-2.5 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--red)' }}>{error}</p>
+        )}
+        <button type="submit" disabled={loading || !email.trim()} className="btn-cta btn-sm w-full justify-center">
+          {loading && <Loader2 size={13} className="animate-spin" />}
+          {loading ? 'Sending…' : 'Send invite'}
+        </button>
+      </form>
     </div>
   );
 }

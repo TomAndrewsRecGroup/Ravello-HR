@@ -14,7 +14,7 @@ export const revalidate = 60;
 
 export default async function SettingsPage() {
   const supabase = createServerSupabaseClient();
-  const { user, profile, companyId } = await getSessionProfile();
+  const { user, profile, companyId, role } = await getSessionProfile();
 
   const [{ data: company }, { data: fullProfile }, { data: teamData }] = await Promise.all([
     supabase
@@ -85,7 +85,7 @@ export default async function SettingsPage() {
         {/* Team Members */}
         <div className="card p-7">
           <p className="eyebrow mb-5">Team Members</p>
-          <TeamMembers members={teamMembers} currentUserId={user?.id ?? ''} />
+          <TeamMembers members={teamMembers} currentUserId={user?.id ?? ''} currentUserRole={role ?? ''} />
         </div>
 
         {/* Password reset */}
