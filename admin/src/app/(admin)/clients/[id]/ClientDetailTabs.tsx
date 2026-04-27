@@ -173,6 +173,155 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
   );
 }
 
+const SUB_STATUS_BADGE: Record<string, string> = {
+  active:             'badge-active',
+  trialing:           'badge-inprogress',
+  past_due:           'badge-urgent',
+  canceled:           'badge-inactive',
+  unpaid:             'badge-urgent',
+  incomplete:         'badge-normal',
+  incomplete_expired: 'badge-inactive',
+  paused:             'badge-inactive',
+};
+const SUB_STATUS_LABEL: Record<string, string> = {
+  active:             'Active',
+  trialing:           'Trialing',
+  past_due:           'Past due',
+  canceled:           'Canceled',
+  unpaid:             'Unpaid',
+  incomplete:         'Awaiting payment',
+  incomplete_expired: 'Setup expired',
+  paused:             'Paused',
+};
+
+function BillingPanel({
+  companyId,
+  initialPence,
+  initialStatus,
+  customerId,
+  subscriptionId,
+  currency,
+}: {
+  companyId: string;
+  initialPence: number | null;
+  initialStatus: string | null;
+  customerId: string | null;
+  subscriptionId: string | null;
+  currency: string | null;
+}) {
+  const [pence,    setPence]    = useState<number | null>(initialPence ?? null);
+  const [statusV,  setStatusV]  = useState<string | null>(initialStatus ?? null);
+  const [editing,  setEditing]  = useState(false);
+  const [draft,    setDraft]    = useState<string>(initialPence ? (initialPence / 100).toFixed(2) : '');
+  const [saving,   setSaving]   = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+
+  const symbol = (currency ?? 'gbp').toLowerCase() === 'gbp' ? '£' : '$';
+  const display = pence != null ? `${symbol}${(pence / 100).toFixed(2)}` : '-';
+
+  async function save() {
+    const parsed = Number(draft);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setError('Enter a valid amount.');
+      return;
+    }
+    const newPence = Math.round(parsed * 100);
+    setSaving(true);
+    setError(null);
+    try {
+      const res  = await fetch(`/api/admin/clients/${companyId}/retainer`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ monthly_retainer_pence: newPence }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setError(json.error ?? 'Update failed.');
+      } else {
+        setPence(newPence);
+        setEditing(false);
+        if (json.stripe?.subscription_status) setStatusV(json.stripe.subscription_status);
+        revalidateAdminPath('/clients');
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Update failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Billing</h2>
+        {statusV && (
+          <span className={`badge ${SUB_STATUS_BADGE[statusV] ?? 'badge-normal'}`}>
+            {SUB_STATUS_LABEL[statusV] ?? statusV}
+          </span>
+        )}
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly retainer</p>
+          {!editing ? (
+            <div className="flex items-baseline gap-2 mt-1">
+              <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{display}</p>
+              {pence ? <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>/ month</span> : null}
+              <button
+                type="button"
+                onClick={() => { setDraft(pence ? (pence / 100).toFixed(2) : ''); setEditing(true); setError(null); }}
+                className="btn-ghost btn-sm ml-auto"
+              >
+                {pence ? 'Change' : 'Set'}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{symbol}</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  className="input flex-1 text-sm"
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  autoFocus
+                />
+                <button onClick={save} disabled={saving} className="btn-cta btn-sm">
+                  {saving ? <Loader2 size={12} className="animate-spin" /> : 'Update'}
+                </button>
+                <button onClick={() => { setEditing(false); setError(null); }} disabled={saving} className="btn-ghost btn-sm">
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                {subscriptionId
+                  ? 'Stripe prorates the difference on the next invoice.'
+                  : 'A non-zero amount creates the Stripe customer and subscription.'}
+              </p>
+              {error && <p className="text-xs" style={{ color: 'var(--rose)' }}>{error}</p>}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Stripe references</p>
+          <div className="mt-1 space-y-1">
+            <p className="text-[11px] font-mono break-all" style={{ color: customerId ? 'var(--ink-soft)' : 'var(--ink-faint)' }}>
+              cust: {customerId ?? '-'}
+            </p>
+            <p className="text-[11px] font-mono break-all" style={{ color: subscriptionId ? 'var(--ink-soft)' : 'var(--ink-faint)' }}>
+              sub:  {subscriptionId ?? '-'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main tabs component ────────────────────────── */
 
 const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Services', 'Friction'] as const;
@@ -478,6 +627,16 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
                 <ManatalIdField companyId={company.id} currentId={company.manatal_client_id ?? ''} />
               </div>
             </div>
+
+            {/* Billing */}
+            <BillingPanel
+              companyId={company.id}
+              initialPence={company.monthly_retainer_pence ?? null}
+              initialStatus={company.subscription_status ?? null}
+              customerId={company.stripe_customer_id ?? null}
+              subscriptionId={company.stripe_subscription_id ?? null}
+              currency={company.billing_currency ?? 'gbp'}
+            />
 
             {/* Users */}
             <div className="card p-6">
