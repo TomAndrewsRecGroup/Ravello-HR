@@ -215,7 +215,7 @@ export default function HiringScoreTool() {
             <CheckCircle size={32} className="text-[var(--brand-purple)]" />
           </div>
           <h2 className=" text-2xl font-bold text-[var(--ink)] mb-2">Your score is ready.</h2>
-          <p className="text-[var(--ink-soft)]">Enter your details to unlock your full Hiring Score report and personalised fix plan.</p>
+          <p className="text-[var(--ink-soft)]">Enter your details to see your full Hiring Score report and a tailored fix plan.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <label htmlFor="hs-name" className="sr-only">Your first name</label>
