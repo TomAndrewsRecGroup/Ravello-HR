@@ -47,9 +47,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const sb = serviceClient();
+  // companies has no updated_at column (only created_at) — don't try
+  // to bump it here, PostgREST will reject the unknown field with a
+  // schema-cache error.
   const { data, error } = await sb
     .from('companies')
-    .update({ feature_flags: sanitised, updated_at: new Date().toISOString() })
+    .update({ feature_flags: sanitised })
     .eq('id', params.id)
     .select('id, feature_flags, monthly_retainer_pence, subscription_status')
     .single();
