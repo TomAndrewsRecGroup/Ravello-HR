@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
@@ -175,6 +176,15 @@ export async function POST(request: NextRequest) {
       hasPaidModules: paidEnabled,
     }));
   }
+
+  // Bust every page-level cache that surfaces this new client.
+  // Without these, the fresh row doesn't appear on /clients,
+  // /users, /dashboard, or /feature-flags until the page-level
+  // revalidate window elapses (30-60s).
+  revalidatePath('/clients');
+  revalidatePath('/users');
+  revalidatePath('/dashboard');
+  revalidatePath('/feature-flags');
 
   return NextResponse.json({ success: true, ...result });
 }
