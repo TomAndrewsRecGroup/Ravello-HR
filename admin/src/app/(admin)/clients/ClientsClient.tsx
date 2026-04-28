@@ -5,13 +5,21 @@ import { Plus, Briefcase, LifeBuoy, AlertTriangle, Users, X } from 'lucide-react
 import { ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 interface Company {
-  id: string; name: string; contact_email: string | null;
+  id: string; slug: string | null; name: string; contact_email: string | null;
   sector: string | null; size_band: string | null; active: boolean;
   feature_flags: Record<string, boolean> | null;
   friction_band: string | null;
   monthly_retainer_pence: number | null;
   subscription_status: string | null;
   billing_currency: string | null;
+}
+
+// Resolve the readable URL segment for a company. Slug for companies
+// that have one (always for new ones, may be missing on legacy rows);
+// uuid as fallback. /clients/[id] auto-redirects uuid → slug so the
+// fallback still arrives at the canonical URL.
+function clientHref(c: Pick<Company, 'id' | 'slug'>): string {
+  return `/clients/${c.slug ?? c.id}`;
 }
 
 const SUB_STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
@@ -69,7 +77,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
               </div>
               <div className="flex items-center gap-2">
                 <Link prefetch={false}
-                  href={`/clients/${usersModal.company.id}`}
+                  href={clientHref(usersModal.company)}
                   className="btn-secondary btn-sm"
                   onClick={() => setUsersModal(null)}
                 >
@@ -160,7 +168,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                   <tr key={c.id}>
                     <td>
                       <Link
-                        href={`/clients/${c.id}`}
+                        href={clientHref(c)}
                         prefetch={false}
                         className="font-semibold hover:underline"
                         style={{ color: 'var(--purple)' }}
@@ -245,7 +253,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                       {total > 0 ? `${on}/${total} on` : '-'}
                     </td>
                     <td>
-                      <Link href={`/clients/${c.id}`} prefetch={false} className="btn-ghost btn-sm">
+                      <Link href={clientHref(c)} prefetch={false} className="btn-ghost btn-sm">
                         Manage →
                       </Link>
                     </td>

@@ -18,12 +18,11 @@ import { useMobileMenu } from './MobileMenuContext';
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 interface NavItem { href: string; label: string; icon: React.ElementType; }
-interface NavGroup { label: string; items: NavItem[]; defaultOpen?: boolean; }
+interface NavGroup { label: string; items: NavItem[]; }
 
 const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Clients',
-    defaultOpen: true,
     items: [
       { href: '/clients',         label: 'All Clients',    icon: Building2 },
       { href: '/clients/onboard', label: 'Onboard',        icon: UserPlus },
@@ -32,7 +31,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Hiring',
-    defaultOpen: true,
     items: [
       { href: '/hiring',          label: 'Roles',          icon: Briefcase },
       { href: '/hiring/templates', label: 'Templates',     icon: FileText },
@@ -41,7 +39,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Intelligence',
-    defaultOpen: true,
     items: [
       { href: '/bd-intelligence', label: 'BD Intelligence', icon: Target },
       { href: '/bd-roles',        label: 'BD Roles',        icon: Radar },
@@ -50,7 +47,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Operations',
-    defaultOpen: true,
     items: [
       { href: '/tasks',           label: 'Tasks',          icon: CheckSquare },
       { href: '/activity',        label: 'Activity',       icon: Rss },
@@ -62,14 +58,12 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Programmes',
-    defaultOpen: false,
     items: [
       { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy },
     ],
   },
   {
     label: 'Business',
-    defaultOpen: false,
     items: [
       { href: '/revenue',         label: 'Revenue',        icon: TrendingUp },
       { href: '/value-reports',   label: 'Value Reports',  icon: BarChart3 },
@@ -85,10 +79,15 @@ export default function AdminSidebar() {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
 
-  // Track which groups are expanded
+  // Default state: every group COLLAPSED. The one exception is the
+  // group whose href matches the active route — that one auto-opens
+  // so the user can see where they are in the hierarchy. Avoids the
+  // "wall of expanded sections" first-load look.
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    NAV_GROUPS.forEach(g => { init[g.label] = g.defaultOpen ?? false; });
+    for (const g of NAV_GROUPS) {
+      init[g.label] = g.items.some(i => path.startsWith(i.href));
+    }
     return init;
   });
 

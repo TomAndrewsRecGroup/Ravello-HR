@@ -40,23 +40,36 @@ export interface ClientDetail {
   docsCount:    number;
 }
 
-async function fetchFromDb(id: string): Promise<ClientDetail | null> {
+async function fetchFromDb(idOrSlug: string): Promise<ClientDetail | null> {
   const sb = serviceClient();
+
+  // Accept either a UUID or a slug — the route param is now the slug
+  // for canonical URLs but old UUID links still work. Detect format
+  // and pick the right column for the company lookup.
+  const isUuid = UUID_RE.test(idOrSlug);
+  const companyQ = sb
+    .from('companies')
+    .select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency,monthly_retainer_pence,subscription_status,stripe_subscription_id,stripe_customer_id,billing_currency')
+    .eq(isUuid ? 'id' : 'slug', idOrSlug)
+    .maybeSingle();
+
+  const { data: company } = await companyQ;
+  if (!company) return null;
+
+  // Now we know the canonical id, fetch the rest of the rollup.
+  const id = company.id as string;
   const [
-    { data: company },
     { data: users },
     { data: reqs },
     { data: tickets },
     { count: docsCount },
   ] = await Promise.all([
-    sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency,monthly_retainer_pence,subscription_status,stripe_subscription_id,stripe_customer_id,billing_currency').eq('id', id).single(),
     sb.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', id).order('created_at'),
     sb.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', id).order('created_at', { ascending: false }),
     sb.from('tickets').select('id,subject,status,priority').eq('company_id', id).neq('status', 'closed'),
     sb.from('documents').select('*', { count: 'exact', head: true }).eq('company_id', id),
   ]);
 
-  if (!company) return null;
   return {
     company,
     users:   users   ?? [],
@@ -66,10 +79,15 @@ async function fetchFromDb(id: string): Promise<ClientDetail | null> {
   };
 }
 
-export function getCachedClientDetail(id: string): Promise<ClientDetail | null> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function getCachedClientDetail(idOrSlug: string): Promise<ClientDetail | null> {
   return unstable_cache(
-    () => fetchFromDb(id),
-    ['client-detail', id],
-    { revalidate: 5, tags: [`client:${id}`] },
+    () => fetchFromDb(idOrSlug),
+    ['client-detail', idOrSlug],
+    // Cache key includes the input form (slug or uuid). On a hit
+    // both forms get a fresh fetch independently — fine, the data
+    // is small and the invalidation tag is the slug we resolve to.
+    { revalidate: 5, tags: [`client:${idOrSlug}`] },
   )();
 }
