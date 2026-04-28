@@ -108,14 +108,28 @@ function recordCall(
   error: string | null,
 ): Promise<void> {
   const sb = serviceClient();
-  if (!sb) return Promise.resolve();
+  if (!sb) {
+    console.warn('[ivylens.recordCall] SUPABASE_SERVICE_ROLE_KEY missing — telemetry row not written');
+    return Promise.resolve();
+  }
   // Wrap in a real Promise — supabase's PostgrestFilterBuilder is
   // PromiseLike, not a full Promise, so callers can't chain .catch()
   // off it directly.
   return new Promise<void>(resolve => {
     sb.from('ivylens_api_calls')
       .insert({ endpoint, method, status, duration_ms, rate_limited, error })
-      .then(() => resolve(), () => resolve()); // swallow errors: telemetry must never break the caller
+      .then(({ error: insErr }) => {
+        if (insErr) {
+          // Log so the deployment surfaces "why are the cards still 0"
+          // in Vercel logs. We still resolve — telemetry must never
+          // break the caller.
+          console.error('[ivylens.recordCall] insert failed:', insErr.message);
+        }
+        resolve();
+      }, (err) => {
+        console.error('[ivylens.recordCall] insert threw:', err?.message ?? err);
+        resolve();
+      });
   });
 }
 

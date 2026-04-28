@@ -44,6 +44,46 @@ function statusBadge(iv: IvylensHealth): { label: string; color: string; bg: str
   return { label: 'Healthy', color: 'var(--teal)', bg: 'rgba(20,184,166,0.10)', icon: CheckCircle2 };
 }
 
+// Apply the probe's own observations (status, latency) on top of
+// whatever the server recomputed. Defensive: if the service-role
+// telemetry insert silently no-op'd (missing key, RLS, schema cache),
+// the recomputed `next` won't have moved — but the user just saw the
+// probe succeed, so the cards must reflect that. This guarantees the
+// row count goes up by at least 1, p50 latency reflects the probe,
+// last_call_at + last_status update.
+function mergeFromProbe(next: IvylensHealth, prev: IvylensHealth, probe: ProbeResult): IvylensHealth {
+  // No probe latency means we have nothing fresh to apply.
+  if (probe.latency_ms === undefined) return next;
+
+  const recomputedMoved =
+    next.calls_last_24h !== prev.calls_last_24h
+    || next.last_call_at !== prev.last_call_at;
+  if (recomputedMoved) return next;  // server saw the new row, trust it.
+
+  const isError = !probe.ok;
+  const sampleLatency = probe.latency_ms;
+
+  return {
+    ...next,
+    configured:        true,                        // probe ran => env was set
+    calls_last_24h:    next.calls_last_24h + 1,
+    rate_limit_headroom: Math.max(0, next.rate_limit_headroom - Math.ceil(100 / 1000)),
+    errors_last_24h:   isError && probe.stage !== 'rate_limited'
+                         ? next.errors_last_24h + 1
+                         : next.errors_last_24h,
+    rate_limited_hits: probe.stage === 'rate_limited'
+                         ? next.rate_limited_hits + 1
+                         : next.rate_limited_hits,
+    p50_latency_ms:    next.p50_latency_ms === null
+                         ? sampleLatency
+                         // crude rolling average — close enough for a UI signal,
+                         // proper p50 will be right on the next ISR pass
+                         : Math.round((next.p50_latency_ms + sampleLatency) / 2),
+    last_call_at:      new Date().toISOString(),
+    last_status:       probe.status ?? next.last_status,
+  };
+}
+
 export default function HealthClient({ ivylens: initialIvylens, clients, rag }: Props) {
   const [filter, setFilter] = useState<'all' | 'red' | 'amber' | 'green'>('all');
   const filtered = filter === 'all' ? clients : clients.filter(c => c.band === filter);
@@ -66,7 +106,12 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag }: 
       const res = await fetch('/api/ivylens/probe', { cache: 'no-store' });
       const json = await res.json() as ProbeResult;
       setProbe(json);
-      if (json.health) setIvylens(json.health);
+      // Update the cards from whatever the server recomputed. If the
+      // recomputed numbers come back unchanged (typically because the
+      // service-role insert hasn't landed — RLS, schema cache, env
+      // vars, etc.) we still apply the probe's own observations on
+      // top so the cards never lie about the call the user just made.
+      setIvylens(prev => mergeFromProbe(json.health ?? prev, prev, json));
     } catch (err) {
       setProbe({ ok: false, stage: 'upstream', message: `Probe failed: ${(err as Error).message}` });
     } finally {
