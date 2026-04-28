@@ -187,10 +187,15 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
   }
 
   function visibleFields(dim: FormDimension): FormField[] {
-    // dim.fields and applicable_bands both come from the IvyLens
-    // proxy and have crashed prod when malformed. Guard everything.
+    // Only show fields the schema explicitly marks applicable to the
+    // caller's employee band. Anything where applicable_bands[band]
+    // isn't === true gets hidden — that drops fields IvyLens would
+    // otherwise render as locked / pre-filled "No" for smaller
+    // companies, making the questionnaire substantially shorter for
+    // micro/small bands. Fields with no applicable_bands at all (a
+    // schema gap) are hidden too rather than shown as a guess.
     if (!Array.isArray(dim?.fields)) return [];
-    return dim.fields.filter(f => f?.applicable_bands?.[employeeBand] !== false);
+    return dim.fields.filter(f => f?.applicable_bands?.[employeeBand] === true);
   }
 
   async function handleSubmit() {
@@ -259,7 +264,11 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
     // Guard: schema?.dimensions is treated as array-or-nothing.
     // If IvyLens returns an object or string here we'd render an
     // error rather than crashing every downstream .map.
-    const dims: FormDimension[] = Array.isArray(schema?.dimensions) ? schema!.dimensions : [];
+    const allDims: FormDimension[] = Array.isArray(schema?.dimensions) ? schema!.dimensions : [];
+    // Only keep dimensions that have at least one visible field for
+    // the caller's employee band — otherwise the user clicks through
+    // empty "Section X of N" pages with nothing to answer.
+    const dims = allDims.filter(d => visibleFields(d).length > 0);
     const totalSteps = dims.length + 1; // step 0 = employee count
 
     return (
