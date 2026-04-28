@@ -10,7 +10,7 @@ import {
 import FrictionLensClient from '../(portal)/hire/friction-lens/FrictionLensClient';
 import type { CompanyAssessment } from '@/lib/supabase/types';
 
-const LOGO    = 'https://www.thepeoplesystem.co.uk/email-logo.png';
+const LOGO    = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
 // Keep this in sync with admin/src/app/(admin)/clients/onboard/OnboardWizard.tsx
 // and portal/src/components/modules/SettingsForm.tsx — same bands so a
@@ -51,19 +51,54 @@ export default function OnboardingPage() {
   // Step-4 form
   const [employee, setEmployee] = useState({ full_name: '', email: '', job_title: '', start_date: '' });
 
+  // Surfaces a fatal load failure with a clear message + sign-out
+  // CTA, so the user never gets stuck on a "session expired" toast
+  // they can't escape from. Set when profile or company can't load.
+  const [fatal, setFatal] = useState<string | null>(null);
+
   // ── Initial load: profile + company + any existing assessment ──
+  // Fetched as three SEPARATE queries instead of one joined SELECT.
+  // The previous joined query (profiles ⨝ companies) could return
+  // null silently if RLS blocked the embedded company resource —
+  // dropping the user on a form with profile=null and stuck on
+  // "session expired" with no recovery path. Splitting the query
+  // means a company-RLS quirk doesn't take the profile down with it.
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/auth/login'); return; }
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) { router.replace('/auth/login'); return; }
 
-      // Pull the profile (with company) and the most recent assessment in parallel.
-      const [{ data: p }, { data: a }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id,full_name,onboarding_completed,onboarding_step,role,company_id,companies(id,name,sector,size_band,contact_email,ivylens_company_id)')
-          .eq('id', user.id)
-          .single(),
+      // 1. Profile (no joins — own_profile RLS allows id = auth.uid())
+      const { data: p, error: pErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, onboarding_completed, onboarding_step, role, company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (pErr || !p) {
+        // Real failure — RLS or DB state. Show recovery UI rather than
+        // a useless "session expired" form.
+        setFatal(pErr?.message
+          ? `Couldn't load your profile: ${pErr.message}`
+          : 'Your profile could not be found. Please contact The People System.');
+        setInit(false);
+        return;
+      }
+
+      if (p.onboarding_completed) {
+        router.replace('/dashboard');
+        return;
+      }
+
+      // 2. Company (only if linked) and 3. Most-recent assessment, in parallel.
+      const [companyRes, assessmentRes] = await Promise.all([
+        p.company_id
+          ? supabase
+              .from('companies')
+              .select('id, name, sector, size_band, contact_email, ivylens_company_id')
+              .eq('id', p.company_id)
+              .single()
+          : Promise.resolve({ data: null, error: null } as any),
         supabase
           .from('company_assessments')
           .select('*')
@@ -72,23 +107,29 @@ export default function OnboardingPage() {
           .maybeSingle(),
       ]);
 
-      if (p?.onboarding_completed) {
-        router.replace('/dashboard');
+      const c = companyRes.data ?? null;
+      const a = assessmentRes.data ?? null;
+
+      if (!c) {
+        // Profile loaded but no company — was the bug pre-47fe03e.
+        // Surface it so the user knows what to do rather than seeing
+        // a generic "session expired" on save.
+        setFatal('Your account isn\'t linked to a company yet. Contact The People System to finish setup.');
+        setInit(false);
         return;
       }
 
-      const c = (p as any)?.companies;
       setProfile(p);
       setCompany(c);
-      setAssessment((a ?? null) as CompanyAssessment | null);
+      setAssessment(a as CompanyAssessment | null);
       setWelcome({
-        full_name: p?.full_name ?? '',
-        sector:    c?.sector    ?? '',
-        size_band: c?.size_band ?? '',
+        full_name: p.full_name ?? '',
+        sector:    c.sector    ?? '',
+        size_band: c.size_band ?? '',
       });
 
       // Resume on the saved step (clamped 1..5)
-      const saved = Math.max(1, Math.min(TOTAL_STEPS, p?.onboarding_step ?? 1)) as Step;
+      const saved = Math.max(1, Math.min(TOTAL_STEPS, p.onboarding_step ?? 1)) as Step;
       setStep(saved);
       setInit(false);
     })();
@@ -223,6 +264,37 @@ export default function OnboardingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAF8' }}>
         <Loader2 size={24} className="animate-spin" style={{ color: 'var(--ink-faint)' }} />
+      </div>
+    );
+  }
+
+  if (fatal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FAFAF8' }}>
+        <div className="w-full max-w-[420px]">
+          <div className="flex justify-center mb-6">
+            <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto" priority />
+          </div>
+          <div className="rounded-[20px] p-7" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] mb-2" style={{ color: 'var(--red)' }}>
+              Account setup needed
+            </p>
+            <h1 className="font-display font-bold text-lg mb-2" style={{ color: '#0A0F1E' }}>
+              We can&rsquo;t continue right now
+            </h1>
+            <p className="text-sm mb-5" style={{ color: 'var(--ink-soft)' }}>{fatal}</p>
+            <div className="flex flex-col gap-2">
+              <a href="mailto:hello@thepeoplesystem.co.uk" className="btn-cta justify-center">
+                Contact support
+              </a>
+              <form action="/auth/signout" method="post">
+                <button type="submit" className="btn-secondary w-full justify-center">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

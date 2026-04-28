@@ -2,10 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 import './globals.css';
 
-// Logo hosted on the marketing domain — same image the email
-// templates use. Keeping it on a TPS-controlled host avoids the
-// off-domain warnings that flagged the earlier Vercel blob URL.
-const LOGO = 'https://www.thepeoplesystem.co.uk/email-logo.png';
+// In-app logo / favicon source. Uses the Vercel blob URL — the same
+// asset the sidebar, login, and other portal pages reference, which
+// demonstrably works in production. The marketing-domain URL
+// (www.thepeoplesystem.co.uk/email-logo.png) is reserved for email
+// templates where Resend deliverability flags off-domain images;
+// browsers don't have that constraint.
+const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 export const metadata: Metadata = {
   title: { default: 'The People System Admin', template: '%s | TPS Admin' },
