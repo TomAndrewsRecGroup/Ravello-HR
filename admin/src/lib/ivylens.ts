@@ -20,6 +20,10 @@ export interface IvylensResponse<T> {
   error: string | null;
   status: number;
   rate_limited?: boolean;
+  /** Promise that resolves when the telemetry insert lands. Optional —
+   * normal callers ignore it; the /health probe awaits it so the
+   * recomputed aggregate includes the call we just made. */
+  telemetry?: Promise<void>;
 }
 
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)); }
@@ -54,8 +58,8 @@ export async function ivylensRequest<T = any>(
 
       if (res.ok) {
         const data = await res.json() as T;
-        recordCall(path, method, res.status, Date.now() - started, false, null);
-        return { data, error: null, status: res.status };
+        const telemetry = recordCall(path, method, res.status, Date.now() - started, false, null);
+        return { data, error: null, status: res.status, telemetry };
       }
 
       lastStatus = res.status;
@@ -63,8 +67,8 @@ export async function ivylensRequest<T = any>(
 
       // 429: signal rate-limited so caller can use stale cache
       if (res.status === 429) {
-        recordCall(path, method, 429, Date.now() - started, true, lastError);
-        return { data: null, error: lastError, status: 429, rate_limited: true };
+        const telemetry = recordCall(path, method, 429, Date.now() - started, true, lastError);
+        return { data: null, error: lastError, status: 429, rate_limited: true, telemetry };
       }
 
       // 5xx: retry with exponential backoff (2s, 4s, 8s)
@@ -74,8 +78,8 @@ export async function ivylensRequest<T = any>(
       }
 
       // 4xx other than 429: no retry
-      recordCall(path, method, res.status, Date.now() - started, false, lastError);
-      return { data: null, error: lastError, status: res.status };
+      const telemetry = recordCall(path, method, res.status, Date.now() - started, false, lastError);
+      return { data: null, error: lastError, status: res.status, telemetry };
     } catch (err: any) {
       lastError = err?.message ?? 'Network error';
       if (attempt < retries) {
@@ -85,12 +89,15 @@ export async function ivylensRequest<T = any>(
     }
   }
 
-  recordCall(path, method, lastStatus, Date.now() - started, false, lastError);
-  return { data: null, error: lastError, status: lastStatus };
+  const telemetry = recordCall(path, method, lastStatus, Date.now() - started, false, lastError);
+  return { data: null, error: lastError, status: lastStatus, telemetry };
 }
 
 // ─── Telemetry ──────────────────────────────────────────────────────────────
-// Fire-and-forget write to ivylens_api_calls. Never blocks the response.
+// Returns a promise that resolves when the row is persisted. Most
+// callers ignore it (fire-and-forget — the response shouldn't block on
+// telemetry). The /health probe awaits it so its recomputed aggregate
+// reflects the call it just made.
 
 function recordCall(
   endpoint: string,
@@ -99,12 +106,17 @@ function recordCall(
   duration_ms: number,
   rate_limited: boolean,
   error: string | null,
-): void {
+): Promise<void> {
   const sb = serviceClient();
-  if (!sb) return;
-  sb.from('ivylens_api_calls')
-    .insert({ endpoint, method, status, duration_ms, rate_limited, error })
-    .then(() => {}, () => {}); // swallow errors: telemetry must never break the caller
+  if (!sb) return Promise.resolve();
+  // Wrap in a real Promise — supabase's PostgrestFilterBuilder is
+  // PromiseLike, not a full Promise, so callers can't chain .catch()
+  // off it directly.
+  return new Promise<void>(resolve => {
+    sb.from('ivylens_api_calls')
+      .insert({ endpoint, method, status, duration_ms, rate_limited, error })
+      .then(() => resolve(), () => resolve()); // swallow errors: telemetry must never break the caller
+  });
 }
 
 // ─── Cache helpers ──────────────────────────────────────────────────────────

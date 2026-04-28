@@ -1,6 +1,5 @@
 'use client';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database, Loader2, PlugZap } from 'lucide-react';
 import type { ClientHealth, IvylensHealth } from './page';
@@ -14,6 +13,10 @@ interface ProbeResult {
   status?: number;
   message: string;
   error?: string;
+  /** Recomputed telemetry aggregate after the probe call landed.
+   *  When present we swap the panel's cards over to it so the user
+   *  doesn't see stale zeros from page-level ISR. */
+  health?: IvylensHealth;
 }
 
 interface Props {
@@ -41,14 +44,17 @@ function statusBadge(iv: IvylensHealth): { label: string; color: string; bg: str
   return { label: 'Healthy', color: 'var(--teal)', bg: 'rgba(20,184,166,0.10)', icon: CheckCircle2 };
 }
 
-export default function HealthClient({ ivylens, clients, rag }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+export default function HealthClient({ ivylens: initialIvylens, clients, rag }: Props) {
   const [filter, setFilter] = useState<'all' | 'red' | 'amber' | 'green'>('all');
   const filtered = filter === 'all' ? clients : clients.filter(c => c.band === filter);
 
   const [probing, setProbing] = useState(false);
   const [probe, setProbe] = useState<ProbeResult | null>(null);
+  // Live mirror of the IvyLens telemetry the page rendered with. Probe
+  // responses include a freshly-recomputed aggregate (`health`) and we
+  // swap to it here, so the cards reflect the call we just made
+  // without waiting for the 30-second ISR window to elapse.
+  const [ivylens, setIvylens] = useState<IvylensHealth>(initialIvylens);
 
   const iv = statusBadge(ivylens);
   const IvIcon = iv.icon;
@@ -60,9 +66,7 @@ export default function HealthClient({ ivylens, clients, rag }: Props) {
       const res = await fetch('/api/ivylens/probe', { cache: 'no-store' });
       const json = await res.json() as ProbeResult;
       setProbe(json);
-      // Probe writes a row to ivylens_api_calls — refresh the page
-      // counters so the user sees the call they just made appear.
-      if (json.ok) startTransition(() => router.refresh());
+      if (json.health) setIvylens(json.health);
     } catch (err) {
       setProbe({ ok: false, stage: 'upstream', message: `Probe failed: ${(err as Error).message}` });
     } finally {
