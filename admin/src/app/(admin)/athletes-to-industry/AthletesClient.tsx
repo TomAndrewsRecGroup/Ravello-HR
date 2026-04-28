@@ -239,97 +239,106 @@ export default function AthletesClient({
         </div>
       )}
 
-      {/* List */}
-      <div className="card p-0 overflow-hidden">
-        {filtered.length === 0 ? (
-          <div className="px-5 py-12 text-center text-sm" style={{ color: 'var(--ink-faint)' }}>
-            {filterCompany ? 'No athletes for this client.' : 'No athletes yet across the platform.'}
-          </div>
-        ) : (
-          <ul className="divide-y" style={{ borderColor: 'var(--line)' }}>
-            {filtered.map(a => {
-              const isBusy = busy.has(a.id);
-              const matched = interestsByAthlete.get(a.id) ?? 0;
-              const trainingMatched = trainingByAthlete.get(a.id) ?? 0;
-              return (
-                <li key={a.id} className="px-5 py-4 flex gap-4 items-start">
-                  <AvatarInitials name={a.full_name} size={40} />
+      {/* Card grid — same shape as the portal AthleteCard, with admin
+          actions revealed in the top-right of each card. */}
+      {filtered.length === 0 ? (
+        <div className="card p-12 text-center text-sm" style={{ color: 'var(--ink-faint)' }}>
+          {filterCompany ? 'No athletes for this client.' : 'No athletes yet across the platform.'}
+        </div>
+      ) : (
+        <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map(a => {
+            const isBusy = busy.has(a.id);
+            const matched = interestsByAthlete.get(a.id) ?? 0;
+            const trainingMatched = trainingByAthlete.get(a.id) ?? 0;
+            return (
+              <li
+                key={a.id}
+                className="card p-3 relative flex flex-col"
+                style={{ boxShadow: 'none', borderColor: 'var(--line)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <AvatarInitials name={a.full_name} size={36} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-                        {a.full_name}
-                      </span>
-                      {a.company_name && (
-                        <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-                          {a.company_name}
-                        </span>
-                      )}
-                      {matched > 0 && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
-                          {matched} role{matched === 1 ? '' : 's'}
-                        </span>
-                      )}
-                      {trainingMatched > 0 && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' }}>
-                          {trainingMatched} training
-                        </span>
-                      )}
-                    </div>
-                    {(a.sport || a.previous_role) && (
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>
-                        {[a.sport, a.previous_role].filter(Boolean).join(' · ')}
-                      </p>
+                    <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
+                      {a.full_name}
+                    </p>
+                    <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--ink-soft)' }}>
+                      {[a.sport, a.previous_role].filter(Boolean).join(' · ') || 'Athlete'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  {a.company_name && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}>
+                      {a.company_name}
+                    </span>
+                  )}
+                  {matched > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+                      {matched} role{matched === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  {trainingMatched > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' }}>
+                      {trainingMatched} training
+                    </span>
+                  )}
+                </div>
+
+                {(a.cv_url || a.cv_kind === 'text' || a.linkedin_url) && (
+                  <div className="flex items-center gap-3 mt-2 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                    {a.cv_url && (
+                      <a href={a.cv_url} target="_blank" rel="noopener noreferrer"
+                         className="inline-flex items-center gap-0.5 hover:underline truncate" style={{ color: 'var(--purple)' }}>
+                        <FileText size={10} /> {a.cv_filename ?? 'CV'} <ExternalLink size={9} />
+                      </a>
                     )}
-                    <div className="flex items-center gap-3 mt-1 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-                      {a.cv_url && (
-                        <a href={a.cv_url} target="_blank" rel="noopener noreferrer"
-                           className="inline-flex items-center gap-0.5 hover:underline" style={{ color: 'var(--purple)' }}>
-                          <FileText size={10} /> {a.cv_filename ?? 'CV'} <ExternalLink size={9} />
-                        </a>
-                      )}
-                      {a.cv_kind === 'text' && (
-                        <span className="inline-flex items-center gap-0.5">
-                          <FileText size={10} /> Pasted CV
-                        </span>
-                      )}
-                      {a.linkedin_url && (
-                        <a href={a.linkedin_url} target="_blank" rel="noopener noreferrer"
-                           className="hover:underline" style={{ color: 'var(--purple)' }}>
-                          LinkedIn
-                        </a>
-                      )}
-                    </div>
+                    {a.cv_kind === 'text' && (
+                      <span className="inline-flex items-center gap-0.5">
+                        <FileText size={10} /> Pasted CV
+                      </span>
+                    )}
+                    {a.linkedin_url && (
+                      <a href={a.linkedin_url} target="_blank" rel="noopener noreferrer"
+                         className="hover:underline" style={{ color: 'var(--purple)' }}>
+                        LinkedIn
+                      </a>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => setMatching(a)} disabled={isBusy}
-                            className="btn-secondary btn-sm flex items-center gap-1"
-                            style={{ padding: '4px 8px', fontSize: 11 }}
-                            title="Match to partner role">
-                      <UserRoundSearch size={11} /> Roles
-                    </button>
-                    <button onClick={() => setMatchingTraining(a)} disabled={isBusy}
-                            className="btn-sm flex items-center gap-1 font-semibold"
-                            style={{
-                              padding: '4px 8px', fontSize: 11, borderRadius: 8,
-                              background: 'rgba(59,111,255,0.08)', color: 'var(--blue)',
-                              border: '1px solid rgba(59,111,255,0.20)',
-                            }}
-                            title="Match to training">
-                      <GraduationCap size={11} /> Training
-                    </button>
-                    <button onClick={() => remove(a.id)} disabled={isBusy} className="btn-icon btn-sm"
-                            style={{ color: 'var(--red)' }} title="Delete">
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                )}
+
+                <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px dashed var(--line)' }}>
+                  <button onClick={() => setMatching(a)} disabled={isBusy}
+                          className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-1"
+                          style={{ padding: '4px 8px', fontSize: 11 }}
+                          title="Match to partner role">
+                    <UserRoundSearch size={11} /> Roles
+                  </button>
+                  <button onClick={() => setMatchingTraining(a)} disabled={isBusy}
+                          className="btn-sm flex-1 flex items-center justify-center gap-1 font-semibold"
+                          style={{
+                            padding: '4px 8px', fontSize: 11, borderRadius: 8,
+                            background: 'rgba(59,111,255,0.08)', color: 'var(--blue)',
+                            border: '1px solid rgba(59,111,255,0.20)',
+                          }}
+                          title="Match to training">
+                    <GraduationCap size={11} /> Training
+                  </button>
+                  <button onClick={() => remove(a.id)} disabled={isBusy} className="btn-icon btn-sm flex-shrink-0"
+                          style={{ color: 'var(--red)' }} title="Delete">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {matching && (
         <MatchPickerModal

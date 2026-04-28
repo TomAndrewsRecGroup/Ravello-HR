@@ -1,29 +1,37 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Trophy, ArrowRight } from 'lucide-react';
+import { Trophy, ArrowRight, Plus } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import AthleteCard from './AthleteCard';
 import type { AthleteRow, InterestRow } from './types';
 
-const AthletesModal = dynamic(() => import('./AthletesModal'), { ssr: false });
+const AthletesModal    = dynamic(() => import('./AthletesModal'),    { ssr: false });
+const AthleteFormModal = dynamic(() => import('./AthleteFormModal'), { ssr: false });
 
 interface Props {
   athletes: AthleteRow[];
   interests: InterestRow[];
 }
 
-// Read-only athletes panel.
+// Client-portal athletes panel.
 //
-// The People System staff own the recruitment side of the Athletes
-// To Industry programme — adding athletes, matching them to partner
-// roles, tracking interest. The client just sees their roster here
-// with the match count for each athlete. Edit + match flows are
-// handled in the admin portal.
+// Clients own the roster: they add athletes here and upload (or paste)
+// each CV. Match management is admin-only — when a client adds an
+// athlete, The People System staff handle introductions to partner
+// roles + training providers and the match counts surface back here
+// on each card.
 
 export default function AthletesPanel({ athletes, interests }: Props) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const refresh = () => startTransition(() => router.refresh());
+
   const [showAll, setShowAll] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<AthleteRow | null>(null);
 
   const interestsByAthlete = useMemo(() => {
     const m = new Map<string, InterestRow[]>();
@@ -60,6 +68,9 @@ export default function AthletesPanel({ athletes, interests }: Props) {
               See all <ArrowRight size={11} />
             </button>
           )}
+          <button onClick={() => setCreating(true)} className="btn-cta btn-sm flex items-center gap-1.5">
+            <Plus size={12} /> Add athlete
+          </button>
         </div>
 
         {recent.length === 0 ? (
@@ -67,8 +78,11 @@ export default function AthletesPanel({ athletes, interests }: Props) {
             <AvatarInitials name="?" size={48} className="mb-3 opacity-30" />
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-soft)' }}>No athletes yet</p>
             <p className="text-xs max-w-[260px]" style={{ color: 'var(--ink-faint)' }}>
-              Your athlete roster is managed by The People System. Get in touch to start building it.
+              Add your first athlete and upload their CV — The People System will take it from there.
             </p>
+            <button onClick={() => setCreating(true)} className="btn-cta btn-sm flex items-center gap-1.5 mt-4">
+              <Plus size={12} /> Add your first athlete
+            </button>
           </div>
         ) : (
           <ul className="grid sm:grid-cols-2 gap-2.5 flex-1 content-start">
@@ -77,6 +91,7 @@ export default function AthletesPanel({ athletes, interests }: Props) {
                 key={a.id}
                 athlete={a}
                 matchCount={interestsByAthlete.get(a.id)?.length ?? 0}
+                onEdit={() => setEditing(a)}
               />
             ))}
           </ul>
@@ -87,7 +102,25 @@ export default function AthletesPanel({ athletes, interests }: Props) {
         <AthletesModal
           athletes={athletes}
           interestsByAthlete={interestsByAthlete}
+          onEdit={(a) => { setShowAll(false); setEditing(a); }}
           onClose={() => setShowAll(false)}
+        />
+      )}
+
+      {creating && (
+        <AthleteFormModal
+          mode="create"
+          onClose={() => setCreating(false)}
+          onSaved={() => { setCreating(false); refresh(); }}
+        />
+      )}
+
+      {editing && (
+        <AthleteFormModal
+          mode="edit"
+          athlete={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); refresh(); }}
         />
       )}
     </>
