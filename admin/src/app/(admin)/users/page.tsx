@@ -27,7 +27,7 @@ interface UserRow {
   role:       string;
   company_id: string | null;
   created_at: string;
-  companies:  { id: string; name: string } | null;
+  companies:  { id: string; slug: string | null; name: string } | null;
 }
 
 export default async function UsersPage() {
@@ -47,7 +47,7 @@ export default async function UsersPage() {
     sb.from('profiles')
       .select('*', { count: 'exact', head: true })
       .neq('role', 'tps_admin'),
-    sb.from('companies').select('id, name'),
+    sb.from('companies').select('id, slug, name'),
   ]);
 
   // Surface query errors to server logs so a future regression doesn't
@@ -56,7 +56,7 @@ export default async function UsersPage() {
   if (countRes.error)     console.error('[/users] profiles count query failed:',    countRes.error.message);
   if (companiesRes.error) console.error('[/users] companies lookup query failed:',  companiesRes.error.message);
 
-  const companyMap = new Map<string, { id: string; name: string }>();
+  const companyMap = new Map<string, { id: string; slug: string | null; name: string }>();
   for (const c of companiesRes.data ?? []) companyMap.set(c.id, c);
 
   const rows: UserRow[] = (usersRes.data ?? []).map(u => ({

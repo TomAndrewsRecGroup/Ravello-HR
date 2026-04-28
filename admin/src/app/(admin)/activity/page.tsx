@@ -48,19 +48,19 @@ export default async function ActivityPage() {
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
   const [reqRes, ticketRes, docRes, candRes, notesRes, complianceRes, servReqRes] = await Promise.all([
-    supabase.from('requisitions').select('id, title, stage, created_at, updated_at, companies(name, id)')
+    supabase.from('requisitions').select('id, title, stage, created_at, updated_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(30),
-    supabase.from('tickets').select('id, subject, status, created_at, resolved_at, companies(name, id)')
+    supabase.from('tickets').select('id, subject, status, created_at, resolved_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(30),
-    supabase.from('documents').select('id, name, created_at, companies(name, id)')
+    supabase.from('documents').select('id, name, created_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
-    supabase.from('candidates').select('id, full_name, created_at, companies(name, id)')
+    supabase.from('candidates').select('id, full_name, created_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
-    supabase.from('client_notes').select('id, title, note_type, created_at, companies(name, id), profiles(full_name)')
+    supabase.from('client_notes').select('id, title, note_type, created_at, companies(id, slug, name), profiles(full_name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
-    supabase.from('compliance_items').select('id, title, status, created_at, companies(name, id)')
+    supabase.from('compliance_items').select('id, title, status, created_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
-    supabase.from('service_requests').select('id, subject, status, created_at, companies(name, id)')
+    supabase.from('service_requests').select('id, subject, status, created_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
   ]);
 
@@ -96,7 +96,7 @@ export default async function ActivityPage() {
       id: `note-${n.id}`, type: 'service_request',
       title: n.title ?? `${n.note_type} note`, subtitle: `by ${n.profiles?.full_name ?? 'TPS'}`,
       companyName: n.companies?.name ?? '', companyId: n.companies?.id ?? '',
-      href: `/clients/${n.companies?.id ?? ''}`, timestamp: n.created_at,
+      href: `/clients/${n.companies?.slug ?? n.companies?.id ?? ''}`, timestamp: n.created_at,
     })),
     ...(complianceRes.data ?? []).map((c: any) => ({
       id: `comp-${c.id}`, type: 'compliance_updated',

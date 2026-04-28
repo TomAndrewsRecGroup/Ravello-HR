@@ -13,8 +13,8 @@ export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
   const [reportsRes, companiesRes, reqsRes, candsRes, compRes, ticketsRes] = await Promise.all([
-    supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,name)').order('created_at', { ascending: false }).limit(500),
-    supabase.from('companies').select('id,name').eq('active', true).order('name'),
+    supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
+    supabase.from('companies').select('id,slug,name').eq('active', true).order('name'),
     supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }),
     supabase.from('compliance_items').select('title,category,status,due_date,companies(name)').order('due_date'),
@@ -110,7 +110,7 @@ export default async function AdminReportsPage() {
                       >
                         <td className="px-4 py-3">
                           <Link prefetch={false}
-                            href={`/clients/${(r.companies as any)?.id}`}
+                            href={`/clients/${(r.companies as any)?.slug ?? (r.companies as any)?.id}`}
                             className="font-medium hover:underline"
                             style={{ color: 'var(--purple)' }}
                           >

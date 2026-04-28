@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props {
   reqs: any[];
-  companies: { id: string; name: string }[];
+  companies: { id: string; slug?: string | null; name: string }[];
 }
 
 const FRICTION_ORDER: Record<string, number> = {
@@ -162,13 +162,14 @@ export default function HiringClient({ reqs, companies }: Props) {
                 const days      = r._daysOpen;
                 const friction  = r._friction;
                 const companyId = r.companies?.id;
+                const companySlug = r.companies?.slug;
 
                 return (
                   <tr key={r.id} style={rowBorderStyle(r, days)}>
                     <td>
                       {companyId ? (
                         <Link prefetch={false}
-                          href={`/clients/${companyId}`}
+                          href={`/clients/${companySlug ?? companyId}`}
                           className="font-medium hover:underline"
                           style={{ color: 'var(--purple)' }}
                         >
@@ -208,7 +209,7 @@ export default function HiringClient({ reqs, companies }: Props) {
                           View Role →
                         </Link>
                         {companyId && (
-                          <Link href={`/clients/${companyId}`} prefetch={false} className="btn-ghost btn-sm">
+                          <Link href={`/clients/${companySlug ?? companyId}`} prefetch={false} className="btn-ghost btn-sm">
                             Client
                           </Link>
                         )}
