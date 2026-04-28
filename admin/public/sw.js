@@ -7,9 +7,18 @@
  * - API/auth/data: never cached (security)
  */
 
-const CACHE_NAME = 'tps-admin-v1';
+// Bumping this version invalidates ALL previously-cached assets when
+// the new SW activates. Bump it whenever you ship a change that
+// users might see stuck (manifest URL, layout HTML, etc.) — the
+// activate handler below deletes every cache whose name doesn't
+// match the current CACHE_NAME.
+const CACHE_NAME = 'tps-admin-v2';
 const OFFLINE_URL = '/offline';
 
+// manifest.json deliberately excluded: it's the file that points at
+// the favicon URL, and we never want a stale manifest pinning a dead
+// URL. JS/CSS bundles already have content hashes in their names so
+// caching them is safe.
 const CACHEABLE_EXTENSIONS = /\.(js|css|woff2?|ttf|png|jpg|jpeg|svg|ico|webp)(\?.*)?$/i;
 
 const NEVER_CACHE = [
