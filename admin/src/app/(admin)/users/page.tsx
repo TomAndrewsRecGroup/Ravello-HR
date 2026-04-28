@@ -16,6 +16,10 @@ export default async function UsersPage() {
     supabase
       .from('profiles')
       .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
+      // Match the count query below — list and count must agree, otherwise
+      // the subtitle says "1 client account" while the row shows a TPS
+      // staff member.
+      .neq('role', 'tps_admin')
       .order('created_at', { ascending: false })
       .limit(PAGE_CAP),
     supabase

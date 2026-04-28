@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
@@ -89,6 +90,17 @@ export async function POST(request: NextRequest) {
     target_type: 'profile',
     metadata: { email, company_id, role: safeRole },
   });
+
+  // Cache busting — without these, the freshly-added user doesn't
+  // appear on /clients/[id] (cached via unstable_cache, 60s TTL),
+  // /users (revalidate=30), or /dashboard (counts) until the TTL
+  // expires. The client_detail cache uses a tag, so revalidateTag
+  // is the right hammer there; the others are page-level and use
+  // revalidatePath.
+  revalidateTag(`client:${company_id}`);
+  revalidatePath('/users');
+  revalidatePath('/dashboard');
+  revalidatePath(`/clients/${company_id}`);
 
   // Branded follow-up alongside Supabase's built-in magic-link email.
   // Supabase's email is functional (the auth token); this one is the
