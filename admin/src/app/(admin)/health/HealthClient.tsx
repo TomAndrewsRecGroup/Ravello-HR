@@ -1,9 +1,20 @@
 'use client';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database, Loader2, PlugZap } from 'lucide-react';
 import type { ClientHealth, IvylensHealth } from './page';
 import { clientHref } from '@/lib/clientHref';
+
+interface ProbeResult {
+  ok: boolean;
+  stage: 'env' | 'live' | 'rate_limited' | 'upstream';
+  env?: { IVYLENS_API_URL: boolean; IVYLENS_API_KEY: boolean; apiHost: string | null };
+  latency_ms?: number;
+  status?: number;
+  message: string;
+  error?: string;
+}
 
 interface Props {
   ivylens: IvylensHealth;
@@ -31,24 +42,92 @@ function statusBadge(iv: IvylensHealth): { label: string; color: string; bg: str
 }
 
 export default function HealthClient({ ivylens, clients, rag }: Props) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [filter, setFilter] = useState<'all' | 'red' | 'amber' | 'green'>('all');
   const filtered = filter === 'all' ? clients : clients.filter(c => c.band === filter);
 
+  const [probing, setProbing] = useState(false);
+  const [probe, setProbe] = useState<ProbeResult | null>(null);
+
   const iv = statusBadge(ivylens);
   const IvIcon = iv.icon;
+
+  async function runProbe() {
+    setProbing(true);
+    setProbe(null);
+    try {
+      const res = await fetch('/api/ivylens/probe', { cache: 'no-store' });
+      const json = await res.json() as ProbeResult;
+      setProbe(json);
+      // Probe writes a row to ivylens_api_calls — refresh the page
+      // counters so the user sees the call they just made appear.
+      if (json.ok) startTransition(() => router.refresh());
+    } catch (err) {
+      setProbe({ ok: false, stage: 'upstream', message: `Probe failed: ${(err as Error).message}` });
+    } finally {
+      setProbing(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
       {/* ── IvyLens integration panel ── */}
       <section>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <h2 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>
             IvyLens Integration
           </h2>
-          <span className="badge text-xs font-semibold flex items-center gap-1.5" style={{ background: iv.bg, color: iv.color }}>
-            <IvIcon size={12} /> {iv.label}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={runProbe}
+              disabled={probing}
+              className="btn-secondary btn-sm flex items-center gap-1.5"
+            >
+              {probing ? <Loader2 size={12} className="animate-spin" /> : <PlugZap size={12} />}
+              {probing ? 'Testing…' : 'Test connection'}
+            </button>
+            <span className="badge text-xs font-semibold flex items-center gap-1.5" style={{ background: iv.bg, color: iv.color }}>
+              <IvIcon size={12} /> {iv.label}
+            </span>
+          </div>
         </div>
+
+        {/* Probe result strip */}
+        {probe && (
+          <div
+            className="card p-3 mb-3 flex items-start gap-2.5"
+            style={{
+              background: probe.ok ? 'rgba(20,184,166,0.06)' : 'rgba(217,68,68,0.06)',
+              borderColor: probe.ok ? 'rgba(20,184,166,0.30)' : 'rgba(217,68,68,0.30)',
+            }}
+          >
+            {probe.ok
+              ? <CheckCircle2 size={15} style={{ color: 'var(--teal)', flexShrink: 0, marginTop: 2 }} />
+              : <XCircle      size={15} style={{ color: 'var(--red)',  flexShrink: 0, marginTop: 2 }} />}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={{ color: probe.ok ? 'var(--teal)' : 'var(--red)' }}>
+                {probe.ok ? 'Connection healthy' : 'Connection failed'}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>
+                {probe.message}
+              </p>
+              {(probe.latency_ms !== undefined || probe.status !== undefined || probe.env?.apiHost) && (
+                <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+                  {probe.env?.apiHost && <>host: <strong>{probe.env.apiHost}</strong> · </>}
+                  {probe.status !== undefined && <>status: <strong>{probe.status}</strong> · </>}
+                  {probe.latency_ms !== undefined && <>latency: <strong>{probe.latency_ms}ms</strong></>}
+                </p>
+              )}
+              {probe.env && (probe.env.IVYLENS_API_URL === false || probe.env.IVYLENS_API_KEY === false) && (
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--ink-faint)' }}>
+                  Env: IVYLENS_API_URL = <strong style={{ color: probe.env.IVYLENS_API_URL ? 'var(--teal)' : 'var(--red)' }}>{probe.env.IVYLENS_API_URL ? 'set' : 'missing'}</strong> · IVYLENS_API_KEY = <strong style={{ color: probe.env.IVYLENS_API_KEY ? 'var(--teal)' : 'var(--ink-faint)' }}>{probe.env.IVYLENS_API_KEY ? 'set' : 'not set (public endpoint)'}</strong>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="card p-4">

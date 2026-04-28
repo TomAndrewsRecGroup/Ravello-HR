@@ -113,7 +113,6 @@ export default function BDRolesClient({ roles }: Props) {
                 <th>Source</th>
                 <th>Scanned</th>
                 <th>Origin</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +133,22 @@ export default function BDRolesClient({ roles }: Props) {
                   </td>
                   <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r)}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
-                  <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '-'}</td>
+                  <td>
+                    {r.source_url ? (
+                      <a
+                        href={r.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 hover:underline"
+                        style={{ color: 'var(--purple)' }}
+                        title={r.source_board ?? r.source_url}
+                      >
+                        Source <ExternalLink size={11} />
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--ink-faint)' }}>-</span>
+                    )}
+                  </td>
                   <td style={{ color: 'var(--ink-faint)' }}>{relative(r.scanned_at)}</td>
                   <td>
                     {r.company_source === 'ivylens' ? (
@@ -146,13 +160,6 @@ export default function BDRolesClient({ roles }: Props) {
                         Local
                       </span>
                     )}
-                  </td>
-                  <td>
-                    {r.source_url ? (
-                      <a href={r.source_url} target="_blank" rel="noopener noreferrer" className="btn-icon" title="Open listing">
-                        <ExternalLink size={13} />
-                      </a>
-                    ) : '-'}
                   </td>
                 </tr>
               ))}

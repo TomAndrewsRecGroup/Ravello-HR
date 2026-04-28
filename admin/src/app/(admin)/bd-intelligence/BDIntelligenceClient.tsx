@@ -266,6 +266,7 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                   {colCompanies.map((c: any) => {
                     const compRoles   = rolesByCompany[c.id] ?? [];
                     const activeCount = compRoles.filter((r: any) => r.still_active).length;
+                    const salary      = getSalaryRange(compRoles);
                     return (
                       <div
                         key={c.id}
@@ -280,10 +281,22 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                       >
                         <p className="font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>{c.company_name}</p>
                         {c.domain && <p className="text-xs mb-2" style={{ color: 'var(--ink-faint)' }}>{c.domain}</p>}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+
+                        <div className="flex items-center gap-2 flex-wrap mb-2 text-[11px]">
+                          <span style={{ color: 'var(--ink-faint)' }}>
                             {activeCount > 0 ? `${activeCount} active role${activeCount > 1 ? 's' : ''}` : 'No active roles'}
                           </span>
+                          {salary !== '-' && (
+                            <span className="font-semibold" style={{ color: 'var(--purple)' }}>{salary}</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          {c.last_seen_at ? (
+                            <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
+                              {relativeTime(c.last_seen_at)}
+                            </span>
+                          ) : <span />}
                           <button
                             onClick={() => setModalCompany(c)}
                             className="text-xs font-medium"
@@ -292,11 +305,6 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                             View →
                           </button>
                         </div>
-                        {c.last_seen_at && (
-                          <p className="text-[10px] mt-1.5" style={{ color: 'var(--ink-faint)' }}>
-                            {relativeTime(c.last_seen_at)}
-                          </p>
-                        )}
                       </div>
                     );
                   })}

@@ -430,7 +430,6 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                           <th>Model</th>
                           <th>Source</th>
                           <th>Scanned</th>
-                          <th>Link</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -447,21 +446,23 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                             <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max, r.salary_text)}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '-'}</td>
-                            <td style={{ color: 'var(--ink-faint)' }}>{r.source_board ?? '-'}</td>
-                            <td style={{ color: 'var(--ink-faint)' }}>{fmtDate(r.scanned_at)}</td>
                             <td>
                               {r.source_url ? (
                                 <a
                                   href={r.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="btn-icon"
-                                  title="Open listing"
+                                  className="inline-flex items-center gap-1 hover:underline"
+                                  style={{ color: 'var(--purple)' }}
+                                  title={r.source_board ?? r.source_url}
                                 >
-                                  <ExternalLink size={13} />
+                                  Source <ExternalLink size={11} />
                                 </a>
-                              ) : '-'}
+                              ) : (
+                                <span style={{ color: 'var(--ink-faint)' }}>-</span>
+                              )}
                             </td>
+                            <td style={{ color: 'var(--ink-faint)' }}>{fmtDate(r.scanned_at)}</td>
                           </tr>
                         ))}
                       </tbody>
