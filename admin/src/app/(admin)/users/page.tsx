@@ -1,29 +1,39 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import AdminTopbar from '@/components/layout/AdminTopbar';
-import Link from 'next/link';
 import UsersClient from './UsersClient';
 
 export const metadata: Metadata = { title: 'Users' };
-export const revalidate = 30;
+// No cache — admin staff need to see freshly-onboarded users
+// immediately, not 30 seconds later. The page is staff-only via the
+// (admin) layout's role gate, so there's no perf concern from
+// rendering it dynamic.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// Cap on initial fetch — see /candidates/page.tsx for the same pattern.
 const PAGE_CAP = 500;
 
+// Service-role read — bypasses RLS so the list always matches the
+// dashboard count, regardless of session-cookie state. The (admin)
+// layout already enforces tps_admin access; no point evaluating RLS
+// a second time inside the page.
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+}
+
 export default async function UsersPage() {
-  const supabase = createServerSupabaseClient();
+  const sb = adminClient();
   const [{ data: users }, { count: totalUsers }] = await Promise.all([
-    supabase
-      .from('profiles')
+    sb.from('profiles')
       .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
-      // Match the count query below — list and count must agree, otherwise
-      // the subtitle says "1 client account" while the row shows a TPS
-      // staff member.
       .neq('role', 'tps_admin')
       .order('created_at', { ascending: false })
       .limit(PAGE_CAP),
-    supabase
-      .from('profiles')
+    sb.from('profiles')
       .select('*', { count: 'exact', head: true })
       .neq('role', 'tps_admin'),
   ]);
