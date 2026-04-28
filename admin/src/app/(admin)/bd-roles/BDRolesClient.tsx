@@ -145,6 +145,11 @@ export default function BDRolesClient({ roles }: Props) {
                       >
                         Source <ExternalLink size={11} />
                       </a>
+                    ) : r.source_board ? (
+                      // Fall back to the board name when we know the source
+                      // but not the listing URL (common for older local
+                      // scrapes that captured the board only).
+                      <span style={{ color: 'var(--ink-faint)' }}>{r.source_board}</span>
                     ) : (
                       <span style={{ color: 'var(--ink-faint)' }}>-</span>
                     )}

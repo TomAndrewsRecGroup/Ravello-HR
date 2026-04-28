@@ -458,6 +458,8 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                                 >
                                   Source <ExternalLink size={11} />
                                 </a>
+                              ) : r.source_board ? (
+                                <span style={{ color: 'var(--ink-faint)' }}>{r.source_board}</span>
                               ) : (
                                 <span style={{ color: 'var(--ink-faint)' }}>-</span>
                               )}
