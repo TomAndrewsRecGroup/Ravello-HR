@@ -11,17 +11,17 @@ import {
 export const metadata: Metadata = { title: 'Activity Feed' };
 export const revalidate = 30;
 
+// In-flight events only — completion / closure narratives are
+// covered by tasks + dashboard rollups, not duplicated here.
 const EVENT_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  role_created:        { icon: Briefcase,     color: 'var(--purple)',  label: 'New Role' },
-  role_filled:         { icon: CheckCircle2,  color: 'var(--success)', label: 'Role Filled' },
-  ticket_created:      { icon: LifeBuoy,      color: 'var(--amber)',   label: 'Ticket Raised' },
-  ticket_resolved:     { icon: CheckCircle2,  color: 'var(--success)', label: 'Ticket Resolved' },
-  compliance_updated:  { icon: ShieldCheck,    color: 'var(--blue)',    label: 'Compliance' },
-  document_uploaded:   { icon: FileText,       color: 'var(--teal)',    label: 'Document' },
-  candidate_added:     { icon: Users,          color: 'var(--purple)',  label: 'Candidate' },
-  user_invited:        { icon: UserPlus,       color: 'var(--teal)',    label: 'User Invited' },
-  service_request:     { icon: MessageSquare,  color: 'var(--amber)',   label: 'Service Request' },
-  feature_toggled:     { icon: Radio,          color: 'var(--blue)',    label: 'Feature Toggle' },
+  role_created:        { icon: Briefcase,      color: 'var(--purple)',    label: 'New Role' },
+  ticket_created:      { icon: LifeBuoy,       color: 'var(--amber)',     label: 'Ticket Raised' },
+  compliance_updated:  { icon: ShieldCheck,    color: 'var(--blue)',      label: 'Compliance' },
+  document_uploaded:   { icon: FileText,       color: 'var(--teal)',      label: 'Document' },
+  candidate_added:     { icon: Users,          color: 'var(--purple)',    label: 'Candidate' },
+  user_invited:        { icon: UserPlus,       color: 'var(--teal)',      label: 'User Invited' },
+  service_request:     { icon: MessageSquare,  color: 'var(--amber)',     label: 'Service Request' },
+  feature_toggled:     { icon: Radio,          color: 'var(--blue)',      label: 'Feature Toggle' },
   login:               { icon: LogIn,          color: 'var(--ink-faint)', label: 'Login' },
 };
 
@@ -67,19 +67,27 @@ export default async function ActivityPage() {
   // Merge into unified feed
   type FeedItem = { id: string; type: string; title: string; subtitle: string; companyName: string; companyId: string; href: string; timestamp: string };
 
+  // Closed/completed events are intentionally excluded from this feed.
+  // Tasks + their status changes cover the "what got done" narrative,
+  // and the dashboard rolls up filled roles / resolved tickets
+  // separately. The activity feed is meant for in-flight signal only.
   const feed: FeedItem[] = [
-    ...(reqRes.data ?? []).map((r: any) => ({
-      id: `req-${r.id}`, type: r.stage === 'filled' ? 'role_filled' : 'role_created',
-      title: r.title, subtitle: r.stage === 'filled' ? 'Role filled' : `Stage: ${r.stage}`,
-      companyName: r.companies?.name ?? '', companyId: r.companies?.id ?? '',
-      href: `/hiring/${r.id}`, timestamp: r.created_at,
-    })),
-    ...(ticketRes.data ?? []).map((t: any) => ({
-      id: `tick-${t.id}`, type: t.resolved_at ? 'ticket_resolved' : 'ticket_created',
-      title: t.subject, subtitle: t.status,
-      companyName: t.companies?.name ?? '', companyId: t.companies?.id ?? '',
-      href: `/support/${t.id}`, timestamp: t.resolved_at ?? t.created_at,
-    })),
+    ...(reqRes.data ?? [])
+      .filter((r: any) => r.stage !== 'filled' && r.stage !== 'cancelled')
+      .map((r: any) => ({
+        id: `req-${r.id}`, type: 'role_created',
+        title: r.title, subtitle: `Stage: ${r.stage}`,
+        companyName: r.companies?.name ?? '', companyId: r.companies?.id ?? '',
+        href: `/hiring/${r.id}`, timestamp: r.created_at,
+      })),
+    ...(ticketRes.data ?? [])
+      .filter((t: any) => !t.resolved_at && t.status !== 'closed')
+      .map((t: any) => ({
+        id: `tick-${t.id}`, type: 'ticket_created',
+        title: t.subject, subtitle: t.status,
+        companyName: t.companies?.name ?? '', companyId: t.companies?.id ?? '',
+        href: `/support/${t.id}`, timestamp: t.created_at,
+      })),
     ...(docRes.data ?? []).map((d: any) => ({
       id: `doc-${d.id}`, type: 'document_uploaded',
       title: d.name, subtitle: 'Document uploaded',
@@ -98,18 +106,22 @@ export default async function ActivityPage() {
       companyName: n.companies?.name ?? '', companyId: n.companies?.id ?? '',
       href: `/clients/${n.companies?.slug ?? n.companies?.id ?? ''}`, timestamp: n.created_at,
     })),
-    ...(complianceRes.data ?? []).map((c: any) => ({
-      id: `comp-${c.id}`, type: 'compliance_updated',
-      title: c.title, subtitle: `Status: ${c.status}`,
-      companyName: c.companies?.name ?? '', companyId: c.companies?.id ?? '',
-      href: `/compliance`, timestamp: c.created_at,
-    })),
-    ...(servReqRes.data ?? []).map((s: any) => ({
-      id: `sr-${s.id}`, type: 'service_request',
-      title: s.subject, subtitle: `Status: ${s.status}`,
-      companyName: s.companies?.name ?? '', companyId: s.companies?.id ?? '',
-      href: `/requests`, timestamp: s.created_at,
-    })),
+    ...(complianceRes.data ?? [])
+      .filter((c: any) => c.status !== 'complete' && c.status !== 'completed')
+      .map((c: any) => ({
+        id: `comp-${c.id}`, type: 'compliance_updated',
+        title: c.title, subtitle: `Status: ${c.status}`,
+        companyName: c.companies?.name ?? '', companyId: c.companies?.id ?? '',
+        href: `/compliance`, timestamp: c.created_at,
+      })),
+    ...(servReqRes.data ?? [])
+      .filter((s: any) => s.status !== 'completed' && s.status !== 'cancelled' && s.status !== 'closed')
+      .map((s: any) => ({
+        id: `sr-${s.id}`, type: 'service_request',
+        title: s.subject, subtitle: `Status: ${s.status}`,
+        companyName: s.companies?.name ?? '', companyId: s.companies?.id ?? '',
+        href: `/requests`, timestamp: s.created_at,
+      })),
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   // Group by date

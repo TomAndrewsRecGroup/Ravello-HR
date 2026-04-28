@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
@@ -49,6 +49,14 @@ export default function AthletesClient({ initial, partners, interests, companies
   // Local mirror of the server-fetched athletes list so deletes
   // remove the row instantly without re-running the server component.
   const [athletes, setAthletes] = useState<AthleteRow[]>(initial);
+
+  // Sync local state whenever the server-fetched prop changes — fires
+  // after router.refresh() resolves with a freshly-rendered server
+  // component (e.g. after a successful create). Without this, new
+  // athletes "disappeared" — POST succeeded, refresh ran, but the
+  // local list never picked up the new row, so the user only saw it
+  // after a hard refresh.
+  useEffect(() => { setAthletes(initial); }, [initial]);
 
   const refresh = () => startTransition(() => router.refresh());
 
