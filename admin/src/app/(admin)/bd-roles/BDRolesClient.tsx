@@ -7,13 +7,16 @@ import type { FlatRole } from './page';
 interface Props { roles: FlatRole[]; }
 
 function fmtSalary(r: FlatRole): string {
+  let core: string;
   if (r.salary_min && r.salary_max && r.salary_min !== r.salary_max) {
-    return `£${Math.round(r.salary_min / 1000)}k: £${Math.round(r.salary_max / 1000)}k`;
+    core = `£${Math.round(r.salary_min / 1000)}k - £${Math.round(r.salary_max / 1000)}k`;
+  } else if (r.salary_min || r.salary_max) {
+    core = `£${Math.round((r.salary_min ?? r.salary_max!) / 1000)}k`;
+  } else {
+    return r.salary_text ?? '-';
   }
-  if (r.salary_min || r.salary_max) {
-    return `£${Math.round((r.salary_min ?? r.salary_max!) / 1000)}k`;
-  }
-  return r.salary_text ?? '-';
+  // Append pay type when IvyLens has enriched it: "£40k - £50k · Annual"
+  return r.pay_type ? `${core} · ${r.pay_type}` : core;
 }
 
 function relative(ts: string | null): string {
