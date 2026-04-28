@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { X, Search } from 'lucide-react';
+import { X, Search, Pencil } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
 import type { AthleteRow, InterestRow } from './types';
@@ -9,15 +9,15 @@ import type { AthleteRow, InterestRow } from './types';
 interface Props {
   athletes: AthleteRow[];
   interestsByAthlete: Map<string, InterestRow[]>;
+  onEdit: (athlete: AthleteRow) => void;
   onClose: () => void;
 }
 
-// Read-only browser for the full athlete roster. Editing + matching
-// were removed when the A2I admin/client roles were inverted —
-// recruitment lives on the admin side now.
+// Full-roster browser for clients. Edit (incl. CV) is supported here;
+// matching/recruitment lives on the admin side.
 
 export default function AthletesModal({
-  athletes, interestsByAthlete, onClose,
+  athletes, interestsByAthlete, onEdit, onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
@@ -103,6 +103,15 @@ export default function AthletesModal({
                         </p>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => onEdit(a)}
+                      className="btn-secondary btn-sm flex items-center gap-1 flex-shrink-0"
+                      style={{ padding: '4px 8px', fontSize: 11 }}
+                      aria-label={`Edit ${a.full_name}`}
+                    >
+                      <Pencil size={11} /> Edit
+                    </button>
                   </li>
                 );
               })}
