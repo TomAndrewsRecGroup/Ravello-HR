@@ -16,7 +16,12 @@ async function handleSignOut(request: Request) {
     },
   );
   await supabase.auth.signOut();
-  const res = NextResponse.redirect(new URL('/auth/login', request.url));
+  // Use 303 See Other so the browser issues a GET on /auth/login
+  // instead of forwarding the original POST. NextResponse.redirect
+  // defaults to 307 (Temporary Redirect) which preserves the method,
+  // and the login page only handles GET — hence the 405 the user
+  // saw on first sign-out.
+  const res = NextResponse.redirect(new URL('/auth/login', request.url), 303);
   // Clear session cookie so middleware re-validates on next login
   res.cookies.set('tps_portal_session', '', { maxAge: 0, path: '/' });
   return res;
