@@ -89,46 +89,123 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     };
   }, [selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services]);
 
-  function downloadReport() {
+  async function downloadReport() {
     if (!report) return;
+    // Lazy-load jsPDF + autotable so the page bundle stays small.
+    // These are browser-side libs (~150 kB combined gzipped) and the
+    // import dynamic chunk is only fetched the first time someone
+    // clicks Download.
+    const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+    const autoTable = (autoTableMod as any).default ?? (autoTableMod as any);
     const r = report;
-    const lines = [
-      `THE PEOPLE SYSTEM: CLIENT VALUE REPORT`,
-      `${r.company?.name} | ${r.month}`,
-      `Generated: ${new Date().toLocaleDateString('en-GB')}`,
-      ``,
-      `═══ HIRE ═══`,
-      `New roles raised: ${r.hire.newRoles}`,
-      `Roles filled this month: ${r.hire.filled}`,
-      `Candidates submitted: ${r.hire.candidates}`,
-      `Active roles (current): ${r.hire.activeRoles}`,
-      `Total roles filled (all-time): ${r.hire.totalFilled}`,
-      ``,
-      `═══ SUPPORT ═══`,
-      `Tickets raised: ${r.support.ticketsRaised}`,
-      `Tickets resolved: ${r.support.ticketsResolved}`,
-      `Avg resolution time: ${r.support.avgResolutionHours}h`,
-      `Service requests: ${r.support.serviceRequests}`,
-      `Service requests responded: ${r.support.serviceRequestsResponded}`,
-      ``,
-      `═══ PROTECT ═══`,
-      `Compliance items addressed: ${r.protect.complianceItems}`,
-      `Documents uploaded: ${r.protect.documentsUploaded}`,
-      `Actions created: ${r.protect.actionsCreated}`,
-      `Actions completed: ${r.protect.actionsCompleted}`,
-      ``,
-      `═══ SYSTEM USAGE ═══`,
-      `Portal users: ${r.usage.portalUsers}`,
-      `Active services: ${r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'}`,
-      `Monthly fee: £${r.usage.mrr}`,
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `value-report-${r.company?.name?.replace(/\s+/g, '-')}-${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+
+    // Brand tokens — kept inline so the PDF doesn't pull in the
+    // application's CSS variables.
+    const PURPLE   = [124, 58, 237] as [number, number, number];
+    const INK      = [7, 11, 29]    as [number, number, number];
+    const INK_SOFT = [56, 67, 106]  as [number, number, number];
+    const SURFACE  = [244, 245, 251] as [number, number, number];
+
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    let y = 56;
+
+    // Header band
+    doc.setFillColor(...PURPLE);
+    doc.rect(0, 0, W, 12, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...INK);
+    doc.text('The People System', 40, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...INK_SOFT);
+    doc.text('Client Value Report', 40, y + 16);
+    y += 40;
+
+    // Company + period card
+    doc.setFillColor(...SURFACE);
+    doc.roundedRect(40, y, W - 80, 64, 6, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...INK);
+    doc.text(r.company?.name ?? '—', 56, y + 22);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...INK_SOFT);
+    doc.text(`Period: ${r.month}`, 56, y + 40);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, 56, y + 56);
+    y += 90;
+
+    function section(title: string, rows: [string, string | number][]) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...PURPLE);
+      doc.text(title, 40, y);
+      y += 6;
+      autoTable(doc, {
+        startY:       y + 4,
+        head:         [['Metric', 'Value']],
+        body:         rows.map(([k, v]) => [k, String(v)]),
+        theme:        'plain',
+        styles:       { fontSize: 10, textColor: INK as any, cellPadding: 6 },
+        headStyles:   { fillColor: SURFACE as any, textColor: INK_SOFT as any, fontStyle: 'bold', fontSize: 9 },
+        alternateRowStyles: { fillColor: [255, 255, 255] as any },
+        columnStyles: { 0: { cellWidth: 280 }, 1: { cellWidth: 'auto', halign: 'right', fontStyle: 'bold' } },
+        margin:       { left: 40, right: 40 },
+      });
+      // After autoTable, finalY is on the doc's lastAutoTable property.
+      y = (doc as any).lastAutoTable.finalY + 18;
+    }
+
+    section('HIRE', [
+      ['New roles raised',           r.hire.newRoles],
+      ['Roles filled this month',    r.hire.filled],
+      ['Candidates submitted',       r.hire.candidates],
+      ['Active roles (current)',     r.hire.activeRoles],
+      ['Total roles filled all-time', r.hire.totalFilled],
+    ]);
+
+    section('SUPPORT', [
+      ['Tickets raised',             r.support.ticketsRaised],
+      ['Tickets resolved',           r.support.ticketsResolved],
+      ['Avg resolution time (hours)', r.support.avgResolutionHours],
+      ['Service requests',           r.support.serviceRequests],
+      ['Service requests responded', r.support.serviceRequestsResponded],
+    ]);
+
+    section('PROTECT', [
+      ['Compliance items addressed', r.protect.complianceItems],
+      ['Documents uploaded',         r.protect.documentsUploaded],
+      ['Actions created',            r.protect.actionsCreated],
+      ['Actions completed',          r.protect.actionsCompleted],
+    ]);
+
+    section('SYSTEM USAGE', [
+      ['Portal users',     r.usage.portalUsers],
+      ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],
+      ['Monthly fee',      `£${r.usage.mrr}`],
+    ]);
+
+    // Footer
+    const pageCount = (doc as any).getNumberOfPages?.() ?? 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      const H = doc.internal.pageSize.getHeight();
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...INK_SOFT);
+      doc.text('thepeoplesystem.co.uk', 40, H - 24);
+      doc.text(`Page ${i} of ${pageCount}`, W - 40, H - 24, { align: 'right' });
+    }
+
+    const safeName = (r.company?.name ?? 'client').replace(/\s+/g, '-');
+    doc.save(`value-report-${safeName}-${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}.pdf`);
   }
 
   return (
