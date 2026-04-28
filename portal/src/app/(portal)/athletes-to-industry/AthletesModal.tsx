@@ -10,12 +10,14 @@ interface Props {
   athletes: AthleteRow[];
   interestsByAthlete: Map<string, InterestRow[]>;
   onClose: () => void;
-  onMatch: (a: AthleteRow) => void;
-  onEdit: (a: AthleteRow) => void;
 }
 
+// Read-only browser for the full athlete roster. Editing + matching
+// were removed when the A2I admin/client roles were inverted —
+// recruitment lives on the admin side now.
+
 export default function AthletesModal({
-  athletes, interestsByAthlete, onClose, onMatch, onEdit,
+  athletes, interestsByAthlete, onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
@@ -100,14 +102,6 @@ export default function AthletesModal({
                           {a.bio}
                         </p>
                       )}
-                    </div>
-                    <div className="flex flex-col gap-1.5 flex-shrink-0">
-                      <button onClick={() => onMatch(a)} className="btn-cta btn-sm" style={{ fontSize: 11 }}>
-                        Match
-                      </button>
-                      <button onClick={() => onEdit(a)} className="btn-secondary btn-sm" style={{ fontSize: 11 }}>
-                        Edit
-                      </button>
                     </div>
                   </li>
                 );

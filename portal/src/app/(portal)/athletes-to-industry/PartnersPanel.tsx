@@ -1,33 +1,26 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Building2, ArrowRight, Globe } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import type { AthleteRow, InterestRow, PartnerRow, RoleOpportunity } from './types';
+import type { InterestRow, PartnerRow } from './types';
 
-const PartnersModal      = dynamic(() => import('./PartnersModal'),      { ssr: false });
-const RoleInterestsPanel = dynamic(() => import('./RoleInterestsPanel'), { ssr: false });
+const PartnersModal = dynamic(() => import('./PartnersModal'), { ssr: false });
 
 interface Props {
   partners: PartnerRow[];
-  athletes: AthleteRow[];
   interests: InterestRow[];
 }
 
-export default function PartnersPanel({ partners, athletes, interests }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
-  const refresh = () => startTransition(() => router.refresh());
-  const [showAll, setShowAll] = useState(false);
-  const [viewingRole, setViewingRole] = useState<{ partner: PartnerRow; role: RoleOpportunity | null } | null>(null);
+// Read-only partners panel.
+//
+// All match-management (RoleInterestsPanel, MatchPickerModal, status
+// edits) lives on the admin side. Clients see the partner roster + a
+// roll-up "matched" count so they know how active the programme is.
 
-  const athletesById = useMemo(() => {
-    const m = new Map<string, AthleteRow>();
-    for (const a of athletes) m.set(a.id, a);
-    return m;
-  }, [athletes]);
+export default function PartnersPanel({ partners, interests }: Props) {
+  const [showAll, setShowAll] = useState(false);
 
   const interestsByPartner = useMemo(() => {
     const m = new Map<string, number>();
@@ -91,20 +84,6 @@ export default function PartnersPanel({ partners, athletes, interests }: Props) 
           interestsByPartner={interestsByPartner}
           interests={interests}
           onClose={() => setShowAll(false)}
-          onOpenRole={(partner, role) => setViewingRole({ partner, role })}
-        />
-      )}
-
-      {viewingRole && (
-        <RoleInterestsPanel
-          partner={viewingRole.partner}
-          role={viewingRole.role}
-          allInterests={interests}
-          athletesById={athletesById}
-          apiBase="/api"
-          staffView={false}
-          onClose={() => setViewingRole(null)}
-          onChanged={refresh}
         />
       )}
     </>
