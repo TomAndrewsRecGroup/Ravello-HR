@@ -61,7 +61,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Pre-create the profile row so middleware can check onboarding_completed
+  // Pre-create / update the profile row so middleware can check
+  // onboarding_completed and so company_id + role are correct from
+  // the first sign-in.
+  //
+  // CRITICAL: don't use ignoreDuplicates here. Supabase's auth trigger
+  // (handle_new_user, migration 001) inserts a profile row with just
+  // (id, email) the moment inviteUserByEmail creates the auth.users
+  // row. By the time we get here that row exists, so ignoreDuplicates
+  // would skip our update — leaving company_id NULL and role at the
+  // column default (client_editor). The upsert WITHOUT ignoreDuplicates
+  // updates the existing row with the right company_id + role.
   await adminClient.from('profiles').upsert({
     id:                   data.user.id,
     email,
@@ -70,7 +80,7 @@ export async function POST(request: NextRequest) {
     role:                 safeRole,
     onboarding_completed: false,
     onboarding_step:      1,
-  }, { onConflict: 'id', ignoreDuplicates: true });
+  }, { onConflict: 'id' });
 
   auditLog({
     action: 'user.invited',

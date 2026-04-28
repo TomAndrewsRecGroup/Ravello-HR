@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
 
   // Pre-create the profile row so the layout's onboarding redirect works
   // for the new user on first sign-in.
+  //
+  // CRITICAL: don't use ignoreDuplicates. The handle_new_user auth
+  // trigger creates the profile with just (id, email) before this
+  // line runs — ignoreDuplicates would skip our update and leave
+  // company_id NULL + role at the column default. We need a real
+  // upsert that overwrites those fields.
   await adminClient.from('profiles').upsert({
     id:                   data.user.id,
     email,
@@ -91,7 +97,7 @@ export async function POST(request: NextRequest) {
     role:                 'client_editor',
     onboarding_completed: false,
     onboarding_step:      0,
-  }, { onConflict: 'id', ignoreDuplicates: true });
+  }, { onConflict: 'id' });
 
   return NextResponse.json({ success: true, user_id: data.user.id });
 }
