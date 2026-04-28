@@ -16,7 +16,9 @@ async function handleSignOut(request: Request) {
     },
   );
   await supabase.auth.signOut();
-  const res = NextResponse.redirect(new URL('/auth/login', request.url));
+  // 303 See Other so POST → GET on /auth/login. The default 307
+  // would forward the POST and trigger 405 on the login page.
+  const res = NextResponse.redirect(new URL('/auth/login', request.url), 303);
   res.cookies.set('tpo_admin_role', '', {
     httpOnly: true, sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
