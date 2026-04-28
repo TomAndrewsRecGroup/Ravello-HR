@@ -69,8 +69,8 @@ function AcceptInviteInner() {
       setError('Enter the email the invite was sent to.');
       return;
     }
-    if (!/^\d{6}$/.test(code)) {
-      setError('Code must be 6 digits.');
+    if (!/^\d{6,10}$/.test(code)) {
+      setError('Enter the numeric code from your invitation email.');
       return;
     }
     if (password.length < 8) {
@@ -130,7 +130,7 @@ function AcceptInviteInner() {
             <>
               <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Accept your invitation</h1>
               <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
-                Enter the 6-digit code from your invitation email and set a password.
+                Enter the code from your invitation email and set a password.
               </p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="form-group">
@@ -144,9 +144,9 @@ function AcceptInviteInner() {
                 <div className="form-group">
                   <label className="label" style={{ color: 'var(--ink-soft)' }}>Invitation code</label>
                   <input
-                    type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} required
+                    type="text" inputMode="numeric" pattern="\d{6,10}" maxLength={10} required
                     value={token} onChange={e => setToken(e.target.value.replace(/\D/g, ''))}
-                    className="input" placeholder="••••••" autoComplete="one-time-code"
+                    className="input" placeholder="••••••••" autoComplete="one-time-code"
                     style={{
                       background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
                       fontFamily: 'SFMono-Regular,Menlo,Consolas,monospace',

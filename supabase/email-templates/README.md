@@ -28,10 +28,14 @@ appears "already expired" by the time the user clicks. Codes can't
 be prefetched, so the OTP path is bulletproof.
 
 The `02-invite-user.html` and `04-reset-password.html` templates
-display both the magic link (button) AND a 6-digit `{{ .Token }}`.
+display both the magic link (button) AND a numeric `{{ .Token }}`.
 Users whose email isn't being scanned can click the button as
 before; users in scanner-protected environments can type the code
 into the portal forms.
+
+The portal accepts any code length between 6 and 10 digits to
+match Supabase's `MAILER_OTP_LENGTH` (default 6, configurable up
+to 10 in Authentication → Providers → Email).
 
 The portal handles both:
 

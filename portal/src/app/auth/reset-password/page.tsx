@@ -62,8 +62,8 @@ export default function ResetPasswordPage() {
     setError('');
 
     const code = token.replace(/\s+/g, '');
-    if (!/^\d{6}$/.test(code)) {
-      setError('Code must be 6 digits.');
+    if (!/^\d{6,10}$/.test(code)) {
+      setError('Enter the numeric code from your email.');
       return;
     }
     if (password.length < 8) {
@@ -122,7 +122,7 @@ export default function ResetPasswordPage() {
           ) : step === 'email' ? (
             <>
               <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Reset password</h1>
-              <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>We&rsquo;ll email you a 6-digit code.</p>
+              <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>We&rsquo;ll email you a sign-in code.</p>
               <form onSubmit={handleSendCode} className="space-y-4">
                 <div className="form-group">
                   <label className="label" style={{ color: 'var(--ink-soft)' }}>Email</label>
@@ -151,18 +151,18 @@ export default function ResetPasswordPage() {
               </button>
               <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Enter your code</h1>
               <p className="text-sm mb-1" style={{ color: 'var(--ink-soft)' }}>
-                Check your inbox for a 6-digit code.
+                Check your inbox for the code we just sent.
               </p>
               <p className="text-xs mb-6" style={{ color: 'var(--ink-faint)' }}>
                 Sent to <span style={{ color: 'var(--ink-soft)', fontWeight: 500 }}>{email}</span>. Code expires in 1 hour.
               </p>
               <form onSubmit={handleVerify} className="space-y-4">
                 <div className="form-group">
-                  <label className="label" style={{ color: 'var(--ink-soft)' }}>6-digit code</label>
+                  <label className="label" style={{ color: 'var(--ink-soft)' }}>Code from email</label>
                   <input
-                    type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} required
+                    type="text" inputMode="numeric" pattern="\d{6,10}" maxLength={10} required
                     value={token} onChange={e => setToken(e.target.value.replace(/\D/g, ''))}
-                    className="input" placeholder="••••••"
+                    className="input" placeholder="••••••••"
                     autoComplete="one-time-code"
                     style={{
                       background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
