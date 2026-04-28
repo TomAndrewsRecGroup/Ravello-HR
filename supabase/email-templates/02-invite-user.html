@@ -9,7 +9,7 @@
 <title>The People System</title>
 </head>
 <body style="margin:0;padding:0;background:#EFF0F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#070B1D;">
-<div style="display:none;max-height:0;overflow:hidden;color:transparent;">Accept your invitation to join The People System.</div>
+<div style="display:none;max-height:0;overflow:hidden;color:transparent;">Your invitation code is {{ .Token }}.</div>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#EFF0F7;padding:32px 16px;">
   <tr>
     <td align="center">
@@ -21,17 +21,31 @@
         </tr>
         <tr>
           <td style="padding:32px;font-size:15px;line-height:1.6;color:#070B1D;">
-            <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#070B1D;">You've been invited</h1>
-            <p style="margin:0 0 16px 0;">You've been invited to join The People System portal. Click the button below to accept your invitation and set your password.</p>
-            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:#070B1D;">You've been invited</h1>
+            <p style="margin:0 0 24px 0;">You've been invited to join The People System portal. Use the code below at <a href="https://www.portal.thepeoplesystem.co.uk/auth/accept-invite" style="color:#7C3AED;text-decoration:none;font-weight:600;">portal.thepeoplesystem.co.uk/auth/accept-invite</a> to set up your password.</p>
+
+            <!-- 6-digit code panel — primary CTA. Resistant to email
+                 link prefetching (scanners can't "click" a code). -->
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px 0;">
+              <tr>
+                <td style="background:#F4F5FB;border:1px solid #E2E4EE;border-radius:14px;padding:24px;text-align:center;">
+                  <p style="margin:0 0 8px 0;font-size:11px;font-weight:600;color:#748099;text-transform:uppercase;letter-spacing:0.08em;">Your invitation code</p>
+                  <p style="margin:0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:0.18em;color:#7C3AED;">{{ .Token }}</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 16px 0;font-size:13px;color:#38436A;">Or just click the button below — it does the same thing.</p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px 0;">
               <tr>
                 <td style="border-radius:10px;background:#7C3AED;">
                   <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;background:linear-gradient(135deg,#7C3AED 0%,#5A2AC8 100%);">Accept invitation</a>
                 </td>
               </tr>
             </table>
-            <p style="margin:24px 0 0 0;font-size:13px;color:#38436A;">If the button doesn't work, copy and paste this URL into your browser:<br/><a href="{{ .ConfirmationURL }}" style="color:#7C3AED;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
-            <p style="margin:16px 0 0 0;font-size:13px;color:#38436A;">This invitation is single-use and expires in 24 hours. If it expires before you click, ask your administrator to send a new one.</p>
+
+            <p style="margin:24px 0 0 0;font-size:13px;color:#38436A;">This invitation is single-use and expires in 24 hours. If it expires, ask your administrator for a new one.</p>
           </td>
         </tr>
         <tr>
