@@ -87,6 +87,12 @@ export async function GET() {
   // anonymous / client users can't probe for org size.
   const isStaff = dbProfile?.role === 'tps_admin';
   let counts: { activeCompanies: number; clientUsers: number; totalProfiles: number } | null = null;
+  // What the /users page query ACTUALLY returns from the user's
+  // RLS-scoped session — vs the service-role count above. If the
+  // count matches admin counts but the user-scoped list comes back
+  // empty, RLS is the culprit. If both come back the same and the
+  // UI still shows empty, the page is serving a stale cached render.
+  let usersPageQuery: { rls_count: number | null; service_count: number; rls_rows: any[]; rls_error: string | null } | null = null;
   if (isStaff) {
     const [{ count: companyCount }, { count: clientUserCount }, { count: totalProfileCount }] = await Promise.all([
       adminClient.from('companies').select('*', { count: 'exact', head: true }).eq('active', true),
@@ -97,6 +103,28 @@ export async function GET() {
       activeCompanies: companyCount     ?? 0,
       clientUsers:     clientUserCount  ?? 0,
       totalProfiles:   totalProfileCount ?? 0,
+    };
+
+    // Run the EXACT query the /users page runs, with the caller's
+    // session (RLS active). If this differs from the service-role
+    // count, RLS is filtering rows the page should see.
+    const [rlsListRes, rlsCountRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
+        .neq('role', 'tps_admin')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .neq('role', 'tps_admin'),
+    ]);
+    usersPageQuery = {
+      rls_count:     rlsCountRes.count ?? null,
+      service_count: counts.clientUsers,
+      rls_rows:      rlsListRes.data ?? [],
+      rls_error:     rlsListRes.error?.message ?? rlsCountRes.error?.message ?? null,
     };
   }
 
@@ -127,6 +155,7 @@ export async function GET() {
     dbProfile,
     dbCompany,
     counts,
+    usersPageQuery,
     diagnosis,
   });
 }
