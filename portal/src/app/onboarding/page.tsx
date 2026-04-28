@@ -10,9 +10,12 @@ import {
 import FrictionLensClient from '../(portal)/hire/friction-lens/FrictionLensClient';
 import type { CompanyAssessment } from '@/lib/supabase/types';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/d853d50b-40d4-47f4-ac80-7058a2387dac.png';
+const LOGO    = 'https://www.thepeoplesystem.co.uk/email-logo.png';
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
-const SIZES   = ['10-24','25-49','50-99','100-249','250+'];
+// Keep this in sync with admin/src/app/(admin)/clients/onboard/OnboardWizard.tsx
+// and portal/src/components/modules/SettingsForm.tsx — same bands so a
+// client picks the same size everywhere they're asked.
+const SIZES   = ['1-9','10-24','25-49','50-99','100-249','250+'];
 
 type Step = 1 | 2 | 3 | 4 | 5;
 const TOTAL_STEPS = 5;
@@ -111,18 +114,43 @@ export default function OnboardingPage() {
       setError('Please pick a sector and team size.');
       return;
     }
+    // Guard against null profile / company. Without these we'd hit
+    // "Cannot read properties of null (reading 'id')" — the spinner-
+    // stuck bug the user saw. Profile is null when the initial
+    // session lookup fails (RLS, expired session). Company is null
+    // when the user's profile.company_id wasn't backfilled — the
+    // legacy bug closed in commit 47fe03e.
+    if (!profile?.id) {
+      setError('Your session has expired. Please sign in again.');
+      return;
+    }
+    if (!company?.id) {
+      setError('No company is linked to your account yet. Contact The People System to get this set up before continuing.');
+      return;
+    }
+
     setLoading(true);
     setError('');
-    const [pErr, cErr] = await Promise.all([
-      supabase.from('profiles').update({ full_name: welcome.full_name || null }).eq('id', profile.id).then(r => r.error),
-      supabase.from('companies').update({
-        sector:    welcome.sector,
-        size_band: welcome.size_band,
-      }).eq('id', company?.id).then(r => r.error),
-    ]);
-    setLoading(false);
-    if (pErr || cErr) { setError(pErr?.message ?? cErr?.message ?? 'Could not save. Please try again.'); return; }
-    goTo(2);
+    try {
+      const [pRes, cRes] = await Promise.all([
+        supabase.from('profiles')
+          .update({ full_name: welcome.full_name || null })
+          .eq('id', profile.id),
+        supabase.from('companies')
+          .update({ sector: welcome.sector, size_band: welcome.size_band })
+          .eq('id', company.id),
+      ]);
+      if (pRes.error || cRes.error) {
+        setError(pRes.error?.message ?? cRes.error?.message ?? 'Could not save. Please try again.');
+        return;
+      }
+      goTo(2);
+    } catch (err: any) {
+      // Network / supabase-js JS exception. Always clear the spinner.
+      setError(err?.message ?? 'Could not save. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function onAssessmentCreated(a: CompanyAssessment) {

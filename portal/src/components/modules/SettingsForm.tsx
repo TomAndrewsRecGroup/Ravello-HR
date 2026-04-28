@@ -157,7 +157,9 @@ export function CompanyProfileForm({ company }: CompanyFormProps) {
     setLoading(false);
   }
 
-  const SIZE_BANDS = ['1-10', '11-25', '26-50', '51-100', '101-250', '251-500', '500+'];
+  // Keep in sync with the onboarding wizards (admin + portal). Same
+  // bands so a client picks the same size everywhere they're asked.
+  const SIZE_BANDS = ['1-9', '10-24', '25-49', '50-99', '100-249', '250+'];
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
