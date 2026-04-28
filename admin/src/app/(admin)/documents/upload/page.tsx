@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
@@ -9,11 +9,21 @@ import { Loader2, Upload } from 'lucide-react';
 const CATEGORIES = ['contract','policy','letter','report','other'];
 
 export default function DocumentUploadPage() {
-  const router   = useRouter();
-  const supabase = createClient();
+  return (
+    <Suspense fallback={null}>
+      <UploadInner />
+    </Suspense>
+  );
+}
+
+function UploadInner() {
+  const router       = useRouter();
+  const supabase     = createClient();
+  const searchParams = useSearchParams();
+  const presetCompany = searchParams.get('company_id') ?? '';
 
   const [companies, setCompanies] = useState<{id:string;name:string}[]>([]);
-  const [form,    setForm]    = useState({ company_id:'', name:'', category:'policy', review_due_at:'', notes:'' });
+  const [form,    setForm]    = useState({ company_id: presetCompany, name:'', category:'policy', review_due_at:'', notes:'' });
   const [file,    setFile]    = useState<File|null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');

@@ -23,14 +23,15 @@ interface Props {
   adminUserId: string;
   template?: Template | null;
   recruiters: string[];
+  presetCompanyId?: string | null;
 }
 
-export default function AdminNewRoleForm({ companies, adminUserId, template, recruiters }: Props) {
+export default function AdminNewRoleForm({ companies, adminUserId, template, recruiters, presetCompanyId }: Props) {
   const router  = useRouter();
   const supabase = createClient();
 
   const [form, setForm] = useState({
-    company_id:       '',
+    company_id:       presetCompanyId ?? '',
     title:            template?.title ?? '',
     department:       template?.department ?? '',
     seniority:        template?.seniority ?? '',

@@ -626,9 +626,20 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
       {/* ─── ROLES ────────────────────────────────────── */}
       {tab === 'Roles' && (
-        <div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {reqs.length} role{reqs.length === 1 ? '' : 's'} on this client
+            </p>
+            <a
+              href={`/hiring/new?company_id=${company.id}`}
+              className="btn-cta btn-sm flex items-center gap-1.5"
+            >
+              <Plus size={13} /> Raise new role
+            </a>
+          </div>
           {reqs.length === 0 ? (
-            <div className="card empty-state">No roles for this client.</div>
+            <div className="card empty-state">No roles for this client yet.</div>
           ) : (
             <div className="table-wrapper">
               <table className="table">
@@ -694,7 +705,18 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
       {/* ─── DOCUMENTS ────────────────────────────────── */}
       {tab === 'Documents' && (
-        <div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {documents.length} document{documents.length === 1 ? '' : 's'}
+            </p>
+            <a
+              href={`/documents/upload?company_id=${company.id}`}
+              className="btn-cta btn-sm flex items-center gap-1.5"
+            >
+              <Plus size={13} /> Upload document
+            </a>
+          </div>
           {documents.length === 0 ? (
             <div className="card p-12 empty-state">No documents yet.</div>
           ) : (
@@ -1068,6 +1090,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       {/* ─── LEAD ─────────────────────────────────────── */}
       {tab === 'LEAD' && tabData['LEAD'] && (
         <LeadTab
+          companyId={company.id}
           initialTrainingNeeds={tabData['LEAD'].trainingNeeds ?? []}
           initialPerfReviews={tabData['LEAD'].perfReviews ?? []}
         />
@@ -1076,6 +1099,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       {/* ─── PROTECT ───────────────────────────────────── */}
       {tab === 'PROTECT' && tabData['PROTECT'] && (
         <ProtectTab
+          companyId={company.id}
           initialAbsenceRecords={tabData['PROTECT'].absenceRecords ?? []}
           initialEmpDocs={tabData['PROTECT'].empDocs ?? []}
         />

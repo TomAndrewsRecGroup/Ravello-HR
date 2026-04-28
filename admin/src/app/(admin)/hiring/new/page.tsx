@@ -9,11 +9,12 @@ export const metadata: Metadata = { title: 'New Role' };
 export default async function AdminNewRolePage({
   searchParams,
 }: {
-  searchParams?: { template?: string };
+  searchParams?: { template?: string; company_id?: string };
 }) {
   const supabase = createServerSupabaseClient();
 
-  const templateId = searchParams?.template ?? null;
+  const templateId          = searchParams?.template   ?? null;
+  const presetCompanyId     = searchParams?.company_id ?? null;
 
   const [{ data: { user } }, { data: companies }, { data: tpoStaff }, templateResult] = await Promise.all([
     supabase.auth.getUser(),
@@ -42,6 +43,7 @@ export default async function AdminNewRolePage({
           adminUserId={user?.id ?? ''}
           template={templateResult?.data ?? null}
           recruiters={(tpoStaff ?? []).map(s => s.full_name).filter(Boolean)}
+          presetCompanyId={presetCompanyId}
         />
       </main>
     </>
