@@ -188,10 +188,17 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                   const salary      = getSalaryRange(compRoles);
                   const cStatus     = c.status ?? 'Prospect';
                   return (
-                    <tr key={c.id}>
+                    <tr key={c.id} className="cursor-pointer hover:bg-[var(--surface-soft)]" onClick={() => setModalCompany(c)}>
                       <td>
-                        <p className="font-semibold" style={{ color: 'var(--ink)' }}>{c.company_name ?? '-'}</p>
-                        {c.domain && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.domain}</p>}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setModalCompany(c); }}
+                          className="text-left hover:underline"
+                          style={{ color: 'var(--purple)' }}
+                        >
+                          <p className="font-semibold">{c.company_name ?? '-'}</p>
+                        </button>
+                        {c.domain && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{c.domain}</p>}
                       </td>
                       <td>
                         <span className="font-medium" style={{ color: activeCount > 0 ? 'var(--purple)' : 'var(--ink-faint)' }}>
@@ -273,7 +280,8 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                         draggable
                         onDragStart={() => onDragStart(c.id)}
                         onDragEnd={() => setDragging(null)}
-                        className="card p-3 cursor-grab active:cursor-grabbing select-none"
+                        onClick={() => setModalCompany(c)}
+                        className="card p-3 cursor-pointer active:cursor-grabbing select-none hover:shadow-md transition-shadow"
                         style={{
                           opacity: dragging === c.id ? 0.4 : 1,
                           borderLeft: `3px solid ${col.color}`,
@@ -297,13 +305,9 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                               {relativeTime(c.last_seen_at)}
                             </span>
                           ) : <span />}
-                          <button
-                            onClick={() => setModalCompany(c)}
-                            className="text-xs font-medium"
-                            style={{ color: 'var(--purple)' }}
-                          >
+                          <span className="text-xs font-medium" style={{ color: 'var(--purple)' }}>
                             View →
-                          </button>
+                          </span>
                         </div>
                       </div>
                     );
