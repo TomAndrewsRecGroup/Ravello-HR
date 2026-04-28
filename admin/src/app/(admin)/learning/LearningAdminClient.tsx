@@ -141,7 +141,7 @@ export default function LearningAdminClient({ initialContent }: Props) {
             </div>
             <div>
               <label className="label">Creator / Author</label>
-              <input className="input" placeholder="e.g. Lucy Andrews" value={form.creator_name} onChange={e => set('creator_name', e.target.value)} />
+              <input className="input" placeholder="e.g. Sarah Mitchell, FCIPD" value={form.creator_name} onChange={e => set('creator_name', e.target.value)} />
             </div>
             <div>
               <label className="label">Category</label>

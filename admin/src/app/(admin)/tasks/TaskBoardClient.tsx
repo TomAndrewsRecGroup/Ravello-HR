@@ -197,7 +197,15 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                       {col.key !== 'done' && (
                         <div className="flex gap-1.5">
                           {col.key === 'todo' && (
-                            <button onClick={() => moveTask(task.id, 'in_progress')} className="text-[10px] font-medium px-2 py-0.5 rounded" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                            <button
+                              onClick={() => moveTask(task.id, 'in_progress')}
+                              className="text-[11px] font-bold px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-all hover:opacity-90"
+                              style={{
+                                background: 'linear-gradient(135deg,#7C3AED 0%,#5A2AC8 100%)',
+                                color: '#FFFFFF',
+                                boxShadow: '0 1px 4px rgba(124,58,237,0.30)',
+                              }}
+                            >
                               Start →
                             </button>
                           )}

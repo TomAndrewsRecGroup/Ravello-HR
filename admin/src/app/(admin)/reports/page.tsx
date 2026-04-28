@@ -75,10 +75,30 @@ export default async function AdminReportsPage() {
         <div>
           <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--ink)' }}>Quick CSV Exports</h2>
           <div className="flex flex-wrap gap-3">
-            <ExportCSVButton data={reqsCSV}    filename={`all-requisitions-${today}`} label="All Requisitions" />
-            <ExportCSVButton data={candsCSV}  filename={`all-candidates-${today}`}   label="All Candidates" />
-            <ExportCSVButton data={compCSV}   filename={`compliance-items-${today}`}  label="Compliance Items" />
-            <ExportCSVButton data={ticketsCSV} filename={`support-tickets-${today}`}  label="Support Tickets" />
+            <ExportCSVButton
+              data={reqsCSV}
+              filename={`all-requisitions-${today}`}
+              label="All Requisitions"
+              headers={['Client', 'Title', 'Department', 'Seniority', 'Location', 'Stage', 'Recruiter', 'Created']}
+            />
+            <ExportCSVButton
+              data={candsCSV}
+              filename={`all-candidates-${today}`}
+              label="All Candidates"
+              headers={['Client', 'Name', 'Email', 'Role', 'Client Status', 'Approved', 'Submitted']}
+            />
+            <ExportCSVButton
+              data={compCSV}
+              filename={`compliance-items-${today}`}
+              label="Compliance Items"
+              headers={['Client', 'Title', 'Category', 'Status', 'Due Date']}
+            />
+            <ExportCSVButton
+              data={ticketsCSV}
+              filename={`support-tickets-${today}`}
+              label="Support Tickets"
+              headers={['Client', 'Subject', 'Status', 'Priority', 'Created', 'Resolved']}
+            />
           </div>
         </div>
 

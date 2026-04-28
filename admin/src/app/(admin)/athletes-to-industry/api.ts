@@ -1,6 +1,6 @@
 'use client';
 
-import type { InterestRow, InterestStatus } from './types';
+import type { InterestRow, InterestStatus, TrainingInterestRow, TrainingStatus } from './types';
 
 const BASE = '/api/admin';
 
@@ -28,6 +28,37 @@ export const interestApi = {
   },
   async remove(id: string): Promise<void> {
     const res = await fetch(`${BASE}/interests/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? 'Failed to delete');
+    }
+  },
+};
+
+export const trainingInterestApi = {
+  async bulkCreate(athlete_id: string, items: { provider_id: string; offering_id: string | null }[]): Promise<TrainingInterestRow[]> {
+    const res = await fetch(`${BASE}/training-interests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ athlete_id, items }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Failed to save');
+    return (json.rows ?? []) as TrainingInterestRow[];
+  },
+  async patch(id: string, body: { status?: TrainingStatus; notes?: string | null }): Promise<void> {
+    const res = await fetch(`${BASE}/training-interests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? 'Failed to update');
+    }
+  },
+  async remove(id: string): Promise<void> {
+    const res = await fetch(`${BASE}/training-interests/${id}`, { method: 'DELETE' });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
       throw new Error(j.error ?? 'Failed to delete');

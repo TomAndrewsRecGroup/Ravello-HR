@@ -48,3 +48,37 @@ export interface InterestRow {
   notes: string | null;
   created_at: string;
 }
+
+// ── Training & Workshops ─────────────────────────────────
+
+export interface TrainingOffering {
+  id: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  format?: string | null;
+  url?: string | null;
+}
+
+export interface TrainingProviderRow {
+  id: string;
+  provider_name: string;
+  locations: string | null;
+  category: string | null;
+  website: string | null;
+  offerings: TrainingOffering[];
+  active: boolean;
+  created_at: string;
+}
+
+export type TrainingStatus = 'interested' | 'enrolled' | 'completed' | 'passed';
+
+export interface TrainingInterestRow {
+  id: string;
+  athlete_id: string;
+  provider_id: string;
+  offering_id: string | null;
+  status: TrainingStatus;
+  notes: string | null;
+  created_at: string;
+}

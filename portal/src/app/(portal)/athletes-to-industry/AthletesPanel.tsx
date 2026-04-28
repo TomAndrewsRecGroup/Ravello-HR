@@ -1,31 +1,29 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Plus, Trophy, ArrowRight, Sparkles } from 'lucide-react';
+import { Trophy, ArrowRight } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import AthleteCard from './AthleteCard';
-import type { AthleteRow, InterestRow, PartnerRow } from './types';
+import type { AthleteRow, InterestRow } from './types';
 
-const AthletesModal     = dynamic(() => import('./AthletesModal'),     { ssr: false });
-const AthleteFormModal  = dynamic(() => import('./AthleteFormModal'),  { ssr: false });
-const MatchPickerModal  = dynamic(() => import('./MatchPickerModal'),  { ssr: false });
+const AthletesModal = dynamic(() => import('./AthletesModal'), { ssr: false });
 
 interface Props {
   athletes: AthleteRow[];
-  partners: PartnerRow[];
   interests: InterestRow[];
 }
 
-export default function AthletesPanel({ athletes, partners, interests }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
-  const refresh = () => startTransition(() => router.refresh());
+// Read-only athletes panel.
+//
+// The People System staff own the recruitment side of the Athletes
+// To Industry programme — adding athletes, matching them to partner
+// roles, tracking interest. The client just sees their roster here
+// with the match count for each athlete. Edit + match flows are
+// handled in the admin portal.
+
+export default function AthletesPanel({ athletes, interests }: Props) {
   const [showAll, setShowAll] = useState(false);
-  const [editing, setEditing] = useState<AthleteRow | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [matching, setMatching] = useState<AthleteRow | null>(null);
 
   const interestsByAthlete = useMemo(() => {
     const m = new Map<string, InterestRow[]>();
@@ -52,7 +50,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
               Your athletes
             </h2>
             <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-              {athletes.length} on your roster
+              {athletes.length} on your roster · The People System manages matches
             </p>
           </div>
           {athletes.length > 6 && (
@@ -69,7 +67,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
             <AvatarInitials name="?" size={48} className="mb-3 opacity-30" />
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-soft)' }}>No athletes yet</p>
             <p className="text-xs max-w-[260px]" style={{ color: 'var(--ink-faint)' }}>
-              Add your first athlete to start matching them with partner roles.
+              Your athlete roster is managed by The People System. Get in touch to start building it.
             </p>
           </div>
         ) : (
@@ -79,19 +77,10 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
                 key={a.id}
                 athlete={a}
                 matchCount={interestsByAthlete.get(a.id)?.length ?? 0}
-                onMatch={() => setMatching(a)}
-                onEdit={() => setEditing(a)}
               />
             ))}
           </ul>
         )}
-
-        <button
-          onClick={() => setCreating(true)}
-          className="btn-cta btn-sm mt-4 flex items-center justify-center gap-1.5 self-start"
-        >
-          <Plus size={13} /> Add athlete
-        </button>
       </section>
 
       {showAll && (
@@ -99,48 +88,7 @@ export default function AthletesPanel({ athletes, partners, interests }: Props) 
           athletes={athletes}
           interestsByAthlete={interestsByAthlete}
           onClose={() => setShowAll(false)}
-          onMatch={a => { setShowAll(false); setMatching(a); }}
-          onEdit={a => { setShowAll(false); setEditing(a); }}
         />
-      )}
-
-      {creating && (
-        <AthleteFormModal
-          mode="create"
-          onClose={() => setCreating(false)}
-          onSaved={(saved, openMatch) => {
-            setCreating(false);
-            refresh();
-            if (openMatch) setMatching(saved);
-          }}
-        />
-      )}
-
-      {editing && (
-        <AthleteFormModal
-          mode="edit"
-          athlete={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); refresh(); }}
-        />
-      )}
-
-      {matching && (
-        <MatchPickerModal
-          athlete={matching}
-          partners={partners}
-          initialInterests={interests.filter(i => i.athlete_id === matching.id)}
-          apiBase="/api"
-          onClose={() => setMatching(null)}
-          onChanged={refresh}
-        />
-      )}
-
-      {/* Empty state CTA when no partners exist yet */}
-      {athletes.length > 0 && partners.length === 0 && (
-        <p className="text-[11px] mt-2 px-1 inline-flex items-center gap-1" style={{ color: 'var(--ink-faint)' }}>
-          <Sparkles size={11} /> Once partners list roles you&apos;ll be able to match athletes here.
-        </p>
       )}
     </>
   );

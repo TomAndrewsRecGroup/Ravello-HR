@@ -158,12 +158,12 @@ export default function BroadcastClient({ companies }: Props) {
             {selected.size} client{selected.size !== 1 ? 's' : ''} selected
           </p>
           <button
-            className="btn-cta flex items-center gap-2"
+            className="btn-cta flex items-center gap-2 whitespace-nowrap"
             disabled={!selected.size || !form.title || sending}
             onClick={openConfirm}
           >
             <Send size={14} />
-            Broadcast to {selected.size || '…'} client{selected.size !== 1 ? 's' : ''}
+            Send to {selected.size || '0'} client{selected.size !== 1 ? 's' : ''}
           </button>
         </div>
       </div>

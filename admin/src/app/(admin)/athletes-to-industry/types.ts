@@ -1,8 +1,11 @@
 // Shared types for the Athletes To Industry channel (admin side).
-// `RoleOpportunity` is re-exported from the API layer (single source of truth)
-// so the JSON validator and the UI consumers stay in sync.
+// `RoleOpportunity` and `TrainingOffering` are re-exported from the
+// API layer (single source of truth) so the JSON validator and the UI
+// consumers stay in sync.
 export type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
+export type { TrainingOffering } from '@/lib/training/offerings';
 import type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
+import type { TrainingOffering } from '@/lib/training/offerings';
 
 export interface PartnerRow {
   id: string;
@@ -42,6 +45,31 @@ export interface InterestRow {
   partner_id: string;
   role_opportunity_id: string | null;
   status: InterestStatus;
+  notes: string | null;
+  created_at: string;
+}
+
+// ── Training & Workshops side ─────────────────────────────
+
+export interface TrainingProviderRow {
+  id: string;
+  provider_name: string;
+  locations: string | null;
+  category: string | null;
+  website: string | null;
+  offerings: TrainingOffering[];
+  active: boolean;
+  created_at: string;
+}
+
+export type TrainingStatus = 'interested' | 'enrolled' | 'completed' | 'passed';
+
+export interface TrainingInterestRow {
+  id: string;
+  athlete_id: string;
+  provider_id: string;
+  offering_id: string | null;
+  status: TrainingStatus;
   notes: string | null;
   created_at: string;
 }

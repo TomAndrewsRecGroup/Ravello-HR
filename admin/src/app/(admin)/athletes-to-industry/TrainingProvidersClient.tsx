@@ -4,33 +4,39 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
-  Building2, Plus, Pencil, Trash2, Loader2, Power, PowerOff, Globe, MapPin, Save, X, Users,
+  GraduationCap, Plus, Pencil, Trash2, Loader2, Power, PowerOff, Globe, MapPin, Save, X, Users,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import RoleOpportunitiesEditor from './RoleOpportunitiesEditor';
-import type { AthleteRow, InterestRow, PartnerRow, RoleOpportunity } from './types';
+import OfferingsEditor from './OfferingsEditor';
+import type {
+  AthleteRow, TrainingInterestRow, TrainingOffering, TrainingProviderRow,
+} from './types';
 
-const RoleInterestsPanel = dynamic(() => import('./RoleInterestsPanel'), { ssr: false });
+const TrainingInterestsPanel = dynamic(() => import('./TrainingInterestsPanel'), { ssr: false });
 
 interface Props {
-  initial: PartnerRow[];
-  interests: InterestRow[];
+  initial: TrainingProviderRow[];
+  interests: TrainingInterestRow[];
   athletes: AthleteRow[];
 }
 
 interface Draft {
-  company_name: string;
+  provider_name: string;
   locations: string;
-  industry: string;
+  category: string;
   website: string;
-  role_opportunities: RoleOpportunity[];
+  offerings: TrainingOffering[];
 }
 
 const EMPTY_DRAFT: Draft = {
-  company_name: '', locations: '', industry: '', website: '', role_opportunities: [],
+  provider_name: '', locations: '', category: '', website: '', offerings: [],
 };
 
-export default function PartnersClient({ initial, interests, athletes }: Props) {
+// Mirror of PartnersClient, but for training_providers + training
+// interests. Uses blue (var(--blue)) as the accent so the section
+// stands out from the purple partners block above it.
+
+export default function TrainingProvidersClient({ initial, interests, athletes }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<string | null>(null);
@@ -38,10 +44,10 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [viewing, setViewing] = useState<{ partner: PartnerRow; role: RoleOpportunity | null } | null>(null);
+  const [viewing, setViewing] = useState<{ provider: TrainingProviderRow; offering: TrainingOffering | null } | null>(null);
 
-  const [partners, setPartners] = useState<PartnerRow[]>(initial);
-  useEffect(() => { setPartners(initial); }, [initial]);
+  const [providers, setProviders] = useState<TrainingProviderRow[]>(initial);
+  useEffect(() => { setProviders(initial); }, [initial]);
   const refresh = () => startTransition(() => router.refresh());
 
   const athletesById = useMemo(() => {
@@ -50,16 +56,16 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
     return m;
   }, [athletes]);
 
-  const interestsByPartnerRole = useMemo(() => {
+  const interestsByProviderOffering = useMemo(() => {
     const m = new Map<string, number>();
     for (const i of interests) {
-      const key = `${i.partner_id}::${i.role_opportunity_id ?? '_general'}`;
+      const key = `${i.provider_id}::${i.offering_id ?? '_general'}`;
       m.set(key, (m.get(key) ?? 0) + 1);
     }
     return m;
   }, [interests]);
-  const roleCount = (partnerId: string, roleId: string | null) =>
-    interestsByPartnerRole.get(`${partnerId}::${roleId ?? '_general'}`) ?? 0;
+  const offeringCount = (providerId: string, offeringId: string | null) =>
+    interestsByProviderOffering.get(`${providerId}::${offeringId ?? '_general'}`) ?? 0;
 
   function setBusyFor(id: string, on: boolean) {
     setBusy(prev => {
@@ -70,13 +76,13 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
   }
 
   function startNew() { setDraft(EMPTY_DRAFT); setEditing('new'); setError(''); }
-  function startEdit(p: PartnerRow) {
+  function startEdit(p: TrainingProviderRow) {
     setDraft({
-      company_name: p.company_name,
+      provider_name: p.provider_name,
       locations: p.locations ?? '',
-      industry: p.industry ?? '',
+      category: p.category ?? '',
       website: p.website ?? '',
-      role_opportunities: p.role_opportunities,
+      offerings: p.offerings,
     });
     setEditing(p.id);
     setError('');
@@ -84,22 +90,22 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
   function cancel() { setEditing(null); setError(''); }
 
   async function save() {
-    if (!draft.company_name.trim()) { setError('Company name is required.'); return; }
+    if (!draft.provider_name.trim()) { setError('Provider name is required.'); return; }
     setSaving(true);
     setError('');
     try {
       const isNew = editing === 'new';
       const res = await fetch(
-        isNew ? '/api/admin/partners' : `/api/admin/partners/${editing}`,
+        isNew ? '/api/admin/training-providers' : `/api/admin/training-providers/${editing}`,
         {
           method: isNew ? 'POST' : 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            company_name: draft.company_name.trim(),
+            provider_name: draft.provider_name.trim(),
             locations: draft.locations.trim() || null,
-            industry: draft.industry.trim() || null,
+            category: draft.category.trim() || null,
             website: draft.website.trim() || null,
-            role_opportunities: draft.role_opportunities,
+            offerings: draft.offerings,
           }),
         },
       );
@@ -116,18 +122,18 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusyFor(id, true);
-    const prev = partners.find(p => p.id === id);
+    const prev = providers.find(p => p.id === id);
     if (prev) {
-      setPartners(curr => curr.map(p => p.id === id ? { ...p, ...body } as PartnerRow : p));
+      setProviders(curr => curr.map(p => p.id === id ? { ...p, ...body } as TrainingProviderRow : p));
     }
     try {
-      const res = await fetch(`/api/admin/partners/${id}`, {
+      const res = await fetch(`/api/admin/training-providers/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        if (prev) setPartners(curr => curr.map(p => p.id === id ? prev : p));
+        if (prev) setProviders(curr => curr.map(p => p.id === id ? prev : p));
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Update failed');
         return;
@@ -138,14 +144,14 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
   }
 
   async function remove(id: string) {
-    if (!confirm('Delete this partner? Existing matches will be removed too.')) return;
+    if (!confirm('Delete this provider? Existing matches will be removed too.')) return;
     setBusyFor(id, true);
-    const prev = partners;
-    setPartners(curr => curr.filter(p => p.id !== id));
+    const prev = providers;
+    setProviders(curr => curr.filter(p => p.id !== id));
     try {
-      const res = await fetch(`/api/admin/partners/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/training-providers/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        setPartners(prev);
+        setProviders(prev);
         const j = await res.json().catch(() => ({}));
         alert(j.error ?? 'Delete failed');
         return;
@@ -155,67 +161,68 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
     }
   }
 
-  function partnerInterestCount(partnerId: string): number {
-    return interests.filter(i => i.partner_id === partnerId).length;
+  function providerInterestCount(providerId: string): number {
+    return interests.filter(i => i.provider_id === providerId).length;
   }
 
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-             style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
-          <Building2 size={15} />
+             style={{ background: 'rgba(59,111,255,0.10)', color: 'var(--blue)' }}>
+          <GraduationCap size={15} />
         </div>
         <div className="flex-1">
           <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-            Partners
+            Training & Workshops
           </h2>
           <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-            Platform-wide pool · visible to every client with the channel enabled.
+            Courses, workshops and coaching providers · visible to every client with the channel enabled.
           </p>
         </div>
         {editing === null && (
-          <button onClick={startNew} className="btn-cta btn-sm flex items-center gap-1.5">
-            <Plus size={13} /> Add partner
+          <button onClick={startNew} className="btn-sm flex items-center gap-1.5 font-semibold text-white"
+                  style={{ background: 'var(--blue)', padding: '6px 12px', borderRadius: 10 }}>
+            <Plus size={13} /> Add provider
           </button>
         )}
       </div>
 
       {/* Edit / new form */}
       {editing !== null && (
-        <div className="card p-5 space-y-4">
+        <div className="card p-5 space-y-4" style={{ borderColor: 'rgba(59,111,255,0.30)' }}>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Company name *</label>
-              <input className="input" value={draft.company_name}
-                     onChange={e => setDraft({ ...draft, company_name: e.target.value })}
-                     placeholder="Acme Manufacturing" />
+              <label className="label">Provider name *</label>
+              <input className="input" value={draft.provider_name}
+                     onChange={e => setDraft({ ...draft, provider_name: e.target.value })}
+                     placeholder="London Business School" />
             </div>
             <div>
-              <label className="label">Industry</label>
-              <input className="input" value={draft.industry}
-                     onChange={e => setDraft({ ...draft, industry: e.target.value })}
-                     placeholder="Manufacturing" />
+              <label className="label">Category</label>
+              <input className="input" value={draft.category}
+                     onChange={e => setDraft({ ...draft, category: e.target.value })}
+                     placeholder="Leadership · Wellbeing · Finance" />
             </div>
             <div>
               <label className="label">Locations</label>
               <input className="input" value={draft.locations}
                      onChange={e => setDraft({ ...draft, locations: e.target.value })}
-                     placeholder="London, Manchester, Remote" />
+                     placeholder="London, Online" />
             </div>
             <div>
               <label className="label">Website</label>
               <input className="input" value={draft.website}
                      onChange={e => setDraft({ ...draft, website: e.target.value })}
-                     placeholder="acme.com" />
+                     placeholder="provider.com" />
             </div>
           </div>
 
           <div>
-            <p className="label">Role opportunities</p>
-            <RoleOpportunitiesEditor
-              value={draft.role_opportunities}
-              onChange={next => setDraft({ ...draft, role_opportunities: next })}
+            <p className="label">Courses & workshops</p>
+            <OfferingsEditor
+              value={draft.offerings}
+              onChange={next => setDraft({ ...draft, offerings: next })}
             />
           </div>
 
@@ -225,35 +232,40 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
             <button onClick={cancel} className="btn-secondary btn-sm flex items-center gap-1.5">
               <X size={12} /> Cancel
             </button>
-            <button onClick={save} disabled={saving} className="btn-cta btn-sm flex items-center gap-1.5">
+            <button onClick={save} disabled={saving}
+                    className="btn-sm flex items-center gap-1.5 font-semibold text-white"
+                    style={{ background: 'var(--blue)', padding: '6px 12px', borderRadius: 10, opacity: saving ? 0.6 : 1 }}>
               {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-              {editing === 'new' ? 'Create partner' : 'Save changes'}
+              {editing === 'new' ? 'Create provider' : 'Save changes'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Partner cards */}
-      {partners.length === 0 ? (
+      {/* Provider cards */}
+      {providers.length === 0 ? (
         <div className="card p-12 text-center text-sm" style={{ color: 'var(--ink-faint)' }}>
-          No partners yet. Add the first one above.
+          No providers yet. Add the first one above.
         </div>
       ) : (
         <ul className="grid md:grid-cols-2 gap-3">
-          {partners.map(p => {
+          {providers.map(p => {
             const isBusy = busy.has(p.id);
-            const totalMatches = partnerInterestCount(p.id);
-            const generalCount = roleCount(p.id, null);
+            const totalMatches = providerInterestCount(p.id);
+            const generalCount = offeringCount(p.id, null);
             return (
               <li key={p.id}
                   className="card p-4 flex flex-col"
-                  style={{ borderColor: p.active ? 'var(--line)' : 'rgba(116,128,153,0.20)', opacity: p.active ? 1 : 0.7 }}>
+                  style={{
+                    borderColor: p.active ? 'rgba(59,111,255,0.20)' : 'rgba(116,128,153,0.20)',
+                    opacity: p.active ? 1 : 0.7,
+                  }}>
                 <div className="flex items-start gap-3">
-                  <AvatarInitials name={p.company_name} size={40} />
+                  <AvatarInitials name={p.provider_name} size={40} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-                        {p.company_name}
+                        {p.provider_name}
                       </span>
                       {!p.active && (
                         <span className="badge" style={{ background: 'rgba(116,128,153,0.10)', color: 'var(--ink-faint)' }}>
@@ -262,13 +274,13 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap" style={{ color: 'var(--ink-faint)' }}>
-                      {p.industry && <span>{p.industry}</span>}
+                      {p.category && <span>{p.category}</span>}
                       {p.locations && (
                         <span className="inline-flex items-center gap-0.5"><MapPin size={10} /> {p.locations}</span>
                       )}
                       {p.website && (
                         <a href={p.website} target="_blank" rel="noopener noreferrer"
-                           className="inline-flex items-center gap-0.5 hover:underline" style={{ color: 'var(--purple)' }}>
+                           className="inline-flex items-center gap-0.5 hover:underline" style={{ color: 'var(--blue)' }}>
                           <Globe size={10} /> site
                         </a>
                       )}
@@ -289,37 +301,38 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px dashed var(--line)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
-                    Roles ({p.role_opportunities.length}) · {totalMatches} match{totalMatches === 1 ? '' : 'es'}
+                <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px dashed rgba(59,111,255,0.18)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--blue)' }}>
+                    Offerings ({p.offerings.length}) · {totalMatches} interest{totalMatches === 1 ? '' : 's'}
                   </p>
-                  {p.role_opportunities.length === 0 ? (
+                  {p.offerings.length === 0 ? (
                     <p className="text-[11px] italic" style={{ color: 'var(--ink-faint)' }}>
-                      No roles listed yet.
+                      No offerings listed yet.
                     </p>
                   ) : (
                     <ul className="space-y-1">
-                      {p.role_opportunities.map(role => {
-                        const count = roleCount(p.id, role.id);
+                      {p.offerings.map(offering => {
+                        const count = offeringCount(p.id, offering.id);
                         return (
-                          <li key={role.id}>
+                          <li key={offering.id}>
                             <button
-                              onClick={() => setViewing({ partner: p, role })}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[8px] text-left hover:bg-[var(--surface-soft)] transition-colors"
+                              onClick={() => setViewing({ provider: p, offering })}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[8px] text-left hover:bg-[rgba(59,111,255,0.04)] transition-colors"
                             >
                               <span className="flex-1 text-[12px] truncate" style={{ color: 'var(--ink-soft)' }}>
-                                {role.title}
+                                {offering.title}
                               </span>
-                              {role.location && (
-                                <span className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
-                                  {role.location}
+                              {offering.format && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                                      style={{ background: 'rgba(59,111,255,0.08)', color: 'var(--blue)' }}>
+                                  {offering.format}
                                 </span>
                               )}
                               <span
                                 className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                                 style={{
-                                  background: count > 0 ? 'rgba(124,58,237,0.10)' : 'var(--surface-alt)',
-                                  color: count > 0 ? 'var(--purple)' : 'var(--ink-faint)',
+                                  background: count > 0 ? 'rgba(59,111,255,0.10)' : 'var(--surface-alt)',
+                                  color: count > 0 ? 'var(--blue)' : 'var(--ink-faint)',
                                 }}
                               >
                                 <Users size={9} /> {count}
@@ -331,9 +344,9 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                     </ul>
                   )}
                   <button
-                    onClick={() => setViewing({ partner: p, role: null })}
+                    onClick={() => setViewing({ provider: p, offering: null })}
                     className="text-[11px] font-semibold inline-flex items-center gap-1 hover:underline mt-1"
-                    style={{ color: 'var(--purple)' }}
+                    style={{ color: 'var(--blue)' }}
                   >
                     General interest · {generalCount}
                   </button>
@@ -345,9 +358,9 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
       )}
 
       {viewing && (
-        <RoleInterestsPanel
-          partner={viewing.partner}
-          role={viewing.role}
+        <TrainingInterestsPanel
+          provider={viewing.provider}
+          offering={viewing.offering}
           allInterests={interests}
           athletesById={athletesById}
           onClose={() => setViewing(null)}

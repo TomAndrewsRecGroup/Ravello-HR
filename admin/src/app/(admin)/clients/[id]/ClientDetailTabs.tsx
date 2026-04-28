@@ -275,7 +275,9 @@ function BillingPanel({
 
 /* ─── Main tabs component ────────────────────────── */
 
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Services', 'Friction'] as const;
+// Services tab removed — retainer + module access live together on the
+// Overview tab now (retainer modal opens on Save in FeatureFlagToggles).
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Friction'] as const;
 type Tab = typeof TABS[number];
 
 const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
@@ -617,18 +619,34 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
             </div>
           </div>
 
-          {/* Feature flags sidebar */}
+          {/* Module access + retainer flow */}
           <div className="card p-5 h-fit">
-            <FeatureFlagToggles companyId={company.id} flags={company.feature_flags ?? {}} />
+            <FeatureFlagToggles
+              companyId={company.id}
+              flags={company.feature_flags ?? {}}
+              monthlyRetainerPence={company.monthly_retainer_pence ?? null}
+              subscriptionStatus={company.subscription_status ?? null}
+            />
           </div>
         </div>
       )}
 
       {/* ─── ROLES ────────────────────────────────────── */}
       {tab === 'Roles' && (
-        <div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {reqs.length} role{reqs.length === 1 ? '' : 's'} on this client
+            </p>
+            <a
+              href={`/hiring/new?company_id=${company.id}`}
+              className="btn-cta btn-sm flex items-center gap-1.5"
+            >
+              <Plus size={13} /> Raise new role
+            </a>
+          </div>
           {reqs.length === 0 ? (
-            <div className="card empty-state">No roles for this client.</div>
+            <div className="card empty-state">No roles for this client yet.</div>
           ) : (
             <div className="table-wrapper">
               <table className="table">
@@ -694,7 +712,18 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
 
       {/* ─── DOCUMENTS ────────────────────────────────── */}
       {tab === 'Documents' && (
-        <div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {documents.length} document{documents.length === 1 ? '' : 's'}
+            </p>
+            <a
+              href={`/documents/upload?company_id=${company.id}`}
+              className="btn-cta btn-sm flex items-center gap-1.5"
+            >
+              <Plus size={13} /> Upload document
+            </a>
+          </div>
           {documents.length === 0 ? (
             <div className="card p-12 empty-state">No documents yet.</div>
           ) : (
@@ -1068,6 +1097,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       {/* ─── LEAD ─────────────────────────────────────── */}
       {tab === 'LEAD' && tabData['LEAD'] && (
         <LeadTab
+          companyId={company.id}
           initialTrainingNeeds={tabData['LEAD'].trainingNeeds ?? []}
           initialPerfReviews={tabData['LEAD'].perfReviews ?? []}
         />
@@ -1076,6 +1106,7 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
       {/* ─── PROTECT ───────────────────────────────────── */}
       {tab === 'PROTECT' && tabData['PROTECT'] && (
         <ProtectTab
+          companyId={company.id}
           initialAbsenceRecords={tabData['PROTECT'].absenceRecords ?? []}
           initialEmpDocs={tabData['PROTECT'].empDocs ?? []}
         />
@@ -1098,85 +1129,6 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
         )
       )}
 
-      {tab === 'Services' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Active Services</h2>
-            <button onClick={() => setShowSvcForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
-              <Plus size={13} /> Add Service
-            </button>
-          </div>
-
-          {/* Add service form */}
-          {showSvcForm && (
-            <div className="card p-5 space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Service Name</label>
-                  <input className="input" placeholder="e.g. HIRE Foundations" value={svcForm.service_name} onChange={e => setSvcForm(f => ({ ...f, service_name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Tier</label>
-                  <input className="input" placeholder="e.g. Standard" value={svcForm.service_tier} onChange={e => setSvcForm(f => ({ ...f, service_tier: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Start Date</label>
-                  <input type="date" className="input" value={svcForm.start_date} onChange={e => setSvcForm(f => ({ ...f, start_date: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Monthly Fee (£)</label>
-                  <input type="number" className="input" placeholder="0.00" value={svcForm.monthly_fee} onChange={e => setSvcForm(f => ({ ...f, monthly_fee: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Status</label>
-                  <select className="input" value={svcForm.status} onChange={e => setSvcForm(f => ({ ...f, status: e.target.value }))}>
-                    {['Active', 'Paused', 'Cancelled'].map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={saveService} disabled={savingSvc || !svcForm.service_name} className="btn-cta btn-sm flex items-center gap-1.5">
-                  {savingSvc ? <Loader2 size={12} className="animate-spin" /> : null} Save Service
-                </button>
-                <button onClick={() => setShowSvcForm(false)} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /> Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {services.length === 0 ? (
-            <div className="card empty-state">No services configured for this client.</div>
-          ) : (
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Service</th>
-                    <th>Tier</th>
-                    <th>Start Date</th>
-                    <th>Status</th>
-                    <th>Monthly Fee</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {services.map((s: any) => (
-                    <tr key={s.id}>
-                      <td className="font-medium">{s.service_name}</td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.service_tier ?? '-'}</td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.start_date ? new Date(s.start_date).toLocaleDateString('en-GB') : '-'}</td>
-                      <td>
-                        <span className={`badge ${s.status === 'Active' ? 'badge-active' : s.status === 'Paused' ? 'badge-high' : 'badge-inactive'}`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{s.monthly_fee != null ? `£${Number(s.monthly_fee).toLocaleString()}` : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
