@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
@@ -99,6 +100,13 @@ export async function POST(req: NextRequest) {
         actionsUrl:    `${portalUrl}/actions`,
       })))
     );
+  }
+
+  // Bust the dashboard cache so the new actions are reflected in the
+  // admin's "Active actions" rollups immediately.
+  revalidatePath('/dashboard');
+  for (const id of company_ids as string[]) {
+    revalidatePath(`/clients/${id}`);
   }
 
   return NextResponse.json({ created: data?.length ?? 0 });

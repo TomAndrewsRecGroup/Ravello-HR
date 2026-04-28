@@ -59,7 +59,9 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
     if (!error) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-      revalidateAdminPath('/clients');
+      // Pass the client-scoped path so revalidateAdminPath flushes
+      // the per-client unstable_cache tag, not just the /clients list.
+      revalidateAdminPath(`/clients/${companyId}`);
     }
   }
 
@@ -95,6 +97,8 @@ function ClientStatusToggle({ companyId, currentActive }: { companyId: string; c
     const { error } = await supabase.from('companies').update({ active: newVal }).eq('id', companyId);
     if (!error) {
       setActive(newVal);
+      // /clients flushes the list, /clients/<id> flushes the tag.
+      revalidateAdminPath(`/clients/${companyId}`);
       revalidateAdminPath('/clients');
     }
     setLoading(false);

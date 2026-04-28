@@ -78,7 +78,11 @@ export async function GET() {
       'content-type':  'application/json',
       // Shared edge cache (Vercel) for 30s; browsers keep serving stale
       // for up to 5 min while re-validating in the background.
-      'cache-control': 'private, max-age=10, s-maxage=30, stale-while-revalidate=300',
+      // Tightened from s-maxage=30 / SWR=300 to 10/60 so a freshly-onboarded
+      // client appears in the list within 10s instead of up to 5 minutes.
+      // Revalidation triggered by the create-client POST still wins; this
+      // is the worst-case bound when no explicit bust happens.
+      'cache-control': 'private, max-age=5, s-maxage=10, stale-while-revalidate=60',
     },
   });
 }
