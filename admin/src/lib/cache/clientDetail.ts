@@ -3,8 +3,15 @@
 // Single layer: unstable_cache with a service-role Supabase client.
 // All The People System staff see the same client detail (row-level access is gated
 // at the sidebar, not per row), so a shared cache keyed by id is safe.
-// TTL 60s; invalidated via revalidateTag(`client:<id>`) from
+// TTL 5s; invalidated via revalidateTag(`client:<id>`) from
 // admin/src/app/actions.ts whenever a mutation touches the client.
+//
+// 5-second TTL is a deliberate trade-off: keeps the cache useful for
+// rapid re-navigation (back-and-forth between tabs is instant) while
+// guaranteeing that if a tag-flush is missed by some new mutation
+// path, the stale render disappears within a tick. Was 60s before;
+// that was long enough to leave admin staring at an empty user list
+// after onboarding while waiting for it to refresh.
 //
 // A Redis layer previously lived here but was removed because pulling
 // node-redis into any module that a 'use server' file imports breaks
@@ -63,6 +70,6 @@ export function getCachedClientDetail(id: string): Promise<ClientDetail | null> 
   return unstable_cache(
     () => fetchFromDb(id),
     ['client-detail', id],
-    { revalidate: 60, tags: [`client:${id}`] },
+    { revalidate: 5, tags: [`client:${id}`] },
   )();
 }
