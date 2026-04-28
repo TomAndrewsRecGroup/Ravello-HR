@@ -244,6 +244,16 @@ export default function OnboardingPage() {
   }
 
   // Step 5: mark complete + redirect.
+  // The session cookie set by middleware caches onboarding_completed
+  // on a 15-min TTL. After we flip the DB to true we MUST clear the
+  // cookie before navigating — otherwise /dashboard layout reads the
+  // stale cookie (false), bounces to /onboarding, which fetches the
+  // fresh DB (true), bounces to /dashboard… infinite loop, thousands
+  // of console logs, the symptom the user reported.
+  // Using window.location.href for the navigation also ensures the
+  // browser issues a fresh document request (re-running middleware)
+  // rather than a soft client-side route — soft routes don't always
+  // re-evaluate the layout on Next 14.
   const completedRef = useRef(false);
   useEffect(() => {
     if (step !== 5 || completedRef.current || !profile?.id) return;
@@ -253,8 +263,16 @@ export default function OnboardingPage() {
         onboarding_completed: true,
         onboarding_step:      TOTAL_STEPS,
       }).eq('id', profile.id);
+      // Invalidate the cached session cookie so the next request
+      // re-stamps it with onboarding_completed = true.
+      try {
+        await fetch('/api/portal/refresh-session', { method: 'POST' });
+      } catch {
+        // Best effort — failure here just means the layout will
+        // do one extra redirect cycle (cap'd by the 15-min TTL).
+      }
       // Tiny delay so the success state is visible.
-      setTimeout(() => router.push('/dashboard'), 1400);
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1400);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, profile?.id]);
