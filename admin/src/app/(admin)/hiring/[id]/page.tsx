@@ -46,7 +46,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const [{ data: req }, { data: candidates }, { data: interviews }] = await Promise.all([
     supabase
       .from('requisitions')
-      .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,created_at,companies(id,name)')
+      .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,created_at,companies(id,slug,name)')
       .eq('id', params.id)
       .single(),
     supabase
@@ -88,7 +88,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
         actions={
           <div className="flex items-center gap-2">
             {company?.id && (
-              <Link prefetch={false} href={`/clients/${company.id}`} className="btn-secondary btn-sm">
+              <Link prefetch={false} href={`/clients/${company.slug ?? company.id}`} className="btn-secondary btn-sm">
                 View Client →
               </Link>
             )}
@@ -129,7 +129,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               <div>
                 <p className="text-xs mb-1" style={{ color: 'var(--ink-faint)' }}>Client</p>
                 {company?.id
-                  ? <Link prefetch={false} href={`/clients/${company.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>{company.name}</Link>
+                  ? <Link prefetch={false} href={`/clients/${company.slug ?? company.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>{company.name}</Link>
                   : <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{company?.name ?? '-'}</p>
                 }
               </div>
@@ -222,7 +222,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               )}
               <div className="mt-3">
                 <Link prefetch={false}
-                  href={`/clients/${company?.id}?tab=Candidates`}
+                  href={`/clients/${company?.slug ?? company?.id}?tab=Candidates`}
                   className="text-xs font-medium"
                   style={{ color: 'var(--purple)' }}
                 >

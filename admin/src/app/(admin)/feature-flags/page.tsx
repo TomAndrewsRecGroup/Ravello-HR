@@ -11,7 +11,7 @@ export default async function FeatureFlagsPage() {
   const supabase = createServerSupabaseClient();
   const { data: companies } = await supabase
     .from('companies')
-    .select('id,name,active,feature_flags')
+    .select('id,slug,name,active,feature_flags')
     .eq('active', true)
     .order('name');
 
@@ -31,7 +31,7 @@ export default async function FeatureFlagsPage() {
               <div key={c.id} className="card p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <Link prefetch={false} href={`/clients/${c.id}`} className="font-display font-semibold text-sm hover:underline" style={{ color: 'var(--ink)' }}>
+                    <Link prefetch={false} href={`/clients/${c.slug ?? c.id}`} className="font-display font-semibold text-sm hover:underline" style={{ color: 'var(--ink)' }}>
                       {c.name}
                     </Link>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>

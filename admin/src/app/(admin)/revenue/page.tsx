@@ -92,11 +92,11 @@ export default async function RevenuePage() {
   const [companiesRes, eventsRes] = await Promise.all([
     supabase
       .from('companies')
-      .select('id, name, active, monthly_retainer_pence, subscription_status, stripe_subscription_id, subscription_started_at, feature_flags')
+      .select('id, slug, name, active, monthly_retainer_pence, subscription_status, stripe_subscription_id, subscription_started_at, feature_flags')
       .order('monthly_retainer_pence', { ascending: false, nullsFirst: false }),
     supabase
       .from('stripe_events')
-      .select('id, type, handled_at, company_id, companies(name)')
+      .select('id, type, handled_at, company_id, companies(id, slug, name)')
       .order('handled_at', { ascending: false })
       .limit(20),
   ]);
@@ -144,6 +144,7 @@ export default async function RevenuePage() {
       const cents  = c.monthly_retainer_pence ?? 0;
       return {
         id:         c.id,
+        slug:       (c as any).slug ?? null,
         name:       c.name,
         retainer:   cents,
         status,
@@ -286,7 +287,7 @@ export default async function RevenuePage() {
                     return (
                       <tr key={r.id}>
                         <td>
-                          <Link prefetch={false} href={`/clients/${r.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
+                          <Link prefetch={false} href={`/clients/${r.slug ?? r.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
                             {r.name}
                           </Link>
                         </td>
@@ -378,7 +379,7 @@ export default async function RevenuePage() {
                     {e.company_id && (
                       <Link
                         prefetch={false}
-                        href={`/clients/${e.company_id}`}
+                        href={`/clients/${e.companies?.slug ?? e.company_id}`}
                         className="text-[11px] font-semibold flex items-center gap-1 hover:underline flex-shrink-0"
                         style={{ color: 'var(--purple)' }}
                       >

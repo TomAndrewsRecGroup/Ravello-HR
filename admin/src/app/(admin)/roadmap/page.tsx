@@ -40,13 +40,13 @@ export default async function AdminRoadmapPage() {
   const [milestonesRes, companiesRes] = await Promise.all([
     supabase
       .from('milestones')
-      .select('id,company_id,track,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,name)')
+      .select('id,company_id,track,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,slug,name)')
       .order('quarter')
       .order('track')
       .limit(2000),
     supabase
       .from('companies')
-      .select('id,name')
+      .select('id,slug,name')
       .eq('active', true)
       .order('name'),
   ]);
@@ -55,11 +55,12 @@ export default async function AdminRoadmapPage() {
   const companies   = companiesRes.data   ?? [];
 
   // Group by company
-  const byCompany: Record<string, { name: string; milestones: any[] }> = {};
+  const byCompany: Record<string, { slug: string | null; name: string; milestones: any[] }> = {};
   for (const m of milestones) {
     const cid  = (m.companies as any)?.id ?? 'unknown';
+    const slug = (m.companies as any)?.slug ?? null;
     const name = (m.companies as any)?.name ?? 'Unknown';
-    if (!byCompany[cid]) byCompany[cid] = { name, milestones: [] };
+    if (!byCompany[cid]) byCompany[cid] = { slug, name, milestones: [] };
     byCompany[cid].milestones.push(m);
   }
 
@@ -115,7 +116,7 @@ export default async function AdminRoadmapPage() {
                     {client.name}
                   </h2>
                   <Link prefetch={false}
-                    href={`/clients/${cid}`}
+                    href={`/clients/${client.slug ?? cid}`}
                     className="text-xs font-medium"
                     style={{ color: 'var(--purple)' }}
                   >
@@ -189,7 +190,7 @@ export default async function AdminRoadmapPage() {
                 {clientsWithout.map((c: any) => (
                   <Link prefetch={false}
                     key={c.id}
-                    href={`/clients/${c.id}`}
+                    href={`/clients/${c.slug ?? c.id}`}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors hover:opacity-80"
                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)', border: '1px solid var(--line)' }}
                   >

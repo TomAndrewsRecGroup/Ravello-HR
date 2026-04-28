@@ -29,10 +29,10 @@ export default async function AdminHiringAnalyticsPage() {
   const supabase = createServerSupabaseClient();
 
   const [{ data: reqs }, { data: candidates }, { data: offers }, { data: companies }] = await Promise.all([
-    supabase.from('requisitions').select('id,title,stage,friction_level,assigned_recruiter,created_at,companies(id,name)').order('created_at', { ascending: false }),
+    supabase.from('requisitions').select('id,title,stage,friction_level,assigned_recruiter,created_at,companies(id,slug,name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('id,approved_for_client,client_status'),
     supabase.from('offers').select('id,status'),
-    supabase.from('companies').select('id,name').eq('active', true),
+    supabase.from('companies').select('id,slug,name').eq('active', true),
   ]);
 
   const allReqs = reqs ?? [];
@@ -79,7 +79,7 @@ export default async function AdminHiringAnalyticsPage() {
     const active = clientReqs.filter(r => !['filled', 'cancelled'].includes(r.stage)).length;
     const filled = clientReqs.filter(r => r.stage === 'filled').length;
     const highFriction = clientReqs.filter(r => ['High', 'Critical'].includes((r as any).friction_level ?? '')).length;
-    return { id: c.id, name: c.name, total: clientReqs.length, active, filled, highFriction };
+    return { id: c.id, slug: c.slug ?? null, name: c.name, total: clientReqs.length, active, filled, highFriction };
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
 
   // Recruiter breakdown
@@ -219,7 +219,7 @@ export default async function AdminHiringAnalyticsPage() {
                   {clientBreakdown.map(c => (
                     <tr key={c.id}>
                       <td>
-                        <Link prefetch={false} href={`/clients/${c.id}`} className="font-medium hover:underline" style={{ color: 'var(--purple)' }}>
+                        <Link prefetch={false} href={`/clients/${c.slug ?? c.id}`} className="font-medium hover:underline" style={{ color: 'var(--purple)' }}>
                           {c.name}
                         </Link>
                       </td>

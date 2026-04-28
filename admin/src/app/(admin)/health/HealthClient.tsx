@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database } from 'lucide-react';
 import type { ClientHealth, IvylensHealth } from './page';
+import { clientHref } from '@/lib/clientHref';
 
 interface Props {
   ivylens: IvylensHealth;
@@ -193,7 +194,7 @@ export default function HealthClient({ ivylens, clients, rag }: Props) {
                       </span>
                     </td>
                     <td>
-                      <Link href={`/clients/${c.id}`} prefetch={false} className="btn-ghost btn-sm">
+                      <Link href={clientHref(c)} prefetch={false} className="btn-ghost btn-sm">
                         Open →
                       </Link>
                     </td>

@@ -36,11 +36,11 @@ export default async function AdminComplianceDashboard() {
   ] = await Promise.all([
     supabase
       .from('compliance_items')
-      .select('id,company_id,title,description,category,status,due_date,companies(id, name)')
+      .select('id,company_id,title,description,category,status,due_date,companies(id, slug, name)')
       .order('due_date', { ascending: true }),
     supabase
       .from('employee_documents')
-      .select('id,company_id,employee_name,doc_type,title,file_url,expiry_date,status,companies(id, name)')
+      .select('id,company_id,employee_name,doc_type,title,file_url,expiry_date,status,companies(id, slug, name)')
       .not('expiry_date', 'is', null)
       .in('status', ['active', 'expired', 'pending_renewal'])
       .order('expiry_date', { ascending: true }),
@@ -63,6 +63,7 @@ export default async function AdminComplianceDashboard() {
       rag: ragFromDays(daysUntil, ci.status),
       companyName: ci.companies?.name ?? '-',
       companyId:   ci.companies?.id ?? '',
+      companySlug: ci.companies?.slug ?? null,
     };
   });
 
@@ -77,6 +78,7 @@ export default async function AdminComplianceDashboard() {
       rag: d.status === 'expired' ? 'red' : docStatus,
       companyName: d.companies?.name ?? '-',
       companyId:   d.companies?.id ?? '',
+      companySlug: d.companies?.slug ?? null,
     };
   });
 
@@ -152,7 +154,7 @@ export default async function AdminComplianceDashboard() {
                     return (
                       <tr key={d.id}>
                         <td>
-                          <Link prefetch={false} href={`/clients/${d.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
+                          <Link prefetch={false} href={`/clients/${d.companySlug ?? d.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
                             {d.companyName}
                           </Link>
                         </td>
@@ -224,7 +226,7 @@ export default async function AdminComplianceDashboard() {
                     return (
                       <tr key={ci.id}>
                         <td>
-                          <Link prefetch={false} href={`/clients/${ci.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
+                          <Link prefetch={false} href={`/clients/${ci.companySlug ?? ci.companyId}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--purple)' }}>
                             {ci.companyName}
                           </Link>
                         </td>

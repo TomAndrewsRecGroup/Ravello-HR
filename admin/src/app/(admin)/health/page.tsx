@@ -16,6 +16,7 @@ const RATE_LIMIT_PER_DAY = 1000;
 
 export interface ClientHealth {
   id:             string;
+  slug:           string | null;
   name:           string;
   active:         boolean;
   overdue_comp:   number;
@@ -59,7 +60,7 @@ export default async function HealthStatusPage() {
     callsRes,
     cacheRes,
   ] = await Promise.all([
-    supabase.from('companies').select('id,name,active').order('name'),
+    supabase.from('companies').select('id,slug,name,active').order('name'),
     supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'completed'),
     supabase.from('tickets').select('company_id').in('status', ['open', 'in_progress']),
     supabase.from('requisitions').select('company_id,updated_at,stage').not('stage', 'in', '(filled,cancelled)').lt('updated_at', fortnightAgo),
@@ -85,6 +86,7 @@ export default async function HealthStatusPage() {
   const clientHealth: ClientHealth[] = companies.map((c: any) => {
     const base = {
       id:              c.id,
+      slug:            c.slug ?? null,
       name:            c.name,
       active:          c.active,
       overdue_comp:    compByCompany[c.id] ?? 0,

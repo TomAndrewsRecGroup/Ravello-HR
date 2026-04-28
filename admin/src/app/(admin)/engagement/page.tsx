@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { AlertTriangle, TrendingUp, LogIn, Eye, EyeOff } from 'lucide-react';
+import { clientHref } from '@/lib/clientHref';
 
 export const metadata: Metadata = { title: 'Client Engagement' };
 export const revalidate = 60;
@@ -11,7 +12,7 @@ export default async function EngagementPage() {
   const supabase = createServerSupabaseClient();
 
   const [compRes, profileRes, reqRes, ticketRes, docRes, notesRes] = await Promise.all([
-    supabase.from('companies').select('id, name, last_portal_login, login_count_30d').eq('active', true).order('name'),
+    supabase.from('companies').select('id, slug, name, last_portal_login, login_count_30d').eq('active', true).order('name'),
     supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin'),
     supabase.from('requisitions').select('company_id, stage, created_at'),
     supabase.from('tickets').select('company_id, status, created_at'),
@@ -75,6 +76,7 @@ export default async function EngagementPage() {
 
     return {
       id: c.id,
+      slug: c.slug ?? null,
       name: c.name,
       userCount: profileCountMap.get(c.id) ?? 0,
       daysSinceLogin,
@@ -145,7 +147,7 @@ export default async function EngagementPage() {
                 return (
                   <tr key={c.id}>
                     <td>
-                      <Link prefetch={false} href={`/clients/${c.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
+                      <Link prefetch={false} href={clientHref(c)} className="text-sm font-medium hover:underline" style={{ color: 'var(--ink)' }}>
                         {c.name}
                       </Link>
                     </td>
