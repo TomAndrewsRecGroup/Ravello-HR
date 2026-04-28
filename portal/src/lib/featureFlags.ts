@@ -4,8 +4,8 @@
 // any billing setup).
 //
 // Used by:
-//   • /clients/new — to render the PAID/FREE checkbox sections and
-//     hide the £ retainer field when only free flags are selected.
+//   • /clients/onboard — to render the PAID/FREE checkbox sections
+//     and hide the £ retainer step when only free flags are selected.
 //   • POST /api/admin/clients — to skip Stripe AND skip the portal
 //     onboarding wizard for free-only clients.
 //   • portal Sidebar — to hide the /billing nav entry for clients
