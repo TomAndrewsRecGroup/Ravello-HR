@@ -18,6 +18,32 @@ For each file in this directory:
 4. Paste the **rest of the file** (the `<!DOCTYPE html>` block onwards) into the message body
 5. Click **Save**
 
+## Why these templates show a 6-digit code
+
+Modern corporate email scanners (Outlook Safe Links, Gmail's anti-
+phishing scanner, Mimecast, Proofpoint, antivirus tools) pre-fetch
+every link in incoming email to scan for malware. Supabase's verify
+endpoint consumes the one-time token on first GET — so the link
+appears "already expired" by the time the user clicks. Codes can't
+be prefetched, so the OTP path is bulletproof.
+
+The `02-invite-user.html` and `04-reset-password.html` templates
+display both the magic link (button) AND a 6-digit `{{ .Token }}`.
+Users whose email isn't being scanned can click the button as
+before; users in scanner-protected environments can type the code
+into the portal forms.
+
+The portal handles both:
+
+| Where the user enters the code | Page |
+|---|---|
+| Reset password code | /auth/reset-password (step 2 after requesting) |
+| Invitation code | /auth/accept-invite |
+
+The other three templates (`01-confirm-signup`, `03-magic-link`,
+`05-change-email`) keep the link-only pattern — those flows aren't
+currently wired into the portal as OTP.
+
 ## URL Configuration prerequisites
 
 In **Authentication → URL Configuration**:

@@ -1,35 +1,58 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
-// Reset password — OTP code flow.
+// Accept invitation — OTP code flow.
 //
-// Why OTP and not magic-link: corporate email scanners (Outlook Safe
-// Links, Gmail's anti-phishing scanner, Mimecast etc.) pre-fetch every
-// link in incoming email. Supabase's verify endpoint consumes the
-// token on first GET, so the link is "already expired" by the time
-// the user clicks. 6-digit codes can't be prefetched.
+// Same rationale as the password reset flow: corporate email scanners
+// pre-fetch links and consume the one-time token before the user can
+// click. 6-digit codes can't be prefetched, so this is the bullet-
+// proof path.
 //
-// Flow:
-//   Step 1 — User enters email, we call resetPasswordForEmail. Supabase
-//            sends an email containing both a code AND a magic link.
-//   Step 2 — User enters the code + new password. We verifyOtp({ type:
-//            'recovery' }) to mint a session, then updateUser({ password })
-//            to set the new password, then redirect to dashboard.
-// Magic link still works for users whose email isn't being scanned —
-// they land on /auth/update-password directly with hash tokens.
+// User has been invited via /api/invite (admin onboarding) or
+// /api/portal/invite (client_admin invites teammate). Either route
+// calls Supabase's inviteUserByEmail which sends an email containing
+// both a magic link and a 6-digit code (template 02-invite-user).
+//
+// On this page they enter:
+//   • their email
+//   • the 6-digit code
+//   • a new password (required for invite — they have no existing one)
+//
+// We verifyOtp({ type: 'invite' }) to mint a session, updateUser() to
+// set the password, then route to /dashboard. The portal layout
+// middleware decides if a paid-tier wizard is needed; either way the
+// user is signed in by the time they arrive there.
 
-export default function ResetPasswordPage() {
-  const router   = useRouter();
-  const supabase = createClient();
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFFFFF' }}>
+        <Loader2 size={20} className="animate-spin" style={{ color: 'var(--purple)' }} />
+      </div>
+    }>
+      <AcceptInviteInner />
+    </Suspense>
+  );
+}
 
-  const [step,     setStep]     = useState<'email' | 'verify'>('email');
-  const [email,    setEmail]    = useState('');
+function AcceptInviteInner() {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const supabase     = createClient();
+
+  // Pre-fill email from query string if it was passed (admins can
+  // include ?email=... in the link they share if the email arrives
+  // late and the user just visits the page directly).
+  const emailHint = searchParams.get('email') ?? '';
+
+  const [email,    setEmail]    = useState(emailHint);
   const [token,    setToken]    = useState('');
   const [password, setPassword] = useState('');
   const [confirm,  setConfirm]  = useState('');
@@ -37,31 +60,15 @@ export default function ResetPasswordPage() {
   const [error,    setError]    = useState('');
   const [done,     setDone]     = useState(false);
 
-  async function handleSendCode(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const { error: sendErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      // Backup magic-link target (works in email clients without
-      // scanners). Lands on /auth/update-password where the page
-      // bootstraps the session from the URL hash.
-      redirectTo: `${window.location.origin}/auth/update-password`,
-    });
-
-    setLoading(false);
-    if (sendErr) {
-      setError(sendErr.message);
-      return;
-    }
-    setStep('verify');
-  }
-
-  async function handleVerify(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
     const code = token.replace(/\s+/g, '');
+    if (!email.trim()) {
+      setError('Enter the email the invite was sent to.');
+      return;
+    }
     if (!/^\d{6}$/.test(code)) {
       setError('Code must be 6 digits.');
       return;
@@ -77,21 +84,21 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    // 1. Verify the OTP — creates a session.
+    // 1. Verify the invite token — creates a session.
     const { error: verifyErr } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code,
-      type:  'recovery',
+      type:  'invite',
     });
     if (verifyErr) {
       setLoading(false);
       setError(verifyErr.message.includes('expired') || verifyErr.message.includes('invalid')
-        ? 'That code is invalid or expired. Request a new one.'
+        ? 'That code is invalid or expired. Ask whoever invited you for a new one.'
         : verifyErr.message);
       return;
     }
 
-    // 2. Update password against the now-active session.
+    // 2. Set the password against the now-active session.
     const { error: updateErr } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (updateErr) {
@@ -115,15 +122,17 @@ export default function ResetPasswordPage() {
             <div className="flex items-start gap-3 p-4 rounded-[10px]" style={{ background: 'rgba(20,184,166,0.10)', color: 'var(--teal)' }}>
               <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold">Password updated</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>Redirecting you to your dashboard…</p>
+                <p className="text-sm font-semibold">Account ready</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>Signing you in…</p>
               </div>
             </div>
-          ) : step === 'email' ? (
+          ) : (
             <>
-              <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Reset password</h1>
-              <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>We&rsquo;ll email you a 6-digit code.</p>
-              <form onSubmit={handleSendCode} className="space-y-4">
+              <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Accept your invitation</h1>
+              <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
+                Enter the 6-digit code from your invitation email and set a password.
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="form-group">
                   <label className="label" style={{ color: 'var(--ink-soft)' }}>Email</label>
                   <input
@@ -132,38 +141,12 @@ export default function ResetPasswordPage() {
                     style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
                   />
                 </div>
-                {error && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--red)' }}>{error}</p>}
-                <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
-                  {loading && <Loader2 size={14} className="animate-spin" />}
-                  {loading ? 'Sending…' : 'Send code'}
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => { setStep('email'); setToken(''); setPassword(''); setConfirm(''); setError(''); }}
-                className="flex items-center gap-1 text-xs font-semibold mb-3"
-                style={{ color: 'var(--ink-faint)' }}
-              >
-                <ArrowLeft size={11} /> Use a different email
-              </button>
-              <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Enter your code</h1>
-              <p className="text-sm mb-1" style={{ color: 'var(--ink-soft)' }}>
-                Check your inbox for a 6-digit code.
-              </p>
-              <p className="text-xs mb-6" style={{ color: 'var(--ink-faint)' }}>
-                Sent to <span style={{ color: 'var(--ink-soft)', fontWeight: 500 }}>{email}</span>. Code expires in 1 hour.
-              </p>
-              <form onSubmit={handleVerify} className="space-y-4">
                 <div className="form-group">
-                  <label className="label" style={{ color: 'var(--ink-soft)' }}>6-digit code</label>
+                  <label className="label" style={{ color: 'var(--ink-soft)' }}>Invitation code</label>
                   <input
                     type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} required
                     value={token} onChange={e => setToken(e.target.value.replace(/\D/g, ''))}
-                    className="input" placeholder="••••••"
-                    autoComplete="one-time-code"
+                    className="input" placeholder="••••••" autoComplete="one-time-code"
                     style={{
                       background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
                       fontFamily: 'SFMono-Regular,Menlo,Consolas,monospace',
@@ -172,7 +155,7 @@ export default function ResetPasswordPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="label" style={{ color: 'var(--ink-soft)' }}>New password</label>
+                  <label className="label" style={{ color: 'var(--ink-soft)' }}>Set password</label>
                   <input
                     type="password" required minLength={8} autoComplete="new-password"
                     value={password} onChange={e => setPassword(e.target.value)}
@@ -192,14 +175,14 @@ export default function ResetPasswordPage() {
                 {error && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--red)' }}>{error}</p>}
                 <button type="submit" disabled={loading} className="btn-cta w-full justify-center">
                   {loading && <Loader2 size={14} className="animate-spin" />}
-                  {loading ? 'Updating…' : 'Reset password'}
+                  {loading ? 'Setting up…' : 'Accept and sign in'}
                 </button>
               </form>
             </>
           )}
         </div>
         <p className="text-center mt-5 text-xs">
-          <a href="/auth/login" style={{ color: 'var(--purple)' }}>← Back to sign in</a>
+          <a href="/auth/login" style={{ color: 'var(--purple)' }}>← Already have an account? Sign in</a>
         </p>
       </div>
     </div>
