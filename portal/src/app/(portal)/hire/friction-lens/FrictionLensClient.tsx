@@ -91,12 +91,16 @@ function FieldInput({
     );
   }
 
-  // three_way, work_model, or any enum type
-  const values = field.values_hint ?? typeInfo?.values ?? [];
+  // three_way, work_model, or any enum type.
+  // values_hint or typeInfo.values can come back from IvyLens as
+  // a string or object on flaky days — coerce to array up-front so
+  // .map() can't crash the whole tree.
+  const rawValues = field.values_hint ?? typeInfo?.values ?? [];
+  const values: unknown[] = Array.isArray(rawValues) ? rawValues : [];
   if (values.length > 0) {
     return (
       <div className="flex flex-wrap gap-2">
-        {values.map(v => (
+        {values.map((v: any) => (
           <button
             key={v}
             type="button"
@@ -183,7 +187,10 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
   }
 
   function visibleFields(dim: FormDimension): FormField[] {
-    return dim.fields.filter(f => f.applicable_bands[employeeBand] !== false);
+    // dim.fields and applicable_bands both come from the IvyLens
+    // proxy and have crashed prod when malformed. Guard everything.
+    if (!Array.isArray(dim?.fields)) return [];
+    return dim.fields.filter(f => f?.applicable_bands?.[employeeBand] !== false);
   }
 
   async function handleSubmit() {
@@ -249,7 +256,10 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
 
   // ─── Assessment Form ───────────────────────────────
   if (showForm) {
-    const dims = schema?.dimensions ?? [];
+    // Guard: schema?.dimensions is treated as array-or-nothing.
+    // If IvyLens returns an object or string here we'd render an
+    // error rather than crashing every downstream .map.
+    const dims: FormDimension[] = Array.isArray(schema?.dimensions) ? schema!.dimensions : [];
     const totalSteps = dims.length + 1; // step 0 = employee count
 
     return (
@@ -367,7 +377,10 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
 
   // ─── Results View ──────────────────────────────────
   if (assessment) {
-    const dims = (assessment.dimensions ?? []) as AssessmentDimension[];
+    // Same guard as the form path — IvyLens shape can drift.
+    const dims: AssessmentDimension[] = Array.isArray(assessment.dimensions)
+      ? assessment.dimensions
+      : [];
     return (
         <main className="portal-page flex-1 max-w-[960px] space-y-6">
 
@@ -391,7 +404,7 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
           </div>
 
           {/* Top signals */}
-          {assessment.top_signals?.length > 0 && (
+          {Array.isArray(assessment.top_signals) && assessment.top_signals.length > 0 && (
             <div className="card p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: 'var(--ink-faint)' }}>
                 Top Friction Signals
@@ -474,7 +487,7 @@ function DimensionCard({ dim }: { dim: AssessmentDimension }) {
         )}
       </div>
 
-      {dim.signals.length > 0 && (
+      {Array.isArray(dim.signals) && dim.signals.length > 0 && (
         <>
           <button
             onClick={() => setExpanded(e => !e)}
