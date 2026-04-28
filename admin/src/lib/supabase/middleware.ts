@@ -102,9 +102,13 @@ export async function updateSession(request: NextRequest) {
   if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
     const cachedRole = request.cookies.get('tpo_admin_role')?.value;
     if (cachedRole && ALLOWED_ROLES.includes(cachedRole)) {
-      // Role confirmed: safe to redirect to dashboard
+      // Role confirmed: safe to redirect to dashboard. Build a clean
+      // URL — DON'T clone the auth page's URL, otherwise leftover
+      // query params like ?reason=unauthorised end up pinned to
+      // /dashboard and the user thinks something's still wrong.
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
+      url.search = '';
       return NextResponse.redirect(url);
     }
     // No confirmed role: don't redirect, let them stay on the auth page
