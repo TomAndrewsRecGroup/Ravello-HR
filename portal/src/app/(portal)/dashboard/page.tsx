@@ -233,10 +233,13 @@ export default async function DashboardPage() {
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {actions.slice(0, 6).map((a: any) => (
-                <div key={a.id} className="card p-4 flex-shrink-0 w-[260px]" style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' ? 'var(--danger)' : a.priority === 'medium' ? 'var(--warning)' : 'var(--line)'}` }}>
+                <Link prefetch={false} key={a.id} href="/protect/actions"
+                      className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow"
+                      style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' ? 'var(--danger)' : a.priority === 'medium' ? 'var(--warning)' : 'var(--line)'}` }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{a.title}</p>
                   {a.description && <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
-                </div>
+                  <p className="text-[11px] mt-2 font-medium" style={{ color: 'var(--purple)' }}>Open →</p>
+                </Link>
               ))}
               {frictionAlerts.slice(0, 3).map((r: any) => (
                 <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>

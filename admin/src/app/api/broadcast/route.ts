@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
         description:   description ?? undefined,
         priorityLabel: PRIORITY_LABELS[priority] ?? priority,
         dueDate:       formatDueDate(due_date),
-        actionsUrl:    `${portalUrl}/actions`,
+        actionsUrl:    `${portalUrl}/protect/actions`,
       })))
     );
   }
