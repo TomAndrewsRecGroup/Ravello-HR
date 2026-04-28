@@ -87,9 +87,21 @@ export async function updateSession(request: NextRequest) {
     const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
     const companyId = profile?.company_id ?? '';
 
-    // Second parallel batch: feature flags (needs companyId from profile)
+    // Second parallel batch: feature flags (needs companyId from profile).
+    // Plus: bump companies.last_portal_login + login_count_30d so the
+    // admin Engagement page reflects when this client last signed in.
+    // The session cookie has a 15-min TTL, so this runs at most every
+    // ~15 min per active user — cheap. We use the service role via
+    // an RPC so RLS doesn't block the update (clients can't normally
+    // write to the companies row).
     let featureFlags: Record<string, boolean> = {};
-    if (companyId) {
+    if (companyId && role !== 'tps_admin') {
+      const [companyRes] = await Promise.all([
+        supabase.from('companies').select('feature_flags').eq('id', companyId).single(),
+        supabase.rpc('record_portal_login', { p_company_id: companyId }),
+      ]);
+      featureFlags = (companyRes.data as any)?.feature_flags ?? {};
+    } else if (companyId) {
       const { data: company } = await supabase
         .from('companies').select('feature_flags').eq('id', companyId).single();
       featureFlags = (company as any)?.feature_flags ?? {};

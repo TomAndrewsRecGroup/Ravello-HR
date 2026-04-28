@@ -4,6 +4,8 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, FileText, ExternalLink } from 'lucide-react';
 import { COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, EMPLOYEE_DOC_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import AddComplianceItem from './AddComplianceItem';
+import RowActions from './RowActions';
 
 export const metadata: Metadata = { title: 'Compliance Dashboard' };
 export const revalidate = 30;
@@ -104,6 +106,7 @@ export default async function AdminComplianceDashboard() {
       <AdminTopbar
         title="Compliance Dashboard"
         subtitle="RAG status across all active clients"
+        actions={<AddComplianceItem companies={companies ?? []} />}
       />
       <main className="admin-page flex-1 space-y-8">
 
@@ -217,6 +220,7 @@ export default async function AdminComplianceDashboard() {
                     <th>Due Date</th>
                     <th>Status</th>
                     <th>RAG</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
