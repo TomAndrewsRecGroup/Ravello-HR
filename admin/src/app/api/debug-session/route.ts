@@ -11,20 +11,18 @@ import { NextResponse } from 'next/server';
 // shows something wrong and you need to know whether the bug is in
 // the data layer or the rendering layer.
 //
-// PROTECTED: blocked in production unless ENABLE_DEBUG_SESSION=true.
-//   Returns 404 instead of 401 in production so it doesn't reveal
-//   the endpoint exists.
-//
-// Returns the same shape as the portal /api/debug-session for parity.
+// SECURITY:
+//   - Anonymous callers get only auth=false response (no data leaked).
+//   - Authenticated callers see their own profile + company.
+//   - Aggregate counts (active companies / total users) are only
+//     returned to tps_admin staff — not leaked to client users.
+// No env-var gate — this endpoint reveals nothing the caller doesn't
+// already know about themselves.
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEBUG_SESSION !== 'true') {
-    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
-  }
-
   const cookieStore = cookies();
 
   const supabase = createServerClient(
@@ -85,13 +83,22 @@ export async function GET() {
     dbCompany = data;
   }
 
-  // Counts the dashboard would see — useful when the dashboard says
-  // X but the lists show Y.
-  const [{ count: companyCount }, { count: clientUserCount }, { count: totalProfileCount }] = await Promise.all([
-    adminClient.from('companies').select('*', { count: 'exact', head: true }).eq('active', true),
-    adminClient.from('profiles').select('*', { count: 'exact', head: true }).neq('role', 'tps_admin'),
-    adminClient.from('profiles').select('*', { count: 'exact', head: true }),
-  ]);
+  // Counts the dashboard would see — only returned to tps_admin so
+  // anonymous / client users can't probe for org size.
+  const isStaff = dbProfile?.role === 'tps_admin';
+  let counts: { activeCompanies: number; clientUsers: number; totalProfiles: number } | null = null;
+  if (isStaff) {
+    const [{ count: companyCount }, { count: clientUserCount }, { count: totalProfileCount }] = await Promise.all([
+      adminClient.from('companies').select('*', { count: 'exact', head: true }).eq('active', true),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }).neq('role', 'tps_admin'),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }),
+    ]);
+    counts = {
+      activeCompanies: companyCount     ?? 0,
+      clientUsers:     clientUserCount  ?? 0,
+      totalProfiles:   totalProfileCount ?? 0,
+    };
+  }
 
   // Diagnosis: human-readable summary of what's likely wrong, if anything.
   let diagnosis: string;
@@ -119,11 +126,7 @@ export async function GET() {
     rpcError:         rpcError?.message ?? null,
     dbProfile,
     dbCompany,
-    counts: {
-      activeCompanies: companyCount ?? 0,
-      clientUsers:     clientUserCount ?? 0,
-      totalProfiles:   totalProfileCount ?? 0,
-    },
+    counts,
     diagnosis,
   });
 }
