@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, Check } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, Check, Upload } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
@@ -203,9 +204,17 @@ export default function FrictionTab({ company, assessment, items: initItems, use
 
       {/* Documents */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: 'var(--ink-faint)' }}>Uploaded Documents</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--ink-faint)' }}>Uploaded Documents</p>
+          <Link
+            href={`/documents/upload?company_id=${company.id}`}
+            className="btn-cta btn-sm flex items-center gap-1.5"
+          >
+            <Upload size={12} /> Upload Documents
+          </Link>
+        </div>
         {documents.length === 0 ? (
-          <div className="card p-12 empty-state"><p className="text-sm">No documents yet.</p></div>
+          <div className="card p-12 empty-state"><p className="text-sm">No documents yet. Use the Upload button to add the first one.</p></div>
         ) : (
           <div className="table-wrapper">
             <table className="table">

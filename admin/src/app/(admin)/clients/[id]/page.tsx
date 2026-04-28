@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import ClientDetailTabs from './ClientDetailTabs';
 import { getCachedClientDetail } from '@/lib/cache/clientDetail';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Client Detail' };
 export const revalidate = 60;
@@ -23,9 +24,15 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     redirect(`/clients/${detail.company.slug}`);
   }
 
-  const { company: c, users, reqs, tickets, docsCount } = detail;
+  const { company: c, users, reqs, tickets, notes, docsCount } = detail;
   const activeRoles = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage)).length;
   const ticketCount = tickets.length;
+
+  // Current TPS staff user — needed as the author when posting a new note
+  // from the timeline. Cheap getUser() since this page already isn't cached
+  // beyond the per-client unstable_cache layer.
+  const supabase = createServerSupabaseClient();
+  const { data: { user: staffUser } } = await supabase.auth.getUser();
 
   return (
     <>
@@ -39,7 +46,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           company={c}
           users={users}
           reqs={reqs}
+          notes={notes}
           stats={{ activeRoles, docsCount, ticketCount }}
+          staffUserId={staffUser?.id ?? null}
         />
       </main>
     </>

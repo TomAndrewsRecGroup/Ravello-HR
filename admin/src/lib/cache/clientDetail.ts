@@ -46,6 +46,7 @@ export interface ClientDetail {
   users:        any[];
   reqs:         any[];
   tickets:      any[];
+  notes:        any[];
   docsCount:    number;
 }
 
@@ -80,15 +81,17 @@ async function fetchFromDb(companyId: string): Promise<ClientDetail | null> {
     { data: users,   error: usersErr },
     { data: reqs,    error: reqsErr },
     { data: tickets, error: ticketsErr },
+    { data: notes,   error: notesErr },
     { count: docsCount, error: docsErr },
   ] = await Promise.all([
     sb.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', companyId).order('created_at'),
     sb.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     sb.from('tickets').select('id,subject,status,priority').eq('company_id', companyId).neq('status', 'closed'),
+    sb.from('client_notes').select('id,company_id,author_id,note_type,title,body,pinned,created_at,profiles(full_name)').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50),
     sb.from('documents').select('*', { count: 'exact', head: true }).eq('company_id', companyId),
   ]);
 
-  const firstErr = usersErr || reqsErr || ticketsErr || docsErr;
+  const firstErr = usersErr || reqsErr || ticketsErr || notesErr || docsErr;
   if (firstErr) throw new Error(`clientDetail rollup failed: ${firstErr.message}`);
 
   return {
@@ -96,6 +99,7 @@ async function fetchFromDb(companyId: string): Promise<ClientDetail | null> {
     users:   users   ?? [],
     reqs:    reqs    ?? [],
     tickets: tickets ?? [],
+    notes:   notes   ?? [],
     docsCount: docsCount ?? 0,
   };
 }

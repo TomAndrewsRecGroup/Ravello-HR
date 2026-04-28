@@ -5,6 +5,7 @@ import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
+import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
@@ -315,10 +316,12 @@ interface Props {
   company: any;
   users: any[];
   reqs: any[];
+  notes: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
+  staffUserId: string | null;
 }
 
-export default function ClientDetailTabs({ company, users, reqs, stats }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, notes, stats, staffUserId }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>('Overview');
 
@@ -619,14 +622,29 @@ export default function ClientDetailTabs({ company, users, reqs, stats }: Props)
             </div>
           </div>
 
-          {/* Module access + retainer flow */}
-          <div className="card p-5 h-fit">
-            <FeatureFlagToggles
-              companyId={company.id}
-              flags={company.feature_flags ?? {}}
-              monthlyRetainerPence={company.monthly_retainer_pence ?? null}
-              subscriptionStatus={company.subscription_status ?? null}
-            />
+          {/* Right column: Module access + Notes timeline */}
+          <div className="space-y-6">
+            <div className="card p-5">
+              <FeatureFlagToggles
+                companyId={company.id}
+                flags={company.feature_flags ?? {}}
+                monthlyRetainerPence={company.monthly_retainer_pence ?? null}
+                subscriptionStatus={company.subscription_status ?? null}
+              />
+            </div>
+
+            {/* Internal notes — what the engagement page calls
+                "Last The People System Note" reads from this table. */}
+            {staffUserId && (
+              <div className="card p-5">
+                <ClientNotesTimeline
+                  companyId={company.id}
+                  companyName={company.name}
+                  userId={staffUserId}
+                  initialNotes={notes}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
