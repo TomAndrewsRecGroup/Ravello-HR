@@ -9,8 +9,10 @@ export default async function PortalLayout({ children }: { children: React.React
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
 
-  // Feature flags come from the session cookie: no DB call needed.
-  // Middleware stamps them every 15 minutes.
+  // Feature flags are read fresh from the DB on every request inside
+  // getSessionProfile() so admin module-access changes propagate to
+  // the client portal instantly. The session cookie no longer caches
+  // them.
   const flags = (isTpsStaff && !companyId) ? {} : featureFlags;
   const uiPreferences = (profile as any)?.ui_preferences ?? {};
   const paidEnabled = hasPaidFlag(flags);
