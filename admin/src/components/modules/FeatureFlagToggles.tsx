@@ -1,7 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import {
   Loader2, ChevronDown, X,
   Briefcase, BookOpen, ShieldCheck, Settings, Trophy,
@@ -39,8 +38,7 @@ export default function FeatureFlagToggles({
   monthlyRetainerPence,
   subscriptionStatus,
 }: Props) {
-  const router   = useRouter();
-  const supabase = createClient();
+  const router = useRouter();
 
   const [savedFlags, setSavedFlags]     = useState<Record<string, boolean>>(flags);
   const [draftFlags, setDraftFlags]     = useState<Record<string, boolean>>(flags);
@@ -89,26 +87,32 @@ export default function FeatureFlagToggles({
   async function save() {
     setSaving(true);
     setError('');
-    const { error: dbErr } = await supabase
-      .from('companies')
-      .update({ feature_flags: draftFlags })
-      .eq('id', companyId);
-    setSaving(false);
+    try {
+      // Server route uses the service-role client + revalidateTag, so
+      // the write is guaranteed (no RLS surprises) and the admin's
+      // /clients/[id] cache is flushed before the next render.
+      const res = await fetch(`/api/admin/clients/${companyId}/feature-flags`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ feature_flags: draftFlags }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Save failed');
 
-    if (dbErr) {
-      setError(dbErr.message);
-      return;
-    }
+      setSavedFlags(draftFlags);
+      router.refresh();
 
-    setSavedFlags(draftFlags);
-    router.refresh();
-
-    // If paid modules are enabled in the new state, prompt the admin
-    // to set / confirm the retainer. Even if it's unchanged from
-    // before — the act of saving is a good moment to verify the
-    // billing matches the access.
-    if (draftPaid) {
-      setRetainerOpen(true);
+      // If paid modules are enabled in the new state, prompt the admin
+      // to set / confirm the retainer. Even if it's unchanged from
+      // before — the act of saving is a good moment to verify the
+      // billing matches the access.
+      if (draftPaid) {
+        setRetainerOpen(true);
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
     }
   }
 
