@@ -17,7 +17,16 @@ interface IvylensLead {
   roles?: Array<{
     title?:    string;
     location?: string;
-    salary?:   string;
+    /** Either the legacy raw string ("£40k - £50k") OR the enriched
+     *  object the IvyLens partner DB now writes
+     *  ({ min: 40000, max: 50000 }). The aggregator handles both. */
+    salary?:        string | { min?: number | null; max?: number | null };
+    /** Display string from the IvyLens enrichment (replaces our
+     *  parsed salary_text where present). */
+    salary_range?:  string;
+    /** "Annual" | "Hourly" | "Daily" | "Contract" — free text,
+     *  not enforced by IvyLens. */
+    pay_type?:      string;
     url?:      string;
     source?:   string;
   }>;
@@ -55,6 +64,20 @@ function parseSalary(s: string | null | undefined): number[] {
       return hasK ? v * 1000 : v;
     })
     .filter(n => !isNaN(n) && n >= 10_000 && n <= 1_000_000);
+}
+
+type RoleSalary = string | { min?: number | null; max?: number | null } | undefined;
+
+// Pull a usable [min, max] pair off whichever shape IvyLens delivered.
+// Object form (post-enrichment) is preferred — it's already canonical
+// numbers in pounds — falling back to string parsing for legacy rows.
+function salariesFromRole(salary: RoleSalary): number[] {
+  if (!salary) return [];
+  if (typeof salary === 'string') return parseSalary(salary);
+  const nums: number[] = [];
+  if (typeof salary.min === 'number' && salary.min > 0) nums.push(salary.min);
+  if (typeof salary.max === 'number' && salary.max > 0 && salary.max !== salary.min) nums.push(salary.max);
+  return nums;
 }
 
 function percentile(sorted: number[], p: number): number | null {
@@ -111,7 +134,7 @@ function aggregateMarket(leads: IvylensLead[]): MarketAggregate[] {
         bucket = { salaries: [], signals: { high_repost: 0, long_vacancy: 0, volume_hiring: 0 } };
         buckets.set(key, bucket);
       }
-      bucket.salaries.push(...parseSalary(role.salary));
+      bucket.salaries.push(...salariesFromRole(role.salary));
       bucket.signals.high_repost   += intel.high_repost   ?? 0;
       bucket.signals.long_vacancy  += intel.long_vacancy  ?? 0;
       bucket.signals.volume_hiring += intel.volume_hiring ?? 0;

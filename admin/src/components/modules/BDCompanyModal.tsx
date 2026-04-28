@@ -11,11 +11,11 @@ interface Props {
 const STATUS_OPTIONS = ['Prospect', 'Contacted', 'Client', 'Not Relevant'];
 const SIZE_BANDS     = ['Micro (1-9)', 'Small (10-49)', 'SME (50-249)', 'Mid-Market (250-999)', 'Enterprise (1000+)'];
 
-function fmtSalary(min: number | null, max: number | null, fallback?: string | null): string {
+function fmtSalary(min: number | null, max: number | null, fallback?: string | null, payType?: string | null): string {
   if (!min && !max) return fallback ?? '-';
   const fmt = (n: number) => `£${(n / 1000).toFixed(0)}k`;
-  if (min && max && min !== max) return `${fmt(min)}: ${fmt(max)}`;
-  return fmt((min ?? max)!);
+  const core = (min && max && min !== max) ? `${fmt(min)} - ${fmt(max)}` : fmt((min ?? max)!);
+  return payType ? `${core} · ${payType}` : core;
 }
 
 function fmtDate(d: string | null): string {
@@ -443,7 +443,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
                                 )}
                               </div>
                             </td>
-                            <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max, r.salary_text)}</td>
+                            <td style={{ color: 'var(--ink-soft)' }}>{fmtSalary(r.salary_min, r.salary_max, r.salary_text, r.pay_type)}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.location ?? '-'}</td>
                             <td style={{ color: 'var(--ink-soft)' }}>{r.working_model ?? '-'}</td>
                             <td>

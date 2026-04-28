@@ -21,6 +21,10 @@ export interface FlatRole {
   salary_text:   string | null;
   salary_min:    number | null;
   salary_max:    number | null;
+  /** Pay frequency from the source listing — e.g. "Annual",
+   *  "Hourly", "Daily". Populated by IvyLens enrichment for new
+   *  roles; older rows have null. */
+  pay_type:      string | null;
   location:      string | null;
   working_model: string | null;
   source_board:  string | null;
@@ -42,11 +46,25 @@ function parseSalary(s: string | null | undefined): { min: number | null; max: n
   return { min: Math.min(...parsed), max: Math.max(...parsed) };
 }
 
+// IvyLens role.salary can be:
+//   - the legacy raw string ("£40k - £50k") — we parse it
+//   - the new enriched object ({ min: 40000, max: 50000 }) — used as-is
+// Returns the canonical { min, max } pair regardless of input shape.
+function extractSalary(salary: unknown): { min: number | null; max: number | null } {
+  if (salary && typeof salary === 'object') {
+    const s = salary as { min?: unknown; max?: unknown };
+    const min = typeof s.min === 'number' && s.min > 0 ? s.min : null;
+    const max = typeof s.max === 'number' && s.max > 0 ? s.max : null;
+    if (min !== null || max !== null) return { min, max };
+  }
+  return parseSalary(typeof salary === 'string' ? salary : null);
+}
+
 export default async function BDRolesPage() {
   const supabase = createServerSupabaseClient();
 
   const [localRolesRes, bdCompaniesRes, ivylensRes] = await Promise.all([
-    supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
+    supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,pay_type,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
     supabase.from('bd_companies').select('id,company_name'),
     ivylensRequest<{ leads?: any[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);
@@ -67,6 +85,7 @@ export default async function BDRolesPage() {
     salary_text:    r.salary_text ?? null,
     salary_min:     r.salary_min ?? null,
     salary_max:     r.salary_max ?? null,
+    pay_type:       r.pay_type ?? null,
     location:       r.location ?? null,
     working_model:  r.working_model ?? null,
     source_board:   r.source_board ?? null,
@@ -75,19 +94,29 @@ export default async function BDRolesPage() {
     still_active:   r.still_active ?? true,
   }));
 
-  // Flatten IvyLens leads' roles
+  // Flatten IvyLens leads' roles. New IvyLens enrichment pushes
+  // structured `salary` ({min,max}) plus `salary_range` (display
+  // string) and `pay_type`; older rows still send the raw string.
+  // extractSalary handles both.
   const ivylensFlat: FlatRole[] = ivylensLeads.flatMap((lead: any) =>
     (lead.roles ?? []).map((r: any, idx: number) => {
-      const { min, max } = parseSalary(r.salary);
+      const { min, max } = extractSalary(r.salary);
+      // Prefer the enriched display string from IvyLens, then fall
+      // back to the raw legacy salary string we used to receive.
+      const salaryText: string | null =
+        (typeof r.salary_range === 'string' && r.salary_range.trim()) ? r.salary_range
+        : (typeof r.salary === 'string' && r.salary.trim()) ? r.salary
+        : null;
       return {
         id:             `ivylens-${lead.id ?? lead.company_name}-${idx}`,
         company_name:   lead.company_name ?? '-',
         company_id:     null,
         company_source: 'ivylens' as const,
         role_title:     r.title ?? null,
-        salary_text:    r.salary ?? null,
+        salary_text:    salaryText,
         salary_min:     min,
         salary_max:     max,
+        pay_type:       typeof r.pay_type === 'string' && r.pay_type.trim() ? r.pay_type : null,
         location:       r.location ?? lead.company_location ?? null,
         working_model:  null,
         source_board:   r.source ?? null,
