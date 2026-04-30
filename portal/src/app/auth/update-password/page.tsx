@@ -131,8 +131,11 @@ function UpdatePasswordInner() {
     }
 
     setDone(true);
-    // Brief confirmation, then push to dashboard.
-    setTimeout(() => router.push('/dashboard'), 1400);
+    // Hard navigation so the freshly-issued auth cookies are present
+    // on the next server request — a router.push can race the cookie
+    // write and leave middleware on a stale session, hanging the
+    // /dashboard render until a manual refresh.
+    setTimeout(() => { window.location.assign('/dashboard'); }, 1400);
   }
 
   if (!authChecked) {

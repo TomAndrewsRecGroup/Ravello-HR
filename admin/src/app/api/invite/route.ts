@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     to:          email,
     companyName: companyRow?.name ?? 'your company',
     roleLabel:   ROLE_LABELS[safeRole] ?? 'Editor',
-    acceptUrl:   `${portalUrl}/auth/login`,
+    acceptUrl:   `${portalUrl}/auth/accept-invite?email=${encodeURIComponent(email)}`,
   }));
 
   return NextResponse.json({ success: true, user_id: data.user.id });
