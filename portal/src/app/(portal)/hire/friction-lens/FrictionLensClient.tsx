@@ -63,18 +63,33 @@ function FieldInput({
   const typeInfo = fieldTypes[type];
 
   if (type === 'boolean') {
+    // Two explicit buttons rather than a toggle. A toggle defaults
+    // visually to "No" before the user has touched it, which both
+    // looked like a preselected answer and submitted false to IvyLens —
+    // skewing scoring toward "Low Friction" because un-answered = "we
+    // already have this in place" in the model. Forcing the user to
+    // pick Yes or No explicitly fixes both the preselect visual and
+    // the scoring drift.
+    const opts: Array<{ v: boolean; label: string }> = [
+      { v: true,  label: 'Yes' },
+      { v: false, label: 'No'  },
+    ];
     return (
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onChange(!value)}
-          className={`toggle ${value ? 'toggle-on' : 'toggle-off'}`}
-        >
-          <div className={`toggle-knob ${value ? 'toggle-knob-on' : 'toggle-knob-off'}`} />
-        </button>
-        <span className="text-sm" style={{ color: value ? 'var(--emerald)' : 'var(--ink-faint)' }}>
-          {value ? 'Yes' : 'No'}
-        </span>
+      <div className="flex flex-wrap gap-2">
+        {opts.map(o => (
+          <button
+            key={String(o.v)}
+            type="button"
+            onClick={() => onChange(o.v)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: value === o.v ? 'var(--purple)' : 'var(--surface-alt)',
+              color:      value === o.v ? '#fff'         : 'var(--ink-soft)',
+            }}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
     );
   }
@@ -202,6 +217,22 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
     setSubmitting(true); setSubmitError('');
     try {
       if (!company) throw new Error('No company');
+
+      // Reject submission if any visible field is unanswered. IvyLens
+      // treats null / undefined as "no signal" — sending a half-filled
+      // form quietly skews the score toward Low Friction. Force a
+      // complete answer set so scoring reflects reality.
+      const allDimsForCheck: FormDimension[] = Array.isArray(schema?.dimensions) ? schema!.dimensions : [];
+      const missing: string[] = [];
+      for (const dim of allDimsForCheck) {
+        for (const f of visibleFields(dim)) {
+          const v = formData[dim.key]?.[f.key];
+          if (v === undefined || v === null || v === '') missing.push(f.description);
+        }
+      }
+      if (missing.length) {
+        throw new Error(`Please answer all questions before submitting (${missing.length} unanswered).`);
+      }
 
       let ivylensCompanyId = company.ivylens_company_id;
 

@@ -36,7 +36,14 @@ export async function POST(request: NextRequest) {
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
-    return NextResponse.json({ error: 'Server is missing required configuration.' }, { status: 500 });
+    // Dev / deployment misconfiguration: the portal needs the Supabase
+    // service-role key to call auth.admin.inviteUserByEmail. Without
+    // it, no one can invite teammates from the portal. Vercel env var
+    // name is logged so the admin can fix it without grepping source.
+    console.error('[/api/portal/invite] SUPABASE_SERVICE_ROLE_KEY is not set on the portal app. Add it in Vercel → Project → Settings → Environment Variables and redeploy.');
+    return NextResponse.json({
+      error: 'Inviting teammates is temporarily unavailable. Please contact The People System support — your portal needs SUPABASE_SERVICE_ROLE_KEY set in Vercel.',
+    }, { status: 500 });
   }
 
   const adminClient = createClient(
