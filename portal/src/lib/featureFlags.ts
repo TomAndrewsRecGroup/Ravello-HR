@@ -20,6 +20,7 @@ export const FREE_FLAGS: ReadonlySet<string> = new Set([
   'athletes_to_industry',
   'friction_lens',
   'latest_updates',
+  'learning',
 ]);
 
 export interface FlagDef { key: string; label: string }
@@ -55,7 +56,6 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'training',         label: 'Training Needs' },
       { key: 'reviews',          label: 'Performance Reviews' },
       { key: 'skills_matrix',    label: 'Skills Matrix' },
-      { key: 'learning',         label: 'E-Learning Marketplace' },
       { key: 'onboarding',       label: 'Onboarding Workflows' },
       { key: 'org_chart',        label: 'Organisation Chart' },
       { key: 'documents',        label: 'Document Management' },
@@ -96,6 +96,7 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'athletes_to_industry', label: 'Athletes To Industry' },
       { key: 'friction_lens',        label: 'Friction Lens Scoring' },
       { key: 'latest_updates',       label: 'Latest Updates' },
+      { key: 'learning',             label: 'E-Learning Marketplace' },
     ],
   },
 ];
