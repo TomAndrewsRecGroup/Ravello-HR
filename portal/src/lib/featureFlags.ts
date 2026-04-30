@@ -18,6 +18,9 @@
 
 export const FREE_FLAGS: ReadonlySet<string> = new Set([
   'athletes_to_industry',
+  'friction_lens',
+  'latest_updates',
+  'learning',
 ]);
 
 export interface FlagDef { key: string; label: string }
@@ -35,7 +38,6 @@ export const FLAG_GROUPS: FlagGroup[] = [
     tier: 'paid',
     flags: [
       { key: 'hiring',           label: 'Hiring Pipeline' },
-      { key: 'friction_lens',    label: 'Friction Lens Scoring' },
       { key: 'benchmarks',       label: 'Salary Benchmarks' },
       { key: 'ivylens_market',   label: 'IvyLens Market Access' },
       { key: 'hiring_analytics', label: 'Hiring Analytics' },
@@ -54,7 +56,6 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'training',         label: 'Training Needs' },
       { key: 'reviews',          label: 'Performance Reviews' },
       { key: 'skills_matrix',    label: 'Skills Matrix' },
-      { key: 'learning',         label: 'E-Learning Marketplace' },
       { key: 'onboarding',       label: 'Onboarding Workflows' },
       { key: 'org_chart',        label: 'Organisation Chart' },
       { key: 'documents',        label: 'Document Management' },
@@ -89,10 +90,13 @@ export const FLAG_GROUPS: FlagGroup[] = [
   },
   {
     label: 'Programmes',
-    description: 'Free programme channels — no billing required',
+    description: 'Free channels — no billing required',
     tier: 'free',
     flags: [
       { key: 'athletes_to_industry', label: 'Athletes To Industry' },
+      { key: 'friction_lens',        label: 'Friction Lens Scoring' },
+      { key: 'latest_updates',       label: 'Latest Updates' },
+      { key: 'learning',             label: 'E-Learning Marketplace' },
     ],
   },
 ];
