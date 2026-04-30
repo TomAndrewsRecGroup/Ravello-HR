@@ -3,7 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Linkedin, ExternalLink } from 'lucide-react';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO       = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const AMIVY_LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/AMIVY%20Transparent.png';
 
 export default function Footer() {
   return (
@@ -202,7 +203,20 @@ export default function Footer() {
           <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
             &copy; {new Date().getFullYear()} The People System. All rights reserved. Registered in England &amp; Wales.
           </p>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-6">
+            <span
+              className="hidden sm:inline-flex items-center gap-2 text-[11px]"
+              style={{ color: 'rgba(255,255,255,0.28)' }}
+            >
+              Designed and built by
+              <Image
+                src={AMIVY_LOGO}
+                alt="AMIVY"
+                width={140}
+                height={32}
+                className="object-contain h-[22px] w-auto opacity-80"
+              />
+            </span>
             {[['Privacy Policy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (
               <Link
                 key={href}
@@ -216,6 +230,23 @@ export default function Footer() {
               </Link>
             ))}
           </div>
+        </div>
+
+        {/* Mobile-only AMIVY credit (the desktop one sits inline above
+            but on narrow screens we want it on its own line so the
+            copyright + legal links stay readable). */}
+        <div
+          className="sm:hidden mt-4 flex items-center justify-center gap-2 text-[11px]"
+          style={{ color: 'rgba(255,255,255,0.28)' }}
+        >
+          Designed and built by
+          <Image
+            src={AMIVY_LOGO}
+            alt="AMIVY"
+            width={140}
+            height={32}
+            className="object-contain h-[20px] w-auto opacity-80"
+          />
         </div>
       </div>
 
