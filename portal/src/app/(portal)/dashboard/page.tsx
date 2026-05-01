@@ -31,14 +31,15 @@ function priorityBadge(priority: string) {
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
-  const { user, profile, companyId, featureFlags: sessionFlags } = await getSessionProfile();
+  const { user, profile, companyId, companyName, featureFlags: sessionFlags } = await getSessionProfile();
   const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 
-  // Single parallel batch: no waterfall
-  const [{ data: company }, { data: fullProfile },
+  // Single parallel batch: no waterfall. Company name + flags come
+  // from getSessionProfile()'s single round-trip; user's full_name
+  // is read alongside the data queries.
+  const [{ data: fullProfile },
     reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
     trainingRes, absenceRes, frictionRes] = await Promise.all([
-    supabase.from('companies').select('id,name,feature_flags').eq('id', companyId).single(),
     supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
     supabase
       .from('requisitions')
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
     <>
       <Topbar
         title={`Good ${getGreeting()}, ${firstName}`}
-        subtitle={company?.name ?? ''}
+        subtitle={companyName ?? ''}
         actions={
           <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm">
             + Raise a Role
@@ -170,7 +171,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── Company Friction Score ─────────────────────────────────── */}
-        {(company?.feature_flags ?? flagsFromSession).friction_lens !== false && (
+        {flagsFromSession.friction_lens !== false && (
           <div className="mb-6">
             {frictionAssessment ? (
               <Link prefetch={false} href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow">

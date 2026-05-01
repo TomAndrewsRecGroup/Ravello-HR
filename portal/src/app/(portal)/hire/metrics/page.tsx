@@ -61,14 +61,12 @@ function SectionHeader({ icon: Icon, title, color = 'var(--purple)' }: {
 
 export default async function MetricsPage() {
   const supabase = createServerSupabaseClient();
-  const { companyId: cId } = await getSessionProfile();
+  const { companyId: cId, featureFlags } = await getSessionProfile();
   const companyId: string = cId ?? '';
 
-  // Fetch feature flags from companies table
-  const { data: company } = companyId
-    ? await supabase.from('companies').select('feature_flags').eq('id', companyId).single()
-    : { data: null };
-  const flags: Record<string, boolean> = (company as any)?.feature_flags ?? {};
+  // Feature flags come from the session-profile fetch above (single
+  // companies round-trip per request); was a separate select before.
+  const flags: Record<string, boolean> = featureFlags ?? {};
 
   if (flags.metrics === false) {
     return (

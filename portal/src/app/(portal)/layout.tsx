@@ -4,7 +4,7 @@ import PortalShell from '@/components/layout/PortalShell';
 import { hasPaidFlag } from '@/lib/featureFlags';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, companyId, role, isTpsStaff, featureFlags } = await getSessionProfile();
+  const { user, profile, companyId, role, isTpsStaff, featureFlags, stripeSubscriptionId } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
@@ -36,9 +36,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const supabase = createServerSupabaseClient();
   const now = new Date().toISOString();
   const counts: Record<string, number> = { actions: 0, tickets: 0, candidates: 0 };
-  let hasStripeSub = false;
   if (companyId) {
-    const [actRes, tickRes, candRes, billingRes] = await Promise.all([
+    const [actRes, tickRes, candRes] = await Promise.all([
       supabase.from('actions').select('id', { count: 'exact', head: true })
         .eq('company_id', companyId).eq('status', 'active')
         .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
@@ -46,13 +45,14 @@ export default async function PortalLayout({ children }: { children: React.React
         .eq('company_id', companyId).in('status', ['open', 'in_progress']),
       supabase.from('candidates').select('id', { count: 'exact', head: true })
         .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
-      supabase.from('companies').select('stripe_subscription_id').eq('id', companyId).maybeSingle(),
     ]);
     counts.actions    = actRes.count    ?? 0;
     counts.tickets    = tickRes.count   ?? 0;
     counts.candidates = candRes.count   ?? 0;
-    hasStripeSub = !!(billingRes.data as any)?.stripe_subscription_id;
   }
+  // Stripe subscription id is read inside getSessionProfile()'s single
+  // companies query so we don't run a second round-trip here.
+  const hasStripeSub = !!stripeSubscriptionId;
 
   // Billing nav entry shows when there's something to manage:
   // a paid flag is on, or there's a live Stripe sub (covers the case

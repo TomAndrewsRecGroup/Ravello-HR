@@ -51,40 +51,52 @@ export const getSessionProfile = cache(async () => {
   const cookieStore = cookies();
   const raw = cookieStore.get('tps_portal_session')?.value;
 
-  if (!raw) {
-    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false, featureFlags: {} as Record<string, boolean> };
-  }
+  const empty = {
+    user: null, profile: null,
+    companyId: '', companyName: null as string | null,
+    role: '', isTpsStaff: false,
+    featureFlags: {} as Record<string, boolean>,
+    stripeSubscriptionId: null as string | null,
+  };
+
+  if (!raw) return empty;
 
   let session: any;
   try {
     session = JSON.parse(raw);
   } catch (err) {
     console.error('[getSessionProfile] Failed to parse session cookie:', err instanceof Error ? err.message : 'unknown error');
-    return { user: null, profile: null, companyId: '', role: '', isTpsStaff: false, featureFlags: {} as Record<string, boolean> };
+    return empty;
   }
 
   const companyId: string = session.companyId ?? '';
   const role: string     = session.role ?? '';
   const isTpsStaff: boolean = session.isTpsStaff ?? false;
 
-  // Always re-read feature flags from the DB so admin module-access
-  // changes surface on the next page load, not after a cookie cycle.
-  // The cookie's stale `featureFlags` is intentionally ignored.
+  // One round-trip pulls everything per-request consumers need from
+  // the companies row: feature_flags (must be fresh so admin toggles
+  // propagate immediately), name (header / dashboard) and the stripe
+  // subscription id (billing nav). Previously layout, dashboard and
+  // metrics each ran their own companies select — three round-trips
+  // collapsed into one.
   let featureFlags: Record<string, boolean> = {};
+  let companyName: string | null = null;
+  let stripeSubscriptionId: string | null = null;
+
   if (companyId) {
     try {
       const supabase = createServerSupabaseClient();
       const { data } = await supabase
         .from('companies')
-        .select('feature_flags')
+        .select('name, feature_flags, stripe_subscription_id')
         .eq('id', companyId)
         .maybeSingle();
-      featureFlags = ((data as any)?.feature_flags ?? {}) as Record<string, boolean>;
+      const row = (data as any) ?? {};
+      featureFlags = (row.feature_flags ?? {}) as Record<string, boolean>;
+      companyName  = row.name ?? null;
+      stripeSubscriptionId = row.stripe_subscription_id ?? null;
     } catch (err) {
-      // If the live read fails, fall back to whatever the cookie has.
-      // This mirrors the previous behaviour rather than logging the
-      // user out on a transient blip.
-      console.warn('[getSessionProfile] live flag read failed, using cookie fallback');
+      console.warn('[getSessionProfile] live company read failed, using cookie fallback');
       featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
     }
   }
@@ -95,10 +107,13 @@ export const getSessionProfile = cache(async () => {
       company_id: companyId,
       ui_preferences: session.uiPreferences ?? {},
       onboarding_completed: session.onboardingCompleted ?? true,
+      full_name: session.fullName ?? null,
     },
     companyId,
+    companyName,
     role,
     isTpsStaff,
     featureFlags,
+    stripeSubscriptionId,
   };
 });
