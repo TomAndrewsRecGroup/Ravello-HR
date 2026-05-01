@@ -131,5 +131,10 @@ export async function POST(request: NextRequest) {
     activateUrl,
   }));
 
-  return NextResponse.json({ success: true, user_id: userId });
+    return NextResponse.json({ success: true, user_id: userId });
+  } catch (err) {
+    console.error('[/api/portal/invite] unexpected error:', err);
+    const message = err instanceof Error ? err.message : 'Unexpected server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
