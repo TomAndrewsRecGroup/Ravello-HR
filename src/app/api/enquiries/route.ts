@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
       const admin   = buildAdminNotification({ fullName, email, phone, companyName, source: source as EnquirySource, result });
 
       await Promise.all([
-        resend.emails.send({ from, to: email,  subject: visitor.subject, html: visitor.html, replyTo: notify }),
-        resend.emails.send({ from, to: notify, subject: admin.subject,   html: admin.html,   replyTo: email  }),
+        resend.emails.send({ from, to: email,  subject: visitor.subject, html: visitor.html, reply_to: notify }),
+        resend.emails.send({ from, to: notify, subject: admin.subject,   html: admin.html,   reply_to: email  }),
       ]);
     } catch (err) {
       console.error('[enquiries] Resend send failed:', err);

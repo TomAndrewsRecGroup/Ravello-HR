@@ -170,6 +170,24 @@ export default function BDCompanyModal({ company, onClose }: Props) {
         });
       }
 
+      // Seed the named contact onto the org chart so they appear the
+      // moment they log in and can start building their team beneath
+      // themselves. Job title defaults to 'Founder' as the most common
+      // case for the BD conversion contact; they can edit it later.
+      if (convForm.contact_name?.trim()) {
+        await supabase.from('employee_records').insert({
+          company_id:      newClient.id,
+          full_name:       convForm.contact_name.trim(),
+          email:           convForm.contact_email?.trim() || null,
+          job_title:       'Founder',
+          department:      'Leadership',
+          employment_type: 'full_time',
+          status:          'active',
+          start_date:      today.toISOString().split('T')[0],
+          line_manager:    null,
+        });
+      }
+
       setConvertedClientId(newClient.id);
     } catch (e: any) {
       setConvertError(e.message ?? 'Something went wrong');
