@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MailPlus, KeyRound, Trash2 } from 'lucide-react';
 import { PORTAL_INVITE_ROLES, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 const ROLE_BADGE: Record<string, string> = {
@@ -50,7 +50,135 @@ function RoleCell({ userId, initialRole }: { userId: string; initialRole: string
   );
 }
 
-export default function UsersClient({ users }: { users: any[] }) {
+type ActionKind = 'resend' | 'reset' | 'delete' | null;
+
+function UserActions({ user, onChanged }: { user: any; onChanged: () => void }) {
+  const isInternal = (user.role as string)?.startsWith('tps_');
+  const [busy,    setBusy]    = useState<ActionKind>(null);
+  const [feedback,setFeedback]= useState<{ kind: 'ok' | 'err' | 'warn'; text: string } | null>(null);
+
+  if (isInternal) {
+    return <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>—</span>;
+  }
+
+  function flash(kind: 'ok' | 'err' | 'warn', text: string) {
+    setFeedback({ kind, text });
+    window.setTimeout(() => setFeedback(null), 7000);
+  }
+
+  async function resendInvite() {
+    setBusy('resend');
+    try {
+      const res = await fetch(`/api/users/${user.id}/resend-invite`, { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        flash('err', body.error ?? 'Failed to resend invite.');
+      } else if (body.email_sent === false) {
+        flash('warn', `${body.email_warning ?? 'Email did not send.'} Activation link: ${body.activate_url}`);
+      } else {
+        flash('ok', `Invite email resent to ${user.email}.`);
+      }
+    } catch (e) {
+      flash('err', e instanceof Error ? e.message : 'Network error.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function resetPassword() {
+    if (!confirm(`Send a password-reset email to ${user.email}?`)) return;
+    setBusy('reset');
+    try {
+      const res = await fetch(`/api/users/${user.id}/reset-password`, { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        flash('err', body.error ?? 'Failed to send reset.');
+      } else if (body.email_sent === false) {
+        flash('warn', `${body.email_warning ?? 'Email did not send.'} Reset link: ${body.reset_url}`);
+      } else {
+        flash('ok', `Password-reset email sent to ${user.email}.`);
+      }
+    } catch (e) {
+      flash('err', e instanceof Error ? e.message : 'Network error.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function deleteUser() {
+    if (!confirm(
+      `Permanently delete ${user.full_name ?? user.email}? This signs them out, removes their login, ` +
+      `and deletes their profile. Their authored records (tickets, comments, etc.) stay as audit history. ` +
+      `This cannot be undone.`,
+    )) return;
+    setBusy('delete');
+    try {
+      const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        flash('err', body.error ?? 'Failed to delete.');
+      } else {
+        flash('ok', `${user.email} deleted.`);
+        onChanged();
+      }
+    } catch (e) {
+      flash('err', e instanceof Error ? e.message : 'Network error.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <button
+          onClick={resendInvite}
+          disabled={busy !== null}
+          className="btn-ghost btn-sm"
+          title="Resend the activation email"
+        >
+          {busy === 'resend' ? <Loader2 size={11} className="animate-spin" /> : <MailPlus size={11} />}
+          <span className="text-[11px]">Resend</span>
+        </button>
+        <button
+          onClick={resetPassword}
+          disabled={busy !== null}
+          className="btn-ghost btn-sm"
+          title="Send a password-reset email"
+        >
+          {busy === 'reset' ? <Loader2 size={11} className="animate-spin" /> : <KeyRound size={11} />}
+          <span className="text-[11px]">Reset</span>
+        </button>
+        <button
+          onClick={deleteUser}
+          disabled={busy !== null}
+          className="btn-ghost btn-sm"
+          title="Delete this user permanently"
+          style={{ color: 'var(--danger, #DC2626)' }}
+        >
+          {busy === 'delete' ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+          <span className="text-[11px]">Delete</span>
+        </button>
+      </div>
+      {feedback && (
+        <p
+          className="text-[10px] leading-snug max-w-[320px] break-words"
+          style={{
+            color:
+              feedback.kind === 'ok'   ? 'var(--success, #16A34A)' :
+              feedback.kind === 'warn' ? 'var(--amber,   #B45309)' :
+                                         'var(--danger,  #DC2626)',
+          }}
+        >
+          {feedback.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function UsersClient({ users: initial }: { users: any[] }) {
+  const [users,  setUsers]  = useState(initial);
   const [search, setSearch] = useState('');
 
   const filtered = users.filter(u => {
@@ -62,6 +190,10 @@ export default function UsersClient({ users }: { users: any[] }) {
       u.companies?.name?.toLowerCase().includes(q)
     );
   });
+
+  function removeUser(id: string) {
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+  }
 
   if (users.length === 0) {
     return <div className="card p-12 empty-state">No users yet.</div>;
@@ -89,6 +221,7 @@ export default function UsersClient({ users }: { users: any[] }) {
               <th>Role</th>
               <th>Company</th>
               <th>Joined</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -113,6 +246,9 @@ export default function UsersClient({ users }: { users: any[] }) {
                   )}
                 </td>
                 <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+                <td>
+                  <UserActions user={u} onChanged={() => removeUser(u.id)} />
+                </td>
               </tr>
             ))}
           </tbody>

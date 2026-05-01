@@ -11,6 +11,9 @@
 type AuditAction =
   | 'user.created'
   | 'user.invited'
+  | 'user.invite_resent'
+  | 'user.password_reset_sent'
+  | 'user.deleted'
   | 'user.role_changed'
   | 'company.created'
   | 'company.deleted'
