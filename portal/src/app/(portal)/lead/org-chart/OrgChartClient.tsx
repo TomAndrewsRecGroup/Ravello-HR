@@ -84,8 +84,10 @@ function wouldCreateCycle(dragged: Employee, target: Employee, all: Employee[]):
     if (seen.has(cursor.id)) return true;
     seen.add(cursor.id);
     if (cursor.id === dragged.id) return true;
-    const mgr = cursor.line_manager?.toLowerCase();
-    cursor = mgr ? byName.get(mgr) : undefined;
+    const mgrName: string | undefined = cursor.line_manager
+      ? cursor.line_manager.toLowerCase()
+      : undefined;
+    cursor = mgrName ? byName.get(mgrName) : undefined;
   }
   return false;
 }
