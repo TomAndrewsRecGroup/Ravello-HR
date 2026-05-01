@@ -117,12 +117,29 @@ export async function POST(request: NextRequest) {
   const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
   const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
 
-  await sendEmail(userInvitedEmail({
+  const emailResult = await sendEmail(userInvitedEmail({
     to:          email,
     companyName: (company as any).name ?? 'your company',
     roleLabel:   ROLE_LABELS[safeRole] ?? 'Admin',
     acceptUrl:   activateUrl,
   }));
 
-  return NextResponse.json({ success: true, user_id: userId });
+  // Surface email-send failures to the admin UI instead of swallowing
+  // them. The user / profile / token are already persisted, so the
+  // invite link still works — but the admin needs to know to either
+  // resend it or hand the link over manually.
+  if (!emailResult) {
+    const reason = !process.env.RESEND_API_KEY
+      ? 'RESEND_API_KEY is not set on this Vercel project. The user record was created but no email was sent.'
+      : 'Resend rejected the send. Check the Vercel function logs for the exact error (likely an unverified from-address domain).';
+    return NextResponse.json({
+      success:        true,
+      user_id:        userId,
+      email_sent:     false,
+      email_warning:  reason,
+      activate_url:   activateUrl,
+    });
+  }
+
+  return NextResponse.json({ success: true, user_id: userId, email_sent: true });
 }
