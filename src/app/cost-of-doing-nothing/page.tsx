@@ -277,14 +277,14 @@ export default function CostOfDoingNothingPage() {
       {/* ── How TPS helps: mirror the 5 pains with 5 fixes ───────── */}
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-[1fr_460px] gap-16 items-start">
+          <div className="grid lg:grid-cols-[320px_1fr] gap-16 items-start">
             <div className="hidden lg:block">
               <div className="rounded-[24px] overflow-hidden" style={{ boxShadow: '0 8px 40px rgba(10,15,30,0.08)' }}>
                 <Image
-                  src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=920&h=1100&fit=crop"
+                  src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=720&h=900&fit=crop"
                   alt="Two professionals reviewing a plan together"
-                  width={460}
-                  height={560}
+                  width={320}
+                  height={420}
                   className="w-full h-auto object-cover"
                 />
               </div>
