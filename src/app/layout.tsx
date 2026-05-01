@@ -10,6 +10,7 @@ import QuickActions from '@/components/QuickActions';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import BookCallButton from '@/components/BookCallButton';
 import ConditionalTicker from '@/components/ConditionalTicker';
+import StructuredData from '@/components/StructuredData';
 
 const FAVICON = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="shortcut icon" type="image/png" href={FAVICON} />
         <link rel="apple-touch-icon" href={FAVICON} />
         <ClarityScript />
+        <StructuredData />
       </head>
       <body className="font-sans antialiased" style={{ background: 'var(--bg)', color: 'var(--ink)' }}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] btn-gradient">

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import {
   ArrowRight, CheckCircle2, XCircle, Minus,
   Layers, Users, Zap, ClipboardCheck, Lock, Award,
@@ -102,6 +104,10 @@ function Cell({ val }: { val: boolean | string }) {
 export default function WhyTPSPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Why TPS', url: '/why-tps' }]}
+        faqs={OBJECTIONS.map((o) => ({ q: o.q, a: o.a }))}
+      />
 
       {/* Hero — matches /hire and /protect layout (text + image) */}
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
@@ -148,6 +154,18 @@ export default function WhyTPSPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AIO summary */}
+      <section style={{ background: 'var(--bg)', padding: '1rem 1.5rem 3rem' }} className="lg:px-10">
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="The People System is a UK HR consultancy delivering HIRE, LEAD and PROTECT as one connected operating model. Senior delivery from Lucy (CIPD-qualified HR Director) and Tom Andrews (Talent Lead). Fixed scope, no retainer required."
+            who="UK SMEs scaling 20 to 250 people who need senior people support across hiring, leadership development and compliance, without hiring three separate suppliers."
+            problem="A recruitment agency fills roles but does not fix why roles keep reopening. An in-house generalist lacks specialist depth in TUPE, M&A and the Employment Rights Bill. A generic consultant gives advice without delivery. The People System gives you all three in one connected system."
+            next="Book a free call. No pitch. We diagnose what is broken and tell you which engagement model makes sense, even if that means none of ours."
+          />
         </div>
       </section>
 

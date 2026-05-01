@@ -170,6 +170,7 @@ export default function Footer() {
                 ['Why TPS',         '/why-tps'],
                 ['About',           '/about'],
                 ['Latest Updates',  '/latest-updates'],
+                ['Sources',         '/sources'],
                 ['Book a Call',     '/book'],
               ].map(([label, href]) => (
                 <li key={href}>

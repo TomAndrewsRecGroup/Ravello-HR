@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import {
   ArrowRight, AlertTriangle, Scale, UserX, Clock, TrendingUp,
   ShieldCheck, FileSignature, UsersRound, Calendar, BarChart3,
@@ -94,6 +96,9 @@ const FIXES = [
 export default function CostOfDoingNothingPage() {
   return (
     <main>
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Cost of Doing Nothing', url: '/cost-of-doing-nothing' }]}
+      />
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
@@ -271,6 +276,18 @@ export default function CostOfDoingNothingPage() {
 
             <CompoundingCostChart />
           </div>
+        </div>
+      </section>
+
+      {/* AIO summary */}
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '1rem', paddingBottom: '2rem' }}>
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="A sourced view of the compounding cost of unfixed people problems for UK SMEs in 2026: tribunal awards, mis-hire cost, time-to-hire and Employment Rights Bill exposure. Every figure has a citation on /sources."
+            who="UK SME founders and operators with 10 to 250 employees who have been deferring people work to focus on revenue."
+            problem="The cost of doing nothing compounds month over month. Day-1 unfair dismissal rights commence in 2026. Tribunal awards average £13,749 (unfair dismissal) to £45,000+ (discrimination). A bad mid-level hire costs £132,000 (REC, 2017)."
+            next="Run the 2-minute HR Risk Score, or book a call. Both are free. Sources: thepeoplesystem.co.uk/sources."
+          />
         </div>
       </section>
 

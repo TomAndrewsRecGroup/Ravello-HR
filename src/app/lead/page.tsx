@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
@@ -71,9 +73,27 @@ const packages: Package[] = [
   },
 ];
 
+const FAQ = [
+  { q: 'Who is LEAD for?', a: 'UK SMEs that know their managers and people need to develop, but do not have the internal L&D resource to make it happen at the depth required. Right for first-time L&D builds, businesses without a formal learning culture, and post-acquisition integrations.' },
+  { q: 'How is LEAD different from a training provider?', a: 'A training provider sells courses. LEAD is a fractional L&D function: strategy, programme design, manager capability, performance frameworks and culture work, owned end to end by a senior lead. The output is a system, not a course catalogue.' },
+  { q: 'What is the minimum commitment?', a: 'LEAD Foundations and LEAD Partner have a 3-month minimum. LEAD Build is scoped as a defined-outcome project, typically 6 to 9 months.' },
+  { q: 'Can LEAD work alongside our existing HR or HRBP?', a: 'Yes, that is the typical setup. We sit underneath your in-house HR on the specialist development work while they stay close to the day-to-day team.' },
+];
+
 export default function LeadPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'LEAD', url: '/lead' }]}
+        faqs={FAQ}
+        service={{
+          name: 'LEAD: leadership development and L&D strategy',
+          description: 'Fractional L&D and leadership development for UK SMEs. Three packages (Foundations, Partner, Build) covering manager training, performance frameworks, behavioural skills and L&D operating model.',
+          url: 'https://thepeoplesystem.co.uk/lead',
+          serviceType: 'Learning and development consultancy',
+          offers: packages.map((p) => ({ name: p.name, description: p.who })),
+        }}
+      />
 
       {/* Hero */}
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
@@ -206,6 +226,18 @@ export default function LeadPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AIO summary */}
+      <section style={{ background: 'var(--bg)', padding: '1rem 1.5rem 3rem' }} className="lg:px-10">
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="LEAD is The People System's L&D and leadership development pillar. Three packages (Foundations, Partner, Build) covering manager capability, performance frameworks, behavioural skills and L&D operating model."
+            who="UK SMEs without a formal L&D function, scaling teams whose managers need real capability development, and post-acquisition integrations rebuilding the people development model."
+            problem="Managers promoted into leadership without training, no performance or feedback culture, course-buying instead of capability building, and culture work that never lands."
+            next="Book a call. We bring you a clear view of where the biggest capability gap sits and which LEAD package fits."
+          />
         </div>
       </section>
 
