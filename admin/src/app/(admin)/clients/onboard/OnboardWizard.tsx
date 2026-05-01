@@ -175,9 +175,13 @@ export default function OnboardWizard({ staff }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: company.contact_email, company_id: companyId }),
         });
+        const body = await inv.json().catch(() => ({}));
         if (!inv.ok) {
-          const body = await inv.json();
           setInviteNote(`Client created but invite failed: ${body.error ?? 'unknown error'}`);
+        } else if (body.email_sent === false) {
+          setInviteNote(
+            `Client created and invite link generated, but the email did not send. ${body.email_warning ?? ''} Activation link: ${body.activate_url ?? 'see profile'}`,
+          );
         }
       } catch {
         setInviteNote('Client created but the invite email could not be sent.');

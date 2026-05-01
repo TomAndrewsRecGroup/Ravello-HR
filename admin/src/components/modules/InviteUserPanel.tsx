@@ -39,6 +39,11 @@ export default function InviteUserPanel({ companyId }: Props) {
       return;
     }
 
+    if (body.email_sent === false) {
+      setError(`User created but the invite email did not send. ${body.email_warning ?? ''} Activation link: ${body.activate_url ?? '(see profile)'}`);
+      return;
+    }
+
     setSuccess(true);
     setEmail('');
     setFullName('');

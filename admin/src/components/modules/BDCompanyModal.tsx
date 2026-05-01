@@ -158,7 +158,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
 
       // Optionally invite a user
       if (convForm.contact_email) {
-        await fetch('/api/invite', {
+        const inv = await fetch('/api/invite', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({
@@ -168,6 +168,15 @@ export default function BDCompanyModal({ company, onClose }: Props) {
             role:       'client_admin',
           }),
         });
+        const invBody = await inv.json().catch(() => ({}));
+        if (!inv.ok) {
+          throw new Error(`Client created but invite failed: ${invBody.error ?? 'unknown error'}`);
+        }
+        if (invBody.email_sent === false) {
+          throw new Error(
+            `Client created and invite link generated, but the email did not send. ${invBody.email_warning ?? ''} Activation link: ${invBody.activate_url ?? 'see profile'}`,
+          );
+        }
       }
 
       // Seed the named contact onto the org chart so they appear the
