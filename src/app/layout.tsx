@@ -7,7 +7,6 @@ import { ClarityScript } from '@/components/ClarityScript';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import QuickActions from '@/components/QuickActions';
-import ExitIntentPopup from '@/components/ExitIntentPopup';
 import BookCallButton from '@/components/BookCallButton';
 import ConditionalTicker from '@/components/ConditionalTicker';
 import StructuredData from '@/components/StructuredData';
@@ -90,7 +89,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <QuickActions />
         <BookCallButton />
-        <ExitIntentPopup />
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
 
@@ -37,6 +39,15 @@ const outcomes = [
 export default function SmartHiringSystemPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Smart Hiring System', url: '/smart-hiring-system' }]}
+        service={{
+          name: 'Smart Hiring System',
+          description: 'How HIRE works end to end: Friction Lens scoring (third-party technology by IvyLens), embedded delivery, structured assessment, and offer management.',
+          url: 'https://thepeoplesystem.co.uk/smart-hiring-system',
+          serviceType: 'Embedded recruitment',
+        }}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

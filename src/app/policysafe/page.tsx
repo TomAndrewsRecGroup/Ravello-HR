@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, BookOpen, Users } from 'lucide-react';
 
@@ -55,6 +56,15 @@ const included = [
 export default function PolicySafePage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'PolicySafe', url: '/policysafe' }]}
+        service={{
+          name: 'PolicySafe',
+          description: 'Employment Rights Bill ready policy stack: contracts, handbooks, statutory policies and manager guidance for UK SMEs.',
+          url: 'https://thepeoplesystem.co.uk/policysafe',
+          serviceType: 'HR compliance consultancy',
+        }}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

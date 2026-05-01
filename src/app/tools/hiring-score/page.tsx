@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import HiringScoreTool from '@/components/tools/HiringScoreTool';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 
 export const metadata: Metadata = {
   title: 'Hiring Score | Diagnose Your Hiring Problems | The People System',
@@ -13,6 +15,9 @@ export const metadata: Metadata = {
 export default function HiringScorePage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Tools', url: '/tools/hiring-score' }, { name: 'Hiring Score', url: '/tools/hiring-score' }]}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
@@ -46,6 +51,17 @@ export default function HiringScorePage() {
             <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
+        </div>
+      </section>
+
+      <section className="section-padding" style={{ paddingTop: '0', paddingBottom: '2rem' }}>
+        <div className="max-w-[900px] mx-auto">
+          <AioSummary
+            what="A free 8-question diagnostic that scores your current hiring process and emails you a tailored fix plan."
+            who="UK SME founders, COOs and HR leads with a sense that hiring is not working but no clear view of why."
+            problem="Roles that reopen, agency dependency, slow time-to-hire, inconsistent assessment and high offer drop-off."
+            next="Submit your details to receive a branded results email with your score, weak areas and a 7/30/90 day fix plan. CTA in the email to book a call."
+          />
         </div>
       </section>
 

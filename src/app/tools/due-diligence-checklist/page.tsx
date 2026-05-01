@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import DDChecklistTool from '@/components/tools/DDChecklistTool';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 
 export const metadata: Metadata = {
   title: 'People Due Diligence Checklist | M&A People Risk | The People System',
@@ -13,6 +15,9 @@ export const metadata: Metadata = {
 export default function DDChecklistPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Tools', url: '/tools/due-diligence-checklist' }, { name: 'DD Checklist', url: '/tools/due-diligence-checklist' }]}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
@@ -46,6 +51,17 @@ export default function DDChecklistPage() {
             <Link href="/book" className="btn-gradient">Book a Call</Link>
             <Link href="/book" className="btn-secondary">Book a Call</Link>
           </div>
+        </div>
+      </section>
+
+      <section className="section-padding" style={{ paddingTop: '0', paddingBottom: '2rem' }}>
+        <div className="max-w-[900px] mx-auto">
+          <AioSummary
+            what="A 19-point people due diligence checklist across workforce structure, employment terms, retention, comp and benefits, and post-acquisition integration."
+            who="UK PE-backed acquirers, founder sellers and integration leads working on M&A or carve-outs."
+            problem="People risk surfaces too late: TUPE timelines slip, key staff walk in week one, contracts harmonisation drags into year two. Most deals never run a structured people DD."
+            next="Submit your details to receive a branded risk summary with the open items mapped to deal stage and DealReady People as the canonical fix."
+          />
         </div>
       </section>
 

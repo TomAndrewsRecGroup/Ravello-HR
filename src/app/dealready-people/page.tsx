@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle, Users, FileText, TrendingUp, Clock } from 'lucide-react';
 
@@ -46,6 +47,15 @@ const decisionTree = [
 export default function DealReadyPeoplePage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'DealReady People', url: '/dealready-people' }]}
+        service={{
+          name: 'DealReady People',
+          description: 'M&A people due diligence, TUPE planning and post-acquisition integration for UK PE-backed and SME deals.',
+          url: 'https://thepeoplesystem.co.uk/dealready-people',
+          serviceType: 'M&A HR consultancy',
+        }}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

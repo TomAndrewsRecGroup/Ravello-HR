@@ -1,6 +1,7 @@
 'use client';
 import { Menu } from 'lucide-react';
 import NotificationBell from '@/components/modules/NotificationBell';
+import EnquiriesButton from '@/components/modules/EnquiriesButton';
 import GlobalSearch from '@/components/modules/GlobalSearch';
 import { ClientSwitcherDropdown } from './ClientSwitcher';
 import { useMobileMenu } from './MobileMenuContext';
@@ -58,6 +59,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
         <ClientSwitcherDropdown />
         {actions}
         <GlobalSearch />
+        <EnquiriesButton />
         <NotificationBell />
       </div>
     </header>
