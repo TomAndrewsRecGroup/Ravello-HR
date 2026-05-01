@@ -4,31 +4,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
-// Accept invitation — OTP code flow.
-//
-// Same rationale as the password reset flow: corporate email scanners
-// pre-fetch links and consume the one-time token before the user can
-// click. 6-digit codes can't be prefetched, so this is the bullet-
-// proof path.
-//
-// User has been invited via /api/invite (admin onboarding) or
-// /api/portal/invite (client_admin invites teammate). Either route
-// calls Supabase's inviteUserByEmail which sends an email containing
-// both a magic link and a 6-digit code (template 02-invite-user).
-//
-// On this page they enter:
-//   • their email
-//   • the 6-digit code
-//   • a new password (required for invite — they have no existing one)
-//
-// We verifyOtp({ type: 'invite' }) to mint a session, updateUser() to
-// set the password, then route to /dashboard. The portal layout
-// middleware decides if a paid-tier wizard is needed; either way the
-// user is signed in by the time they arrive there.
+const ERROR_MESSAGES: Record<string, string> = {
+  expired: 'Your invitation link has expired. Ask whoever invited you to send a new one.',
+  invalid: 'This invitation link has already been used or is invalid. Ask whoever invited you to send a new one.',
+  link:    'Something went wrong processing your invitation. Please try again or contact support.',
+  missing: 'No invitation token found. Please use the link from your invitation email.',
+};
 
 export default function AcceptInvitePage() {
   return (
@@ -47,9 +32,10 @@ function AcceptInviteInner() {
   const searchParams = useSearchParams();
   const supabase     = createClient();
 
-  // Pre-fill email from query string if it was passed (admins can
-  // include ?email=... in the link they share if the email arrives
-  // late and the user just visits the page directly).
+  const errorCode = searchParams.get('error') ?? '';
+  const errorMsg  = ERROR_MESSAGES[errorCode] ?? '';
+
+  // Pre-fill email from query string if it was passed.
   const emailHint = searchParams.get('email') ?? '';
 
   const [email,    setEmail]    = useState(emailHint);
@@ -132,6 +118,12 @@ function AcceptInviteInner() {
             </div>
           ) : (
             <>
+              {errorMsg && (
+                <div className="flex items-start gap-3 p-4 mb-6 rounded-[10px]" style={{ background: 'rgba(217,68,68,0.08)', color: 'var(--red)' }}>
+                  <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                  <p className="text-sm">{errorMsg}</p>
+                </div>
+              )}
               <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>Accept your invitation</h1>
               <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>
                 Enter the code from your invitation email and set a password.

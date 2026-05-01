@@ -1,27 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionProfile } from '@/lib/supabase/server';
+import { sendEmail, buildInviteEmail } from '@/lib/email';
 
-// Seat cap: every client gets 2 portal users (1 Admin + 1 Editor).
-// Anything beyond that is a paid upgrade — handled separately when
-// the Stripe billing integration lands. Until then, this endpoint
-// hard-refuses the third invite.
 const SEAT_CAP = 2;
+
+const ROLE_LABELS: Record<string, string> = {
+  client_admin:  'Admin',
+  client_editor: 'Editor',
+};
 
 export async function POST(request: NextRequest) {
   try {
     const { user, role, companyId } = await getSessionProfile();
 
-    // Only the company's existing Admin can invite. Editors cannot.
-    if (!user) {
-      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-    }
-    if (role !== 'client_admin') {
-      return NextResponse.json({ error: `Only the company Admin can invite team members. Your role: ${role || 'unknown'}.` }, { status: 403 });
-    }
-    if (!companyId) {
-      return NextResponse.json({ error: 'Your account is not linked to a company.' }, { status: 400 });
-    }
+  if (!user) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+  }
+  if (role !== 'client_admin') {
+    return NextResponse.json({ error: 'Only the company Admin can invite team members.' }, { status: 403 });
+  }
+  if (!companyId) {
+    return NextResponse.json({ error: 'Your account is not linked to a company.' }, { status: 400 });
+  }
 
     let body: { email?: string; full_name?: string } = {};
     try { body = await request.json(); } catch { /* ignore */ }
@@ -48,12 +49,12 @@ export async function POST(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ── Seat cap check: count current portal users on this company ──
-    const { count: seatCount, error: countErr } = await adminClient
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', companyId)
-      .in('role', ['client_admin', 'client_editor']);
+  // ── Seat cap ──────────────────────────────────────────────────
+  const { count: seatCount, error: countErr } = await adminClient
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('company_id', companyId)
+    .in('role', ['client_admin', 'client_editor']);
 
     if (countErr) {
       console.error('[/api/portal/invite] seat count failed:', countErr);
@@ -66,43 +67,69 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // ── Invite via Supabase Auth Admin API ──
-    const { data, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      data: { company_id: companyId, role: 'client_editor' },
-      redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/accept-invite?email=${encodeURIComponent(email)}`,
+  // ── Get company name for the email ────────────────────────────
+  const { data: companyRow } = await adminClient
+    .from('companies')
+    .select('name')
+    .eq('id', companyId)
+    .maybeSingle();
+
+  // ── Create or re-invite user ──────────────────────────────────
+  // Check if user already exists in profiles (re-invite path).
+  const { data: existingProfile } = await adminClient
+    .from('profiles')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
+
+  let userId: string;
+
+  if (existingProfile?.id) {
+    userId = existingProfile.id;
+  } else {
+    // New user: create silently (email_confirm=true so no Supabase email
+    // is sent and the magic link we generate on activation works immediately).
+    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: { company_id: companyId, role: 'client_editor' },
     });
 
-    if (inviteErr) {
-      console.error('[/api/portal/invite] inviteUserByEmail failed:', inviteErr);
-      return NextResponse.json({ error: inviteErr.message }, { status: 400 });
+    if (createError || !createData?.user) {
+      return NextResponse.json(
+        { error: createError?.message ?? 'Could not create user.' },
+        { status: 400 },
+      );
     }
-    if (!data?.user?.id) {
-      return NextResponse.json({ error: 'Supabase returned no user from inviteUserByEmail.' }, { status: 502 });
-    }
-
-    // Pre-create the profile row so the layout's onboarding redirect works
-    // for the new user on first sign-in. Surface DB errors instead of
-    // swallowing them — a silent upsert failure leaves the new user with
-    // company_id NULL and they bounce off the onboarding redirect.
-    const { error: upsertErr } = await adminClient.from('profiles').upsert({
-      id:                   data.user.id,
-      email,
-      full_name,
-      company_id:           companyId,
-      role:                 'client_editor',
-      onboarding_completed: false,
-      onboarding_step:      0,
-    }, { onConflict: 'id' });
-
-    if (upsertErr) {
-      console.error('[/api/portal/invite] profiles upsert failed:', upsertErr);
-      return NextResponse.json({ error: `Profile write failed: ${upsertErr.message}` }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, user_id: data.user.id });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'unknown';
-    console.error('[/api/portal/invite] unhandled:', err);
-    return NextResponse.json({ error: `Invite failed: ${msg}` }, { status: 500 });
+    userId = createData.user.id;
   }
+
+  // ── Generate 7-day invite token ───────────────────────────────
+  const inviteToken   = crypto.randomUUID();
+  const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  await adminClient.from('profiles').upsert({
+    id:                      userId,
+    email,
+    full_name,
+    company_id:              companyId,
+    role:                    'client_editor',
+    onboarding_completed:    false,
+    onboarding_step:         0,
+    invite_token:            inviteToken,
+    invite_token_expires_at: inviteExpires,
+  }, { onConflict: 'id' });
+
+  // ── Send branded invite email via Resend ──────────────────────
+  const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
+
+  await sendEmail(buildInviteEmail({
+    to:          email,
+    companyName: companyRow?.name ?? 'your company',
+    roleLabel:   ROLE_LABELS['client_editor'],
+    activateUrl,
+  }));
+
+  return NextResponse.json({ success: true, user_id: userId });
 }

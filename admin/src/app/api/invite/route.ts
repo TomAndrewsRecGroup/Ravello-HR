@@ -18,20 +18,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'email and company_id are required' }, { status: 400 });
   }
 
-  // ── Validate company_id exists ──
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!UUID_RE.test(company_id)) {
     return NextResponse.json({ error: 'Invalid company_id format' }, { status: 400 });
   }
   const { data: company, error: companyErr } = await supabase
-    .from('companies').select('id').eq('id', company_id).single();
+    .from('companies').select('id, name').eq('id', company_id).single();
   if (companyErr || !company) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });
   }
 
-  // Whitelist of accepted portal roles (Admin or Editor). Anything else
-  // falls back to Admin so an invite never lands a sub-user with a
-  // role we don't expect.
   const safeRole = (PORTAL_INVITE_ROLES as readonly string[]).includes(role) ? role : 'client_admin';
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,76 +41,88 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // Invite via Supabase Auth Admin API: sends a magic-link invite email.
-  // Supabase returns invite confirmations using IMPLICIT FLOW — auth
-  // tokens come back in the URL hash (#access_token=...). Server-side
-  // route handlers can't see hashes (browsers don't send them), so we
-  // skip /auth/callback and point directly at /auth/update-password.
-  // That page is a client component and detects the hash via supabase-js
-  // (detectSessionInUrl=true), creates the session, then shows the
-  // "Welcome — set your password" form.
-  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { company_id, role: safeRole },
-    redirectTo: `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001'}/auth/update-password?welcome=1`,
-  });
+  // ── Check if this email already has a profile (re-invite path). ──
+  // We look in profiles rather than auth.users so we can use our own
+  // indexed column and avoid a paginated admin.listUsers() scan.
+  const { data: existingProfile } = await adminClient
+    .from('profiles')
+    .select('id')
+    .eq('email', email.toLowerCase().trim())
+    .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  let userId: string;
+
+  if (existingProfile?.id) {
+    // Re-invite: user already exists in auth. We'll just regenerate
+    // their invite token so the new link works.
+    userId = existingProfile.id;
+  } else {
+    // New user: create the auth user silently (email_confirm=true so
+    // they don't get Supabase's own confirmation email, and the magic-
+    // link we generate later works without a separate confirmation step).
+    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+      email: email.toLowerCase().trim(),
+      email_confirm: true,
+      user_metadata: { company_id, role: safeRole },
+    });
+
+    if (createError || !createData?.user) {
+      return NextResponse.json(
+        { error: createError?.message ?? 'Could not create user.' },
+        { status: 400 },
+      );
+    }
+    userId = createData.user.id;
   }
 
-  // Pre-create / update the profile row so middleware can check
-  // onboarding_completed and so company_id + role are correct from
-  // the first sign-in.
-  //
-  // CRITICAL: don't use ignoreDuplicates here. Supabase's auth trigger
-  // (handle_new_user, migration 001) inserts a profile row with just
-  // (id, email) the moment inviteUserByEmail creates the auth.users
-  // row. By the time we get here that row exists, so ignoreDuplicates
-  // would skip our update — leaving company_id NULL and role at the
-  // column default (client_editor). The upsert WITHOUT ignoreDuplicates
-  // updates the existing row with the right company_id + role.
+  // ── Generate a 7-day invite token and store it on the profile. ──
+  // This replaces the 1-hour access_token that Supabase's native
+  // inviteUserByEmail embeds directly in the email link. The portal's
+  // /auth/activate page validates this token and generates a fresh
+  // Supabase magic link on-demand, so the 1-hour window only starts
+  // when the client actually clicks — not when we sent the email.
+  const inviteToken   = crypto.randomUUID();
+  const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
   await adminClient.from('profiles').upsert({
-    id:                   data.user.id,
-    email,
-    full_name:            full_name || null,
+    id:                      userId,
+    email:                   email.toLowerCase().trim(),
+    full_name:               full_name || null,
     company_id,
-    role:                 safeRole,
-    onboarding_completed: false,
-    onboarding_step:      1,
+    role:                    safeRole,
+    onboarding_completed:    false,
+    onboarding_step:         1,
+    invite_token:            inviteToken,
+    invite_token_expires_at: inviteExpires,
   }, { onConflict: 'id' });
 
   auditLog({
-    action: 'user.invited',
-    actor_id: auth.userId,
-    target_id: data.user.id,
+    action:      'user.invited',
+    actor_id:    auth.userId,
+    target_id:   userId,
     target_type: 'profile',
-    metadata: { email, company_id, role: safeRole },
+    metadata:    { email, company_id, role: safeRole },
   });
 
-  // Cache busting — without these, the freshly-added user doesn't
-  // appear on /clients/[id] (cached via unstable_cache, 60s TTL),
-  // /users (revalidate=30), or /dashboard (counts) until the TTL
-  // expires. The client_detail cache uses a tag, so revalidateTag
-  // is the right hammer there; the others are page-level and use
-  // revalidatePath.
   revalidateTag(`client:${company_id}`);
   revalidatePath('/users');
   revalidatePath('/dashboard');
   revalidatePath(`/clients/${company_id}`);
 
-  // Branded follow-up alongside Supabase's built-in magic-link email.
-  // Supabase's email is functional (the auth token); this one is the
-  // welcome — TPS branded, points at the portal sign-in, names the
-  // company and role.
-  const { data: companyRow } = await adminClient
-    .from('companies').select('name').eq('id', company_id).single();
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  // ── Send the branded invite email via Resend. ──
+  // This is now the ONLY email the client receives — we no longer
+  // rely on Supabase's native invite email (which embedded a
+  // short-lived token). The link goes to /auth/activate which
+  // validates the 7-day token and generates a fresh magic link.
+  const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
+
   await sendEmail(userInvitedEmail({
     to:          email,
-    companyName: companyRow?.name ?? 'your company',
-    roleLabel:   ROLE_LABELS[safeRole] ?? 'Editor',
-    acceptUrl:   `${portalUrl}/auth/accept-invite?email=${encodeURIComponent(email)}`,
+    companyName: (company as any).name ?? 'your company',
+    roleLabel:   ROLE_LABELS[safeRole] ?? 'Admin',
+    acceptUrl:   activateUrl,
   }));
 
-  return NextResponse.json({ success: true, user_id: data.user.id });
+  return NextResponse.json({ success: true, user_id: userId });
 }
