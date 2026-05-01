@@ -93,7 +93,11 @@ function AcceptInviteInner() {
     }
 
     setDone(true);
-    setTimeout(() => router.push('/dashboard'), 1400);
+    // Hard navigation (not router.push) so cookies set by verifyOtp /
+    // updateUser are guaranteed to be on the next request — a soft
+    // SPA push can race the cookie write and land on the dashboard
+    // before middleware sees the session, causing a blank-screen hang.
+    setTimeout(() => { window.location.assign('/dashboard'); }, 1400);
   }
 
   return (

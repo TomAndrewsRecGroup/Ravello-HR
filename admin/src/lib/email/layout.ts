@@ -14,7 +14,7 @@
 // same root (e.g. assets.thepeoplesystem.co.uk).
 
 export const BRAND = {
-  logoUrl:   process.env.EMAIL_LOGO_URL ?? 'https://www.thepeoplesystem.co.uk/email-logo.png',
+  logoUrl:   process.env.EMAIL_LOGO_URL ?? 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png',
   purple:    '#7C3AED',
   purpleDk:  '#5A2AC8',
   ink:       '#070B1D',

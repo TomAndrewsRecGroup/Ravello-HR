@@ -11,7 +11,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
-  const { user, role, companyId } = await getSessionProfile();
+  try {
+    const { user, role, companyId } = await getSessionProfile();
 
   if (!user) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
@@ -23,28 +24,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Your account is not linked to a company.' }, { status: 400 });
   }
 
-  let body: { email?: string; full_name?: string } = {};
-  try { body = await request.json(); } catch { /* ignore */ }
-  const email     = (body.email ?? '').trim().toLowerCase();
-  const full_name = (body.full_name ?? '').trim() || null;
+    let body: { email?: string; full_name?: string } = {};
+    try { body = await request.json(); } catch { /* ignore */ }
+    const email     = (body.email ?? '').trim().toLowerCase();
+    const full_name = (body.full_name ?? '').trim() || null;
 
-  if (!email) {
-    return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: 'That email does not look right.' }, { status: 400 });
-  }
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'That email does not look right.' }, { status: 400 });
+    }
 
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) {
-    return NextResponse.json({ error: 'Server is missing required configuration.' }, { status: 500 });
-  }
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!serviceKey || !supabaseUrl) {
+      console.error('[/api/portal/invite] env missing', { hasServiceKey: !!serviceKey, hasUrl: !!supabaseUrl });
+      return NextResponse.json({
+        error: `Server config missing: ${!serviceKey ? 'SUPABASE_SERVICE_ROLE_KEY ' : ''}${!supabaseUrl ? 'NEXT_PUBLIC_SUPABASE_URL' : ''}`.trim(),
+      }, { status: 500 });
+    }
 
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+    const adminClient = createClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
   // ── Seat cap ──────────────────────────────────────────────────
   const { count: seatCount, error: countErr } = await adminClient
@@ -53,15 +56,16 @@ export async function POST(request: NextRequest) {
     .eq('company_id', companyId)
     .in('role', ['client_admin', 'client_editor']);
 
-  if (countErr) {
-    return NextResponse.json({ error: 'Could not check your seat count.' }, { status: 500 });
-  }
-  if ((seatCount ?? 0) >= SEAT_CAP) {
-    return NextResponse.json({
-      error: 'You have reached your seat limit. Contact The People System to add more seats.',
-      code:  'seat_cap_reached',
-    }, { status: 409 });
-  }
+    if (countErr) {
+      console.error('[/api/portal/invite] seat count failed:', countErr);
+      return NextResponse.json({ error: `Could not check your seat count: ${countErr.message}` }, { status: 500 });
+    }
+    if ((seatCount ?? 0) >= SEAT_CAP) {
+      return NextResponse.json({
+        error: 'You have reached your seat limit. Contact The People System to add more seats.',
+        code:  'seat_cap_reached',
+      }, { status: 409 });
+    }
 
   // ── Get company name for the email ────────────────────────────
   const { data: companyRow } = await adminClient
