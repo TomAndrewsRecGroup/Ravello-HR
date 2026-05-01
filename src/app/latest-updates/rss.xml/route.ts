@@ -5,6 +5,17 @@ export const revalidate = 600;
 
 const SITE_URL = 'https://thepeoplesystem.co.uk';
 
+interface FeedRow {
+  id:           string;
+  title:        string;
+  description:  string | null;
+  source_url:   string;
+  site_name:    string | null;
+  published_at: string | null;
+  created_at:   string;
+  image_url:    string | null;
+}
+
 function escapeXml(s: string | null | undefined): string {
   if (!s) return '';
   return s
@@ -29,7 +40,8 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  const items = (data ?? []).map((row) => `
+  const rows = (data ?? []) as unknown as FeedRow[];
+  const items = rows.map((row) => `
     <item>
       <title>${escapeXml(row.title)}</title>
       <link>${escapeXml(row.source_url)}</link>
