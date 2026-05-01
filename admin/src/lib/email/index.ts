@@ -18,6 +18,9 @@ export type { ClientWelcomeInput }       from './templates/clientWelcome';
 export { userInvitedEmail }              from './templates/userInvited';
 export type { UserInvitedInput }         from './templates/userInvited';
 
+export { passwordResetEmail }            from './templates/passwordReset';
+export type { PasswordResetInput }       from './templates/passwordReset';
+
 export { actionAssignedEmail }           from './templates/actionAssigned';
 export type { ActionAssignedInput }      from './templates/actionAssigned';
 
