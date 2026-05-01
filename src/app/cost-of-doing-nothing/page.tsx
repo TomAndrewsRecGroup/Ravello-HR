@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import {
   ArrowRight, AlertTriangle, Scale, UserX, Clock, TrendingUp,
   ShieldCheck, FileSignature, UsersRound, Calendar, BarChart3,
@@ -94,6 +96,9 @@ const FIXES = [
 export default function CostOfDoingNothingPage() {
   return (
     <main>
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Cost of Doing Nothing', url: '/cost-of-doing-nothing' }]}
+      />
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section className="section-padding" style={{ background: 'var(--surface)' }}>
         <div className="container-wide">
@@ -274,17 +279,29 @@ export default function CostOfDoingNothingPage() {
         </div>
       </section>
 
+      {/* AIO summary */}
+      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '1rem', paddingBottom: '2rem' }}>
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="A sourced view of the compounding cost of unfixed people problems for UK SMEs in 2026: tribunal awards, mis-hire cost, time-to-hire and Employment Rights Bill exposure. Every figure has a citation on /sources."
+            who="UK SME founders and operators with 10 to 250 employees who have been deferring people work to focus on revenue."
+            problem="The cost of doing nothing compounds month over month. Day-1 unfair dismissal rights commence in 2026. Tribunal awards average £13,749 (unfair dismissal) to £45,000+ (discrimination). A bad mid-level hire costs £132,000 (REC, 2017)."
+            next="Run the 2-minute HR Risk Score, or book a call. Both are free. Sources: thepeoplesystem.co.uk/sources."
+          />
+        </div>
+      </section>
+
       {/* ── How TPS helps: mirror the 5 pains with 5 fixes ───────── */}
       <section className="section-padding" style={{ background: 'var(--bg)' }}>
         <div className="container-wide">
-          <div className="grid lg:grid-cols-[1fr_460px] gap-16 items-start">
+          <div className="grid lg:grid-cols-[320px_1fr] gap-16 items-start">
             <div className="hidden lg:block">
               <div className="rounded-[24px] overflow-hidden" style={{ boxShadow: '0 8px 40px rgba(10,15,30,0.08)' }}>
                 <Image
-                  src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=920&h=1100&fit=crop"
+                  src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=720&h=900&fit=crop"
                   alt="Two professionals reviewing a plan together"
-                  width={460}
-                  height={560}
+                  width={320}
+                  height={420}
                   className="w-full h-auto object-cover"
                 />
               </div>

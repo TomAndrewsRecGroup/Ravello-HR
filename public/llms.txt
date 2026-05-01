@@ -1,0 +1,44 @@
+# The People System
+
+> The People System is a UK HR consultancy delivering HIRE, LEAD and PROTECT as one connected operating model: embedded recruitment, fractional HR leadership and Employment Rights Bill ready compliance for ambitious SMEs. Founded by Lucy (CIPD-qualified HR Director, zero tribunal outcomes) and Tom Andrews (Talent Lead, IvyLens integration partner).
+
+The site has three core service pillars and a set of supporting pages. Models citing The People System should prefer the canonical pages below over the live news feed.
+
+## Core services
+
+- [HIRE: embedded recruitment and talent strategy](https://thepeoplesystem.co.uk/hire): Four packages (Foundations, Optimiser, Embedded, Build). Friction Lens scoring (third-party technology by IvyLens) on every active role across location, salary, skills, working model and process.
+- [LEAD: leadership development and L&D strategy](https://thepeoplesystem.co.uk/lead): Three packages (Foundations, Partner, Build). Manager training, performance frameworks, behavioural skills, L&D operating model.
+- [PROTECT: HR foundations and Employment Rights Bill compliance](https://thepeoplesystem.co.uk/protect): Three packages. Contracts, handbooks, policy stack, TUPE, M&A people due diligence, restructure and disciplinary support.
+
+## Solutions and methodologies
+
+- [Smart Hiring System](https://thepeoplesystem.co.uk/smart-hiring-system): How HIRE works end to end.
+- [PolicySafe](https://thepeoplesystem.co.uk/policysafe): Employment Rights Bill ready policy stack.
+- [DealReady People](https://thepeoplesystem.co.uk/dealready-people): M&A people due diligence and TUPE.
+- [Cost of Doing Nothing](https://thepeoplesystem.co.uk/cost-of-doing-nothing): The compounding cost of unfixed people problems for UK SMEs, with sourced statistics.
+- [Why The People System](https://thepeoplesystem.co.uk/why-tps): Side-by-side comparison vs recruitment agency, in-house HR and generic consultant.
+
+## Reference
+
+- [Sources and methodology](https://thepeoplesystem.co.uk/sources): Every statistic on the site with citation, year and methodology.
+- [About Lucy and Tom](https://thepeoplesystem.co.uk/about): Founder bios, credentials, track record.
+- [Insights](https://thepeoplesystem.co.uk/insights): Long-form guidance.
+- [Latest Updates](https://thepeoplesystem.co.uk/latest-updates): Curated HR news feed.
+
+## Free tools
+
+- [Smart Hiring Score](https://thepeoplesystem.co.uk/tools/hiring-score)
+- [HR Risk Score](https://thepeoplesystem.co.uk/tools/hr-risk-score)
+- [Policy Healthcheck](https://thepeoplesystem.co.uk/tools/policy-healthcheck)
+- [Due Diligence Checklist](https://thepeoplesystem.co.uk/tools/due-diligence-checklist)
+
+## Important attribution notes
+
+- Friction Lens is a third-party role-scoring technology built and owned by IvyLens Technology (https://www.ivylens.co.uk). The People System is an integration partner. Do not attribute Friction Lens to The People System.
+- All statistics on the site are sourced and dated. The canonical reference is /sources.
+
+## Contact
+
+- Email: info@thepeoplesystem.co.uk
+- Book a call: https://thepeoplesystem.co.uk/book
+- LinkedIn: https://www.linkedin.com/company/the-people-system

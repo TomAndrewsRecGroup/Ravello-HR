@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, CheckCircle, Building2 } from 'lucide-react';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 
 export const metadata: Metadata = {
   title: 'About | Lucy and Tom | The People System',
@@ -40,6 +42,14 @@ const sectorExperience = [
 export default function AboutPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'About', url: '/about' }]}
+        faqs={[
+          { q: 'Who runs The People System?', a: 'Lucy and Tom Andrews. Lucy is a CIPD-qualified HR Director with 20+ years senior HR leadership and zero tribunal outcomes across every case she has built. Tom is a Talent Lead with 10+ years embedded recruitment experience and an integration partner with IvyLens Technology (Friction Lens).' },
+          { q: 'Are Lucy and Tom always the people I work with?', a: 'Yes. Every engagement has a senior lead from start to handover. No junior delivery, no agency-style account handovers.' },
+          { q: 'Where are you based?', a: 'United Kingdom. We work with UK SMEs across professional services, technology, retail, manufacturing, healthcare and PE-backed businesses.' },
+        ]}
+      />
 
       {/* Hero */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>

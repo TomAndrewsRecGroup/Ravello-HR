@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { ArrowRight, ArrowLeft, Shield, AlertTriangle, XCircle } from 'lucide-react';
+import EnquiryGate from './EnquiryGate';
 
 const questions = [
   {
@@ -107,9 +108,6 @@ export default function HRRiskScoreTool() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const totalQuestions = questions.length;
@@ -139,19 +137,6 @@ export default function HRRiskScoreTool() {
     setStep(step + 1);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await fetch('/api/leads/hr-risk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, score: totalScore, maxScore, percentage, topRisks: getTopRisks() }),
-      });
-    } catch (_) {}
-    setSubmitting(false);
-    setSubmitted(true);
-  };
 
   if (submitted) {
     const riskInfo = getRiskLevel();
@@ -194,23 +179,19 @@ export default function HRRiskScoreTool() {
 
   if (isEmailGate) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="text-center mb-6">
-          <Shield size={40} className="text-[var(--brand-purple)] mx-auto mb-3" />
-          <h2 className=" text-2xl font-bold text-[var(--ink)] mb-2">Your risk score is ready.</h2>
-          <p className="text-[var(--ink-soft)]">Unlock your full risk report with your top 3 compliance exposures and recommended actions.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <label htmlFor="hr-name" className="sr-only">Your first name</label>
-          <input id="hr-name" type="text" placeholder="Your first name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
-          <label htmlFor="hr-email" className="sr-only">Your work email</label>
-          <input id="hr-email" type="email" placeholder="Your work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
-          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
-            {submitting ? 'Unlocking…' : 'Unlock My Risk Report'} <ArrowRight size={16} />
-          </button>
-          <p className="text-center text-xs text-gray-400">We&rsquo;ll send your report by email. No spam, ever.</p>
-        </form>
-      </div>
+      <EnquiryGate
+        toolName="HR Risk Score"
+        source="hr_risk"
+        teaserScore={`${percentage}%`}
+        teaserLabel="risk score"
+        result={{
+          score: totalScore,
+          maxScore,
+          percentage,
+          riskAreas: getTopRisks().map((r) => `${r.area}: ${r.risk}`),
+        }}
+        onUnlock={() => setSubmitted(true)}
+      />
     );
   }
 

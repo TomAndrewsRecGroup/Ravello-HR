@@ -12,7 +12,12 @@ export const metadata: Metadata = {
   title: 'Latest Updates | HR News and Insight | The People System',
   description:
     'A live feed of HR news, policy updates, workforce data and practical guidance from across the industry, curated by The People System.',
-  alternates: { canonical: 'https://thepeoplesystem.co.uk/latest-updates' },
+  alternates: {
+    canonical: 'https://thepeoplesystem.co.uk/latest-updates',
+    types: {
+      'application/rss+xml': 'https://thepeoplesystem.co.uk/latest-updates/rss.xml',
+    },
+  },
 };
 
 export const revalidate = 300;
@@ -128,9 +133,16 @@ export default async function LatestUpdatesPage({
           >
             HR news that actually <span className="text-gradient">matters</span>
           </h1>
-          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: 'var(--ink-soft)' }}>
+          <p className="text-lg leading-relaxed max-w-2xl mb-4" style={{ color: 'var(--ink-soft)' }}>
             A curated live feed of HR news, policy changes, workforce data and practical guidance. Pulled from the sources we actually read.
           </p>
+          <a
+            href="/latest-updates/rss.xml"
+            className="inline-flex items-center gap-2 text-xs font-semibold"
+            style={{ color: 'var(--brand-purple)' }}
+          >
+            Subscribe via RSS
+          </a>
         </div>
       </section>
 

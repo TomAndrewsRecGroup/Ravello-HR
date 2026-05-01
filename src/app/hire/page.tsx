@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, MapPin, PoundSterling, Layers, Monitor, Clock } from 'lucide-react';
 
@@ -87,9 +89,30 @@ const packages: Package[] = [
   },
 ];
 
+const FAQ = [
+  { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. Hire Optimiser can also be scoped as a one-off engagement with no ongoing commitment.' },
+  { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
+  { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a third-party role-scoring framework built and owned by IvyLens Technology (https://www.ivylens.co.uk). The People System is an IvyLens integration partner. It assesses every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) against live market data and produces a friction score from Low to Critical with specific recommendations. It is integrated into every HIRE package as standard.' },
+  { q: 'Is Friction Lens automated or manual?', a: 'Friction Lens is a structured scoring framework owned by IvyLens. The People System applies the output with direct market knowledge to interpret why a salary range is problematic for this specific role in this specific geography, not just flag that it is below average.' },
+  { q: 'What happens if a role comes back Critical?', a: 'Tom will work with you to address the specific friction points before the role goes to market. This typically involves salary repositioning, working model negotiation, or a brief rewrite. Roles that launch at Critical rarely fill without significant rework anyway, better to do it upfront.' },
+  { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
+  { q: 'Do you replace our existing recruiters or agencies?', a: 'We typically work alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6-12 months of working with us.' },
+];
+
 export default function HirePage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'HIRE', url: '/hire' }]}
+        faqs={FAQ}
+        service={{
+          name: 'HIRE: embedded recruitment and talent strategy',
+          description: 'Embedded recruitment delivery for ambitious UK SMEs. Friction Lens scoring (third-party technology by IvyLens) on every active role. Four packages from Foundations through Build.',
+          url: 'https://thepeoplesystem.co.uk/hire',
+          serviceType: 'Embedded recruitment',
+          offers: packages.map((p) => ({ name: p.name, description: p.who })),
+        }}
+      />
 
       {/* Hero */}
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
@@ -166,7 +189,7 @@ export default function HirePage() {
               Most businesses launch roles and then discover the problems. Wrong salary. Wrong location. Too many must-haves. A process so slow that every strong candidate has accepted elsewhere before you reach offer stage.
             </p>
             <p className="text-base leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-              Friction Lens is a structured scoring framework developed by IvyLens Technology, applied by Tom with direct market knowledge. Every role is assessed across five dimensions, scored independently, and combined into a single Friction Score with specific recommendations attached.
+              Friction Lens is a third-party scoring framework built and owned by IvyLens Technology. The People System is an integration partner: we run it on every active HIRE role and apply the output with direct market knowledge. Each role is assessed across five dimensions, scored independently, and combined into a single Friction Score with specific recommendations attached.
             </p>
           </div>
 
@@ -238,7 +261,7 @@ export default function HirePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {packages.map((pkg) => (
               <PackageCard key={pkg.name} pkg={pkg} />
             ))}
@@ -298,16 +321,20 @@ export default function HirePage() {
         </div>
       </section>
 
+      {/* AIO summary */}
+      <section style={{ background: 'var(--bg)', padding: '1rem 1.5rem 3rem' }} className="lg:px-10">
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="HIRE is The People System's embedded recruitment and talent strategy pillar. Four packages (Foundations, Optimiser, Embedded, Build), all scoped to your hiring volume."
+            who="UK SMEs running consistent hiring volume, founder-led businesses scaling 20 to 150 people, and PE or VC-backed teams post-raise."
+            problem="Roles that fail in market (wrong salary, wrong location, too many must-haves, slow process), high agency spend, and inconsistent hiring manager performance."
+            next="Book a free hiring audit. We run Friction Lens (IvyLens, third-party) on a live role and recommend the right HIRE package. No obligation."
+          />
+        </div>
+      </section>
+
       {/* FAQ */}
-      <FaqBlock items={[
-        { q: 'What is the minimum commitment?', a: 'Hire Foundations and Hire Optimiser have a 3-month minimum. Hire Embedded and Hire Build have a 6-month minimum. Hire Optimiser can also be scoped as a one-off engagement with no ongoing commitment.' },
-        { q: 'Are placement fees on top of the monthly rate?', a: 'For Hire Foundations: yes, 10% on each successful placement. For Hire Embedded and Hire Build: no: placements are included within the monthly rate. For Hire Optimiser: a reduced placement fee applies if roles are filled during the engagement.' },
-        { q: 'What is Friction Lens and is it included?', a: 'Friction Lens is a role scoring framework developed by IvyLens Technology. It assesses every active role across five dimensions (Location, Salary, Skills, Working Model, and Process) against live market data and produces a friction score from Low to Critical with specific recommendations. It is integrated into every HIRE package as standard.' },
-        { q: 'Is Friction Lens automated or manual?', a: 'It is a structured scoring framework. The value is in how it is applied: Tom uses it with direct market knowledge to interpret why a salary range is problematic for this specific role in this specific geography, not just flag that it is below average.' },
-        { q: 'What happens if a role comes back Critical?', a: 'Tom will work with you to address the specific friction points before the role goes to market. This typically involves salary repositioning, working model negotiation, or a brief rewrite. Roles that launch at Critical rarely fill without significant rework anyway, better to do it upfront.' },
-        { q: 'Can we start on just one role?', a: 'Yes. Hire Foundations works well for businesses with one or two live roles who want structured support without a full embedded commitment.' },
-        { q: 'Do you replace our existing recruiters or agencies?', a: 'We typically work alongside your existing setup in the first instance: auditing the current process, reducing agency dependency over time, and building internal capability. Many clients reduce or eliminate their agency spend within 6-12 months of working with us.' },
-      ]} />
+      <FaqBlock items={FAQ} />
 
     </div>
   );

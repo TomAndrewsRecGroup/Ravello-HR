@@ -50,6 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/tasks',           label: 'Tasks',          icon: CheckSquare },
       { href: '/activity',        label: 'Activity',       icon: Rss },
+      { href: '/enquiries',       label: 'Enquiries',      icon: Inbox },
       { href: '/requests',        label: 'Requests',       icon: Inbox },
       { href: '/support',         label: 'Tickets',        icon: LifeBuoy },
       { href: '/broadcast',       label: 'Broadcast',      icon: Radio },

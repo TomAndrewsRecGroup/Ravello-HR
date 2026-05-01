@@ -23,7 +23,7 @@ export default function Footer() {
       />
 
       <div className="relative z-10 container-wide section-padding">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10">
 
           {/* Brand column */}
           <div className="lg:col-span-1">
@@ -127,6 +127,36 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Partners */}
+          <div>
+            <h4
+              className="text-[10px] font-bold uppercase tracking-[0.20em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.30)' }}
+            >
+              Partners
+            </h4>
+            <ul className="space-y-3">
+              {[
+                ['Andrews Recruitment Group', 'https://www.andrewsrecruitmentgroup.co.uk'],
+                ['RecXchange',                'https://www.recxchange.io'],
+                ['Athletes To Industry',      'https://www.athletestoindustry.co.uk'],
+                ['IvyLens',                   'https://www.ivylens.co.uk'],
+              ].map(([label, href]) => (
+                <li key={href}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link text-sm inline-flex items-center gap-1.5"
+                  >
+                    {label}
+                    <ExternalLink size={11} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Company / Get Started */}
           <div>
             <h4
@@ -140,6 +170,7 @@ export default function Footer() {
                 ['Why TPS',         '/why-tps'],
                 ['About',           '/about'],
                 ['Latest Updates',  '/latest-updates'],
+                ['Sources',         '/sources'],
                 ['Book a Call',     '/book'],
               ].map(([label, href]) => (
                 <li key={href}>

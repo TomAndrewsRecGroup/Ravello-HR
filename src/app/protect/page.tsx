@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -75,9 +77,27 @@ const packages: Package[] = [
   },
 ];
 
+const FAQ = [
+  { q: 'What is PROTECT?', a: 'PROTECT is The People System pillar covering HR foundations and compliance. Contracts, handbooks, statutory policies, employee relations case management, organisational design and (at the executive tier) fractional CPO leadership. It is built around current UK employment law including the Employment Rights Bill.' },
+  { q: 'What changes are coming under the Employment Rights Bill?', a: 'Headline changes include day-one unfair dismissal rights, statutory sick pay reform, fair work agency, restrictions on fire-and-rehire, zero-hours contract reform and stronger protections against harassment. Phased commencement is expected 2026 and 2027. PROTECT updates your contracts, policies and manager guidance ahead of each commencement date.' },
+  { q: 'Do you handle TUPE and M&A people work?', a: 'Yes. Lucy is a TUPE specialist and DealReady People is The People System programme for pre and post-acquisition people due diligence, restructure risk and integration.' },
+  { q: 'How is PROTECT different from a generic HR consultant?', a: 'PROTECT is delivered by a CIPD-qualified HR Director with zero tribunal outcomes across every restructure, TUPE transfer and disciplinary matter she has built a case for. Fixed scope, senior delivery, no junior handovers.' },
+];
+
 export default function ProtectPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'PROTECT', url: '/protect' }]}
+        faqs={FAQ}
+        service={{
+          name: 'PROTECT: HR foundations, compliance and fractional CPO',
+          description: 'Contracts, handbooks, policy stack, employee relations case management and fractional CPO leadership. Built for UK SMEs and Employment Rights Bill ready.',
+          url: 'https://thepeoplesystem.co.uk/protect',
+          serviceType: 'HR consultancy',
+          offers: packages.map((p) => ({ name: p.name, description: p.who })),
+        }}
+      />
 
       {/* Hero */}
       <section style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }} className="lg:px-10">
@@ -159,7 +179,7 @@ export default function ProtectPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {packages.map((pkg) => (
               <PackageCard key={pkg.name} pkg={pkg} />
             ))}
@@ -200,6 +220,18 @@ export default function ProtectPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* AIO summary */}
+      <section style={{ background: 'var(--bg)', padding: '1rem 1.5rem 3rem' }} className="lg:px-10">
+        <div className="container-wide max-w-[900px]">
+          <AioSummary
+            what="PROTECT is The People System's HR foundations and compliance pillar. Three packages (Foundations, Partner, CPO) covering contracts, handbooks, policy stack, ER case management, organisational design and fractional CPO leadership."
+            who="UK SMEs employing 10 to 250 people whose contracts, handbooks and policies are out of date, growing teams without a senior HR lead, and businesses preparing for Employment Rights Bill commencement."
+            problem="Out-of-date documentation, undocumented disciplinary and grievance handling, exposure to unfair dismissal and discrimination claims, and missing policy work ahead of the Employment Rights Bill phased commencement in 2026 and 2027."
+            next="Book a call. We can run a free 15-minute risk view on your current contracts and handbook before you commit."
+          />
         </div>
       </section>
 

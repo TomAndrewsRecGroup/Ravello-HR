@@ -1,89 +1,98 @@
+// Site-wide JSON-LD. Rendered once from the root layout. Page-specific
+// Service / Article / FAQPage / BreadcrumbList schemas are emitted from
+// the page itself via <PageSchema>.
+
+const SITE_URL = 'https://thepeoplesystem.co.uk';
+const LOGO     = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+
 export default function StructuredData() {
   const org = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'ProfessionalService'],
+    '@id': `${SITE_URL}#organization`,
     name: 'The People System',
-    url: 'https://thepeoplesystem.co.uk',
-    logo: 'https://thepeoplesystem.co.uk/logo.png',
+    legalName: 'The People System Ltd',
+    url: SITE_URL,
+    logo: LOGO,
+    image: LOGO,
     description:
-      'The People System delivers HIRE, LEAD, and PROTECT: embedded recruitment, fractional HR leadership, and compliance foundations for founder-led and PE-backed businesses.',
+      'The People System is a UK HR consultancy delivering HIRE, LEAD and PROTECT as one connected operating model: embedded recruitment, fractional HR leadership and Employment Rights Bill ready compliance for ambitious SMEs.',
+    slogan: 'Hire. Lead. Protect.',
+    foundingDate: '2024',
     founders: [
-      { '@type': 'Person', name: 'Lucy' },
-      { '@type': 'Person', name: 'Tom Andrews' },
+      { '@type': 'Person', name: 'Lucy', jobTitle: 'Co-founder, HR Director' },
+      { '@type': 'Person', name: 'Tom Andrews', jobTitle: 'Co-founder, Talent Lead' },
     ],
-    areaServed: 'GB',
+    areaServed: { '@type': 'Country', name: 'United Kingdom' },
+    knowsAbout: [
+      'Embedded recruitment', 'Fractional HR', 'TUPE',
+      'M&A people due diligence', 'Employment Rights Bill',
+      'HR compliance', 'Talent strategy', 'L&D strategy',
+    ],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      url: 'https://thepeoplesystem.co.uk/book',
+      email: 'info@thepeoplesystem.co.uk',
+      url: `${SITE_URL}/book`,
+      areaServed: 'GB',
+      availableLanguage: ['en-GB'],
     },
+    sameAs: [
+      'https://www.linkedin.com/company/the-people-system',
+    ],
+    makesOffer: [
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'HIRE', url: `${SITE_URL}/hire` } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'LEAD', url: `${SITE_URL}/lead` } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'PROTECT', url: `${SITE_URL}/protect` } },
+    ],
   };
 
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    url: 'https://thepeoplesystem.co.uk',
+    '@id': `${SITE_URL}#website`,
+    url: SITE_URL,
     name: 'The People System',
+    publisher: { '@id': `${SITE_URL}#organization` },
+    inLanguage: 'en-GB',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://thepeoplesystem.co.uk/playbook?q={search_term_string}',
+      target: `${SITE_URL}/latest-updates?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   };
 
-  const faq = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: 'What is Friction Lens?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Friction Lens is a role scoring technology built by Tom Andrews through IvyLens Technology. It scores every active role across five dimensions: Location, Salary, Skills, Working Model, and Process: before it goes to market, and provides specific recommendations to reduce friction before you recruit. The People System integrates Friction Lens into every HIRE engagement as standard.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'What is PROTECT?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'PROTECT is the HR foundations pillar of The People System. Lucy builds the contracts, handbook, and policies your business genuinely needs: compliant with current UK legislation including the Employment Rights Bill.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'What HR support is available for M&A?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'DealReady People\u2122 supports businesses pre- and post-acquisition with people due diligence, TUPE, restructuring risk, and integration. It is a specialist project service, not a retainer product.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'How do I book a free call with The People System?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Book directly at thepeoplesystem.co.uk/book. Three routes: I need help hiring, I need HR foundations, or I\u2019m going through a deal. No pitch. No obligation.',
-        },
-      },
-    ],
-  };
+  const founders = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      '@id': `${SITE_URL}/about#lucy`,
+      name: 'Lucy',
+      jobTitle: 'Co-founder, HR Director',
+      worksFor: { '@id': `${SITE_URL}#organization` },
+      image: `${SITE_URL}/Lucy.jpg`,
+      knowsAbout: ['HR strategy', 'Employment Rights Bill', 'TUPE', 'Restructure', 'Disciplinary and grievance', 'Policy design'],
+      hasCredential: { '@type': 'EducationalOccupationalCredential', credentialCategory: 'CIPD' },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      '@id': `${SITE_URL}/about#tom`,
+      name: 'Tom Andrews',
+      jobTitle: 'Co-founder, Talent Lead',
+      worksFor: { '@id': `${SITE_URL}#organization` },
+      image: `${SITE_URL}/Tom.jpg`,
+      knowsAbout: ['Embedded recruitment', 'Talent strategy', 'Friction Lens (IvyLens)', 'Hiring process design'],
+    },
+  ];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(org) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(org) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }} />
+      {founders.map((p, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(p) }} />
+      ))}
     </>
   );
 }

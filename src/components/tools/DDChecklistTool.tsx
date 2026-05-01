@@ -1,6 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { CheckCircle, XCircle, ArrowRight, AlertTriangle } from 'lucide-react';
+import EnquiryGate from './EnquiryGate';
+
+type Stage = 'input' | 'gate' | 'results';
 
 const categories = [
   {
@@ -50,32 +53,34 @@ const categories = [
 
 export default function DDChecklistTool() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [stage,   setStage]   = useState<Stage>('input');
 
-  const toggle = (id: string) => setChecked((c) => ({ ...c, [id]: !c[id] }));
-  const allItems = categories.flatMap((c) => c.items);
+  const toggle       = (id: string) => setChecked((c) => ({ ...c, [id]: !c[id] }));
+  const allItems     = categories.flatMap((c) => c.items);
   const checkedCount = allItems.filter((i) => checked[i.id]).length;
-  const totalItems = allItems.length;
+  const totalItems   = allItems.length;
   const missingItems = allItems.filter((i) => !checked[i.id]);
+  const percentage   = Math.round((checkedCount / totalItems) * 100);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await fetch('/api/leads/due-diligence', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, checkedCount, totalItems, missing: missingItems.map((i) => i.label) }),
-      });
-    } catch (_) {}
-    setSubmitting(false);
-    setSubmitted(true);
-  };
+  if (stage === 'gate') {
+    return (
+      <EnquiryGate
+        toolName="DD Checklist"
+        source="due_diligence"
+        teaserScore={`${checkedCount}/${totalItems}`}
+        teaserLabel="DD coverage"
+        result={{
+          checkedCount,
+          totalItems,
+          percentage,
+          gaps: missingItems.map((i) => `${i.label}: ${i.risk}`),
+        }}
+        onUnlock={() => setStage('results')}
+      />
+    );
+  }
 
-  if (submitted) {
+  if (stage === 'results') {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-8">
@@ -145,15 +150,9 @@ export default function DDChecklistTool() {
 
       <div className="border-t border-gray-100 pt-6">
         <p className="font-semibold text-[var(--ink)] mb-4">Get your risk summary report</p>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <label htmlFor="dd-name" className="sr-only">Your name</label>
-          <input id="dd-name" type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
-          <label htmlFor="dd-email" className="sr-only">Work email</label>
-          <input id="dd-email" type="email" placeholder="Work email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]" />
-          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
-            {submitting ? 'Generating…' : 'Get My Risk Summary'} <ArrowRight size={16} />
-          </button>
-        </form>
+        <button onClick={() => setStage('gate')} className="btn-primary w-full justify-center">
+          Get My Risk Summary <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );

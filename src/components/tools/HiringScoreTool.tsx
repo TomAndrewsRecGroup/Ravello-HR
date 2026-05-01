@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import EnquiryGate from './EnquiryGate';
 
 const questions = [
   {
@@ -96,12 +97,9 @@ const questions = [
 type Answer = { score: number; area: string };
 
 export default function HiringScoreTool() {
-  const [step, setStep] = useState(0); // 0 = questions, questions.length = email gate, questions.length+1 = results
+  const [step, setStep] = useState(0); // 0..n-1 = questions, n = enquiry gate, n+1 = results
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentChoice, setCurrentChoice] = useState<number | null>(null);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const totalQuestions = questions.length;
@@ -132,27 +130,6 @@ export default function HiringScoreTool() {
     setStep(step + 1);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await fetch('/api/leads/hiring-score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          score: totalScore,
-          maxScore,
-          percentage,
-          weakAreas: getWeakAreas(),
-          answers,
-        }),
-      });
-    } catch (_) {}
-    setSubmitting(false);
-    setSubmitted(true);
-  };
 
   if (isResults) {
     const scoreInfo = getScoreLabel();
@@ -209,41 +186,14 @@ export default function HiringScoreTool() {
 
   if (isEmailGate) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-[var(--brand-purple)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle size={32} className="text-[var(--brand-purple)]" />
-          </div>
-          <h2 className=" text-2xl font-bold text-[var(--ink)] mb-2">Your score is ready.</h2>
-          <p className="text-[var(--ink-soft)]">Enter your details to see your full Hiring Score report and a tailored fix plan.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <label htmlFor="hs-name" className="sr-only">Your first name</label>
-          <input
-            id="hs-name"
-            type="text"
-            placeholder="Your first name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]"
-          />
-          <label htmlFor="hs-email" className="sr-only">Your work email</label>
-          <input
-            id="hs-email"
-            type="email"
-            placeholder="Your work email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[var(--brand-purple)] focus:ring-offset-1 focus:border-transparent text-[var(--ink)]"
-          />
-          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center">
-            {submitting ? 'Unlocking…' : 'Unlock My Hiring Score'} <ArrowRight size={16} />
-          </button>
-          <p className="text-center text-xs text-gray-400">No spam. We’ll email your report and nothing else (unless you want more).</p>
-        </form>
-      </div>
+      <EnquiryGate
+        toolName="Smart Hiring Score"
+        source="hiring_score"
+        teaserScore={`${percentage}%`}
+        teaserLabel="hiring score"
+        result={{ score: totalScore, maxScore, percentage, weakAreas: getWeakAreas(), answers }}
+        onUnlock={() => setSubmitted(true)}
+      />
     );
   }
 

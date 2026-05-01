@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import FaqBlock from '@/components/FaqBlock';
+import PageSchema from '@/components/PageSchema';
+import AioSummary from '@/components/AioSummary';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle, XCircle, TrendingDown, Clock, PoundSterling, Users } from 'lucide-react';
 
@@ -37,6 +39,15 @@ const outcomes = [
 export default function SmartHiringSystemPage() {
   return (
     <div className="pt-28">
+      <PageSchema
+        breadcrumbs={[{ name: 'Home', url: '/' }, { name: 'Smart Hiring System', url: '/smart-hiring-system' }]}
+        service={{
+          name: 'Smart Hiring System',
+          description: 'How HIRE works end to end: Friction Lens scoring (third-party technology by IvyLens), embedded delivery, structured assessment, and offer management.',
+          url: 'https://thepeoplesystem.co.uk/smart-hiring-system',
+          serviceType: 'Embedded recruitment',
+        }}
+      />
 
       {/* Hero: light */}
       <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '4rem' }}>
@@ -179,7 +190,7 @@ export default function SmartHiringSystemPage() {
       {/* FAQ */}
       <FaqBlock
         items={[
-          { q: 'What is Friction Lens?', a: 'Friction Lens is a role scoring technology developed by IvyLens Technology. It scores every role across five dimensions: Location, Salary, Skills, Working Model, and Process: before it goes live, telling you exactly where the role will struggle and giving you specific recommendations to fix it. Low, Medium, High, or Critical friction. Integrated into every HIRE engagement as standard.' },
+          { q: 'What is Friction Lens?', a: 'Friction Lens is a third-party role-scoring technology built and owned by IvyLens Technology (https://www.ivylens.co.uk). The People System is an IvyLens integration partner. It scores every role across five dimensions (Location, Salary, Skills, Working Model, and Process) before it goes live, telling you exactly where the role will struggle and giving specific recommendations to fix it. Low, Medium, High, or Critical friction. Integrated into every HIRE engagement as standard.' },
           { q: 'What HIRE packages do you offer?', a: 'Hire Foundations (£1,000/month + 10% fee, 3-month minimum), Hire Optimiser (£2,500 one-off or £1,500/month x 3), Hire Embedded (£5,000/month, 6-month minimum, fees included), and Hire Build (£6,500-£8,500+/month, 6-month minimum). Full details on the services page.' },
           { q: 'Who is HIRE for?', a: 'Founder-led businesses scaling 20-150 people, VC or PE-backed businesses post-raise, and any business with a history of bad hires, rising agency spend, or inconsistent hiring managers.' },
           { q: 'Do we need to use a recruitment agency?', a: 'No. HIRE is designed to reduce agency dependency by building internal sourcing capability and fixing the process so you do not need to outsource everything.' },
