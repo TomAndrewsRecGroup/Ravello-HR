@@ -8,7 +8,7 @@
 // sendEmail() accepts directly. Failure modes are logged and never
 // thrown — the caller's primary action always proceeds.
 
-export { sendEmail }                          from './client';
+export { sendEmail, lastEmailError }          from './client';
 export type { SendEmailInput, SendEmailResult } from './client';
 export { wrapEmail, ctaButton, infoCard, BRAND } from './layout';
 

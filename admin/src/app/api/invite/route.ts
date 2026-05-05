@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 import { PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
-import { sendEmail, userInvitedEmail } from '@/lib/email';
+import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   const auth = await requireStaff();
@@ -129,9 +129,12 @@ export async function POST(request: NextRequest) {
   // invite link still works — but the admin needs to know to either
   // resend it or hand the link over manually.
   if (!emailResult) {
+    const last = lastEmailError();
     const reason = !process.env.RESEND_API_KEY
       ? 'RESEND_API_KEY is not set on this Vercel project. The user record was created but no email was sent.'
-      : 'Resend rejected the send. Check the Vercel function logs for the exact error (likely an unverified from-address domain).';
+      : last
+        ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
+        : 'Resend rejected the send. Check the Vercel function logs for details.';
     return NextResponse.json({
       success:        true,
       user_id:        userId,
