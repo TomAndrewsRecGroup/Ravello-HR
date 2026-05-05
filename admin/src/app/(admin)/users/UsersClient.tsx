@@ -76,7 +76,7 @@ function UserActions({ user, onChanged }: { user: any; onChanged: () => void }) 
       } else if (body.email_sent === false) {
         flash('warn', `${body.email_warning ?? 'Email did not send.'} Activation link: ${body.activate_url}`);
       } else {
-        flash('ok', `Invite email resent to ${user.email}.`);
+        flash('ok', `Login link sent to ${user.email}.`);
       }
     } catch (e) {
       flash('err', e instanceof Error ? e.message : 'Network error.');
@@ -135,10 +135,10 @@ function UserActions({ user, onChanged }: { user: any; onChanged: () => void }) 
           onClick={resendInvite}
           disabled={busy !== null}
           className="btn-ghost btn-sm"
-          title="Resend the activation email"
+          title="Send a fresh login link by email (works for new and existing users)"
         >
           {busy === 'resend' ? <Loader2 size={11} className="animate-spin" /> : <MailPlus size={11} />}
-          <span className="text-[11px]">Resend</span>
+          <span className="text-[11px]">Send login link</span>
         </button>
         <button
           onClick={resetPassword}

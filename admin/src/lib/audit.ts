@@ -16,6 +16,8 @@ type AuditAction =
   | 'user.deleted'
   | 'user.role_changed'
   | 'company.created'
+  | 'company.archived'
+  | 'company.unarchived'
   | 'company.deleted'
   // 'company.billing_setup' is distinct from 'company.created': it fires
   // when the retainer / Stripe subscription is first attached or updated,
