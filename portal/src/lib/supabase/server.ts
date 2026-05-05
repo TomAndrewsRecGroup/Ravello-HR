@@ -57,6 +57,7 @@ export const getSessionProfile = cache(async () => {
     role: '', isTpsStaff: false,
     featureFlags: {} as Record<string, boolean>,
     stripeSubscriptionId: null as string | null,
+    archivedAt: null as string | null,
   };
 
   if (!raw) return empty;
@@ -82,19 +83,21 @@ export const getSessionProfile = cache(async () => {
   let featureFlags: Record<string, boolean> = {};
   let companyName: string | null = null;
   let stripeSubscriptionId: string | null = null;
+  let archivedAt: string | null = null;
 
   if (companyId) {
     try {
       const supabase = createServerSupabaseClient();
       const { data } = await supabase
         .from('companies')
-        .select('name, feature_flags, stripe_subscription_id')
+        .select('name, feature_flags, stripe_subscription_id, archived_at')
         .eq('id', companyId)
         .maybeSingle();
       const row = (data as any) ?? {};
       featureFlags = (row.feature_flags ?? {}) as Record<string, boolean>;
       companyName  = row.name ?? null;
       stripeSubscriptionId = row.stripe_subscription_id ?? null;
+      archivedAt   = row.archived_at ?? null;
     } catch (err) {
       console.warn('[getSessionProfile] live company read failed, using cookie fallback');
       featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
@@ -115,5 +118,6 @@ export const getSessionProfile = cache(async () => {
     isTpsStaff,
     featureFlags,
     stripeSubscriptionId,
+    archivedAt,
   };
 });

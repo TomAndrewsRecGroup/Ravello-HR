@@ -4,10 +4,18 @@ import PortalShell from '@/components/layout/PortalShell';
 import { hasPaidFlag } from '@/lib/featureFlags';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, companyId, role, isTpsStaff, featureFlags, stripeSubscriptionId } = await getSessionProfile();
+  const { user, profile, companyId, role, isTpsStaff, featureFlags, stripeSubscriptionId, archivedAt } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
+
+  // Archived clients: portal access blocked. Stays in Supabase, but
+  // user is bounced to login with a friendly reason. Staff (TPS) keep
+  // their override so they can still see archived clients via the
+  // client switcher / admin tools.
+  if (archivedAt && !isTpsStaff) {
+    redirect('/auth/login?reason=archived');
+  }
 
   // Feature flags are read fresh from the DB on every request inside
   // getSessionProfile() so admin module-access changes propagate to

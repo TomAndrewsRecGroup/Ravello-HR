@@ -46,6 +46,10 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   }
 
   // Regenerate a fresh 7-day invite token and replace the previous one.
+  // We deliberately DON'T touch onboarding_completed: this endpoint
+  // doubles as a "send a new login link" for already-active users, and
+  // they shouldn't be forced back through the onboarding wizard just
+  // because they asked for a new magic link.
   const inviteToken   = crypto.randomUUID();
   const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -54,7 +58,6 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     .update({
       invite_token:            inviteToken,
       invite_token_expires_at: inviteExpires,
-      onboarding_completed:    false,
     })
     .eq('id', userId);
 

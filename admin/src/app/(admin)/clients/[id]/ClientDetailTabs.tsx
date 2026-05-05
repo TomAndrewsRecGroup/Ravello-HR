@@ -6,6 +6,7 @@ import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Be
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
+import ClientDangerZone from '@/components/modules/ClientDangerZone';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
@@ -645,6 +646,15 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 />
               </div>
             )}
+
+            {/* Danger zone: archive (reversible) or hard-delete the
+                client. Sits at the bottom so it's intentional, not
+                accidental. */}
+            <ClientDangerZone
+              companyId={company.id}
+              companyName={company.name}
+              archivedAt={company.archived_at ?? null}
+            />
           </div>
         </div>
       )}
