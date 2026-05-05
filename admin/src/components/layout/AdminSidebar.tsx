@@ -26,6 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/clients',         label: 'All Clients',    icon: Building2 },
       { href: '/clients/onboard', label: 'Onboard',        icon: UserPlus },
+      { href: '/users',           label: 'Users',          icon: Users },
       { href: '/engagement',      label: 'Engagement',     icon: Gauge },
     ],
   },
