@@ -14,6 +14,7 @@ export interface PartnerRow {
   locations: string | null;
   industry: string | null;
   website: string | null;
+  logo_url: string | null;
   role_opportunities: RoleOpportunity[];
   active: boolean;
   created_at: string;
@@ -66,6 +67,7 @@ export interface TrainingProviderRow {
   locations: string | null;
   category: string | null;
   website: string | null;
+  logo_url: string | null;
   offerings: TrainingOffering[];
   active: boolean;
   created_at: string;

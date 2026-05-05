@@ -100,7 +100,13 @@ function PartnerCard({ partner, matchCount, onOpen }: {
       onClick={onOpen}
     >
       <div className="flex items-center gap-3">
-        <AvatarInitials name={partner.company_name} size={36} />
+        {partner.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={partner.logo_url} alt={partner.company_name} width={36} height={36}
+               style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }} />
+        ) : (
+          <AvatarInitials name={partner.company_name} size={36} />
+        )}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
             {partner.company_name}

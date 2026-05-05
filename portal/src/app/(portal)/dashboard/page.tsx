@@ -31,7 +31,7 @@ function priorityBadge(priority: string) {
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
-  const { user, profile, companyId, companyName, featureFlags: sessionFlags } = await getSessionProfile();
+  const { user, profile, companyId, companyName, companyLogoUrl, featureFlags: sessionFlags } = await getSessionProfile();
   const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 
   // Single parallel batch: no waterfall. Company name + flags come
@@ -136,6 +136,20 @@ export default async function DashboardPage() {
       />
 
       <main className="portal-page flex-1">
+
+        {/* Client logo banner — only shown when a logo is uploaded
+            via admin. Sits above the hero so the brand is the first
+            thing the user sees on their dashboard. */}
+        {companyLogoUrl && (
+          <div className="mb-6 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={companyLogoUrl}
+              alt={companyName ?? 'Company logo'}
+              style={{ height: 44, width: 'auto', maxWidth: 200, objectFit: 'contain' }}
+            />
+          </div>
+        )}
 
         {/* ── Hero context: one sentence summary ────────────────── */}
         <div className="mb-6 p-5 rounded-xl" style={{ background: 'var(--gradient-soft)' }}>

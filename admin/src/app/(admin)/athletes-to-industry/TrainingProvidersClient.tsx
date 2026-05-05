@@ -7,6 +7,7 @@ import {
   GraduationCap, Plus, Pencil, Trash2, Loader2, Power, PowerOff, Globe, MapPin, Save, X, Users,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import LogoUpload from '@/components/modules/LogoUpload';
 import OfferingsEditor from './OfferingsEditor';
 import type {
   AthleteRow, TrainingInterestRow, TrainingOffering, TrainingProviderRow,
@@ -261,7 +262,18 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
                     opacity: p.active ? 1 : 0.7,
                   }}>
                 <div className="flex items-start gap-3">
-                  <AvatarInitials name={p.provider_name} size={40} />
+                  {p.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.logo_url}
+                      alt={p.provider_name}
+                      width={40}
+                      height={40}
+                      style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }}
+                    />
+                  ) : (
+                    <AvatarInitials name={p.provider_name} size={40} />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
@@ -299,6 +311,10 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
                       <Trash2 size={12} />
                     </button>
                   </div>
+                </div>
+
+                <div className="mt-3 pt-3" style={{ borderTop: '1px dashed rgba(59,111,255,0.18)' }}>
+                  <LogoUpload kind="training_provider" targetId={p.id} currentUrl={p.logo_url} alt={p.provider_name} size={48} />
                 </div>
 
                 <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px dashed rgba(59,111,255,0.18)' }}>

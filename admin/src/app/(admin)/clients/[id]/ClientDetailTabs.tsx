@@ -7,6 +7,7 @@ import InviteUserPanel from '@/components/modules/InviteUserPanel';
 import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
 import ClientDangerZone from '@/components/modules/ClientDangerZone';
+import LogoUpload from '@/components/modules/LogoUpload';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
@@ -566,6 +567,10 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Company Details</h2>
                 <ClientStatusToggle companyId={company.id} currentActive={company.active} />
+              </div>
+              <div className="mb-5 pb-5" style={{ borderBottom: '1px solid var(--line)' }}>
+                <p className="label mb-2">Logo</p>
+                <LogoUpload kind="company" targetId={company.id} currentUrl={company.logo_url ?? null} alt={company.name ?? 'Client'} size={72} />
               </div>
               <dl className="grid sm:grid-cols-2 gap-4">
                 {[

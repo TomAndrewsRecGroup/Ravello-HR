@@ -70,7 +70,7 @@ async function fetchFromDb(companyId: string): Promise<ClientDetail | null> {
 
   const { data: company, error: companyErr } = await sb
     .from('companies')
-    .select('id,name,slug,sector,size_band,contact_email,active,archived_at,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency,monthly_retainer_pence,subscription_status,stripe_subscription_id,stripe_customer_id,billing_currency')
+    .select('id,name,slug,sector,size_band,contact_email,active,archived_at,logo_url,feature_flags,manatal_client_id,account_owner_id,open_days,open_hours,timezone,currency,monthly_retainer_pence,subscription_status,stripe_subscription_id,stripe_customer_id,billing_currency')
     .eq('id', companyId)
     .maybeSingle();
 
