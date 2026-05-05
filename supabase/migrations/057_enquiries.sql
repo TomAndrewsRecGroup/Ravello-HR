@@ -50,6 +50,7 @@ CREATE POLICY enquiries_staff_update ON enquiries
 -- anonymous public insert policy: keeps the table off the public
 -- supabase API surface).
 
+DROP TRIGGER IF EXISTS enquiries_set_updated_at ON enquiries;
 CREATE TRIGGER enquiries_set_updated_at
   BEFORE UPDATE ON enquiries
   FOR EACH ROW
