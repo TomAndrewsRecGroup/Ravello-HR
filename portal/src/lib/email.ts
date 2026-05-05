@@ -83,7 +83,7 @@ export async function sendEmail(input: {
     return;
   }
 
-  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@thepeoplesystem.co.uk>';
+  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
   const replyTo = process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 

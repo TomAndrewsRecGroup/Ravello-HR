@@ -8,8 +8,14 @@
 //                           logs a warning and returns null (so dev /
 //                           preview environments don't crash on email
 //                           triggers).
-//   EMAIL_FROM            — From address (default: noreply@thepeoplesystem.co.uk)
-//   EMAIL_REPLY_TO        — Reply-To header (default: hello@thepeoplesystem.co.uk)
+//   EMAIL_FROM            — From address (default: noreply@portal.thepeoplesystem.co.uk)
+//                           NOTE: the FROM-ADDRESS DOMAIN must be verified in
+//                           Resend → Domains. Currently the verified domain is
+//                           the `portal.thepeoplesystem.co.uk` subdomain — sending
+//                           from anything @ the apex thepeoplesystem.co.uk will be
+//                           rejected with HTTP 403 until the apex is verified too.
+//   EMAIL_REPLY_TO        — Reply-To header (default: hello@thepeoplesystem.co.uk).
+//                           Reply-to does NOT need to be on a verified domain.
 //   EMAIL_BCC_INTERNAL    — Optional comma-separated list — every send
 //                           gets BCC'd here (useful for dev visibility).
 //
@@ -71,7 +77,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
     return null;
   }
 
-  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@thepeoplesystem.co.uk>';
+  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
   const replyTo = input.replyTo ?? process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 

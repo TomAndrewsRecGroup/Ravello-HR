@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     try {
       const { Resend } = await import('resend');
       const resend = new Resend(resendKey);
-      const from   = process.env.EMAIL_FROM        ?? 'The People System <results@thepeoplesystem.co.uk>';
+      const from   = process.env.EMAIL_FROM        ?? 'The People System <results@portal.thepeoplesystem.co.uk>';
       const notify = process.env.LEAD_NOTIFY_EMAIL ?? 'info@thepeoplesystem.co.uk';
 
       const visitor = buildEnquiryEmail({ fullName, source: source as EnquirySource, result });
