@@ -47,6 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/png" href={LOGO} />
         <link rel="shortcut icon" type="image/png" href={LOGO} />
         <link rel="apple-touch-icon" href={LOGO} />
+        {/* Pair the deprecated apple-* meta (auto-emitted by Next's
+            metadata.appleWebApp) with the modern mobile-web-app-capable
+            tag so Chrome stops logging the deprecation warning. */}
+        <meta name="mobile-web-app-capable" content="yes" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />

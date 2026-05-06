@@ -28,7 +28,7 @@ export function ClientSwitcherProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from('companies').select('id, name').eq('active', true).is('archived_at', null).order('name').then(({ data }) => {
+    supabase.from('companies').select('id, name').eq('active', true).order('name').then(({ data }) => {
       if (data) setCompanies(data);
     });
   }, []);

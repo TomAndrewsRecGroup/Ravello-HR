@@ -34,7 +34,14 @@ export async function GET() {
     { data: complianceItems },
     { data: profiles },
   ] = await Promise.all([
-    sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,logo_url,feature_flags,account_owner_id,friction_band,monthly_retainer_pence,subscription_status,billing_currency').is('archived_at', null).order('name').limit(200),
+    // Archive filter removed at the query level: when migration 058
+    // hasn't been applied yet, the column doesn't exist and the
+    // .is('archived_at', null) clause was failing the whole select,
+    // leaving /clients silently empty. The page can hide archived
+    // clients client-side once the column is selected (post-058
+    // deploys can re-add 'archived_at' to the SELECT and filter
+    // c.archived_at in the UI).
+    sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,logo_url,feature_flags,account_owner_id,friction_band,monthly_retainer_pence,subscription_status,billing_currency').order('name').limit(200),
     sb.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
     sb.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
     sb.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
