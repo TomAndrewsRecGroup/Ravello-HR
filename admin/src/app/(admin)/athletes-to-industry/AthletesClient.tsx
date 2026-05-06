@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Trophy, Plus, Trash2, Loader2, Save, X, UserRoundSearch, FileText, ExternalLink, GraduationCap,
+  Upload, Type as TypeIcon,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import type {
@@ -94,9 +95,24 @@ export default function AthletesClient({
     });
   }
 
+  // ── CV state for the create form ──────────────────────────
+  // Mirrors the portal AthleteFormModal: pick file or paste text;
+  // on Add, create the athlete first (POST /api/admin/athletes),
+  // then upload the file (POST .../cv) or PATCH the text.
+  const [cvKindNew, setCvKindNew] = useState<'file' | 'text' | null>(null);
+  const [cvFileNew, setCvFileNew] = useState<File | null>(null);
+  const [cvTextNew, setCvTextNew] = useState('');
+
+  function resetCvState() {
+    setCvKindNew(null); setCvFileNew(null); setCvTextNew('');
+  }
+
   async function create() {
     if (!draft.company_id) { setError('Pick a client.'); return; }
     if (!draft.full_name.trim()) { setError('Name is required.'); return; }
+    if (cvKindNew === 'file' && cvFileNew && cvFileNew.size > 10 * 1024 * 1024) {
+      setError('CV file exceeds 10 MB limit.'); return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -115,13 +131,88 @@ export default function AthletesClient({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Save failed');
+
+      const newId = json.id ?? json.row?.id;
+
+      // Attach CV after creation, if one was provided.
+      if (newId && cvKindNew === 'file' && cvFileNew) {
+        const fd = new FormData();
+        fd.append('file', cvFileNew);
+        const upRes = await fetch(`/api/admin/athletes/${newId}/cv`, { method: 'POST', body: fd });
+        if (!upRes.ok) {
+          const upJson = await upRes.json().catch(() => ({}));
+          throw new Error(`Athlete created but CV upload failed: ${upJson.error ?? upRes.statusText}`);
+        }
+      } else if (newId && cvKindNew === 'text' && cvTextNew.trim()) {
+        const tRes = await fetch(`/api/admin/athletes/${newId}`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ cv_kind: 'text', cv_text: cvTextNew.trim() }),
+        });
+        if (!tRes.ok) {
+          const tJson = await tRes.json().catch(() => ({}));
+          throw new Error(`Athlete created but CV text save failed: ${tJson.error ?? tRes.statusText}`);
+        }
+      }
+
       setDraft(EMPTY_DRAFT);
+      resetCvState();
       setAdding(false);
       refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  // ── Per-row CV upload (existing athletes) ─────────────────
+  // Triggered by the small Upload button on each card. Uploads the
+  // file, then updates local state so the new CV link appears
+  // without a hard refresh.
+  async function uploadCvForAthlete(athleteId: string, file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      alert('CV file exceeds 10 MB limit.');
+      return;
+    }
+    setBusyFor(athleteId, true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`/api/admin/athletes/${athleteId}/cv`, { method: 'POST', body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(json.error ?? 'CV upload failed');
+        return;
+      }
+      // The admin API returns { url, filename } — patch local state.
+      setAthletes((curr) => curr.map((a) => (a.id === athleteId
+        ? { ...a, cv_kind: 'file', cv_url: json.url ?? a.cv_url, cv_filename: json.filename ?? file.name, cv_text: null }
+        : a)));
+    } finally {
+      setBusyFor(athleteId, false);
+    }
+  }
+
+  async function clearCvForAthlete(athleteId: string) {
+    if (!confirm('Remove this athlete’s CV?')) return;
+    setBusyFor(athleteId, true);
+    try {
+      const res = await fetch(`/api/admin/athletes/${athleteId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ cv_kind: null }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error ?? 'Failed to clear CV');
+        return;
+      }
+      setAthletes((curr) => curr.map((a) => (a.id === athleteId
+        ? { ...a, cv_kind: null, cv_url: null, cv_filename: null, cv_text: null }
+        : a)));
+    } finally {
+      setBusyFor(athleteId, false);
     }
   }
 
@@ -221,9 +312,71 @@ export default function AthletesClient({
             </div>
           </div>
 
-          <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-            CV uploads are done from the client portal — admins can edit profile fields here, but the CV file/text input lives client-side for now.
-          </p>
+          {/* CV: same two-mode pattern as the portal AthleteFormModal. */}
+          <div>
+            <p className="label">CV (optional)</p>
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => { setCvKindNew('file'); setCvTextNew(''); }}
+                className="btn-sm flex items-center gap-1"
+                style={{
+                  background: cvKindNew === 'file' ? 'var(--purple)' : 'var(--surface-alt)',
+                  color:      cvKindNew === 'file' ? '#fff'         : 'var(--ink-soft)',
+                  fontSize: 11, padding: '4px 8px',
+                }}
+              >
+                <Upload size={11} /> Upload file
+              </button>
+              <button
+                type="button"
+                onClick={() => { setCvKindNew('text'); setCvFileNew(null); }}
+                className="btn-sm flex items-center gap-1"
+                style={{
+                  background: cvKindNew === 'text' ? 'var(--purple)' : 'var(--surface-alt)',
+                  color:      cvKindNew === 'text' ? '#fff'         : 'var(--ink-soft)',
+                  fontSize: 11, padding: '4px 8px',
+                }}
+              >
+                <TypeIcon size={11} /> Paste text
+              </button>
+              {cvKindNew && (
+                <button type="button" onClick={resetCvState} className="btn-ghost btn-sm" style={{ fontSize: 11 }}>
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {cvKindNew === 'file' && (
+              <label
+                className="block rounded-[10px] p-3 text-center cursor-pointer hover:bg-[var(--surface-alt)]"
+                style={{ border: '1.5px dashed var(--line)' }}
+              >
+                <Upload size={16} className="mx-auto mb-1" style={{ color: 'var(--ink-faint)' }} />
+                <p className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>
+                  {cvFileNew ? cvFileNew.name : 'Click to choose a CV file'}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                  PDF, DOC, DOCX or TXT — up to 10 MB
+                </p>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  onChange={e => setCvFileNew(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </label>
+            )}
+            {cvKindNew === 'text' && (
+              <textarea
+                className="input"
+                rows={5}
+                value={cvTextNew}
+                onChange={e => setCvTextNew(e.target.value)}
+                placeholder="Paste the CV text here…"
+              />
+            )}
+          </div>
 
           {error && <p className="text-xs" style={{ color: 'var(--red)' }}>{error}</p>}
 
@@ -290,27 +443,58 @@ export default function AthletesClient({
                   )}
                 </div>
 
-                {(a.cv_url || a.cv_kind === 'text' || a.linkedin_url) && (
-                  <div className="flex items-center gap-3 mt-2 text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-                    {a.cv_url && (
-                      <a href={a.cv_url} target="_blank" rel="noopener noreferrer"
-                         className="inline-flex items-center gap-0.5 hover:underline truncate" style={{ color: 'var(--purple)' }}>
-                        <FileText size={10} /> {a.cv_filename ?? 'CV'} <ExternalLink size={9} />
-                      </a>
-                    )}
-                    {a.cv_kind === 'text' && (
-                      <span className="inline-flex items-center gap-0.5">
-                        <FileText size={10} /> Pasted CV
-                      </span>
-                    )}
-                    {a.linkedin_url && (
-                      <a href={a.linkedin_url} target="_blank" rel="noopener noreferrer"
-                         className="hover:underline" style={{ color: 'var(--purple)' }}>
-                        LinkedIn
-                      </a>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-2 mt-2 text-[11px] flex-wrap" style={{ color: 'var(--ink-faint)' }}>
+                  {a.cv_url && (
+                    <a href={a.cv_url} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-0.5 hover:underline truncate" style={{ color: 'var(--purple)' }}>
+                      <FileText size={10} /> {a.cv_filename ?? 'CV'} <ExternalLink size={9} />
+                    </a>
+                  )}
+                  {a.cv_kind === 'text' && !a.cv_url && (
+                    <span className="inline-flex items-center gap-0.5">
+                      <FileText size={10} /> Pasted CV
+                    </span>
+                  )}
+                  {a.linkedin_url && (
+                    <a href={a.linkedin_url} target="_blank" rel="noopener noreferrer"
+                       className="hover:underline" style={{ color: 'var(--purple)' }}>
+                      LinkedIn
+                    </a>
+                  )}
+
+                  {/* Upload / replace CV — file picker hidden behind a label. */}
+                  <label
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded cursor-pointer"
+                    style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}
+                    title={a.cv_url || a.cv_kind === 'text' ? 'Replace CV' : 'Upload CV'}
+                  >
+                    {isBusy ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
+                    {a.cv_url || a.cv_kind === 'text' ? 'Replace' : 'Upload CV'}
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = '';
+                        if (f) uploadCvForAthlete(a.id, f);
+                      }}
+                      className="hidden"
+                      disabled={isBusy}
+                    />
+                  </label>
+                  {(a.cv_url || a.cv_kind === 'text') && (
+                    <button
+                      type="button"
+                      onClick={() => clearCvForAthlete(a.id)}
+                      disabled={isBusy}
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded"
+                      style={{ background: 'transparent', color: 'var(--red, #DC2626)' }}
+                      title="Remove CV"
+                    >
+                      <Trash2 size={9} /> Remove
+                    </button>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px dashed var(--line)' }}>
                   <button onClick={() => setMatching(a)} disabled={isBusy}

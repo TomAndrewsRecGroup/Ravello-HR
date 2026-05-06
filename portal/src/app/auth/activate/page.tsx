@@ -23,11 +23,14 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 interface Props {
-  searchParams: { token?: string };
+  searchParams: { token?: string; purpose?: string };
 }
 
 export default async function ActivatePage({ searchParams }: Props) {
-  const token = searchParams.token?.trim();
+  const token   = searchParams.token?.trim();
+  // 'invite' (default) → welcome=1 banner on the password page.
+  // 'reset'           → no welcome banner, just sets a new password.
+  const purpose = searchParams.purpose?.trim() === 'reset' ? 'reset' : 'invite';
 
   if (!token) {
     redirect('/auth/accept-invite?error=missing');
@@ -65,12 +68,17 @@ export default async function ActivatePage({ searchParams }: Props) {
   // ── Generate a fresh Supabase magic link ───────────────────────
   // Do this BEFORE clearing the token so that if generateLink fails
   // the user can retry (the token is still valid).
+  // Magic-link for invites and password resets alike — both flows
+  // land on /auth/update-password where the user sets a password.
+  // Only the 'invite' flow shows the welcome banner.
+  const redirectTo = purpose === 'reset'
+    ? `${portalUrl}/auth/update-password`
+    : `${portalUrl}/auth/update-password?welcome=1`;
+
   const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-    type:  'magiclink',
+    type:  purpose === 'reset' ? 'recovery' : 'magiclink',
     email: profile.email,
-    options: {
-      redirectTo: `${portalUrl}/auth/update-password?welcome=1`,
-    },
+    options: { redirectTo },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
