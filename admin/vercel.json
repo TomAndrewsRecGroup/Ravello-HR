@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/ingest-feeds",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/prune-latest-updates",
+      "schedule": "0 3 * * *"
     }
   ]
 }

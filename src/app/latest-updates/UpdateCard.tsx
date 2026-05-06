@@ -28,9 +28,15 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// Brand fallback rendered when an article doesn't carry its own
+// cover image. Uses the TPS logo on a soft tinted backdrop so the
+// card still has visual weight and the grid stays uniform height.
+const FALLBACK_LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+
 export default function UpdateCard({ item, variant = 'grid' }: Props) {
   const dateString = formatDate(item.published_at ?? item.created_at);
   const isCarousel = variant === 'carousel';
+  const hasImage   = !!item.image_url;
 
   return (
     <Link
@@ -42,23 +48,27 @@ export default function UpdateCard({ item, variant = 'grid' }: Props) {
       }`}
       style={{ scrollSnapAlign: isCarousel ? 'start' : undefined }}
     >
-      {item.image_url && (
-        <div
-          className="-mx-8 -mt-8 mb-5 overflow-hidden rounded-t-[24px]"
-          style={{
-            aspectRatio: isCarousel ? '16 / 9' : '5 / 3',
-            background: 'var(--surface-alt, rgba(10,15,30,0.04))',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image_url}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        </div>
-      )}
+      <div
+        className="-mx-8 -mt-8 mb-5 overflow-hidden rounded-t-[24px] flex items-center justify-center"
+        style={{
+          aspectRatio: isCarousel ? '16 / 9' : '5 / 3',
+          background: hasImage
+            ? 'var(--surface-alt, rgba(10,15,30,0.04))'
+            : 'linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(59,111,255,0.08) 100%)',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={hasImage ? item.image_url! : FALLBACK_LOGO}
+          alt=""
+          className={
+            hasImage
+              ? 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
+              : 'h-12 w-auto opacity-80 transition-transform duration-300 group-hover:scale-[1.04]'
+          }
+          loading="lazy"
+        />
+      </div>
 
       <div className="flex items-center justify-between mb-3 gap-3">
         {item.site_name && (
