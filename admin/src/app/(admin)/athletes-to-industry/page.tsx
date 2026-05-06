@@ -21,12 +21,12 @@ export default async function AthletesToIndustryAdminPage() {
   ] = await Promise.all([
     supabase
       .from('partners')
-      .select('id, company_name, locations, industry, website, role_opportunities, active, created_at')
+      .select('id, company_name, locations, industry, website, logo_url, role_opportunities, active, created_at')
       .order('active', { ascending: false })
       .order('company_name', { ascending: true }),
     supabase
       .from('training_providers')
-      .select('id, provider_name, locations, category, website, offerings, active, created_at')
+      .select('id, provider_name, locations, category, website, logo_url, offerings, active, created_at')
       .order('active', { ascending: false })
       .order('provider_name', { ascending: true }),
     supabase

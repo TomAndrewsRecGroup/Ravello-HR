@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Rss, Loader2, Plus, Trash2, RefreshCw, Power, PowerOff, AlertCircle, CheckCircle2, Code, ChevronDown, ChevronRight,
+  Rss, Loader2, Plus, Trash2, RefreshCw, Power, PowerOff, AlertCircle, CheckCircle2, Code,
+  ChevronDown, ChevronRight, Wand2, ExternalLink,
 } from 'lucide-react';
 
 export interface FeedSourceRow {
@@ -65,6 +66,41 @@ export default function FeedSourcesClient({ initial }: Props) {
   // server to compute fields we can't derive client-side (create timestamps,
   // refresh-source result counts).
   const [rows, setRows] = useState<FeedSourceRow[]>(initial);
+
+  // Probe state — paste a URL, click Fetch, the rest of the form is
+  // auto-filled from the parsed feed.
+  const [probing, setProbing] = useState(false);
+  const [probeError,   setProbeError]   = useState<string | null>(null);
+  const [probePreview, setProbePreview] = useState<{
+    item_count: number;
+    items: Array<{ title: string; description: string | null; image_url: string | null; url: string }>;
+  } | null>(null);
+
+  async function probeFeed() {
+    if (!feedUrl.trim()) { setProbeError('Paste a feed URL first.'); return; }
+    setProbing(true); setProbeError(null); setProbePreview(null);
+    try {
+      const res = await fetch('/api/admin/feed-sources/probe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ url: feedUrl.trim() }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body.ok === false) {
+        throw new Error(body.error ?? `Probe failed (${res.status})`);
+      }
+      // Auto-fill any blank fields. Don't clobber what the operator
+      // already typed — they win on conflict.
+      if (!displayName.trim() && body.display_name) setDisplayName(body.display_name);
+      if (!slug.trim()         && body.slug)        setSlug(body.slug);
+      if (!category.trim()     && body.category)    setCategory(body.category);
+      setProbePreview({ item_count: body.item_count, items: body.preview_items });
+    } catch (e) {
+      setProbeError(e instanceof Error ? e.message : 'Probe failed.');
+    } finally {
+      setProbing(false);
+    }
+  }
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -254,8 +290,20 @@ export default function FeedSourcesClient({ initial }: Props) {
             />
           </div>
           <div>
-            <label className="label">
-              {sourceType === 'rss' ? 'Feed URL' : 'Page URL'}
+            <label className="label flex items-center justify-between">
+              <span>{sourceType === 'rss' ? 'Feed URL' : 'Page URL'}</span>
+              {sourceType === 'rss' && (
+                <button
+                  type="button"
+                  onClick={probeFeed}
+                  disabled={probing || !feedUrl.trim()}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1"
+                  title="Fetch the feed and auto-fill display name, slug and category"
+                >
+                  {probing ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                  <span className="text-[11px]">Fetch &amp; auto-fill</span>
+                </button>
+              )}
             </label>
             <input
               className="input"
@@ -263,7 +311,7 @@ export default function FeedSourcesClient({ initial }: Props) {
                 ? 'https://www.example.com/rss.xml'
                 : 'https://www.cipd.org/knowledge/'}
               value={feedUrl}
-              onChange={e => setFeedUrl(e.target.value)}
+              onChange={e => { setFeedUrl(e.target.value); setProbeError(null); setProbePreview(null); }}
             />
           </div>
           <div>
@@ -293,6 +341,52 @@ export default function FeedSourcesClient({ initial }: Props) {
             <p className="text-[11px] mt-2" style={{ color: 'var(--ink-faint)' }}>
               CSS selectors run against the page. <code>item</code> is required; the rest default to <code>h1-h4</code> for title, <code>a</code> for link, <code>img</code> for image, <code>time</code> for date, <code>p</code> for description.
             </p>
+          </div>
+        )}
+
+        {/* Probe preview / error */}
+        {probeError && (
+          <div className="rounded-md p-3 text-xs flex items-start gap-2"
+               style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.20)', color: '#7F1D1D' }}>
+            <AlertCircle size={13} style={{ marginTop: 2, flexShrink: 0 }} />
+            <span>{probeError}</span>
+          </div>
+        )}
+        {probePreview && (
+          <div className="rounded-md p-3"
+               style={{ background: 'rgba(20,184,166,0.04)', border: '1px solid rgba(20,184,166,0.20)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 size={13} style={{ color: 'var(--teal)' }} />
+              <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>
+                Feed parsed: {probePreview.item_count} item{probePreview.item_count === 1 ? '' : 's'} found
+              </span>
+              <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                · Form auto-filled. Review &amp; click Add source.
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {probePreview.items.map((it, i) => (
+                <li key={i} className="flex gap-3 text-xs">
+                  {it.image_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={it.image_url} alt="" width={48} height={48}
+                         style={{ width: 48, height: 48, borderRadius: 4, objectFit: 'cover', flexShrink: 0, background: 'var(--surface-alt)' }} />
+                  ) : (
+                    <div style={{ width: 48, height: 48, borderRadius: 4, background: 'var(--surface-alt)', flexShrink: 0 }} />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate" style={{ color: 'var(--ink)' }}>{it.title}</p>
+                    {it.description && (
+                      <p className="text-[11px] line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{it.description}</p>
+                    )}
+                    <a href={it.url} target="_blank" rel="noopener noreferrer"
+                       className="text-[10px] inline-flex items-center gap-0.5 hover:underline" style={{ color: 'var(--purple)' }}>
+                      open <ExternalLink size={9} />
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

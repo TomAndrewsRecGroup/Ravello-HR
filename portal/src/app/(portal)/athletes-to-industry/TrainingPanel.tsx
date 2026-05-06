@@ -102,7 +102,13 @@ function ProviderCard({ provider, matchCount, onOpen }: {
       onClick={onOpen}
     >
       <div className="flex items-center gap-3">
-        <AvatarInitials name={provider.provider_name} size={36} />
+        {provider.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={provider.logo_url} alt={provider.provider_name} width={36} height={36}
+               style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }} />
+        ) : (
+          <AvatarInitials name={provider.provider_name} size={36} />
+        )}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
             {provider.provider_name}

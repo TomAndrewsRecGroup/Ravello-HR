@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
-import { sendEmail, passwordResetEmail } from '@/lib/email';
+import { sendEmail, lastEmailError, passwordResetEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -71,9 +71,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   });
 
   if (!result) {
+    const last = lastEmailError();
     const reason = !process.env.RESEND_API_KEY
       ? 'RESEND_API_KEY is not set on this Vercel project. The reset link was generated but no email was sent.'
-      : 'Resend rejected the send. Check the Vercel function logs for details.';
+      : last
+        ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
+        : 'Resend rejected the send. Check the Vercel function logs for details.';
     return NextResponse.json({
       success:       true,
       email_sent:    false,

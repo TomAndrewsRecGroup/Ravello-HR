@@ -7,6 +7,7 @@ import {
   Building2, Plus, Pencil, Trash2, Loader2, Power, PowerOff, Globe, MapPin, Save, X, Users,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import LogoUpload from '@/components/modules/LogoUpload';
 import RoleOpportunitiesEditor from './RoleOpportunitiesEditor';
 import type { AthleteRow, InterestRow, PartnerRow, RoleOpportunity } from './types';
 
@@ -249,7 +250,18 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                   className="card p-4 flex flex-col"
                   style={{ borderColor: p.active ? 'var(--line)' : 'rgba(116,128,153,0.20)', opacity: p.active ? 1 : 0.7 }}>
                 <div className="flex items-start gap-3">
-                  <AvatarInitials name={p.company_name} size={40} />
+                  {p.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.logo_url}
+                      alt={p.company_name}
+                      width={40}
+                      height={40}
+                      style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }}
+                    />
+                  ) : (
+                    <AvatarInitials name={p.company_name} size={40} />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
@@ -287,6 +299,10 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                       <Trash2 size={12} />
                     </button>
                   </div>
+                </div>
+
+                <div className="mt-3 pt-3" style={{ borderTop: '1px dashed var(--line)' }}>
+                  <LogoUpload kind="partner" targetId={p.id} currentUrl={p.logo_url} alt={p.company_name} size={48} />
                 </div>
 
                 <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px dashed var(--line)' }}>

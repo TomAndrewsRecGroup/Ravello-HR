@@ -54,6 +54,7 @@ export const getSessionProfile = cache(async () => {
   const empty = {
     user: null, profile: null,
     companyId: '', companyName: null as string | null,
+    companyLogoUrl: null as string | null,
     role: '', isTpsStaff: false,
     featureFlags: {} as Record<string, boolean>,
     stripeSubscriptionId: null as string | null,
@@ -82,6 +83,7 @@ export const getSessionProfile = cache(async () => {
   // collapsed into one.
   let featureFlags: Record<string, boolean> = {};
   let companyName: string | null = null;
+  let companyLogoUrl: string | null = null;
   let stripeSubscriptionId: string | null = null;
   let archivedAt: string | null = null;
 
@@ -90,12 +92,13 @@ export const getSessionProfile = cache(async () => {
       const supabase = createServerSupabaseClient();
       const { data } = await supabase
         .from('companies')
-        .select('name, feature_flags, stripe_subscription_id, archived_at')
+        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at')
         .eq('id', companyId)
         .maybeSingle();
       const row = (data as any) ?? {};
       featureFlags = (row.feature_flags ?? {}) as Record<string, boolean>;
       companyName  = row.name ?? null;
+      companyLogoUrl = row.logo_url ?? null;
       stripeSubscriptionId = row.stripe_subscription_id ?? null;
       archivedAt   = row.archived_at ?? null;
     } catch (err) {
@@ -114,6 +117,7 @@ export const getSessionProfile = cache(async () => {
     },
     companyId,
     companyName,
+    companyLogoUrl,
     role,
     isTpsStaff,
     featureFlags,

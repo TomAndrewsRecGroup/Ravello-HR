@@ -19,6 +19,8 @@ type AuditAction =
   | 'company.archived'
   | 'company.unarchived'
   | 'company.deleted'
+  | 'logo.uploaded'
+  | 'logo.removed'
   // 'company.billing_setup' is distinct from 'company.created': it fires
   // when the retainer / Stripe subscription is first attached or updated,
   // which can happen well after the company row is created (e.g. a free-tier

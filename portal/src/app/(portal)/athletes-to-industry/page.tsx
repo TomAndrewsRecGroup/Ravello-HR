@@ -34,13 +34,13 @@ export default async function AthletesToIndustryPage() {
       .limit(200),
     supabase
       .from('partners')
-      .select('id, company_name, locations, industry, website, role_opportunities, active, created_at')
+      .select('id, company_name, locations, industry, website, logo_url, role_opportunities, active, created_at')
       .eq('active', true)
       .order('created_at', { ascending: false })
       .limit(200),
     supabase
       .from('training_providers')
-      .select('id, provider_name, locations, category, website, offerings, active, created_at')
+      .select('id, provider_name, locations, category, website, logo_url, offerings, active, created_at')
       .eq('active', true)
       .order('created_at', { ascending: false })
       .limit(200),

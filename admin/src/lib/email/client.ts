@@ -8,8 +8,14 @@
 //                           logs a warning and returns null (so dev /
 //                           preview environments don't crash on email
 //                           triggers).
-//   EMAIL_FROM            — From address (default: noreply@thepeoplesystem.co.uk)
-//   EMAIL_REPLY_TO        — Reply-To header (default: hello@thepeoplesystem.co.uk)
+//   EMAIL_FROM            — From address (default: noreply@portal.thepeoplesystem.co.uk)
+//                           NOTE: the FROM-ADDRESS DOMAIN must be verified in
+//                           Resend → Domains. Currently the verified domain is
+//                           the `portal.thepeoplesystem.co.uk` subdomain — sending
+//                           from anything @ the apex thepeoplesystem.co.uk will be
+//                           rejected with HTTP 403 until the apex is verified too.
+//   EMAIL_REPLY_TO        — Reply-To header (default: hello@thepeoplesystem.co.uk).
+//                           Reply-to does NOT need to be on a verified domain.
 //   EMAIL_BCC_INTERNAL    — Optional comma-separated list — every send
 //                           gets BCC'd here (useful for dev visibility).
 //
@@ -32,10 +38,18 @@ export interface SendEmailInput {
 }
 
 export interface SendEmailResult {
-  id:       string;
+  id:        string;
   /** Whether this was a real send or a no-op (no API key). */
   delivered: boolean;
 }
+
+/** Surfaced when Resend rejects a send so callers can show the operator
+ *  the actual reason (unverified domain, bad from-address, rate limit etc.)
+ *  instead of a generic 'rejected' string. Module-level so multiple
+ *  invocations don't race.
+ */
+let lastSendError: { status: number; message: string; from: string } | null = null;
+export function lastEmailError() { return lastSendError; }
 
 /**
  * Strip tags and decode common entities for plaintext fallback.
@@ -63,7 +77,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
     return null;
   }
 
-  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@thepeoplesystem.co.uk>';
+  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
   const replyTo = input.replyTo ?? process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 
@@ -90,15 +104,21 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
-      console.error('[email] Resend rejected send', { status: res.status, body: errBody, subject: input.subject });
+      let parsedMessage = errBody;
+      try {
+        const parsed = JSON.parse(errBody);
+        parsedMessage = parsed.message ?? parsed.error ?? errBody;
+      } catch { /* leave as raw text */ }
+      lastSendError = { status: res.status, message: parsedMessage, from };
+      console.error('[email] Resend rejected send', { status: res.status, body: errBody, subject: input.subject, from });
       return null;
     }
 
+    lastSendError = null;
     const data = await res.json() as { id: string };
     return { id: data.id, delivered: true };
   } catch (err: any) {
-    // Network error — log and move on. The API route still returns 200
-    // because the user's primary action succeeded; email is a side-effect.
+    lastSendError = { status: 0, message: err?.message ?? 'Network error reaching Resend', from };
     console.error('[email] Resend transport failure', { error: err?.message, subject: input.subject });
     return null;
   }
