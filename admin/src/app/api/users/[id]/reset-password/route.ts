@@ -6,6 +6,16 @@ import { sendEmail, lastEmailError, passwordResetEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Send a password-reset email.
+ *
+ * Uses the same UUID-token + on-click-magic-link middle layer as the
+ * invite flow (see /auth/activate). Why: Supabase's native recovery
+ * link expires 1 hour after generation, so a reset emailed Friday at
+ * 5pm is dead by Saturday morning. The UUID token here lives 7 days
+ * and only mints the 1-hour Supabase magic link when the recipient
+ * actually clicks the link in their email.
+ */
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
@@ -39,22 +49,26 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'User has no email on file' }, { status: 400 });
   }
 
-  // Generate a Supabase recovery link without triggering Supabase's own
-  // email — we send our own branded one via Resend instead.
-  const portalUrl  = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
-  const redirectTo = `${portalUrl}/auth/update-password`;
+  // Mint a 7-day UUID token and store it on the profile. /auth/activate
+  // validates and consumes this token, then generates a fresh Supabase
+  // magic link at click time.
+  const token   = crypto.randomUUID();
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
-    type:    'recovery',
-    email:   profile.email,
-    options: { redirectTo },
-  });
+  const { error: tokenErr } = await adminClient
+    .from('profiles')
+    .update({
+      invite_token:            token,
+      invite_token_expires_at: expires,
+    })
+    .eq('id', userId);
 
-  if (linkErr || !linkData?.properties?.action_link) {
-    return NextResponse.json({ error: linkErr?.message ?? 'Could not generate reset link' }, { status: 500 });
+  if (tokenErr) {
+    return NextResponse.json({ error: tokenErr.message }, { status: 500 });
   }
 
-  const resetUrl = linkData.properties.action_link;
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const resetUrl  = `${portalUrl}/auth/activate?token=${token}&purpose=reset`;
 
   const result = await sendEmail(passwordResetEmail({
     to:       profile.email,
