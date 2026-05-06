@@ -64,7 +64,7 @@ export default function UpdateCard({ item, variant = 'grid' }: Props) {
           className={
             hasImage
               ? 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
-              : 'h-12 w-auto opacity-80 transition-transform duration-300 group-hover:scale-[1.04]'
+              : 'h-36 w-auto opacity-80 transition-transform duration-300 group-hover:scale-[1.04]'
           }
           loading="lazy"
         />
