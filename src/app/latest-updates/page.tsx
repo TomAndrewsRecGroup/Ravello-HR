@@ -143,6 +143,12 @@ export default async function LatestUpdatesPage({
           >
             Subscribe via RSS
           </a>
+          <p
+            className="text-[11px] leading-relaxed mt-6 max-w-2xl"
+            style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}
+          >
+            Articles are sourced from third-party publishers. The views and opinions expressed by their authors are their own and do not necessarily reflect those of The People System, unless an item is published directly by us.
+          </p>
         </div>
       </section>
 
