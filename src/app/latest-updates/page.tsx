@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { getPublicSupabase } from '@/lib/supabase/server';
 import FeaturedCarousel from './FeaturedCarousel';
@@ -114,41 +115,68 @@ export default async function LatestUpdatesPage({
   return (
     <div className="pt-28">
 
-      {/* Hero */}
-      <section className="section-padding" style={{ background: 'var(--bg)', paddingTop: '5rem', paddingBottom: '2rem' }}>
-        <div className="max-w-4xl mx-auto">
-          <p className="eyebrow mb-5">
-            <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
-            Latest Updates
-          </p>
-          <h1
-            className="font-display mb-5"
-            style={{
-              fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
-              fontWeight: 800,
-              lineHeight: 1.02,
-              letterSpacing: '-0.04em',
-              color: 'var(--ink)',
-            }}
-          >
-            HR news that actually <span className="text-gradient">matters</span>
-          </h1>
-          <p className="text-lg leading-relaxed max-w-2xl mb-4" style={{ color: 'var(--ink-soft)' }}>
-            A curated live feed of HR news, policy changes, workforce data and practical guidance. Pulled from the sources we actually read.
-          </p>
-          <a
-            href="/latest-updates/rss.xml"
-            className="inline-flex items-center gap-2 text-xs font-semibold"
-            style={{ color: 'var(--brand-purple)' }}
-          >
-            Subscribe via RSS
-          </a>
-          <p
-            className="text-[11px] leading-relaxed mt-6 max-w-2xl"
-            style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}
-          >
-            Articles are sourced from third-party publishers. The views and opinions expressed by their authors are their own and do not necessarily reflect those of The People System, unless an item is published directly by us.
-          </p>
+      {/* Hero — matches the homepage hero background (var(--bg) plus
+          ambient radial gradients) and the /hire / /protect layout
+          (left-aligned text on the left, image on the right). */}
+      <section className="relative overflow-hidden" style={{ background: 'var(--bg)', padding: '3rem 1.5rem 2.5rem' }}>
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: [
+              'radial-gradient(ellipse at 72% 18%, rgba(124,58,237,0.07) 0%, transparent 55%)',
+              'radial-gradient(ellipse at 12% 80%, rgba(234,61,196,0.05) 0%, transparent 50%)',
+            ].join(', '),
+          }}
+        />
+        <div className="relative z-10 container-wide lg:px-10">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-12 items-center">
+            <div>
+              <p className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: 'var(--brand-purple)', verticalAlign: 'middle' }} />
+                Latest Updates
+              </p>
+              <h1
+                className="font-display mb-5"
+                style={{
+                  fontSize: 'clamp(2.8rem, 5.5vw, 5rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.04em',
+                  color: 'var(--ink)',
+                }}
+              >
+                HR news that actually <span className="text-gradient">matters</span>
+              </h1>
+              <p className="text-lg leading-relaxed max-w-2xl mb-4" style={{ color: 'var(--ink-soft)' }}>
+                A curated live feed of HR news, policy changes, workforce data and practical guidance. Pulled from the sources we actually read.
+              </p>
+              <a
+                href="/latest-updates/rss.xml"
+                className="inline-flex items-center gap-2 text-xs font-semibold"
+                style={{ color: 'var(--brand-purple)' }}
+              >
+                Subscribe via RSS
+              </a>
+              <p
+                className="text-[11px] leading-relaxed mt-6 max-w-2xl"
+                style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}
+              >
+                Articles are sourced from third-party publishers. The views and opinions expressed by their authors are their own and do not necessarily reflect those of The People System, unless an item is published directly by us.
+              </p>
+            </div>
+            <div className="hidden lg:block">
+              <div className="relative rounded-[24px] overflow-hidden" style={{ height: 480 }}>
+                <Image
+                  src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=960&h=960&fit=crop"
+                  alt="Newspapers and notebooks on a desk"
+                  fill
+                  className="object-cover"
+                  sizes="420px"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

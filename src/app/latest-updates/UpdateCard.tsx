@@ -64,8 +64,9 @@ export default function UpdateCard({ item, variant = 'grid' }: Props) {
           className={
             hasImage
               ? 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
-              : 'h-36 w-auto opacity-80 transition-transform duration-300 group-hover:scale-[1.04]'
+              : 'w-auto opacity-85 transition-transform duration-300 group-hover:scale-[1.04]'
           }
+          style={hasImage ? undefined : { height: '60%', maxHeight: 200, objectFit: 'contain' }}
           loading="lazy"
         />
       </div>
