@@ -75,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/png" href={FAVICON} />
         <link rel="shortcut icon" type="image/png" href={FAVICON} />
         <link rel="apple-touch-icon" href={FAVICON} />
+        <meta name="mobile-web-app-capable" content="yes" />
         <ClarityScript />
         <StructuredData />
       </head>
