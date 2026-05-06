@@ -158,8 +158,35 @@ export default function FeedSourcesClient({ initial }: Props) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to add feed');
+
+      // Prepend the new source to the table immediately so the
+      // operator sees it without a manual refresh. Falls back to a
+      // synthesised row if the server didn't return the full record
+      // (older deploys); router.refresh() will reconcile any
+      // server-derived fields on the next render.
+      const newRow: FeedSourceRow = json.row ?? {
+        id:               json.id,
+        slug:             slug.trim(),
+        display_name:     displayName.trim(),
+        feed_url:         feedUrl.trim(),
+        source_type:      sourceType,
+        category:         category.trim() || null,
+        active:           true,
+        last_fetched_at:  null,
+        last_error:       null,
+        created_at:       new Date().toISOString(),
+        scrape_config:    (parsedConfig as Record<string, unknown> | null) ?? null,
+      };
+      setRows((curr) => [newRow, ...curr]);
+
+      // Reset the entire add-source panel: form fields, type and
+      // probe state so the next URL starts from a clean slate.
       setSlug(''); setDisplayName(''); setFeedUrl(''); setCategory(''); setScrapeConfig('');
       setSourceType('rss');
+      setProbePreview(null);
+      setProbeError(null);
+      setFormError('');
+
       refresh();
     } catch (e) {
       setFormError((e as Error).message);

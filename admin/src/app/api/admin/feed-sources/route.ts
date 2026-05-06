@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       active: body.active ?? true,
       scrape_config,
     })
-    .select('id')
+    .select('id, slug, display_name, feed_url, source_type, category, active, last_fetched_at, last_error, created_at, scrape_config')
     .single();
 
   if (error) {
@@ -89,5 +89,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: data.id, row: data });
 }
