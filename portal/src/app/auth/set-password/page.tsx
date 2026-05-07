@@ -20,6 +20,11 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import SetPasswordForm from './SetPasswordForm';
 
+// Never statically optimise: token validation runs server-side per
+// request and we don't want any cached redirect-to-login response.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Props {
   searchParams: { token?: string };
 }
