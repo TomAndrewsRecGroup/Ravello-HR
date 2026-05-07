@@ -187,6 +187,39 @@ export async function updateSubscriptionPrice(
 }
 
 /** Cancels a subscription at period end. The customer keeps access until then. */
+/**
+ * Best-effort detach: cancel the live subscription IMMEDIATELY (no
+ * proration) and delete the customer. Used by the hard-delete-client
+ * flow so we don't keep billing a customer that no longer exists in
+ * the app DB. Errors are caught + returned to the caller as strings
+ * so the deletion route can surface them rather than fail the whole
+ * cascade.
+ */
+export async function detachAndDeleteStripeCustomer(args: {
+  customerId?:     string | null;
+  subscriptionId?: string | null;
+}): Promise<{ ok: true } | { ok: false; warnings: string[] }> {
+  if (!stripeConfigured()) return { ok: true };
+  const warnings: string[] = [];
+  const sb = client();
+
+  if (args.subscriptionId) {
+    try {
+      await sb.subscriptions.cancel(args.subscriptionId, { invoice_now: false, prorate: false });
+    } catch (e) {
+      warnings.push(`subscription cancel failed: ${(e as Error).message}`);
+    }
+  }
+  if (args.customerId) {
+    try {
+      await sb.customers.del(args.customerId);
+    } catch (e) {
+      warnings.push(`customer delete failed: ${(e as Error).message}`);
+    }
+  }
+  return warnings.length ? { ok: false, warnings } : { ok: true };
+}
+
 export async function cancelSubscriptionAtPeriodEnd(subscriptionId: string): Promise<void> {
   const sb = client();
   await sb.subscriptions.update(subscriptionId, { cancel_at_period_end: true });
