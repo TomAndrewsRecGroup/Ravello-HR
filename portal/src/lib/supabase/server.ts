@@ -28,7 +28,7 @@ function fetchCompanyShellCached(companyId: string) {
       const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data } = await sb
         .from('companies')
-        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at')
+        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at, account_owner_id, account_owner:account_owner_id(full_name, email)')
         .eq('id', companyId)
         .maybeSingle();
       return data ?? null;
@@ -95,6 +95,8 @@ export const getSessionProfile = cache(async () => {
     featureFlags: {} as Record<string, boolean>,
     stripeSubscriptionId: null as string | null,
     archivedAt: null as string | null,
+    accountManagerName:  null as string | null,
+    accountManagerEmail: null as string | null,
   };
 
   if (!raw) return empty;
@@ -126,6 +128,8 @@ export const getSessionProfile = cache(async () => {
   let companyLogoUrl: string | null = null;
   let stripeSubscriptionId: string | null = null;
   let archivedAt: string | null = null;
+  let accountManagerName:  string | null = null;
+  let accountManagerEmail: string | null = null;
 
   if (companyId) {
     try {
@@ -136,6 +140,11 @@ export const getSessionProfile = cache(async () => {
         companyLogoUrl      = row.logo_url ?? null;
         stripeSubscriptionId= row.stripe_subscription_id ?? null;
         archivedAt          = row.archived_at ?? null;
+        // account_owner is the Supabase nested-select alias from the
+        // shell query; the join may return null for clients that
+        // don't have an owner assigned.
+        accountManagerName  = row.account_owner?.full_name ?? null;
+        accountManagerEmail = row.account_owner?.email     ?? null;
       } else {
         featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
       }
@@ -161,5 +170,7 @@ export const getSessionProfile = cache(async () => {
     featureFlags,
     stripeSubscriptionId,
     archivedAt,
+    accountManagerName,
+    accountManagerEmail,
   };
 });

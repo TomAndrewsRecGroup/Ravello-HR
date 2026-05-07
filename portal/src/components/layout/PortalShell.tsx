@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import QuickActions from './QuickActions';
 import { MobileMenuProvider } from './MobileMenuContext';
 import { UserPreferencesProvider } from './UserPreferences';
+import { LockedFeatureProvider } from './LockedFeature';
 import { ToastProvider } from '@/components/modules/Toast';
 
 interface Props {
@@ -13,25 +14,32 @@ interface Props {
   role: string;
   showBilling: boolean;
   uiPreferences: Record<string, any>;
+  accountManagerName:  string | null;
+  accountManagerEmail: string | null;
   children: React.ReactNode;
 }
 
-export default function PortalShell({ flags, counts, userId, companyId, role, showBilling, uiPreferences, children }: Props) {
+export default function PortalShell({
+  flags, counts, userId, companyId, role, showBilling, uiPreferences,
+  accountManagerName, accountManagerEmail, children,
+}: Props) {
   return (
     <MobileMenuProvider>
       <UserPreferencesProvider userId={userId} initialPrefs={uiPreferences}>
-        <ToastProvider>
-          <div className="flex min-h-screen">
-            <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} role={role} showBilling={showBilling} />
-            <div
-              className="main-content flex-1 flex flex-col min-h-screen"
-              style={{ marginLeft: 'var(--sidebar-w)' }}
-            >
-              {children}
+        <LockedFeatureProvider accountManagerName={accountManagerName} accountManagerEmail={accountManagerEmail}>
+          <ToastProvider>
+            <div className="flex min-h-screen">
+              <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} role={role} showBilling={showBilling} />
+              <div
+                className="main-content flex-1 flex flex-col min-h-screen"
+                style={{ marginLeft: 'var(--sidebar-w)' }}
+              >
+                {children}
+              </div>
             </div>
-          </div>
-          <QuickActions />
-        </ToastProvider>
+            <QuickActions />
+          </ToastProvider>
+        </LockedFeatureProvider>
       </UserPreferencesProvider>
     </MobileMenuProvider>
   );
