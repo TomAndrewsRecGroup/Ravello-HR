@@ -109,95 +109,36 @@ export default function BDCompanyModal({ company, onClose }: Props) {
     setConvertError('');
     setConverting(true);
     try {
-      // Create companies record
-      const { data: newClient, error: insertErr } = await supabase
-        .from('companies')
-        .insert({
-          name:          company.company_name,
-          sector:        convForm.sector    || null,
+      // Single transactional server route. If any step fails after
+      // companies.insert, the route deletes the company row (cascades
+      // remove anything partially seeded) — operator never lands with
+      // a half-converted client.
+      const res = await fetch(`/api/bd-companies/${encodeURIComponent(company.id)}/convert`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          sector:        convForm.sector || null,
           size_band:     convForm.size_band || null,
-          feature_flags: {
-            hiring: true, documents: true, reports: true,
-            support: true, metrics: true, compliance: true,
-          },
-        })
-        .select('id')
-        .single();
-
-      if (insertErr || !newClient) throw new Error(insertErr?.message ?? 'Failed to create client record');
-
-      // Mark BD company as Client
-      await supabase
-        .from('bd_companies')
-        .update({ status: 'Client' })
-        .eq('id', company.id);
-      setStatus('Client');
-
-      // Seed standard onboarding compliance items
-      const today = new Date();
-      const in30  = new Date(today); in30.setDate(today.getDate() + 30);
-      const in60  = new Date(today); in60.setDate(today.getDate() + 60);
-      const in90  = new Date(today); in90.setDate(today.getDate() + 90);
-      await supabase.from('compliance_items').insert([
-        { company_id: newClient.id, title: 'Employment contract audit', category: 'hr', status: 'pending', due_date: in30.toISOString().split('T')[0] },
-        { company_id: newClient.id, title: 'GDPR data audit',           category: 'legal', status: 'pending', due_date: in60.toISOString().split('T')[0] },
-        { company_id: newClient.id, title: 'Health & Safety review',    category: 'health_safety', status: 'pending', due_date: in90.toISOString().split('T')[0] },
-        { company_id: newClient.id, title: 'Data protection policy review', category: 'legal', status: 'pending', due_date: in90.toISOString().split('T')[0] },
-      ]);
-
-      // Seed welcome action
-      await supabase.from('actions').insert({
-        company_id: newClient.id,
-        action_type: 'general',
-        title: 'Welcome to The People System portal',
-        description: 'Your HR portal is now active. Start by completing the initial compliance checklist and adding your team members.',
-        priority: 'normal',
-        status: 'active',
-        created_by_admin: true,
+          contact_email: convForm.contact_email || null,
+          contact_name:  convForm.contact_name  || null,
+          // For synthetic ivylens-* ids the server can't look the
+          // company name up from bd_companies; pass it through.
+          ...(isIvylensCompany ? { company_name: company.company_name } : {}),
+        }),
       });
-
-      // Optionally invite a user
-      if (convForm.contact_email) {
-        const inv = await fetch('/api/invite', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            email:      convForm.contact_email,
-            company_id: newClient.id,
-            full_name:  convForm.contact_name || undefined,
-            role:       'client_admin',
-          }),
-        });
-        const invBody = await inv.json().catch(() => ({}));
-        if (!inv.ok) {
-          throw new Error(`Client created but invite failed: ${invBody.error ?? 'unknown error'}`);
-        }
-        if (invBody.email_sent === false) {
-          throw new Error(
-            `Client created and invite link generated, but the email did not send. ${invBody.email_warning ?? ''} Activation link: ${invBody.activate_url ?? 'see profile'}`,
-          );
-        }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error ?? `Conversion failed (${res.status})`);
       }
 
-      // Seed the named contact onto the org chart so they appear the
-      // moment they log in and can start building their team beneath
-      // themselves. Job title defaults to 'Founder' as the most common
-      // case for the BD conversion contact; they can edit it later.
-      if (convForm.contact_name?.trim()) {
-        await supabase.from('employee_records').insert({
-          company_id:      newClient.id,
-          full_name:       convForm.contact_name.trim(),
-          email:           convForm.contact_email?.trim() || null,
-          job_title:       'Founder',
-          department:      'Leadership',
-          employment_type: 'full_time',
-          status:          'active',
-          start_date:      today.toISOString().split('T')[0],
-          line_manager:    null,
-        });
+      setStatus('Client');
+      // Surface non-fatal warnings (employee seed, invite send) without
+      // blocking — the client is already created. Hard errors above
+      // throw and abort instead.
+      if (Array.isArray(body.warnings) && body.warnings.length > 0) {
+        setConvertError(body.warnings.join(' · '));
       }
-
-      setConvertedClientId(newClient.id);
+      setConvertedClientId(body.client_id);
     } catch (e: any) {
       setConvertError(e.message ?? 'Something went wrong');
     } finally {
