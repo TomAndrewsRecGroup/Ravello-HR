@@ -36,6 +36,10 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  // Logo file held client-side until the partner row exists; on Save
+  // we create the row first then POST the file to /api/admin/logos
+  // tied to the returned id. Mirrors the AthletesClient CV flow.
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -82,10 +86,13 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
     setEditing(p.id);
     setError('');
   }
-  function cancel() { setEditing(null); setError(''); }
+  function cancel() { setEditing(null); setError(''); setLogoFile(null); }
 
   async function save() {
     if (!draft.company_name.trim()) { setError('Company name is required.'); return; }
+    if (logoFile && logoFile.size > 2 * 1024 * 1024) {
+      setError('Logo file exceeds 2 MB limit.'); return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -106,7 +113,28 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Save failed');
+
+      // Attach the logo (if picked) to the new or existing row.
+      // Two-step so the row's UUID is the storage path's tenant key.
+      const targetId = isNew ? json.id : editing!;
+      if (logoFile && targetId) {
+        const fd = new FormData();
+        fd.set('kind',     'partner');
+        fd.set('targetId', targetId);
+        fd.set('file',     logoFile);
+        const upRes = await fetch('/api/admin/logos', { method: 'POST', body: fd });
+        if (!upRes.ok) {
+          const upJson = await upRes.json().catch(() => ({}));
+          // Don't undo the partner — surface the warning so the
+          // operator can retry the logo via the per-card uploader.
+          setError(`Partner saved but logo upload failed: ${upJson.error ?? upRes.statusText}. Use the Logo controls on the partner's card to retry.`);
+          refresh();
+          return;
+        }
+      }
+
       setEditing(null);
+      setLogoFile(null);
       refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -210,6 +238,33 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                      onChange={e => setDraft({ ...draft, website: e.target.value })}
                      placeholder="acme.com" />
             </div>
+          </div>
+
+          <div>
+            <p className="label">Logo (optional)</p>
+            <label
+              className="block rounded-[10px] p-3 text-center cursor-pointer hover:bg-[var(--surface-alt)]"
+              style={{ border: '1.5px dashed var(--line)' }}
+            >
+              {logoFile
+                ? <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{logoFile.name}</span>
+                : <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>Click to choose a logo image</span>}
+              <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+                PNG / JPG / WEBP / SVG · 2 MB max
+              </p>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={e => setLogoFile(e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+            </label>
+            {logoFile && (
+              <button type="button" onClick={() => setLogoFile(null)}
+                      className="btn-ghost btn-sm mt-1" style={{ fontSize: 11 }}>
+                Clear
+              </button>
+            )}
           </div>
 
           <div>
