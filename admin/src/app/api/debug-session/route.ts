@@ -22,7 +22,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(req: import('next/server').NextRequest) {
   const cookieStore = cookies();
 
   const supabase = createServerClient(
@@ -108,22 +108,41 @@ export async function GET() {
     // Run the EXACT query the /users page runs, with the caller's
     // session (RLS active). If this differs from the service-role
     // count, RLS is filtering rows the page should see.
+    //
+    // We deliberately don't dump full rows in the response anymore
+    // — the audit flagged that this endpoint was a one-shot exfil
+    // surface for a compromised tps_admin. We expose the diagnostic
+    // counts (the actual reason the route exists) but not the row
+    // bodies; on `?rows=1` an opt-in returns redacted rows (email
+    // local-part hashed) so an operator can still sanity-check
+    // ordering / shape.
+    const wantsRows = req.nextUrl.searchParams.get('rows') === '1';
     const [rlsListRes, rlsCountRes] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('id,email,full_name,role,company_id,created_at,companies(id,name)')
-        .neq('role', 'tps_admin')
-        .order('created_at', { ascending: false })
-        .limit(500),
+      wantsRows
+        ? supabase
+            .from('profiles')
+            .select('id,email,role,company_id,created_at,companies(id,name)')
+            .neq('role', 'tps_admin')
+            .order('created_at', { ascending: false })
+            .limit(50)
+        : Promise.resolve({ data: null, error: null } as any),
       supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .neq('role', 'tps_admin'),
     ]);
+    const redactedRows = (rlsListRes.data ?? []).map((r: any) => ({
+      id:         r.id,
+      email:      typeof r.email === 'string' ? r.email.replace(/^([^@]{1,2})[^@]*@/, '$1***@') : null,
+      role:       r.role,
+      company_id: r.company_id,
+      company:    r.companies?.name ?? null,
+      created_at: r.created_at,
+    }));
     usersPageQuery = {
       rls_count:     rlsCountRes.count ?? null,
       service_count: counts.clientUsers,
-      rls_rows:      rlsListRes.data ?? [],
+      rls_rows:      redactedRows,
       rls_error:     rlsListRes.error?.message ?? rlsCountRes.error?.message ?? null,
     };
   }

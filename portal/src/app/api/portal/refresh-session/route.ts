@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { PORTAL_SESSION_COOKIE } from '@/lib/auth/portalSession';
 
 // POST /api/portal/refresh-session
 //
@@ -24,7 +26,18 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
+  // Require an active Supabase auth session before clearing the
+  // cookie. Otherwise an unauth'd POST could DoS another user's
+  // session and force re-authentication. (No cross-user effect
+  // since the cookie is httpOnly + same-origin, but we still want
+  // to gate it on a real session.)
+  const supabase = createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const cookieStore = cookies();
-  cookieStore.set('tps_portal_session', '', { maxAge: 0, path: '/' });
+  cookieStore.set(PORTAL_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
   return NextResponse.json({ ok: true });
 }
