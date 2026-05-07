@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
+import RaiseRoleButton from '@/components/layout/RaiseRoleButton';
+import LockedLink from '@/components/layout/LockedLink';
 import FrictionAlert from '@/components/FrictionAlert';
 import {
   Briefcase, FolderOpen, LifeBuoy, AlertTriangle,
@@ -128,11 +130,7 @@ export default async function DashboardPage() {
       <Topbar
         title={`Good ${getGreeting()}, ${firstName}`}
         subtitle={companyName ?? ''}
-        actions={
-          <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm">
-            + Raise a Role
-          </Link>
-        }
+        actions={<RaiseRoleButton hiringEnabled={flagsFromSession.hiring !== false} />}
       />
 
       <main className="portal-page flex-1">
@@ -165,22 +163,24 @@ export default async function DashboardPage() {
         {/* ── Stat pills: compact, scannable ────────────────────── */}
         <div className="flex flex-wrap gap-2 mb-6">
           {[
-            { label: 'Active Roles',     val: requisitions.length,    href: '/hire/hiring',         color: 'var(--purple)' },
-            { label: 'Open Tickets',     val: tickets.length,         href: '/support',             color: 'var(--warning)' },
-            { label: 'Compliance',       val: complianceItems.length, href: '/protect/compliance',  color: 'var(--danger)' },
-            { label: 'Documents',        val: documents.length,       href: '/lead/documents',      color: 'var(--blue)' },
-            { label: 'Actions',          val: actions.length,         href: '/protect/actions',     color: 'var(--ink-soft)' },
+            { label: 'Active Roles', val: requisitions.length,    href: '/hire/hiring',        color: 'var(--purple)',   feature: 'Hiring',     flag: flagsFromSession.hiring     !== false },
+            { label: 'Open Tickets', val: tickets.length,         href: '/support',            color: 'var(--warning)',  feature: 'Support',    flag: flagsFromSession.support    !== false },
+            { label: 'Compliance',   val: complianceItems.length, href: '/protect/compliance', color: 'var(--danger)',   feature: 'Compliance', flag: flagsFromSession.compliance !== false && flagsFromSession.protect !== false },
+            { label: 'Documents',    val: documents.length,       href: '/lead/documents',     color: 'var(--blue)',     feature: 'Documents',  flag: flagsFromSession.documents  !== false },
+            { label: 'Actions',      val: actions.length,         href: '/protect/actions',    color: 'var(--ink-soft)', feature: 'Actions',    flag: flagsFromSession.protect    !== false },
           ].map(s => (
-            <Link prefetch={false}
+            <LockedLink
               key={s.label}
               href={s.href}
+              flagEnabled={s.flag}
+              featureLabel={s.feature}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-white"
               style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
             >
               <span className="w-2 h-2 rounded-full" style={{ background: s.val > 0 ? s.color : 'var(--line)' }} />
               {s.label}
               <span className="font-semibold" style={{ color: s.val > 0 ? s.color : 'var(--ink-faint)' }}>{s.val}</span>
-            </Link>
+            </LockedLink>
           ))}
         </div>
 
@@ -243,24 +243,25 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Needs Your Attention</h2>
               {actions.length > 0 && (
-                <Link prefetch={false} href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+                <LockedLink href="/protect/actions" flagEnabled={flagsFromSession.protect !== false} featureLabel="Actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</LockedLink>
               )}
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {actions.slice(0, 6).map((a: any) => (
-                <Link prefetch={false} key={a.id} href="/protect/actions"
-                      className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow"
+                <LockedLink key={a.id} href="/protect/actions"
+                      flagEnabled={flagsFromSession.protect !== false} featureLabel="Actions"
+                      className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow text-left"
                       style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' ? 'var(--danger)' : a.priority === 'medium' ? 'var(--warning)' : 'var(--line)'}` }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{a.title}</p>
                   {a.description && <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
                   <p className="text-[11px] mt-2 font-medium" style={{ color: 'var(--purple)' }}>Open →</p>
-                </Link>
+                </LockedLink>
               ))}
               {frictionAlerts.slice(0, 3).map((r: any) => (
-                <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
+                <LockedLink key={r.id} href={`/hire/hiring/${r.id}`} flagEnabled={flagsFromSession.hiring !== false} featureLabel="Hiring" className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow text-left" style={{ scrollSnapAlign: 'start', borderLeft: '3px solid var(--warning)' }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>High friction: review details</p>
-                </Link>
+                </LockedLink>
               ))}
             </div>
           </section>
@@ -271,18 +272,18 @@ export default async function DashboardPage() {
           <section className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Live Roles</h2>
-              <Link prefetch={false} href="/hire/hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <LockedLink href="/hire/hiring" flagEnabled={flagsFromSession.hiring !== false} featureLabel="Hiring" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</LockedLink>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
               {requisitions.slice(0, 8).map((r: any) => (
-                <Link prefetch={false} key={r.id} href={`/hire/hiring/${r.id}`} className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all" style={{ scrollSnapAlign: 'start' }}>
+                <LockedLink key={r.id} href={`/hire/hiring/${r.id}`} flagEnabled={flagsFromSession.hiring !== false} featureLabel="Hiring" className="card p-4 flex-shrink-0 w-[240px] hover:shadow-md transition-all text-left" style={{ scrollSnapAlign: 'start' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageBadge(r.stage)}`}>{labelFor(HIRING_STAGE_LABELS, r.stage)}</span>
                     <FrictionAlert level={r.friction_level} />
                   </div>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{r.title}</p>
                   <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{daysOpen(r.created_at)}d open</p>
-                </Link>
+                </LockedLink>
               ))}
             </div>
           </section>
@@ -293,7 +294,7 @@ export default async function DashboardPage() {
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Compliance</h2>
-              <Link prefetch={false} href="/protect/compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <LockedLink href="/protect/compliance" flagEnabled={flagsFromSession.compliance !== false && flagsFromSession.protect !== false} featureLabel="Compliance" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</LockedLink>
             </div>
             {complianceItems.length === 0 ? (
               <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>All clear: no upcoming items</p>
@@ -316,20 +317,20 @@ export default async function DashboardPage() {
           <section className="card p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>HR Support</h2>
-              <Link prefetch={false} href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+              <LockedLink href="/support" flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</LockedLink>
             </div>
             {tickets.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
-                <Link prefetch={false} href="/support/new" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</Link>
+                <LockedLink href="/support/new" flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</LockedLink>
               </div>
             ) : (
               <div className="space-y-1.5">
                 {tickets.slice(0, 5).map((t: any) => (
-                  <Link prefetch={false} key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)]" style={{ background: 'var(--surface-soft)' }}>
+                  <LockedLink key={t.id} href={`/support/${t.id}`} flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)] w-full text-left" style={{ background: 'var(--surface-soft)' }}>
                     <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 200 }}>{t.subject}</span>
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.priority === 'urgent' ? 'var(--danger)' : t.priority === 'high' ? 'var(--warning)' : 'var(--ink-faint)' }} />
-                  </Link>
+                  </LockedLink>
                 ))}
               </div>
             )}
@@ -357,7 +358,7 @@ export default async function DashboardPage() {
             <section className="card p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-display text-sm font-semibold" style={{ color: 'var(--ink)' }}>Recent Documents</h2>
-                <Link prefetch={false} href="/lead/documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</Link>
+                <LockedLink href="/lead/documents" flagEnabled={flagsFromSession.documents !== false} featureLabel="Documents" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>View all →</LockedLink>
               </div>
               <div className="space-y-1.5">
                 {documents.slice(0, 4).map((d: any) => (

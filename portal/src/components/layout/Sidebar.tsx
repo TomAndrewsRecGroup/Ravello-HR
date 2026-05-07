@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
+import { useLockedFeature } from './LockedFeature';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -60,6 +61,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
+  const locked = useLockedFeature();
   const [editMode, setEditMode] = useState(false);
   // Counts are pre-computed in the layout SSR pass and refreshed on every
   // navigation by Next's data revalidation — no client-side fetch needed.
@@ -93,9 +95,13 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
     }));
   }, [prefs, flags, role, showBilling]);
 
-  const visibleItems = orderedItems.filter(i =>
-    !i.hidden && (!i.disabled || i.showWhenDisabled),
-  );
+  // Show every nav item the user has either explicitly hidden via
+  // their preferences AND every disabled (out-of-package) item — the
+  // disabled ones render greyed-out with a lock icon and pop the
+  // 'not in your package' modal on click. Was filtering disabled
+  // items out except for ATI; that hid features the user might want
+  // to upgrade to.
+  const visibleItems = orderedItems.filter(i => !i.hidden);
 
   async function moveItem(href: string, direction: 'up' | 'down') {
     const currentOrder = orderedItems.map(i => i.href);
@@ -168,7 +174,33 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
       );
     }
 
-    if (item.disabled && !editMode) return null;
+    // Disabled (out-of-package) items still render — greyed-out with
+    // a lock — and pop the polite 'not in your package' modal on
+    // click rather than navigating. Was returning null which hid them
+    // entirely. Skipped while in editMode so the user can still
+    // re-order them in their preferences.
+    if (item.disabled && !editMode) {
+      return (
+        <button
+          key={item.href}
+          type="button"
+          onClick={() => locked.show(item.label)}
+          className="nav-link flex-1 text-left w-full"
+          style={{
+            opacity: 0.45,
+            cursor: 'pointer',
+            background: 'transparent',
+            border: 'none',
+          }}
+          aria-disabled="true"
+          title={`${item.label} is not in your package`}
+        >
+          <item.icon size={15} />
+          <span className="flex-1">{item.label}</span>
+          <Lock size={11} style={{ color: 'var(--ink-faint)' }} />
+        </button>
+      );
+    }
 
     return (
       <div key={item.href} className="flex items-center gap-0.5">

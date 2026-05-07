@@ -4,32 +4,43 @@ import { useRouter } from 'next/navigation';
 import {
   Plus, Briefcase, Palmtree, LifeBuoy, FileText, X,
   UserPlus, CalendarDays, ShieldCheck, BookOpen,
-  Settings as SettingsIcon, Check,
+  Settings as SettingsIcon, Check, Lock,
 } from 'lucide-react';
 import { useUserPreferences } from './UserPreferences';
+import { useLockedFeature } from './LockedFeature';
 
-/* All available quick actions */
-const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.ElementType; color: string }> = {
-  raise_role:     { label: 'Raise a Role',    href: '/hire/hiring/new',    icon: Briefcase,    color: 'var(--purple)' },
-  log_leave:      { label: 'Log Leave',       href: '/calendar',           icon: Palmtree,     color: 'var(--success)' },
-  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',        icon: LifeBuoy,     color: 'var(--amber)' },
-  upload_doc:     { label: 'Upload Document', href: '/lead/documents',     icon: FileText,     color: 'var(--blue)' },
-  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,  color: 'var(--teal)' },
-  view_calendar:  { label: 'View Calendar',   href: '/calendar',           icon: CalendarDays, color: '#6366F1' },
-  compliance:     { label: 'Compliance',       href: '/protect/compliance', icon: ShieldCheck,  color: 'var(--danger)' },
-  learning:       { label: 'Learning',         href: '/lead/learning',      icon: BookOpen,     color: '#8B5CF6' },
+/* All available quick actions. `flag` is the feature_flag key that
+   gates the action — when the flag is false on the company, the
+   action renders locked and clicking opens the upgrade modal. */
+const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.ElementType; color: string; flag: string | null }> = {
+  raise_role:     { label: 'Raise a Role',    href: '/hire/hiring/new',       icon: Briefcase,    color: 'var(--purple)',  flag: 'hiring'    },
+  log_leave:      { label: 'Log Leave',       href: '/calendar',              icon: Palmtree,     color: 'var(--success)', flag: null        },
+  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',           icon: LifeBuoy,     color: 'var(--amber)',   flag: 'support'   },
+  upload_doc:     { label: 'Upload Document', href: '/lead/documents',        icon: FileText,     color: 'var(--blue)',    flag: 'documents' },
+  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,     color: 'var(--teal)',    flag: 'protect'   },
+  view_calendar:  { label: 'View Calendar',   href: '/calendar',              icon: CalendarDays, color: '#6366F1',        flag: null        },
+  compliance:     { label: 'Compliance',      href: '/protect/compliance',    icon: ShieldCheck,  color: 'var(--danger)',  flag: 'compliance'},
+  learning:       { label: 'Learning',        href: '/lead/learning',         icon: BookOpen,     color: '#8B5CF6',        flag: 'lead'      },
 };
 
 const DEFAULT_ACTIONS = ['raise_role', 'log_leave', 'raise_ticket', 'upload_doc'];
 
-export default function QuickActions() {
+interface Props {
+  flags?: Record<string, boolean>;
+}
+
+export default function QuickActions({ flags = {} }: Props) {
   const router = useRouter();
   const { prefs, updatePrefs } = useUserPreferences();
+  const locked = useLockedFeature();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
 
   const activeKeys = prefs.quick_actions?.length > 0 ? prefs.quick_actions : DEFAULT_ACTIONS;
-  const activeActions = activeKeys.map(k => ALL_ACTIONS[k]).filter(Boolean);
+  const activeActions = activeKeys
+    .map(k => ({ key: k, ...ALL_ACTIONS[k] }))
+    .filter(a => a.label !== undefined)
+    .map(a => ({ ...a, disabled: a.flag !== null && flags[a.flag] === false }));
 
   async function toggleAction(key: string) {
     const current = [...activeKeys];
@@ -52,11 +63,25 @@ export default function QuickActions() {
           {activeActions.map(action => (
             <button
               key={action.label}
-              onClick={() => { router.push(action.href); setOpen(false); }}
+              onClick={() => {
+                if (action.disabled) {
+                  locked.show(action.label);
+                } else {
+                  router.push(action.href);
+                }
+                setOpen(false);
+              }}
               className="flex items-center gap-2.5 pl-4 pr-5 py-2.5 rounded-xl shadow-lg text-sm font-medium transition-all hover:scale-[1.02]"
-              style={{ background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--line)' }}
+              style={{
+                background: 'var(--surface)',
+                color: action.disabled ? 'var(--ink-faint)' : 'var(--ink)',
+                border: '1px solid var(--line)',
+                opacity: action.disabled ? 0.6 : 1,
+              }}
             >
-              <action.icon size={15} style={{ color: action.color }} />
+              {action.disabled
+                ? <Lock size={13} style={{ color: 'var(--ink-faint)' }} />
+                : <action.icon size={15} style={{ color: action.color }} />}
               {action.label}
             </button>
           ))}

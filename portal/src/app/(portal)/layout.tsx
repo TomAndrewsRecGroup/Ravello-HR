@@ -4,7 +4,11 @@ import PortalShell from '@/components/layout/PortalShell';
 import { hasPaidFlag } from '@/lib/featureFlags';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, companyId, role, isTpsStaff, featureFlags, stripeSubscriptionId, archivedAt } = await getSessionProfile();
+  const {
+    user, profile, companyId, role, isTpsStaff, featureFlags,
+    stripeSubscriptionId, archivedAt,
+    accountManagerName, accountManagerEmail,
+  } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
@@ -78,6 +82,8 @@ export default async function PortalLayout({ children }: { children: React.React
       role={role}
       showBilling={showBilling}
       uiPreferences={uiPreferences}
+      accountManagerName={accountManagerName}
+      accountManagerEmail={accountManagerEmail}
     >
       {children}
     </PortalShell>
