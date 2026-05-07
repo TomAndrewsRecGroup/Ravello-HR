@@ -56,17 +56,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
+  // cv_storage_path is canonical (mig 062); cv_url retained for
+  // backward compat with existing readers.
   const { data: { publicUrl } } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
 
   const { data: row, error: updateError } = await supabase
     .from('athletes')
     .update({
-      cv_kind: 'file',
-      cv_url: publicUrl,
-      cv_filename: file.name,
-      cv_mime: file.type,
-      cv_text: null,
-      updated_at: new Date().toISOString(),
+      cv_kind:         'file',
+      cv_url:          publicUrl,   // legacy compat
+      cv_storage_path: path,        // canonical
+      cv_filename:     file.name,
+      cv_mime:         file.type,
+      cv_text:         null,
+      updated_at:      new Date().toISOString(),
     })
     .eq('id', athlete.id)
     .select('id, company_id, full_name, email, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at')
