@@ -1,3 +1,4 @@
+import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
@@ -53,7 +54,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const inviteToken   = crypto.randomUUID();
   const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const portalUrl = portalUrlFromEnv();
   const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
 
   const result = await sendEmail(userInvitedEmail({

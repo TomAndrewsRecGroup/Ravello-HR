@@ -1,3 +1,4 @@
+import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
   // rely on Supabase's native invite email (which embedded a
   // short-lived token). The link goes to /auth/activate which
   // validates the 7-day token and generates a fresh magic link.
-  const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const portalUrl = portalUrlFromEnv();
   const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
 
   const emailResult = await sendEmail(userInvitedEmail({

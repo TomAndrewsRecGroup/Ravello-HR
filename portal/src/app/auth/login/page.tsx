@@ -7,14 +7,26 @@ export const metadata: Metadata = { title: 'Sign In' };
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
 const REASON_MESSAGES: Record<string, { tone: 'info' | 'warn'; text: string }> = {
-  archived:    { tone: 'warn', text: 'This client portal has been archived. Contact The People System if you believe this is in error.' },
-  'no-profile':{ tone: 'info', text: 'We could not find your profile. Please sign in again or contact The People System.' },
-  'no-session':{ tone: 'info', text: 'Your session expired. Please sign in again.' },
+  archived:     { tone: 'warn', text: 'This client portal has been archived. Contact The People System if you believe this is in error.' },
+  'no-profile': { tone: 'info', text: 'We could not find your profile. Please sign in again or contact The People System.' },
+  'no-session': { tone: 'info', text: 'Your session expired. Please sign in again.' },
+  // 'error' is set by /auth/activate when something goes wrong on
+  // the password-set redirect. Most common: 'config' (server is
+  // missing SUPABASE_SERVICE_ROLE_KEY, e.g. someone hit a stray
+  // www. subdomain that wasn't configured). Tell the user to ask
+  // for a fresh link rather than 'log in', because they can't.
+  config:       { tone: 'warn', text: 'This invitation link was sent before your portal was fully configured. Please ask The People System to send you a fresh activation link.' },
+  invalid:      { tone: 'warn', text: 'This invitation link has already been used or is no longer valid. Please ask The People System to send you a fresh activation link.' },
+  expired:      { tone: 'warn', text: 'This invitation link has expired. Please ask The People System to send you a fresh activation link.' },
+  link:         { tone: 'warn', text: 'We could not generate your sign-in link. Please ask The People System to resend your invitation.' },
 };
 
-export default function LoginPage({ searchParams }: { searchParams?: { reason?: string } }) {
-  const reason  = searchParams?.reason ?? '';
-  const message = REASON_MESSAGES[reason];
+export default function LoginPage({ searchParams }: { searchParams?: { reason?: string; error?: string } }) {
+  // Activate failures land here as ?error=config|invalid|expired|link.
+  // Layout-driven redirects use ?reason=archived|no-session|...  We
+  // accept either so neither flow shows a blank page.
+  const code    = (searchParams?.reason ?? searchParams?.error ?? '').toString();
+  const message = REASON_MESSAGES[code];
 
   return (
     <div

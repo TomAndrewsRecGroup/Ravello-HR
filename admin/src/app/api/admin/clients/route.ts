@@ -164,18 +164,14 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Welcome email — fire-and-forget. If the contact_email is missing or
-  // Resend isn't configured, sendEmail() logs and returns null without
-  // throwing, so the API response is unaffected.
-  if (body.contact_email) {
-    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
-    await sendEmail(clientWelcomeEmail({
-      to:             body.contact_email,
-      companyName:    name,
-      portalUrl,
-      hasPaidModules: paidEnabled,
-    }));
-  }
+  // The 'welcome to the portal' email used to fire here too. Removed
+  // because the OnboardWizard separately POSTs to /api/invite, which
+  // sends the branded 'you have been invited' email containing the
+  // /auth/activate link the new admin actually needs to set their
+  // password. Sending the welcome email here gave clients TWO emails
+  // (welcome + invite) and the welcome one pointed at the portal
+  // homepage with no token, so it was a dead end. Single email now,
+  // with a working password-set link.
 
   // Bust every page-level cache that surfaces this new client.
   // Without these, the fresh row doesn't appear on /clients,

@@ -36,15 +36,32 @@ export default async function ActivatePage({ searchParams }: Props) {
     redirect('/auth/accept-invite?error=missing');
   }
 
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const portalUrl  = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Strip leading 'www.' so admin emails minted with a misformatted
+  // NEXT_PUBLIC_PORTAL_URL still redirect through the canonical host
+  // — otherwise we end up bouncing to www.portal.…/auth/login?error=
+  // config when the wrong subdomain has missing env vars.
+  const rawPortal   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const portalUrl   = (() => {
+    try {
+      const u = new URL(rawPortal.trim().replace(/\/+$/, ''));
+      if (u.hostname.startsWith('www.')) u.hostname = u.hostname.slice(4);
+      return u.toString().replace(/\/+$/, '');
+    } catch { return 'https://portal.thepeoplesystem.co.uk'; }
+  })();
 
-  if (!serviceKey) {
+  if (!serviceKey || !supabaseUrl) {
+    console.error('[activate] env missing', {
+      hasServiceKey: !!serviceKey,
+      hasSupabaseUrl: !!supabaseUrl,
+      host:           supabaseUrl ? new URL(supabaseUrl).hostname : null,
+    });
     redirect('/auth/login?error=config');
   }
 
   const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     serviceKey,
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
