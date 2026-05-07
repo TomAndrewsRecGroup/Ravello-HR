@@ -42,6 +42,9 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  // Logo file held client-side until the row exists; uploaded after
+  // create/update via /api/admin/logos.
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -88,10 +91,13 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
     setEditing(p.id);
     setError('');
   }
-  function cancel() { setEditing(null); setError(''); }
+  function cancel() { setEditing(null); setError(''); setLogoFile(null); }
 
   async function save() {
     if (!draft.provider_name.trim()) { setError('Provider name is required.'); return; }
+    if (logoFile && logoFile.size > 2 * 1024 * 1024) {
+      setError('Logo file exceeds 2 MB limit.'); return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -112,7 +118,24 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Save failed');
+
+      const targetId = isNew ? json.id : editing!;
+      if (logoFile && targetId) {
+        const fd = new FormData();
+        fd.set('kind',     'training_provider');
+        fd.set('targetId', targetId);
+        fd.set('file',     logoFile);
+        const upRes = await fetch('/api/admin/logos', { method: 'POST', body: fd });
+        if (!upRes.ok) {
+          const upJson = await upRes.json().catch(() => ({}));
+          setError(`Provider saved but logo upload failed: ${upJson.error ?? upRes.statusText}. Use the Logo controls on the provider's card to retry.`);
+          refresh();
+          return;
+        }
+      }
+
       setEditing(null);
+      setLogoFile(null);
       refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -217,6 +240,33 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
                      onChange={e => setDraft({ ...draft, website: e.target.value })}
                      placeholder="provider.com" />
             </div>
+          </div>
+
+          <div>
+            <p className="label">Logo (optional)</p>
+            <label
+              className="block rounded-[10px] p-3 text-center cursor-pointer hover:bg-[var(--surface-alt)]"
+              style={{ border: '1.5px dashed var(--line)' }}
+            >
+              {logoFile
+                ? <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{logoFile.name}</span>
+                : <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>Click to choose a logo image</span>}
+              <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+                PNG / JPG / WEBP / SVG · 2 MB max
+              </p>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={e => setLogoFile(e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+            </label>
+            {logoFile && (
+              <button type="button" onClick={() => setLogoFile(null)}
+                      className="btn-ghost btn-sm mt-1" style={{ fontSize: 11 }}>
+                Clear
+              </button>
+            )}
           </div>
 
           <div>
