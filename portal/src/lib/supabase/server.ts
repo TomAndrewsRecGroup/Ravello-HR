@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { PORTAL_SESSION_COOKIE, verifyPortalSession } from '@/lib/auth/portalSession';
 
 export function createServerSupabaseClient() {
   const cookieStore = cookies();
@@ -49,7 +50,7 @@ export function createServerSupabaseClient() {
  */
 export const getSessionProfile = cache(async () => {
   const cookieStore = cookies();
-  const raw = cookieStore.get('tps_portal_session')?.value;
+  const raw = cookieStore.get(PORTAL_SESSION_COOKIE)?.value;
 
   const empty = {
     user: null, profile: null,
@@ -63,11 +64,15 @@ export const getSessionProfile = cache(async () => {
 
   if (!raw) return empty;
 
-  let session: any;
-  try {
-    session = JSON.parse(raw);
-  } catch (err) {
-    console.error('[getSessionProfile] Failed to parse session cookie:', err instanceof Error ? err.message : 'unknown error');
+  // CRITICAL: verifyPortalSession() returns null on a tampered cookie,
+  // a missing PORTAL_SESSION_SECRET env, or any malformed payload. We
+  // MUST NOT trust the JSON contents otherwise — claims like companyId
+  // and isTpsStaff would be attacker-controlled.
+  const session = await verifyPortalSession(raw);
+  if (!session) {
+    if (raw && !process.env.PORTAL_SESSION_SECRET) {
+      console.error('[getSessionProfile] PORTAL_SESSION_SECRET missing — treating session as invalid');
+    }
     return empty;
   }
 

@@ -1,20 +1,18 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  PORTAL_SESSION_COOKIE, signPortalSession, verifyPortalSession,
+} from '@/lib/auth/portalSession';
 
 const PUBLIC_ROUTES = [
   /^\/auth\//,
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
-  // debug-session removed from public routes: now requires The People System staff auth
 ];
 
-const SESSION_COOKIE = 'tps_portal_session';
 // 15-minute TTL: feature-flag changes made in the admin portal won't
-// be visible to an active portal session until this cookie expires or
-// the user triggers a fresh auth (sign-out / sign-in). This is a
-// deliberate trade-off — a Supabase round-trip on every request is too
-// expensive at scale. If you need near-instant propagation, add a
-// server action that deletes the cookie and forces a re-stamp.
+// be visible to an active portal session until this cookie expires
+// or the user triggers a fresh auth (sign-out / sign-in).
 const SESSION_TTL = 60 * 15;
 
 export async function updateSession(request: NextRequest) {
@@ -46,17 +44,18 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
 
-  // Check for cached session cookie: if valid, skip auth
-  const cachedSession = request.cookies.get(SESSION_COOKIE)?.value;
-  if (cachedSession && !isPublicRoute) {
-    try {
-      const parsed = JSON.parse(cachedSession);
-      // Allow tps_staff through even without companyId (they can browse all clients)
-      if (parsed.userId && (parsed.companyId || parsed.isTpsStaff)) {
-        return supabaseResponse;
-      }
-    } catch {}
-    // Cookie exists but invalid: fall through to re-validate
+  // Cookie-fast-path. ONLY trusted when the HMAC signature verifies
+  // against PORTAL_SESSION_SECRET. A tampered (or unsigned-from-an-
+  // older-deploy) cookie returns null, and the request falls through
+  // to a real Supabase auth.getUser() + a freshly-signed cookie. If
+  // the env secret is missing, verifyPortalSession() always returns
+  // null — so we never silently downgrade to the old plaintext format.
+  const cachedSessionRaw = request.cookies.get(PORTAL_SESSION_COOKIE)?.value;
+  const cached = await verifyPortalSession(cachedSessionRaw);
+  if (cached && !isPublicRoute) {
+    if (cached.userId && (cached.companyId || cached.isTpsStaff)) {
+      return supabaseResponse;
+    }
   }
 
   // Validate with Supabase (first load, or every 15 min when cookie expires)
@@ -72,8 +71,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Stamp session cookie with fresh data from DB: all queries in parallel
-  // Uses SECURITY DEFINER functions to bypass RLS (avoids circular dependency)
+  // Stamp signed session cookie with fresh data from DB.
   if (user && !isPublicRoute) {
     const [{ data: rpcRole, error: roleErr }, { data: profileRows, error: profErr }] = await Promise.all([
       supabase.rpc('get_my_role'),
@@ -87,13 +85,6 @@ export async function updateSession(request: NextRequest) {
     const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
     const companyId = profile?.company_id ?? '';
 
-    // Second parallel batch: feature flags (needs companyId from profile).
-    // Plus: bump companies.last_portal_login + login_count_30d so the
-    // admin Engagement page reflects when this client last signed in.
-    // The session cookie has a 15-min TTL, so this runs at most every
-    // ~15 min per active user — cheap. We use the service role via
-    // an RPC so RLS doesn't block the update (clients can't normally
-    // write to the companies row).
     let featureFlags: Record<string, boolean> = {};
     if (companyId && role !== 'tps_admin') {
       const [companyRes] = await Promise.all([
@@ -109,22 +100,32 @@ export async function updateSession(request: NextRequest) {
 
     const sessionData = {
       userId: user.id,
-      email: user.email,
+      email: user.email ?? null,
       role,
       companyId,
       isTpsStaff: role === 'tps_admin',
       uiPreferences: (profile as any)?.ui_preferences ?? {},
       onboardingCompleted: (profile as any)?.onboarding_completed ?? true,
       featureFlags,
+      fullName: (profile as any)?.full_name ?? null,
     };
 
-    supabaseResponse.cookies.set(SESSION_COOKIE, JSON.stringify(sessionData), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: SESSION_TTL,
-      path: '/',
-    });
+    const signed = await signPortalSession(sessionData);
+    if (signed) {
+      supabaseResponse.cookies.set(PORTAL_SESSION_COOKIE, signed, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: SESSION_TTL,
+        path: '/',
+      });
+    } else {
+      // No PORTAL_SESSION_SECRET — clear any prior cookie so the next
+      // request also goes through real auth instead of trusting
+      // whatever stale unsigned value the browser still holds.
+      console.error('[auth] PORTAL_SESSION_SECRET missing — refusing to stamp unsigned session cookie');
+      supabaseResponse.cookies.set(PORTAL_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
+    }
   }
 
   // Authenticated on auth pages → redirect to dashboard
