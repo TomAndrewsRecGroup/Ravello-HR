@@ -55,7 +55,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const portalUrl = portalUrlFromEnv();
-  const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
+  const activateUrl = `${portalUrl}/auth/set-password?token=${inviteToken}`;
 
   const result = await sendEmail(userInvitedEmail({
     to:          profile.email,

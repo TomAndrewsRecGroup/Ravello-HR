@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
   // short-lived token). The link goes to /auth/activate which
   // validates the 7-day token and generates a fresh magic link.
   const portalUrl = portalUrlFromEnv();
-  const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
+  const activateUrl = `${portalUrl}/auth/set-password?token=${inviteToken}`;
 
   const emailResult = await sendEmail(userInvitedEmail({
     to:          email,

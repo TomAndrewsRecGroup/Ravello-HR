@@ -6,6 +6,7 @@ import {
 
 const PUBLIC_ROUTES = [
   /^\/auth\//,
+  /^\/api\/auth\//,                  // /api/auth/set-password — first-time password creation, caller is not yet signed in
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
 ];
