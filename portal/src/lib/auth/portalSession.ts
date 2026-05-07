@@ -62,7 +62,11 @@ async function importKey(secret: string): Promise<CryptoKey> {
 
 async function hmac(secret: string, data: Uint8Array): Promise<Uint8Array> {
   const key = await importKey(secret);
-  const sig = await crypto.subtle.sign('HMAC', key, data);
+  // Cast through `BufferSource`: TS strict typings flag Uint8Array's
+  // underlying ArrayBufferLike as 'maybe SharedArrayBuffer' which is
+  // not assignable to BufferSource. The runtime contract is fine —
+  // crypto.subtle.sign accepts any TypedArray.
+  const sig = await crypto.subtle.sign('HMAC', key, data as unknown as BufferSource);
   return new Uint8Array(sig);
 }
 

@@ -33,12 +33,16 @@ interface WindowEntry {
 export function createRateLimiter({ windowMs, max }: RateLimiterOptions) {
   const store = new Map<string, WindowEntry>();
 
-  // Periodically clean up expired entries to prevent memory leaks
+  // Periodically clean up expired entries to prevent memory leaks.
+  // Map.forEach instead of `for…of` so the marketing tsconfig
+  // (target=es5, no downlevelIteration) compiles. The portal+admin
+  // copies of this file use for-of because their tsconfigs target
+  // ES2015+.
   const cleanup = setInterval(() => {
     const now = Date.now();
-    for (const [key, entry] of store) {
+    store.forEach((entry, key) => {
       if (now >= entry.resetAt) store.delete(key);
-    }
+    });
   }, windowMs * 2);
 
   // Allow garbage collection of the interval if this module is unloaded
