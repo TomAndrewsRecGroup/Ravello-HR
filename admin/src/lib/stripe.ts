@@ -14,6 +14,14 @@ import Stripe from 'stripe';
 
 const RETAINER_PRODUCT_NAME = 'The People System Monthly Retainer';
 
+// Legal entity that issues every invoice. The Stripe account itself is
+// owned by Andrews Recruitment Group Limited; "The People System" is the
+// trading name. We surface this on every invoice (retainer + one-off)
+// via the customer's invoice_settings.footer so it shows on the PDF
+// regardless of who creates the invoice.
+const INVOICE_LEGAL_FOOTER =
+  'Andrews Recruitment Group Limited t/a The People System';
+
 let _stripe: Stripe | null = null;
 function client(): Stripe {
   if (_stripe) return _stripe;
@@ -84,6 +92,10 @@ export async function createCustomer(args: CreateCustomerArgs): Promise<string> 
     // Tag with our company UUID so webhook handlers can resolve the
     // local row without a separate lookup.
     metadata: { tps_company_id: args.metadataCompanyId },
+    // Legal-entity footer applied to every invoice for this customer
+    // (retainer + one-off). Stripe inherits invoice_settings.footer
+    // onto each generated invoice unless overridden.
+    invoice_settings: { footer: INVOICE_LEGAL_FOOTER },
   });
   return customer.id;
 }
@@ -291,7 +303,13 @@ export async function raiseOneOffInvoice(
   const sb = client();
 
   if (args.syncCustomerEmail !== false) {
-    await sb.customers.update(args.customerId, { email: args.recipientEmail });
+    await sb.customers.update(args.customerId, {
+      email: args.recipientEmail,
+      // Backfill the legal-entity footer on customers that pre-date
+      // the invoice_settings.footer change, so older clients get the
+      // trading-name line on this invoice and all future ones.
+      invoice_settings: { footer: INVOICE_LEGAL_FOOTER },
+    });
   }
 
   const taxRateId = await getVatTaxRateId();
@@ -311,6 +329,7 @@ export async function raiseOneOffInvoice(
     pending_invoice_items_behavior: 'include',
     auto_advance:      false,
     description:       `${args.packageLabel} — ${args.description}`,
+    footer:            INVOICE_LEGAL_FOOTER,
     custom_fields: [
       { name: 'Invoice date',    value: args.invoiceDate.toISOString().slice(0, 10) },
       { name: 'Payment terms',   value: `${args.paymentTermsDays} days` },
