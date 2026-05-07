@@ -157,6 +157,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   });
 
   revalidateTag(`client:${companyId}`);
+  revalidateTag('companies-active');
   revalidatePath('/clients');
   revalidatePath('/users');
   revalidatePath('/dashboard');
