@@ -50,7 +50,7 @@ export async function fetchHtml(
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new Error('Only http(s) URLs are supported');
   }
-  await assertPublicHost(parsed.hostname);
+  await assertPublicHost(parsed.hostname, parsed.port ? Number(parsed.port) : undefined, parsed.protocol);
 
   const res = await fetch(pageUrl, {
     signal: AbortSignal.timeout(15_000),
