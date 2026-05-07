@@ -49,48 +49,64 @@ export default async function ActivatePage({ searchParams }: Props) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // ── Validate the invite token ──────────────────────────────────
-  const { data: profile } = await adminClient
+  // ── Atomic consume (CAS) ───────────────────────────────────────
+  // Single UPDATE … WHERE invite_token = $token AND expires > now()
+  // RETURNING. If two tabs / a double-click hit this page in parallel,
+  // exactly one wins the row update; the other gets an empty result
+  // and is redirected to accept-invite?error=invalid. This is what
+  // guarantees the token is single-use under contention — the
+  // previous SELECT-then-UPDATE flow let two parallel requests both
+  // mint a fresh magic link and both consume.
+  const nowIso = new Date().toISOString();
+  const { data: claimed, error: claimErr } = await adminClient
     .from('profiles')
-    .select('id, email, invite_token_expires_at')
+    .update({ invite_token: null, invite_token_expires_at: null })
     .eq('invite_token', token)
+    .gt('invite_token_expires_at', nowIso)
+    .select('id, email')
     .maybeSingle();
 
-  if (!profile) {
-    // Token not found (never existed, already used, or tampered).
+  if (claimErr) {
+    console.error('[activate] CAS update failed', claimErr.message);
+    redirect('/auth/accept-invite?error=link');
+  }
+  if (!claimed) {
+    // Either the token was never valid, has already been consumed,
+    // or has expired. We can disambiguate by reading the row by
+    // token (NULL after consume so this returns nothing for the
+    // race-loser AND for already-used tokens) — for the operator,
+    // both cases collapse to 'invalid'. Expired vs invalid is
+    // surfaced via a second targeted lookup before we redirect.
+    const { data: maybeExpired } = await adminClient
+      .from('profiles')
+      .select('invite_token_expires_at')
+      .eq('invite_token', token)
+      .maybeSingle();
+    if (maybeExpired) {
+      redirect('/auth/accept-invite?error=expired');
+    }
     redirect('/auth/accept-invite?error=invalid');
   }
 
-  if (!profile.invite_token_expires_at || new Date(profile.invite_token_expires_at) < new Date()) {
-    redirect('/auth/accept-invite?error=expired');
-  }
-
   // ── Generate a fresh Supabase magic link ───────────────────────
-  // Do this BEFORE clearing the token so that if generateLink fails
-  // the user can retry (the token is still valid).
-  // Magic-link for invites and password resets alike — both flows
-  // land on /auth/update-password where the user sets a password.
-  // Only the 'invite' flow shows the welcome banner.
+  // Token is already consumed at this point; if generateLink errors
+  // the recipient will see 'invalid' and need a new link from admin.
+  // We accept that small operator-burden trade-off in exchange for
+  // not having a re-issuable token across a network blip.
   const redirectTo = purpose === 'reset'
     ? `${portalUrl}/auth/update-password`
     : `${portalUrl}/auth/update-password?welcome=1`;
 
   const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type:  purpose === 'reset' ? 'recovery' : 'magiclink',
-    email: profile.email,
+    email: claimed.email,
     options: { redirectTo },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
-    console.error('[activate] generateLink failed', linkError?.message);
+    console.error('[activate] generateLink failed AFTER token consume', linkError?.message);
     redirect('/auth/accept-invite?error=link');
   }
-
-  // ── Consume the token (one-time use) ──────────────────────────
-  await adminClient
-    .from('profiles')
-    .update({ invite_token: null, invite_token_expires_at: null })
-    .eq('id', profile.id);
 
   // ── Redirect through the fresh Supabase magic link ─────────────
   // The action_link is a Supabase verify URL that will exchange for
