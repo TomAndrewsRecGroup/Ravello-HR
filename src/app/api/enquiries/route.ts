@@ -39,23 +39,46 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent') ?? null;
 
   const supabase = getSupabase();
-  if (supabase) {
-    const { error } = await supabase.from('enquiries').insert({
-      full_name:    fullName,
-      email,
-      phone,
-      company_name: companyName,
-      source,
-      result:       result ?? {},
-      user_agent:   userAgent,
-    });
-    if (error) {
-      console.error('[enquiries] insert failed:', error.message);
-    }
+  if (!supabase) {
+    // Hard fail: without a DB we'd lose the lead silently. Mis-config
+    // beats appearing-to-succeed.
+    console.error('[enquiries] Supabase env not configured');
+    return NextResponse.json({
+      ok:    false,
+      error: 'Service temporarily unavailable. Please try again or email us directly.',
+    }, { status: 503 });
   }
 
-  // Send branded results email to the visitor + notification to TPS.
+  const { error: dbErr } = await supabase.from('enquiries').insert({
+    full_name:    fullName,
+    email,
+    phone,
+    company_name: companyName,
+    source,
+    result:       result ?? {},
+    user_agent:   userAgent,
+  });
+
+  if (dbErr) {
+    // Persistence is the contract — without it the lead is lost.
+    // Return non-200 so the visitor knows to retry rather than seeing
+    // a green 'thanks' state for a submission that was dropped.
+    console.error('[enquiries] insert failed:', dbErr.message);
+    return NextResponse.json({
+      ok:    false,
+      error: 'We could not record your details. Please try again — or email info@thepeoplesystem.co.uk.',
+    }, { status: 500 });
+  }
+
+  // Emails are a side-effect: Promise.allSettled so one failure
+  // doesn't drop the other, and we surface partial success to the
+  // caller. The lead is already saved at this point so the API
+  // remains 200 even when the visitor email fails — the operator
+  // sees the row in /enquiries and can follow up manually.
   const resendKey = process.env.RESEND_API_KEY;
+  let visitorEmail: 'sent' | 'failed' | 'skipped' = 'skipped';
+  let adminEmail:   'sent' | 'failed' | 'skipped' = 'skipped';
+
   if (resendKey) {
     try {
       const { Resend } = await import('resend');
@@ -66,14 +89,24 @@ export async function POST(req: NextRequest) {
       const visitor = buildEnquiryEmail({ fullName, source: source as EnquirySource, result });
       const admin   = buildAdminNotification({ fullName, email, phone, companyName, source: source as EnquirySource, result });
 
-      await Promise.all([
+      const [visRes, admRes] = await Promise.allSettled([
         resend.emails.send({ from, to: email,  subject: visitor.subject, html: visitor.html, reply_to: notify }),
         resend.emails.send({ from, to: notify, subject: admin.subject,   html: admin.html,   reply_to: email  }),
       ]);
+      visitorEmail = visRes.status === 'fulfilled' ? 'sent' : 'failed';
+      adminEmail   = admRes.status === 'fulfilled' ? 'sent' : 'failed';
+      if (visRes.status === 'rejected') console.error('[enquiries] visitor email rejected:', visRes.reason);
+      if (admRes.status === 'rejected') console.error('[enquiries] admin email rejected:',   admRes.reason);
     } catch (err) {
-      console.error('[enquiries] Resend send failed:', err);
+      console.error('[enquiries] Resend init failed:', err);
+      visitorEmail = 'failed';
+      adminEmail   = 'failed';
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    visitor_email: visitorEmail,
+    admin_email:   adminEmail,
+  });
 }
