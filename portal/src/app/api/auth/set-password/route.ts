@@ -40,11 +40,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Password too long.' }, { status: 400 });
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
+    console.error('[/api/auth/set-password] env missing', {
+      hasSupabaseUrl: !!url,
+      hasServiceKey:  !!key,
+    });
     return NextResponse.json({
-      error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY. Contact The People System.',
+      error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL on the portal Vercel project. Contact The People System.',
     }, { status: 500 });
   }
 

@@ -33,12 +33,19 @@ export default async function SetPasswordPage({ searchParams }: Props) {
   const token = searchParams.token?.trim();
   if (!token) redirect('/auth/login?error=invalid');
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    // Env mis-config — surface a clear error rather than a blank
-    // login page. Operator needs to set SUPABASE_SERVICE_ROLE_KEY
-    // on the portal Vercel project.
+    // Log which one is missing so the operator can spot the gap in
+    // Vercel function logs without exposing var status to the visitor.
+    console.error('[set-password] env missing', {
+      hasSupabaseUrl: !!url,
+      hasServiceKey:  !!key,
+      // Show the env keys we tried — helps diagnose typos
+      // (e.g. SUPABASE_SERVICE_KEY vs SUPABASE_SERVICE_ROLE_KEY).
+      tried_url_keys: ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL'],
+      tried_key_keys: ['SUPABASE_SERVICE_ROLE_KEY'],
+    });
     return <SetPasswordError reason="config" />;
   }
 
