@@ -1,11 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface Ctx { params: { id: string } }
 
 export async function POST(request: NextRequest, { params }: Ctx) {
+  const tooBig = assertBodySize(request, 64 * 1024);
+  if (tooBig) return tooBig;
+
   const { user, role, companyId } = await getSessionProfile();
   if (!user) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });

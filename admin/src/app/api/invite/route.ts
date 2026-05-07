@@ -6,8 +6,12 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 import { PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 export async function POST(request: NextRequest) {
+  const tooBig = assertBodySize(request, 64 * 1024);
+  if (tooBig) return tooBig;
+
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
@@ -44,35 +48,41 @@ export async function POST(request: NextRequest) {
   // ── Check if this email already has a profile (re-invite path). ──
   // We look in profiles rather than auth.users so we can use our own
   // indexed column and avoid a paginated admin.listUsers() scan.
-  const { data: existingProfile } = await adminClient
-    .from('profiles')
-    .select('id')
-    .eq('email', email.toLowerCase().trim())
-    .maybeSingle();
-
+  // Avoid the read-then-write race: try createUser first and treat
+  // 'already registered' as the re-invite path. Two parallel invites
+  // for the same email previously both saw existingProfile=null and
+  // both called createUser; one stranded an auth user with no profile.
+  const normalisedEmail = email.toLowerCase().trim();
   let userId: string;
 
-  if (existingProfile?.id) {
-    // Re-invite: user already exists in auth. We'll just regenerate
-    // their invite token so the new link works.
-    userId = existingProfile.id;
-  } else {
-    // New user: create the auth user silently (email_confirm=true so
-    // they don't get Supabase's own confirmation email, and the magic-
-    // link we generate later works without a separate confirmation step).
-    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-      email: email.toLowerCase().trim(),
-      email_confirm: true,
-      user_metadata: { company_id, role: safeRole },
-    });
+  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+    email:         normalisedEmail,
+    email_confirm: true,
+    user_metadata: { company_id, role: safeRole },
+  });
 
-    if (createError || !createData?.user) {
+  if (createData?.user) {
+    userId = createData.user.id;
+  } else {
+    // Likely 'A user with this email address has already been registered'.
+    // Fall back to looking up the existing profile by email — RLS lets
+    // service-role through and migration 063 guarantees uniqueness.
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('email', normalisedEmail)
+      .maybeSingle();
+
+    if (existingProfile?.id) {
+      userId = existingProfile.id;
+    } else {
+      // Auth says the user exists but profiles disagrees — surface
+      // the real createUser error rather than swallowing it silently.
       return NextResponse.json(
         { error: createError?.message ?? 'Could not create user.' },
         { status: 400 },
       );
     }
-    userId = createData.user.id;
   }
 
   // ── Generate a 7-day invite token and store it on the profile. ──

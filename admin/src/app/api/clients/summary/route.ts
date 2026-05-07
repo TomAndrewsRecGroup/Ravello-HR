@@ -10,7 +10,9 @@ import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;

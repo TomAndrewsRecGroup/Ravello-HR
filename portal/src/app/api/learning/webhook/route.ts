@@ -71,19 +71,42 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // ── Idempotency dedupe ──────────────────────────────────────
+  // Stripe retries deliveries on any non-2xx; without this guard a
+  // retry of charge.refunded would re-flip the row, and a retry of
+  // checkout.session.completed would re-update + miss our row-count
+  // assertion. The unique PK on stripe_events.id makes this race-
+  // safe — a parallel retry hitting before the first finishes will
+  // collide and we treat that as "already in flight".
+  if (event.id) {
+    const { error: dedupeErr } = await supabase
+      .from('stripe_events')
+      .insert({ id: event.id, type: event.type, payload: event });
+    if (dedupeErr) {
+      if ((dedupeErr as any).code === '23505') {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      console.error('[learning/webhook] dedupe insert failed:', dedupeErr.message);
+      return NextResponse.json({ error: 'Dedupe write failed' }, { status: 500 });
+    }
+  }
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { content_id, company_id, user_id } = session.metadata ?? {};
+    const { content_id, company_id } = session.metadata ?? {};
 
     if (!content_id || !company_id) {
       return NextResponse.json({ received: true });
     }
 
-    // Activate the purchase: configurable access window (default 7 days)
     const accessDays = parseInt(process.env.LEARNING_ACCESS_DAYS ?? '7', 10);
     const expiresAt = new Date(Date.now() + accessDays * 86400000).toISOString();
 
-    await supabase
+    // Use .select() so we can detect zero-row updates — if no pending
+    // row matched (checkout-route insert never landed, or metadata
+    // mis-tagged) we want to know rather than silently drop the
+    // activation.
+    const { data: updated, error: upErr } = await supabase
       .from('learning_purchases')
       .update({
         status:                'active',
@@ -91,7 +114,16 @@ export async function POST(req: NextRequest) {
         access_expires_at:     expiresAt,
         updated_at:            new Date().toISOString(),
       })
-      .eq('stripe_session_id', session.id);
+      .eq('stripe_session_id', session.id)
+      .select('id');
+
+    if (upErr) {
+      console.error('[learning/webhook] activation update failed:', upErr.message);
+      return NextResponse.json({ error: upErr.message }, { status: 500 });
+    }
+    if (!updated || updated.length === 0) {
+      console.error('[learning/webhook] no learning_purchases row for session', session.id);
+    }
   }
 
   if (event.type === 'charge.refunded') {
@@ -99,10 +131,18 @@ export async function POST(req: NextRequest) {
     const paymentIntent = charge.payment_intent;
 
     if (paymentIntent) {
-      await supabase
+      const { data: updated, error: upErr } = await supabase
         .from('learning_purchases')
         .update({ status: 'refunded', updated_at: new Date().toISOString() })
-        .eq('stripe_payment_intent', paymentIntent);
+        .eq('stripe_payment_intent', paymentIntent)
+        .select('id');
+      if (upErr) {
+        console.error('[learning/webhook] refund update failed:', upErr.message);
+        return NextResponse.json({ error: upErr.message }, { status: 500 });
+      }
+      if (!updated || updated.length === 0) {
+        console.error('[learning/webhook] no learning_purchases row for PI', paymentIntent);
+      }
     }
   }
 

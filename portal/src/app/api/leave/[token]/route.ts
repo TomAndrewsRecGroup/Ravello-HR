@@ -1,5 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
+import { randomBytes } from 'crypto';
+
+// Per-IP: 30 GETs / 5 POSTs per 5 minutes — tight enough that a bot
+// can't realistically enumerate the 32-hex-char token space, loose
+// enough that a real employee filling the form (then editing dates)
+// won't trip it.
+const ipGetLimiter  = createRateLimiter({ windowMs: 5 * 60_000, max: 30 });
+const ipPostLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 5  });
+
+// Per-token: a single employee link should only fire a handful of
+// pending submissions per window. After that, rotate the token via
+// regenerate-token so a leaked link can't be replayed indefinitely.
+const tokenPostLimiter = createRateLimiter({ windowMs: 60 * 60_000, max: 10 });
 
 // Public, token-authenticated leave-request flow.
 //
@@ -40,7 +54,11 @@ interface Ctx {
   params: { token: string };
 }
 
-export async function GET(_request: NextRequest, { params }: Ctx) {
+export async function GET(request: NextRequest, { params }: Ctx) {
+  const ipKey = getRateLimitKey(request);
+  if (!ipGetLimiter.check(ipKey).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
   const token = params.token;
   if (!TOKEN_RE.test(token)) {
     return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
@@ -75,9 +93,20 @@ export async function GET(_request: NextRequest, { params }: Ctx) {
 }
 
 export async function POST(request: NextRequest, { params }: Ctx) {
+  // Per-IP limit defends against random token guessing; per-token
+  // limit defends against replay/spam from a leaked or shared link.
+  const ipKey = getRateLimitKey(request);
+  if (!ipPostLimiter.check(ipKey).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
   const token = params.token;
   if (!TOKEN_RE.test(token)) {
     return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
+  }
+  if (!tokenPostLimiter.check(token).allowed) {
+    return NextResponse.json({
+      error: 'Too many submissions on this link recently. Ask your admin to issue a new one.',
+    }, { status: 429 });
   }
 
   let body: { absence_type?: string; start_date?: string; end_date?: string; reason?: string } = {};
@@ -142,6 +171,22 @@ export async function POST(request: NextRequest, { params }: Ctx) {
 
   if (insErr) {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
+  }
+
+  // Rotate the leave_token after every successful submission. The link
+  // the employee just used is now dead — a leaked URL on a forwarded
+  // text or screenshot can't be replayed to spam more pending requests.
+  // The admin/portal regen-token route is still available for issuing
+  // a fresh link to the same employee. We rotate post-insert so a DB
+  // failure doesn't double-burn the token.
+  try {
+    const fresh = randomBytes(16).toString('hex');
+    await sb.from('employee_records')
+      .update({ leave_token: fresh })
+      .eq('id', emp.id);
+  } catch (e) {
+    // Non-fatal: the request was already saved. Log and move on.
+    console.error('[leave] post-submit token rotate failed:', (e as Error).message);
   }
 
   return NextResponse.json({ success: true });

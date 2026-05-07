@@ -7,6 +7,12 @@ const withMDX = createMDX({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+  experimental: {
+    // Tree-shake lucide-react so each marketing page only ships the
+    // icons it actually imports. ~30KB shaved off the homepage
+    // bundle alone. admin/portal already do this.
+    optimizePackageImports: ['lucide-react'],
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },

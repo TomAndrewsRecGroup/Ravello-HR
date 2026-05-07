@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ivylensRequest, IVYLENS_TAGS } from '@/lib/ivylens';
 import { listCompanyTickets } from '@/lib/support/tickets';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 /** Strip HTML tags and script content to prevent stored XSS */
 function sanitize(input: string): string {
@@ -25,6 +26,9 @@ export async function GET() {
 
 // POST /api/support/tickets: create an IvyLens ticket
 export async function POST(req: NextRequest) {
+  const tooBig = assertBodySize(req, 256 * 1024);
+  if (tooBig) return tooBig;
+
   const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

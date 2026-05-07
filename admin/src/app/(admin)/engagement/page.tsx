@@ -11,13 +11,20 @@ export const revalidate = 60;
 export default async function EngagementPage() {
   const supabase = createServerSupabaseClient();
 
+  // Soft caps prevent the page from running out of memory once the
+  // dataset crosses 100K rows. Engagement is a portfolio rollup so
+  // older records age out of meaningful relevance — date-filtering
+  // would be cleaner; this is the bounded-cost interim.
   const [compRes, profileRes, reqRes, ticketRes, docRes, notesRes] = await Promise.all([
-    supabase.from('companies').select('id, slug, name, last_portal_login, login_count_30d').eq('active', true).order('name'),
-    supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin'),
-    supabase.from('requisitions').select('company_id, stage, created_at'),
-    supabase.from('tickets').select('company_id, status, created_at'),
-    supabase.from('documents').select('company_id', { count: 'exact', head: false }),
-    supabase.from('client_notes').select('company_id, created_at').order('created_at', { ascending: false }),
+    supabase.from('companies').select('id, slug, name, last_portal_login, login_count_30d').eq('active', true).order('name').limit(500),
+    supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin').limit(5000),
+    supabase.from('requisitions').select('company_id, stage, created_at').limit(5000),
+    supabase.from('tickets').select('company_id, status, created_at').limit(5000),
+    // Was selecting `company_id` AND requesting an exact count via
+    // head:false — got both rows AND the count, doubling work. We
+    // only need the count here; head:true is correct.
+    supabase.from('documents').select('company_id', { count: 'exact', head: true }),
+    supabase.from('client_notes').select('company_id, created_at').order('created_at', { ascending: false }).limit(5000),
   ]);
 
   const companies = compRes.data ?? [];

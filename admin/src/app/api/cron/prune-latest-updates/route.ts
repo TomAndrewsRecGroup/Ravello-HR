@@ -37,13 +37,32 @@ async function run(req: NextRequest) {
   const { data, error } = await supabase.rpc('prune_latest_updates', { p_max_age_days: days });
 
   if (error) {
+    // Loud structured log so the failed prune is visible in any
+    // log drain even though Vercel cron itself only sees the HTTP
+    // status. Auditing the success case as well so operators can
+    // see the deleted-count history without tailing function logs.
+    console.error(JSON.stringify({
+      _audit:   true,
+      action:   'cron.prune.failed',
+      cutoff_days: days,
+      error:    error.message,
+      ran_at:   new Date().toISOString(),
+    }));
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
-    ran_at:   new Date().toISOString(),
+  console.log(JSON.stringify({
+    _audit:    true,
+    action:    'cron.prune.ok',
     cutoff_days: days,
-    deleted:  data ?? 0,
+    deleted:   data ?? 0,
+    ran_at:    new Date().toISOString(),
+  }));
+
+  return NextResponse.json({
+    ran_at:      new Date().toISOString(),
+    cutoff_days: days,
+    deleted:     data ?? 0,
   });
 }
 

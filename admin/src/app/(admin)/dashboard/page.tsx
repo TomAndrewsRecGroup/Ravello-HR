@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Dashboard' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 30; // cache page for 30s: revalidates in background
 
 export default async function AdminDashboardPage() {

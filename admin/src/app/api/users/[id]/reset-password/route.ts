@@ -49,23 +49,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'User has no email on file' }, { status: 400 });
   }
 
-  // Mint a 7-day UUID token and store it on the profile. /auth/activate
-  // validates and consumes this token, then generates a fresh Supabase
-  // magic link at click time.
+  // Mint a candidate token but DON'T persist it until Resend has
+  // accepted the email. If we wrote first and the email failed,
+  // the previously-issued reset/invite link would already be dead
+  // even though the recipient never got the new one.
   const token   = crypto.randomUUID();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const { error: tokenErr } = await adminClient
-    .from('profiles')
-    .update({
-      invite_token:            token,
-      invite_token_expires_at: expires,
-    })
-    .eq('id', userId);
-
-  if (tokenErr) {
-    return NextResponse.json({ error: tokenErr.message }, { status: 500 });
-  }
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
   const resetUrl  = `${portalUrl}/auth/activate?token=${token}&purpose=reset`;
@@ -75,6 +64,31 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     fullName: profile.full_name ?? null,
     resetUrl,
   }));
+
+  // Persist the token only on confirmed Resend acceptance.
+  if (result) {
+    const { error: tokenErr } = await adminClient
+      .from('profiles')
+      .update({
+        invite_token:            token,
+        invite_token_expires_at: expires,
+      })
+      .eq('id', userId);
+    if (tokenErr) {
+      auditLog({
+        action:      'user.password_reset_sent',
+        actor_id:    auth.userId,
+        target_id:   userId,
+        target_type: 'profile',
+        metadata:    { email: profile.email, email_sent: true, token_persist_failed: true, db_error: tokenErr.message },
+      });
+      return NextResponse.json({
+        success:       false,
+        email_sent:    true,
+        email_warning: `Email sent but token write failed: ${tokenErr.message}. Recipient's link will fail; please retry.`,
+      }, { status: 500 });
+    }
+  }
 
   auditLog({
     action:      'user.password_reset_sent',
@@ -87,7 +101,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!result) {
     const last = lastEmailError();
     const reason = !process.env.RESEND_API_KEY
-      ? 'RESEND_API_KEY is not set on this Vercel project. The reset link was generated but no email was sent.'
+      ? 'RESEND_API_KEY is not set on this Vercel project. No email was sent and no token was rotated; the user can keep using their existing password.'
       : last
         ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
         : 'Resend rejected the send. Check the Vercel function logs for details.';

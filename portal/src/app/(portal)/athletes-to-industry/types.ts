@@ -1,12 +1,10 @@
 // Shared types for the Athletes To Industry channel.
-
-export interface RoleOpportunity {
-  id: string;
-  title: string;
-  description?: string | null;
-  location?: string | null;
-  url?: string | null;
-}
+// `RoleOpportunity` and `TrainingOffering` are re-exported from the
+// lib layer so the shape stays aligned with the admin app's validator.
+export type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
+export type { TrainingOffering } from '@/lib/training/offerings';
+import type { RoleOpportunity } from '@/lib/partners/roleOpportunities';
+import type { TrainingOffering } from '@/lib/training/offerings';
 
 export interface PartnerRow {
   id: string;
@@ -36,6 +34,7 @@ export interface AthleteRow {
   cv_mime: string | null;
   cv_text: string | null;
   created_at: string;
+  company_name?: string | null;
 }
 
 export type InterestStatus = 'interested' | 'introduced' | 'passed';
@@ -51,15 +50,6 @@ export interface InterestRow {
 }
 
 // ── Training & Workshops ─────────────────────────────────
-
-export interface TrainingOffering {
-  id: string;
-  title: string;
-  description?: string | null;
-  location?: string | null;
-  format?: string | null;
-  url?: string | null;
-}
 
 export interface TrainingProviderRow {
   id: string;

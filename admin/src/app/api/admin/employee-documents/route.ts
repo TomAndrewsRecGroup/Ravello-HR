@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Upload failed: ${upErr.message}` }, { status: 500 });
   }
 
+  // file_storage_path is the canonical reference (mig 062). file_url
+  // is retained for backward compat with existing readers but should
+  // not be used by new code — sign on demand via lib/storage/files.ts.
   const { data: pub } = sb.storage.from('documents').getPublicUrl(path);
   const file_url = pub?.publicUrl ?? null;
 
@@ -68,11 +71,12 @@ export async function POST(request: NextRequest) {
     company_id,
     employee_name,
     doc_type,
-    title:       title || file.name,
-    file_url,
-    file_size:   file.size,
+    title:             title || file.name,
+    file_url,           // legacy compat
+    file_storage_path: path,         // canonical
+    file_size:         file.size,
     expiry_date,
-    status:      'active',
+    status:            'active',
   }).select('id').single();
 
   if (insErr) {

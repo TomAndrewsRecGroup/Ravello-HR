@@ -12,13 +12,16 @@ export const revalidate = 30;
 export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
+  // CSV export builders preview the most recent 5K rows. The
+  // full-export download path can pull more later via a streaming
+  // route (TODO) — this caps the page render cost today.
   const [reportsRes, companiesRes, reqsRes, candsRes, compRes, ticketsRes] = await Promise.all([
     supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
-    supabase.from('companies').select('id,slug,name').eq('active', true).order('name'),
-    supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }),
-    supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }),
-    supabase.from('compliance_items').select('title,category,status,due_date,companies(name)').order('due_date'),
-    supabase.from('tickets').select('subject,status,priority,created_at,resolved_at,companies(name)').order('created_at', { ascending: false }),
+    supabase.from('companies').select('id,slug,name').eq('active', true).order('name').limit(500),
+    supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }).limit(5000),
+    supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }).limit(5000),
+    supabase.from('compliance_items').select('title,category,status,due_date,companies(name)').order('due_date').limit(5000),
+    supabase.from('tickets').select('subject,status,priority,created_at,resolved_at,companies(name)').order('created_at', { ascending: false }).limit(5000),
   ]);
 
   const reports   = reportsRes.data   ?? [];

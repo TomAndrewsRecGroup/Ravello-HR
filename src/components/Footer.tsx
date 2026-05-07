@@ -184,7 +184,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://www.portal.thepeoplesystem.co.uk"
+                  href="https://portal.thepeoplesystem.co.uk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="footer-link text-sm flex items-center gap-2"

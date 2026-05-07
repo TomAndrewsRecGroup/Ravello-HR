@@ -245,7 +245,7 @@ function BrowserWindow({ revealed }: { revealed: boolean }) {
           ))}
         </div>
         <div style={{ flex: 1, marginLeft: 10, padding: '6px 14px', borderRadius: 8, background: '#EDEEF5', border: '1px solid rgba(10,15,30,0.07)', fontSize: 11.5, fontWeight: 500, color: '#748099' }}>
-          www.portal.thepeoplesystem.co.uk
+          portal.thepeoplesystem.co.uk
         </div>
       </div>
 
@@ -376,7 +376,7 @@ export default function PortalShowcase() {
                 ))}
               </div>
               <div style={{ flex: 1, marginLeft: 8, padding: '5px 10px', borderRadius: 6, background: '#EDEEF5', fontSize: 10, fontWeight: 500, color: '#748099', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                www.portal.thepeoplesystem.co.uk
+                portal.thepeoplesystem.co.uk
               </div>
             </div>
 

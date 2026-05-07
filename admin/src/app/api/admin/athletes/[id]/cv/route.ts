@@ -61,17 +61,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
+  // cv_storage_path is the canonical reference (mig 062). cv_url is
+  // retained for backward compat with existing readers — only works
+  // while bucket stays private + caller authenticated. New readers
+  // should sign on demand via lib/storage/files.ts > signFileUrl().
   const { data: { publicUrl } } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
 
   const { error: updateError } = await supabase
     .from('athletes')
     .update({
-      cv_kind: 'file',
-      cv_url: publicUrl,
-      cv_filename: file.name,
-      cv_mime: file.type,
-      cv_text: null,
-      updated_at: new Date().toISOString(),
+      cv_kind:         'file',
+      cv_url:          publicUrl,   // legacy compat
+      cv_storage_path: path,        // canonical
+      cv_filename:     file.name,
+      cv_mime:         file.type,
+      cv_text:         null,
+      updated_at:      new Date().toISOString(),
     })
     .eq('id', athlete.id);
   if (updateError) {

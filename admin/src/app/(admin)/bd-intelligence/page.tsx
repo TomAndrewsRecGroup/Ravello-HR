@@ -6,23 +6,32 @@ import { Target } from 'lucide-react';
 import { ivylensRequest } from '@/lib/ivylens';
 
 export const metadata: Metadata = { title: 'BD Intelligence' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 60;
 
 export default async function BDIntelligencePage() {
   const supabase = createServerSupabaseClient();
 
   const [companiesRes, rolesRes, ivylensRes] = await Promise.all([
+    // 200 most-recently-seen prospect companies. Was 500 — operators
+    // act on the top of the list anyway, and 60% of the row weight
+    // is the friction_intel + ivylens_roles JSONB columns.
     supabase
       .from('bd_companies')
       .select('id,company_name,domain,company_location,status,total_roles_seen,last_seen_at,first_seen_at,friction_intel,ivylens_roles,notes')
       .order('last_seen_at', { ascending: false })
-      .limit(500),
+      .limit(200),
+    // 500 most-recent scraped roles. Was 2000 — the page only
+    // surfaces a per-company recent-roles preview, capped further
+    // client-side. Pulling 2000 over the wire on every render was
+    // the dominant cost of this page.
     supabase
       .from('bd_scanned_roles')
       .select('id,company_id,role_title,location,salary_min,salary_max,salary_text,source,source_board,source_url,scanned_at,still_active,working_model')
       .order('scanned_at', { ascending: false })
-      .limit(2000),
+      .limit(500),
     ivylensRequest('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
   ]);
 

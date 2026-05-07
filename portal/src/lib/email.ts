@@ -74,13 +74,20 @@ function htmlToText(html: string): string {
     .trim();
 }
 
+// Mirror of admin/src/lib/email/client.ts: callers can read this to
+// surface the actual Resend error string to the operator instead of
+// printing 'rejected' and forcing a Vercel-logs dive. Module-level
+// so concurrent invocations don't race.
+let lastSendError: { status: number; message: string; from: string } | null = null;
+export function lastEmailError() { return lastSendError; }
+
 export async function sendEmail(input: {
   to: string; subject: string; html: string; tag?: string;
-}): Promise<void> {
+}): Promise<{ id: string; delivered: true } | null> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn('[email] RESEND_API_KEY unset — skipping send', { subject: input.subject });
-    return;
+    return null;
   }
 
   const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
@@ -106,9 +113,21 @@ export async function sendEmail(input: {
     });
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
-      console.error('[email] Resend rejected send', { status: res.status, body: errBody });
+      let parsed = errBody;
+      try {
+        const j = JSON.parse(errBody);
+        parsed = j.message ?? j.error ?? errBody;
+      } catch { /* leave raw */ }
+      lastSendError = { status: res.status, message: parsed, from };
+      console.error('[email] Resend rejected send', { status: res.status, body: errBody, from });
+      return null;
     }
+    lastSendError = null;
+    const data = await res.json() as { id: string };
+    return { id: data.id, delivered: true };
   } catch (err: any) {
+    lastSendError = { status: 0, message: err?.message ?? 'Network error', from };
     console.error('[email] Resend transport failure', err?.message);
+    return null;
   }
 }

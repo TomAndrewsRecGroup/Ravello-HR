@@ -198,7 +198,7 @@ export default function Nav() {
 
             {/* Client Portal */}
             <a
-              href="https://www.portal.thepeoplesystem.co.uk"
+              href="https://portal.thepeoplesystem.co.uk"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-portal flex items-center gap-2 text-sm"
@@ -289,7 +289,7 @@ export default function Nav() {
             ))}
             <div className="my-3 brand-divider" />
             <a
-              href="https://www.portal.thepeoplesystem.co.uk"
+              href="https://portal.thepeoplesystem.co.uk"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium"

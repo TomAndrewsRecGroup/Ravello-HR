@@ -12,7 +12,9 @@ import { computeIvylensHealth, type IvylensHealth } from '@/lib/ivylens/health';
 export type { IvylensHealth };
 
 export const metadata: Metadata = { title: 'Health Status' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 30;
 
 export interface ClientHealth {

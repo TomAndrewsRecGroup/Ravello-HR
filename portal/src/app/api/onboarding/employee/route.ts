@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 // Inserts the first employee for a company during onboarding.
 // Lightweight payload (full_name + email + start_date + job_title) —
@@ -9,6 +10,9 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 // is no way for a client to seed an employee onto another company.
 
 export async function POST(request: NextRequest) {
+  const tooBig = assertBodySize(request, 64 * 1024);
+  if (tooBig) return tooBig;
+
   const { user, companyId } = await getSessionProfile();
   if (!user) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });

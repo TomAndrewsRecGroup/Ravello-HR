@@ -52,12 +52,21 @@ async function run(req: NextRequest) {
     { fetched: 0, inserted: 0, skipped: 0, errors: 0 },
   );
 
+  // Surface failure to Vercel cron monitoring: if every source threw
+  // (or > 50% of them did), return a non-2xx so Vercel shows the run
+  // as failed and we can alarm. 200 every time meant a fully-broken
+  // ingest stayed silent until someone noticed Latest Updates was
+  // stale on the marketing site.
+  const failureRatio = results.length > 0 ? totals.errors / results.length : 0;
+  const status = (results.length > 0 && failureRatio >= 0.5) ? 502 : 200;
+
   return NextResponse.json({
     sources: results.length,
     totals,
     results,
     ran_at: new Date().toISOString(),
-  });
+    status: status === 200 ? 'ok' : 'degraded',
+  }, { status });
 }
 
 export async function GET(req: NextRequest) { return run(req); }

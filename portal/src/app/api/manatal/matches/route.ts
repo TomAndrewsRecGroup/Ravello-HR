@@ -46,7 +46,12 @@ export async function GET(_req: NextRequest) {
         // Browser caches for 30s; CDN holds for 60s and serves stale-while-revalidate
         // up to 5 minutes. Mutations come through move-stage which busts via
         // router.refresh() on the client.
-        'Cache-Control': 'private, max-age=30, s-maxage=60, stale-while-revalidate=300',
+        // private + no-store for this CDN: per-tenant data must
+        // never be CDN-shared. The browser still keeps it for 30s
+        // (max-age) so back/forward + tab switches feel instant,
+        // but Vercel's edge cache won't serve company A's matches
+        // to company B. s-maxage was a tenant-leak risk.
+        'Cache-Control': 'private, max-age=30, no-store',
       },
     },
   );

@@ -1,6 +1,42 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
+import { PORTAL_SESSION_COOKIE, verifyPortalSession } from '@/lib/auth/portalSession';
+
+// Per-company "shell" row: name, logo, feature_flags, stripe sub id,
+// archived_at. Read on every authed page render — and previously
+// re-fetched on every render. Now memoised through unstable_cache
+// for 30s with a tag the admin app revalidates on feature-flag /
+// archive / billing mutations (see admin's revalidateTag('client:<id>')
+// callsites). 30s TTL is the worst-case latency for a flag toggle to
+// reach the portal — admin's tag-bust shortens that to ~immediate
+// when both projects share the same Vercel cache namespace.
+//
+// Service-role client used inside the cache because unstable_cache
+// callbacks don't carry the request's auth cookies. Safe here because:
+// (a) the calling getSessionProfile already verified the HMAC-signed
+// session cookie and has a trusted companyId; (b) we only return
+// the requester's own company shell — no cross-tenant exposure.
+function fetchCompanyShellCached(companyId: string) {
+  return unstable_cache(
+    async () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return null;
+      const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+      const { data } = await sb
+        .from('companies')
+        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at')
+        .eq('id', companyId)
+        .maybeSingle();
+      return data ?? null;
+    },
+    ['portal-company-shell', companyId],
+    { revalidate: 30, tags: [`client:${companyId}`] },
+  )();
+}
 
 export function createServerSupabaseClient() {
   const cookieStore = cookies();
@@ -49,7 +85,7 @@ export function createServerSupabaseClient() {
  */
 export const getSessionProfile = cache(async () => {
   const cookieStore = cookies();
-  const raw = cookieStore.get('tps_portal_session')?.value;
+  const raw = cookieStore.get(PORTAL_SESSION_COOKIE)?.value;
 
   const empty = {
     user: null, profile: null,
@@ -63,11 +99,15 @@ export const getSessionProfile = cache(async () => {
 
   if (!raw) return empty;
 
-  let session: any;
-  try {
-    session = JSON.parse(raw);
-  } catch (err) {
-    console.error('[getSessionProfile] Failed to parse session cookie:', err instanceof Error ? err.message : 'unknown error');
+  // CRITICAL: verifyPortalSession() returns null on a tampered cookie,
+  // a missing PORTAL_SESSION_SECRET env, or any malformed payload. We
+  // MUST NOT trust the JSON contents otherwise — claims like companyId
+  // and isTpsStaff would be attacker-controlled.
+  const session = await verifyPortalSession(raw);
+  if (!session) {
+    if (raw && !process.env.PORTAL_SESSION_SECRET) {
+      console.error('[getSessionProfile] PORTAL_SESSION_SECRET missing — treating session as invalid');
+    }
     return empty;
   }
 
@@ -89,20 +129,18 @@ export const getSessionProfile = cache(async () => {
 
   if (companyId) {
     try {
-      const supabase = createServerSupabaseClient();
-      const { data } = await supabase
-        .from('companies')
-        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at')
-        .eq('id', companyId)
-        .maybeSingle();
-      const row = (data as any) ?? {};
-      featureFlags = (row.feature_flags ?? {}) as Record<string, boolean>;
-      companyName  = row.name ?? null;
-      companyLogoUrl = row.logo_url ?? null;
-      stripeSubscriptionId = row.stripe_subscription_id ?? null;
-      archivedAt   = row.archived_at ?? null;
+      const row: any = await fetchCompanyShellCached(companyId);
+      if (row) {
+        featureFlags        = (row.feature_flags ?? {}) as Record<string, boolean>;
+        companyName         = row.name ?? null;
+        companyLogoUrl      = row.logo_url ?? null;
+        stripeSubscriptionId= row.stripe_subscription_id ?? null;
+        archivedAt          = row.archived_at ?? null;
+      } else {
+        featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
+      }
     } catch (err) {
-      console.warn('[getSessionProfile] live company read failed, using cookie fallback');
+      console.warn('[getSessionProfile] cached company shell read failed, using cookie fallback');
       featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
     }
   }

@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionProfile } from '@/lib/supabase/server';
-import { sendEmail, buildInviteEmail } from '@/lib/email';
+import { sendEmail, lastEmailError, buildInviteEmail } from '@/lib/email';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 const SEAT_CAP = 2;
 
@@ -12,6 +13,9 @@ const ROLE_LABELS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    const tooBig = assertBodySize(request, 64 * 1024);
+    if (tooBig) return tooBig;
+
     const { user, role, companyId } = await getSessionProfile();
 
   if (!user) {
@@ -75,33 +79,34 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   // ── Create or re-invite user ──────────────────────────────────
-  // Check if user already exists in profiles (re-invite path).
-  const { data: existingProfile } = await adminClient
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-
+  // Avoids the read-then-write race: try createUser first and fall
+  // back to a profiles lookup if Supabase says the address is taken.
+  // Migration 063 makes profiles.email case-insensitively unique so
+  // the fallback finds the right row deterministically.
   let userId: string;
 
-  if (existingProfile?.id) {
-    userId = existingProfile.id;
-  } else {
-    // New user: create silently (email_confirm=true so no Supabase email
-    // is sent and the magic link we generate on activation works immediately).
-    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { company_id: companyId, role: 'client_editor' },
-    });
+  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { company_id: companyId, role: 'client_editor' },
+  });
 
-    if (createError || !createData?.user) {
+  if (createData?.user) {
+    userId = createData.user.id;
+  } else {
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    if (existingProfile?.id) {
+      userId = existingProfile.id;
+    } else {
       return NextResponse.json(
         { error: createError?.message ?? 'Could not create user.' },
         { status: 400 },
       );
     }
-    userId = createData.user.id;
   }
 
   // ── Generate 7-day invite token ───────────────────────────────
@@ -124,14 +129,33 @@ export async function POST(request: NextRequest) {
   const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
   const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
 
-  await sendEmail(buildInviteEmail({
+  const emailResult = await sendEmail(buildInviteEmail({
     to:          email,
     companyName: companyRow?.name ?? 'your company',
     roleLabel:   ROLE_LABELS['client_editor'],
     activateUrl,
   }));
 
-    return NextResponse.json({ success: true, user_id: userId });
+    // Mirror the admin route's behaviour: surface email-send failures
+    // so the inviting client_admin can copy the activate_url to the
+    // recipient by hand if Resend rejected the send.
+    if (!emailResult) {
+      const last = lastEmailError();
+      const reason = !process.env.RESEND_API_KEY
+        ? 'RESEND_API_KEY is not set on this Vercel project. The user record was created but no email was sent.'
+        : last
+          ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
+          : 'Resend rejected the send. Check the Vercel function logs for details.';
+      return NextResponse.json({
+        success:        true,
+        user_id:        userId,
+        email_sent:     false,
+        email_warning:  reason,
+        activate_url:   activateUrl,
+      });
+    }
+
+    return NextResponse.json({ success: true, user_id: userId, email_sent: true });
   } catch (err) {
     console.error('[/api/portal/invite] unexpected error:', err);
     const message = err instanceof Error ? err.message : 'Unexpected server error';
