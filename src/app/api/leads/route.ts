@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
+
+// Per-IP cap so a script can't pound this endpoint to fill our
+// leads table or burn Resend quota. 20 submits per 5 minutes is
+// generous for a real visitor double-submitting forms.
+const leadsLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 20 });
 
 const LeadSchema = z.object({
   email: z.string().email('Valid email required'),
@@ -24,6 +30,9 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!leadsLimiter.check(getRateLimitKey(req)).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const parsed = LeadSchema.safeParse(body);
@@ -82,7 +91,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (err) {
+    console.error('[leads] unexpected error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

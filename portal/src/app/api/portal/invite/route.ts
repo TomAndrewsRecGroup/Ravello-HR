@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionProfile } from '@/lib/supabase/server';
-import { sendEmail, buildInviteEmail } from '@/lib/email';
+import { sendEmail, lastEmailError, buildInviteEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
 
 const SEAT_CAP = 2;
@@ -129,14 +129,33 @@ export async function POST(request: NextRequest) {
   const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
   const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
 
-  await sendEmail(buildInviteEmail({
+  const emailResult = await sendEmail(buildInviteEmail({
     to:          email,
     companyName: companyRow?.name ?? 'your company',
     roleLabel:   ROLE_LABELS['client_editor'],
     activateUrl,
   }));
 
-    return NextResponse.json({ success: true, user_id: userId });
+    // Mirror the admin route's behaviour: surface email-send failures
+    // so the inviting client_admin can copy the activate_url to the
+    // recipient by hand if Resend rejected the send.
+    if (!emailResult) {
+      const last = lastEmailError();
+      const reason = !process.env.RESEND_API_KEY
+        ? 'RESEND_API_KEY is not set on this Vercel project. The user record was created but no email was sent.'
+        : last
+          ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
+          : 'Resend rejected the send. Check the Vercel function logs for details.';
+      return NextResponse.json({
+        success:        true,
+        user_id:        userId,
+        email_sent:     false,
+        email_warning:  reason,
+        activate_url:   activateUrl,
+      });
+    }
+
+    return NextResponse.json({ success: true, user_id: userId, email_sent: true });
   } catch (err) {
     console.error('[/api/portal/invite] unexpected error:', err);
     const message = err instanceof Error ? err.message : 'Unexpected server error';

@@ -134,14 +134,19 @@ export default function AthletesClient({
 
       const newId = json.id ?? json.row?.id;
 
-      // Attach CV after creation, if one was provided.
+      // Attach CV after creation, if one was provided. If this step
+      // fails the athlete row is already saved — refresh the page to
+      // pick it up, then surface a retry instruction so the operator
+      // can re-attempt via the per-card Upload CV button instead of
+      // having to re-enter every field.
       if (newId && cvKindNew === 'file' && cvFileNew) {
         const fd = new FormData();
         fd.append('file', cvFileNew);
         const upRes = await fetch(`/api/admin/athletes/${newId}/cv`, { method: 'POST', body: fd });
         if (!upRes.ok) {
           const upJson = await upRes.json().catch(() => ({}));
-          throw new Error(`Athlete created but CV upload failed: ${upJson.error ?? upRes.statusText}`);
+          refresh();
+          throw new Error(`Athlete created but CV upload failed: ${upJson.error ?? upRes.statusText}. Click 'Upload CV' on the new athlete's card to retry.`);
         }
       } else if (newId && cvKindNew === 'text' && cvTextNew.trim()) {
         const tRes = await fetch(`/api/admin/athletes/${newId}`, {
@@ -151,7 +156,8 @@ export default function AthletesClient({
         });
         if (!tRes.ok) {
           const tJson = await tRes.json().catch(() => ({}));
-          throw new Error(`Athlete created but CV text save failed: ${tJson.error ?? tRes.statusText}`);
+          refresh();
+          throw new Error(`Athlete created but CV text save failed: ${tJson.error ?? tRes.statusText}. Use 'Replace' on the new athlete's card to retry.`);
         }
       }
 
