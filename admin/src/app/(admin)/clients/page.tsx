@@ -5,7 +5,9 @@ import { Plus } from 'lucide-react';
 import ClientsFetcher from './ClientsFetcher';
 
 export const metadata: Metadata = { title: 'Clients' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 60;
 
 // Shell-only server component. All list data now loads client-side from

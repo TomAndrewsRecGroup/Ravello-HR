@@ -9,7 +9,9 @@ import { User, ExternalLink } from 'lucide-react';
 
 import { CANDIDATE_CLIENT_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 export const metadata: Metadata = { title: 'Requisition Detail' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 30;
 
 const STAGE_BADGE: Record<string, string> = {

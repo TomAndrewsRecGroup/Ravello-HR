@@ -5,7 +5,9 @@ import HiringClient from './HiringClient';
 import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Hiring Overview' };
-export const runtime    = 'edge';
+// Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
+// AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
+// (transatlantic from a US edge node) to ~5ms per query.
 export const revalidate = 30;
 
 export default async function AdminHiringPage() {
