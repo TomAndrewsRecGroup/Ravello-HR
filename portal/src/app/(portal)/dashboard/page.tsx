@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
+import RaiseRoleButton from '@/components/layout/RaiseRoleButton';
 import FrictionAlert from '@/components/FrictionAlert';
 import {
   Briefcase, FolderOpen, LifeBuoy, AlertTriangle,
@@ -128,11 +129,7 @@ export default async function DashboardPage() {
       <Topbar
         title={`Good ${getGreeting()}, ${firstName}`}
         subtitle={companyName ?? ''}
-        actions={
-          <Link prefetch={false} href="/hire/hiring/new" className="btn-cta btn-sm">
-            + Raise a Role
-          </Link>
-        }
+        actions={<RaiseRoleButton hiringEnabled={flagsFromSession.hiring !== false} />}
       />
 
       <main className="portal-page flex-1">

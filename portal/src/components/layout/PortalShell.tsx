@@ -37,7 +37,7 @@ export default function PortalShell({
                 {children}
               </div>
             </div>
-            <QuickActions />
+            <QuickActions flags={flags} />
           </ToastProvider>
         </LockedFeatureProvider>
       </UserPreferencesProvider>

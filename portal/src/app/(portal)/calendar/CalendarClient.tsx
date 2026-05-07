@@ -95,6 +95,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showEventForm, setShowEventForm] = useState(false);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [leaveError,    setLeaveError]    = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Event form
@@ -186,7 +187,10 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
   }
 
   async function saveLeave() {
-    if (!leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date) return;
+    setLeaveError(null);
+    if (!leaveForm.employee_id) { setLeaveError('Pick the employee this leave is for.'); return; }
+    if (!leaveForm.start_date || !leaveForm.end_date) { setLeaveError('Both dates are required.'); return; }
+    if (leaveForm.start_date > leaveForm.end_date) { setLeaveError('Start date must be on or before the end date.'); return; }
     setSaving(true);
     const { data, error } = await supabase
       .from('leave_records')
@@ -202,12 +206,22 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       })
       .select('*, employee_records(full_name, job_title)')
       .single();
-    if (!error && data) {
-      setLeave(prev => [...prev, data as LeaveRecord]);
-      setShowLeaveForm(false);
-      setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
-      revalidatePortalPath('/calendar');
+    if (error || !data) {
+      // Surface the actual error rather than silently keeping the form
+      // open. Most common: RLS denial when the caller isn't a
+      // client_admin (only Admins can log leave for the whole company).
+      const msg = error?.message ?? 'Could not save leave';
+      const friendly = /policy|permission|denied|rls|new row violates/i.test(msg)
+        ? 'Only the company Admin can log leave directly here. Ask your admin, or use the personal leave link they emailed you.'
+        : msg;
+      setLeaveError(friendly);
+      setSaving(false);
+      return;
     }
+    setLeave(prev => [...prev, data as LeaveRecord]);
+    setShowLeaveForm(false);
+    setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
+    revalidatePortalPath('/calendar');
     setSaving(false);
   }
 
@@ -240,16 +254,22 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
           </h2>
           <button onClick={nextMonth} className="btn-icon"><ChevronRight size={18} /></button>
         </div>
-        {isAdmin && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {/* Company Event remains admin-only — it adds a closed/bank-
+              holiday entry that affects everyone in the company. */}
+          {isAdmin && (
             <button onClick={() => openEventForm(selectedDate ?? undefined)} className="btn-secondary btn-sm">
               <Plus size={13} /> Company Event
             </button>
-            <button onClick={() => openLeaveForm(selectedDate ?? undefined)} className="btn-cta btn-sm">
-              <Plus size={13} /> Log Leave
-            </button>
-          </div>
-        )}
+          )}
+          {/* Log Leave shown to every user. RLS still enforces that
+              only client_admin can write — but non-admins now see a
+              clear 'ask your admin' message rather than a hidden
+              button + silent failure. */}
+          <button onClick={() => openLeaveForm(selectedDate ?? undefined)} className="btn-cta btn-sm">
+            <Plus size={13} /> Log Leave
+          </button>
+        </div>
       </div>
 
       {/* Legend */}
@@ -522,8 +542,16 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                 <textarea className="input" rows={2} value={leaveForm.notes} onChange={e => setLeaveForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
+            {leaveError && (
+              <div
+                className="rounded-[10px] px-3 py-2 mt-4 text-xs"
+                style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.20)', color: '#92400E' }}
+              >
+                {leaveError}
+              </div>
+            )}
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowLeaveForm(false)} className="btn-secondary btn-sm">Cancel</button>
+              <button onClick={() => { setShowLeaveForm(false); setLeaveError(null); }} className="btn-secondary btn-sm">Cancel</button>
               <button onClick={saveLeave} disabled={saving || !leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date} className="btn-cta btn-sm">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : null} Log Leave
               </button>
