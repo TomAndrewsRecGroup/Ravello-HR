@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionProfile } from '@/lib/supabase/server';
 import { sendEmail, buildInviteEmail } from '@/lib/email';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 const SEAT_CAP = 2;
 
@@ -12,6 +13,9 @@ const ROLE_LABELS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    const tooBig = assertBodySize(request, 64 * 1024);
+    if (tooBig) return tooBig;
+
     const { user, role, companyId } = await getSessionProfile();
 
   if (!user) {
@@ -75,33 +79,34 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   // ── Create or re-invite user ──────────────────────────────────
-  // Check if user already exists in profiles (re-invite path).
-  const { data: existingProfile } = await adminClient
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-
+  // Avoids the read-then-write race: try createUser first and fall
+  // back to a profiles lookup if Supabase says the address is taken.
+  // Migration 063 makes profiles.email case-insensitively unique so
+  // the fallback finds the right row deterministically.
   let userId: string;
 
-  if (existingProfile?.id) {
-    userId = existingProfile.id;
-  } else {
-    // New user: create silently (email_confirm=true so no Supabase email
-    // is sent and the magic link we generate on activation works immediately).
-    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { company_id: companyId, role: 'client_editor' },
-    });
+  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { company_id: companyId, role: 'client_editor' },
+  });
 
-    if (createError || !createData?.user) {
+  if (createData?.user) {
+    userId = createData.user.id;
+  } else {
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    if (existingProfile?.id) {
+      userId = existingProfile.id;
+    } else {
       return NextResponse.json(
         { error: createError?.message ?? 'Could not create user.' },
         { status: 400 },
       );
     }
-    userId = createData.user.id;
   }
 
   // ── Generate 7-day invite token ───────────────────────────────

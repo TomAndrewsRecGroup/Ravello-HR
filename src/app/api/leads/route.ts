@@ -11,6 +11,11 @@ const LeadSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+function escapeHtml(s: string | null | undefined): string {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function getSupabase() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
@@ -63,11 +68,11 @@ export async function POST(req: NextRequest) {
           subject: `New lead: ${email} (${source})`,
           html: `
             <h2>New lead captured</h2>
-            <p><strong>Email:</strong> ${email}</p>
-            ${name ? `<p><strong>Name:</strong> ${name}</p>` : ''}
-            ${company ? `<p><strong>Company:</strong> ${company}</p>` : ''}
-            <p><strong>Source:</strong> ${source}</p>
-            ${problemType ? `<p><strong>Problem type:</strong> ${problemType}</p>` : ''}
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            ${name ? `<p><strong>Name:</strong> ${escapeHtml(name)}</p>` : ''}
+            ${company ? `<p><strong>Company:</strong> ${escapeHtml(company)}</p>` : ''}
+            <p><strong>Source:</strong> ${escapeHtml(source)}</p>
+            ${problemType ? `<p><strong>Problem type:</strong> ${escapeHtml(problemType)}</p>` : ''}
             <p><strong>Time:</strong> ${new Date().toISOString()}</p>
           `,
         });

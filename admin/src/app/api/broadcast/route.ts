@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
 import { sendEmail, actionAssignedEmail } from '@/lib/email';
+import { assertBodySize } from '@/lib/http/bodySize';
 
 const PRIORITY_LABELS: Record<string, string> = {
   low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
@@ -22,6 +23,9 @@ function formatDueDate(iso: string | null | undefined): string | undefined {
 //         action_type: string, priority: string, due_date?: string }
 
 export async function POST(req: NextRequest) {
+  const tooBig = assertBodySize(req, 256 * 1024);
+  if (tooBig) return tooBig;
+
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
