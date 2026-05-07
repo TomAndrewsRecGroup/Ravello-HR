@@ -46,6 +46,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   });
 
   revalidateTag(`client:${companyId}`);
+  revalidateTag('companies-active');
   revalidatePath('/clients');
   revalidatePath(`/clients/${companyId}`);
 

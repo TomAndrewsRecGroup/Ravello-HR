@@ -1,3 +1,4 @@
+import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
@@ -188,7 +189,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     typeof stripeUpdate.stripe_subscription_id === 'string';
 
   if (isFirstTimeSetup && company.contact_email && newPence) {
-    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+    const portalUrl = portalUrlFromEnv();
     const retainerLabel = `£${(newPence / 100).toFixed(2)} / month`;
     await sendEmail(billingSetupEmail({
       to:            company.contact_email,

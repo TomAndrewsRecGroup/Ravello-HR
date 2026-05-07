@@ -1,3 +1,4 @@
+import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
   // only (not Editors) so the inbox-flood for a 50-company broadcast
   // stays manageable — the Action shows on the actions page for everyone.
   // sendEmail is fire-and-forget; failures don't block the API response.
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
+  const portalUrl = portalUrlFromEnv();
   const { data: recipients } = await supabase
     .from('profiles')
     .select('email, company_id, companies(name)')

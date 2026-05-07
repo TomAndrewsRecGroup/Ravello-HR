@@ -22,16 +22,29 @@ export function useClientSwitcher() {
   return useContext(ClientSwitcherContext);
 }
 
-export function ClientSwitcherProvider({ children }: { children: React.ReactNode }) {
-  const [companies, setCompanies] = useState<Company[]>([]);
+/**
+ * The provider accepts an optional `initialCompanies` server-prop so
+ * the dropdown's full list ships with the page HTML and the topbar
+ * has zero post-mount network calls. Falls back to the original
+ * client-side fetch when no prop is passed (e.g. legacy callers).
+ */
+export function ClientSwitcherProvider({
+  children,
+  initialCompanies,
+}: {
+  children: React.ReactNode;
+  initialCompanies?: Company[];
+}) {
+  const [companies, setCompanies] = useState<Company[]>(initialCompanies ?? []);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialCompanies && initialCompanies.length > 0) return;
     const supabase = createClient();
     supabase.from('companies').select('id, name').eq('active', true).order('name').then(({ data }) => {
       if (data) setCompanies(data);
     });
-  }, []);
+  }, [initialCompanies]);
 
   const selectedClientName = selectedClientId
     ? companies.find(c => c.id === selectedClientId)?.name ?? null

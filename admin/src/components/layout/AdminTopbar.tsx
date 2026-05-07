@@ -1,10 +1,16 @@
 'use client';
 import { Menu } from 'lucide-react';
-import NotificationBell from '@/components/modules/NotificationBell';
-import EnquiriesButton from '@/components/modules/EnquiriesButton';
-import GlobalSearch from '@/components/modules/GlobalSearch';
+import dynamic from 'next/dynamic';
 import { ClientSwitcherDropdown } from './ClientSwitcher';
 import { useMobileMenu } from './MobileMenuContext';
+
+// Lazy: GlobalSearch, EnquiriesButton, NotificationBell are non-
+// critical for first paint and each opens a Supabase realtime
+// channel on mount. Loading them after hydration shaves them out
+// of the initial JS bundle and keeps the topbar interactive faster.
+const GlobalSearch    = dynamic(() => import('@/components/modules/GlobalSearch'),    { ssr: false });
+const EnquiriesButton = dynamic(() => import('@/components/modules/EnquiriesButton'), { ssr: false });
+const NotificationBell = dynamic(() => import('@/components/modules/NotificationBell'), { ssr: false });
 
 interface Props { title: string; subtitle?: string; actions?: React.ReactNode; }
 
