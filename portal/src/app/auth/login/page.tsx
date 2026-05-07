@@ -15,10 +15,11 @@ const REASON_MESSAGES: Record<string, { tone: 'info' | 'warn'; text: string }> =
   // missing SUPABASE_SERVICE_ROLE_KEY, e.g. someone hit a stray
   // www. subdomain that wasn't configured). Tell the user to ask
   // for a fresh link rather than 'log in', because they can't.
-  config:       { tone: 'warn', text: 'This invitation link was sent before your portal was fully configured. Please ask The People System to send you a fresh activation link.' },
-  invalid:      { tone: 'warn', text: 'This invitation link has already been used or is no longer valid. Please ask The People System to send you a fresh activation link.' },
-  expired:      { tone: 'warn', text: 'This invitation link has expired. Please ask The People System to send you a fresh activation link.' },
-  link:         { tone: 'warn', text: 'We could not generate your sign-in link. Please ask The People System to resend your invitation.' },
+  config:       { tone: 'warn', text: 'The portal is missing a required configuration value. Ask The People System to send you a fresh activation link.' },
+  invalid:      { tone: 'warn', text: 'This activation link has already been used or is no longer valid. Ask The People System for a fresh link.' },
+  expired:      { tone: 'warn', text: 'This activation link has expired. Ask The People System for a fresh link.' },
+  link:         { tone: 'warn', text: 'We could not generate your sign-in link. Ask The People System to resend your invitation.' },
+  'set-password': { tone: 'info', text: 'Your password is set. Please sign in below.' },
 };
 
 export default function LoginPage({ searchParams }: { searchParams?: { reason?: string; error?: string } }) {

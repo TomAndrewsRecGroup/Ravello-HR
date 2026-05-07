@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
   // ── Send branded invite email via Resend ──────────────────────
   const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
-  const activateUrl = `${portalUrl}/auth/activate?token=${inviteToken}`;
+  const activateUrl = `${portalUrl}/auth/set-password?token=${inviteToken}`;
 
   const emailResult = await sendEmail(buildInviteEmail({
     to:          email,
