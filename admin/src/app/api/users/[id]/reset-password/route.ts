@@ -57,8 +57,11 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const token   = crypto.randomUUID();
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+  // Reset uses the same direct set-password page as fresh invites
+  // — both flows end with 'user types a password and is signed in'.
+  // No magic-link bounce, no redirect_to allowlist dependency.
   const portalUrl = portalUrlFromEnv();
-  const resetUrl  = `${portalUrl}/auth/activate?token=${token}&purpose=reset`;
+  const resetUrl  = `${portalUrl}/auth/set-password?token=${token}`;
 
   const result = await sendEmail(passwordResetEmail({
     to:       profile.email,
