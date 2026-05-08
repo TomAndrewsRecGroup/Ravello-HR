@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { buildPatch } from '@/lib/athletes/validate';
+import { sendEmail, athleteWelcomeEmail, nextBusinessSendAt } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -52,5 +53,17 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Queue the Athletes To Industry welcome email — Resend dispatches
+  // it 2 days from now, snapped into 09:00–17:00 GMT. Best-effort:
+  // failures here never block the create response.
+  const recipient = (body.email ?? '').trim();
+  if (recipient) {
+    const firstName = body.full_name?.trim().split(/\s+/)[0];
+    const tpl = athleteWelcomeEmail({ to: recipient, firstName });
+    sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() })
+      .catch(err => console.error('[athlete-welcome] queue failed', err));
+  }
+
   return NextResponse.json({ id: data.id });
 }
