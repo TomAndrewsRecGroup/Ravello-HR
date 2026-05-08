@@ -41,14 +41,33 @@ export default function BDRolesClient({ roles }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  async function dismissIvylens(ids: string[]) {
+    // Persist to bd_ivylens_dismissed so the row stays gone across
+    // refreshes (the BD pages re-synthesise IvyLens rows on every
+    // render from /bd/leads — without this, deleted rows came back).
+    const res = await fetch('/api/bd-ivylens-dismiss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, kind: 'role' }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error ?? 'dismiss failed');
+    }
+  }
+
   async function deleteRole(id: string) {
-    // IvyLens rows are synthesized server-side from the live /bd/leads
-    // feed — they're not stored locally, so a DB delete would 422 on
-    // the non-UUID id. Hide them from the view instead and warn the
-    // operator that the row will reappear unless cleared at source.
     if (id.startsWith('ivylens-')) {
-      if (!confirm('This is an IvyLens-sourced role — it isn\'t stored locally. Hide it from this view?\n\nIt may reappear next time the IvyLens feed refreshes; clear it there to remove permanently.')) return;
-      setRows(prev => prev.filter(r => r.id !== id));
+      if (!confirm('Permanently dismiss this IvyLens role? It will be hidden from this view from now on.')) return;
+      setBusyId(id);
+      try {
+        await dismissIvylens([id]);
+        setRows(prev => prev.filter(r => r.id !== id));
+      } catch (e) {
+        alert(`Dismiss failed: ${(e as Error).message}`);
+      } finally {
+        setBusyId(null);
+      }
       return;
     }
     if (!confirm('Delete this role? This cannot be undone.')) return;
@@ -62,11 +81,16 @@ export default function BDRolesClient({ roles }: Props) {
   async function clearAllIvylens() {
     const ivyIds = rows.filter(r => r.company_source === 'ivylens').map(r => r.id);
     if (ivyIds.length === 0) { alert('No IvyLens roles to clear.'); return; }
-    if (!confirm(`Hide all ${ivyIds.length} IvyLens-sourced role${ivyIds.length === 1 ? '' : 's'} from this view?\n\nIvyLens rows aren't stored locally — they'll reappear next time the feed refreshes unless cleared at source.`)) return;
-    // Synthetic ids — nothing to delete in the DB, just drop them
-    // client-side. (Real bd_scanned_roles rows have company_source =
-    // 'local' so this path can't accidentally wipe stored data.)
-    setRows(prev => prev.filter(r => r.company_source !== 'ivylens'));
+    if (!confirm(`Permanently dismiss ${ivyIds.length} IvyLens-sourced role${ivyIds.length === 1 ? '' : 's'}? They will be hidden from this view from now on.`)) return;
+    setBulkBusy(true);
+    try {
+      await dismissIvylens(ivyIds);
+      setRows(prev => prev.filter(r => r.company_source !== 'ivylens'));
+    } catch (e) {
+      alert(`Bulk dismiss failed: ${(e as Error).message}`);
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   const boards = useMemo(() => {

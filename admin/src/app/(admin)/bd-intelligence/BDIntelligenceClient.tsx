@@ -94,12 +94,23 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
     const roleCount = (rolesByCompany[companyId] ?? []).length;
     const tail = roleCount > 0 ? ` and its ${roleCount} scanned role${roleCount === 1 ? '' : 's'}` : '';
 
-    // IvyLens-sourced companies are synthesized client-side from the
-    // live /bd/leads feed (id like 'ivylens-…'), so a DB delete would
-    // 422 on the non-UUID id. Drop from local state instead and warn.
+    // IvyLens-sourced companies are synthesised on every render from
+    // the live /bd/leads feed (id like 'ivylens-…'). Persist the
+    // dismissal to bd_ivylens_dismissed so it sticks across refreshes.
     if (companyId.startsWith('ivylens-')) {
-      if (!confirm(`This is an IvyLens-sourced lead${tail ? ` (${roleCount} role${roleCount === 1 ? '' : 's'})` : ''} — it isn't stored locally. Hide it from this view?\n\nIt may reappear next time the IvyLens feed refreshes; clear it there to remove permanently.`)) return;
+      if (!confirm(`Permanently dismiss ${companyName}${tail}? It will be hidden from this view from now on.`)) return;
+      const res = await fetch('/api/bd-ivylens-dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [companyId], kind: 'company' }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(`Dismiss failed: ${j.error ?? res.statusText}`);
+        return;
+      }
       setCompanies(prev => prev.filter(c => c.id !== companyId));
+      revalidateAdminPath('/bd-intelligence');
       return;
     }
 
