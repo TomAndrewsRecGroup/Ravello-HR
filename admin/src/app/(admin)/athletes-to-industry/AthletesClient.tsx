@@ -27,6 +27,7 @@ interface Props {
   interests: InterestRow[];
   trainingInterests: TrainingInterestRow[];
   companies: CompanyRow[];
+  devPlans?: Array<{ id: string; title: string; status: string; athlete_id: string | null }>;
 }
 
 interface NewAthleteDraft {
@@ -44,7 +45,7 @@ const EMPTY_DRAFT: NewAthleteDraft = {
 };
 
 export default function AthletesClient({
-  initial, partners, providers, interests, trainingInterests, companies,
+  initial, partners, providers, interests, trainingInterests, companies, devPlans = [],
 }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -610,6 +611,7 @@ export default function AthletesClient({
         <AthleteProfileModal
           athlete={viewing}
           notes={notesFor(viewing.id)}
+          devPlans={devPlans.filter(p => p.athlete_id === viewing.id).map(p => ({ id: p.id, title: p.title, status: p.status }))}
           onClose={() => setViewing(null)}
           onSaved={(saved) => {
             setAthletes((curr) => curr.map((x) => (x.id === saved.id ? { ...x, ...saved } : x)));

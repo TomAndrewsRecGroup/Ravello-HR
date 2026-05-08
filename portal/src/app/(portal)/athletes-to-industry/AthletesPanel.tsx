@@ -7,7 +7,14 @@ import { Trophy, ArrowRight, Plus } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import AthleteCard from './AthleteCard';
 import type { AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow } from './types';
-import type { AthleteNote } from './AthleteFormModal';
+import type { AthleteNote, AthleteDevPlanLink } from './AthleteFormModal';
+
+interface DevPlanRow {
+  id: string;
+  title: string;
+  status: string;
+  athlete_id: string | null;
+}
 
 const AthletesModal    = dynamic(() => import('./AthletesModal'),    { ssr: false });
 const AthleteFormModal = dynamic(() => import('./AthleteFormModal'), { ssr: false });
@@ -18,6 +25,7 @@ interface Props {
   partners?: PartnerRow[];
   providers?: TrainingProviderRow[];
   trainingInterests?: TrainingInterestRow[];
+  devPlans?: DevPlanRow[];
 }
 
 // Client-portal athletes panel.
@@ -28,7 +36,7 @@ interface Props {
 // roles + training providers and the match counts surface back here
 // on each card.
 
-export default function AthletesPanel({ athletes, interests, partners = [], providers = [], trainingInterests = [] }: Props) {
+export default function AthletesPanel({ athletes, interests, partners = [], providers = [], trainingInterests = [], devPlans = [] }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const refresh = () => startTransition(() => router.refresh());
@@ -49,6 +57,12 @@ export default function AthletesPanel({ athletes, interests, partners = [], prov
 
   const partnerById = useMemo(() => new Map(partners.map(p => [p.id, p])), [partners]);
   const providerById = useMemo(() => new Map(providers.map(p => [p.id, p])), [providers]);
+
+  function devPlansFor(athleteId: string): AthleteDevPlanLink[] {
+    return devPlans
+      .filter(p => p.athlete_id === athleteId)
+      .map(p => ({ id: p.id, title: p.title, status: p.status }));
+  }
 
   function notesFor(athleteId: string): AthleteNote[] {
     const out: AthleteNote[] = [];
@@ -142,6 +156,7 @@ export default function AthletesPanel({ athletes, interests, partners = [], prov
           mode="edit"
           athlete={editing}
           notes={notesFor(editing.id)}
+          devPlans={devPlansFor(editing.id)}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); refresh(); }}
         />

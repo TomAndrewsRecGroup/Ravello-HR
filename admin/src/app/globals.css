@@ -678,12 +678,16 @@
   header,
   .no-print { display: none !important; }
   .main-content { margin-left: 0 !important; width: 100% !important; }
-  .print-area { box-shadow: none !important; background: #fff !important; }
+  .print-area { box-shadow: none !important; }
   .print-area .card {
     box-shadow: none !important;
     border: 1px solid #e5e7eb !important;
     page-break-inside: avoid;
   }
-  .print-keep-color { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-keep-color,
+  .print-keep-color * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   a { color: inherit !important; text-decoration: none !important; }
 }
