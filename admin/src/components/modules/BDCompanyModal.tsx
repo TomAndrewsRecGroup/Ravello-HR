@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { X, ExternalLink, Loader2, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { SECTORS } from '@/lib/sectors';
 
 interface Props {
   company: any;
@@ -227,12 +228,14 @@ export default function BDCompanyModal({ company, onClose }: Props) {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Sector <span style={{ color: 'var(--ink-faint)' }}>(optional)</span></label>
-                  <input
+                  <select
                     className="input"
-                    placeholder="e.g. Technology, Finance…"
                     value={convForm.sector}
                     onChange={e => setConvForm(p => ({ ...p, sector: e.target.value }))}
-                  />
+                  >
+                    <option value="">Select…</option>
+                    {SECTORS.map(s => <option key={s}>{s}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="label">Company Size</label>

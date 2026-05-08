@@ -7,6 +7,7 @@ import {
   Trophy, Lock, AlertTriangle,
 } from 'lucide-react';
 import { FLAG_GROUPS, hasPaidFlag } from '@/lib/featureFlags';
+import { SECTORS } from '@/lib/sectors';
 
 // Onboard wizard — the SINGLE path for adding a new client.
 //
@@ -35,10 +36,6 @@ const STEPS = [
   { num: 6, label: 'Done',     icon: Sparkles },
 ];
 
-const SECTORS = [
-  'Retail & Hospitality','Technology & SaaS','Professional Services','Finance',
-  'Manufacturing','Healthcare','Logistics','Education','Construction','Other',
-];
 const SIZES = ['1-9','10-24','25-49','50-99','100-249','250+'];
 
 // Sensible defaults for a typical paying client. Admin can tick more
