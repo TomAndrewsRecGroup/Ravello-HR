@@ -1,15 +1,18 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { X, Search, ChevronDown, ChevronRight, Globe, MapPin, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, Search, ChevronDown, ChevronRight, Globe, MapPin, ExternalLink, Plus, Check } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
-import type { TrainingInterestRow, TrainingProviderRow } from './types';
+import { createClient } from '@/lib/supabase/client';
+import type { AthleteRow, TrainingInterestRow, TrainingProviderRow } from './types';
 
 interface Props {
   providers: TrainingProviderRow[];
   interests: TrainingInterestRow[];
   interestsByProvider: Map<string, number>;
+  athletes?: AthleteRow[];
   onClose: () => void;
 }
 
@@ -19,12 +22,54 @@ interface Props {
 // with a blue accent.
 
 export default function TrainingModal({
-  providers, interests, interestsByProvider, onClose,
+  providers, interests, interestsByProvider, athletes = [], onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
+  const router = useRouter();
+  const supabase = createClient();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const [pickerKey, setPickerKey] = useState<string | null>(null);
+  const [pickerAthlete, setPickerAthlete] = useState('');
+  const [pickerNote, setPickerNote] = useState('');
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [errorByKey, setErrorByKey] = useState<Record<string, string>>({});
+
+  function rowKey(providerId: string, offeringId: string | null): string {
+    return `${providerId}:${offeringId ?? 'root'}`;
+  }
+
+  async function expressInterest(providerId: string, offeringId: string | null) {
+    const key = rowKey(providerId, offeringId);
+    if (!pickerAthlete) {
+      setErrorByKey(p => ({ ...p, [key]: 'Pick an athlete first' }));
+      return;
+    }
+    setSavingKey(key);
+    setErrorByKey(p => ({ ...p, [key]: '' }));
+    try {
+      const { error } = await supabase
+        .from('athlete_training_interests')
+        .insert({
+          athlete_id: pickerAthlete,
+          provider_id: providerId,
+          offering_id: offeringId,
+          status: 'interested',
+          notes: pickerNote.trim() || null,
+        });
+      if (error) throw error;
+      setPickerKey(null);
+      setPickerAthlete('');
+      setPickerNote('');
+      router.refresh();
+    } catch (e) {
+      setErrorByKey(p => ({ ...p, [key]: (e as Error).message }));
+    } finally {
+      setSavingKey(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return providers;
@@ -148,6 +193,8 @@ export default function TrainingModal({
                           <ul className="space-y-1.5">
                             {p.offerings.map(offering => {
                               const count = offeringInterestCount(p.id, offering.id);
+                              const key = rowKey(p.id, offering.id);
+                              const open = pickerKey === key;
                               return (
                                 <li key={offering.id} className="rounded-[10px] p-3"
                                     style={{ background: 'rgba(59,111,255,0.04)' }}>
@@ -182,19 +229,70 @@ export default function TrainingModal({
                                         )}
                                       </div>
                                     </div>
-                                    {count > 0 && (
-                                      <span
-                                        className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
-                                        style={{
-                                          background: 'rgba(59,111,255,0.10)',
-                                          color: 'var(--blue)',
-                                          border: '1px solid rgba(59,111,255,0.20)',
-                                        }}
-                                      >
-                                        {count} interested
-                                      </span>
-                                    )}
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      {count > 0 && (
+                                        <span
+                                          className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                                          style={{
+                                            background: 'rgba(59,111,255,0.10)',
+                                            color: 'var(--blue)',
+                                            border: '1px solid rgba(59,111,255,0.20)',
+                                          }}
+                                        >
+                                          {count} interested
+                                        </span>
+                                      )}
+                                      {athletes.length > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const next = open ? null : key;
+                                            setPickerKey(next);
+                                            setPickerAthlete('');
+                                            setPickerNote('');
+                                            setErrorByKey(p => ({ ...p, [key]: '' }));
+                                          }}
+                                          className="btn-secondary btn-sm"
+                                          style={{ padding: '4px 8px', fontSize: 11 }}
+                                          title="Express an athlete's interest in this course"
+                                        >
+                                          {open ? <X size={11} /> : <Plus size={11} />}
+                                          {open ? 'Cancel' : 'Add interest'}
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
+                                  {open && (
+                                    <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px dashed var(--line)' }}>
+                                      <select
+                                        className="input"
+                                        value={pickerAthlete}
+                                        onChange={e => setPickerAthlete(e.target.value)}
+                                      >
+                                        <option value="">Select an athlete…</option>
+                                        {athletes.map(a => (
+                                          <option key={a.id} value={a.id}>{a.full_name}</option>
+                                        ))}
+                                      </select>
+                                      <input
+                                        className="input"
+                                        placeholder="Note (optional) — e.g. why this course suits them"
+                                        value={pickerNote}
+                                        onChange={e => setPickerNote(e.target.value)}
+                                      />
+                                      {errorByKey[key] && (
+                                        <p className="text-xs" style={{ color: 'var(--red)' }}>{errorByKey[key]}</p>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => expressInterest(p.id, offering.id)}
+                                        disabled={savingKey === key || !pickerAthlete}
+                                        className="btn-cta btn-sm"
+                                      >
+                                        <Check size={12} /> {savingKey === key ? 'Saving…' : 'Save interest'}
+                                      </button>
+                                    </div>
+                                  )}
                                 </li>
                               );
                             })}

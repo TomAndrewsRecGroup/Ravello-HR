@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { X, Search, Pencil } from 'lucide-react';
+import { X, Search, Pencil, PhoneCall } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
 import type { AthleteRow, InterestRow } from './types';
@@ -80,7 +80,7 @@ export default function AthletesModal({
                 return (
                   <li
                     key={a.id}
-                    className="px-6 py-4 flex gap-3 items-start cursor-pointer hover:bg-[var(--surface-soft)]"
+                    className={`px-6 py-4 flex gap-3 items-start cursor-pointer hover:bg-[var(--surface-soft)] ${a.called_at ? 'athlete-called-glow rounded-md' : ''}`}
                     onClick={() => onEdit(a)}
                     role="button"
                     tabIndex={0}
@@ -93,6 +93,15 @@ export default function AthletesModal({
                         <span className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
                           {a.full_name}
                         </span>
+                        {a.called_at && (
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                            style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
+                            title="The People System has been in touch with this athlete"
+                          >
+                            <PhoneCall size={9} /> Called
+                          </span>
+                        )}
                         {matches > 0 && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                                 style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>

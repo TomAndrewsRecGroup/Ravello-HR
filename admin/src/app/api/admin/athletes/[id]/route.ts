@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  let body: AthleteFields;
+  let body: AthleteFields & { called?: boolean };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
@@ -24,6 +24,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: patch.error }, { status: 400 });
   }
   patch.updated_at = new Date().toISOString();
+
+  // Admin-only "Called" toggle. Booleans get translated into the
+  // canonical timestamp + caller pair so we can later show when the
+  // call was made and by whom.
+  if (typeof body.called === 'boolean') {
+    if (body.called) {
+      patch.called_at = new Date().toISOString();
+      patch.called_by = auth.userId;
+    } else {
+      patch.called_at = null;
+      patch.called_by = null;
+    }
+  }
 
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.from('athletes').update(patch).eq('id', params.id);

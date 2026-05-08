@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { X, FileText, ExternalLink, Save } from 'lucide-react';
+import { X, FileText, ExternalLink, Save, PhoneCall } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { openAthleteCv } from './openCv';
@@ -36,8 +36,31 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
   useModalShell(true, onClose, dialogRef);
 
   const [phone, setPhone] = useState(athlete.phone ?? '');
+  const [calledAt, setCalledAt] = useState<string | null>(athlete.called_at ?? null);
+  const [togglingCalled, setTogglingCalled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  async function toggleCalled(next: boolean) {
+    setTogglingCalled(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/athletes/${athlete.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ called: next }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Save failed');
+      const newAt = next ? new Date().toISOString() : null;
+      setCalledAt(newAt);
+      onSaved({ ...athlete, called_at: newAt });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setTogglingCalled(false);
+    }
+  }
 
   async function savePhone() {
     setSaving(true);
@@ -67,20 +90,43 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="card w-full max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden"
+        className={`card w-full max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden ${calledAt ? 'athlete-called' : ''}`}
         onClick={e => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-labelledby="athlete-profile-title"
       >
         <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid var(--line)' }}>
           <AvatarInitials name={athlete.full_name} size={36} />
           <div className="flex-1 min-w-0">
-            <h2 id="athlete-profile-title" className="font-display text-lg font-semibold truncate" style={{ color: 'var(--ink)' }}>
-              {athlete.full_name}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 id="athlete-profile-title" className="font-display text-lg font-semibold truncate" style={{ color: 'var(--ink)' }}>
+                {athlete.full_name}
+              </h2>
+              {calledAt && (
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap"
+                  style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)', border: '1px solid rgba(20,184,166,0.35)' }}
+                  title={`Called on ${new Date(calledAt).toLocaleString('en-GB')}`}
+                >
+                  <PhoneCall size={10} /> Called
+                </span>
+              )}
+            </div>
             <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>
               {[athlete.sport, athlete.previous_role, athlete.company_name].filter(Boolean).join(' · ') || 'Athlete'}
             </p>
           </div>
+          <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold whitespace-nowrap"
+                 style={{ color: calledAt ? 'var(--teal)' : 'var(--ink-soft)' }}
+                 title="Mark as called — visible to client">
+            <input
+              type="checkbox"
+              checked={!!calledAt}
+              disabled={togglingCalled}
+              onChange={e => toggleCalled(e.target.checked)}
+              className="w-4 h-4 cursor-pointer accent-teal-500"
+            />
+            <PhoneCall size={12} /> Called
+          </label>
           <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
         </div>
 

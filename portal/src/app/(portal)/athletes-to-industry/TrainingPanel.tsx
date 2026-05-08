@@ -4,13 +4,14 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { GraduationCap, ArrowRight, Globe } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import type { TrainingInterestRow, TrainingProviderRow } from './types';
+import type { AthleteRow, TrainingInterestRow, TrainingProviderRow } from './types';
 
 const TrainingModal = dynamic(() => import('./TrainingModal'), { ssr: false });
 
 interface Props {
   providers: TrainingProviderRow[];
   interests: TrainingInterestRow[];
+  athletes?: AthleteRow[];
 }
 
 // Read-only training & workshops panel.
@@ -20,7 +21,7 @@ interface Props {
 // matched to courses. Match management is admin-side, mirroring the
 // partners/roles flow but with a blue accent.
 
-export default function TrainingPanel({ providers, interests }: Props) {
+export default function TrainingPanel({ providers, interests, athletes = [] }: Props) {
   const [showAll, setShowAll] = useState(false);
 
   const interestsByProvider = useMemo(() => {
@@ -85,6 +86,7 @@ export default function TrainingPanel({ providers, interests }: Props) {
           providers={providers}
           interestsByProvider={interestsByProvider}
           interests={interests}
+          athletes={athletes}
           onClose={() => setShowAll(false)}
         />
       )}
