@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ArrowLeft, Check, Clock, Circle } from 'lucide-react';
+import PrintButton from './PrintButton';
 
 export const metadata: Metadata = { title: 'Development Plan' };
 export const dynamic = 'force-dynamic';
@@ -54,13 +55,16 @@ export default async function DevPlanDetailPage({ params }: { params: { id: stri
   const secondary = brand?.secondary_color || 'var(--blue)';
 
   return (
-    <main className="portal-page">
-      <Link href="/dev-plans" className="inline-flex items-center gap-1 text-sm mb-4 hover:underline" style={{ color: 'var(--purple)' }}>
-        <ArrowLeft size={14} /> Back to plans
-      </Link>
+    <main className="portal-page print-area">
+      <div className="flex items-center justify-between mb-4 no-print">
+        <Link href="/dev-plans" className="inline-flex items-center gap-1 text-sm hover:underline" style={{ color: 'var(--purple)' }}>
+          <ArrowLeft size={14} /> Back to plans
+        </Link>
+        <PrintButton />
+      </div>
 
       <div
-        className="card p-6 mb-6"
+        className="card p-6 mb-6 print-keep-color"
         style={{
           background: brand
             ? `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`
