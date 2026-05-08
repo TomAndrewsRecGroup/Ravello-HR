@@ -58,6 +58,24 @@ export default function AthletesClient({
   const [matchingTraining, setMatchingTraining] = useState<AthleteRow | null>(null);
   const [viewing,          setViewing]          = useState<AthleteRow | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
+  const [migratingCvs, setMigratingCvs] = useState(false);
+
+  async function migrateLegacyCvs() {
+    if (!confirm('Move every legacy CV from the old documents bucket into the private athlete-cvs bucket?\n\nThis can take a minute. Safe to re-run.')) return;
+    setMigratingCvs(true);
+    try {
+      const res = await fetch('/api/admin/athletes/migrate-cvs', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Migration failed');
+      const s = json.summary as Record<string, number>;
+      alert(`CV migration done — migrated ${s.migrated ?? 0}, skipped ${s.skipped ?? 0}, errors ${s.error ?? 0}.`);
+      refresh();
+    } catch (e) {
+      alert(`CV migration failed: ${(e as Error).message}`);
+    } finally {
+      setMigratingCvs(false);
+    }
+  }
 
   // Local mirror of the server-fetched athletes list so deletes
   // remove the row instantly without re-running the server component.
@@ -281,10 +299,18 @@ export default function AthletesClient({
             ))}
           </select>
           {!adding && (
-            <button onClick={() => { setDraft(EMPTY_DRAFT); setAdding(true); setError(''); }}
-                    className="btn-cta btn-sm flex items-center gap-1.5">
-              <Plus size={13} /> Add for client
-            </button>
+            <>
+              <button onClick={migrateLegacyCvs} disabled={migratingCvs}
+                      className="btn-secondary btn-sm flex items-center gap-1.5"
+                      title="Move legacy CVs from the old documents bucket into the private athlete-cvs bucket">
+                {migratingCvs ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                {migratingCvs ? 'Migrating CVs…' : 'Migrate legacy CVs'}
+              </button>
+              <button onClick={() => { setDraft(EMPTY_DRAFT); setAdding(true); setError(''); }}
+                      className="btn-cta btn-sm flex items-center gap-1.5">
+                <Plus size={13} /> Add for client
+              </button>
+            </>
           )}
         </div>
       </div>
