@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Briefcase, BookOpen, Users,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
   Eye, EyeOff, Pencil, Check,
-  ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard,
+  ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard, ClipboardList,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
@@ -30,6 +30,9 @@ interface NavItem {
   showWhenDisabled?: boolean;
   /** Roles allowed to see this item. Undefined = everyone. */
   requireRole?: string[];
+  /** Optional sub-heading group label rendered above the first
+   *  visible item that shares the same group. */
+  group?: string;
 }
 
 /* All possible nav items: order/visibility controlled by user prefs */
@@ -38,7 +41,8 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/hire',                 label: 'HIRE',                 icon: Briefcase,       flag: 'hiring',                fixed: false },
   { href: '/lead',                 label: 'LEAD',                 icon: BookOpen,        flag: 'lead',                  fixed: false },
   { href: '/protect',              label: 'PROTECT',              icon: Users,           flag: 'protect',               fixed: false },
-  { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true },
+  { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true, group: 'Programmes' },
+  { href: '/dev-plans',            label: 'Development Plans',    icon: ClipboardList,   flag: null,                    fixed: false, group: 'Programmes' },
   { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: null,                    fixed: false },
   { href: '/support',              label: 'Support',              icon: LifeBuoy,        flag: 'support',               fixed: false },
   { href: '/billing',              label: 'Billing',              icon: CreditCard,      flag: null,                    fixed: false, requireRole: ['client_admin', 'tps_admin'] },
@@ -274,10 +278,27 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 pt-3">
           <div className="space-y-0.5">
-            {editMode
-              ? orderedItems.map(renderNavItem)
-              : visibleItems.map(renderNavItem)
-            }
+            {(() => {
+              const list = editMode ? orderedItems : visibleItems;
+              const seenGroups = new Set<string>();
+              return list.map(item => {
+                const showHeading = !!item.group && !seenGroups.has(item.group) && !editMode;
+                if (item.group) seenGroups.add(item.group);
+                return (
+                  <div key={item.href}>
+                    {showHeading && (
+                      <div
+                        className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: 'var(--ink-faint)' }}
+                      >
+                        {item.group}
+                      </div>
+                    )}
+                    {renderNavItem(item)}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </nav>
 

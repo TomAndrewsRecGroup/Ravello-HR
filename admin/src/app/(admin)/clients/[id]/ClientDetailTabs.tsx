@@ -12,6 +12,7 @@ import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
 import CandidatesTab from './tabs/CandidatesTab';
+import InvoicesTab from './tabs/InvoicesTab';
 
 import { HIRING_STAGE_LABELS, COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 /* ─── Helpers ─────────────────────────────────────── */
@@ -280,7 +281,7 @@ function BillingPanel({
 
 // Services tab removed — retainer + module access live together on the
 // Overview tab now (retainer modal opens on Save in FeatureFlagToggles).
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Friction'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Friction', 'Invoices'] as const;
 type Tab = typeof TABS[number];
 
 const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
@@ -334,7 +335,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
 
   const loadTabData = useCallback(async (tabName: string) => {
     // Skip tabs that don't need lazy loading or are already loaded
-    if (['Overview', 'Roles'].includes(tabName)) return;
+    if (['Overview', 'Roles', 'Invoices'].includes(tabName)) return;
     if (fetchedTabs.current.has(tabName)) return;
     fetchedTabs.current.add(tabName);
     setTabLoading(tabName);
@@ -1160,6 +1161,11 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
             documents={documents}
           />
         )
+      )}
+
+      {/* ─── INVOICES ─────────────────────────────────── */}
+      {tab === 'Invoices' && (
+        <InvoicesTab companyId={company.id} users={users} />
       )}
 
     </div>

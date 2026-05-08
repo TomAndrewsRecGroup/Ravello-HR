@@ -126,9 +126,18 @@ export async function POST(request: NextRequest) {
         break;
       case 'invoice.paid':
         await handleInvoicePaid(sb, event.data.object as Stripe.Invoice);
+        await handleOneOffInvoiceUpdate(sb, event.data.object as Stripe.Invoice, 'paid');
         break;
       case 'invoice.payment_failed':
         await handleInvoiceFailed(sb, event.data.object as Stripe.Invoice);
+        break;
+      case 'invoice.voided':
+      case 'invoice.marked_uncollectible':
+        await handleOneOffInvoiceUpdate(
+          sb,
+          event.data.object as Stripe.Invoice,
+          event.type === 'invoice.voided' ? 'void' : 'uncollectible',
+        );
         break;
       default:
         // We logged the event but don't act on it. Useful for admin
@@ -163,7 +172,28 @@ const HANDLED_EVENT_TYPES = new Set([
   'customer.subscription.deleted',
   'invoice.paid',
   'invoice.payment_failed',
+  'invoice.voided',
+  'invoice.marked_uncollectible',
 ]);
+
+/**
+ * Updates the local one_off_invoices row for any invoice tagged with
+ * metadata.tps_one_off='true'. Retainer invoices are silently
+ * ignored here (handled by handleInvoicePaid/Failed which mutate
+ * companies.subscription_status).
+ */
+async function handleOneOffInvoiceUpdate(
+  sb: ReturnType<typeof adminSupabase>,
+  invoice: Stripe.Invoice,
+  newStatus: 'paid' | 'void' | 'uncollectible',
+): Promise<void> {
+  if (invoice.metadata?.tps_one_off !== 'true') return;
+  const update: Record<string, any> = { status: newStatus };
+  if (newStatus === 'paid') update.paid_at = new Date().toISOString();
+  await sb.from('one_off_invoices')
+    .update(update)
+    .eq('stripe_invoice_id', invoice.id);
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
