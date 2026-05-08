@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Github, Trash } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Github, Trash, Printer } from 'lucide-react';
 
 type PlanStatus = 'draft' | 'active' | 'completed' | 'archived';
 type MilestoneStatus = 'pending' | 'in_progress' | 'done';
@@ -447,6 +448,11 @@ export default function PlanEditor(props: Props) {
         <button type="button" className="btn-secondary" onClick={saveAsTemplate} disabled={milestones.length === 0}>
           <FileText size={14} /> Save as template
         </button>
+        {props.plan && (
+          <Link href={`/dev-plans/${props.plan.id}/preview`} className="btn-secondary" target="_blank" rel="noopener noreferrer">
+            <Printer size={14} /> Preview &amp; print
+          </Link>
+        )}
         {props.plan && (
           <button type="button" className="btn-ghost" onClick={deletePlan} style={{ color: 'var(--red)' }}>
             <Trash size={14} /> Delete plan

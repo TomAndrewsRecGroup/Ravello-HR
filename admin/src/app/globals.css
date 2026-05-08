@@ -665,3 +665,25 @@
     display: none !important;
   }
 }
+
+/* ─── Print: when a page contains .print-area, the browser's
+   "Save as PDF" / Print produces a clean one-pager. Used by the
+   dev-plan preview page so admins can email plans off-portal. */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff !important; }
+  .sidebar-mobile,
+  .sidebar-backdrop,
+  .topbar-responsive,
+  header,
+  .no-print { display: none !important; }
+  .main-content { margin-left: 0 !important; width: 100% !important; }
+  .print-area { box-shadow: none !important; background: #fff !important; }
+  .print-area .card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    page-break-inside: avoid;
+  }
+  .print-keep-color { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: inherit !important; text-decoration: none !important; }
+}
