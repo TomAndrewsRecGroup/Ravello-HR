@@ -346,12 +346,29 @@ export async function raiseOneOffInvoice(
   const finalized = await sb.invoices.finalizeInvoice(invoice.id!);
   const sent      = await sb.invoices.sendInvoice(finalized.id!);
 
+  // Stripe removed the top-level `tax` field on Invoice — tax is now
+  // exposed via `total_taxes[].amount` (or, on older API versions,
+  // `total_tax_amounts[].amount`). Fall back to total − subtotal so
+  // we tolerate either shape and any future renames.
+  const sentAny = sent as unknown as {
+    total?: number | null;
+    subtotal?: number | null;
+    total_taxes?: Array<{ amount?: number | null }> | null;
+    total_tax_amounts?: Array<{ amount?: number | null }> | null;
+  };
+  const sumAmounts = (arr?: Array<{ amount?: number | null }> | null): number =>
+    (arr ?? []).reduce((acc, t) => acc + (t.amount ?? 0), 0);
+  const taxPence =
+    sumAmounts(sentAny.total_taxes) ||
+    sumAmounts(sentAny.total_tax_amounts) ||
+    Math.max(0, (sentAny.total ?? 0) - (sentAny.subtotal ?? 0));
+
   return {
     stripeInvoiceId: sent.id!,
     invoiceNumber:   sent.number ?? null,
     hostedUrl:       sent.hosted_invoice_url ?? null,
     pdfUrl:          sent.invoice_pdf ?? null,
-    taxPence:        sent.tax ?? 0,
+    taxPence,
   };
 }
 
