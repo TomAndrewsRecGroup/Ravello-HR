@@ -93,6 +93,16 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
   async function deleteCompany(companyId: string, companyName: string) {
     const roleCount = (rolesByCompany[companyId] ?? []).length;
     const tail = roleCount > 0 ? ` and its ${roleCount} scanned role${roleCount === 1 ? '' : 's'}` : '';
+
+    // IvyLens-sourced companies are synthesized client-side from the
+    // live /bd/leads feed (id like 'ivylens-…'), so a DB delete would
+    // 422 on the non-UUID id. Drop from local state instead and warn.
+    if (companyId.startsWith('ivylens-')) {
+      if (!confirm(`This is an IvyLens-sourced lead${tail ? ` (${roleCount} role${roleCount === 1 ? '' : 's'})` : ''} — it isn't stored locally. Hide it from this view?\n\nIt may reappear next time the IvyLens feed refreshes; clear it there to remove permanently.`)) return;
+      setCompanies(prev => prev.filter(c => c.id !== companyId));
+      return;
+    }
+
     if (!confirm(`Delete ${companyName}${tail}? This cannot be undone.`)) return;
     const { error } = await supabase.from('bd_companies').delete().eq('id', companyId);
     if (error) { alert(`Delete failed: ${error.message}`); return; }
