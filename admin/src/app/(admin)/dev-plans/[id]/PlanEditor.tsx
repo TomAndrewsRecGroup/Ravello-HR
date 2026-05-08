@@ -228,8 +228,12 @@ export default function PlanEditor(props: Props) {
         }
       }
 
-      // Upsert plan.
-      let planId = props.plan?.id ?? null;
+      // Title change on an existing plan creates a brand-new plan
+      // rather than overwriting the original — protects history.
+      const treatAsNew = !!props.plan
+        && title.trim() !== (props.plan.title ?? '').trim();
+      let planId = treatAsNew ? null : (props.plan?.id ?? null);
+
       const cleanFreeTextItems = (items: FreeTextItem[]) =>
         items.map(it => ({ box1: it.box1.trim(), box2: it.box2.trim() }))
              .filter(it => it.box1 || it.box2);
@@ -242,7 +246,9 @@ export default function PlanEditor(props: Props) {
         brand_profile_id: brandId,
         training_items: cleanFreeTextItems(trainingItems),
         roles_items: cleanFreeTextItems(rolesItems),
-        assigned_at: status === 'active' && !props.plan?.assigned_at ? new Date().toISOString() : props.plan?.assigned_at ?? null,
+        assigned_at: treatAsNew
+          ? (status === 'active' ? new Date().toISOString() : null)
+          : (status === 'active' && !props.plan?.assigned_at ? new Date().toISOString() : props.plan?.assigned_at ?? null),
       };
       if (planId) {
         const { error: e } = await supabase.from('dev_plans').update(planPayload).eq('id', planId);
@@ -472,7 +478,12 @@ export default function PlanEditor(props: Props) {
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className="btn-cta" onClick={save} disabled={saving || pending}>
-          <Save size={14} /> {saving ? 'Saving…' : (props.plan ? 'Save plan' : 'Create plan')}
+          <Save size={14} />{' '}
+          {saving
+            ? 'Saving…'
+            : !props.plan
+              ? 'Create plan'
+              : (title.trim() !== (props.plan.title ?? '').trim() ? 'Save as new' : 'Save plan')}
         </button>
         <button type="button" className="btn-secondary" onClick={saveAsTemplate} disabled={milestones.length === 0}>
           <FileText size={14} /> Save as template
