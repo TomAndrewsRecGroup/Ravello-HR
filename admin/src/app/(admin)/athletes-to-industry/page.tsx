@@ -31,7 +31,7 @@ export default async function AthletesToIndustryAdminPage() {
       .order('provider_name', { ascending: true }),
     supabase
       .from('athletes')
-      .select('id, company_id, full_name, email, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at, companies(name)')
+      .select('id, company_id, full_name, email, phone, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at, companies(name)')
       .order('created_at', { ascending: false })
       .limit(200),
     supabase

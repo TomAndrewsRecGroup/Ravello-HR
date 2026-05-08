@@ -10,15 +10,21 @@ interface Props {
   onEdit: () => void;
 }
 
-// Client-portal athlete card. Clients own the roster — they edit their
-// athletes' details and CVs here. Match management is admin-side and
-// surfaces back as the `matchCount` chip.
+// Client-portal athlete card. The whole card is clickable — opens the
+// profile/edit modal where clients review notes from their account
+// manager and update details (incl. phone). The pencil affordance
+// stays for keyboard/screen-reader users.
 
 export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
   return (
     <li
-      className="card p-3 relative group"
+      className="card p-3 relative group cursor-pointer"
       style={{ boxShadow: 'none', borderColor: 'var(--line)' }}
+      onClick={onEdit}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit(); } }}
+      aria-label={`Open profile for ${athlete.full_name}`}
     >
       <div className="flex items-center gap-3">
         <AvatarInitials name={athlete.full_name} size={36} />
@@ -39,15 +45,13 @@ export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
           </span>
         )}
       </div>
-      <button
-        type="button"
-        onClick={onEdit}
-        aria-label={`Edit ${athlete.full_name}`}
-        className="absolute top-2 right-2 btn-icon btn-ghost opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+      <span
+        aria-hidden="true"
+        className="absolute top-2 right-2 btn-icon btn-ghost opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
         style={{ width: 26, height: 26, background: 'var(--surface)', border: '1px solid var(--line)' }}
       >
         <Pencil size={11} />
-      </button>
+      </span>
     </li>
   );
 }

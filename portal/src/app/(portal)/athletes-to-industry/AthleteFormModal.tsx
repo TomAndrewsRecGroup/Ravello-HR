@@ -8,9 +8,16 @@ import type { AthleteRow } from './types';
 
 type Mode = 'create' | 'edit';
 
+export interface AthleteNote {
+  label: string;
+  status: string;
+  note: string;
+}
+
 interface Props {
   mode: Mode;
   athlete?: AthleteRow;
+  notes?: AthleteNote[];
   onClose: () => void;
   onSaved: (saved: AthleteRow) => void;
 }
@@ -21,12 +28,13 @@ const ACCEPT = '.pdf,.doc,.docx,.txt';
 // own athletes and upload (or paste) the CV. Match management is
 // admin-only — there is no "Save & match" shortcut here.
 
-export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Props) {
+export default function AthleteFormModal({ mode, athlete, notes, onClose, onSaved }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
 
   const [fullName, setFullName] = useState(athlete?.full_name ?? '');
   const [email, setEmail] = useState(athlete?.email ?? '');
+  const [phone, setPhone] = useState(athlete?.phone ?? '');
   const [sport, setSport] = useState(athlete?.sport ?? '');
   const [previousRole, setPreviousRole] = useState(athlete?.previous_role ?? '');
   const [bio, setBio] = useState(athlete?.bio ?? '');
@@ -71,6 +79,7 @@ export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Pr
     const body: Record<string, unknown> = {
       full_name: fullName.trim(),
       email: email.trim() || null,
+      phone: phone.trim() || null,
       sport: sport.trim() || null,
       previous_role: previousRole.trim() || null,
       bio: bio.trim() || null,
@@ -139,12 +148,35 @@ export default function AthleteFormModal({ mode, athlete, onClose, onSaved }: Pr
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {mode === 'edit' && notes && notes.length > 0 && (
+            <div
+              className="rounded-md p-3 space-y-2"
+              style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.18)' }}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--purple)' }}>
+                Notes from your account manager
+              </p>
+              <ul className="space-y-1.5">
+                {notes.map((n, i) => (
+                  <li key={i} className="text-xs">
+                    <span className="font-semibold" style={{ color: 'var(--ink)' }}>{n.label}</span>
+                    <span className="ml-2 text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{n.status}</span>
+                    <p style={{ color: 'var(--ink-soft)' }}>{n.note}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Full name" required>
               <input className="input" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Sarah Mitchell" />
             </Field>
             <Field label="Email">
               <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="sarah@example.com" />
+            </Field>
+            <Field label="Phone">
+              <input className="input" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7…" />
             </Field>
             <Field label="Sport">
               <input className="input" value={sport} onChange={e => setSport(e.target.value)} placeholder="Rugby" />

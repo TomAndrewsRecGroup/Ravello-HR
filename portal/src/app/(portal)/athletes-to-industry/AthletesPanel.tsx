@@ -6,7 +6,8 @@ import dynamic from 'next/dynamic';
 import { Trophy, ArrowRight, Plus } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import AthleteCard from './AthleteCard';
-import type { AthleteRow, InterestRow } from './types';
+import type { AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow } from './types';
+import type { AthleteNote } from './AthleteFormModal';
 
 const AthletesModal    = dynamic(() => import('./AthletesModal'),    { ssr: false });
 const AthleteFormModal = dynamic(() => import('./AthleteFormModal'), { ssr: false });
@@ -14,6 +15,9 @@ const AthleteFormModal = dynamic(() => import('./AthleteFormModal'), { ssr: fals
 interface Props {
   athletes: AthleteRow[];
   interests: InterestRow[];
+  partners?: PartnerRow[];
+  providers?: TrainingProviderRow[];
+  trainingInterests?: TrainingInterestRow[];
 }
 
 // Client-portal athletes panel.
@@ -24,7 +28,7 @@ interface Props {
 // roles + training providers and the match counts surface back here
 // on each card.
 
-export default function AthletesPanel({ athletes, interests }: Props) {
+export default function AthletesPanel({ athletes, interests, partners = [], providers = [], trainingInterests = [] }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const refresh = () => startTransition(() => router.refresh());
@@ -42,6 +46,24 @@ export default function AthletesPanel({ athletes, interests }: Props) {
     }
     return m;
   }, [interests]);
+
+  const partnerById = useMemo(() => new Map(partners.map(p => [p.id, p])), [partners]);
+  const providerById = useMemo(() => new Map(providers.map(p => [p.id, p])), [providers]);
+
+  function notesFor(athleteId: string): AthleteNote[] {
+    const out: AthleteNote[] = [];
+    for (const i of interests) {
+      if (i.athlete_id !== athleteId || !i.notes) continue;
+      const p = partnerById.get(i.partner_id);
+      out.push({ label: p?.company_name ?? 'Partner', status: i.status, note: i.notes });
+    }
+    for (const t of trainingInterests) {
+      if (t.athlete_id !== athleteId || !t.notes) continue;
+      const p = providerById.get(t.provider_id);
+      out.push({ label: p?.provider_name ?? 'Training', status: t.status, note: t.notes });
+    }
+    return out;
+  }
 
   const recent = athletes.slice(0, 6);
 
@@ -119,6 +141,7 @@ export default function AthletesPanel({ athletes, interests }: Props) {
         <AthleteFormModal
           mode="edit"
           athlete={editing}
+          notes={notesFor(editing.id)}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); refresh(); }}
         />

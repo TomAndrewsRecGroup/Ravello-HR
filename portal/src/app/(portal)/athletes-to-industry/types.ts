@@ -23,6 +23,7 @@ export interface AthleteRow {
   company_id: string;
   full_name: string;
   email: string | null;
+  phone: string | null;
   sport: string | null;
   previous_role: string | null;
   bio: string | null;
