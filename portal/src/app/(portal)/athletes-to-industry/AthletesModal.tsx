@@ -78,7 +78,15 @@ export default function AthletesModal({
               {filtered.map(a => {
                 const matches = interestsByAthlete.get(a.id)?.length ?? 0;
                 return (
-                  <li key={a.id} className="px-6 py-4 flex gap-3 items-start">
+                  <li
+                    key={a.id}
+                    className="px-6 py-4 flex gap-3 items-start cursor-pointer hover:bg-[var(--surface-soft)]"
+                    onClick={() => onEdit(a)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit(a); } }}
+                    aria-label={`Open profile for ${a.full_name}`}
+                  >
                     <AvatarInitials name={a.full_name} size={40} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2 flex-wrap">
@@ -103,15 +111,13 @@ export default function AthletesModal({
                         </p>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onEdit(a)}
-                      className="btn-secondary btn-sm flex items-center gap-1 flex-shrink-0"
+                    <span
+                      aria-hidden="true"
+                      className="btn-secondary btn-sm flex items-center gap-1 flex-shrink-0 pointer-events-none"
                       style={{ padding: '4px 8px', fontSize: 11 }}
-                      aria-label={`Edit ${a.full_name}`}
                     >
-                      <Pencil size={11} /> Edit
-                    </button>
+                      <Pencil size={11} /> Open
+                    </span>
                   </li>
                 );
               })}
