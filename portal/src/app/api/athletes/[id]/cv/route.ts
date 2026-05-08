@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       updated_at:      new Date().toISOString(),
     })
     .eq('id', athlete.id)
-    .select('id, company_id, full_name, email, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at')
+    .select('id, company_id, full_name, email, phone, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, created_at')
     .single();
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });

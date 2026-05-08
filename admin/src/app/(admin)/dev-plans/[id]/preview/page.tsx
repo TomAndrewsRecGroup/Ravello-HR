@@ -23,7 +23,7 @@ export default async function DevPlanPreviewPage({ params }: { params: { id: str
   const supabase = createServerSupabaseClient();
   const { data: plan } = await supabase
     .from('dev_plans')
-    .select('id, title, summary, status, brand_profile_id, athlete:athlete_id (full_name), company:company_id (name)')
+    .select('id, title, summary, status, brand_profile_id, training_items, roles_items, athlete:athlete_id (full_name), company:company_id (name)')
     .eq('id', params.id)
     .single();
   if (!plan) notFound();
@@ -130,6 +130,25 @@ export default async function DevPlanPreviewPage({ params }: { params: { id: str
           );
         })}
       </section>
+
+      <FreeTextSection title="Training & Workshops" items={(plan as { training_items?: Array<{ box1: string; box2: string }> }).training_items} />
+      <FreeTextSection title="Roles & Ideas" items={(plan as { roles_items?: Array<{ box1: string; box2: string }> }).roles_items} />
     </main>
+  );
+}
+
+function FreeTextSection({ title, items }: { title: string; items?: Array<{ box1: string; box2: string }> | null }) {
+  const list = (items ?? []).filter(it => it.box1 || it.box2);
+  if (list.length === 0) return null;
+  return (
+    <section className="space-y-3 mt-6">
+      <h2 className="font-display text-lg font-semibold">{title}</h2>
+      {list.map((it, i) => (
+        <div key={i} className="card p-4">
+          {it.box1 && <h3 className="font-semibold">{it.box1}</h3>}
+          {it.box2 && <p className="text-sm mt-1" style={{ color: 'var(--ink-soft)', whiteSpace: 'pre-wrap' }}>{it.box2}</p>}
+        </div>
+      ))}
+    </section>
   );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Eye } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Development Plans' };
 export const dynamic = 'force-dynamic';
@@ -63,11 +63,12 @@ export default async function DevPlansPage() {
                   <th>Client</th>
                   <th>Status</th>
                   <th>Assigned</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={5} className="empty-state">No plans yet — create your first one.</td></tr>
+                  <tr><td colSpan={6} className="empty-state">No plans yet — create your first one.</td></tr>
                 ) : rows.map(r => (
                   <tr key={r.id}>
                     <td><Link href={`/dev-plans/${r.id}`} className="font-semibold" style={{ color: 'var(--purple)' }}>{r.title}</Link></td>
@@ -75,6 +76,11 @@ export default async function DevPlansPage() {
                     <td>{r.company_name ?? <span style={{ color: 'var(--ink-faint)' }}>—</span>}</td>
                     <td><span className="badge">{STATUS_LABELS[r.status] ?? r.status}</span></td>
                     <td>{r.assigned_at ? new Date(r.assigned_at).toLocaleDateString('en-GB') : <span style={{ color: 'var(--ink-faint)' }}>—</span>}</td>
+                    <td className="text-right whitespace-nowrap">
+                      <Link href={`/dev-plans/${r.id}/preview`} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm" title="Open preview in a new tab">
+                        <Eye size={12} /> Preview
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

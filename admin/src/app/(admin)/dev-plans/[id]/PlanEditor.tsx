@@ -9,6 +9,8 @@ import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Gith
 type PlanStatus = 'draft' | 'active' | 'completed' | 'archived';
 type MilestoneStatus = 'pending' | 'in_progress' | 'done';
 
+export interface FreeTextItem { box1: string; box2: string }
+
 interface Plan {
   id: string;
   company_id: string;
@@ -18,6 +20,8 @@ interface Plan {
   status: PlanStatus;
   brand_profile_id: string | null;
   assigned_at: string | null;
+  training_items?: FreeTextItem[] | null;
+  roles_items?: FreeTextItem[] | null;
 }
 
 interface Milestone {
@@ -126,6 +130,8 @@ export default function PlanEditor(props: Props) {
   const [companyId, setCompanyId] = useState(props.plan?.company_id ?? props.initialCompanyId ?? '');
   const [athleteId, setAthleteId] = useState(props.plan?.athlete_id ?? props.initialAthleteId ?? '');
   const [milestones, setMilestones] = useState<DraftMilestone[]>(initialMilestones);
+  const [trainingItems, setTrainingItems] = useState<FreeTextItem[]>(props.plan?.training_items ?? []);
+  const [rolesItems, setRolesItems] = useState<FreeTextItem[]>(props.plan?.roles_items ?? []);
 
   const [brand, setBrand] = useState<BrandProfile | null>(props.brandProfile);
   const [brandUrl, setBrandUrl] = useState(brand?.source_url ?? '');
@@ -224,6 +230,9 @@ export default function PlanEditor(props: Props) {
 
       // Upsert plan.
       let planId = props.plan?.id ?? null;
+      const cleanFreeTextItems = (items: FreeTextItem[]) =>
+        items.map(it => ({ box1: it.box1.trim(), box2: it.box2.trim() }))
+             .filter(it => it.box1 || it.box2);
       const planPayload = {
         company_id: companyId,
         athlete_id: athleteId || null,
@@ -231,6 +240,8 @@ export default function PlanEditor(props: Props) {
         summary: summary.trim() || null,
         status,
         brand_profile_id: brandId,
+        training_items: cleanFreeTextItems(trainingItems),
+        roles_items: cleanFreeTextItems(rolesItems),
         assigned_at: status === 'active' && !props.plan?.assigned_at ? new Date().toISOString() : props.plan?.assigned_at ?? null,
       };
       if (planId) {
@@ -383,6 +394,24 @@ export default function PlanEditor(props: Props) {
         )}
       </div>
 
+      <FreeTextBoxesCard
+        title="Training & Workshops"
+        helper="Each row is two free-text fields — e.g. workshop name + description, or course title + link."
+        items={trainingItems}
+        setItems={setTrainingItems}
+        placeholder1="e.g. Interview Skills Workshop"
+        placeholder2="e.g. Join Tom & Lucy on a Free Chat virtual workshop where we discuss skills and traits to help you in your next interview."
+      />
+
+      <FreeTextBoxesCard
+        title="Roles & Ideas"
+        helper="Each row is two free-text fields — e.g. role title + a description or link."
+        items={rolesItems}
+        setItems={setRolesItems}
+        placeholder1="e.g. Quantity Surveyor"
+        placeholder2="e.g. Check out this link to see what a day in the life of a Quantity Surveyor looks like."
+      />
+
       <div className="card p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -450,7 +479,7 @@ export default function PlanEditor(props: Props) {
         </button>
         {props.plan && (
           <Link href={`/dev-plans/${props.plan.id}/preview`} className="btn-secondary" target="_blank" rel="noopener noreferrer">
-            <Printer size={14} /> Preview &amp; print
+            <Printer size={14} /> Preview
           </Link>
         )}
         {props.plan && (
@@ -459,6 +488,52 @@ export default function PlanEditor(props: Props) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function FreeTextBoxesCard({
+  title, helper, items, setItems, placeholder1, placeholder2,
+}: {
+  title: string;
+  helper: string;
+  items: FreeTextItem[];
+  setItems: (next: FreeTextItem[]) => void;
+  placeholder1: string;
+  placeholder2: string;
+}) {
+  function set(idx: number, patch: Partial<FreeTextItem>) {
+    setItems(items.map((it, i) => i === idx ? { ...it, ...patch } : it));
+  }
+  function add() { setItems([...items, { box1: '', box2: '' }]); }
+  function remove(idx: number) { setItems(items.filter((_, i) => i !== idx)); }
+
+  return (
+    <div className="card p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-display text-lg font-semibold">{title}</h3>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{helper}</p>
+        </div>
+        <button type="button" className="btn-secondary btn-sm" onClick={add}>
+          <Plus size={12} /> Add row
+        </button>
+      </div>
+      {items.length === 0 ? (
+        <div className="empty-state">No items yet.</div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it, idx) => (
+            <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start">
+              <input className="input md:col-span-4" value={it.box1} placeholder={placeholder1} onChange={e => set(idx, { box1: e.target.value })} />
+              <textarea className="input md:col-span-7" rows={2} value={it.box2} placeholder={placeholder2} onChange={e => set(idx, { box2: e.target.value })} />
+              <button type="button" className="btn-icon btn-sm md:col-span-1" onClick={() => remove(idx)} aria-label="Remove">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
