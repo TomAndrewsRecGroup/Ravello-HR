@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { X, Loader2, FileText, Type as TypeIcon, Upload, Trash2 } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import { CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
+import { openAthleteCv } from './openCv';
 import type { AthleteRow } from './types';
 
 type Mode = 'create' | 'edit';
@@ -43,9 +44,12 @@ export default function AthleteFormModal({ mode, athlete, notes, onClose, onSave
   const [cvKind, setCvKind] = useState<'file' | 'text' | null>(athlete?.cv_kind ?? null);
   const [cvText, setCvText] = useState(athlete?.cv_text ?? '');
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [existingCv, setExistingCv] = useState<{ url: string; name: string } | null>(
-    athlete?.cv_kind === 'file' && athlete.cv_url
-      ? { url: athlete.cv_url, name: athlete.cv_filename ?? 'CV' }
+  // We never render a stored CV URL — CVs live in a private bucket
+  // and are fetched via a short-lived signed URL on demand. Keep
+  // the filename for display so the user knows a CV is attached.
+  const [existingCv, setExistingCv] = useState<{ name: string } | null>(
+    athlete?.cv_kind === 'file'
+      ? { name: athlete.cv_filename ?? 'CV' }
       : null,
   );
 
@@ -213,9 +217,15 @@ export default function AthleteFormModal({ mode, athlete, notes, onClose, onSave
                 {existingCv && !cvFile && (
                   <div className="rounded-[10px] p-3 mb-2 flex items-center gap-2" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
                     <FileText size={14} style={{ color: 'var(--purple)' }} />
-                    <a href={existingCv.url} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline flex-1 truncate" style={{ color: 'var(--ink)' }}>
+                    <button
+                      type="button"
+                      onClick={() => athlete && openAthleteCv(athlete.id)}
+                      className="text-xs hover:underline flex-1 truncate text-left"
+                      style={{ color: 'var(--ink)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                      title="Open CV (signed link valid for 1 hour)"
+                    >
                       {existingCv.name}
-                    </a>
+                    </button>
                     <button type="button" onClick={() => setExistingCv(null)} className="btn-icon btn-ghost" style={{ width: 24, height: 24, color: 'var(--red)' }}>
                       <Trash2 size={11} />
                     </button>

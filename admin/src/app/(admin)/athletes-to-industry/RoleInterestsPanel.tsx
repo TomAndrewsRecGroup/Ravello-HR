@@ -5,6 +5,7 @@ import { X, Trash2, ExternalLink, FileText } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
 import { interestApi } from './api';
+import { openAthleteCv } from './openCv';
 import type { AthleteRow, InterestRow, InterestStatus, PartnerRow, RoleOpportunity } from './types';
 
 interface Props {
@@ -147,16 +148,16 @@ export default function RoleInterestsPanel({
                         {[athlete.sport, athlete.previous_role].filter(Boolean).join(' · ')}
                       </p>
                     )}
-                    {athlete.cv_url && (
-                      <a
-                        href={athlete.cv_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {athlete.cv_kind === 'file' && (
+                      <button
+                        type="button"
+                        onClick={() => openAthleteCv(athlete.id)}
                         className="inline-flex items-center gap-1 text-[11px] mt-1.5 hover:underline"
-                        style={{ color: 'var(--purple)' }}
+                        style={{ color: 'var(--purple)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                        title="Open CV (signed link valid for 1 hour)"
                       >
                         <FileText size={10} /> {athlete.cv_filename ?? 'CV'} <ExternalLink size={10} />
-                      </a>
+                      </button>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
