@@ -42,6 +42,15 @@ export default function BDRolesClient({ roles }: Props) {
   const [bulkBusy, setBulkBusy] = useState(false);
 
   async function deleteRole(id: string) {
+    // IvyLens rows are synthesized server-side from the live /bd/leads
+    // feed — they're not stored locally, so a DB delete would 422 on
+    // the non-UUID id. Hide them from the view instead and warn the
+    // operator that the row will reappear unless cleared at source.
+    if (id.startsWith('ivylens-')) {
+      if (!confirm('This is an IvyLens-sourced role — it isn\'t stored locally. Hide it from this view?\n\nIt may reappear next time the IvyLens feed refreshes; clear it there to remove permanently.')) return;
+      setRows(prev => prev.filter(r => r.id !== id));
+      return;
+    }
     if (!confirm('Delete this role? This cannot be undone.')) return;
     setBusyId(id);
     const { error } = await supabase.from('bd_scanned_roles').delete().eq('id', id);
@@ -53,11 +62,10 @@ export default function BDRolesClient({ roles }: Props) {
   async function clearAllIvylens() {
     const ivyIds = rows.filter(r => r.company_source === 'ivylens').map(r => r.id);
     if (ivyIds.length === 0) { alert('No IvyLens roles to clear.'); return; }
-    if (!confirm(`Delete all ${ivyIds.length} IvyLens-sourced role${ivyIds.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
-    setBulkBusy(true);
-    const { error } = await supabase.from('bd_scanned_roles').delete().in('id', ivyIds);
-    setBulkBusy(false);
-    if (error) { alert(`Bulk delete failed: ${error.message}`); return; }
+    if (!confirm(`Hide all ${ivyIds.length} IvyLens-sourced role${ivyIds.length === 1 ? '' : 's'} from this view?\n\nIvyLens rows aren't stored locally — they'll reappear next time the feed refreshes unless cleared at source.`)) return;
+    // Synthetic ids — nothing to delete in the DB, just drop them
+    // client-side. (Real bd_scanned_roles rows have company_source =
+    // 'local' so this path can't accidentally wipe stored data.)
     setRows(prev => prev.filter(r => r.company_source !== 'ivylens'));
   }
 
