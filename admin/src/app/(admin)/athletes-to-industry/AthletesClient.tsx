@@ -8,6 +8,7 @@ import {
   Upload, Type as TypeIcon,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import { openAthleteCv } from './openCv';
 import type {
   AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow,
 } from './types';
@@ -214,7 +215,7 @@ export default function AthletesClient({
       }
       // The admin API returns { url, filename } — patch local state.
       setAthletes((curr) => curr.map((a) => (a.id === athleteId
-        ? { ...a, cv_kind: 'file', cv_url: json.url ?? a.cv_url, cv_filename: json.filename ?? file.name, cv_text: null }
+        ? { ...a, cv_kind: 'file', cv_url: null, cv_filename: json.filename ?? file.name, cv_text: null }
         : a)));
     } finally {
       setBusyFor(athleteId, false);
@@ -476,13 +477,18 @@ export default function AthletesClient({
                 </div>
 
                 <div className="flex items-center gap-2 mt-2 text-[11px] flex-wrap" style={{ color: 'var(--ink-faint)' }}>
-                  {a.cv_url && (
-                    <a href={a.cv_url} target="_blank" rel="noopener noreferrer"
-                       className="inline-flex items-center gap-0.5 hover:underline truncate" style={{ color: 'var(--purple)' }}>
+                  {a.cv_kind === 'file' && (
+                    <button
+                      type="button"
+                      onClick={() => openAthleteCv(a.id)}
+                      className="inline-flex items-center gap-0.5 hover:underline truncate"
+                      style={{ color: 'var(--purple)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                      title="Open CV (signed link valid for 1 hour)"
+                    >
                       <FileText size={10} /> {a.cv_filename ?? 'CV'} <ExternalLink size={9} />
-                    </a>
+                    </button>
                   )}
-                  {a.cv_kind === 'text' && !a.cv_url && (
+                  {a.cv_kind === 'text' && (
                     <span className="inline-flex items-center gap-0.5">
                       <FileText size={10} /> Pasted CV
                     </span>
@@ -498,10 +504,10 @@ export default function AthletesClient({
                   <label
                     className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded cursor-pointer"
                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}
-                    title={a.cv_url || a.cv_kind === 'text' ? 'Replace CV' : 'Upload CV'}
+                    title={a.cv_kind === 'file' || a.cv_kind === 'text' ? 'Replace CV' : 'Upload CV'}
                   >
                     {isBusy ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
-                    {a.cv_url || a.cv_kind === 'text' ? 'Replace' : 'Upload CV'}
+                    {a.cv_kind === 'file' || a.cv_kind === 'text' ? 'Replace' : 'Upload CV'}
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -514,7 +520,7 @@ export default function AthletesClient({
                       disabled={isBusy}
                     />
                   </label>
-                  {(a.cv_url || a.cv_kind === 'text') && (
+                  {(a.cv_kind === 'file' || a.cv_kind === 'text') && (
                     <button
                       type="button"
                       onClick={() => clearCvForAthlete(a.id)}

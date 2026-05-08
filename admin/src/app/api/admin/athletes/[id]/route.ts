@@ -48,12 +48,22 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       .eq('id', params.id)
       .single();
     if (athlete) {
-      const folder = `athletes/${athlete.company_id}/${athlete.id}`;
-      const { data: files } = await supabase.storage.from('documents').list(folder);
+      // New private bucket (mig 068).
+      const folder = `${athlete.company_id}/${athlete.id}`;
+      const { data: files } = await supabase.storage.from('athlete-cvs').list(folder);
       if (files && files.length > 0) {
         await supabase.storage
-          .from('documents')
+          .from('athlete-cvs')
           .remove(files.map(f => `${folder}/${f.name}`));
+      }
+      // Legacy folder in the shared 'documents' bucket — best-effort
+      // sweep for athletes whose CVs were uploaded before mig 068.
+      const legacy = `athletes/${athlete.company_id}/${athlete.id}`;
+      const { data: legacyFiles } = await supabase.storage.from('documents').list(legacy);
+      if (legacyFiles && legacyFiles.length > 0) {
+        await supabase.storage
+          .from('documents')
+          .remove(legacyFiles.map(f => `${legacy}/${f.name}`));
       }
     }
   } catch { /* non-fatal */ }

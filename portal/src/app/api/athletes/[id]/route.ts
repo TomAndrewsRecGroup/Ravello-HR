@@ -58,12 +58,22 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   // Best-effort: list and delete CV/avatar files in storage before the row.
   // List failures are non-fatal — the row delete still goes through.
   try {
-    const folder = `athletes/${athlete.company_id}/${athlete.id}`;
-    const { data: files } = await supabase.storage.from('documents').list(folder);
+    // New private bucket (mig 068).
+    const folder = `${athlete.company_id}/${athlete.id}`;
+    const { data: files } = await supabase.storage.from('athlete-cvs').list(folder);
     if (files && files.length > 0) {
       await supabase.storage
-        .from('documents')
+        .from('athlete-cvs')
         .remove(files.map(f => `${folder}/${f.name}`));
+    }
+    // Legacy sweep: the shared 'documents' bucket where CVs lived
+    // before mig 068. Cheap to attempt; ignored on miss.
+    const legacy = `athletes/${athlete.company_id}/${athlete.id}`;
+    const { data: legacyFiles } = await supabase.storage.from('documents').list(legacy);
+    if (legacyFiles && legacyFiles.length > 0) {
+      await supabase.storage
+        .from('documents')
+        .remove(legacyFiles.map(f => `${legacy}/${f.name}`));
     }
   } catch { /* swallow: orphaned files are tolerable, orphaned interests are not */ }
 

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { X, FileText, ExternalLink, Save } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import { openAthleteCv } from './openCv';
 import type { AthleteRow } from './types';
 
 export interface ProfileNote {
@@ -133,12 +134,18 @@ export default function AthleteProfileModal({ athlete, notes, onClose, onSaved }
             </Field>
           )}
 
-          {(athlete.cv_url || athlete.cv_kind === 'text') && (
+          {(athlete.cv_kind === 'file' || athlete.cv_kind === 'text') && (
             <Field label="CV">
-              {athlete.cv_url ? (
-                <a href={athlete.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline" style={{ color: 'var(--purple)' }}>
+              {athlete.cv_kind === 'file' ? (
+                <button
+                  type="button"
+                  onClick={() => openAthleteCv(athlete.id)}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  style={{ color: 'var(--purple)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                  title="Open CV (signed link valid for 1 hour)"
+                >
                   <FileText size={12} /> {athlete.cv_filename ?? 'Open CV'} <ExternalLink size={11} />
-                </a>
+                </button>
               ) : (
                 <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--ink-soft)' }}>{athlete.cv_text ?? ''}</p>
               )}

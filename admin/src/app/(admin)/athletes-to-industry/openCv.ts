@@ -1,0 +1,26 @@
+// Open an athlete CV by fetching a fresh short-lived signed URL.
+// CVs are PII — never store the URL; sign on demand. The window.open
+// is kicked off pre-fetch (and then has its location set) so popup
+// blockers treat it as a user-initiated action.
+export async function openAthleteCv(athleteId: string): Promise<string | null> {
+  const w = window.open('about:blank', '_blank');
+  try {
+    const res = await fetch(`/api/admin/athletes/${athleteId}/cv`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      if (w) w.close();
+      alert(`Couldn't open CV: ${j.error ?? res.statusText}`);
+      return null;
+    }
+    const json = await res.json() as { url: string };
+    if (w) w.location.href = json.url;
+    return json.url;
+  } catch (e) {
+    if (w) w.close();
+    alert(`Couldn't open CV: ${(e as Error).message}`);
+    return null;
+  }
+}
