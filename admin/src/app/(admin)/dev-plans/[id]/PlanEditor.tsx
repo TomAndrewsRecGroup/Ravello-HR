@@ -228,10 +228,15 @@ export default function PlanEditor(props: Props) {
         }
       }
 
-      // Title change on an existing plan creates a brand-new plan
-      // rather than overwriting the original — protects history.
-      const treatAsNew = !!props.plan
+      // Title or athlete change on an existing plan creates a brand-
+      // new plan rather than overwriting the original — protects
+      // history (and avoids quietly reassigning a plan to a different
+      // person).
+      const titleChanged = !!props.plan
         && title.trim() !== (props.plan.title ?? '').trim();
+      const athleteChanged = !!props.plan
+        && (athleteId || null) !== (props.plan.athlete_id ?? null);
+      const treatAsNew = titleChanged || athleteChanged;
       let planId = treatAsNew ? null : (props.plan?.id ?? null);
 
       const cleanFreeTextItems = (items: FreeTextItem[]) =>
@@ -483,7 +488,10 @@ export default function PlanEditor(props: Props) {
             ? 'Saving…'
             : !props.plan
               ? 'Create plan'
-              : (title.trim() !== (props.plan.title ?? '').trim() ? 'Save as new' : 'Save plan')}
+              : ((title.trim() !== (props.plan.title ?? '').trim()
+                  || (athleteId || null) !== (props.plan.athlete_id ?? null))
+                  ? 'Save as new'
+                  : 'Save plan')}
         </button>
         <button type="button" className="btn-secondary" onClick={saveAsTemplate} disabled={milestones.length === 0}>
           <FileText size={14} /> Save as template
