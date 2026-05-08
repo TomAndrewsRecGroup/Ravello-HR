@@ -29,3 +29,6 @@ export type { BillingSetupInput }        from './templates/billingSetup';
 
 export { serviceRequestResponseEmail }   from './templates/serviceRequestResponse';
 export type { ServiceRequestResponseInput } from './templates/serviceRequestResponse';
+
+export { athleteWelcomeEmail, nextBusinessSendAt } from './templates/athleteWelcome';
+export type { AthleteWelcomeInput } from './templates/athleteWelcome';

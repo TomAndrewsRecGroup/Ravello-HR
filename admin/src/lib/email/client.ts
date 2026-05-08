@@ -35,6 +35,9 @@ export interface SendEmailInput {
   replyTo?: string;
   /** Tag for Resend Insights filtering, e.g. "client-welcome". */
   tag?:     string;
+  /** ISO-8601 timestamp; Resend queues the send and dispatches at
+   *  the requested time (up to 30 days in the future). */
+  scheduledAt?: string;
 }
 
 export interface SendEmailResult {
@@ -91,6 +94,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
   };
   if (bcc.length) payload.bcc = bcc;
   if (input.tag)  payload.tags = [{ name: 'category', value: input.tag }];
+  if (input.scheduledAt) payload.scheduled_at = input.scheduledAt;
 
   try {
     const res = await fetch(RESEND_ENDPOINT, {
