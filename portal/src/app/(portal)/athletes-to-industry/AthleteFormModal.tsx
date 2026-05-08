@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { X, Loader2, FileText, Type as TypeIcon, Upload, Trash2 } from 'lucide-react';
+import { X, Loader2, FileText, Type as TypeIcon, Upload, Trash2, PhoneCall } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import { CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
 import { openAthleteCv } from './openCv';
@@ -146,14 +146,23 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="card w-full max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden"
+        className={`card w-full max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden ${athlete?.called_at ? 'athlete-called' : ''}`}
         onClick={e => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-labelledby="athlete-form-title"
       >
-        <div className="px-6 py-5 flex items-center" style={{ borderBottom: '1px solid var(--line)' }}>
+        <div className="px-6 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--line)' }}>
           <h2 id="athlete-form-title" className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
             {mode === 'create' ? 'Add an athlete' : `Edit ${athlete?.full_name}`}
           </h2>
+          {athlete?.called_at && (
+            <span
+              className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full inline-flex items-center gap-1 whitespace-nowrap"
+              style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)', border: '1px solid rgba(20,184,166,0.35)' }}
+              title={`The People System called on ${new Date(athlete.called_at).toLocaleString('en-GB')}`}
+            >
+              <PhoneCall size={10} /> Called
+            </span>
+          )}
           <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
         </div>
 

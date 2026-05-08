@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Trophy, Plus, Trash2, Loader2, Save, X, UserRoundSearch, FileText, ExternalLink, GraduationCap,
-  Upload, Type as TypeIcon,
+  Upload, Type as TypeIcon, PhoneCall,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { openAthleteCv } from './openCv';
@@ -462,8 +462,8 @@ export default function AthletesClient({
             return (
               <li
                 key={a.id}
-                className="card p-3 relative flex flex-col"
-                style={{ boxShadow: 'none', borderColor: 'var(--line)' }}
+                className={`card p-3 relative flex flex-col ${a.called_at ? 'athlete-called' : ''}`}
+                style={a.called_at ? undefined : { boxShadow: 'none', borderColor: 'var(--line)' }}
               >
                 <button
                   type="button"
@@ -473,9 +473,20 @@ export default function AthletesClient({
                 >
                   <AvatarInitials name={a.full_name} size={36} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
-                      {a.full_name}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
+                        {a.full_name}
+                      </p>
+                      {a.called_at && (
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"
+                          style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
+                          title={`Called on ${new Date(a.called_at).toLocaleString('en-GB')}`}
+                        >
+                          <PhoneCall size={8} /> Called
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--ink-soft)' }}>
                       {[a.sport, a.previous_role].filter(Boolean).join(' · ') || 'Athlete'}
                     </p>

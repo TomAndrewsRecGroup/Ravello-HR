@@ -666,6 +666,22 @@
   }
 }
 
+/* ─── Athlete "called" state — soft green glow visible on any
+   admin card or modal where an athlete is shown. */
+.athlete-called {
+  border-color: rgba(20, 184, 166, 0.55) !important;
+  box-shadow:
+    0 0 0 1px rgba(20, 184, 166, 0.35),
+    0 0 16px rgba(20, 184, 166, 0.32),
+    0 0 28px rgba(20, 184, 166, 0.18) !important;
+  position: relative;
+}
+.athlete-called-glow {
+  box-shadow:
+    0 0 0 1.5px rgba(20, 184, 166, 0.45),
+    0 0 18px rgba(20, 184, 166, 0.28) !important;
+}
+
 /* ─── Print: when a page contains .print-area, the browser's
    "Save as PDF" / Print produces a clean one-pager. Used by the
    dev-plan preview page so admins can email plans off-portal. */

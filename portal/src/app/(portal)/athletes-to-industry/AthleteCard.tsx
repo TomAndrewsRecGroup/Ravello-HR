@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil } from 'lucide-react';
+import { Pencil, PhoneCall } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import type { AthleteRow } from './types';
 
@@ -18,8 +18,8 @@ interface Props {
 export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
   return (
     <li
-      className="card p-3 relative group cursor-pointer"
-      style={{ boxShadow: 'none', borderColor: 'var(--line)' }}
+      className={`card p-3 relative group cursor-pointer ${athlete.called_at ? 'athlete-called' : ''}`}
+      style={athlete.called_at ? undefined : { boxShadow: 'none', borderColor: 'var(--line)' }}
       onClick={onEdit}
       role="button"
       tabIndex={0}
@@ -29,9 +29,20 @@ export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
       <div className="flex items-center gap-3">
         <AvatarInitials name={athlete.full_name} size={36} />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
-            {athlete.full_name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
+              {athlete.full_name}
+            </p>
+            {athlete.called_at && (
+              <span
+                className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5 flex-shrink-0"
+                style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
+                title="The People System has been in touch with this athlete"
+              >
+                <PhoneCall size={8} /> Called
+              </span>
+            )}
+          </div>
           <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--ink-soft)' }}>
             {[athlete.sport, athlete.previous_role].filter(Boolean).join(' · ') || 'Athlete'}
           </p>

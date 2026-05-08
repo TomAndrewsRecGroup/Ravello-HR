@@ -4,13 +4,14 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Building2, ArrowRight, Globe } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
-import type { InterestRow, PartnerRow } from './types';
+import type { AthleteRow, InterestRow, PartnerRow } from './types';
 
 const PartnersModal = dynamic(() => import('./PartnersModal'), { ssr: false });
 
 interface Props {
   partners: PartnerRow[];
   interests: InterestRow[];
+  athletes?: AthleteRow[];
 }
 
 // Read-only partners panel.
@@ -19,7 +20,7 @@ interface Props {
 // edits) lives on the admin side. Clients see the partner roster + a
 // roll-up "matched" count so they know how active the programme is.
 
-export default function PartnersPanel({ partners, interests }: Props) {
+export default function PartnersPanel({ partners, interests, athletes = [] }: Props) {
   const [showAll, setShowAll] = useState(false);
 
   const interestsByPartner = useMemo(() => {
@@ -83,6 +84,7 @@ export default function PartnersPanel({ partners, interests }: Props) {
           partners={partners}
           interestsByPartner={interestsByPartner}
           interests={interests}
+          athletes={athletes}
           onClose={() => setShowAll(false)}
         />
       )}

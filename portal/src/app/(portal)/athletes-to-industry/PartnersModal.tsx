@@ -1,15 +1,18 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { X, Search, ChevronDown, ChevronRight, Globe, MapPin, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, Search, ChevronDown, ChevronRight, Globe, MapPin, ExternalLink, Plus, Check } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { useModalShell } from '@/components/ui/useModalShell';
-import type { InterestRow, PartnerRow } from './types';
+import { createClient } from '@/lib/supabase/client';
+import type { AthleteRow, InterestRow, PartnerRow } from './types';
 
 interface Props {
   partners: PartnerRow[];
   interests: InterestRow[];
   interestsByPartner: Map<string, number>;
+  athletes?: AthleteRow[];
   onClose: () => void;
 }
 
@@ -18,12 +21,56 @@ interface Props {
 // modal just shows partners, their roles, and aggregate match counts.
 
 export default function PartnersModal({
-  partners, interests, interestsByPartner, onClose,
+  partners, interests, interestsByPartner, athletes = [], onClose,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
+  const router = useRouter();
+  const supabase = createClient();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Per-role inline picker state. Keyed by `${partnerId}:${roleId|root}`
+  // so each role row tracks its own dropdown without conflict.
+  const [pickerKey, setPickerKey] = useState<string | null>(null);
+  const [pickerAthlete, setPickerAthlete] = useState('');
+  const [pickerNote, setPickerNote] = useState('');
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [errorByKey, setErrorByKey] = useState<Record<string, string>>({});
+
+  function rowKey(partnerId: string, roleId: string | null): string {
+    return `${partnerId}:${roleId ?? 'root'}`;
+  }
+
+  async function expressInterest(partnerId: string, roleId: string | null) {
+    const key = rowKey(partnerId, roleId);
+    if (!pickerAthlete) {
+      setErrorByKey(p => ({ ...p, [key]: 'Pick an athlete first' }));
+      return;
+    }
+    setSavingKey(key);
+    setErrorByKey(p => ({ ...p, [key]: '' }));
+    try {
+      const { error } = await supabase
+        .from('athlete_partner_interests')
+        .insert({
+          athlete_id: pickerAthlete,
+          partner_id: partnerId,
+          role_opportunity_id: roleId,
+          status: 'interested',
+          notes: pickerNote.trim() || null,
+        });
+      if (error) throw error;
+      setPickerKey(null);
+      setPickerAthlete('');
+      setPickerNote('');
+      router.refresh();
+    } catch (e) {
+      setErrorByKey(p => ({ ...p, [key]: (e as Error).message }));
+    } finally {
+      setSavingKey(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return partners;
@@ -145,6 +192,8 @@ export default function PartnersModal({
                           <ul className="space-y-1.5">
                             {p.role_opportunities.map(role => {
                               const count = roleInterestCount(p.id, role.id);
+                              const key = rowKey(p.id, role.id);
+                              const open = pickerKey === key;
                               return (
                                 <li key={role.id} className="rounded-[10px] p-3" style={{ background: 'var(--surface-soft)' }}>
                                   <div className="flex items-start gap-2">
@@ -172,19 +221,70 @@ export default function PartnersModal({
                                         )}
                                       </div>
                                     </div>
-                                    {count > 0 && (
-                                      <span
-                                        className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
-                                        style={{
-                                          background: 'rgba(124,58,237,0.10)',
-                                          color: 'var(--purple)',
-                                          border: '1px solid var(--line)',
-                                        }}
-                                      >
-                                        {count} interested
-                                      </span>
-                                    )}
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      {count > 0 && (
+                                        <span
+                                          className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                                          style={{
+                                            background: 'rgba(124,58,237,0.10)',
+                                            color: 'var(--purple)',
+                                            border: '1px solid var(--line)',
+                                          }}
+                                        >
+                                          {count} interested
+                                        </span>
+                                      )}
+                                      {athletes.length > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const next = open ? null : key;
+                                            setPickerKey(next);
+                                            setPickerAthlete('');
+                                            setPickerNote('');
+                                            setErrorByKey(p => ({ ...p, [key]: '' }));
+                                          }}
+                                          className="btn-secondary btn-sm"
+                                          style={{ padding: '4px 8px', fontSize: 11 }}
+                                          title="Express an athlete's interest in this role"
+                                        >
+                                          {open ? <X size={11} /> : <Plus size={11} />}
+                                          {open ? 'Cancel' : 'Add interest'}
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
+                                  {open && (
+                                    <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px dashed var(--line)' }}>
+                                      <select
+                                        className="input"
+                                        value={pickerAthlete}
+                                        onChange={e => setPickerAthlete(e.target.value)}
+                                      >
+                                        <option value="">Select an athlete…</option>
+                                        {athletes.map(a => (
+                                          <option key={a.id} value={a.id}>{a.full_name}</option>
+                                        ))}
+                                      </select>
+                                      <input
+                                        className="input"
+                                        placeholder="Note (optional) — e.g. why you think they'd suit this role"
+                                        value={pickerNote}
+                                        onChange={e => setPickerNote(e.target.value)}
+                                      />
+                                      {errorByKey[key] && (
+                                        <p className="text-xs" style={{ color: 'var(--red)' }}>{errorByKey[key]}</p>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => expressInterest(p.id, role.id)}
+                                        disabled={savingKey === key || !pickerAthlete}
+                                        className="btn-cta btn-sm"
+                                      >
+                                        <Check size={12} /> {savingKey === key ? 'Saving…' : 'Save interest'}
+                                      </button>
+                                    </div>
+                                  )}
                                 </li>
                               );
                             })}

@@ -484,6 +484,24 @@
   }
 }
 
+/* ─── Athlete "called" state: soft glowing green border so it
+   reads at a glance from anywhere an athlete card is rendered. */
+.athlete-called {
+  border-color: rgba(20, 184, 166, 0.55) !important;
+  box-shadow:
+    0 0 0 1px rgba(20, 184, 166, 0.35),
+    0 0 16px rgba(20, 184, 166, 0.32),
+    0 0 28px rgba(20, 184, 166, 0.18) !important;
+  position: relative;
+}
+.athlete-called-glow {
+  /* For containers that don't have their own border; adds the same
+     soft green halo without changing the border colour. */
+  box-shadow:
+    0 0 0 1.5px rgba(20, 184, 166, 0.45),
+    0 0 18px rgba(20, 184, 166, 0.28) !important;
+}
+
 /* ─── Print: when a page contains .print-area, the browser's
    "Save as PDF" / Print produces a clean one-pager. Everything
    outside the print-area is hidden. */
