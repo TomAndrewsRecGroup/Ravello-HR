@@ -14,6 +14,8 @@ import type {
 
 const MatchPickerModal    = dynamic(() => import('./MatchPickerModal'),    { ssr: false });
 const TrainingPickerModal = dynamic(() => import('./TrainingPickerModal'), { ssr: false });
+const AthleteProfileModal = dynamic(() => import('./AthleteProfileModal'), { ssr: false });
+type ProfileNote = { label: string; status: string; note: string };
 
 interface CompanyRow { id: string; name: string }
 
@@ -53,6 +55,7 @@ export default function AthletesClient({
   const [error, setError] = useState('');
   const [matching,         setMatching]         = useState<AthleteRow | null>(null);
   const [matchingTraining, setMatchingTraining] = useState<AthleteRow | null>(null);
+  const [viewing,          setViewing]          = useState<AthleteRow | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
 
   // Local mirror of the server-fetched athletes list so deletes
@@ -80,6 +83,24 @@ export default function AthletesClient({
     for (const i of trainingInterests) m.set(i.athlete_id, (m.get(i.athlete_id) ?? 0) + 1);
     return m;
   }, [trainingInterests]);
+
+  const partnerById = useMemo(() => new Map(partners.map(p => [p.id, p])), [partners]);
+  const providerById = useMemo(() => new Map(providers.map(p => [p.id, p])), [providers]);
+
+  function notesFor(athleteId: string): ProfileNote[] {
+    const out: ProfileNote[] = [];
+    for (const i of interests) {
+      if (i.athlete_id !== athleteId || !i.notes) continue;
+      const p = partnerById.get(i.partner_id);
+      out.push({ label: p?.company_name ?? 'Partner', status: i.status, note: i.notes });
+    }
+    for (const t of trainingInterests) {
+      if (t.athlete_id !== athleteId || !t.notes) continue;
+      const p = providerById.get(t.provider_id);
+      out.push({ label: p?.provider_name ?? 'Training', status: t.status, note: t.notes });
+    }
+    return out;
+  }
 
   const filtered = useMemo(() => {
     return filterCompany
@@ -416,7 +437,12 @@ export default function AthletesClient({
                 className="card p-3 relative flex flex-col"
                 style={{ boxShadow: 'none', borderColor: 'var(--line)' }}
               >
-                <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setViewing(a)}
+                  className="flex items-center gap-3 text-left rounded-md -mx-1 px-1 py-0.5 hover:bg-[var(--surface-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--purple)]"
+                  aria-label={`Open profile for ${a.full_name}`}
+                >
                   <AvatarInitials name={a.full_name} size={36} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[13px] leading-tight truncate" style={{ color: 'var(--ink)' }}>
@@ -426,7 +452,7 @@ export default function AthletesClient({
                       {[a.sport, a.previous_role].filter(Boolean).join(' · ') || 'Athlete'}
                     </p>
                   </div>
-                </div>
+                </button>
 
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                   {a.company_name && (
@@ -546,6 +572,17 @@ export default function AthletesClient({
           initialInterests={trainingInterests.filter(i => i.athlete_id === matchingTraining.id)}
           onClose={() => setMatchingTraining(null)}
           onChanged={refresh}
+        />
+      )}
+      {viewing && (
+        <AthleteProfileModal
+          athlete={viewing}
+          notes={notesFor(viewing.id)}
+          onClose={() => setViewing(null)}
+          onSaved={(saved) => {
+            setAthletes((curr) => curr.map((x) => (x.id === saved.id ? { ...x, ...saved } : x)));
+            setViewing(saved);
+          }}
         />
       )}
     </section>

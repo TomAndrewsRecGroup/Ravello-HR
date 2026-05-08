@@ -1,6 +1,7 @@
 export interface AthleteFields {
   full_name?: string;
   email?: string | null;
+  phone?: string | null;
   sport?: string | null;
   previous_role?: string | null;
   bio?: string | null;
@@ -29,6 +30,7 @@ export function buildPatch(body: AthleteFields): Record<string, unknown> | { err
     patch.full_name = v.slice(0, 200);
   }
   if (body.email !== undefined) patch.email = body.email?.trim()?.slice(0, 200) || null;
+  if (body.phone !== undefined) patch.phone = body.phone?.trim()?.slice(0, 50) || null;
   if (body.sport !== undefined) patch.sport = body.sport?.trim()?.slice(0, 100) || null;
   if (body.previous_role !== undefined) patch.previous_role = body.previous_role?.trim()?.slice(0, 200) || null;
   if (body.bio !== undefined) patch.bio = body.bio?.trim()?.slice(0, 5000) || null;
