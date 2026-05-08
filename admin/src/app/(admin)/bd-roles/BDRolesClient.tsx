@@ -1,7 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, ExternalLink, Filter } from 'lucide-react';
+import { Search, ExternalLink, Filter, Trash2, Eraser } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import type { FlatRole } from './page';
 
 interface Props { roles: FlatRole[]; }
@@ -32,21 +33,45 @@ function relative(ts: string | null): string {
 }
 
 export default function BDRolesClient({ roles }: Props) {
+  const supabase = createClient();
+  const [rows, setRows] = useState<FlatRole[]>(roles);
   const [search,   setSearch]   = useState('');
   const [source,   setSource]   = useState<'all' | 'ivylens' | 'local'>('all');
   const [activeOnly, setActiveOnly] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function deleteRole(id: string) {
+    if (!confirm('Delete this role? This cannot be undone.')) return;
+    setBusyId(id);
+    const { error } = await supabase.from('bd_scanned_roles').delete().eq('id', id);
+    setBusyId(null);
+    if (error) { alert(`Delete failed: ${error.message}`); return; }
+    setRows(prev => prev.filter(r => r.id !== id));
+  }
+
+  async function clearAllIvylens() {
+    const ivyIds = rows.filter(r => r.company_source === 'ivylens').map(r => r.id);
+    if (ivyIds.length === 0) { alert('No IvyLens roles to clear.'); return; }
+    if (!confirm(`Delete all ${ivyIds.length} IvyLens-sourced role${ivyIds.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from('bd_scanned_roles').delete().in('id', ivyIds);
+    setBulkBusy(false);
+    if (error) { alert(`Bulk delete failed: ${error.message}`); return; }
+    setRows(prev => prev.filter(r => r.company_source !== 'ivylens'));
+  }
 
   const boards = useMemo(() => {
     const s = new Set<string>();
-    roles.forEach(r => { if (r.source_board) s.add(r.source_board); });
+    rows.forEach(r => { if (r.source_board) s.add(r.source_board); });
     return Array.from(s).sort();
-  }, [roles]);
+  }, [rows]);
 
   const [board, setBoard] = useState<string>('all');
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return roles.filter(r => {
+    return rows.filter(r => {
       if (activeOnly && !r.still_active) return false;
       if (source !== 'all' && r.company_source !== source) return false;
       if (board !== 'all' && r.source_board !== board) return false;
@@ -57,7 +82,7 @@ export default function BDRolesClient({ roles }: Props) {
         r.location?.toLowerCase().includes(q)
       );
     });
-  }, [roles, search, source, board, activeOnly]);
+  }, [rows, search, source, board, activeOnly]);
 
   return (
     <>
@@ -97,6 +122,16 @@ export default function BDRolesClient({ roles }: Props) {
           <input type="checkbox" checked={activeOnly} onChange={e => setActiveOnly(e.target.checked)} />
           Active only
         </label>
+
+        <button
+          onClick={clearAllIvylens}
+          disabled={bulkBusy}
+          className="btn btn-sm btn-ghost"
+          style={{ color: 'var(--red)' }}
+          title="Delete every IvyLens-sourced role"
+        >
+          <Eraser size={12} /> {bulkBusy ? 'Clearing…' : 'Clear IvyLens'}
+        </button>
       </div>
 
       {/* Table */}
@@ -116,6 +151,7 @@ export default function BDRolesClient({ roles }: Props) {
                 <th>Source</th>
                 <th>Scanned</th>
                 <th>Origin</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -168,6 +204,17 @@ export default function BDRolesClient({ roles }: Props) {
                         Local
                       </span>
                     )}
+                  </td>
+                  <td className="text-right">
+                    <button
+                      onClick={() => deleteRole(r.id)}
+                      disabled={busyId === r.id}
+                      className="btn-ghost btn-sm"
+                      style={{ color: 'var(--red)' }}
+                      title="Delete role"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </td>
                 </tr>
               ))}

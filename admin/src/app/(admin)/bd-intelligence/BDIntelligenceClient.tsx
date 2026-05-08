@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import BDCompanyModal from '@/components/modules/BDCompanyModal';
-import { Search, ChevronDown, LayoutList, Columns3 } from 'lucide-react';
+import { Search, ChevronDown, LayoutList, Columns3, Trash2 } from 'lucide-react';
 
 interface Props {
   companies: any[];
@@ -88,6 +88,16 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
       setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, status: newStatus } : c));
       revalidateAdminPath('/bd-intelligence');
     }
+  }
+
+  async function deleteCompany(companyId: string, companyName: string) {
+    const roleCount = (rolesByCompany[companyId] ?? []).length;
+    const tail = roleCount > 0 ? ` and its ${roleCount} scanned role${roleCount === 1 ? '' : 's'}` : '';
+    if (!confirm(`Delete ${companyName}${tail}? This cannot be undone.`)) return;
+    const { error } = await supabase.from('bd_companies').delete().eq('id', companyId);
+    if (error) { alert(`Delete failed: ${error.message}`); return; }
+    setCompanies(prev => prev.filter(c => c.id !== companyId));
+    revalidateAdminPath('/bd-intelligence');
   }
 
   /* ─── Drag handlers ──────────────────────────────── */
@@ -215,8 +225,18 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                       <td style={{ color: 'var(--ink-soft)' }}>{salary}</td>
                       <td style={{ color: 'var(--ink-faint)' }}>{relativeTime(c.last_seen_at)}</td>
                       <td><span className={`badge ${statusBadgeClass(cStatus)}`}>{cStatus}</span></td>
-                      <td>
-                        <button onClick={() => setModalCompany(c)} className="btn-ghost btn-sm">View Roles</button>
+                      <td onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setModalCompany(c)} className="btn-ghost btn-sm">View Roles</button>
+                          <button
+                            onClick={() => deleteCompany(c.id, c.company_name ?? 'this company')}
+                            className="btn-ghost btn-sm"
+                            style={{ color: 'var(--red)' }}
+                            title="Delete company and its scanned roles"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -281,13 +301,23 @@ export default function BDIntelligenceClient({ companies: initialCompanies, role
                         onDragStart={() => onDragStart(c.id)}
                         onDragEnd={() => setDragging(null)}
                         onClick={() => setModalCompany(c)}
-                        className="card p-3 cursor-pointer active:cursor-grabbing select-none hover:shadow-md transition-shadow"
+                        className="card p-3 cursor-pointer active:cursor-grabbing select-none hover:shadow-md transition-shadow group relative"
                         style={{
                           opacity: dragging === c.id ? 0.4 : 1,
                           borderLeft: `3px solid ${col.color}`,
                         }}
                       >
-                        <p className="font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>{c.company_name}</p>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteCompany(c.id, c.company_name ?? 'this company'); }}
+                          onMouseDown={e => e.stopPropagation()}
+                          className="absolute top-1.5 right-1.5 btn-icon btn-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ width: 22, height: 22, background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--red)' }}
+                          title="Delete company and its scanned roles"
+                          aria-label={`Delete ${c.company_name}`}
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <p className="font-semibold text-sm mb-1 pr-6" style={{ color: 'var(--ink)' }}>{c.company_name}</p>
                         {c.domain && <p className="text-xs mb-2" style={{ color: 'var(--ink-faint)' }}>{c.domain}</p>}
 
                         <div className="flex items-center gap-2 flex-wrap mb-2 text-[11px]">
