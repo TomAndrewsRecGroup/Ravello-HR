@@ -65,10 +65,11 @@ function extractSalary(salary: unknown): { min: number | null; max: number | nul
 export default async function BDRolesPage() {
   const supabase = createServerSupabaseClient();
 
-  const [localRolesRes, bdCompaniesRes, ivylensRes] = await Promise.all([
+  const [localRolesRes, bdCompaniesRes, ivylensRes, dismissedRes] = await Promise.all([
     supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,pay_type,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
     supabase.from('bd_companies').select('id,company_name'),
     ivylensRequest<{ leads?: any[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
+    supabase.from('bd_ivylens_dismissed').select('synthetic_id'),
   ]);
 
   const localRoles  = localRolesRes.data ?? [];
@@ -76,6 +77,7 @@ export default async function BDRolesPage() {
   const companyById = new Map(bdCompanies.map((c: any) => [c.id, c.company_name]));
 
   const ivylensLeads = (ivylensRes as any)?.data?.leads ?? [];
+  const dismissed = new Set<string>((dismissedRes.data ?? []).map((r: any) => r.synthetic_id));
 
   // Flatten local roles
   const local: FlatRole[] = localRoles.map((r: any) => ({
@@ -100,8 +102,12 @@ export default async function BDRolesPage() {
   // structured `salary` ({min,max}) plus `salary_range` (display
   // string) and `pay_type`; older rows still send the raw string.
   // extractSalary handles both.
-  const ivylensFlat: FlatRole[] = ivylensLeads.flatMap((lead: any) =>
-    (lead.roles ?? []).map((r: any, idx: number) => {
+  const ivylensFlat: FlatRole[] = ivylensLeads.flatMap((lead: any) => {
+    const companyId = `ivylens-${lead.id ?? lead.company_name}`;
+    if (dismissed.has(companyId)) return [];
+    return (lead.roles ?? []).flatMap((r: any, idx: number) => {
+      const roleId = `${companyId}-${idx}`;
+      if (dismissed.has(roleId)) return [];
       const { min, max } = extractSalary(r.salary);
       // Prefer the enriched display string from IvyLens, then fall
       // back to the raw legacy salary string we used to receive.
@@ -109,8 +115,8 @@ export default async function BDRolesPage() {
         (typeof r.salary_range === 'string' && r.salary_range.trim()) ? r.salary_range
         : (typeof r.salary === 'string' && r.salary.trim()) ? r.salary
         : null;
-      return {
-        id:             `ivylens-${lead.id ?? lead.company_name}-${idx}`,
+      return [{
+        id:             roleId,
         company_name:   lead.company_name ?? '-',
         company_id:     null,
         company_source: 'ivylens' as const,
@@ -125,9 +131,9 @@ export default async function BDRolesPage() {
         source_url:     r.url ?? null,
         scanned_at:     lead.sent_at ?? null,
         still_active:   true,
-      };
-    })
-  );
+      }];
+    });
+  });
 
   const allRoles = [...ivylensFlat, ...local];
 

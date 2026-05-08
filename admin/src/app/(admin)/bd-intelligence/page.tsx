@@ -14,7 +14,7 @@ export const revalidate = 60;
 export default async function BDIntelligencePage() {
   const supabase = createServerSupabaseClient();
 
-  const [companiesRes, rolesRes, ivylensRes] = await Promise.all([
+  const [companiesRes, rolesRes, ivylensRes, dismissedRes] = await Promise.all([
     // 200 most-recently-seen prospect companies. Was 500 — operators
     // act on the top of the list anyway, and 60% of the row weight
     // is the friction_intel + ivylens_roles JSONB columns.
@@ -33,11 +33,13 @@ export default async function BDIntelligencePage() {
       .order('scanned_at', { ascending: false })
       .limit(500),
     ivylensRequest('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
+    supabase.from('bd_ivylens_dismissed').select('synthetic_id'),
   ]);
 
   const companies: any[] = companiesRes.data ?? [];
   const roles: any[]     = rolesRes.data ?? [];
   const ivylensLeads: any[] = (ivylensRes as any)?.data?.leads ?? [];
+  const dismissed = new Set<string>((dismissedRes.data ?? []).map((r: any) => r.synthetic_id));
 
   // Parse IvyLens salary strings like "65000-80000" or "£65k-£80k"
   function parseSalary(s: string | null | undefined): { min: number | null; max: number | null } {
@@ -54,9 +56,11 @@ export default async function BDIntelligencePage() {
   }
 
   // Merge IvyLens BD leads: add any companies not already tracked locally
+  // and that admins haven't dismissed (mig 070).
   const localNames = new Set(companies.map((c: any) => c.company_name?.toLowerCase()));
   const mergedFromIvylens = ivylensLeads
     .filter((l: any) => l.company_name && !localNames.has(l.company_name.toLowerCase()))
+    .filter((l: any) => !dismissed.has(`ivylens-${l.id ?? l.company_name}`))
     .map((l: any) => ({
       id: `ivylens-${l.id ?? l.company_name}`,
       company_name: l.company_name,
@@ -70,13 +74,18 @@ export default async function BDIntelligencePage() {
       friction_intel: l.friction_intel ?? null,
     }));
 
-  // Synthesize scanned-role rows for IvyLens leads so the existing table view renders them
+  // Synthesize scanned-role rows for IvyLens leads so the existing
+  // table view renders them. Skip companies + individual roles
+  // already on the dismiss list so deletions persist across reloads.
   const ivylensRoleRows: any[] = ivylensLeads.flatMap((l: any) => {
     const companyId = `ivylens-${l.id ?? l.company_name}`;
-    return (l.roles ?? []).map((r: any, idx: number) => {
+    if (dismissed.has(companyId)) return [];
+    return (l.roles ?? []).flatMap((r: any, idx: number) => {
       const { min, max } = parseSalary(r.salary);
-      return {
-        id:            `${companyId}-role-${idx}`,
+      const roleId = `${companyId}-role-${idx}`;
+      if (dismissed.has(roleId)) return [];
+      return [{
+        id:            roleId,
         company_id:    companyId,
         role_title:    r.title ?? null,
         salary_min:    min,
@@ -88,7 +97,7 @@ export default async function BDIntelligencePage() {
         source_board:  r.source ?? null,
         scanned_at:    l.sent_at ?? null,
         still_active:  true,
-      };
+      }];
     });
   });
 
