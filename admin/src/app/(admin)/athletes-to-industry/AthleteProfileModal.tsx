@@ -12,10 +12,16 @@ export interface ProfileNote {
   status: string;
   note: string;
 }
+export interface ProfileDevPlan {
+  id: string;
+  title: string;
+  status: string;
+}
 
 interface Props {
   athlete: AthleteRow;
   notes: ProfileNote[];
+  devPlans?: ProfileDevPlan[];
   onClose: () => void;
   onSaved: (a: AthleteRow) => void;
 }
@@ -25,7 +31,7 @@ interface Props {
 // passed in are aggregated by AthletesClient from athlete_partner_
 // interests + athlete_training_interests so admins can see (and
 // review) every note they've left without leaving this card.
-export default function AthleteProfileModal({ athlete, notes, onClose, onSaved }: Props) {
+export default function AthleteProfileModal({ athlete, notes, devPlans, onClose, onSaved }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
 
@@ -82,6 +88,25 @@ export default function AthleteProfileModal({ athlete, notes, onClose, onSaved }
           {error && (
             <div className="rounded-md p-2 text-xs" style={{ background: 'rgba(217,68,68,0.05)', color: 'var(--red)', border: '1px solid var(--red)' }}>
               {error}
+            </div>
+          )}
+
+          {devPlans && devPlans.length > 0 && (
+            <div className="rounded-md p-3 space-y-2"
+                 style={{ background: 'rgba(59,111,255,0.05)', border: '1px solid rgba(59,111,255,0.18)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>
+                Development plans
+              </p>
+              <ul className="space-y-1.5">
+                {devPlans.map(d => (
+                  <li key={d.id}>
+                    <a href={`/dev-plans/${d.id}`} className="inline-flex items-center gap-1.5 text-xs hover:underline font-semibold" style={{ color: 'var(--blue)' }}>
+                      <span>{d.title}</span>
+                      <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{d.status}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

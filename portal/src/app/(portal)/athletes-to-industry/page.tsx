@@ -25,6 +25,7 @@ export default async function AthletesToIndustryPage() {
     { data: providersData },
     { data: interestsData },
     { data: trainingInterestsData },
+    { data: devPlansData },
   ] = await Promise.all([
     supabase
       .from('athletes')
@@ -54,6 +55,13 @@ export default async function AthletesToIndustryPage() {
       .select('id, athlete_id, provider_id, offering_id, status, notes, created_at')
       .order('created_at', { ascending: false })
       .limit(2000),
+    supabase
+      .from('dev_plans')
+      .select('id, title, status, athlete_id')
+      .eq('company_id', companyId ?? '')
+      .in('status', ['active', 'completed'])
+      .order('created_at', { ascending: false })
+      .limit(500),
   ]);
 
   const athletes = (athletesData ?? []) as AthleteRow[];
@@ -61,6 +69,7 @@ export default async function AthletesToIndustryPage() {
   const providers = (providersData ?? []) as TrainingProviderRow[];
   const interests = (interestsData ?? []) as InterestRow[];
   const trainingInterests = (trainingInterestsData ?? []) as TrainingInterestRow[];
+  const devPlans = (devPlansData ?? []) as Array<{ id: string; title: string; status: string; athlete_id: string | null }>;
 
   return (
     <>
@@ -76,6 +85,7 @@ export default async function AthletesToIndustryPage() {
             partners={partners}
             providers={providers}
             trainingInterests={trainingInterests}
+            devPlans={devPlans}
           />
           <PartnersPanel
             partners={partners}

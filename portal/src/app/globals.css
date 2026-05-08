@@ -496,14 +496,18 @@
   .main-content { margin-left: 0 !important; width: 100% !important; }
   .print-area {
     box-shadow: none !important;
-    background: #fff !important;
   }
   .print-area .card {
     box-shadow: none !important;
     border: 1px solid #e5e7eb !important;
     page-break-inside: avoid;
   }
-  /* Force gradient/coloured hero blocks to print their fill. */
-  .print-keep-color { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Force every element flagged print-keep-color to retain its
+     fill/border (brand colours, gradients) on PDF export. */
+  .print-keep-color,
+  .print-keep-color * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   a { color: inherit !important; text-decoration: none !important; }
 }

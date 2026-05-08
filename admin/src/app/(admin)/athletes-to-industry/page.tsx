@@ -17,7 +17,7 @@ export default async function AthletesToIndustryAdminPage() {
   const supabase = createServerSupabaseClient();
 
   const [
-    partnersRes, providersRes, athletesRes, interestsRes, trainingInterestsRes, companiesRes,
+    partnersRes, providersRes, athletesRes, interestsRes, trainingInterestsRes, companiesRes, devPlansRes,
   ] = await Promise.all([
     supabase
       .from('partners')
@@ -49,6 +49,11 @@ export default async function AthletesToIndustryAdminPage() {
       .select('id, name')
       .eq('active', true)
       .order('name', { ascending: true }),
+    supabase
+      .from('dev_plans')
+      .select('id, title, status, athlete_id')
+      .order('created_at', { ascending: false })
+      .limit(2000),
   ]);
 
   const partners = (partnersRes.data ?? []) as PartnerRow[];
@@ -56,6 +61,7 @@ export default async function AthletesToIndustryAdminPage() {
   const interests = (interestsRes.data ?? []) as InterestRow[];
   const trainingInterests = (trainingInterestsRes.data ?? []) as TrainingInterestRow[];
   const companies = (companiesRes.data ?? []) as CompanyRow[];
+  const devPlans = (devPlansRes.data ?? []) as Array<{ id: string; title: string; status: string; athlete_id: string | null }>;
 
   type RawAthlete = Omit<AthleteRow, 'company_name'> & {
     companies?: { name: string } | { name: string }[] | null;
@@ -90,6 +96,7 @@ export default async function AthletesToIndustryAdminPage() {
           interests={interests}
           trainingInterests={trainingInterests}
           companies={companies}
+          devPlans={devPlans}
         />
       </main>
     </>

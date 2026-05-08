@@ -14,11 +14,17 @@ export interface AthleteNote {
   status: string;
   note: string;
 }
+export interface AthleteDevPlanLink {
+  id: string;
+  title: string;
+  status: string;
+}
 
 interface Props {
   mode: Mode;
   athlete?: AthleteRow;
   notes?: AthleteNote[];
+  devPlans?: AthleteDevPlanLink[];
   onClose: () => void;
   onSaved: (saved: AthleteRow) => void;
 }
@@ -29,7 +35,7 @@ const ACCEPT = '.pdf,.doc,.docx,.txt';
 // own athletes and upload (or paste) the CV. Match management is
 // admin-only — there is no "Save & match" shortcut here.
 
-export default function AthleteFormModal({ mode, athlete, notes, onClose, onSaved }: Props) {
+export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClose, onSaved }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalShell(true, onClose, dialogRef);
 
@@ -152,6 +158,24 @@ export default function AthleteFormModal({ mode, athlete, notes, onClose, onSave
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {mode === 'edit' && devPlans && devPlans.length > 0 && (
+            <div className="rounded-md p-3 space-y-2"
+                 style={{ background: 'rgba(59,111,255,0.05)', border: '1px solid rgba(59,111,255,0.18)' }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>
+                Development plans
+              </p>
+              <ul className="space-y-1.5">
+                {devPlans.map(d => (
+                  <li key={d.id}>
+                    <a href={`/dev-plans/${d.id}`} className="inline-flex items-center gap-1.5 text-xs hover:underline font-semibold" style={{ color: 'var(--blue)' }}>
+                      <span>{d.title}</span>
+                      <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{d.status}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {mode === 'edit' && notes && notes.length > 0 && (
             <div
               className="rounded-md p-3 space-y-2"
