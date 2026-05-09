@@ -38,7 +38,8 @@
       "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__execute_sql",
       "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__list_tables",
       "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__get_project",
-      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__list_organizations"
+      "mcp__1b738f27-1bc6-427c-8731-c681d96ab322__list_organizations",
+      "mcp__Stripe__get_stripe_account_info"
     ]
   }
 }

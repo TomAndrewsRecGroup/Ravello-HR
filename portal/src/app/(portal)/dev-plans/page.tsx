@@ -31,13 +31,6 @@ export default async function DevPlansPage() {
 
   return (
     <main className="portal-page">
-      <header className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Development Plans</h1>
-        <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-          Branded development plans assigned by The People System.
-        </p>
-      </header>
-
       <PlansSearchList rows={rows} />
     </main>
   );
