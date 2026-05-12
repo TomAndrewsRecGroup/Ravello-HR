@@ -109,6 +109,10 @@ export async function POST(request: NextRequest) {
   // re-used to store the org id). Best-effort: a Manatal failure
   // never undoes the company row — admin can retry from the client
   // profile's ManatalIdField.
+  console.info('[Manatal] onboarding step starting', {
+    company_id: company.id,
+    configured: isManatalConfigured(),
+  });
   if (isManatalConfigured()) {
     const org = await createManatalOrganization({
       name,
@@ -123,10 +127,14 @@ export async function POST(request: NextRequest) {
       result.manatal = updErr
         ? { organization_id: org.id, error: `Saved in Manatal but local update failed: ${updErr.message}` }
         : { organization_id: org.id };
+      console.info('[Manatal] org created', { company_id: company.id, manatal_org_id: org.id });
     } else {
       const err = lastManatalError();
       result.manatal = { error: err?.message ?? 'Manatal org create failed.' };
+      console.warn('[Manatal] org create failed', { company_id: company.id, error: err });
     }
+  } else {
+    console.warn('[Manatal] skipping — MANATAL_API_KEY not visible to runtime');
   }
 
   // ── 3. Stripe billing setup, only if a non-zero retainer was set,
