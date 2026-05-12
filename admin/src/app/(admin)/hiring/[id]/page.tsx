@@ -48,7 +48,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const [{ data: req }, { data: candidates }, { data: interviews }] = await Promise.all([
     supabase
       .from('requisitions')
-      .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,created_at,companies(id,slug,name)')
+      .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,companies(id,slug,name,manatal_client_id)')
       .eq('id', params.id)
       .single(),
     supabase
