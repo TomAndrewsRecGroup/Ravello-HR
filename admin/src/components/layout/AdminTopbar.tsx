@@ -62,7 +62,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
         </div>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-        <ClientSwitcherDropdown />
+        <div className="hide-below-desktop"><ClientSwitcherDropdown /></div>
         {actions}
         <GlobalSearch />
         <EnquiriesButton />
