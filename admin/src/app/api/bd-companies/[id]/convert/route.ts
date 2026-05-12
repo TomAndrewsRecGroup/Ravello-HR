@@ -111,9 +111,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const manatalWarnings: string[] = [];
   if (isManatalConfigured()) {
     const org = await createManatalOrganization({
-      name:     companyName!,
-      industry: 'TPS',
-      country:  'GB',
+      name:        companyName!,
+      externalId:  newClientId,
+      description: 'TPS-managed client',
     });
     if (org?.id) {
       const { error: updErr } = await sb
