@@ -55,6 +55,8 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
   const [value,  setValue]  = useState(currentId);
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   async function save() {
     setSaving(true);
@@ -66,6 +68,27 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
       // Pass the client-scoped path so revalidateAdminPath flushes
       // the per-client unstable_cache tag, not just the /clients list.
       revalidateAdminPath(`/clients/${companyId}`);
+    }
+  }
+
+  async function createInManatal() {
+    setCreating(true);
+    setCreateError('');
+    try {
+      const res = await fetch(`/api/admin/clients/${companyId}/manatal-sync`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCreateError(json.error ?? `Create failed (${res.status})`);
+        return;
+      }
+      setValue(String(json.manatal_client_id ?? ''));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      revalidateAdminPath(`/clients/${companyId}`);
+    } catch (e) {
+      setCreateError((e as Error).message);
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -83,6 +106,20 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
           {saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <Check size={12} /> : 'Save'}
         </button>
       </div>
+      {!value && (
+        <button
+          onClick={createInManatal}
+          disabled={creating}
+          className="btn-cta btn-sm mt-2"
+          title="Create a Manatal organization for this client now"
+        >
+          {creating ? <Loader2 size={12} className="animate-spin" /> : null}
+          {creating ? 'Creating in Manatal…' : 'Create in Manatal'}
+        </button>
+      )}
+      {createError && (
+        <p className="text-[11px] mt-1" style={{ color: 'var(--red)' }}>{createError}</p>
+      )}
       <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
         Link this client to their Manatal department/account to enable live pipeline in the portal.
       </p>
