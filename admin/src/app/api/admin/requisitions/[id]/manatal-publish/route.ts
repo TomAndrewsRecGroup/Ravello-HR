@@ -6,11 +6,26 @@ import {
   createManatalJob,
   publishManatalJob,
   lastManatalError,
+  type ManatalContractDetails,
 } from '@/lib/manatal';
 
 export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Manatal's contract_details enum. Anything our requisitions row
+// has in employment_type is mapped through normaliseContract — we
+// lowercase + dash/space-to-underscore + check membership. Anything
+// off-list goes null so Manatal accepts the create.
+const MANATAL_CONTRACT: ReadonlySet<ManatalContractDetails> = new Set([
+  'full_time', 'part_time', 'temporary', 'freelance',
+  'internship', 'apprenticeship', 'contractor', 'consultancy',
+]);
+function normaliseContract(input: string | null | undefined): ManatalContractDetails | null {
+  if (!input) return null;
+  const v = input.trim().toLowerCase().replace(/[\s-]+/g, '_') as ManatalContractDetails;
+  return MANATAL_CONTRACT.has(v) ? v : null;
+}
 
 // Map "£40k-£60k" style strings to { min, max } in pence-free integers.
 // Keeps the wrapper simple: anything we can't parse stays null.
@@ -77,12 +92,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       organizationId,
       title:           req.title,
       description:     req.description ?? null,
-      location:        req.location ?? null,
-      employmentType:  req.employment_type ?? null,
+      address:         req.location ?? null,
+      contractDetails: normaliseContract(req.employment_type),
       salaryMin:       min,
       salaryMax:       max,
-      salaryCurrency:  'GBP',
-      seniority:       req.seniority ?? null,
+      currency:        'GBP',
+      externalId:      req.id,
     });
     if (!created?.id) {
       const err = lastManatalError();

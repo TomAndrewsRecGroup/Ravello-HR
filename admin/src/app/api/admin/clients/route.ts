@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
   if (isManatalConfigured()) {
     const org = await createManatalOrganization({
       name,
-      industry: 'TPS',
-      country:  'GB',
+      externalId:  company.id,
+      description: 'TPS-managed client',
     });
     if (org?.id) {
       const { error: updErr } = await supabase
