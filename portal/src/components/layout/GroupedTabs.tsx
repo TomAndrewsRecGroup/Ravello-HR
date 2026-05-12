@@ -10,7 +10,7 @@ export default function GroupedTabs({ groups }: { groups: TabGroup[] }) {
 
   return (
     <div
-      className="flex items-center gap-0.5 px-5 overflow-x-auto"
+      className="flex flex-wrap items-center gap-x-0.5 gap-y-1 px-3 sm:px-5 py-1 sm:py-0"
       style={{ borderBottom: '1px solid var(--line)' }}
     >
       {groups.map((group, gi) => (

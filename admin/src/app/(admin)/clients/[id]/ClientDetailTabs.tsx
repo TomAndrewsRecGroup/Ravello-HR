@@ -556,7 +556,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   return (
     <div>
       {/* Tab bar */}
-      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: 'var(--line)' }}>
+      <div className="flex flex-wrap gap-x-1 gap-y-1 mb-6 border-b" style={{ borderColor: 'var(--line)' }}>
         {TABS.map(t => (
           <button
             key={t}
