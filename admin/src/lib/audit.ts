@@ -26,6 +26,10 @@ type AuditAction =
   // which can happen well after the company row is created (e.g. a free-tier
   // client later upgrading to a paid module).
   | 'company.billing_setup'
+  // 'company.manatal_synced' fires when an existing TPS client is
+  // retro-pushed into Manatal via /api/admin/clients/[id]/manatal-sync
+  // (one-click 'Create in Manatal' button on the client profile).
+  | 'company.manatal_synced'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'
