@@ -145,34 +145,49 @@ export async function updateMatchStage(matchId: number, stageId: number): Promis
 /* ─── Write surface — orgs + jobs (Manatal Open API v3) ─── */
 
 export interface CreateOrganizationArgs {
-  name:         string;
+  name:          string;
   /** TPS company UUID — stored on Manatal as `external_id` so we
    *  can look the org up by our own id later. Doubles as our
    *  "this org belongs to TPS" marker. */
-  externalId?:  string;
-  description?: string;
-  website?:     string;
-  address?:     string;
+  externalId?:   string;
+  description?:  string;
+  website?:      string;
+  address?:      string;
+  /** Manatal custom_fields object — free-form per Manatal account.
+   *  We use it to stamp the organisation's "Industry" (or whatever
+   *  custom field key the account uses) as 'TPS' so every
+   *  TPS-managed client is identifiable upstream. */
+  customFields?: Record<string, unknown>;
 }
 
 /** POST /organizations/ on Manatal Open API v3.
  *  Manatal organizations have no `industry` or `country` fields,
  *  so we stamp `description: 'TPS-managed client'` + `external_id`
- *  with our company UUID so every TPS org is identifiable upstream.
- *  Returns the organization id Manatal assigned, or null on failure
- *  (with reason on lastManatalError()). */
+ *  with our company UUID, and `custom_fields[<key>] = 'TPS'` where
+ *  <key> is whatever Manatal account custom field represents
+ *  "client industry" (env override: MANATAL_ORG_INDUSTRY_FIELD,
+ *  defaults to 'industry'; value via MANATAL_ORG_INDUSTRY, defaults
+ *  to 'TPS'). Returns the organization id Manatal assigned, or
+ *  null on failure (with reason on lastManatalError()). */
 export async function createManatalOrganization(
   args: CreateOrganizationArgs,
 ): Promise<{ id: string } | null> {
+  const industryField = process.env.MANATAL_ORG_INDUSTRY_FIELD ?? 'industry';
+  const industryValue = process.env.MANATAL_ORG_INDUSTRY ?? 'TPS';
+  const defaultCustom: Record<string, unknown> = industryValue
+    ? { [industryField]: industryValue }
+    : {};
+
   const data = await manatalFetch('/organizations/', undefined, {
     method:  'POST',
     baseUrl: WRITE_API_URL,
     body: {
-      name:        args.name,
-      external_id: args.externalId ?? null,
-      description: args.description ?? 'TPS-managed client',
-      website:     args.website ?? '',
-      address:     args.address ?? '',
+      name:          args.name,
+      external_id:   args.externalId ?? null,
+      description:   args.description ?? 'TPS-managed client',
+      website:       args.website ?? '',
+      address:       args.address ?? '',
+      custom_fields: { ...defaultCustom, ...(args.customFields ?? {}) },
     },
   });
   if (!data?.id) return null;
