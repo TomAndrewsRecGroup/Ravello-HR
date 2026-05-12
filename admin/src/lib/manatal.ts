@@ -1,24 +1,24 @@
 // ─── Manatal ATS API client (admin) ────────────────────────────────────────
-// Auth: token in MANATAL_API_KEY env var. Base URL via MANATAL_API_URL
-// (defaults to https://api.manatal.com/open/v1).
+// Auth: token in MANATAL_API_KEY env var.
+//
+// Two base URLs in play:
+//   READ_API_URL  (env MANATAL_API_URL, default /open/v1) — the existing
+//                  portal pipeline reads (/jobs/?department_id=…,
+//                  /pipeline/, /matches/) target v1 and keep working.
+//   WRITE_API_URL (hardcoded /open/v3) — new admin write surface
+//                  (organizations, jobs, publish). v3 is the only
+//                  version Manatal documents these write shapes for.
+//
 // Docs: https://developers.manatal.com/reference
-//
-// Admin owns the WRITE surface:
-//   POST  /organizations/   create a Manatal org per TPS client (industry: 'TPS')
-//   POST  /jobs/            create a job under that org from a requisition
-//   PATCH /jobs/:id/        publish the job to Careers page + free boards
-//
-// Read helpers (jobs, stages, matches) are mirrored from
-// portal/src/lib/manatal.ts so admin-side surfaces (future v2
-// candidate review) don't have to depend on the portal package.
 //
 // Failure mode is best-effort, matching the lib/email pattern:
 //   - functions return null on failure (network, 4xx/5xx, bad json)
 //   - the last error is captured for the caller to surface via
 //     lastManatalError() (mirrors lastEmailError() in lib/email).
 
-const API_KEY = process.env.MANATAL_API_KEY ?? '';
-const API_URL = process.env.MANATAL_API_URL ?? 'https://api.manatal.com/open/v1';
+const API_KEY       = process.env.MANATAL_API_KEY ?? '';
+const READ_API_URL  = process.env.MANATAL_API_URL ?? 'https://api.manatal.com/open/v1';
+const WRITE_API_URL = 'https://api.manatal.com/open/v3';
 
 /* ─── Last error capture ──────────────────────────── */
 
@@ -55,14 +55,15 @@ export interface ManatalMatch {
 async function manatalFetch(
   path: string,
   params?: Record<string, string>,
-  options?: { method?: string; body?: unknown },
+  options?: { method?: string; body?: unknown; baseUrl?: string },
 ): Promise<any> {
   if (!API_KEY) {
     lastError = { status: 0, message: 'MANATAL_API_KEY not configured', path };
     return null;
   }
 
-  const url = new URL(`${API_URL}${path}`);
+  const base = options?.baseUrl ?? READ_API_URL;
+  const url = new URL(`${base}${path}`);
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const method = options?.method ?? 'GET';
@@ -141,56 +142,74 @@ export async function updateMatchStage(matchId: number, stageId: number): Promis
   return data as ManatalMatch | null;
 }
 
-/* ─── Write surface — orgs + jobs ─────────────────── */
+/* ─── Write surface — orgs + jobs (Manatal Open API v3) ─── */
 
 export interface CreateOrganizationArgs {
-  name:       string;
-  industry?:  string;   // tagged 'TPS' for every TPS-managed client
-  country?:   string;   // ISO-2 (e.g. 'GB')
-  website?:   string;
+  name:         string;
+  /** TPS company UUID — stored on Manatal as `external_id` so we
+   *  can look the org up by our own id later. Doubles as our
+   *  "this org belongs to TPS" marker. */
+  externalId?:  string;
+  description?: string;
+  website?:     string;
+  address?:     string;
 }
 
-/** Creates a Manatal organization (one per TPS client). The exact
- *  payload field names are taken from Manatal's REST docs; any
- *  rename only needs to touch this function. Returns the organization
- *  id Manatal assigned, or null on failure (with reason on
- *  lastManatalError()). */
+/** POST /organizations/ on Manatal Open API v3.
+ *  Manatal organizations have no `industry` or `country` fields,
+ *  so we stamp `description: 'TPS-managed client'` + `external_id`
+ *  with our company UUID so every TPS org is identifiable upstream.
+ *  Returns the organization id Manatal assigned, or null on failure
+ *  (with reason on lastManatalError()). */
 export async function createManatalOrganization(
   args: CreateOrganizationArgs,
 ): Promise<{ id: string } | null> {
   const data = await manatalFetch('/organizations/', undefined, {
-    method: 'POST',
+    method:  'POST',
+    baseUrl: WRITE_API_URL,
     body: {
-      name:     args.name,
-      industry: args.industry ?? null,
-      country:  args.country ?? null,
-      website:  args.website ?? null,
+      name:        args.name,
+      external_id: args.externalId ?? null,
+      description: args.description ?? 'TPS-managed client',
+      website:     args.website ?? '',
+      address:     args.address ?? '',
     },
   });
   if (!data?.id) return null;
   return { id: String(data.id) };
 }
 
+export type ManatalContractDetails =
+  | 'full_time' | 'part_time' | 'temporary' | 'freelance'
+  | 'internship' | 'apprenticeship' | 'contractor' | 'consultancy';
+
 export interface CreateJobArgs {
-  organizationId:  string;
-  title:           string;
-  description?:    string | null;
-  location?:       string | null;
-  employmentType?: string | null;
-  salaryMin?:      number | null;
-  salaryMax?:      number | null;
-  salaryCurrency?: string | null;
-  seniority?:      string | null;
+  organizationId:   string;
+  title:            string;
+  description?:     string | null;
+  address?:         string | null;   // free-text office address
+  city?:            string | null;
+  state?:           string | null;
+  country?:         string | null;
+  isRemote?:        boolean | null;
+  contractDetails?: ManatalContractDetails | null;
+  salaryMin?:       number | null;
+  salaryMax?:       number | null;
+  currency?:        string | null;   // ISO-3 e.g. 'GBP'
+  /** External id to round-trip the requisition's UUID. */
+  externalId?:      string | null;
+  headcount?:       number | null;
 }
 
-/** Creates a Manatal job inside the supplied organization. Created
- *  in 'draft' status — call publishManatalJob() afterwards to flip
- *  it live to the Careers page + free job board syndication.
+/** POST /jobs/ on Manatal Open API v3.
  *
- *  Note: Manatal stores ids as integers. We store them as TEXT on
- *  our side (companies.manatal_client_id, requisitions.manatal_job_id)
- *  for flexibility but coerce back to Number on outbound writes —
- *  Manatal validators reject string ids in body fields. */
+ *  Required fields per the v3 schema: `organization` (FK integer)
+ *  and `position_name` (string). Job is created with status='active'
+ *  + is_published=false; flip via publishManatalJob() when ready.
+ *
+ *  Note: Manatal stores ids as integers. We coerce organizationId
+ *  (TEXT on our side) back to Number. Salary fields are decimal
+ *  strings on Manatal (`format: decimal` + `type: string`). */
 export async function createManatalJob(
   args: CreateJobArgs,
 ): Promise<{ id: string } | null> {
@@ -200,28 +219,35 @@ export async function createManatalJob(
     return null;
   }
   const data = await manatalFetch('/jobs/', undefined, {
-    method: 'POST',
+    method:  'POST',
+    baseUrl: WRITE_API_URL,
     body: {
-      name:             args.title,
-      department:       orgIdNum,
-      description:      args.description ?? null,
-      location:         args.location ?? null,
-      employment_type:  args.employmentType ?? null,
-      salary_min:       args.salaryMin ?? null,
-      salary_max:       args.salaryMax ?? null,
-      salary_currency:  args.salaryCurrency ?? 'GBP',
-      seniority:        args.seniority ?? null,
-      status:           'draft',
+      organization:     orgIdNum,
+      position_name:    args.title,
+      description:      args.description ?? '',
+      external_id:      args.externalId ?? null,
+      address:          args.address ?? '',
+      city:             args.city ?? '',
+      state:            args.state ?? '',
+      country:          args.country ?? '',
+      is_remote:        args.isRemote ?? null,
+      contract_details: args.contractDetails ?? null,
+      salary_min:       args.salaryMin != null ? String(args.salaryMin) : null,
+      salary_max:       args.salaryMax != null ? String(args.salaryMax) : null,
+      currency:         args.currency ?? null,
+      headcount:        args.headcount ?? null,
+      status:           'active',
+      is_published:     false,
     },
   });
   if (!data?.id) return null;
   return { id: String(data.id) };
 }
 
-/** Toggles a Manatal job live. Sets status to 'open', publishes to
- *  the Manatal Careers page, and enables free-job-board syndication
- *  flags. Manatal's actual flag names are isolated here so any
- *  schema change is a one-line edit.
+/** PATCH /jobs/{id}/ on Manatal Open API v3 to flip a job live on
+ *  the Manatal Careers page (and pin it). Manatal's free-job-board
+ *  syndication isn't an API toggle — it's a Manatal-side automatic
+ *  behaviour for published jobs.
  *
  *  Returns true when manatalFetch reported a successful response
  *  (covers 200 with body, 204 No Content, and 2xx with empty body —
@@ -230,11 +256,12 @@ export async function createManatalJob(
  *  lastManatalError(). */
 export async function publishManatalJob(jobId: string): Promise<boolean> {
   const data = await manatalFetch(`/jobs/${jobId}/`, undefined, {
-    method: 'PATCH',
+    method:  'PATCH',
+    baseUrl: WRITE_API_URL,
     body: {
-      status:                 'open',
-      published_on_careers:   true,
-      published_on_free_jobs: true,
+      status:                  'active',
+      is_published:            true,
+      is_pinned_in_career_page: true,
     },
   });
   return data !== null;
