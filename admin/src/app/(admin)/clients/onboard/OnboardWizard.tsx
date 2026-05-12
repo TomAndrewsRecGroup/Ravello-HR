@@ -62,6 +62,7 @@ export default function OnboardWizard({ staff }: Props) {
   const [error, setError] = useState('');
   const [stripeNote, setStripeNote] = useState('');
   const [inviteNote, setInviteNote] = useState('');
+  const [manatalNote, setManatalNote] = useState('');
   const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
 
   const [company, setCompany] = useState({
@@ -126,6 +127,7 @@ export default function OnboardWizard({ staff }: Props) {
     setError('');
     setStripeNote('');
     setInviteNote('');
+    setManatalNote('');
 
     const retainerNum   = parseFloat(retainerPounds);
     const retainerPence = paidEnabled && !isNaN(retainerNum) && retainerNum > 0
@@ -158,6 +160,14 @@ export default function OnboardWizard({ staff }: Props) {
       setCreatedCompanyId(companyId);
       if (data.stripe?.error) {
         setStripeNote(`Client created but Stripe billing setup failed: ${data.stripe.error}. Retry from the client profile.`);
+      }
+      if (data.manatal?.error) {
+        setManatalNote(`Client created but Manatal org create failed: ${data.manatal.error}. Set the Manatal ID manually on the client profile or retry.`);
+      } else if (data.manatal === undefined) {
+        // Server didn't run the Manatal step at all — surfaces when the
+        // build is older than the Manatal integration or the env key is
+        // missing on this deployment. Check /api/manatal/diag.
+        setManatalNote('Heads-up: this deployment did not attempt Manatal org create. Visit /api/manatal/diag for runtime diagnostics.');
       }
     } catch (e: any) {
       setError(e?.message ?? 'Network error.');
@@ -470,6 +480,12 @@ export default function OnboardWizard({ staff }: Props) {
               </p>
             )}
             {inviteNote && <p className="text-xs p-3 rounded-[8px]" style={{ background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' }}>{inviteNote}</p>}
+            {manatalNote && (
+              <p className="text-xs p-3 rounded-[8px] flex items-start gap-2" style={{ background: 'rgba(245,158,11,0.10)', color: 'var(--amber)' }}>
+                <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+                {manatalNote}
+              </p>
+            )}
           </div>
         )}
 

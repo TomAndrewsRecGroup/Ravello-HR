@@ -112,6 +112,10 @@ export async function POST(request: NextRequest) {
   console.info('[Manatal] onboarding step starting', {
     company_id: company.id,
     configured: isManatalConfigured(),
+    api_key_present: Boolean(process.env.MANATAL_API_KEY),
+    api_key_length:  (process.env.MANATAL_API_KEY ?? '').length,
+    api_url_env:     process.env.MANATAL_API_URL ?? '(unset, defaulting to v1)',
+    deployment_sha:  (process.env.VERCEL_GIT_COMMIT_SHA ?? 'unknown').slice(0, 7),
   });
   if (isManatalConfigured()) {
     const org = await createManatalOrganization({
