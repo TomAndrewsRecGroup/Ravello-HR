@@ -104,12 +104,31 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: err?.message ?? 'Manatal job create failed.' }, { status: 502 });
     }
     jobId = created.id;
+    // Persist the new job id immediately, BEFORE we attempt publish.
+    // If publish fails (network blip etc.) a retry of this endpoint
+    // will see the stored id and skip create — no duplicate Manatal
+    // jobs. manatal_published_at stays null until publish succeeds.
+    const { error: stampErr } = await supabase
+      .from('requisitions')
+      .update({ manatal_job_id: jobId })
+      .eq('id', req.id);
+    if (stampErr) {
+      // Soft-fail: the job exists in Manatal, our local row didn't
+      // record it. Tell the caller so they can reconcile manually.
+      return NextResponse.json({
+        error: `Created in Manatal but local update failed: ${stampErr.message}`,
+        manatal_job_id: jobId,
+      }, { status: 500 });
+    }
   }
 
   const published = await publishManatalJob(jobId);
   if (!published) {
     const err = lastManatalError();
-    return NextResponse.json({ error: err?.message ?? 'Manatal job publish failed.' }, { status: 502 });
+    return NextResponse.json({
+      error: err?.message ?? 'Manatal job publish failed.',
+      manatal_job_id: jobId,
+    }, { status: 502 });
   }
 
   const now = new Date().toISOString();

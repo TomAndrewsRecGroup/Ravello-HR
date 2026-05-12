@@ -233,27 +233,31 @@ export async function createManatalJob(
     lastError = { status: 0, message: `organizationId is not numeric: ${args.organizationId}`, path: '/jobs/' };
     return null;
   }
+  // contract_details is an ENUM on Manatal v3 with no nullable flag —
+  // sending null 400s. Build the body conditionally so optional non-
+  // nullable fields are omitted when unset rather than nulled out.
+  const body: Record<string, unknown> = {
+    organization:     orgIdNum,
+    position_name:    args.title,
+    description:      args.description ?? '',
+    external_id:      args.externalId ?? null,
+    address:          args.address ?? '',
+    city:             args.city ?? '',
+    state:            args.state ?? '',
+    country:          args.country ?? '',
+    is_remote:        args.isRemote ?? null,
+    salary_min:       args.salaryMin != null ? String(args.salaryMin) : null,
+    salary_max:       args.salaryMax != null ? String(args.salaryMax) : null,
+    currency:         args.currency ?? null,
+    headcount:        args.headcount ?? null,
+    status:           'active',
+    is_published:     false,
+  };
+  if (args.contractDetails) body.contract_details = args.contractDetails;
   const data = await manatalFetch('/jobs/', undefined, {
     method:  'POST',
     baseUrl: WRITE_API_URL,
-    body: {
-      organization:     orgIdNum,
-      position_name:    args.title,
-      description:      args.description ?? '',
-      external_id:      args.externalId ?? null,
-      address:          args.address ?? '',
-      city:             args.city ?? '',
-      state:            args.state ?? '',
-      country:          args.country ?? '',
-      is_remote:        args.isRemote ?? null,
-      contract_details: args.contractDetails ?? null,
-      salary_min:       args.salaryMin != null ? String(args.salaryMin) : null,
-      salary_max:       args.salaryMax != null ? String(args.salaryMax) : null,
-      currency:         args.currency ?? null,
-      headcount:        args.headcount ?? null,
-      status:           'active',
-      is_published:     false,
-    },
+    body,
   });
   if (!data?.id) return null;
   return { id: String(data.id) };
