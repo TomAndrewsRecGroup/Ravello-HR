@@ -683,6 +683,13 @@
   }
 }
 
+@media (max-width: 1023px) {
+  /* Generic helper — hide an element on anything below desktop.
+     Used by AdminTopbar to drop the ClientSwitcher (and any future
+     desktop-only controls) so the hamburger has room to breathe. */
+  .hide-below-desktop { display: none !important; }
+}
+
 @media (max-width: 639px) {
   [role="dialog"] {
     max-width: calc(100vw - 1.5rem) !important;
