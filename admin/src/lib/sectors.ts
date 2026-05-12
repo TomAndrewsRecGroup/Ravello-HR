@@ -59,6 +59,7 @@ export const SECTORS: readonly string[] = [
   'Sports & Recreation',
   'Technology & SaaS',
   'Telecommunications',
+  'TPS',
   'Transportation',
   'Travel',
   'Utilities',

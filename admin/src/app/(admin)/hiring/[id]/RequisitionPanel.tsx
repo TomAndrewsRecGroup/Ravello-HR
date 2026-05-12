@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
-import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle,
+import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle, Send,
          MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText } from 'lucide-react';
 
 /* ── Friction display helpers ─────────────────────────────── */
@@ -318,6 +318,36 @@ export default function RequisitionPanel({ req }: Props) {
   const [savingRecruiter, setSavingRecruiter] = useState(false);
   const [recruiterSaved,  setRecruiterSaved]  = useState(false);
 
+  // Manatal publish state. We track id + timestamp locally so the
+  // button can flip to "Live on Manatal" the moment the call returns
+  // without forcing a router.refresh().
+  const company = Array.isArray(req.companies) ? req.companies[0] : req.companies;
+  const manatalClientId: string | null = company?.manatal_client_id ?? null;
+  const [manatalJobId,       setManatalJobId]       = useState<string | null>(req.manatal_job_id ?? null);
+  const [manatalPublishedAt, setManatalPublishedAt] = useState<string | null>(req.manatal_published_at ?? null);
+  const [publishingManatal,  setPublishingManatal]  = useState(false);
+  const [manatalError,       setManatalError]       = useState<string | null>(null);
+
+  async function publishToManatal() {
+    setPublishingManatal(true);
+    setManatalError(null);
+    try {
+      const res = await fetch(`/api/admin/requisitions/${req.id}/manatal-publish`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setManatalError(json.error ?? `Publish failed (${res.status})`);
+        return;
+      }
+      setManatalJobId(json.manatal_job_id ?? null);
+      setManatalPublishedAt(json.manatal_published_at ?? new Date().toISOString());
+      revalidateAdminPath(`/hiring/${req.id}`);
+    } catch (e) {
+      setManatalError((e as Error).message);
+    } finally {
+      setPublishingManatal(false);
+    }
+  }
+
   async function updateStage(newStage: string) {
     setSavingStage(true);
     await supabase.from('requisitions').update({ stage: newStage }).eq('id', req.id);
@@ -381,6 +411,44 @@ export default function RequisitionPanel({ req }: Props) {
                 {recruiterSaved ? 'Saved' : 'Save'}
               </button>
             </div>
+          </div>
+
+          <div>
+            <label className="label">Manatal</label>
+            {manatalClientId ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={publishToManatal}
+                  disabled={publishingManatal}
+                  className="btn-cta btn-sm flex items-center gap-1.5"
+                  title={manatalJobId
+                    ? 'Re-publish this role to Manatal Careers + free job boards'
+                    : 'Create and publish this role on Manatal Careers + free job boards'}
+                >
+                  {publishingManatal
+                    ? <Loader2 size={12} className="animate-spin" />
+                    : <Send size={12} />}
+                  {manatalJobId ? 'Re-publish to Manatal' : 'Publish to Manatal'}
+                </button>
+                {manatalJobId && (
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full inline-flex items-center gap-1"
+                    style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
+                    title={manatalPublishedAt ? `Published ${new Date(manatalPublishedAt).toLocaleString('en-GB')}` : 'Live on Manatal'}
+                  >
+                    <CheckCircle2 size={10} /> Live on Manatal
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                This client isn&rsquo;t linked to Manatal yet — onboarding may have failed to create the organization.
+                Set the Manatal ID on the client profile to enable publishing.
+              </p>
+            )}
+            {manatalError && (
+              <p className="text-xs mt-1" style={{ color: 'var(--red)' }}>{manatalError}</p>
+            )}
           </div>
         </div>
       </div>
