@@ -569,31 +569,35 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── Hamburger button ────────────────────────────── */
+/* ─── Hamburger button ────────────────────────────────
+   Inverted display logic: visible by default, hidden only on
+   confirmed desktop (>=1024px). If any future @media block fails
+   to apply, the hamburger still renders on mobile.
+   Brand-purple background + white icon so it's visually obvious
+   as the entry point to the menu drawer. */
 .hamburger-btn {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   cursor: pointer;
-  color: var(--ink-soft);
-  transition: all 0.15s;
-  background: transparent;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #7C3AED 0%, #5A2AC8 100%);
+  transition: transform 0.15s, box-shadow 0.15s;
   border: none;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
 }
 .hamburger-btn:hover {
-  background: var(--surface-alt);
-  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
 }
 
 /* ─── Mobile: < 768px ─────────────────────────────── */
 @media (max-width: 767px) {
   :root { --sidebar-w: 280px; }
-
-  .hamburger-btn { display: flex; }
 
   .sidebar-mobile {
     transform: translateX(-100%);
@@ -631,8 +635,6 @@
 @media (min-width: 768px) and (max-width: 1023px) {
   :root { --sidebar-w: 280px; }
 
-  .hamburger-btn { display: flex; }
-
   .sidebar-mobile {
     transform: translateX(-100%);
   }
@@ -656,12 +658,15 @@
   .hide-tablet { display: none !important; }
 }
 
-/* ─── Desktop: >= 1024px — sidebar always visible ─── */
+/* ─── Desktop: >= 1024px — sidebar always visible, hamburger hidden ─── */
 @media (min-width: 1024px) {
   .sidebar-mobile {
     transform: translateX(0) !important;
   }
   .sidebar-backdrop {
+    display: none !important;
+  }
+  .hamburger-btn {
     display: none !important;
   }
 }
@@ -676,10 +681,6 @@
     padding-left:  max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
   }
-}
-
-@media (max-width: 1023px) {
-  .hamburger-btn { display: flex !important; min-width: 44px; min-height: 44px; }
 }
 
 @media (max-width: 639px) {
