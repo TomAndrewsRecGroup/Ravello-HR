@@ -91,7 +91,24 @@ async function manatalFetch(
       return null;
     }
     lastError = null;
-    return await res.json();
+    // 204 No Content (common on PATCH/DELETE) and any other empty
+    // body would throw inside res.json(). Treat the empty case as a
+    // successful response with an empty object so callers that only
+    // care about success vs failure don't get false negatives.
+    if (res.status === 204 || res.headers.get('content-length') === '0') {
+      return {};
+    }
+    const raw = await res.text();
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      // Manatal returned 2xx with a non-JSON body — count as success
+      // (the operation went through) but log so we can see what they
+      // sent.
+      console.warn('[Manatal] non-JSON success body', { path, raw: raw.slice(0, 200) });
+      return {};
+    }
   } catch (err) {
     lastError = { status: 0, message: (err as Error)?.message ?? 'transport error', path };
     console.warn('[Manatal] fetch failed', err);
@@ -168,15 +185,25 @@ export interface CreateJobArgs {
 
 /** Creates a Manatal job inside the supplied organization. Created
  *  in 'draft' status — call publishManatalJob() afterwards to flip
- *  it live to the Careers page + free job board syndication. */
+ *  it live to the Careers page + free job board syndication.
+ *
+ *  Note: Manatal stores ids as integers. We store them as TEXT on
+ *  our side (companies.manatal_client_id, requisitions.manatal_job_id)
+ *  for flexibility but coerce back to Number on outbound writes —
+ *  Manatal validators reject string ids in body fields. */
 export async function createManatalJob(
   args: CreateJobArgs,
 ): Promise<{ id: string } | null> {
+  const orgIdNum = Number(args.organizationId);
+  if (!Number.isFinite(orgIdNum)) {
+    lastError = { status: 0, message: `organizationId is not numeric: ${args.organizationId}`, path: '/jobs/' };
+    return null;
+  }
   const data = await manatalFetch('/jobs/', undefined, {
     method: 'POST',
     body: {
       name:             args.title,
-      department:       { id: args.organizationId },
+      department:       orgIdNum,
       description:      args.description ?? null,
       location:         args.location ?? null,
       employment_type:  args.employmentType ?? null,
@@ -194,7 +221,13 @@ export async function createManatalJob(
 /** Toggles a Manatal job live. Sets status to 'open', publishes to
  *  the Manatal Careers page, and enables free-job-board syndication
  *  flags. Manatal's actual flag names are isolated here so any
- *  schema change is a one-line edit. */
+ *  schema change is a one-line edit.
+ *
+ *  Returns true when manatalFetch reported a successful response
+ *  (covers 200 with body, 204 No Content, and 2xx with empty body —
+ *  all are treated as success in the helper). false means the API
+ *  responded non-2xx or the network failed; the reason is on
+ *  lastManatalError(). */
 export async function publishManatalJob(jobId: string): Promise<boolean> {
   const data = await manatalFetch(`/jobs/${jobId}/`, undefined, {
     method: 'PATCH',
@@ -204,7 +237,7 @@ export async function publishManatalJob(jobId: string): Promise<boolean> {
       published_on_free_jobs: true,
     },
   });
-  return Boolean(data?.id);
+  return data !== null;
 }
 
 /* ─── Config check ────────────────────────────────── */
