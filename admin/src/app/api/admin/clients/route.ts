@@ -6,6 +6,7 @@ import { auditLog } from '@/lib/audit';
 import { stripeConfigured, createCustomer, createPrice, createSubscription } from '@/lib/stripe';
 import { hasPaidFlag } from '@/lib/featureFlags';
 import { sendEmail, clientWelcomeEmail } from '@/lib/email';
+import { isManatalConfigured, createManatalOrganization, lastManatalError } from '@/lib/manatal';
 
 const DEFAULT_FLAGS = {
   hiring: true, documents: true, reports: false, support: true,
@@ -31,6 +32,10 @@ interface CreateClientResult {
     subscription_id?: string;
     price_id?:        string;
     status?:          string;
+    error?:           string;
+  };
+  manatal?: {
+    organization_id?: string;
     error?:           string;
   };
 }
@@ -98,7 +103,33 @@ export async function POST(request: NextRequest) {
 
   const result: CreateClientResult = { company_id: company.id };
 
-  // ── 2. Stripe billing setup, only if a non-zero retainer was set,
+  // ── 2. Manatal organization — one per TPS client, tagged with
+  // industry 'TPS' so the upstream account stays filterable. The id
+  // is written back to companies.manatal_client_id (existing column,
+  // re-used to store the org id). Best-effort: a Manatal failure
+  // never undoes the company row — admin can retry from the client
+  // profile's ManatalIdField.
+  if (isManatalConfigured()) {
+    const org = await createManatalOrganization({
+      name,
+      industry: 'TPS',
+      country:  'GB',
+    });
+    if (org?.id) {
+      const { error: updErr } = await supabase
+        .from('companies')
+        .update({ manatal_client_id: org.id })
+        .eq('id', company.id);
+      result.manatal = updErr
+        ? { organization_id: org.id, error: `Saved in Manatal but local update failed: ${updErr.message}` }
+        : { organization_id: org.id };
+    } else {
+      const err = lastManatalError();
+      result.manatal = { error: err?.message ?? 'Manatal org create failed.' };
+    }
+  }
+
+  // ── 3. Stripe billing setup, only if a non-zero retainer was set,
   // at least one paid module is enabled, AND Stripe is configured.
   // Skips entirely otherwise — free-only clients never touch Stripe.
   if (paidEnabled && retainerPence && retainerPence > 0 && stripeConfigured()) {

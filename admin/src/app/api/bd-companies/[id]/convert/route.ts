@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
+import { isManatalConfigured, createManatalOrganization, lastManatalError } from '@/lib/manatal';
 
 export const runtime = 'nodejs';
 
@@ -103,6 +104,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: reason, rolled_back: true }, { status });
   }
 
+  // ── 1b. Manatal organization (best-effort, mirrors the path in
+  // /api/admin/clients). On success we stamp manatal_client_id; on
+  // failure we collect a warning and continue — a missed Manatal
+  // create can be re-run from the client profile's ManatalIdField.
+  const manatalWarnings: string[] = [];
+  if (isManatalConfigured()) {
+    const org = await createManatalOrganization({
+      name:     companyName!,
+      industry: 'TPS',
+      country:  'GB',
+    });
+    if (org?.id) {
+      const { error: updErr } = await sb
+        .from('companies')
+        .update({ manatal_client_id: org.id })
+        .eq('id', newClientId);
+      if (updErr) manatalWarnings.push(`Manatal saved but local update failed: ${updErr.message}`);
+    } else {
+      const err = lastManatalError();
+      manatalWarnings.push(`Manatal org create failed: ${err?.message ?? 'unknown'}`);
+    }
+  }
+
   // ── 2. Mark the BD row as Client (if real). ──
   if (!isIvylens) {
     const { error } = await sb.from('bd_companies').update({ status: 'Client' }).eq('id', bdId);
@@ -137,7 +161,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // ── 4. Seed contact employee + invite (parallel). ──
   // Employee insert is non-fatal (operator can add manually); invite is
   // also non-fatal (operator gets a warning but the company stays).
-  const warnings: string[] = [];
+  const warnings: string[] = [...manatalWarnings];
   const seedEmployee = body.contact_name?.trim()
     ? sb.from('employee_records').insert({
         company_id:      newClientId,
