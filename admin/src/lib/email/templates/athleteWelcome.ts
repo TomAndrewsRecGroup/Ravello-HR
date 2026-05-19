@@ -18,8 +18,8 @@ export function athleteWelcomeEmail(input: AthleteWelcomeInput) {
   const body = `
 <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">Welcome to Athletes To Industry</h1>
 <p style="margin:0 0 16px 0;">${greeting}</p>
-<p style="margin:0 0 16px 0;">Your details have been added to <strong>The People System's Athletes To Industry programme</strong> — the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
-<p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong>Tom Andrews</strong>. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
+<p style="margin:0 0 16px 0;">Your details have been added to <strong>Andrews Recruitment Groups: Athletes To Industry programme</strong> via The People System portal. This is the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
+<p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong>Tom Andrews</strong>, Owner of Andrews Recruitment. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
 ${ctaButton(url, 'Book a call with Tom Andrews')}
 <p style="margin:24px 0 0 0;font-size:13px;color:${BRAND.inkSoft};">If you'd rather get in touch first, just reply to this email — we'd love to hear from you.</p>
 `.trim();
@@ -27,7 +27,7 @@ ${ctaButton(url, 'Book a call with Tom Andrews')}
   return {
     to:      input.to,
     subject: 'Your Athletes To Industry journey starts here',
-    html:    wrapEmail(body, "Welcome to Athletes To Industry — book a call with Tom Andrews to get started."),
+    html:    wrapEmail(body, "Welcome to Athletes To Industry - book a call with Tom to get started."),
     tag:     'athlete-welcome',
   };
 }
