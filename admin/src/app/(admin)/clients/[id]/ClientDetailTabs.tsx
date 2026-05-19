@@ -8,6 +8,7 @@ import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
 import ClientDangerZone from '@/components/modules/ClientDangerZone';
 import LogoUpload from '@/components/modules/LogoUpload';
+import EmailLogList from '@/components/modules/EmailLogList';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import ProtectTab from './tabs/ProtectTab';
@@ -625,6 +626,10 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
               </dl>
               <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
                 <ManatalIdField companyId={company.id} currentId={company.manatal_client_id ?? ''} />
+              </div>
+              <div className="mt-5 pt-5 border-t space-y-2" style={{ borderColor: 'var(--line)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--ink-faint)' }}>Email activity</p>
+                <EmailLogList targetType="company" targetId={company.id} />
               </div>
             </div>
 

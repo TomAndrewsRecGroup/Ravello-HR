@@ -38,6 +38,15 @@ export interface SendEmailInput {
   /** ISO-8601 timestamp; Resend queues the send and dispatches at
    *  the requested time (up to 30 days in the future). */
   scheduledAt?: string;
+  /** Optional override of the From header. Used by the
+   *  send-email route when a TPS staff member elects to send from
+   *  Resend but with their personal display name. Falls back to
+   *  EMAIL_FROM env var when unset. The actual address still has
+   *  to be on a Resend-verified domain. */
+  from?: string;
+  /** Attachments forwarded to Resend's `attachments` array. The
+   *  bytes are base64-encoded server-side before send. */
+  attachments?: Array<{ filename: string; content: Buffer; contentType?: string }>;
 }
 
 export interface SendEmailResult {
@@ -80,7 +89,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
     return null;
   }
 
-  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
+  const from    = input.from ?? process.env.EMAIL_FROM ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
   const replyTo = input.replyTo ?? process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 
@@ -95,6 +104,13 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
   if (bcc.length) payload.bcc = bcc;
   if (input.tag)  payload.tags = [{ name: 'category', value: input.tag }];
   if (input.scheduledAt) payload.scheduled_at = input.scheduledAt;
+  if (input.attachments?.length) {
+    payload.attachments = input.attachments.map(a => ({
+      filename:    a.filename,
+      content:     a.content.toString('base64'),
+      contentType: a.contentType,
+    }));
+  }
 
   try {
     const res = await fetch(RESEND_ENDPOINT, {

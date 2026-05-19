@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { X, FileText, ExternalLink, Save, PhoneCall, Mail, CheckCircle2 } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import EmailLogList from '@/components/modules/EmailLogList';
 import { openAthleteCv } from './openCv';
 import type { AthleteRow } from './types';
 
@@ -200,6 +201,13 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
               </ul>
             </div>
           )}
+
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>
+              Email activity
+            </p>
+            <EmailLogList targetType="athlete" targetId={athlete.id} />
+          </div>
 
           <div
             className="rounded-md p-3 flex flex-wrap items-center gap-2"

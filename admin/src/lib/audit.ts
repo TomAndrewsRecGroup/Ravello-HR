@@ -35,6 +35,10 @@ type AuditAction =
   // /api/admin/athletes/[id]/welcome-email — used for backfilling
   // athletes added before the auto-send went live.
   | 'athlete.welcome_email_sent'
+  // 'email.sent' fires for every freeform email composed via
+  // /api/admin/send-email (Dev Plan share, candidate share, custom
+  // message). The email_log row carries the detail.
+  | 'email.sent'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'
