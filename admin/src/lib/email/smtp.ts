@@ -95,13 +95,21 @@ function buildFrom(creds: SmtpCreds): string {
 }
 
 /** Send via a TPS staff member's SMTP server. Signature is appended
- *  to the body when provided. Failure mode: null + lastSmtpError(). */
+ *  to the body when provided. Failure mode: null + lastSmtpError().
+ *
+ *  TLS handling: when secure=true we do implicit TLS (port 465 style);
+ *  when secure=false we still force STARTTLS so the connection is
+ *  encrypted before auth — most modern servers (Office 365, Gmail,
+ *  Postmark) require it on port 587. The `wrong version number` SSL
+ *  error users see is almost always the result of forcing implicit
+ *  TLS on a STARTTLS-only port. */
 export async function sendViaSmtp(creds: SmtpCreds, input: SmtpSendInput): Promise<SmtpSendResult | null> {
   const transporter = nodemailer.createTransport({
-    host:   creds.host,
-    port:   creds.port,
-    secure: creds.secure,
-    auth:   { user: creds.user, pass: creds.pass },
+    host:       creds.host,
+    port:       creds.port,
+    secure:     creds.secure,
+    requireTLS: !creds.secure,
+    auth:       { user: creds.user, pass: creds.pass },
   });
 
   const signed = input.signatureHtml
@@ -134,10 +142,11 @@ export async function sendViaSmtp(creds: SmtpCreds, input: SmtpSendInput): Promi
  *  "Verify connection" button on the Settings page. */
 export async function verifySmtp(creds: SmtpCreds): Promise<{ ok: true } | { ok: false; error: string }> {
   const transporter = nodemailer.createTransport({
-    host:   creds.host,
-    port:   creds.port,
-    secure: creds.secure,
-    auth:   { user: creds.user, pass: creds.pass },
+    host:       creds.host,
+    port:       creds.port,
+    secure:     creds.secure,
+    requireTLS: !creds.secure,
+    auth:       { user: creds.user, pass: creds.pass },
   });
   try {
     await transporter.verify();
