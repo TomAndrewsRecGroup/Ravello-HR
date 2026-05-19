@@ -70,8 +70,8 @@ export interface SmtpSendResult {
   delivered: true;
 }
 
-let lastSmtpError: { message: string; from: string } | null = null;
-export function lastSmtpError() { return lastSmtpError; }
+let _lastSmtpError: { message: string; from: string } | null = null;
+export function lastSmtpError() { return _lastSmtpError; }
 
 /** Best-effort plain-text fallback from HTML — matches the helper in
  *  lib/email/client.ts so the two transports produce similar output. */
@@ -118,10 +118,10 @@ export async function sendViaSmtp(creds: SmtpCreds, input: SmtpSendInput): Promi
       replyTo:     creds.replyTo ?? undefined,
       attachments: input.attachments,
     });
-    lastSmtpError = null;
+    _lastSmtpError = null;
     return { messageId: res.messageId, delivered: true };
   } catch (err) {
-    lastSmtpError = {
+    _lastSmtpError = {
       message: (err as Error)?.message ?? 'SMTP transport failure',
       from:    buildFrom(creds),
     };
