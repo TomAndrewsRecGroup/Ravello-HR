@@ -167,8 +167,21 @@ export default function EmailSettingsForm({ initial, ownEmail }: Props) {
             <input className="input" placeholder="smtp.office365.com" value={host} onChange={e => setHost(e.target.value)} />
           </Field>
           <Field label="Port">
-            <input className="input" type="number" placeholder="587" value={port}
-                   onChange={e => setPort(e.target.value === '' ? '' : Number(e.target.value))} />
+            <input
+              className="input"
+              type="number"
+              placeholder="587"
+              value={port}
+              onChange={e => {
+                const next = e.target.value === '' ? '' : Number(e.target.value);
+                setPort(next);
+                // Auto-pick TLS mode based on the standard ports so a
+                // user pasting 587 doesn't fight the SSL handshake.
+                // Port 465 → implicit TLS; 587/25 → STARTTLS (secure=false).
+                if (next === 465) setSecure(true);
+                else if (next === 587 || next === 25) setSecure(false);
+              }}
+            />
           </Field>
           <Field label="Username">
             <input className="input" placeholder="you@yourdomain.com" value={user} onChange={e => setUser(e.target.value)} />
@@ -187,10 +200,16 @@ export default function EmailSettingsForm({ initial, ownEmail }: Props) {
             </div>
           </Field>
         </div>
-        <label className="inline-flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--ink-soft)' }}>
-          <input type="checkbox" checked={secure} onChange={e => setSecure(e.target.checked)} />
-          Use TLS / secure connection (port 465 typically secure; 587 typically STARTTLS — leave on for both unless your provider says otherwise)
-        </label>
+        <div className="flex flex-col gap-1.5">
+          <label className="inline-flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--ink-soft)' }}>
+            <input type="checkbox" checked={secure} onChange={e => setSecure(e.target.checked)} />
+            Implicit TLS (tick for port&nbsp;465 only)
+          </label>
+          <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+            <strong>Port 465</strong> → tick this box (implicit TLS). <strong>Port 587 or 25</strong> → leave unticked; STARTTLS is still enforced automatically.
+            A <em>wrong version number</em> SSL error means this box is on for a STARTTLS-only port — untick and retry.
+          </p>
+        </div>
       </section>
 
       {/* From identity */}
