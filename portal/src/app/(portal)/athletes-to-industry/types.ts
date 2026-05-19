@@ -35,6 +35,7 @@ export interface AthleteRow {
   cv_mime: string | null;
   cv_text: string | null;
   called_at: string | null;
+  welcome_email_sent_at: string | null;
   created_at: string;
   company_name?: string | null;
 }

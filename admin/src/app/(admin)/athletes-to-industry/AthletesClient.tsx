@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Trophy, Plus, Trash2, Loader2, Save, X, UserRoundSearch, FileText, ExternalLink, GraduationCap,
-  Upload, Type as TypeIcon, PhoneCall,
+  Upload, Type as TypeIcon, PhoneCall, Mail,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { openAthleteCv } from './openCv';
@@ -60,6 +60,33 @@ export default function AthletesClient({
   const [viewing,          setViewing]          = useState<AthleteRow | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [migratingCvs, setMigratingCvs] = useState(false);
+  const [welcomeBusyId, setWelcomeBusyId] = useState<string | null>(null);
+
+  async function sendWelcomeEmail(a: AthleteRow) {
+    if (!a.email) {
+      alert('This athlete has no email address on file. Add one first.');
+      return;
+    }
+    if (a.welcome_email_sent_at && !confirm(
+      `Welcome email already sent ${new Date(a.welcome_email_sent_at).toLocaleString('en-GB')}.\n\nResend anyway?`,
+    )) return;
+    setWelcomeBusyId(a.id);
+    try {
+      const res = await fetch(`/api/admin/athletes/${a.id}/welcome-email`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(`Send failed: ${json.error ?? res.statusText}`);
+        return;
+      }
+      setAthletes(curr => curr.map(x => x.id === a.id
+        ? { ...x, welcome_email_sent_at: json.sent_at ?? new Date().toISOString() }
+        : x));
+    } catch (e) {
+      alert(`Send failed: ${(e as Error).message}`);
+    } finally {
+      setWelcomeBusyId(null);
+    }
+  }
 
   async function migrateLegacyCvs() {
     if (!confirm('Move every legacy CV from the old documents bucket into the private athlete-cvs bucket?\n\nThis can take a minute. Safe to re-run.')) return;
@@ -588,6 +615,27 @@ export default function AthletesClient({
                           }}
                           title="Match to training">
                     <GraduationCap size={11} /> Training
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => sendWelcomeEmail(a)}
+                    disabled={isBusy || welcomeBusyId === a.id || !a.email}
+                    className="btn-icon btn-sm flex-shrink-0"
+                    style={{
+                      color: a.welcome_email_sent_at ? 'var(--teal)' : 'var(--purple)',
+                      opacity: !a.email ? 0.4 : 1,
+                    }}
+                    title={
+                      !a.email
+                        ? 'Add an email address to this athlete first'
+                        : a.welcome_email_sent_at
+                          ? `Resend invite (last sent ${new Date(a.welcome_email_sent_at).toLocaleString('en-GB')})`
+                          : 'Send invite-to-call email now'
+                    }
+                  >
+                    {welcomeBusyId === a.id
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <Mail size={12} />}
                   </button>
                   <button onClick={() => remove(a.id)} disabled={isBusy} className="btn-icon btn-sm flex-shrink-0"
                           style={{ color: 'var(--red)' }} title="Delete">

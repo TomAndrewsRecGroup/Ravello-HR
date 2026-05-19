@@ -30,6 +30,11 @@ type AuditAction =
   // retro-pushed into Manatal via /api/admin/clients/[id]/manatal-sync
   // (one-click 'Create in Manatal' button on the client profile).
   | 'company.manatal_synced'
+  // 'athlete.welcome_email_sent' fires when admin manually sends the
+  // Athletes To Industry "invite to call" welcome email via
+  // /api/admin/athletes/[id]/welcome-email — used for backfilling
+  // athletes added before the auto-send went live.
+  | 'athlete.welcome_email_sent'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'

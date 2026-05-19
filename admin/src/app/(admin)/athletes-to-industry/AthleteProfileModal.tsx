@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { X, FileText, ExternalLink, Save, PhoneCall } from 'lucide-react';
+import { X, FileText, ExternalLink, Save, PhoneCall, Mail, CheckCircle2 } from 'lucide-react';
 import { useModalShell } from '@/components/ui/useModalShell';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import { openAthleteCv } from './openCv';
@@ -38,6 +38,31 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
   const [phone, setPhone] = useState(athlete.phone ?? '');
   const [calledAt, setCalledAt] = useState<string | null>(athlete.called_at ?? null);
   const [togglingCalled, setTogglingCalled] = useState(false);
+  const [welcomeSentAt, setWelcomeSentAt] = useState<string | null>(athlete.welcome_email_sent_at ?? null);
+  const [sendingWelcome, setSendingWelcome] = useState(false);
+  const [welcomeError, setWelcomeError] = useState<string | null>(null);
+
+  async function sendWelcomeEmail() {
+    if (welcomeSentAt && !confirm(
+      `Welcome email already sent ${new Date(welcomeSentAt).toLocaleString('en-GB')}.\n\nResend anyway?`,
+    )) return;
+    setSendingWelcome(true);
+    setWelcomeError(null);
+    try {
+      const res = await fetch(`/api/admin/athletes/${athlete.id}/welcome-email`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setWelcomeError(json.error ?? `Send failed (${res.status})`);
+        return;
+      }
+      setWelcomeSentAt(json.sent_at ?? new Date().toISOString());
+      onSaved({ ...athlete, welcome_email_sent_at: json.sent_at ?? new Date().toISOString() });
+    } catch (e) {
+      setWelcomeError((e as Error).message);
+    } finally {
+      setSendingWelcome(false);
+    }
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -175,6 +200,45 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
               </ul>
             </div>
           )}
+
+          <div
+            className="rounded-md p-3 flex flex-wrap items-center gap-2"
+            style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}
+          >
+            <div className="flex-1 min-w-[180px]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>
+                Athletes To Industry — invite to call
+              </p>
+              {welcomeSentAt ? (
+                <p className="text-xs mt-0.5 inline-flex items-center gap-1" style={{ color: 'var(--teal)' }}>
+                  <CheckCircle2 size={11} /> Sent {new Date(welcomeSentAt).toLocaleString('en-GB')}
+                </p>
+              ) : (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-soft)' }}>
+                  Not sent yet — auto-fires 2 days after add, or send manually now.
+                </p>
+              )}
+              {welcomeError && (
+                <p className="text-[11px] mt-1" style={{ color: 'var(--red)' }}>{welcomeError}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={sendWelcomeEmail}
+              disabled={sendingWelcome || !athlete.email}
+              className="btn-cta btn-sm whitespace-nowrap"
+              title={
+                !athlete.email
+                  ? 'Add an email address to this athlete first'
+                  : welcomeSentAt
+                    ? 'Resend the invite-to-call email now'
+                    : 'Send the invite-to-call email now'
+              }
+            >
+              <Mail size={12} />
+              {sendingWelcome ? 'Sending…' : welcomeSentAt ? 'Resend invite' : 'Send invite'}
+            </button>
+          </div>
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Email">{athlete.email ?? '—'}</Field>
