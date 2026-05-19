@@ -2,7 +2,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
-import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell } from 'lucide-react';
+import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell, Mail } from 'lucide-react';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 import InviteUserPanel from '@/components/modules/InviteUserPanel';
 import FeatureFlagToggles from '@/components/modules/FeatureFlagToggles';
 import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
@@ -654,7 +655,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
               ) : (
                 <div className="table-wrapper mb-4">
                   <table className="table">
-                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
                     <tbody>
                       {users.map((u: any) => (
                         <tr key={u.id}>
@@ -662,6 +663,27 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                           <td style={{ color: 'var(--ink-soft)' }}>{u.email}</td>
                           <td><span className={`badge badge-${u.role?.includes('admin') ? 'admin' : u.role?.includes('staff') ? 'staff' : 'client'}`}>{labelFor(ROLE_LABELS, u.role)}</span></td>
                           <td style={{ color: 'var(--ink-faint)' }}>{new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+                          <td className="text-right whitespace-nowrap">
+                            {u.email && (
+                              <SendEmailButton
+                                target={{
+                                  type:       'company',
+                                  id:         company.id,
+                                  company_id: company.id,
+                                  profile_id: u.id,
+                                }}
+                                buildDefaults={() => ({
+                                  to:       u.email,
+                                  subject:  '',
+                                  bodyHtml: '',
+                                })}
+                                className="btn-ghost btn-sm"
+                                title="Send a freeform email to this user"
+                              >
+                                <Mail size={11} />
+                              </SendEmailButton>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

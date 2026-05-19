@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import Link from 'next/link';
-import { Loader2, MailPlus, KeyRound, Trash2 } from 'lucide-react';
+import { Loader2, MailPlus, KeyRound, Trash2, Mail } from 'lucide-react';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 import { PORTAL_INVITE_ROLES, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 const ROLE_BADGE: Record<string, string> = {
@@ -140,6 +141,25 @@ function UserActions({ user, onChanged }: { user: any; onChanged: () => void }) 
           {busy === 'resend' ? <Loader2 size={11} className="animate-spin" /> : <MailPlus size={11} />}
           <span className="text-[11px]">Send login link</span>
         </button>
+        {user.companies?.id && user.email && (
+          <SendEmailButton
+            target={{
+              type:       'company',
+              id:         user.companies.id,
+              company_id: user.companies.id,
+              profile_id: user.id,
+            }}
+            buildDefaults={() => ({
+              to:       user.email,
+              subject:  '',
+              bodyHtml: '',
+            })}
+            className="btn-ghost btn-sm"
+            title="Send a freeform email to this user"
+          >
+            <Mail size={11} /><span className="text-[11px]">Email</span>
+          </SendEmailButton>
+        )}
         <button
           onClick={resetPassword}
           disabled={busy !== null}

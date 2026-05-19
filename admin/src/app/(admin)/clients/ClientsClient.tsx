@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Briefcase, LifeBuoy, AlertTriangle, Users, X } from 'lucide-react';
+import { Plus, Briefcase, LifeBuoy, AlertTriangle, Users, X, Mail } from 'lucide-react';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 import { ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 interface Company {
@@ -103,6 +104,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                       <th>Email</th>
                       <th>Role</th>
                       <th>Joined</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -117,6 +119,27 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                         </td>
                         <td style={{ color: 'var(--ink-faint)' }}>
                           {new Date(u.created_at).toLocaleDateString('en-GB')}
+                        </td>
+                        <td className="text-right whitespace-nowrap">
+                          {u.email && (
+                            <SendEmailButton
+                              target={{
+                                type:       'company',
+                                id:         usersModal.company.id,
+                                company_id: usersModal.company.id,
+                                profile_id: u.id,
+                              }}
+                              buildDefaults={() => ({
+                                to:       u.email,
+                                subject:  '',
+                                bodyHtml: '',
+                              })}
+                              className="btn-ghost btn-sm"
+                              title="Send a freeform email to this user"
+                            >
+                              <Mail size={11} />
+                            </SendEmailButton>
+                          )}
                         </td>
                       </tr>
                     ))}
