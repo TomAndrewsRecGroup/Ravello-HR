@@ -29,7 +29,7 @@ export default async function AthletesToIndustryPage() {
   ] = await Promise.all([
     supabase
       .from('athletes')
-      .select('id, company_id, full_name, email, phone, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, called_at, created_at')
+      .select('id, company_id, full_name, email, phone, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, called_at, welcome_email_sent_at, created_at')
       .eq('company_id', companyId ?? '')
       .order('created_at', { ascending: false })
       .limit(200),
