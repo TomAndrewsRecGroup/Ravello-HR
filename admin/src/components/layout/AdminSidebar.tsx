@@ -11,7 +11,7 @@ import {
   FolderOpen, LifeBuoy, LogOut,
   Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
   X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper, Trophy, ClipboardList,
+  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper, Trophy, ClipboardList, Mail,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -74,6 +74,12 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/documents',       label: 'Documents',      icon: FileText },
       { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
       { href: '/learning',        label: 'Learning',       icon: BookOpen },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { href: '/settings/email',  label: 'Email Settings', icon: Mail },
     ],
   },
 ];
