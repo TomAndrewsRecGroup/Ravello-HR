@@ -5,6 +5,7 @@ import { X, FileText, ExternalLink, Save, PhoneCall, Mail, CheckCircle2 } from '
 import { useModalShell } from '@/components/ui/useModalShell';
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import EmailLogList from '@/components/modules/EmailLogList';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 import { openAthleteCv } from './openCv';
 import type { AthleteRow } from './types';
 
@@ -246,6 +247,14 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
               <Mail size={12} />
               {sendingWelcome ? 'Sending…' : welcomeSentAt ? 'Resend invite' : 'Send invite'}
             </button>
+            <SendEmailButton
+              target={{ type: 'athlete', id: athlete.id, company_id: athlete.company_id }}
+              buildDefaults={() => ({ to: athlete.email ?? '', subject: '', bodyHtml: '' })}
+              className="btn-secondary btn-sm"
+              title={athlete.email ? 'Compose a custom email to this athlete' : 'Add an email address to this athlete first'}
+            >
+              <Mail size={12} /> Send custom email…
+            </SendEmailButton>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-3">

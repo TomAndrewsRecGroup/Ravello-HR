@@ -20,7 +20,7 @@ export default async function CandidatesPage() {
   const [{ data: candidates }, { count: totalCandidates }, { data: companies }] = await Promise.all([
     supabase
       .from('candidates')
-      .select('id,full_name,email,cv_url,cv_file_path,client_status,pipeline_stage,screening_score,source,requisition_id,requisitions(title, companies(name))')
+      .select('id,full_name,email,cv_url,cv_file_path,client_status,pipeline_stage,screening_score,source,requisition_id,requisitions(title, companies(id, name))')
       .order('created_at', { ascending: false })
       .limit(PAGE_CAP),
     supabase
