@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
   Trophy, Plus, Trash2, Loader2, Save, X, UserRoundSearch, FileText, ExternalLink, GraduationCap,
-  Upload, Type as TypeIcon, PhoneCall, Mail,
+  Upload, Type as TypeIcon, PhoneCall, Mail, Send,
 } from 'lucide-react';
 import AvatarInitials from '@/components/ui/AvatarInitials';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 import { openAthleteCv } from './openCv';
 import type {
   AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow,
@@ -630,13 +631,21 @@ export default function AthletesClient({
                         ? 'Add an email address to this athlete first'
                         : a.welcome_email_sent_at
                           ? `Resend invite (last sent ${new Date(a.welcome_email_sent_at).toLocaleString('en-GB')})`
-                          : 'Send invite-to-call email now'
+                          : 'Send invite-to-call email now (templated)'
                     }
                   >
                     {welcomeBusyId === a.id
                       ? <Loader2 size={12} className="animate-spin" />
                       : <Mail size={12} />}
                   </button>
+                  <SendEmailButton
+                    target={{ type: 'athlete', id: a.id, company_id: a.company_id }}
+                    buildDefaults={() => ({ to: a.email ?? '', subject: '', bodyHtml: '' })}
+                    className="btn-icon btn-sm flex-shrink-0"
+                    title={a.email ? 'Send a custom email to this athlete' : 'Add an email address to this athlete first'}
+                  >
+                    <Send size={12} style={{ color: a.email ? 'var(--purple)' : 'var(--ink-faint)' }} />
+                  </SendEmailButton>
                   <button onClick={() => remove(a.id)} disabled={isBusy} className="btn-icon btn-sm flex-shrink-0"
                           style={{ color: 'var(--red)' }} title="Delete">
                     <Trash2 size={12} />

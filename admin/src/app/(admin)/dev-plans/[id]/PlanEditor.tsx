@@ -4,7 +4,8 @@ import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Github, Trash, Printer } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Github, Trash, Printer, Send } from 'lucide-react';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 
 type PlanStatus = 'draft' | 'active' | 'completed' | 'archived';
 type MilestoneStatus = 'pending' | 'in_progress' | 'done';
@@ -500,6 +501,32 @@ export default function PlanEditor(props: Props) {
           <Link href={`/dev-plans/${props.plan.id}/preview`} className="btn-secondary" target="_blank" rel="noopener noreferrer">
             <Printer size={14} /> Preview
           </Link>
+        )}
+        {props.plan && props.plan.athlete_id && (
+          <SendEmailButton
+            target={{
+              type:       'athlete',
+              id:         props.plan.athlete_id,
+              company_id: props.plan.company_id,
+            }}
+            buildDefaults={async () => {
+              const { data } = await supabase
+                .from('athletes')
+                .select('full_name,email')
+                .eq('id', props.plan!.athlete_id!)
+                .single();
+              const firstName = data?.full_name?.trim().split(/\s+/)[0] ?? '';
+              return {
+                to:      data?.email ?? '',
+                subject: `Your Athletes To Industry development plan${title.trim() ? ` — ${title.trim()}` : ''}`,
+                bodyHtml: `<p>Hi ${firstName || 'there'},</p><p>Please find your development plan attached as a PDF. It outlines the milestones, training and roles we'll be working through together.</p><p><strong>Next step:</strong> have a read through, then we'll catch up to walk through any questions.</p>`,
+              };
+            }}
+            className="btn-secondary"
+            title="Send this Dev Plan to the athlete (save the PDF first via Preview, then attach in the modal)"
+          >
+            <Send size={14} /> Send via email
+          </SendEmailButton>
         )}
         {props.plan && (
           <button type="button" className="btn-ghost" onClick={deletePlan} style={{ color: 'var(--red)' }}>

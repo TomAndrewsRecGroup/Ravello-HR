@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
-import { ExternalLink, ChevronDown, Star, Loader2 } from 'lucide-react';
+import { ExternalLink, ChevronDown, Star, Loader2, Send } from 'lucide-react';
+import SendEmailButton from '@/components/modules/SendEmailButton';
 
 import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Candidate {
@@ -19,7 +20,7 @@ interface Candidate {
   approved_for_client: boolean;
   created_at: string;
   requisition_id: string;
-  requisitions: { title: string; companies: { name: string } | null } | null;
+  requisitions: { title: string; companies: { id: string; name: string } | null } | null;
 }
 
 interface Props {
@@ -199,19 +200,71 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                     </span>
                   </td>
                   <td>
-                    {(c.cv_url || c.cv_file_path) ? (
-                      <a
-                        href={c.cv_url ?? '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs"
-                        style={{ color: 'var(--purple)' }}
-                      >
-                        CV <ExternalLink size={10} />
-                      </a>
-                    ) : (
-                      <span style={{ color: 'var(--ink-faint)' }}>-</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {(c.cv_url || c.cv_file_path) ? (
+                        <a
+                          href={c.cv_url ?? '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs"
+                          style={{ color: 'var(--purple)' }}
+                        >
+                          CV <ExternalLink size={10} />
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--ink-faint)' }}>-</span>
+                      )}
+                      {c.requisitions?.companies?.id && (
+                        <SendEmailButton
+                          target={{
+                            type:       'company',
+                            id:         c.requisitions.companies.id,
+                            company_id: c.requisitions.companies.id,
+                          }}
+                          buildDefaults={async () => {
+                            const sb = createClient();
+                            const { data: users } = await sb
+                              .from('profiles')
+                              .select('id,email,full_name,role')
+                              .eq('company_id', c.requisitions!.companies!.id)
+                              .in('role', ['client_admin','client_editor','client_user']);
+                            const recipients = (users ?? [])
+                              .filter(u => u.email)
+                              .map(u => ({
+                                email:      u.email as string,
+                                label:      u.full_name ?? undefined,
+                                profile_id: u.id,
+                              }));
+                            const cvLine = c.cv_url
+                              ? `<p>You can view the CV here: <a href="${c.cv_url}">${c.cv_url}</a></p>`
+                              : '<p>The CV is attached.</p>';
+                            return {
+                              candidateRecipients: recipients,
+                              to:       recipients[0]?.email ?? '',
+                              subject:  `Candidate for review — ${c.full_name} (${c.requisitions?.title ?? 'role'})`,
+                              bodyHtml: `<p>Hi,</p><p>Sharing <strong>${c.full_name}</strong> for the <em>${c.requisitions?.title ?? 'open role'}</em> role.</p>${cvLine}<p>Let me know your thoughts.</p>`,
+                            };
+                          }}
+                          className="btn-secondary btn-sm"
+                          title="Share this candidate with a client user"
+                          onSent={async () => {
+                            // Flip the candidate's client_status to 'shared'
+                            // + approved_for_client so admin doesn't have
+                            // to set those manually after sharing.
+                            const sb = createClient();
+                            if (c.client_status !== 'shared' || !c.approved_for_client) {
+                              await sb
+                                .from('candidates')
+                                .update({ client_status: 'shared', approved_for_client: true })
+                                .eq('id', c.id);
+                              revalidateAdminPath('/candidates');
+                            }
+                          }}
+                        >
+                          <Send size={11} /> Send
+                        </SendEmailButton>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
