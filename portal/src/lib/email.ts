@@ -81,6 +81,87 @@ ${ctaButton(url, 'Book a call with Tom Andrews')}
   };
 }
 
+// ── Athletes To Industry gold/navy email theme ──────────────────────────
+// Distinct from the purple People-System shell above so A2I referral
+// notifications stay on-brand. Used by buildPartnerReferralEmail.
+const A2I_NAVY_DEEP = '#060a18';
+const A2I_NAVY      = '#0a1126';
+const A2I_CREAM     = '#f3ecd8';
+const A2I_CREAM_MUT = '#c9c4b3';
+const A2I_GOLD      = '#c9a24a';
+const A2I_BORDER    = 'rgba(243,236,216,0.14)';
+const A2I_LOGO_URL  =
+  process.env.A2I_EMAIL_LOGO_URL ??
+  'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Athletes%20To%20Industry%20Option%20A.png';
+
+/** Escape untrusted text before interpolating into email HTML. */
+function escapeHtml(s: string | null | undefined): string {
+  if (!s) return '';
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function wrapEmailGold(body: string, preheader: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Athletes To Industry</title></head>
+<body style="margin:0;padding:0;background:${A2I_NAVY_DEEP};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${A2I_CREAM};">
+<div style="display:none;max-height:0;overflow:hidden;color:transparent;">${preheader}</div>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${A2I_NAVY_DEEP};padding:32px 16px;"><tr><td align="center">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:${A2I_NAVY};border-radius:14px;overflow:hidden;border:1px solid ${A2I_BORDER};">
+<tr><td style="padding:28px 32px 18px 32px;border-bottom:1px solid ${A2I_BORDER};"><img src="${A2I_LOGO_URL}" alt="Athletes To Industry" width="64" style="display:block;height:auto;max-width:64px;"/></td></tr>
+<tr><td style="padding:28px 32px;font-size:15px;line-height:1.6;color:${A2I_CREAM};">${body}</td></tr>
+<tr><td style="padding:22px 32px;border-top:1px solid ${A2I_BORDER};font-size:12px;color:${A2I_CREAM_MUT};line-height:1.5;">
+<p style="margin:0 0 6px 0;font-weight:600;color:${A2I_GOLD};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
+<p style="margin:0;">Operated by Andrews Recruitment Group · Powered by The People System.</p>
+</td></tr></table>
+</td></tr></table></body></html>`;
+}
+
+/** Notification to Tom when a partner submits via a client's /r/partner/[slug] link. */
+export function buildPartnerReferralEmail(input: {
+  to:              string;
+  referrerCompany: string;
+  name:            string;
+  location?:       string | null;
+  website?:        string | null;
+  sector?:         string | null;
+  opportunities?:  string | null;
+}) {
+  const row = (label: string, value: string) => `
+<tr>
+<td style="padding:10px 0;border-bottom:1px solid ${A2I_BORDER};font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;width:160px;vertical-align:top;">${label}</td>
+<td style="padding:10px 0;border-bottom:1px solid ${A2I_BORDER};font-size:14px;color:${A2I_CREAM};">${value}</td>
+</tr>`;
+
+  const websiteVal = input.website
+    ? `<a href="${escapeHtml(input.website)}" style="color:${A2I_GOLD};">${escapeHtml(input.website)}</a>`
+    : '—';
+  const opportunities = escapeHtml(input.opportunities).replace(/\n/g, '<br/>') || '—';
+
+  const body = `
+<h1 style="margin:0 0 8px 0;font-size:21px;font-weight:700;color:${A2I_CREAM};">New partner referral</h1>
+<p style="margin:0 0 20px 0;color:${A2I_CREAM_MUT};">Referred by <strong style="color:${A2I_CREAM};">${escapeHtml(input.referrerCompany)}</strong> via their Athletes To Industry partner link.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+${row('Partner / name', escapeHtml(input.name) || '—')}
+${row('Location', escapeHtml(input.location) || '—')}
+${row('Website', websiteVal)}
+${row('Sector', escapeHtml(input.sector) || '—')}
+</table>
+<p style="margin:22px 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">Opportunities available</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:${A2I_CREAM};">${opportunities}</p>
+`.trim();
+
+  return {
+    to:      input.to,
+    subject: `New partner referral via ${input.referrerCompany} — ${input.name}`,
+    html:    wrapEmailGold(body, `New Athletes To Industry partner referral from ${input.referrerCompany}.`),
+    tag:     'partner-referral',
+  };
+}
+
 /** Returns ISO-8601 for +2 days from `from`, snapped into the
  *  09:00–17:00 GMT window. */
 export function nextBusinessSendAt(from: Date = new Date()): string {

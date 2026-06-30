@@ -1,0 +1,181 @@
+/*
+ * Athletes To Industry theme — SCOPED to the public referral pages only.
+ *
+ * Every rule is nested under `.a2i-scope` so none of the gold/navy tokens
+ * or form styles leak into the portal's purple "People System" theme. The
+ * portal's own globals.css and Tailwind config are untouched.
+ */
+
+.a2i-scope {
+  --navy: #0a1126;
+  --navy-deep: #060a18;
+  --cream: #f3ecd8;
+  --cream-muted: #c9c4b3;
+  --gold: #c9a24a;
+  --gold-bright: #e0b85a;
+  --a2i-border: rgba(243, 236, 216, 0.12);
+  --gold-border: rgba(201, 162, 74, 0.3);
+  --gold-surface: rgba(201, 162, 74, 0.06);
+  --cream-surface: rgba(243, 236, 216, 0.02);
+
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--navy-deep);
+  color: var(--cream);
+  font-family: var(--font-a2i-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Background layers */
+.a2i-bg-solid {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: #060a18;
+  pointer-events: none;
+}
+.a2i-bg-shader {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Selection */
+.a2i-scope ::selection {
+  background: var(--gold);
+  color: var(--navy-deep);
+}
+
+/* Typography helpers */
+.a2i-scope .a2i-display {
+  font-family: var(--font-a2i-oswald), 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.02;
+  color: var(--cream);
+}
+.a2i-scope .a2i-gold {
+  color: var(--gold);
+}
+.a2i-scope .a2i-label {
+  display: block;
+  font-family: var(--font-a2i-oswald), 'Arial Narrow', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.a2i-scope .a2i-section-label {
+  font-family: var(--font-a2i-oswald), 'Arial Narrow', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold);
+}
+.a2i-scope .a2i-prose {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--cream-muted);
+}
+
+/* Form fields — underline style matching A2I contact form */
+.a2i-scope .a2i-field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--a2i-border);
+  padding: 12px 0;
+  color: var(--cream);
+  font-size: 16px;
+  font-family: var(--font-a2i-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.a2i-scope .a2i-field:focus {
+  border-bottom-color: var(--gold);
+}
+.a2i-scope .a2i-field::placeholder {
+  color: rgba(201, 196, 179, 0.5);
+}
+.a2i-scope textarea.a2i-field {
+  resize: vertical;
+  min-height: 96px;
+}
+.a2i-scope select.a2i-field {
+  appearance: none;
+  cursor: pointer;
+}
+.a2i-scope select.a2i-field option {
+  background: var(--navy-deep);
+  color: var(--cream);
+}
+
+/* Buttons */
+.a2i-scope .a2i-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-a2i-oswald), 'Arial Narrow', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 14px 28px;
+  background: var(--gold);
+  color: var(--navy-deep);
+  border: 1px solid var(--gold);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+.a2i-scope .a2i-btn:hover {
+  background: var(--gold-bright);
+  border-color: var(--gold-bright);
+}
+.a2i-scope .a2i-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.a2i-scope .a2i-btn-ghost {
+  background: transparent;
+  color: var(--gold);
+}
+.a2i-scope .a2i-btn-ghost:hover {
+  background: var(--gold-surface);
+  color: var(--gold-bright);
+}
+
+/* Surfaces */
+.a2i-scope .a2i-panel {
+  background: var(--navy);
+  border: 1px solid var(--a2i-border);
+}
+
+.a2i-scope .a2i-gold-line {
+  display: block;
+  width: 80px;
+  height: 1px;
+  background: var(--gold);
+}
+
+/* Links */
+.a2i-scope a {
+  color: var(--gold);
+}
+
+/* Focus visible */
+.a2i-scope :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2i-bg-shader { display: none; }
+}

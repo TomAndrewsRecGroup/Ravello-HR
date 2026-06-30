@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import PartnersClient from './PartnersClient';
 import TrainingProvidersClient from './TrainingProvidersClient';
 import AthletesClient from './AthletesClient';
+import ReferralLinksAdmin from './ReferralLinksAdmin';
 import type {
   AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow,
 } from './types';
@@ -11,7 +12,7 @@ import type {
 export const metadata: Metadata = { title: 'Athletes To Industry' };
 export const dynamic = 'force-dynamic';
 
-interface CompanyRow { id: string; name: string }
+interface CompanyRow { id: string; name: string; slug: string | null }
 
 export default async function AthletesToIndustryAdminPage() {
   const supabase = createServerSupabaseClient();
@@ -46,7 +47,7 @@ export default async function AthletesToIndustryAdminPage() {
       .limit(5000),
     supabase
       .from('companies')
-      .select('id, name')
+      .select('id, name, slug')
       .eq('active', true)
       .order('name', { ascending: true }),
     supabase
@@ -79,6 +80,10 @@ export default async function AthletesToIndustryAdminPage() {
         subtitle="Manage the partner pool, training providers and review athletes added across all clients."
       />
       <main className="admin-page flex-1 space-y-8">
+        <ReferralLinksAdmin
+          companies={companies}
+          portalBase={process.env.NEXT_PUBLIC_PORTAL_URL ?? ''}
+        />
         <PartnersClient
           initial={partners}
           interests={interests}
