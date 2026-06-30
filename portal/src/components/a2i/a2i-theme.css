@@ -19,6 +19,11 @@
   --cream-surface: rgba(243, 236, 216, 0.02);
 
   position: relative;
+  /* Establish a stacking context so the fixed background layers below
+     (negative z-index) paint ABOVE this wrapper's own opaque background
+     instead of being hidden behind it. Without this the iris shader was
+     covered by the navy fill and only the smoke showed through. */
+  isolation: isolate;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--navy-deep);
