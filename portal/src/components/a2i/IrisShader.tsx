@@ -122,7 +122,7 @@ export function IrisShader() {
         col += grain;
 
         /* symmetric vignette alpha (centred content) */
-        float alpha = vig * 0.85;
+        float alpha = vig * 0.96;
         gl_FragColor = vec4(col * alpha, alpha);
       }
     `;
@@ -187,7 +187,7 @@ export function IrisShader() {
     window.addEventListener('pointerleave', onLeave);
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.max(1, Math.floor(canvas.clientWidth  * dpr));
       const h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
       if (canvas.width !== w || canvas.height !== h) {

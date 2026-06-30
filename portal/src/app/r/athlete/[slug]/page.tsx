@@ -19,7 +19,7 @@ export default async function AthleteReferralPage({ params }: { params: { slug: 
           </h1>
           <span className="a2i-gold-line mt-5" />
           <p className="a2i-prose mt-5" style={{ fontSize: 16 }}>
-            {company.name} has invited you to register with Athletes To Industry — the structured
+            {company.name} has invited you to register with Athletes To Industry, the structured
             transition from elite sport into industry. Tell us about yourself and add your CV, and the
             team at Andrews Recruitment Group will be in touch to map out your next chapter.
           </p>

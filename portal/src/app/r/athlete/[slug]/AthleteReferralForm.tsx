@@ -157,7 +157,7 @@ export default function AthleteReferralForm({ slug }: { slug: string }) {
               {cvFile ? cvFile.name : 'Click to upload your CV'}
             </span>
             <span className="block a2i-prose" style={{ fontSize: 11, marginTop: 4 }}>
-              PDF, DOC, DOCX or TXT — up to 10 MB
+              PDF, DOC, DOCX or TXT (max 10 MB)
             </span>
             <input type="file" accept={ACCEPT} onChange={(e) => pickFile(e.target.files?.[0] ?? null)} className="hidden" />
           </label>

@@ -68,15 +68,15 @@ export function buildAthleteWelcomeEmail(input: { to: string; firstName?: string
   const body = `
 <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">Welcome to Athletes To Industry</h1>
 <p style="margin:0 0 16px 0;">${greeting}</p>
-<p style="margin:0 0 16px 0;">Your details have been added to <strong>The People System's Athletes To Industry programme</strong> — the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
+<p style="margin:0 0 16px 0;">Your details have been added to <strong>The People System's Athletes To Industry programme</strong>, the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
 <p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong>Tom Andrews</strong>. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
 ${ctaButton(url, 'Book a call with Tom Andrews')}
-<p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If you'd rather get in touch first, just reply to this email — we'd love to hear from you.</p>
+<p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If you'd rather get in touch first, just reply to this email and we'd love to hear from you.</p>
 `.trim();
   return {
     to:      input.to,
     subject: 'Your Athletes To Industry journey starts here',
-    html:    wrapEmail(body, "Welcome to Athletes To Industry — book a call with Tom Andrews to get started."),
+    html:    wrapEmail(body, "Welcome to Athletes To Industry. Book a call with Tom Andrews to get started."),
     tag:     'athlete-welcome',
   };
 }
@@ -138,17 +138,17 @@ export function buildPartnerReferralEmail(input: {
 
   const websiteVal = input.website
     ? `<a href="${escapeHtml(input.website)}" style="color:${A2I_GOLD};">${escapeHtml(input.website)}</a>`
-    : '—';
-  const opportunities = escapeHtml(input.opportunities).replace(/\n/g, '<br/>') || '—';
+    : 'Not provided';
+  const opportunities = escapeHtml(input.opportunities).replace(/\n/g, '<br/>') || 'Not provided';
 
   const body = `
 <h1 style="margin:0 0 8px 0;font-size:21px;font-weight:700;color:${A2I_CREAM};">New partner referral</h1>
 <p style="margin:0 0 20px 0;color:${A2I_CREAM_MUT};">Referred by <strong style="color:${A2I_CREAM};">${escapeHtml(input.referrerCompany)}</strong> via their Athletes To Industry partner link.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-${row('Partner / name', escapeHtml(input.name) || '—')}
-${row('Location', escapeHtml(input.location) || '—')}
+${row('Partner / name', escapeHtml(input.name) || 'Not provided')}
+${row('Location', escapeHtml(input.location) || 'Not provided')}
 ${row('Website', websiteVal)}
-${row('Sector', escapeHtml(input.sector) || '—')}
+${row('Sector', escapeHtml(input.sector) || 'Not provided')}
 </table>
 <p style="margin:22px 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">Opportunities available</p>
 <p style="margin:0;font-size:14px;line-height:1.6;color:${A2I_CREAM};">${opportunities}</p>
@@ -156,7 +156,7 @@ ${row('Sector', escapeHtml(input.sector) || '—')}
 
   return {
     to:      input.to,
-    subject: `New partner referral via ${input.referrerCompany} — ${input.name}`,
+    subject: `New partner referral via ${input.referrerCompany}: ${input.name}`,
     html:    wrapEmailGold(body, `New Athletes To Industry partner referral from ${input.referrerCompany}.`),
     tag:     'partner-referral',
   };
