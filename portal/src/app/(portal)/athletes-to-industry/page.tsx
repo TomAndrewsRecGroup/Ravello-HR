@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { Trophy, Building2 } from 'lucide-react';
+import { Trophy, Building2, Share2 } from 'lucide-react';
 import Topbar from '@/components/layout/Topbar';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import CopyLinkRow from '@/components/modules/CopyLinkRow';
 import AthletesPanel from './AthletesPanel';
 import PartnersPanel from './PartnersPanel';
 import TrainingPanel from './TrainingPanel';
@@ -15,9 +16,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function AthletesToIndustryPage() {
   const supabase = createServerSupabaseClient();
-  const { user, companyId, featureFlags } = await getSessionProfile();
+  const { user, companyId, companySlug, featureFlags } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (featureFlags?.athletes_to_industry === false) redirect('/dashboard');
+
+  const portalBase = process.env.NEXT_PUBLIC_PORTAL_URL ?? '';
+  const athleteReferralUrl = companySlug ? `${portalBase}/r/athlete/${companySlug}` : null;
+  const partnerReferralUrl = companySlug ? `${portalBase}/r/partner/${companySlug}` : null;
 
   const [
     { data: athletesData },
@@ -78,6 +83,26 @@ export default async function AthletesToIndustryPage() {
         subtitle="Athletes from your roster, programme partners and training providers — all in one place."
       />
       <main className="portal-page flex-1">
+        {athleteReferralUrl && partnerReferralUrl && (
+          <div className="card p-5 mb-5">
+            <div className="flex items-start gap-2 mb-3">
+              <Share2 size={16} style={{ color: 'var(--purple)' }} className="mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Your referral links</p>
+                <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+                  Share these open links with any athlete or partner. Submissions come straight back to
+                  your Athletes To Industry roster (athletes) or the The People System team (partners) —
+                  no login needed.
+                </p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <CopyLinkRow label="Athlete sign-up link" url={athleteReferralUrl} hint="For athletes" />
+              <CopyLinkRow label="Partner enquiry link" url={partnerReferralUrl} hint="For partners" />
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-2 gap-5 mb-5">
           <AthletesPanel
             athletes={athletes}

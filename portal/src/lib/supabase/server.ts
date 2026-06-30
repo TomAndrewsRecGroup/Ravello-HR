@@ -28,7 +28,7 @@ function fetchCompanyShellCached(companyId: string) {
       const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data } = await sb
         .from('companies')
-        .select('name, logo_url, feature_flags, stripe_subscription_id, archived_at, account_owner_id, account_owner:account_owner_id(full_name, email)')
+        .select('name, slug, logo_url, feature_flags, stripe_subscription_id, archived_at, account_owner_id, account_owner:account_owner_id(full_name, email)')
         .eq('id', companyId)
         .maybeSingle();
       return data ?? null;
@@ -90,6 +90,7 @@ export const getSessionProfile = cache(async () => {
   const empty = {
     user: null, profile: null,
     companyId: '', companyName: null as string | null,
+    companySlug: null as string | null,
     companyLogoUrl: null as string | null,
     role: '', isTpsStaff: false,
     featureFlags: {} as Record<string, boolean>,
@@ -125,6 +126,7 @@ export const getSessionProfile = cache(async () => {
   // collapsed into one.
   let featureFlags: Record<string, boolean> = {};
   let companyName: string | null = null;
+  let companySlug: string | null = null;
   let companyLogoUrl: string | null = null;
   let stripeSubscriptionId: string | null = null;
   let archivedAt: string | null = null;
@@ -137,6 +139,7 @@ export const getSessionProfile = cache(async () => {
       if (row) {
         featureFlags        = (row.feature_flags ?? {}) as Record<string, boolean>;
         companyName         = row.name ?? null;
+        companySlug         = row.slug ?? null;
         companyLogoUrl      = row.logo_url ?? null;
         stripeSubscriptionId= row.stripe_subscription_id ?? null;
         archivedAt          = row.archived_at ?? null;
@@ -164,6 +167,7 @@ export const getSessionProfile = cache(async () => {
     },
     companyId,
     companyName,
+    companySlug,
     companyLogoUrl,
     role,
     isTpsStaff,
