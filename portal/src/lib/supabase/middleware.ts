@@ -9,6 +9,8 @@ const PUBLIC_ROUTES = [
   /^\/api\/auth\//,                  // /api/auth/set-password — first-time password creation, caller is not yet signed in
   /^\/api\/learning\/webhook$/,
   /^\/api\/partner\//,
+  /^\/r\//,                          // public Athletes/Partners referral pages — open, no login
+  /^\/api\/r\//,                     // their submission endpoints — open, anonymous athletes/partners
 ];
 
 // 15-minute TTL: feature-flag changes made in the admin portal won't
