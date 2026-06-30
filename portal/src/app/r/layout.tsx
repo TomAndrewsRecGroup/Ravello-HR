@@ -55,7 +55,7 @@ export default function ReferralLayout({ children }: { children: React.ReactNode
 
       <footer className="relative z-10 px-6 py-10 text-center">
         <p className="a2i-prose" style={{ fontSize: 12, opacity: 0.7 }}>
-          Athletes To Industry — operated by Andrews Recruitment Group, powered by The People System.
+          Athletes To Industry. Operated by Andrews Recruitment Group, powered by The People System.
         </p>
       </footer>
     </div>
