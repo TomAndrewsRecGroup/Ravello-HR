@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Oswald, Inter } from 'next/font/google';
-import { IrisShader } from '@/components/a2i/IrisShader';
-import { SmokeCanvas } from '@/components/a2i/SmokeCanvas';
+import { IrisShaderLazy } from '@/components/a2i/IrisShaderLazy';
 import '@/components/a2i/a2i-theme.css';
 
 // Athletes To Industry display + body fonts, scoped to the /r subtree via
@@ -32,12 +31,12 @@ export const metadata: Metadata = {
 export default function ReferralLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`a2i-scope ${oswald.variable} ${inter.variable}`}>
-      {/* Background layers (fixed, behind content) */}
+      {/* Background layers — mirror the Athletes To Industry site:
+          solid navy fill, then the WebGL iris shader on top. No smoke. */}
       <div aria-hidden className="a2i-bg-solid" />
       <div aria-hidden className="a2i-bg-shader">
-        <IrisShader />
+        <IrisShaderLazy />
       </div>
-      <SmokeCanvas />
 
       {/* Brand header */}
       <header className="relative z-10 flex items-center justify-center px-6 pt-10 pb-2">
