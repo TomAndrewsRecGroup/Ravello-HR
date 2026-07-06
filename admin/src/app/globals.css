@@ -779,6 +779,12 @@ html, body { overflow-x: hidden; }
 }
 .dp-pad { padding: 44px 48px; }
 
+/* Long unbreakable tokens (pasted URLs, long words) must wrap instead
+   of overflowing the fixed page width and clipping on the right. */
+.dp, .dp-prose, .dp-list li, .dp-trait p, .dp-path p { overflow-wrap: break-word; }
+.dp-fact .v, .dp-fact .k, .dp-chip, .dp-bar-label, .dp-company-cat h4,
+.dp-sec-title, .dp-sub, .dp-cover-name, .dp-cover-role, .dp-prose a { overflow-wrap: anywhere; word-break: break-word; }
+
 /* ── Cover ── */
 .dp-cover { position: relative; background: var(--dp-navy-deep); color: var(--dp-cream); min-height: 760px; overflow: hidden; }
 .dp-cover-glow {
