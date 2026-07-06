@@ -715,22 +715,24 @@ html, body { overflow-x: hidden; }
   .dp-strengths { grid-template-columns: 1fr; }
 }
 
-/* ── Print: A2I document. The cover uses a named zero-margin page so
-   the navy/gold bleeds to the paper edge; body pages take the default
-   14mm @page margin (applied on every sheet, including overflow) and
-   the in-body .dp-pad is dropped so nothing exceeds the printable
-   width. Only atomic blocks avoid breaking — sections flow so pages
-   fill top-to-bottom instead of one item per sheet. ── */
+/* ── Print: A2I document. Verified against the compiled production CSS
+   with a headless Chromium print. The cover keeps a full-bleed
+   zero-margin page; body pages are pinned to a FIXED physical width
+   (176mm, centred on A4) so no app-shell wrapper can inflate the
+   layout and push text off the right edge. overflow-x:hidden on
+   html/body is disabled in print (it was clipping the overflow), and
+   the preview wrapper + its inner max-width container are neutralised.
+   Only atomic blocks avoid breaking so pages fill top-to-bottom. ── */
 @page dp-cover { size: A4; margin: 0; }
 @media print {
+  html, body { overflow: visible !important; }
   .dp-print-frame { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-  /* Hard cap the document to the A4 printable width so no wrapper /
-     app shell can force it wider than the page (which would clip text
-     on the right). 182mm = 210mm − 2×14mm margins. */
-  .dp { width: 100% !important; max-width: 182mm !important; margin: 0 auto !important; }
-  .dp-page { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
+  .dp-print-frame > div { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .dp { width: 100% !important; max-width: none !important; margin: 0 !important; }
+  .dp-page { width: 176mm !important; max-width: 176mm !important; margin: 0 auto !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
   .dp-pad { padding: 0 !important; }
-  .dp-cover { page: dp-cover; height: 297mm !important; min-height: 0 !important; overflow: hidden; page-break-after: always; }
+  /* Cover overrides the fixed body width to stay full-bleed. */
+  .dp-page.dp-cover { page: dp-cover; width: 100% !important; max-width: none !important; margin: 0 !important; height: 297mm !important; min-height: 0 !important; overflow: hidden !important; page-break-after: always; }
   .dp-cover-inner { height: 297mm !important; min-height: 0 !important; }
   .dp-cover, .dp-cover-glow, .dp-cover-grain, .dp-callout, .dp-fit.strongest,
   .dp-bar-fill, .dp-fact, .dp-trait, .dp-path, .dp-company-cat, .dp-radar-wrap svg {
