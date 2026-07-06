@@ -571,3 +571,162 @@ html, body { overflow-x: hidden; }
   }
   a { color: inherit !important; text-decoration: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Development Plan document — Athletes to Industry house style.
+   Navy/cream/gold editorial look (mirrors a2i-theme.css), used
+   by the branded plan renderer + print-to-PDF. Scoped under .dp.
+   ═══════════════════════════════════════════════════════════ */
+.dp {
+  --dp-navy: #0a1126;
+  --dp-navy-deep: #060a18;
+  --dp-cream: #f3ecd8;
+  --dp-cream-muted: #c9c4b3;
+  --dp-gold: #c9a24a;
+  --dp-gold-bright: #e0b85a;
+  --dp-ink: #070b1d;
+  --dp-ink-soft: #38436a;
+  --dp-ink-faint: #748099;
+  --dp-line: rgba(7, 11, 29, 0.10);
+  --dp-paper: #ffffff;
+  --dp-paper-soft: #faf8f2;
+  --dp-display: 'Oswald', 'Arial Narrow', 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--dp-ink);
+  line-height: 1.6;
+}
+.dp-page {
+  background: var(--dp-paper);
+  max-width: 900px;
+  margin: 0 auto 24px;
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(7, 11, 29, 0.12);
+  overflow: hidden;
+}
+.dp-pad { padding: 44px 48px; }
+
+/* ── Cover ── */
+.dp-cover { position: relative; background: var(--dp-navy-deep); color: var(--dp-cream); min-height: 760px; overflow: hidden; }
+.dp-cover-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 72% 30%, rgba(224, 184, 90, 0.30) 0%, rgba(201, 162, 74, 0.12) 32%, rgba(6, 10, 24, 0) 68%),
+    radial-gradient(80% 60% at 20% 88%, rgba(201, 162, 74, 0.10) 0%, rgba(6, 10, 24, 0) 60%),
+    linear-gradient(160deg, #0a1126 0%, #060a18 60%, #04060f 100%);
+}
+.dp-cover-grain {
+  position: absolute; inset: 0; opacity: 0.06; pointer-events: none;
+  background-image: radial-gradient(rgba(243, 236, 216, 0.7) 0.5px, transparent 0.6px);
+  background-size: 3px 3px;
+}
+.dp-cover-inner { position: relative; z-index: 1; padding: 56px 52px; min-height: 760px; display: flex; flex-direction: column; }
+.dp-cover-logo { height: 44px; width: auto; }
+.dp-cover-logo-txt { font-family: var(--dp-display); font-weight: 700; font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dp-cream); }
+.dp-cover-logo-txt small { display: block; font-size: 10px; letter-spacing: 0.34em; color: var(--dp-gold); font-weight: 600; margin-top: 4px; }
+.dp-eyebrow { font-family: var(--dp-display); font-weight: 600; font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--dp-gold); }
+.dp-gold-rule { width: 80px; height: 2px; background: var(--dp-gold); border: 0; margin: 0; }
+.dp-cover-kicker { font-family: var(--dp-display); font-weight: 700; font-size: 24px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dp-cream-muted); margin: 0; }
+.dp-cover-name { font-family: var(--dp-display); font-weight: 700; font-size: 74px; line-height: 0.98; text-transform: uppercase; color: var(--dp-cream); margin: 0; }
+.dp-cover-role { font-size: 15px; color: var(--dp-cream-muted); max-width: 60ch; }
+.dp-cover-meta { display: flex; flex-wrap: wrap; gap: 44px; margin-top: 4px; }
+.dp-cover-meta .k { font-family: var(--dp-display); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dp-gold); }
+.dp-cover-meta .v { font-size: 14px; color: var(--dp-cream); margin-top: 3px; }
+.dp-cover-foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: var(--dp-cream-muted); }
+
+/* ── Body sections ── */
+.dp-section { margin-bottom: 30px; }
+.dp-section:last-child { margin-bottom: 0; }
+.dp-sec-label { font-family: var(--dp-display); font-weight: 600; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dp-gold); display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.dp-sec-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(201, 162, 74, 0.5), rgba(201, 162, 74, 0)); }
+.dp-sec-title { font-family: var(--dp-display); font-weight: 700; font-size: 25px; color: var(--dp-navy); margin: 0 0 14px; text-transform: uppercase; }
+.dp-sub { font-family: var(--dp-display); font-weight: 600; font-size: 16px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dp-navy); margin: 20px 0 6px; }
+
+/* Rich text (Tiptap HTML) */
+.dp-prose { font-size: 14.5px; color: var(--dp-ink-soft); }
+.dp-prose.lead { font-size: 16px; color: var(--dp-ink); }
+.dp-prose p { margin: 0 0 12px; }
+.dp-prose strong, .dp-prose b { color: var(--dp-navy); font-weight: 600; }
+.dp-prose h2 { font-family: var(--dp-display); font-weight: 600; font-size: 18px; text-transform: uppercase; color: var(--dp-navy); margin: 18px 0 6px; }
+.dp-prose h3 { font-family: var(--dp-display); font-weight: 600; font-size: 15px; text-transform: uppercase; color: var(--dp-navy); margin: 14px 0 4px; }
+.dp-prose ul, .dp-prose ol { margin: 0 0 12px; padding-left: 20px; }
+.dp-prose li { margin: 3px 0; }
+.dp-prose a { color: #9a7420; text-decoration: underline; }
+
+/* Bullet list (gold dot) */
+.dp-list { margin: 0 0 12px; padding: 0; list-style: none; }
+.dp-list li { position: relative; padding: 4px 0 4px 20px; font-size: 14.5px; color: var(--dp-ink-soft); }
+.dp-list li::before { content: ""; position: absolute; left: 0; top: 12px; width: 7px; height: 7px; background: var(--dp-gold); border-radius: 50%; }
+
+/* Positioning callout */
+.dp-callout { background: var(--dp-navy-deep); color: var(--dp-cream); border-radius: 14px; padding: 26px 30px; margin: 6px 0 4px; position: relative; overflow: hidden; }
+.dp-callout::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--dp-gold); }
+.dp-callout .dp-prose, .dp-callout p { font-family: var(--dp-display); font-weight: 500; font-size: 20px; line-height: 1.35; color: var(--dp-cream); margin: 0; }
+.dp-callout .dp-prose strong, .dp-callout em { color: var(--dp-gold-bright); font-style: normal; font-weight: 600; }
+
+/* Fact grid */
+.dp-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 8px; }
+.dp-fact { background: var(--dp-paper-soft); border: 1px solid var(--dp-line); border-radius: 12px; padding: 14px 16px; border-top: 3px solid var(--dp-gold); }
+.dp-fact .k { font-family: var(--dp-display); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dp-ink-faint); }
+.dp-fact .v { font-size: 17px; font-weight: 600; color: var(--dp-navy); margin-top: 4px; }
+
+/* Personality trait cards */
+.dp-traits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.dp-trait { background: var(--dp-paper-soft); border: 1px solid var(--dp-line); border-left: 4px solid var(--dp-gold); border-radius: 12px; padding: 16px 18px; }
+.dp-trait h4 { font-family: var(--dp-display); font-weight: 600; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dp-navy); margin: 0 0 4px; }
+.dp-trait p { margin: 0; font-size: 13.5px; color: var(--dp-ink-soft); }
+
+/* Strengths radar + bars */
+.dp-strengths { display: grid; grid-template-columns: 340px 1fr; gap: 28px; align-items: center; }
+.dp-radar-wrap { display: flex; justify-content: center; }
+.dp-bars { display: flex; flex-direction: column; gap: 9px; }
+.dp-bar-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.dp-bar-label { font-size: 12.5px; color: var(--dp-ink-soft); }
+.dp-bar-val { font-family: var(--dp-display); font-size: 12px; letter-spacing: 0.1em; color: var(--dp-gold); font-weight: 600; }
+.dp-bar-track { grid-column: 1 / -1; height: 7px; border-radius: 4px; background: rgba(7, 11, 29, 0.06); overflow: hidden; margin-top: -4px; }
+.dp-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--dp-gold), var(--dp-gold-bright)); }
+
+/* Career path cards */
+.dp-paths { display: flex; flex-direction: column; gap: 14px; }
+.dp-path { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start; background: var(--dp-paper-soft); border: 1px solid var(--dp-line); border-radius: 12px; padding: 16px 18px; }
+.dp-path-num { font-family: var(--dp-display); font-weight: 700; font-size: 22px; color: var(--dp-navy); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(201, 162, 74, 0.14); border: 1px solid rgba(201, 162, 74, 0.4); }
+.dp-path h4 { font-family: var(--dp-display); font-weight: 600; font-size: 16px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dp-navy); margin: 0 0 4px; }
+.dp-path p { margin: 0; font-size: 13.5px; color: var(--dp-ink-soft); }
+.dp-fit { font-family: var(--dp-display); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+.dp-fit.strongest { background: var(--dp-navy-deep); color: var(--dp-gold-bright); }
+.dp-fit.strong { background: rgba(201, 162, 74, 0.16); color: #9a7420; }
+.dp-fit.emerging { background: rgba(7, 11, 29, 0.06); color: var(--dp-ink-soft); }
+
+/* Target companies grid */
+.dp-companies { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.dp-company-cat { background: var(--dp-paper-soft); border: 1px solid var(--dp-line); border-radius: 12px; padding: 16px 18px; border-top: 3px solid var(--dp-gold); }
+.dp-company-cat h4 { font-family: var(--dp-display); font-weight: 600; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dp-navy); margin: 0 0 8px; }
+.dp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dp-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--dp-line); color: var(--dp-ink-soft); }
+
+.dp-doc-footer { border-top: 1px solid var(--dp-line); margin-top: 6px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--dp-ink-faint); }
+.dp-doc-footer .conf { font-family: var(--dp-display); letter-spacing: 0.2em; text-transform: uppercase; color: var(--dp-gold); }
+
+@media (max-width: 720px) {
+  .dp-pad { padding: 28px 22px; }
+  .dp-cover-inner { padding: 34px 26px; }
+  .dp-cover-name { font-size: 52px; }
+  .dp-facts { grid-template-columns: 1fr; }
+  .dp-traits, .dp-companies { grid-template-columns: 1fr; }
+  .dp-strengths { grid-template-columns: 1fr; }
+}
+
+/* ── Print: A2I document. The cover uses a named page with zero
+   margin so the navy/gold bleeds to the paper edge; body pages
+   keep the default 14mm margin on every sheet (incl. overflow). ── */
+@page dp-cover { size: A4; margin: 0; }
+@media print {
+  .dp-page { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+  .dp-cover { page: dp-cover; min-height: 297mm; page-break-after: always; }
+  .dp-cover-inner { min-height: 297mm; }
+  .dp-cover, .dp-cover-glow, .dp-cover-grain, .dp-callout, .dp-fit.strongest,
+  .dp-bar-fill, .dp-fact, .dp-trait, .dp-path, .dp-company-cat, .dp-radar-wrap svg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .dp-section, .dp-trait, .dp-path, .dp-company-cat, .dp-callout, .dp-strengths { page-break-inside: avoid; }
+}
