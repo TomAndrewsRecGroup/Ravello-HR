@@ -36,7 +36,7 @@ export default async function DevPlanPreviewPage({ params }: { params: { id: str
   const companyName = Array.isArray(companyRel) ? companyRel[0]?.name : companyRel?.name;
 
   return (
-    <main className="flex-1" style={{ background: '#e7e8ef', minHeight: '100vh', padding: '1.25rem 0.75rem' }}>
+    <main className="flex-1 dp-print-frame" style={{ background: '#e7e8ef', minHeight: '100vh', padding: '1.25rem 0.75rem' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
         <div className="flex items-center justify-between mb-4 no-print" style={{ paddingInline: '0.5rem' }}>
           <Link href={`/dev-plans/${plan.id}`} className="inline-flex items-center gap-1 text-sm hover:underline" style={{ color: 'var(--purple)' }}>

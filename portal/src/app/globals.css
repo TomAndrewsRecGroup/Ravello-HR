@@ -715,18 +715,24 @@ html, body { overflow-x: hidden; }
   .dp-strengths { grid-template-columns: 1fr; }
 }
 
-/* ── Print: A2I document. The cover uses a named page with zero
-   margin so the navy/gold bleeds to the paper edge; body pages
-   keep the default 14mm margin on every sheet (incl. overflow). ── */
+/* ── Print: A2I document. The cover uses a named zero-margin page so
+   the navy/gold bleeds to the paper edge; body pages take the default
+   14mm @page margin (applied on every sheet, including overflow) and
+   the in-body .dp-pad is dropped so nothing exceeds the printable
+   width. Only atomic blocks avoid breaking — sections flow so pages
+   fill top-to-bottom instead of one item per sheet. ── */
 @page dp-cover { size: A4; margin: 0; }
 @media print {
-  .dp-page { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
-  .dp-cover { page: dp-cover; min-height: 297mm; page-break-after: always; }
-  .dp-cover-inner { min-height: 297mm; }
+  .dp-print-frame { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .dp-page { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .dp-pad { padding: 0 !important; }
+  .dp-cover { page: dp-cover; height: 297mm !important; min-height: 0 !important; overflow: hidden; page-break-after: always; }
+  .dp-cover-inner { height: 297mm !important; min-height: 0 !important; }
   .dp-cover, .dp-cover-glow, .dp-cover-grain, .dp-callout, .dp-fit.strongest,
   .dp-bar-fill, .dp-fact, .dp-trait, .dp-path, .dp-company-cat, .dp-radar-wrap svg {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .dp-section, .dp-trait, .dp-path, .dp-company-cat, .dp-callout, .dp-strengths { page-break-inside: avoid; }
+  .dp-callout, .dp-trait, .dp-path, .dp-company-cat, .dp-fact, .dp-strengths { break-inside: avoid; page-break-inside: avoid; }
+  .dp-sec-label, .dp-sec-title, .dp-sub { break-after: avoid; page-break-after: avoid; }
 }
