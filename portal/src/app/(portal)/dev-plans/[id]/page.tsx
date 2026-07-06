@@ -37,7 +37,7 @@ export default async function DevPlanDetailPage({ params }: { params: { id: stri
   const athleteName = Array.isArray(athleteRel) ? athleteRel[0]?.full_name : athleteRel?.full_name;
 
   return (
-    <main style={{ background: '#e7e8ef', minHeight: '100vh', padding: '1.25rem 0.75rem' }}>
+    <main className="dp-print-frame" style={{ background: '#e7e8ef', minHeight: '100vh', padding: '1.25rem 0.75rem' }}>
       <div style={{ maxWidth: 940, margin: '0 auto' }}>
         <div className="flex items-center justify-between mb-4 no-print" style={{ paddingInline: '0.5rem' }}>
           <Link href="/dev-plans" className="inline-flex items-center gap-1 text-sm hover:underline" style={{ color: 'var(--purple)' }}>
