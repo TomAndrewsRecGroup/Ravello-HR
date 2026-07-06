@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, FileText, Sparkles, Globe, Github, Trash, Printer, Send } from 'lucide-react';
 import SendEmailButton from '@/components/modules/SendEmailButton';
+import PlanContentFields from '@/components/dev-plans/PlanContentFields';
+import type { DevPlanContent, DevPlanStrength } from '@/lib/devPlan';
 
 type PlanStatus = 'draft' | 'active' | 'completed' | 'archived';
 type MilestoneStatus = 'pending' | 'in_progress' | 'done';
@@ -23,6 +25,8 @@ interface Plan {
   assigned_at: string | null;
   training_items?: FreeTextItem[] | null;
   roles_items?: FreeTextItem[] | null;
+  content?: DevPlanContent | null;
+  strengths?: DevPlanStrength[] | null;
 }
 
 interface Milestone {
@@ -133,6 +137,9 @@ export default function PlanEditor(props: Props) {
   const [milestones, setMilestones] = useState<DraftMilestone[]>(initialMilestones);
   const [trainingItems, setTrainingItems] = useState<FreeTextItem[]>(props.plan?.training_items ?? []);
   const [rolesItems, setRolesItems] = useState<FreeTextItem[]>(props.plan?.roles_items ?? []);
+  const [content, setContent] = useState<DevPlanContent>(props.plan?.content ?? {});
+  const [strengths, setStrengths] = useState<DevPlanStrength[]>(props.plan?.strengths ?? []);
+  const [showContent, setShowContent] = useState(false);
 
   const [brand, setBrand] = useState<BrandProfile | null>(props.brandProfile);
   const [brandUrl, setBrandUrl] = useState(brand?.source_url ?? '');
@@ -252,6 +259,10 @@ export default function PlanEditor(props: Props) {
         brand_profile_id: brandId,
         training_items: cleanFreeTextItems(trainingItems),
         roles_items: cleanFreeTextItems(rolesItems),
+        content,
+        strengths: strengths
+          .filter(s => s.label.trim())
+          .map(s => ({ label: s.label.trim(), rating: Math.min(5, Math.max(0, Number(s.rating) || 0)) })),
         assigned_at: treatAsNew
           ? (status === 'active' ? new Date().toISOString() : null)
           : (status === 'active' && !props.plan?.assigned_at ? new Date().toISOString() : props.plan?.assigned_at ?? null),
@@ -423,6 +434,30 @@ export default function PlanEditor(props: Props) {
         placeholder1="e.g. Quantity Surveyor"
         placeholder2="e.g. Check out this link to see what a day in the life of a Quantity Surveyor looks like."
       />
+
+      <div className="card p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-lg font-semibold">Report content</h3>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              The full transition report — executive summary, strengths chart, career paths and more. Use the guided wizard to draft it, or edit here directly.
+            </p>
+          </div>
+          <button type="button" className="btn-secondary btn-sm" onClick={() => setShowContent(v => !v)}>
+            {showContent ? 'Hide' : 'Edit report content'}
+          </button>
+        </div>
+        {showContent && (
+          <div className="mt-4">
+            <PlanContentFields
+              content={content}
+              update={fn => setContent(prev => fn(prev))}
+              strengths={strengths}
+              setStrengths={setStrengths}
+            />
+          </div>
+        )}
+      </div>
 
       <div className="card p-5 space-y-4">
         <div className="flex items-center justify-between">
