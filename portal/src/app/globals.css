@@ -724,7 +724,11 @@ html, body { overflow-x: hidden; }
 @page dp-cover { size: A4; margin: 0; }
 @media print {
   .dp-print-frame { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-  .dp-page { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  /* Hard cap the document to the A4 printable width so no wrapper /
+     app shell can force it wider than the page (which would clip text
+     on the right). 182mm = 210mm − 2×14mm margins. */
+  .dp { width: 100% !important; max-width: 182mm !important; margin: 0 auto !important; }
+  .dp-page { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
   .dp-pad { padding: 0 !important; }
   .dp-cover { page: dp-cover; height: 297mm !important; min-height: 0 !important; overflow: hidden; page-break-after: always; }
   .dp-cover-inner { height: 297mm !important; min-height: 0 !important; }
