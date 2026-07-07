@@ -906,6 +906,12 @@ html, body { overflow-x: hidden; }
 @page dp-cover { size: A4; margin: 0; }
 @media print {
   html, body { overflow: visible !important; }
+  /* The app shell wraps content in flex containers (.flex.min-h-screen
+     › .main-content). Chromium's print engine does not paginate content
+     inside a flex container — it clips the tail to ~one page height,
+     dropping later sections. Force them to block so the whole document
+     paginates. */
+  .flex.min-h-screen, .main-content { display: block !important; min-height: 0 !important; }
   .dp-print-frame { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
   .dp-print-frame > div { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
   .dp { width: 100% !important; max-width: none !important; margin: 0 !important; }
