@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { buildPatch } from '@/lib/athletes/validate';
-import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt } from '@/lib/email';
+import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt, lastEmailError } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -51,15 +51,23 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Queue the Athletes To Industry welcome email — Resend dispatches
-  // it 2 days from now, snapped into 09:00–17:00 GMT. Best-effort:
-  // failures here never block the create response.
+  // Send the Athletes To Industry welcome email — Resend dispatches it 2 days
+  // from now, snapped into 09:00–17:00 GMT. AWAIT it: a floating promise after
+  // the response is returned can be killed by the serverless runtime before
+  // the Resend request completes. Record the outcome on the row so the roster
+  // shows whether the automated email actually went out.
   const recipient = (body.email ?? '').trim();
   if (recipient) {
     const firstName = body.full_name?.trim().split(/\s+/)[0];
     const tpl = buildAthleteWelcomeEmail({ to: recipient, firstName });
-    sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() })
-      .catch(err => console.error('[athlete-welcome] queue failed', err));
+    const sent = await sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() });
+    if (sent) {
+      const ts = new Date().toISOString();
+      await supabase.from('athletes').update({ welcome_email_sent_at: ts }).eq('id', data.id);
+      (data as { welcome_email_sent_at: string | null }).welcome_email_sent_at = ts;
+    } else {
+      console.error('[athlete-welcome] NOT sent', { to: recipient, reason: lastEmailError() });
+    }
   }
 
   return NextResponse.json({ row: data });
