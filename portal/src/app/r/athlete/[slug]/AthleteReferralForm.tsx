@@ -52,6 +52,14 @@ export default function AthleteReferralForm({ slug }: { slug: string }) {
       return;
     }
 
+    // Email is required — it's how we send the welcome email and follow up.
+    const email = String(fd.get('email')).trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('error');
+      setErrorMsg('A valid email address is required.');
+      return;
+    }
+
     setStatus('submitting');
     setErrorMsg('');
     try {
@@ -102,8 +110,8 @@ export default function AthleteReferralForm({ slug }: { slug: string }) {
           <input id="full_name" name="full_name" type="text" required autoComplete="name" className="a2i-field" placeholder="Sarah Mitchell" />
         </div>
         <div>
-          <label htmlFor="email" className="a2i-label">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" className="a2i-field" placeholder="sarah@example.com" />
+          <label htmlFor="email" className="a2i-label">Email *</label>
+          <input id="email" name="email" type="email" required autoComplete="email" className="a2i-field" placeholder="sarah@example.com" />
         </div>
         <div>
           <label htmlFor="phone" className="a2i-label">Phone</label>

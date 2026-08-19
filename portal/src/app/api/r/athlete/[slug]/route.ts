@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPatch, CV_MIME_ALLOW, CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
-import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt } from '@/lib/email';
+import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt, lastEmailError } from '@/lib/email';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 import { getServiceClient, findReferralCompany } from '@/lib/referral';
 
@@ -57,6 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
   const fullName = str(form.get('full_name')).trim();
   if (!fullName) {
     return NextResponse.json({ error: 'Your name is required' }, { status: 400 });
+  }
+
+  // Email is required: without it we cannot send the welcome email, which is
+  // the whole point of the sign-up. Basic shape check only — Resend does the
+  // real deliverability validation.
+  const email = str(form.get('email')).trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: 'A valid email address is required' }, { status: 400 });
   }
 
   const cvKindRaw = str(form.get('cv_kind'));
@@ -123,15 +131,26 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     }
   }
 
-  // Queue the existing Athletes To Industry welcome email to the athlete
-  // (2 days out, business hours). Best-effort; never blocks the response.
-  const recipient = str(form.get('email')).trim();
-  if (recipient) {
-    const firstName = fullName.split(/\s+/)[0];
-    const tpl = buildAthleteWelcomeEmail({ to: recipient, firstName });
-    sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() }).catch((err) =>
-      console.error('[referral-athlete] welcome email queue failed', err),
-    );
+  // Send the Athletes To Industry welcome email — same template + 2-day
+  // business-hours schedule as the manual-entry flows. This MUST be awaited:
+  // a floating promise after the response is returned can be frozen/killed by
+  // the serverless runtime before the Resend request completes, which is why
+  // earlier referral sign-ups never received the email. Record the outcome on
+  // the athlete row so the admin roster shows whether it actually went out,
+  // and log the exact Resend error on failure instead of swallowing it.
+  const firstName = fullName.split(/\s+/)[0];
+  const tpl = buildAthleteWelcomeEmail({ to: email, firstName });
+  const sent = await sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() });
+  if (sent) {
+    await supabase
+      .from('athletes')
+      .update({ welcome_email_sent_at: new Date().toISOString() })
+      .eq('id', athlete.id);
+  } else {
+    console.error('[referral-athlete] welcome email NOT sent', {
+      to: email,
+      reason: lastEmailError(),
+    });
   }
 
   // Never leak the row to an anonymous caller.
