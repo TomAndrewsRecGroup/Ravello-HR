@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPatch, CV_MIME_ALLOW, CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
-import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt, lastEmailError } from '@/lib/email';
+import { sendEmail, buildAthleteWelcomeEmail, lastEmailError } from '@/lib/email';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 import { getServiceClient, findReferralCompany } from '@/lib/referral';
 
@@ -131,16 +131,17 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     }
   }
 
-  // Send the Athletes To Industry welcome email — same template + 2-day
-  // business-hours schedule as the manual-entry flows. This MUST be awaited:
-  // a floating promise after the response is returned can be frozen/killed by
-  // the serverless runtime before the Resend request completes, which is why
-  // earlier referral sign-ups never received the email. Record the outcome on
-  // the athlete row so the admin roster shows whether it actually went out,
-  // and log the exact Resend error on failure instead of swallowing it.
+  // Send the Athletes To Industry welcome email immediately (no scheduling)
+  // so a referral athlete gets it the moment they register. This MUST be
+  // awaited: a floating promise after the response is returned can be
+  // frozen/killed by the serverless runtime before the Resend request
+  // completes, which is why earlier referral sign-ups never received the
+  // email. Record the outcome on the athlete row so the admin roster shows
+  // whether it actually went out, and log the exact Resend error on failure
+  // instead of swallowing it.
   const firstName = fullName.split(/\s+/)[0];
   const tpl = buildAthleteWelcomeEmail({ to: email, firstName });
-  const sent = await sendEmail({ ...tpl, scheduledAt: nextBusinessSendAt() });
+  const sent = await sendEmail({ ...tpl });
   if (sent) {
     await supabase
       .from('athletes')
