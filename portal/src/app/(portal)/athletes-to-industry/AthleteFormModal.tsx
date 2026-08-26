@@ -163,7 +163,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
               <PhoneCall size={10} /> Called
             </span>
           )}
-          <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
@@ -259,7 +259,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
                     >
                       {existingCv.name}
                     </button>
-                    <button type="button" onClick={() => setExistingCv(null)} className="btn-icon btn-ghost" style={{ width: 24, height: 24, color: 'var(--red)' }}>
+                    <button type="button" onClick={() => setExistingCv(null)} className="btn-icon btn-ghost" style={{ width: 24, height: 24, color: 'var(--red)' }} aria-label="Remove">
                       <Trash2 size={11} />
                     </button>
                   </div>

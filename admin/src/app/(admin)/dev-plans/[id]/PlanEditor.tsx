@@ -396,8 +396,8 @@ export default function PlanEditor(props: Props) {
               <div key={idx} className="border rounded-md p-3 space-y-2" style={{ borderColor: 'var(--line)' }}>
                 <div className="flex items-start gap-2">
                   <div className="flex flex-col gap-1 pt-1">
-                    <button type="button" className="btn-icon btn-sm" onClick={() => moveMilestone(idx, -1)} disabled={idx === 0}><ArrowUp size={12} /></button>
-                    <button type="button" className="btn-icon btn-sm" onClick={() => moveMilestone(idx, 1)} disabled={idx === milestones.length - 1}><ArrowDown size={12} /></button>
+                    <button type="button" className="btn-icon btn-sm" onClick={() => moveMilestone(idx, -1)} disabled={idx === 0} aria-label="Move up"><ArrowUp size={12} /></button>
+                    <button type="button" className="btn-icon btn-sm" onClick={() => moveMilestone(idx, 1)} disabled={idx === milestones.length - 1} aria-label="Move down"><ArrowDown size={12} /></button>
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                     <input className="input md:col-span-2" placeholder="Milestone title" value={m.title} onChange={e => setMilestone(idx, { title: e.target.value })} />
@@ -409,7 +409,7 @@ export default function PlanEditor(props: Props) {
                     <textarea className="input md:col-span-2" rows={2} placeholder="Description (optional)" value={m.description ?? ''} onChange={e => setMilestone(idx, { description: e.target.value })} />
                     <input className="input" type="date" value={m.due_date ?? ''} onChange={e => setMilestone(idx, { due_date: e.target.value || null })} />
                   </div>
-                  <button type="button" className="btn-icon btn-sm" onClick={() => removeMilestone(idx)} title="Remove"><Trash2 size={12} /></button>
+                  <button type="button" className="btn-icon btn-sm" onClick={() => removeMilestone(idx)} title="Remove" aria-label="Remove"><Trash2 size={12} /></button>
                 </div>
               </div>
             ))}

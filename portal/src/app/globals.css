@@ -362,6 +362,38 @@
     border-radius: 4px;
   }
 
+
+  /* ─── GLOBAL FOCUS VISIBILITY ─────────────────────────────
+     A .focus-ring class existed but had to be opted into, so most
+     interactive elements had no visible keyboard focus at all. That
+     fails WCAG 2.2 AA (2.4.7 Focus Visible), which UK public-sector and
+     large-enterprise buyers ask about during procurement — and it makes
+     the product unusable without a mouse.
+
+     :focus-visible rather than :focus, so a mouse click does not leave a
+     ring behind while keyboard users still get one. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: 2px solid var(--purple);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respect a reduced-motion preference across the app rather than
+     per-animation. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /* ─── Keyframes ──────────────────────────────────────── */

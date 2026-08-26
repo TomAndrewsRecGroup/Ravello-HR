@@ -69,7 +69,7 @@ export default function RoleOpportunitiesEditor({ value, onChange }: Props) {
                 className="btn-icon btn-sm"
                 style={{ color: 'var(--red)' }}
                 title="Remove role"
-              >
+               aria-label="Remove">
                 <Trash2 size={12} />
               </button>
             </div>

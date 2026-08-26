@@ -154,7 +154,7 @@ export default function AthleteProfileModal({ athlete, notes, devPlans, onClose,
             />
             <PhoneCall size={12} /> Called
           </label>
-          <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">

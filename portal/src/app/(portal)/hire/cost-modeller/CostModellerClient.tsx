@@ -214,7 +214,7 @@ export default function CostModellerClient() {
                   </td>
                   <td className="px-2 py-3">
                     {rows.length > 1 && (
-                      <button onClick={() => removeRow(row.id)} className="btn-icon">
+                      <button onClick={() => removeRow(row.id)} className="btn-icon" aria-label="Remove">
                         <Trash2 size={13} />
                       </button>
                     )}

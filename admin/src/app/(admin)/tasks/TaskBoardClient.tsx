@@ -165,7 +165,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                         <p className="text-sm font-medium leading-snug" style={{ color: col.key === 'done' ? 'var(--ink-faint)' : 'var(--ink)', textDecoration: col.key === 'done' ? 'line-through' : 'none' }}>
                           {task.title}
                         </p>
-                        <button onClick={() => deleteTask(task.id)} className="btn-icon opacity-0 group-hover:opacity-100" style={{ width: 20, height: 20 }}>
+                        <button onClick={() => deleteTask(task.id)} className="btn-icon opacity-0 group-hover:opacity-100" style={{ width: 20, height: 20 }} aria-label="Close">
                           <X size={10} />
                         </button>
                       </div>
@@ -243,7 +243,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
           <div className="relative card p-6 w-full max-w-md" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>New Task</h3>
-              <button onClick={() => setShowForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
             <div className="space-y-4">
               <div className="form-group">

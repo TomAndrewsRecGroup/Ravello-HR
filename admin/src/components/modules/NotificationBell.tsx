@@ -164,7 +164,7 @@ export default function NotificationBell() {
         className="btn-icon relative"
         title="Notifications"
         onClick={() => setOpen(o => !o)}
-      >
+       aria-label="Notifications">
         <Bell size={15} />
         {unreadCount > 0 && (
           <span

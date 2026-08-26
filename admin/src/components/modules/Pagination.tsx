@@ -28,7 +28,7 @@ export default function Pagination({ page, totalPages, onPageChange, pageSize, t
           disabled={page <= 1}
           className="btn-icon"
           style={{ width: 28, height: 28, opacity: page <= 1 ? 0.3 : 1 }}
-        >
+         aria-label="Previous">
           <ChevronLeft size={14} />
         </button>
         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -61,7 +61,7 @@ export default function Pagination({ page, totalPages, onPageChange, pageSize, t
           disabled={page >= totalPages}
           className="btn-icon"
           style={{ width: 28, height: 28, opacity: page >= totalPages ? 0.3 : 1 }}
-        >
+         aria-label="Next">
           <ChevronRight size={14} />
         </button>
       </div>

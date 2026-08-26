@@ -242,7 +242,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
           <div className="relative card p-6 w-full max-w-lg" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Request Policy Sign-off</h3>
-              <button onClick={() => setShowSendForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowSendForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
             <div className="space-y-4">
               <div className="form-group">

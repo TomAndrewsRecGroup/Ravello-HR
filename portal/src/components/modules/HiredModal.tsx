@@ -108,7 +108,7 @@ export default function HiredModal({
           <h2 className="font-display text-lg font-semibold" style={{ color: 'var(--ink)' }}>
             Mark as Hired
           </h2>
-          <button onClick={onClose} className="btn-icon btn-ghost">
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close">
             <X size={18} />
           </button>
         </div>

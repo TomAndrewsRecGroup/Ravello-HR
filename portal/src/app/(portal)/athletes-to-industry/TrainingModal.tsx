@@ -116,7 +116,7 @@ export default function TrainingModal({
           <h2 id="training-modal-title" className="font-display text-lg font-semibold flex-1" style={{ color: 'var(--ink)' }}>
             Training & Workshops ({providers.length})
           </h2>
-          <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="px-6 py-3" style={{ borderBottom: '1px solid var(--line)' }}>

@@ -480,7 +480,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
           <div className="relative card p-6 w-full max-w-md overflow-y-auto max-h-[calc(100vh-80px)]" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Add Internal Role</h3>
-              <button onClick={() => setShowForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
 
             {/* TPS suggestion */}

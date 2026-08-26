@@ -134,7 +134,7 @@ export default function ClientNotesTimeline({ companyId, companyName, userId, in
               <button onClick={() => togglePin(note.id, note.pinned)} className="btn-icon" style={{ width: 24, height: 24 }} title={note.pinned ? 'Unpin' : 'Pin'}>
                 <Pin size={11} style={{ color: note.pinned ? 'var(--purple)' : 'var(--ink-faint)' }} />
               </button>
-              <button onClick={() => deleteNote(note.id)} className="btn-icon" style={{ width: 24, height: 24 }} title="Delete">
+              <button onClick={() => deleteNote(note.id)} className="btn-icon" style={{ width: 24, height: 24 }} title="Delete" aria-label="Close">
                 <X size={11} />
               </button>
             </div>

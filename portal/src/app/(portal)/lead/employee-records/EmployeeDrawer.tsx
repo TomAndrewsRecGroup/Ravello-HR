@@ -42,7 +42,7 @@ export default function EmployeeDrawer({
           <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>
             {editingId ? 'Edit Employee' : 'Add Employee'}
           </h3>
-          <button onClick={onClose} className="btn-icon">
+          <button onClick={onClose} className="btn-icon" aria-label="Close">
             <X size={18} />
           </button>
         </div>

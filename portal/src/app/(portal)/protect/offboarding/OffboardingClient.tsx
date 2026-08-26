@@ -373,7 +373,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
           <div className="relative w-full max-w-xl bg-white h-full overflow-y-auto shadow-2xl" style={{ animation: 'slideInRight 0.3s ease' }}>
             <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: '1px solid var(--line)' }}>
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>New Offboarding Template</h3>
-              <button onClick={() => setShowTemplateForm(false)} className="btn-icon"><X size={18} /></button>
+              <button onClick={() => setShowTemplateForm(false)} className="btn-icon" aria-label="Close"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-5">
               <div className="form-group">
@@ -405,7 +405,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                             </div>
                           </div>
                         </div>
-                        <button onClick={() => removeTask(i)} className="btn-icon mt-1"><Trash2 size={13} /></button>
+                        <button onClick={() => removeTask(i)} className="btn-icon mt-1" aria-label="Remove"><Trash2 size={13} /></button>
                       </div>
                     </div>
                   ))}
@@ -429,7 +429,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
           <div className="relative card p-6 w-full max-w-md overflow-y-auto max-h-[calc(100vh-80px)]" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Start Offboarding</h3>
-              <button onClick={() => setShowStartForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowStartForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
             <div className="space-y-4">
               <div className="form-group">

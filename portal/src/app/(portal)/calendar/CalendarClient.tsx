@@ -248,11 +248,11 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
       {/* Header + Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-4">
-          <button onClick={prevMonth} className="btn-icon"><ChevronLeft size={18} /></button>
+          <button onClick={prevMonth} className="btn-icon" aria-label="Previous"><ChevronLeft size={18} /></button>
           <h2 className="section-title text-xl min-w-[180px] text-center">
             {MONTHS[month]} {year}
           </h2>
-          <button onClick={nextMonth} className="btn-icon"><ChevronRight size={18} /></button>
+          <button onClick={nextMonth} className="btn-icon" aria-label="Next"><ChevronRight size={18} /></button>
         </div>
         <div className="flex items-center gap-2">
           {/* Company Event remains admin-only — it adds a closed/bank-
@@ -377,7 +377,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
             <h3 className="font-display text-base font-semibold" style={{ color: 'var(--ink)' }}>
               {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </h3>
-            <button onClick={() => setSelectedDate(null)} className="btn-icon"><X size={14} /></button>
+            <button onClick={() => setSelectedDate(null)} className="btn-icon" aria-label="Close"><X size={14} /></button>
           </div>
 
           {selectedEvents.length === 0 && selectedLeave.length === 0 ? (
@@ -439,7 +439,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
           <div className="relative card p-6 w-full max-w-md overflow-y-auto max-h-[calc(100vh-80px)]" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Add Company Event</h3>
-              <button onClick={() => setShowEventForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowEventForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
             <div className="space-y-4">
               <div className="form-group">
@@ -491,7 +491,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
           <div className="relative card p-6 w-full max-w-md overflow-y-auto max-h-[calc(100vh-80px)]" style={{ animation: 'fadeUp 0.2s ease' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg" style={{ color: 'var(--ink)' }}>Log Employee Leave</h3>
-              <button onClick={() => setShowLeaveForm(false)} className="btn-icon"><X size={16} /></button>
+              <button onClick={() => setShowLeaveForm(false)} className="btn-icon" aria-label="Close"><X size={16} /></button>
             </div>
             <div className="space-y-4">
               <div className="form-group">

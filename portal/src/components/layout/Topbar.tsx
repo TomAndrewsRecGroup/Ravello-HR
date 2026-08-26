@@ -1,5 +1,6 @@
 'use client';
 import { Menu } from 'lucide-react';
+import Breadcrumbs from './Breadcrumbs';
 import NotificationBell from '@/components/modules/NotificationBell';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -7,9 +8,11 @@ interface TopbarProps {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  /** Name for the current record, shown in the breadcrumb instead of a raw id. */
+  breadcrumbLabel?: string;
 }
 
-export default function Topbar({ title, subtitle, actions }: TopbarProps) {
+export default function Topbar({ title, subtitle, actions, breadcrumbLabel }: TopbarProps) {
   const { toggle } = useMobileMenu();
 
   return (
@@ -39,6 +42,7 @@ export default function Topbar({ title, subtitle, actions }: TopbarProps) {
           <Menu size={20} />
         </button>
         <div className="min-w-0">
+          <Breadcrumbs currentLabel={breadcrumbLabel ?? subtitle} homeHref="/dashboard" />
           <h1
             className="font-display text-[1rem] sm:text-[1.15rem] truncate"
             style={{

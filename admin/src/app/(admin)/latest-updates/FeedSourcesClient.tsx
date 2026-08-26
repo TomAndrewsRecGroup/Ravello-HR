@@ -546,7 +546,7 @@ export default function FeedSourcesClient({ initial }: Props) {
                       disabled={isBusy}
                       onClick={() => remove(r.id)}
                       style={{ color: 'var(--red)' }}
-                    >
+                     aria-label="Remove">
                       <Trash2 size={14} />
                     </button>
                   </div>

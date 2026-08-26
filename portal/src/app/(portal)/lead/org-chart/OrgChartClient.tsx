@@ -655,7 +655,7 @@ function ImportModal({
               Paste CSV or upload a .csv file. Columns: full_name, job_title, department, line_manager, email.
             </p>
           </div>
-          <button onClick={onClose} className="btn-icon btn-sm"><X size={14} /></button>
+          <button onClick={onClose} className="btn-icon btn-sm" aria-label="Close"><X size={14} /></button>
         </div>
 
         <div className="p-5 overflow-y-auto flex-1">

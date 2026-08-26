@@ -240,7 +240,7 @@ export default function TemplatesClient({ initialTemplates }: Props) {
                   className="btn-icon btn-sm"
                   onClick={() => openEdit(t)}
                   title="Edit"
-                >
+                 aria-label="Edit">
                   <Edit2 size={13} />
                 </button>
                 <button

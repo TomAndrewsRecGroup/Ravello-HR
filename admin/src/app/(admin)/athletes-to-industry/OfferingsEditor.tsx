@@ -72,7 +72,7 @@ export default function OfferingsEditor({ value, onChange }: Props) {
                 className="btn-icon btn-sm"
                 style={{ color: 'var(--red)' }}
                 title="Remove offering"
-              >
+               aria-label="Remove">
                 <Trash2 size={12} />
               </button>
             </div>

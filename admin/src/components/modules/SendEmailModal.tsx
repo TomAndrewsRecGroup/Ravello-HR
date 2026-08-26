@@ -141,7 +141,7 @@ export default function SendEmailModal({
         <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid var(--line)' }}>
           <Send size={16} style={{ color: 'var(--purple)' }} />
           <h2 id="send-email-title" className="font-display font-semibold flex-1">Send email</h2>
-          <button onClick={onClose} className="btn-icon btn-ghost"><X size={18} /></button>
+          <button onClick={onClose} className="btn-icon btn-ghost" aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
@@ -242,7 +242,7 @@ export default function SendEmailModal({
                     <Paperclip size={11} style={{ color: 'var(--ink-faint)' }} />
                     <span className="flex-1 truncate">{f.name}</span>
                     <span style={{ color: 'var(--ink-faint)' }}>{formatBytes(f.size)}</span>
-                    <button onClick={() => removeFile(i)} className="btn-icon btn-sm" title="Remove">
+                    <button onClick={() => removeFile(i)} className="btn-icon btn-sm" title="Remove" aria-label="Remove">
                       <Trash2 size={11} />
                     </button>
                   </li>

@@ -102,7 +102,7 @@ export default function TemplatesClient({ initial }: { initial: Template[] }) {
                 <input className="input md:col-span-2" placeholder="Description" value={m.description ?? ''} onChange={e => setMilestone(i, { description: e.target.value })} />
                 <div className="flex items-center gap-2">
                   <input className="input" type="number" placeholder="Days" value={m.due_offset_days ?? ''} onChange={e => setMilestone(i, { due_offset_days: e.target.value ? Number(e.target.value) : null })} title="Due in N days from plan start" />
-                  <button className="btn-icon btn-sm" onClick={() => removeMilestone(i)}><Trash2 size={12} /></button>
+                  <button className="btn-icon btn-sm" onClick={() => removeMilestone(i)} aria-label="Remove"><Trash2 size={12} /></button>
                 </div>
               </div>
             ))}

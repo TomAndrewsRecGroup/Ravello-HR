@@ -132,7 +132,7 @@ export default function GlobalSearch() {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="btn-icon" title="Search (⌘K)">
+      <button onClick={() => setOpen(true)} className="btn-icon" title="Search (⌘K)" aria-label="Search">
         <Search size={15} />
       </button>
     );

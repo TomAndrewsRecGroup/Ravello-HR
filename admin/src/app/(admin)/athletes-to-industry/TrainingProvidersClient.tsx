@@ -349,7 +349,7 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => startEdit(p)} disabled={isBusy} className="btn-icon btn-sm" title="Edit">
+                    <button onClick={() => startEdit(p)} disabled={isBusy} className="btn-icon btn-sm" title="Edit" aria-label="Edit">
                       <Pencil size={12} />
                     </button>
                     <button onClick={() => patch(p.id, { active: !p.active })} disabled={isBusy} className="btn-icon btn-sm"
@@ -357,7 +357,7 @@ export default function TrainingProvidersClient({ initial, interests, athletes }
                       {p.active ? <Power size={12} /> : <PowerOff size={12} />}
                     </button>
                     <button onClick={() => remove(p.id)} disabled={isBusy} className="btn-icon btn-sm"
-                            style={{ color: 'var(--red)' }} title="Delete">
+                            style={{ color: 'var(--red)' }} title="Delete" aria-label="Remove">
                       <Trash2 size={12} />
                     </button>
                   </div>

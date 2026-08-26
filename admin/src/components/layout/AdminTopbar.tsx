@@ -1,5 +1,6 @@
 'use client';
 import { Menu } from 'lucide-react';
+import Breadcrumbs from './Breadcrumbs';
 import dynamic from 'next/dynamic';
 import { ClientSwitcherDropdown } from './ClientSwitcher';
 import { useMobileMenu } from './MobileMenuContext';
@@ -12,9 +13,11 @@ const GlobalSearch    = dynamic(() => import('@/components/modules/GlobalSearch'
 const EnquiriesButton = dynamic(() => import('@/components/modules/EnquiriesButton'), { ssr: false });
 const NotificationBell = dynamic(() => import('@/components/modules/NotificationBell'), { ssr: false });
 
-interface Props { title: string; subtitle?: string; actions?: React.ReactNode; }
+interface Props { title: string; subtitle?: string; actions?: React.ReactNode;   /** Name for the current record, shown in the breadcrumb instead of a raw id. */
+  breadcrumbLabel?: string;
+}
 
-export default function AdminTopbar({ title, subtitle, actions }: Props) {
+export default function AdminTopbar({ title, subtitle, actions, breadcrumbLabel }: Props) {
   const { toggle } = useMobileMenu();
 
   return (
@@ -44,6 +47,7 @@ export default function AdminTopbar({ title, subtitle, actions }: Props) {
           <Menu size={20} />
         </button>
         <div className="min-w-0">
+          <Breadcrumbs currentLabel={breadcrumbLabel ?? subtitle} homeHref="/dashboard" />
           <h1
             className="font-display text-[1rem] sm:text-[1.15rem] truncate"
             style={{

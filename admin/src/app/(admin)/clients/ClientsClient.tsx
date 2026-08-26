@@ -84,7 +84,7 @@ export default function ClientsClient({ companies, usersByCompany, activeRolesMa
                 >
                   Manage Client →
                 </Link>
-                <button onClick={() => setUsersModal(null)} className="btn-icon btn-ghost">
+                <button onClick={() => setUsersModal(null)} className="btn-icon btn-ghost" aria-label="Close">
                   <X size={15} />
                 </button>
               </div>

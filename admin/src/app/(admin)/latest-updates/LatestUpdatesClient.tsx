@@ -302,7 +302,7 @@ export default function LatestUpdatesClient({ initial }: Props) {
                       onClick={() => patch(r.id, {
                         status: r.status === 'published' ? 'hidden' : 'published',
                       })}
-                    >
+                     aria-label="View">
                       {r.status === 'published' ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
                     <button
@@ -311,7 +311,7 @@ export default function LatestUpdatesClient({ initial }: Props) {
                       disabled={isBusy}
                       onClick={() => remove(r.id)}
                       style={{ color: 'var(--red)' }}
-                    >
+                     aria-label="Remove">
                       <Trash2 size={14} />
                     </button>
                   </div>

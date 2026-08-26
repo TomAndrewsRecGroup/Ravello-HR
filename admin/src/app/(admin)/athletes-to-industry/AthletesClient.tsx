@@ -647,7 +647,7 @@ export default function AthletesClient({
                     <Send size={12} style={{ color: a.email ? 'var(--purple)' : 'var(--ink-faint)' }} />
                   </SendEmailButton>
                   <button onClick={() => remove(a.id)} disabled={isBusy} className="btn-icon btn-sm flex-shrink-0"
-                          style={{ color: 'var(--red)' }} title="Delete">
+                          style={{ color: 'var(--red)' }} title="Delete" aria-label="Remove">
                     <Trash2 size={12} />
                   </button>
                 </div>

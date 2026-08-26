@@ -183,7 +183,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
               </p>
             )}
           </div>
-          <button onClick={onClose} className="btn-icon ml-4"><X size={16} /></button>
+          <button onClick={onClose} className="btn-icon ml-4" aria-label="Close"><X size={16} /></button>
         </div>
 
         {/* Body */}

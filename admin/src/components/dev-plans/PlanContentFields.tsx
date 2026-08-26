@@ -83,8 +83,8 @@ function CardList<T>({ items, onChange, makeEmpty, render, addLabel }: {
         <div key={i} className="border rounded-md p-3" style={{ borderColor: 'var(--line)' }}>
           <div className="flex items-start gap-2">
             <div className="flex flex-col gap-1 pt-1">
-              <button type="button" className="btn-icon btn-sm" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
-              <button type="button" className="btn-icon btn-sm" disabled={i === items.length - 1} onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
+              <button type="button" className="btn-icon btn-sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up"><ArrowUp size={12} /></button>
+              <button type="button" className="btn-icon btn-sm" disabled={i === items.length - 1} onClick={() => move(i, 1)} aria-label="Move down"><ArrowDown size={12} /></button>
             </div>
             <div className="flex-1">
               {render(item, (p) => onChange(items.map((x, j) => j === i ? { ...x, ...p } : x)))}
