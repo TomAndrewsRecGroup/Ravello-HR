@@ -42,10 +42,39 @@ export interface ManatalJob {
 
 export interface ManatalStage { id: number; name: string }
 
+/**
+ * Manatal returns a related object EITHER expanded OR as a bare id,
+ * and which one you get depends on the API version.
+ *
+ * Measured against the live account on 2026-08-26:
+ *   /open/v1/matches/  → "candidate": { id, first_name, … }
+ *   /open/v3/matches/  → "candidate": 161626806
+ *
+ * The referral pipeline reads v3 and the portal's pipeline board reads
+ * v1, so both shapes are live in this codebase at the same time. Read
+ * an id with `manatalRefId()` and never with `.candidate?.id` — on the
+ * v3 shape that is `undefined`, which silently discards every match.
+ */
+export type ManatalRef<T> = number | string | T;
+
+export interface ManatalMatchCandidate {
+  id: number; first_name: string; last_name: string; email: string; picture?: string;
+}
+
+/**
+ * The id of a related record, whichever shape it arrived in.
+ * Returns '' when there genuinely is none, so callers can test falsy.
+ */
+export function manatalRefId(ref: ManatalRef<{ id?: number | string }> | null | undefined): string {
+  if (ref === null || ref === undefined) return '';
+  if (typeof ref === 'number' || typeof ref === 'string') return String(ref);
+  return ref.id === null || ref.id === undefined ? '' : String(ref.id);
+}
+
 export interface ManatalMatch {
   id:           number;
-  candidate:    { id: number; first_name: string; last_name: string; email: string; picture?: string };
-  job:          { id: number; name: string };
+  candidate:    ManatalRef<ManatalMatchCandidate>;
+  job:          ManatalRef<{ id: number; name: string }>;
   stage:        ManatalStage;
   is_active:    boolean;
   created_at:   string;

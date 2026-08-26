@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getManatalCandidate,
   getManatalMatchesForJob,
+  manatalRefId,
   type ManatalCandidate,
   type ManatalMatch,
 } from '../manatal';
@@ -174,7 +175,7 @@ export async function processMatch(
   tally: Tally,
   budget: RunBudget,
 ): Promise<void> {
-  const manatalCandidateId = String(match.candidate?.id ?? '');
+  const manatalCandidateId = manatalRefId(match.candidate);
   if (!manatalCandidateId) {
     tally.scan_errors++;
     tally.notes.push('A match arrived with no candidate id and was skipped.');
@@ -398,7 +399,7 @@ export async function processRole(
   // The idempotency guard, applied before any work: a candidate we
   // already hold a row for is never reconsidered for this role, so
   // nobody can be emailed twice.
-  const ids = matches.map(m => String(m.candidate?.id ?? '')).filter(Boolean);
+  const ids = matches.map(m => manatalRefId(m.candidate)).filter(Boolean);
   const { data: existing } = await supabase
     .from('referral_applications')
     .select('manatal_candidate_id')
@@ -406,7 +407,7 @@ export async function processRole(
     .in('manatal_candidate_id', ids);
 
   const seen  = new Set((existing ?? []).map(r => r.manatal_candidate_id as string));
-  const fresh = matches.filter(m => !seen.has(String(m.candidate?.id ?? '')));
+  const fresh = matches.filter(m => !seen.has(manatalRefId(m.candidate)));
   tally.already_processed += matches.length - fresh.length;
 
   // Oldest first, so a backlog drains in application order rather than
