@@ -31,14 +31,18 @@ import {
   Rss,
   Send,
   ShieldCheck,
+  Map,
   Target,
+  ToggleLeft,
   TrendingUp,
   Trophy,
   UserPlus,
   Users,
+  UserSearch,
   X,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
+import { activeHref, isUnder } from '@/lib/ui/navMatch';
 
 const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
 
@@ -53,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/clients/onboard', label: 'Onboard',        icon: UserPlus },
       { href: '/users',           label: 'Users',          icon: Users },
       { href: '/engagement',      label: 'Engagement',     icon: Gauge },
+      { href: '/feature-flags',   label: 'Feature Flags',  icon: ToggleLeft },
     ],
   },
   {
@@ -60,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/hiring',          label: 'Roles',          icon: Briefcase },
       { href: '/hiring/templates', label: 'Templates',     icon: FileText },
+      { href: '/candidates',      label: 'Candidates',     icon: UserSearch },
       { href: '/salary-benchmarks', label: 'Benchmarks',  icon: PoundSterling },
     ],
   },
@@ -96,6 +102,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/revenue',         label: 'Revenue',        icon: TrendingUp },
       { href: '/value-reports',   label: 'Value Reports',  icon: BarChart3 },
+      { href: '/roadmap',         label: 'Roadmap',        icon: Map },
       { href: '/reports',         label: 'CSV Exports',    icon: FolderOpen },
       { href: '/documents',       label: 'Documents',      icon: FileText },
       { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
@@ -110,9 +117,16 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+const ALL_HREFS = NAV_GROUPS.flatMap(g => g.items.map(i => i.href));
+
 export default function AdminSidebar() {
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
+
+  // One winner across every group. The item highlight and the group
+  // header are both derived from this, so they cannot disagree — which
+  // is exactly what they used to do on a client detail page.
+  const current = activeHref(path, ALL_HREFS);
 
   // Default state: every group COLLAPSED. The one exception is the
   // group whose href matches the active route — that one auto-opens
@@ -121,7 +135,7 @@ export default function AdminSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const g of NAV_GROUPS) {
-      init[g.label] = g.items.some(i => path.startsWith(i.href));
+      init[g.label] = g.items.some(i => isUnder(path, i.href));
     }
     return init;
   });
@@ -176,7 +190,7 @@ export default function AdminSidebar() {
           {/* Grouped navigation */}
           {NAV_GROUPS.map(group => {
             const isExpanded = expanded[group.label];
-            const hasActive = group.items.some(item => path.startsWith(item.href));
+            const hasActive = group.items.some(item => item.href === current);
 
             return (
               <div key={group.label} className="mt-1">
@@ -198,7 +212,7 @@ export default function AdminSidebar() {
                 {isExpanded && (
                   <div className="mt-0.5 space-y-0.5">
                     {group.items.map(item => {
-                      const active = path === item.href || (path.startsWith(item.href) && item.href !== '/clients');
+                      const active = item.href === current;
                       return (
                         <Link
                           key={item.href}
