@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { instrumentSupabase } from './instrument';
 
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,5 +11,7 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, key);
+  // Instrumented so a failed query is reported rather than rendering
+  // as an empty page. See instrument.ts — behaviour is otherwise identical.
+  return instrumentSupabase(createBrowserClient(url, key), 'browser');
 }

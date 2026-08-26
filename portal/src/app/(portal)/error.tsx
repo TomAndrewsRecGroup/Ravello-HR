@@ -1,9 +1,11 @@
 'use client';
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function PortalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    Sentry.captureException(error);
     console.error('Portal error:', error);
   }, [error]);
 

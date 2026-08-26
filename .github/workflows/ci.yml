@@ -1,0 +1,59 @@
+name: ci
+
+# The gate that did not exist. Before this, every check ran because a
+# person remembered to run it — and the portal's new-role form shipped
+# writing an enum value the database rejects, so a client pressing
+# Submit got an error and no requisition was created. Nothing caught it
+# because nothing was running.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared-dupes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-shared-dupes.sh
+
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [admin, portal]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      # Placeholder credentials only. The build prerenders a few public
+      # pages that construct a Supabase client at module scope and throw
+      # on missing env vars — it never issues a request, so a real key is
+      # not needed and must not be put here.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-build-only
+          NEXT_TELEMETRY_DISABLED: '1'

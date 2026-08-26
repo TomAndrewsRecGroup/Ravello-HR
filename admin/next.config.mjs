@@ -1,6 +1,10 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    // Required on Next 14 for instrumentation.ts (Sentry boot).
+    instrumentationHook: true,
     optimizePackageImports: ['lucide-react'],
     // node-redis pulls in net/tls/string_decoder/crypto. Without this,
     // Next.js' server-action flight loader tries to bundle the package
@@ -29,4 +33,25 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wraps the config to upload source maps and instrument the
+// server. Without SENTRY_AUTH_TOKEN the upload step is skipped and the
+// build behaves exactly as it did before, so local and preview builds
+// are unaffected.
+export default withSentryConfig(nextConfig, {
+  org:     process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent:  !process.env.CI,
+
+  // Source maps are uploaded then deleted from the deployed bundle, so
+  // stack traces are readable in Sentry without shipping our source to
+  // anyone who opens devtools.
+  widenClientFileUpload: true,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+
+  // Routes Sentry's own browser requests through our domain so ad
+  // blockers do not silently swallow error reports.
+  tunnelRoute: '/monitoring',
+
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});

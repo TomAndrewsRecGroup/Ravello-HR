@@ -25,6 +25,8 @@ PAIRS=(
   "admin/src/lib/ui/statusMaps.ts|portal/src/lib/ui/statusMaps.ts"
   "admin/src/lib/frictionLens.ts|portal/src/lib/frictionLens.ts"
   "admin/src/lib/featureFlags.ts|portal/src/lib/featureFlags.ts"
+  "admin/src/lib/supabase/instrument.ts|portal/src/lib/supabase/instrument.ts"
+  "admin/src/lib/supabase/client.ts|portal/src/lib/supabase/client.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

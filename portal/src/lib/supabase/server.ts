@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { instrumentSupabase } from './instrument';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
@@ -50,7 +51,9 @@ export function createServerSupabaseClient() {
     );
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  // Instrumented so a failed query is reported rather than
+  // rendering as an empty page. See instrument.ts.
+  return instrumentSupabase(createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -66,7 +69,7 @@ export function createServerSupabaseClient() {
         } catch {}
       },
     },
-  });
+  }), 'portal:server');
 }
 
 /**
