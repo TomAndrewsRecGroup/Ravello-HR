@@ -1,4 +1,6 @@
 import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
+import { parseBody } from '@/lib/validation/parseBody';
+import { longText, optionalIsoDate, optionalShortText, shortText, uuid, z } from '@/lib/validation/primitives';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -23,6 +25,18 @@ function formatDueDate(iso: string | null | undefined): string | undefined {
 // Body: { company_ids: string[], title: string, description?: string,
 //         action_type: string, priority: string, due_date?: string }
 
+
+// This writes one action per company, so an unbounded company_ids array
+// is an unbounded write amplification from a single request.
+const BroadcastSchema = z.object({
+  company_ids: z.array(uuid).min(1, 'Select at least one client').max(500),
+  title:       shortText(200),
+  description: longText(5_000).optional().nullable().transform(v => v || null),
+  action_type: optionalShortText(60),
+  priority:    z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  due_date:    optionalIsoDate,
+});
+
 export async function POST(req: NextRequest) {
   const tooBig = assertBodySize(req, 256 * 1024);
   if (tooBig) return tooBig;
@@ -31,8 +45,9 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
 
-  const body = await req.json();
-  const { company_ids, title, description, action_type, priority, due_date } = body;
+  const parsed = await parseBody(req, BroadcastSchema);
+  if (!parsed.ok) return parsed.response;
+  const { company_ids, title, description, action_type, priority, due_date } = parsed.data;
 
   if (!company_ids?.length || !title || !action_type || !priority) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

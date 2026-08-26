@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { parseForm } from '@/lib/validation/parseForm';
+import { email as emailField, htmlBody, optionalUuid, shortText, uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
@@ -37,34 +39,36 @@ type TargetType = 'athlete' | 'company' | 'candidate';
 //   body_html       HTML body from the Tiptap editor
 //   sender          'resend' | 'smtp'
 //   attachment-*    one or more File parts
+// This sends arbitrary HTML to an arbitrary address on behalf of the
+// business. The previous checks caught missing fields but never checked
+// that `to` was an email at all, and put no ceiling on subject or body.
+const SendEmailSchema = z.object({
+  target_type: z.enum(['athlete', 'company', 'candidate']),
+  target_id:   uuid,
+  company_id:  optionalUuid,
+  profile_id:  optionalUuid,
+  to:          emailField,
+  subject:     shortText(300),
+  body_html:   htmlBody(200_000),
+  sender:      z.enum(['resend', 'smtp']).default('resend'),
+});
+
 export async function POST(req: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
-  let form: FormData;
-  try {
-    form = await req.formData();
-  } catch (e) {
-    return NextResponse.json({ error: `Invalid form data: ${(e as Error).message}` }, { status: 400 });
-  }
+  const parsed = await parseForm(req, SendEmailSchema);
+  if (!parsed.ok) return parsed.response;
+  const form = parsed.form!;
 
-  // ── Parse + validate fields ────────────────────────────
-  const targetType = String(form.get('target_type') ?? '');
-  if (!TARGET_TYPES.has(targetType as TargetType)) {
-    return NextResponse.json({ error: 'target_type must be one of athlete | company | candidate' }, { status: 400 });
-  }
-  const targetId  = String(form.get('target_id') ?? '').trim();
-  const companyId = (form.get('company_id') ? String(form.get('company_id')) : null) || null;
-  const profileId = (form.get('profile_id') ? String(form.get('profile_id')) : null) || null;
-  const to        = String(form.get('to') ?? '').trim();
-  const subject   = String(form.get('subject') ?? '').trim();
-  const bodyHtml  = String(form.get('body_html') ?? '');
-  const sender    = (String(form.get('sender') ?? 'resend') === 'smtp') ? 'smtp' : 'resend';
-
-  if (!targetId) return NextResponse.json({ error: 'target_id is required' }, { status: 400 });
-  if (!to)       return NextResponse.json({ error: 'to is required' },        status400);
-  if (!subject)  return NextResponse.json({ error: 'subject is required' },   status400);
-  if (!bodyHtml) return NextResponse.json({ error: 'body_html is required' }, status400);
+  const targetType = parsed.data.target_type;
+  const targetId   = parsed.data.target_id;
+  const companyId  = parsed.data.company_id;
+  const profileId  = parsed.data.profile_id;
+  const to         = parsed.data.to;
+  const subject    = parsed.data.subject;
+  const bodyHtml   = parsed.data.body_html;
+  const sender     = parsed.data.sender;
 
   // ── Collect attachments ────────────────────────────────
   const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = [];

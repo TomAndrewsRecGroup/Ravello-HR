@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseBody } from '@/lib/validation/parseBody';
+import { longText, optionalShortText, shortText, z } from '@/lib/validation/primitives';
 import { revalidateTag } from 'next/cache';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ivylensRequest, IVYLENS_TAGS } from '@/lib/ivylens';
@@ -25,6 +27,20 @@ export async function GET() {
 }
 
 // POST /api/support/tickets: create an IvyLens ticket
+
+const TicketSchema = z.object({
+  subject:      shortText(200),
+  message:      longText(10_000),
+  category:     optionalShortText(80),
+  priority:     z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  reference_id: optionalShortText(120),
+  // Bounded so a client cannot store an arbitrarily large blob on a row
+  // nobody reviews.
+  metadata:     z.record(z.unknown()).optional().nullable()
+                  .refine(m => !m || JSON.stringify(m).length <= 8_000,
+                          'metadata is too large'),
+});
+
 export async function POST(req: NextRequest) {
   const tooBig = assertBodySize(req, 256 * 1024);
   if (tooBig) return tooBig;
@@ -32,8 +48,9 @@ export async function POST(req: NextRequest) {
   const { user, companyId } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json();
-  const { subject, message, category, priority, reference_id, metadata } = body;
+  const parsed = await parseBody(req, TicketSchema);
+  if (!parsed.ok) return parsed.response;
+  const { subject, message, category, priority, reference_id, metadata } = parsed.data;
 
   if (!subject?.trim() || !message?.trim()) {
     return NextResponse.json({ error: 'Subject and message are required' }, { status: 400 });

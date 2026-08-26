@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseBody } from '@/lib/validation/parseBody';
+import { uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 }); // 10 checkouts per minute
+
+
+// This creates a Stripe session, so a malformed contentId reaches a
+// payment provider before anything checks it.
+const CheckoutSchema = z.object({ contentId: uuid });
 
 export async function POST(req: NextRequest) {
   const { allowed } = limiter.check(getRateLimitKey(req));
@@ -11,7 +18,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { contentId } = await req.json();
+    const parsed = await parseBody(req, CheckoutSchema);
+    if (!parsed.ok) return parsed.response;
+    const { contentId } = parsed.data;
 
     if (!contentId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

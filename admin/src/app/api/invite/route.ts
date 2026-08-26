@@ -1,4 +1,6 @@
 import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
+import { parseBody } from '@/lib/validation/parseBody';
+import { email as emailField, optionalShortText, uuid, z } from '@/lib/validation/primitives';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
@@ -9,6 +11,18 @@ import { labelFor, PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps'
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
 
+
+// The role list comes from PORTAL_INVITE_ROLES rather than a literal, so
+// a change to the accepted roles changes this schema too. Previously an
+// unknown role silently fell back to client_admin — quietly granting
+// more access than the caller asked for.
+const InviteSchema = z.object({
+  email:      emailField,
+  company_id: uuid,
+  role:       z.enum(PORTAL_INVITE_ROLES).default('client_admin'),
+  full_name:  optionalShortText(120),
+});
+
 export async function POST(request: NextRequest) {
   const tooBig = assertBodySize(request, 64 * 1024);
   if (tooBig) return tooBig;
@@ -17,7 +31,9 @@ export async function POST(request: NextRequest) {
   if (!auth.ok) return auth.response;
   const supabase = createServerSupabaseClient();
 
-  const { email, company_id, role = 'client_admin', full_name } = await request.json();
+  const parsed = await parseBody(request, InviteSchema);
+  if (!parsed.ok) return parsed.response;
+  const { email, company_id, role, full_name } = parsed.data;
 
   if (!email || !company_id) {
     return NextResponse.json({ error: 'email and company_id are required' }, { status: 400 });
