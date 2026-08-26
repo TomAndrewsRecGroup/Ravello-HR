@@ -47,14 +47,23 @@ export default async function HealthStatusPage() {
     ticketsRes,
     stalledReqsRes,
     ivylens,
+    rlsAuditRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,slug,name,active').order('name'),
     supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'completed'),
     supabase.from('tickets').select('company_id').in('status', ['open', 'in_progress']),
     supabase.from('requisitions').select('company_id,updated_at,stage').not('stage', 'in', '(filled,cancelled)').lt('updated_at', fortnightAgo),
     computeIvylensHealth(supabase),
+    // Row-level security drift, reported by the database itself.
+    // 251 policies had accumulated across 67 tables, 99 of them
+    // superseded duplicates that were never dropped — and because
+    // permissive policies are OR'd, the weakest of each pair was the
+    // one deciding. This surfaces the next instance on the day it
+    // appears instead of in an audit months later.
+    supabase.rpc('rls_policy_audit'),
   ]);
 
+  const rlsFindings   = (rlsAuditRes.data ?? []) as { severity: string; table_name: string; detail: string }[];
   const companies     = companiesRes.data ?? [];
   const overdueComp   = complianceRes.data ?? [];
   const openTickets   = ticketsRes.data ?? [];
@@ -101,7 +110,7 @@ export default async function HealthStatusPage() {
         }
       />
       <main className="admin-page flex-1">
-        <HealthClient ivylens={ivylens} clients={clientHealth} rag={rag} />
+        <HealthClient ivylens={ivylens} clients={clientHealth} rag={rag} rlsFindings={rlsFindings} />
       </main>
     </>
   );

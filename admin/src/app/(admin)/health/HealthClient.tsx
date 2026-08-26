@@ -19,10 +19,19 @@ interface ProbeResult {
   health?: IvylensHealth;
 }
 
+export interface RlsFinding {
+  severity:   string;
+  table_name: string;
+  detail:     string;
+}
+
 interface Props {
   ivylens: IvylensHealth;
   clients: ClientHealth[];
   rag:     { green: number; amber: number; red: number };
+  /** Row-level security drift, reported by the rls_policy_audit()
+   *  database function. Empty is the healthy state. */
+  rlsFindings: RlsFinding[];
 }
 
 function relative(ts: string | null): string {
@@ -84,7 +93,7 @@ function mergeFromProbe(next: IvylensHealth, prev: IvylensHealth, probe: ProbeRe
   };
 }
 
-export default function HealthClient({ ivylens: initialIvylens, clients, rag }: Props) {
+export default function HealthClient({ ivylens: initialIvylens, clients, rag, rlsFindings }: Props) {
   const [filter, setFilter] = useState<'all' | 'red' | 'amber' | 'green'>('all');
   const filtered = filter === 'all' ? clients : clients.filter(c => c.band === filter);
 
@@ -119,8 +128,54 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag }: 
     }
   }
 
+
+  const rlsCritical = rlsFindings.filter(f => f.severity === 'critical');
+  const rlsWarnings = rlsFindings.filter(f => f.severity !== 'critical');
+
+  const rlsPanel = (
+    <section className="card p-5 mb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+        <div>
+          <h3 className="font-display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+            Row-level security
+          </h3>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)', margin: '3px 0 0' }}>
+            Tenant isolation is the only thing standing between one client&apos;s HR data and another&apos;s.
+            Checked live against the database on every page load.
+          </p>
+        </div>
+        <span
+          className="badge"
+          style={{ color: rlsCritical.length ? 'var(--red)' : rlsWarnings.length ? 'var(--gold)' : 'var(--teal)' }}
+        >
+          {rlsCritical.length ? `${rlsCritical.length} critical`
+            : rlsWarnings.length ? `${rlsWarnings.length} to review`
+            : 'No drift'}
+        </span>
+      </div>
+
+      {rlsFindings.length === 0 ? (
+        <p className="text-sm" style={{ color: 'var(--ink-soft)', margin: '10px 0 0' }}>
+          Every table has policies, none permit unrestricted access, and no table carries
+          competing policies for the same operation.
+        </p>
+      ) : (
+        <ul style={{ margin: '12px 0 0', paddingLeft: 18 }}>
+          {rlsFindings.map((f, i) => (
+            <li key={i} className="text-sm" style={{ marginBottom: 6, color: 'var(--ink-soft)' }}>
+              <strong style={{ color: f.severity === 'critical' ? 'var(--red)' : 'var(--gold)' }}>
+                {f.table_name}
+              </strong>{' — '}{f.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+
   return (
     <div className="space-y-8">
+      {rlsPanel}
       {/* ── IvyLens integration panel ── */}
       <section>
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
