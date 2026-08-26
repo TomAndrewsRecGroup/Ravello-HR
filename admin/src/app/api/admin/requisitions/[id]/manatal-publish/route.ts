@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import {
@@ -48,9 +49,14 @@ function parseSalaryRange(s: string | null): { min: number | null; max: number |
 // boards). Writes manatal_job_id + manatal_published_at back on the
 // requisition. Idempotent re-publish is supported — if a job id
 // already exists the route just toggles publish on it again.
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(httpReq: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.vendor.check(getUserRateLimitKey(httpReq, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }

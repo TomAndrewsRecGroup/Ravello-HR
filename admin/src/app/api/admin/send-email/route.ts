@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { parseForm } from '@/lib/validation/parseForm';
 import { email as emailField, htmlBody, optionalUuid, shortText, uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
@@ -56,6 +57,11 @@ const SendEmailSchema = z.object({
 export async function POST(req: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.email.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const parsed = await parseForm(req, SendEmailSchema);
   if (!parsed.ok) return parsed.response;

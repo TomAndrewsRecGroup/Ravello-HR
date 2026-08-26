@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
@@ -19,9 +20,14 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // - Calls createManatalOrganization with external_id = company UUID.
 // - Stamps manatal_client_id with the returned org id.
 // - Audit-logs the operation.
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.vendor.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid company id' }, { status: 400 });
   }

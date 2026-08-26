@@ -1,4 +1,5 @@
 import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { parseBody } from '@/lib/validation/parseBody';
 import { longText, optionalIsoDate, optionalShortText, shortText, uuid, z } from '@/lib/validation/primitives';
 import { NextRequest, NextResponse } from 'next/server';
@@ -43,6 +44,11 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.email.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
   const supabase = createServerSupabaseClient();
 
   const parsed = await parseBody(req, BroadcastSchema);

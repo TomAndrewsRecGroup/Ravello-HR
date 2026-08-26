@@ -27,6 +27,10 @@ PAIRS=(
   "admin/src/lib/featureFlags.ts|portal/src/lib/featureFlags.ts"
   "admin/src/lib/supabase/instrument.ts|portal/src/lib/supabase/instrument.ts"
   "admin/src/lib/supabase/client.ts|portal/src/lib/supabase/client.ts"
+  "admin/src/lib/supabase/paged.ts|portal/src/lib/supabase/paged.ts"
+  "admin/src/lib/rateLimit.ts|portal/src/lib/rateLimit.ts"
+  "admin/src/lib/validation/primitives.ts|portal/src/lib/validation/primitives.ts"
+  "admin/src/lib/validation/parseBody.ts|portal/src/lib/validation/parseBody.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

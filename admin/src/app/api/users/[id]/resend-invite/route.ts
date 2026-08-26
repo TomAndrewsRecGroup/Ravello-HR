@@ -1,4 +1,5 @@
 import { portalUrl as portalUrlFromEnv } from '@/lib/portalUrl';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
@@ -8,9 +9,14 @@ import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.account.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const userId = params.id;
   if (!UUID_RE.test(userId)) {

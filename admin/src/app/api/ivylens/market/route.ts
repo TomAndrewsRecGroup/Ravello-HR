@@ -7,6 +7,7 @@
 // Cache: 24h TTL, keyed by role_type + location. force=true bypasses.
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { ivylensRequest, readCache, writeCache } from '@/lib/ivylens';
 
@@ -173,6 +174,11 @@ const CACHE_TTL = 24 * 60 * 60; // 24h
 export async function GET(request: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  // Ceiling on a metered/outbound action. Keyed by user rather
+  // than IP so one person's bulk run does not throttle the office.
+  const rl = limiters.vendor.check(getUserRateLimitKey(request, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const force = request.nextUrl.searchParams.get('force') === 'true';
 
