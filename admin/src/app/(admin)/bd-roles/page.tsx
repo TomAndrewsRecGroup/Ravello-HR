@@ -3,6 +3,7 @@
 // sidebar "Intelligence" group or directly at /bd-roles.
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import BDRolesClient from './BDRolesClient';
 import { Radar } from 'lucide-react';
@@ -66,7 +67,7 @@ export default async function BDRolesPage() {
   const supabase = createServerSupabaseClient();
 
   const [localRolesRes, bdCompaniesRes, ivylensRes, dismissedRes] = await Promise.all([
-    supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,pay_type,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).limit(2000),
+    readAllPages<any>((from, to) => supabase.from('bd_scanned_roles').select('id,company_id,company_name,company_source,role_title,location,salary_min,salary_max,salary_text,pay_type,source_board,source_url,scanned_at,still_active').order('scanned_at', { ascending: false }).order('id').range(from, to)),
     supabase.from('bd_companies').select('id,company_name'),
     ivylensRequest<{ leads?: any[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 })),
     supabase.from('bd_ivylens_dismissed').select('synthetic_id'),

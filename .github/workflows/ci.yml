@@ -21,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/check-shared-dupes.sh
+      - run: bash scripts/check-row-cap.sh
 
   quality:
     runs-on: ubuntu-latest

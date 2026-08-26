@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { BarChart3, ExternalLink } from 'lucide-react';
@@ -12,23 +13,50 @@ export const revalidate = 30;
 export default async function AdminReportsPage() {
   const supabase = createServerSupabaseClient();
 
-  // CSV export builders preview the most recent 5K rows. The
-  // full-export download path can pull more later via a streaming
-  // route (TODO) — this caps the page render cost today.
-  const [reportsRes, companiesRes, reqsRes, candsRes, compRes, ticketsRes] = await Promise.all([
+  // These are CSV EXPORTS, so "most of the rows" is the wrong answer.
+  // The five-thousand-row limits these used to carry did nothing: PostgREST clamps
+  // every response at ~1000, so a client exporting "all candidates"
+  // received 1000 with no warning and nothing reporting a fault. Each
+  // exhaustive read now walks pages with a stable, unique sort key.
+  //
+  // The `id` tie-break is load-bearing: created_at alone is not unique
+  // (an import writes many rows in the same millisecond) and without a
+  // total order two pages can be ordered differently, dropping or
+  // duplicating rows across the boundary.
+  const [reportsRes, companiesRes, reqs, cands, comp, tickets] = await Promise.all([
     supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
     supabase.from('companies').select('id,slug,name').eq('active', true).order('name').limit(500),
-    supabase.from('requisitions').select('title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)').order('created_at', { ascending: false }).limit(5000),
-    supabase.from('candidates').select('full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)').order('created_at', { ascending: false }).limit(5000),
-    supabase.from('compliance_items').select('title,category,status,due_date,companies(name)').order('due_date').limit(5000),
-    supabase.from('tickets').select('subject,status,priority,created_at,resolved_at,companies(name)').order('created_at', { ascending: false }).limit(5000),
+    readAllPages<any>((from, to) => supabase.from('requisitions')
+      .select('id,title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)')
+      .order('created_at', { ascending: false }).order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('candidates')
+      .select('id,full_name,email,client_status,approved_for_client,created_at,requisitions(title),companies(name)')
+      .order('created_at', { ascending: false }).order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('compliance_items')
+      .select('id,title,category,status,due_date,companies(name)')
+      .order('due_date').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('tickets')
+      .select('id,subject,status,priority,created_at,resolved_at,companies(name)')
+      .order('created_at', { ascending: false }).order('id').range(from, to)),
   ]);
 
   const reports   = reportsRes.data   ?? [];
   const companies = companiesRes.data ?? [];
+
+  // Surfaced rather than swallowed: an export that could not be read in
+  // full must say so, otherwise it is the same silent truncation with
+  // extra steps.
+  const exportProblems = [
+    reqs.error    && `Roles: ${reqs.error}`,
+    cands.error   && `Candidates: ${cands.error}`,
+    comp.error    && `Compliance: ${comp.error}`,
+    tickets.error && `Tickets: ${tickets.error}`,
+    (reqs.truncated || cands.truncated || comp.truncated || tickets.truncated)
+      && 'An export hit the 200,000-row safety ceiling and is incomplete.',
+  ].filter(Boolean) as string[];
   const today = new Date().toISOString().slice(0, 10);
 
-  const reqsCSV = (reqsRes.data ?? []).map((r: any) => ({
+  const reqsCSV = reqs.rows.map((r: any) => ({
     Client:      (r.companies as any)?.name ?? '',
     Title:       r.title,
     Department:  r.department ?? '',
@@ -39,7 +67,7 @@ export default async function AdminReportsPage() {
     Created:     new Date(r.created_at).toLocaleDateString('en-GB'),
   }));
 
-  const candsCSV = (candsRes.data ?? []).map((c: any) => ({
+  const candsCSV = cands.rows.map((c: any) => ({
     Client:          (c.companies as any)?.name ?? '',
     Name:            c.full_name,
     Email:           c.email ?? '',
@@ -49,7 +77,7 @@ export default async function AdminReportsPage() {
     Submitted:       new Date(c.created_at).toLocaleDateString('en-GB'),
   }));
 
-  const compCSV = (compRes.data ?? []).map((c: any) => ({
+  const compCSV = comp.rows.map((c: any) => ({
     Client:   (c.companies as any)?.name ?? '',
     Title:    c.title,
     Category: c.category ?? '',
@@ -57,7 +85,7 @@ export default async function AdminReportsPage() {
     'Due Date': c.due_date ? new Date(c.due_date).toLocaleDateString('en-GB') : '',
   }));
 
-  const ticketsCSV = (ticketsRes.data ?? []).map((t: any) => ({
+  const ticketsCSV = tickets.rows.map((t: any) => ({
     Client:     (t.companies as any)?.name ?? '',
     Subject:    t.subject,
     Status:     t.status,
@@ -73,6 +101,18 @@ export default async function AdminReportsPage() {
         subtitle="Upload and manage client reports"
       />
       <main className="admin-page flex-1 space-y-6">
+        {exportProblems.length > 0 && (
+          <div className="card p-4" style={{ borderColor: 'var(--red)' }}>
+            <p className="text-sm" style={{ color: 'var(--ink)', fontWeight: 600, margin: 0 }}>
+              These exports may be incomplete
+            </p>
+            <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+              {exportProblems.map((p, i) => (
+                <li key={i} className="text-sm" style={{ color: 'var(--ink-soft)' }}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* CSV Exports */}
         <div>

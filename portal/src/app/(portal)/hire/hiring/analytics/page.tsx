@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
 import { TrendingUp, Clock, Users, CheckCircle2, AlertTriangle, BarChart3 } from 'lucide-react';
@@ -59,9 +60,9 @@ export default async function HiringAnalyticsPage() {
   );
 
   const [{ data: reqs }, { data: candidates }, { data: offers }] = await Promise.all([
-    supabase.from('requisitions').select('id,stage,created_at,friction_level,working_model').eq('company_id', companyId).order('created_at', { ascending: false }).limit(2000),
-    supabase.from('candidates').select('id,client_status,approved_for_client').eq('company_id', companyId).limit(5000),
-    supabase.from('offers').select('id,status').eq('company_id', companyId).limit(2000),
+    readAllPages<any>((from, to) => supabase.from('requisitions').select('id,stage,created_at,friction_level,working_model').eq('company_id', companyId).order('created_at', { ascending: false }).order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('candidates').select('id,client_status,approved_for_client').eq('company_id', companyId).order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('offers').select('id,status').eq('company_id', companyId).order('id').range(from, to)),
   ]);
 
   const allReqs = reqs ?? [];

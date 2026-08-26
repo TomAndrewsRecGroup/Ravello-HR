@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Trophy, Building2, Share2 } from 'lucide-react';
 import Topbar from '@/components/layout/Topbar';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import CopyLinkRow from '@/components/modules/CopyLinkRow';
 import AthletesPanel from './AthletesPanel';
 import PartnersPanel from './PartnersPanel';
@@ -50,16 +51,18 @@ export default async function AthletesToIndustryPage() {
       .eq('active', true)
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
+    readAllPages<any>((from, to) => supabase
       .from('athlete_partner_interests')
       .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at')
       .order('created_at', { ascending: false })
-      .limit(2000),
-    supabase
+      .order('id')
+      .range(from, to)),
+    readAllPages<any>((from, to) => supabase
       .from('athlete_training_interests')
       .select('id, athlete_id, provider_id, offering_id, status, notes, created_at')
       .order('created_at', { ascending: false })
-      .limit(2000),
+      .order('id')
+      .range(from, to)),
     supabase
       .from('dev_plans')
       .select('id, title, status, athlete_id')

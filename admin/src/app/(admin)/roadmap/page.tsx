@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import {
@@ -49,12 +50,11 @@ export default async function AdminRoadmapPage() {
   const supabase = createServerSupabaseClient();
 
   const [milestonesRes, companiesRes] = await Promise.all([
-    supabase
+    readAllPages<any>((from, to) => supabase
       .from('milestones')
       .select('id,company_id,track,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,slug,name)')
       .order('quarter')
-      .order('track')
-      .limit(2000),
+      .order('track').order('id').range(from, to)),
     supabase
       .from('companies')
       .select('id,slug,name')

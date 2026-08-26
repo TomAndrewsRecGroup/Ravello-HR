@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import PartnersClient from './PartnersClient';
 import TrainingProvidersClient from './TrainingProvidersClient';
@@ -35,26 +36,29 @@ export default async function AthletesToIndustryAdminPage() {
       .select('id, company_id, full_name, email, phone, sport, previous_role, bio, linkedin_url, avatar_url, cv_kind, cv_url, cv_filename, cv_mime, cv_text, called_at, welcome_email_sent_at, created_at, companies(name)')
       .order('created_at', { ascending: false })
       .limit(200),
-    supabase
+    readAllPages<any>((from, to) => supabase
       .from('athlete_partner_interests')
       .select('id, athlete_id, partner_id, role_opportunity_id, status, notes, created_at')
       .order('created_at', { ascending: false })
-      .limit(5000),
-    supabase
+      .order('id')
+      .range(from, to)),
+    readAllPages<any>((from, to) => supabase
       .from('athlete_training_interests')
       .select('id, athlete_id, provider_id, offering_id, status, notes, created_at')
       .order('created_at', { ascending: false })
-      .limit(5000),
+      .order('id')
+      .range(from, to)),
     supabase
       .from('companies')
       .select('id, name, slug')
       .eq('active', true)
       .order('name', { ascending: true }),
-    supabase
+    readAllPages<any>((from, to) => supabase
       .from('dev_plans')
       .select('id, title, status, athlete_id')
       .order('created_at', { ascending: false })
-      .limit(2000),
+      .order('id')
+      .range(from, to)),
   ]);
 
   const partners = (partnersRes.data ?? []) as PartnerRow[];

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { Plus, Download } from 'lucide-react';
@@ -11,11 +12,10 @@ const catBadge: Record<string,string> = { contract:'badge-submitted',policy:'bad
 
 export default async function AdminDocumentsPage() {
   const supabase = createServerSupabaseClient();
-  const { data: docs } = await supabase
+  const { data: docs } = await readAllPages<any>((from, to) => supabase
     .from('documents')
     .select('id,name,category,version,review_due_at,file_url,file_size,created_at,companies(name)')
-    .order('created_at', { ascending: false })
-    .limit(2000);
+    .order('created_at', { ascending: false }).order('id').range(from, to));
 
   const all = docs ?? [];
 

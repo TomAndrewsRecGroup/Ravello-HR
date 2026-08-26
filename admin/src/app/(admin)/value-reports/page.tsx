@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import ValueReportClient from './ValueReportClient';
 
@@ -20,15 +21,15 @@ export default async function ValueReportsPage() {
   // be cleaner long-term but this caps the scaling cliff today.
   const [compRes, reqRes, candRes, ticketRes, docRes, complianceRes, servReqRes, actionsRes, loginRes, servicesRes] = await Promise.all([
     supabase.from('companies').select('id, name, active, contact_email').eq('active', true).order('name').limit(500),
-    supabase.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').limit(5000),
-    supabase.from('candidates').select('id, company_id, full_name, client_status, created_at').limit(5000),
-    supabase.from('tickets').select('id, company_id, subject, status, priority, created_at, resolved_at').limit(5000),
-    supabase.from('documents').select('id, company_id, name, created_at').limit(5000),
-    supabase.from('compliance_items').select('id, company_id, title, status, created_at').limit(5000),
-    supabase.from('service_requests').select('id, company_id, subject, status, created_at, responded_at').limit(5000),
-    supabase.from('actions').select('id, company_id, title, status, created_at, completed_at').limit(5000),
-    supabase.from('profiles').select('id, company_id, role').neq('role', 'tps_admin').limit(5000),
-    supabase.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active').limit(5000),
+    readAllPages<any>((from, to) => supabase.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('candidates').select('id, company_id, full_name, client_status, created_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('tickets').select('id, company_id, subject, status, priority, created_at, resolved_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('documents').select('id, company_id, name, created_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('compliance_items').select('id, company_id, title, status, created_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('service_requests').select('id, company_id, subject, status, created_at, responded_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('actions').select('id, company_id, title, status, created_at, completed_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('profiles').select('id, company_id, role').neq('role', 'tps_admin').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active').order('id').range(from, to)),
   ]);
 
   return (

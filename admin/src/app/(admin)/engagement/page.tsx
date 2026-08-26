@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { AlertTriangle, TrendingUp, LogIn, Eye, EyeOff } from 'lucide-react';
@@ -17,14 +18,14 @@ export default async function EngagementPage() {
   // would be cleaner; this is the bounded-cost interim.
   const [compRes, profileRes, reqRes, ticketRes, docRes, notesRes] = await Promise.all([
     supabase.from('companies').select('id, slug, name, last_portal_login, login_count_30d').eq('active', true).order('name').limit(500),
-    supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin').limit(5000),
-    supabase.from('requisitions').select('company_id, stage, created_at').limit(5000),
-    supabase.from('tickets').select('company_id, status, created_at').limit(5000),
+    readAllPages<any>((from, to) => supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('requisitions').select('company_id, stage, created_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('tickets').select('company_id, status, created_at').order('id').range(from, to)),
     // Was selecting `company_id` AND requesting an exact count via
     // head:false — got both rows AND the count, doubling work. We
     // only need the count here; head:true is correct.
     supabase.from('documents').select('company_id', { count: 'exact', head: true }),
-    supabase.from('client_notes').select('company_id, created_at').order('created_at', { ascending: false }).limit(5000),
+    readAllPages<any>((from, to) => supabase.from('client_notes').select('company_id, created_at').order('created_at', { ascending: false }).order('id').range(from, to)),
   ]);
 
   const companies = compRes.data ?? [];
