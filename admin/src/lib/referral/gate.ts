@@ -28,9 +28,15 @@ import type {
 } from './types';
 
 /** Below this, a skill_matches[] entry is not trusted as evidence.
- *  IvyLens omits confidence on some entries; an absent confidence is
- *  treated as sufficient (the model still asserted `found`), but an
- *  explicit low number is not. */
+ *
+ *  Verified against IvyLens core-api on 2026-08-26: `SkillMatch.confidence`
+ *  is a plain `f64` with no `skip_serializing_if`, so this endpoint always
+ *  sends it — the deterministic path uses 0.8 for a found required skill
+ *  and 0.7 for a found preferred one, and the LLM prompt demands 0.0-1.0.
+ *  An entry that reaches the `undefined` branch below therefore came from
+ *  somewhere else, or from a future response shape; it is still accepted
+ *  on an explicit `found === true`, because the model asserting the skill
+ *  is itself the evidence. An explicit low number is not. */
 const MIN_SKILL_CONFIDENCE = 0.5;
 
 export interface GateInput {
