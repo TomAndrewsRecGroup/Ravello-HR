@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { BarChart3, Clock, Users, CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react';
-import { HIRING_STAGE_LABELS as STAGE_LABELS } from '@/lib/ui/statusMaps';
+import { HIRING_STAGE_LABELS as STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
@@ -131,7 +131,7 @@ export default async function AdminHiringAnalyticsPage() {
                 {STAGE_ORDER.filter(s => stageCounts[s]).map(s => (
                   <div key={s}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{STAGE_LABELS[s]}</span>
+                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{labelFor(STAGE_LABELS, s)}</span>
                       <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{stageCounts[s]}</span>
                     </div>
                     <Bar pct={(stageCounts[s] / maxStageCount) * 100} color="var(--purple)" />

@@ -214,6 +214,15 @@
   .badge-complete   { background: rgba(52,211,153,0.12);  color: #047857; }
   .badge-pending    { background: rgba(59,111,255,0.10);  color: #1848CC; }
 
+  /* Candidate client_status — rendered as `badge badge-${client_status}`
+     on the requisition detail page. Only .badge-pending existed, so
+     every other status fell back to bare .badge styling. */
+  .badge-shared         { background: rgba(59,111,255,0.10);  color: #1848CC; }
+  .badge-approved       { background: rgba(52,211,153,0.12);  color: #047857; }
+  .badge-rejected       { background: rgba(217,68,68,0.08);   color: #B02020; }
+  .badge-info_requested { background: rgba(245,158,11,0.12);  color: #8A5500; }
+  .badge-hired          { background: rgba(20,184,166,0.16);  color: #0E7A6A; }
+
   /* ─── Sidebar nav — light theme ──────────────────── */
   .nav-link {
     @apply flex items-center gap-3 px-3 py-2 text-[13px] font-medium

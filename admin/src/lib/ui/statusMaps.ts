@@ -6,6 +6,21 @@
 //
 // Pattern: each map is `Record<DBValue, UserFacingLabel>`. Pair with
 // `labelFor(map, value, fallback?)` so callers don't need null guards.
+//
+// This file also carries the DB enum vocabularies themselves (below).
+// Migrations here are applied BY HAND, so the .sql files are not
+// authority — `pg_enum` is. Three separate sites once wrote enum
+// values the database did not have ('shared', 'pending_approval',
+// 'handbook'), each failing at runtime with a 22P02 on a path whose
+// error went to a setError() nobody read. Typing a write against the
+// tuples below turns that into a compile error instead.
+//
+// WHEN A MIGRATION TOUCHES AN ENUM, UPDATE THE MATCHING TUPLE HERE.
+// `statusMaps.test.ts` pins each label map against its tuple in both
+// directions, so a label for a value that cannot exist — and a live
+// value with no label — both fail the suite.
+
+import type { CSSProperties } from 'react';
 
 /* ─── small helper ────────────────────────────────────────────── */
 
@@ -18,10 +33,51 @@ export function labelFor<T extends Record<string, string>>(
   return map[value as keyof T] ?? fallback ?? value;
 }
 
+/** `labelFor` for non-string maps (e.g. CLIENT_STATUS_STYLE).
+ *
+ *  The maps below are keyed by their exact enum union, which is what
+ *  makes a typo a compile error. Call sites, however, read the value
+ *  out of a Supabase row typed as plain `string`, so indexing directly
+ *  will not typecheck. Go through this instead of widening the maps
+ *  back to Record<string, …> and losing the guard. */
+export function valueFor<V>(
+  map: Record<string, V>,
+  value: string | null | undefined,
+  fallback: V,
+): V {
+  if (value == null) return fallback;
+  return map[value] ?? fallback;
+}
+
+/* ─── Database enum vocabularies ──────────────────────────────── */
+// Verified against pg_enum on the live project (sbmekaviwkiyorvmtgcu),
+// 2026-08-26, after migration 078.
+
+export const HIRING_STAGES = [
+  'submitted', 'in_progress', 'shortlist_ready',
+  'interview', 'offer', 'filled', 'cancelled',
+] as const;
+export type HiringStage = typeof HIRING_STAGES[number];
+
+export const CANDIDATE_CLIENT_STATUSES = [
+  'pending', 'shared', 'approved', 'rejected', 'info_requested', 'hired',
+] as const;
+export type CandidateClientStatus = typeof CANDIDATE_CLIENT_STATUSES[number];
+
+export const DOC_CATEGORIES = [
+  'contract', 'policy', 'handbook', 'letter', 'report', 'other',
+] as const;
+export type DocCategory = typeof DOC_CATEGORIES[number];
+
+export const USER_ROLES = [
+  'tps_admin', 'tps_client', 'client_admin', 'client_editor', 'client_user',
+] as const;
+export type UserRole = typeof USER_ROLES[number];
+
 /* ─── Hiring ──────────────────────────────────────────────────── */
 
 /** Display label for each stage in the hiring funnel. */
-export const HIRING_STAGE_LABELS: Record<string, string> = {
+export const HIRING_STAGE_LABELS: Record<HiringStage, string> = {
   submitted:       'New',
   in_progress:     'Sourcing',
   shortlist_ready: 'Shortlist Ready',
@@ -33,11 +89,30 @@ export const HIRING_STAGE_LABELS: Record<string, string> = {
 
 /* ─── Candidate client status ─────────────────────────────────── */
 
-export const CANDIDATE_CLIENT_STATUS_LABELS: Record<string, string> = {
-  pending:  'Awaiting your review',
-  shared:   'Shared with you',
-  approved: 'Approved by you',
-  rejected: 'Not the right fit',
+export const CANDIDATE_CLIENT_STATUS_LABELS: Record<CandidateClientStatus, string> = {
+  pending:        'Awaiting your review',
+  shared:         'Shared with you',
+  approved:       'Approved by you',
+  rejected:       'Not the right fit',
+  info_requested: 'More info requested',
+  hired:          'Hired',
+};
+
+/** Badge styling per candidate status.
+ *
+ *  Lived in FOUR duplicated copies (the candidates list, the
+ *  requisition detail page, the client-detail candidates tab and
+ *  ClientDetailTabs). Only one knew about 'shared' and none knew about
+ *  'hired', so those candidates rendered in grey "pending" styling on
+ *  three screens out of four — wrong, but quiet enough that nobody
+ *  reports it. One definition, imported everywhere. */
+export const CLIENT_STATUS_STYLE: Record<CandidateClientStatus, CSSProperties> = {
+  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
+  shared:         { background: 'rgba(59,111,255,0.1)',  color: 'var(--blue)' },
+  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
+  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
+  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
+  hired:          { background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' },
 };
 
 /* ─── Compliance ──────────────────────────────────────────────── */
@@ -169,13 +244,15 @@ export const EMPLOYEE_DOC_TYPE_LABELS: Record<string, string> = {
 
 /* ─── Document categories (company-wide docs) ─────────────────── */
 
-export const DOC_CATEGORY_LABELS: Record<string, string> = {
+// 'compliance' was listed here for a value doc_category has never had;
+// it is gone. Compliance ITEMS are a different table with a TEXT
+// category — see COMPLIANCE_CATEGORY_LABELS above, which is unaffected.
+export const DOC_CATEGORY_LABELS: Record<DocCategory, string> = {
   contract:   'Contracts',
   policy:     'Policies',
   handbook:   'Handbook',
-  compliance: 'Compliance',
-  report:     'Reports',
   letter:     'Letters',
+  report:     'Reports',
   other:      'Other',
 };
 
@@ -199,10 +276,12 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
 
 /* ─── User roles (UI labels, never expose the raw enum) ───────── */
 
-export const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<UserRole, string> = {
+  tps_admin:     'TPS Staff',
+  tps_client:    'TPS Client',
   client_admin:  'Admin',
   client_editor: 'Editor',
-  tps_admin:     'TPS Staff',
+  client_user:   'User',
 };
 
 /* ─── Athletes To Industry interest status ────────────────────── */

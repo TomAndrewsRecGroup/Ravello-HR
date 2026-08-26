@@ -5,7 +5,7 @@ import { revalidateAdminPath } from '@/app/actions';
 import { ExternalLink, ChevronDown, Star, Loader2, Send } from 'lucide-react';
 import SendEmailButton from '@/components/modules/SendEmailButton';
 
-import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, labelFor, valueFor } from '@/lib/ui/statusMaps';
 interface Candidate {
   id: string;
   full_name: string;
@@ -38,12 +38,6 @@ const SOURCE_LABELS: Record<string, string> = {
   agency: 'Agency', job_board: 'Job Board',
 };
 
-const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:  { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
-  shared:   { background: 'rgba(59,111,255,0.1)',   color: 'var(--blue)' },
-  approved: { background: 'rgba(22,163,74,0.1)',    color: 'var(--emerald)' },
-  rejected: { background: 'rgba(220,38,38,0.1)',    color: 'var(--rose)' },
-};
 
 function Stars({ score }: { score: number | null }) {
   if (!score) return <span style={{ color: 'var(--ink-faint)' }}>-</span>;
@@ -194,7 +188,7 @@ export default function CandidatesClient({ initialCandidates, companies }: Props
                   <td>
                     <span
                       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                      style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}
+                      style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}
                     >
                       {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                     </span>

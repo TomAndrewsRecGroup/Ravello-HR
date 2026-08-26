@@ -5,13 +5,7 @@ import { Loader2, Plus, X, User, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
-import { CANDIDATE_CLIENT_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
-const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
-};
+import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, labelFor, valueFor } from '@/lib/ui/statusMaps';
 
 interface Props {
   companyId: string;
@@ -166,7 +160,7 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
                             ) : <span style={{ color: 'var(--ink-faint)' }}>-</span>}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
                               {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                             </span>
                           </td>

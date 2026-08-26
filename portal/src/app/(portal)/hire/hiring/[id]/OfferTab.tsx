@@ -216,7 +216,10 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
     setOffers(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   }
 
-  const approvedCandidates = candidates.filter(c => ['approved', 'pending'].includes(c.client_status));
+  // Includes 'shared': a candidate the client is still reviewing can
+  // absolutely be the one they want to make an offer to, and omitting
+  // it would leave them unselectable with no explanation.
+  const approvedCandidates = candidates.filter(c => ['approved', 'pending', 'shared'].includes(c.client_status));
 
   return (
     <div className="space-y-5">

@@ -55,8 +55,13 @@ export default async function PortalLayout({ children }: { children: React.React
         .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
       supabase.from('tickets').select('id', { count: 'exact', head: true })
         .eq('company_id', companyId).in('status', ['open', 'in_progress']),
+      // 'pending' AND 'shared' both mean "the client has not responded
+      // yet". Counting only 'pending' would make a candidate vanish
+      // from this badge the moment an admin pressed Share — the exact
+      // moment they most need to see them.
       supabase.from('candidates').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('approved_for_client', true).eq('client_status', 'pending'),
+        .eq('company_id', companyId).eq('approved_for_client', true)
+        .in('client_status', ['pending', 'shared']),
     ]);
     counts.actions    = actRes.count    ?? 0;
     counts.tickets    = tickRes.count   ?? 0;

@@ -5,7 +5,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
-import { PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { labelFor, PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
   const emailResult = await sendEmail(userInvitedEmail({
     to:          email,
     companyName: (company as any).name ?? 'your company',
-    roleLabel:   ROLE_LABELS[safeRole] ?? 'Admin',
+    roleLabel:   labelFor(ROLE_LABELS, safeRole, 'Admin'),
     acceptUrl:   activateUrl,
   }));
 

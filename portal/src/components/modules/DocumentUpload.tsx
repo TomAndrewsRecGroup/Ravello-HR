@@ -5,10 +5,18 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import { UploadCloud, X, Loader2, FileText } from 'lucide-react';
 
+// dbCat maps a UI category onto a real doc_category enum value. The
+// remaining 'other' rows are UI-only concepts the enum deliberately
+// does not model; nothing filters on them individually.
+//
+// Handbook used to map to 'other' as a workaround for the enum lacking
+// the value. That made the Policy Acknowledgements page unable to find
+// handbooks without also sweeping in templates, role packs, meeting
+// notes and strategic plans. Migration 078 added the real value.
 const UI_CATEGORIES = [
   { label: 'Contract',        value: 'contract', dbCat: 'contract' },
   { label: 'Policy',          value: 'policy',   dbCat: 'policy'   },
-  { label: 'Handbook',        value: 'handbook',  dbCat: 'other'   },
+  { label: 'Handbook',        value: 'handbook',  dbCat: 'handbook' },
   { label: 'Template',        value: 'template',  dbCat: 'other'   },
   { label: 'Role Pack',       value: 'role_pack', dbCat: 'other'   },
   { label: 'Meeting Notes',   value: 'meeting_notes', dbCat: 'other' },

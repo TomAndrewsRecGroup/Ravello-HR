@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { auditLog } from '@/lib/audit';
-import { ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -60,7 +60,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const result = await sendEmail(userInvitedEmail({
     to:          profile.email,
     companyName: (profile as any).companies?.name ?? 'your company',
-    roleLabel:   ROLE_LABELS[profile.role as string] ?? 'Team member',
+    roleLabel:   labelFor(ROLE_LABELS, profile.role as string, 'Team member'),
     acceptUrl:   activateUrl,
   }));
 

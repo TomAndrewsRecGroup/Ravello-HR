@@ -143,7 +143,9 @@ export default async function MetricsPage() {
 
   /* ── Candidate stats ── */
   const sharedCands   = candidates.filter(c => c.approved_for_client);
-  const pendingCands  = sharedCands.filter(c => c.client_status === 'pending');
+  // 'shared' is also awaiting a response from the client, so it belongs
+  // in this bucket rather than silently falling out of every total.
+  const pendingCands  = sharedCands.filter(c => c.client_status === 'pending' || c.client_status === 'shared');
   const approvedCands = sharedCands.filter(c => c.client_status === 'approved');
   const rejectedCands = sharedCands.filter(c => c.client_status === 'rejected');
 

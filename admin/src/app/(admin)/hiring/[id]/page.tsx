@@ -8,7 +8,7 @@ import ReferralConfigPanel from '@/components/modules/ReferralConfigPanel';
 import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
-import { CANDIDATE_CLIENT_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, HIRING_STAGE_LABELS, labelFor, valueFor } from '@/lib/ui/statusMaps';
 export const metadata: Metadata = { title: 'Requisition Detail' };
 // Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
 // AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
@@ -32,12 +32,6 @@ const FRICTION_STYLE: Record<string, React.CSSProperties> = {
   Critical: { background: 'rgba(127,29,29,0.12)',  color: '#7F1D1D' },
 };
 
-const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
-};
 
 function daysOpen(createdAt: string) {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
@@ -213,7 +207,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                             )}
                           </td>
                           <td className="py-3 pr-4">
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={CLIENT_STATUS_STYLE[c.client_status] ?? CLIENT_STATUS_STYLE.pending}>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
                               {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
                             </span>
                           </td>

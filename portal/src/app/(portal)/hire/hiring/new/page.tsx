@@ -140,7 +140,13 @@ export default function NewRequisitionPage() {
       friction_score: finalScore ?? null, friction_level: finalScore?.overall_level ?? null,
       friction_recommendations: finalScore?.recommendations ?? null,
       friction_scored_at: finalScore ? new Date().toISOString() : null,
-      stage: 'pending_approval', submitted_by: user.id,
+      // 'submitted' (labelled "New"), NOT 'pending_approval' — the
+      // latter is not a hiring_stage value and Postgres rejected the
+      // whole insert with a 22P02, so this form could never create a
+      // requisition. "Awaiting approval" is already expressible as
+      // approved_at IS NULL, and the role_pending_approval notification
+      // below is what actually tells an admin to look.
+      stage: 'submitted', submitted_by: user.id,
     }).select().single();
     if (err) { setError(err.message); setLoading(false); return; }
 

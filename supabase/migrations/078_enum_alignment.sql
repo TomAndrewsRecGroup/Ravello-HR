@@ -1,0 +1,46 @@
+-- ═══════════════════════════════════════════════════════════
+-- Phase 78: Enum alignment — values the code writes but the
+--           database refuses
+--
+-- Three live sites wrote or read enum values that do not exist,
+-- each producing a Postgres 22P02 error on a path whose failure
+-- surfaces as a setError() nobody reads:
+--
+--   1. admin  candidates page       client_status = 'shared'
+--   2. portal new-role submission   stage        = 'pending_approval'
+--   3. portal policy-acknowledgements  category IN (…,'handbook',…)
+--
+-- #2 is fixed in CODE, not here — nothing reads 'pending_approval',
+-- HIRING_STAGE_LABELS has no such key, and 'submitted' (labelled
+-- "New") plus the existing approved_at column already expresses
+-- "submitted, awaiting approval". Adding an eighth stage would mean
+-- touching every stage filter and Kanban column in both apps to say
+-- something already sayable. The portal form now writes 'submitted'.
+--
+-- So this migration adds exactly two values.
+--
+-- Verified against the live database before writing: candidates,
+-- requisitions and documents were all EMPTY, so there is nothing to
+-- backfill and no row whose meaning changes.
+--
+-- NOTE: do not wrap this file in BEGIN/COMMIT. ALTER TYPE … ADD VALUE
+-- historically cannot run inside a transaction block; each statement
+-- here is deliberately standalone.
+--
+-- Idempotent. Safe to re-run.
+-- ═══════════════════════════════════════════════════════════
+
+-- 'shared' = actively sent to the client, awaiting their response.
+-- Distinct from 'pending' (flagged for the client, not yet sent).
+-- CANDIDATE_CLIENT_STATUS_LABELS has carried both wordings since the
+-- beginning ('Awaiting your review' / 'Shared with you'); only the SQL
+-- was missing.
+ALTER TYPE candidate_client_status ADD VALUE IF NOT EXISTS 'shared';
+
+-- 'handbook' — the portal's document upload previously mapped its
+-- Handbook option to dbCat 'other' as a workaround for this gap, which
+-- meant the Policy Acknowledgements page could not filter for handbooks
+-- without also sweeping in templates, role packs, meeting notes and
+-- strategic plans (all also 'other'). With a real value the existing
+-- filter works as written. DOC_CATEGORY_LABELS already has the key.
+ALTER TYPE doc_category ADD VALUE IF NOT EXISTS 'handbook';

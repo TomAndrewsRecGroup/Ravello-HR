@@ -179,7 +179,7 @@ export interface Candidate {
   cv_url: string | null;
   recruiter_notes: string | null;
   approved_for_client: boolean;
-  client_status: 'pending' | 'approved' | 'rejected' | 'info_requested';
+  client_status: 'pending' | 'shared' | 'approved' | 'rejected' | 'info_requested' | 'hired';
   client_feedback: string | null;
 }
 

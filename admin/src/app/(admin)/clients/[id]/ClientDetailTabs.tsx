@@ -16,7 +16,7 @@ import ProtectTab from './tabs/ProtectTab';
 import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
 
-import { HIRING_STAGE_LABELS, COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, ROLE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 /* ─── Helpers ─────────────────────────────────────── */
 
 const STAGE_BADGE: Record<string, string> = {
@@ -347,12 +347,6 @@ const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
   low:    { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
-const CLIENT_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:        { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
-  approved:       { background: 'rgba(22,163,74,0.1)',   color: 'var(--emerald)' },
-  rejected:       { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
-  info_requested: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
-};
 
 interface Props {
   company: any;

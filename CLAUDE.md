@@ -183,14 +183,52 @@ font-display    : Plus Jakarta Sans (headings)
 | `bd_scanned_roles` | Scraped job listings per BD company |
 
 ### Enums (PostgreSQL)
+
+**Read from `pg_enum`, not from the migration files.** Migrations here are
+applied BY HAND in the Supabase SQL editor, so a `.sql` file on disk is a record
+of intent, not proof of what the database contains. This block was wrong about
+four of six enums until 2026-08-26 — it documented `briefing`/`sourcing`/
+`screening`/`interviewing` stages, a `compliance` doc category and a
+`client_viewer` role, none of which have ever existed, while omitting
+`hired`, `shortlist_ready`, `letter` and `client_editor`, which do.
+
+Verified live (project `sbmekaviwkiyorvmtgcu`) after migration 078:
+
 ```sql
-hiring_stage: submitted | briefing | sourcing | screening | interviewing | offer | filled | cancelled
-candidate_client_status: pending | shared | approved | rejected
-user_role: tps_admin | tps_client | client_admin | client_viewer | client_user
-doc_category: contract | policy | handbook | compliance | report | other
-ticket_status: open | in_progress | resolved | closed
-ticket_priority: low | normal | high | urgent
+hiring_stage:            submitted | in_progress | shortlist_ready | interview | offer | filled | cancelled
+candidate_client_status: pending | approved | rejected | info_requested | hired | shared
+doc_category:            contract | policy | letter | report | other | handbook
+user_role:               client_admin | client_user | tps_admin | tps_client | client_editor
+ticket_status:           open | in_progress | resolved | closed
+ticket_priority:         low | normal | high | urgent
+compliance_status:       pending | in_review | complete | overdue
+leave_status:            pending | approved | rejected | cancelled
+email_log_target:        athlete | company | candidate
 ```
+
+To re-verify:
+
+```sql
+SELECT t.typname, string_agg(e.enumlabel, ' | ' ORDER BY e.enumsortorder)
+FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
+JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname = 'public' GROUP BY t.typname ORDER BY t.typname;
+```
+
+**A string literal for an enum is checked by nothing until Postgres rejects it.**
+Three live sites wrote or read values the database did not have — `'shared'`
+(admin candidates page), `'pending_approval'` (the portal's new-role form, so a
+client pressing Submit got an error and no requisition) and `'handbook'` (the
+Policy Acknowledgements filter, dead entirely). Each failed with a 22P02 on a
+path whose error surfaced only to a `setError()` nobody read.
+
+So `lib/ui/statusMaps.ts` now carries the vocabularies as `as const` tuples with
+derived unions, and the label maps are typed against them. **When a migration
+touches an enum, update the matching tuple in that file** — the `statusMaps`
+test pins each label map against its tuple in both directions, so a label for a
+value that cannot exist and a live value with no label both fail the suite.
+`statusMaps.ts` is one of the byte-identical shared-dupe pairs
+(`scripts/check-shared-dupes.sh`), so mirror the edit to both apps.
 
 ---
 
@@ -411,6 +449,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 39 | Portal metrics page: LEAD/PROTECT module analytics sections (training completion, reviews, absences, employee doc expiry) |
 | 40 | Admin clients list: per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
 | 41 | **Referral pipeline** (migration 077): hourly cron reads job-board applicants from Manatal per referral-enabled role, gates them (country → IvyLens scan → mandatory-criteria veto → score) and emails qualifiers a partner referral link via Resend. Admin `/referrals` funnel + review queue; config panel on the requisition page. See the section below. |
+| 42 | **Enum alignment** (migration 078): fixed three live sites writing/reading enum values the database refuses (`'shared'`, `'pending_approval'`, `'handbook'`). `statusMaps.ts` becomes the single vocabulary source with `as const` tuples + derived unions; `CLIENT_STATUS_STYLE` de-duplicated from four copies; portal badge/metrics/offer queries made `shared`-aware. |
 
 ---
 

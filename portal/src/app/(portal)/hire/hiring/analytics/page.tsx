@@ -7,7 +7,7 @@ import { TrendingUp, Clock, Users, CheckCircle2, AlertTriangle, BarChart3 } from
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
 
-import { HIRING_STAGE_LABELS as STAGE_LABELS } from '@/lib/ui/statusMaps';
+import { HIRING_STAGE_LABELS as STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
 const STAGE_ORDER = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer', 'filled', 'cancelled'];
 const FRICTION_COLORS: Record<string, string> = {
@@ -141,7 +141,7 @@ export default async function HiringAnalyticsPage() {
                 {STAGE_ORDER.filter(s => stageCounts[s]).map(s => (
                   <div key={s}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{STAGE_LABELS[s]}</span>
+                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{labelFor(STAGE_LABELS, s)}</span>
                       <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{stageCounts[s]}</span>
                     </div>
                     <Bar pct={(stageCounts[s] / maxStageCount) * 100} color="var(--purple)" />
