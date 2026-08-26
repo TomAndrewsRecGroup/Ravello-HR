@@ -450,6 +450,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 40 | Admin clients list: per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
 | 41 | **Referral pipeline** (migration 077): hourly cron reads job-board applicants from Manatal per referral-enabled role, gates them (country → IvyLens scan → mandatory-criteria veto → score) and emails qualifiers a partner referral link via Resend. Admin `/referrals` funnel + review queue; config panel on the requisition page. See the section below. |
 | 42 | **Enum alignment** (migration 078): fixed three live sites writing/reading enum values the database refuses (`'shared'`, `'pending_approval'`, `'handbook'`). `statusMaps.ts` becomes the single vocabulary source with `as const` tuples + derived unions; `CLIENT_STATUS_STYLE` de-duplicated from four copies; portal badge/metrics/offer queries made `shared`-aware. |
+| 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
 
 ---
 
@@ -543,3 +544,74 @@ orchestrates, decides, emails and tracks.
 (previously portal-only). `MANATAL_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM` and
 `CRON_SECRET` are already set.
 
+
+---
+
+## Foundations sweep (Phase 43)
+
+Nine findings from a full review of both apps, each fixed with a guard
+where a guard was possible. The guards matter more than the fixes: every
+one of these defects compiled, rendered and reported success.
+
+### The four CI guards — run them before merging
+
+```
+bash scripts/check-shared-dupes.sh         # 13 byte-identical pairs across the two apps
+bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
+bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
+bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
+```
+
+All four run in `.github/workflows/ci.yml` alongside tsc, tests and a
+production build of both apps. Each is a **ratchet or an invariant**, not
+a lint — a new violation fails, an existing one is either listed or
+already zero.
+
+### What each finding was, and the trap in it
+
+- **RLS (079, 080).** 97 legacy policies dropped. Postgres ORs permissive
+  policies, so **the weakest policy on a table decides** — a superseded
+  policy left behind is not dead code, it is the live grant. Note
+  `is_tps_staff()` is `tps_admin` ONLY despite what Phase 30 claimed, so
+  it is the NARROWER of the two staff predicates; the drop direction was
+  chosen on that measurement, not on the docs. `rls_policy_audit()`
+  reports the current state.
+- **Paged reads (`lib/supabase/paged.ts`, shared).** `readAllPages()`
+  walks 1,000-row windows and **reports `truncated`** rather than
+  presenting a partial read as complete. A `.limit(5000)` is not a large
+  read, it is a silently clipped one — see the PostgREST section above.
+- **Validation (`lib/validation/`, shared).** Bounded field types +
+  `parseBody`. Zod chain order is load-bearing: `.max()` MUST come before
+  `.toLowerCase()` or `.refine()`, which return a `ZodEffects` that has no
+  `.max()`.
+- **Error visibility (`lib/supabase/instrument.ts`, shared).** A Proxy
+  intercepting only `then`, so every discarded `{ error }` is reported
+  centrally instead of being fixed at 114 call sites. Sentry is inert
+  without a DSN; **no session replay** — it would record employee, salary
+  and absence data — and `sendDefaultPii: false`.
+- **Rate limiting (`lib/rateLimit.ts`, shared).** Five named `limiters`.
+  Keyed by **user id, falling back to IP**: IP alone puts a whole office
+  behind one NAT in one bucket.
+- **Vendor resilience (`lib/http/resilient.ts`).** Full-jitter backoff, a
+  per-vendor circuit breaker, and `Retry-After` honoured to a 60s cap.
+  **Writes are not retried** unless `retryOnWrite` is passed, and a 4xx
+  does not count against the breaker — a bad request is our fault, not
+  the vendor being down.
+- **Navigation (`lib/ui/navMatch.ts`).** One winner across all sidebar
+  groups by longest segment-boundary match. Independent per-item prefix
+  checks highlighted two items on `/hiring/templates` and none on
+  `/clients/<id>`. Three finished pages (`/candidates`, `/feature-flags`,
+  `/roadmap`) had no link from anywhere; the guard above stops the next.
+- **Breadcrumbs + accessibility.** `Breadcrumbs.tsx` never renders a raw
+  id and never links the current page. Global `:focus-visible` and
+  `prefers-reduced-motion` (collapsed to 0.01ms, not removed, so
+  animation-end handlers still fire).
+
+### The rule these share
+
+**A comment asserting something about callers, coverage or reachability
+is not a check.** Every defect here was invisible to `tsc`, to the build
+and to the test suite, because the code was valid and the page rendered.
+Assert the thing that was actually wrong — which route highlighted, which
+error was reported, how many round trips — and reintroduce the bug to
+watch the test fail before trusting it.
