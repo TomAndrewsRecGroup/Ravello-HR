@@ -7,11 +7,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Building2, Briefcase, Users,
-  FolderOpen, LifeBuoy, LogOut,
-  Inbox, BarChart3, BookOpen, ShieldCheck, PoundSterling, Radio, UserPlus,
-  X, TrendingUp, FileText, CheckSquare, Rss, Gauge,
-  ChevronDown, ChevronRight, Radar, Activity, Target, Newspaper, Trophy, ClipboardList, Mail,
+  Activity,
+  BarChart3,
+  BookOpen,
+  Briefcase,
+  Building2,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  FolderOpen,
+  Gauge,
+  Inbox,
+  LayoutDashboard,
+  LifeBuoy,
+  LogOut,
+  Mail,
+  Newspaper,
+  PoundSterling,
+  Radar,
+  Radio,
+  Rss,
+  Send,
+  ShieldCheck,
+  Target,
+  TrendingUp,
+  Trophy,
+  UserPlus,
+  Users,
+  X,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 
@@ -63,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy },
       { href: '/dev-plans',            label: 'Development Plans',    icon: ClipboardList },
+      { href: '/referrals',            label: 'Referrals',            icon: Send },
     ],
   },
   {

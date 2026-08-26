@@ -55,7 +55,7 @@ export interface ManatalMatch {
 async function manatalFetch(
   path: string,
   params?: Record<string, string>,
-  options?: { method?: string; body?: unknown; baseUrl?: string },
+  options?: { method?: string; body?: unknown; baseUrl?: string; noCache?: boolean },
 ): Promise<any> {
   if (!API_KEY) {
     lastError = { status: 0, message: 'MANATAL_API_KEY not configured', path };
@@ -67,7 +67,14 @@ async function manatalFetch(
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const method = options?.method ?? 'GET';
-  const cacheConfig = method === 'GET' ? { next: { revalidate: 60 } } : { cache: 'no-store' as const };
+  // GETs are cached for a minute by default, which suits the portal's
+  // pipeline view. Background jobs MUST pass noCache: a cached
+  // candidate payload can serve an already-expired presigned resume
+  // URL, and a 403 on that link is indistinguishable from a CV with
+  // nothing in it. See getManatalCandidate below.
+  const cacheConfig = method === 'GET' && !options?.noCache
+    ? { next: { revalidate: 60 } }
+    : { cache: 'no-store' as const };
 
   try {
     const res = await fetch(url.toString(), {
@@ -140,6 +147,144 @@ export async function updateMatchStage(matchId: number, stageId: number): Promis
     body:   { stage: { id: stageId } },
   });
   return data as ManatalMatch | null;
+}
+
+/* ─── Candidate read surface (Manatal Open API v3) ───────── */
+//
+// The referral pipeline (admin/src/app/api/cron/referral-scan) reads
+// job-board applicants through here. v3 is required: the v1 candidate
+// payload omits `resume`, the parsed `skills[]` and `candidate_location`,
+// which are the three fields the scan depends on.
+//
+// Every function below passes noCache. These are background reads and
+// a stale payload is worse than a slow one — see getManatalCandidate.
+
+export interface ManatalCandidateSkill {
+  skill:      number;
+  skill_name: string;
+  score:      number;
+  source:     string;
+}
+
+export interface ManatalCandidate {
+  id:                 number;
+  external_id:        string | null;
+  full_name:          string;
+  email:              string | null;
+  phone_number:       string | null;
+  /** PRESIGNED CloudFront URL. Short-lived — see getManatalCandidate. */
+  resume:             string | null;
+  address:            string | null;
+  /** Free text. Often a city with no country ("Ndola, Zambia",
+   *  "United Kingdom", or just "Manchester"). The country gate must
+   *  treat an unrecognised value as UNKNOWN, never as approved. */
+  candidate_location: string | null;
+  latest_degree:      string | null;
+  latest_university:  string | null;
+  current_company:    string | null;
+  current_position:   string | null;
+  description:        string | null;
+  skills:             ManatalCandidateSkill[];
+  candidate_tags:     unknown[];
+  candidate_industries: unknown[];
+  source_type:        string | null;
+  /** Stamped by Manatal when the applicant submitted the application. */
+  consent:            boolean | null;
+  consent_date:       string | null;
+  created_at:         string;
+  updated_at:         string;
+}
+
+export interface ManatalExperience {
+  id:           number;
+  title:        string | null;
+  company_name: string | null;
+  description:  string | null;
+  start_date:   string | null;
+  end_date:     string | null;
+}
+
+export interface ManatalEducation {
+  id:           number;
+  degree:       string | null;
+  school_name:  string | null;
+  field_of_study: string | null;
+  start_date:   string | null;
+  end_date:     string | null;
+}
+
+/** GET /candidates/{id}/ — the ONLY source of a usable `resume` URL.
+ *
+ *  ⚠ `resume` is a presigned CloudFront link whose signature expires
+ *  roughly ONE HOUR after this call. Measured against the live account
+ *  on 2026-08-26: Expires was 59 minutes ahead at read time.
+ *
+ *  So: fetch the PDF inside the same request that called this, and
+ *  never persist the URL for later use. An expired link answers 403,
+ *  and because CV text is only ever used as scan input, an unhandled
+ *  403 does not look like an error — it looks like a candidate whose
+ *  CV said nothing, and scores them accordingly. That is why
+ *  buildScanText records which source it actually used.
+ */
+export async function getManatalCandidate(candidateId: string | number): Promise<ManatalCandidate | null> {
+  const data = await manatalFetch(`/candidates/${candidateId}/`, undefined, {
+    baseUrl: WRITE_API_URL,
+    noCache: true,
+  });
+  if (!data?.id) return null;
+  return data as ManatalCandidate;
+}
+
+/** GET /candidates/?created_at__gte=… — a page of recent applicants.
+ *  Used for backfill and diagnostics; the cron drives off /matches/
+ *  instead, because that is what ties an applicant to a job. */
+export async function getManatalCandidatesSince(
+  sinceIso: string,
+  opts?: { pageSize?: number; page?: number },
+): Promise<ManatalCandidate[]> {
+  const params: Record<string, string> = {
+    created_at__gte: sinceIso,
+    page_size:       String(opts?.pageSize ?? 100),
+  };
+  if (opts?.page) params.page = String(opts.page);
+  const data = await manatalFetch('/candidates/', params, {
+    baseUrl: WRITE_API_URL,
+    noCache: true,
+  });
+  return (data?.results ?? []) as ManatalCandidate[];
+}
+
+/** GET /matches/?job_id=… — every applicant attached to one job.
+ *  This is the candidate→role link the pipeline runs on, so a role
+ *  with no Manatal job id can never pull in applicants. */
+export async function getManatalMatchesForJob(
+  jobId: string,
+  opts?: { pageSize?: number },
+): Promise<ManatalMatch[]> {
+  const data = await manatalFetch('/matches/', {
+    job_id:    jobId,
+    page_size: String(opts?.pageSize ?? 200),
+  }, { baseUrl: WRITE_API_URL, noCache: true });
+  return (data?.results ?? []) as ManatalMatch[];
+}
+
+/** Experience + education rows, used to thicken the fallback scan
+ *  text when the CV PDF could not be read. Best-effort: an empty
+ *  array degrades the blob, it does not fail the scan. */
+export async function getManatalCandidateExperiences(candidateId: string | number): Promise<ManatalExperience[]> {
+  const data = await manatalFetch(`/candidates/${candidateId}/experiences/`, { page_size: '50' }, {
+    baseUrl: WRITE_API_URL,
+    noCache: true,
+  });
+  return (data?.results ?? []) as ManatalExperience[];
+}
+
+export async function getManatalCandidateEducations(candidateId: string | number): Promise<ManatalEducation[]> {
+  const data = await manatalFetch(`/candidates/${candidateId}/educations/`, { page_size: '50' }, {
+    baseUrl: WRITE_API_URL,
+    noCache: true,
+  });
+  return (data?.results ?? []) as ManatalEducation[];
 }
 
 /* ─── Write surface — orgs + jobs (Manatal Open API v3) ─── */

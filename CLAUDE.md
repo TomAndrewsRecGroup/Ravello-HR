@@ -392,13 +392,13 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 15 | Hire phase enhancements: offer management, interview scheduling DB, hiring analytics, `interview_schedules` + `offers` migration |
 | 16-18 | LEAD module (training needs, performance reviews, skills matrix); PROTECT module (absence records, employee docs, HR dashboard); E-learning marketplace with Stripe |
 | 21 | IvyLens Friction Lens integration: proxy route `/api/friction/analyze`, updated `FrictionScoreCard`, JD text column in requisitions |
-| 22 | Admin LEAD + PROTECT tabs in client detail; `ManatalIdField` in Overview tab |
+| 22 | Admin LEAD + PROTECT tabs in client detail; Manatal ID field in the Overview tab (inside `ClientDetailTabs.tsx` — there is no separate component file) |
 | 23 | Interview scheduling UI in admin `RequisitionPanel`: full CRUD for `interview_schedules` |
 | 24 | Admin `/compliance` cross-client RAG dashboard: overdue/amber/on-track cards + employee doc expiry alerts |
 | 25 | Salary benchmarks: `salary_benchmarks` migration, admin CRUD page `/salary-benchmarks`, portal `/benchmarks` comparison page |
 | 26 | BD pipeline Kanban view: HTML5 drag-and-drop, 4 status columns, inline status update |
 | 28 | Reporting CSV exports: portal `/reports` with 4 export cards; admin `/reports` with cross-client exports |
-| 29 | Manatal ATS integration: `manatal.ts` client lib, proxy routes `/api/manatal/jobs` + `/api/manatal/pipeline`; `manatal_client_id` column on companies |
+| 29 | Manatal ATS integration: `manatal.ts` client lib, portal proxy routes `/api/manatal/matches` + `/api/manatal/matches/move-stage`; `manatal_client_id` column on companies |
 | 30 | RLS audit fixes: `is_ravello_staff()` corrected to include `tps_client`; 8 policies rewritten; client insert policies tightened |
 | 31 | Feature flag toggles expanded to include LEAD, PROTECT, Learning, Benchmarks; Manatal ATS pipeline surfaced in portal hiring page |
 | 32 | Admin dashboard enhanced with PROTECT alerts (overdue compliance, expiring docs, pending absences, open service requests) |
@@ -410,6 +410,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 38 | Auto-seed standard compliance items + welcome action when BD company converted to client |
 | 39 | Portal metrics page: LEAD/PROTECT module analytics sections (training completion, reviews, absences, employee doc expiry) |
 | 40 | Admin clients list: per-client health indicators (active roles, open tickets, overdue compliance) with parallel data fetching |
+| 41 | **Referral pipeline** (migration 077): hourly cron reads job-board applicants from Manatal per referral-enabled role, gates them (country → IvyLens scan → mandatory-criteria veto → score) and emails qualifiers a partner referral link via Resend. Admin `/referrals` funnel + review queue; config panel on the requisition page. See the section below. |
 
 ---
 
@@ -423,3 +424,83 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 6. **New feature-flag-gated pages check `flags.X === false` not `!flags.X`**
 7. **New DB tables go in a new migration file in `supabase/migrations/`**
 8. **Commit and push after every phase**
+
+---
+
+## Referral pipeline (Phase 41)
+
+Refers job-board applicants on to an external partner (first use: Micro1) and
+tracks the funnel to a referral fee. Each system has one job: **Manatal** is
+intake and job-board distribution, **IvyLens** scores, **the People System**
+orchestrates, decides, emails and tracks.
+
+`admin/src/lib/referral/` — `gate.ts` (pure decision logic), `cvText.ts`,
+`ivylensScan.ts`, `pipeline.ts` (the one processing path), `statusMeta.ts`,
+`types.ts`. Cron at `admin/src/app/api/cron/referral-scan/route.ts`, hourly.
+
+### Rules that keep it correct
+
+- **Manatal is READ-ONLY.** Never write back — no note, no stage move. One
+  writer for a candidate's status means no second vocabulary to drift.
+- **The Manatal `resume` URL is presigned and expires in ~1 hour.** Measured
+  2026-08-26: 59 minutes. Read the candidate fresh (`getManatalCandidate`,
+  which passes `noCache`) and fetch the PDF in the same request. Never persist
+  the URL — that is why `candidates.cv_url` is left null here. An expired link
+  returns 403, and since CV text is only ever scan input, an unhandled 403 does
+  not look like an error: it looks like a candidate whose CV said nothing.
+  `referral_applications.scan_source` records which text was actually scored
+  (`cv_pdf` vs `manatal_parsed`) and the UI shows it, so a thin scan is
+  **visibly** thin. A rising `manatal_parsed` share means extraction is broken.
+- **Absence of evidence is a FAIL, not a pass.** A mandatory criterion passes
+  only on a `skill_matches[]` entry with `found === true` and sufficient
+  confidence. Absent, `found: false`, or `found: undefined` all fail. Inverting
+  this default is exactly the failure the feature exists to prevent — a
+  candidate scoring 91% on adjacent experience who has never touched the
+  mandatory skill. Mutation-tested.
+- **An empty `approved_countries` refuses everyone.** The country gate fails
+  CLOSED because a wrong pass emails a stranger in the operator's name. The
+  config API refuses to *enable* a role with an empty list.
+- **Gate order is country → [scan] → criteria veto → score.** Country genuinely
+  runs first and short-circuits, so an ineligible applicant costs zero AI. The
+  criteria cannot literally precede the scan (they are derived from it), so they
+  act as a veto over the score — which is the wanted behaviour.
+- **`dry_run` defaults TRUE.** IvyLens's `POST /api/partner/scans/run` returns
+  the RAW model score, skipping the objective-anchor blend its internal
+  Candidate Match applies, and IvyLens's own `docs/CANDIDATE_MATCH_MODEL.md`
+  records that scorer as unreliable at the margins. 85/75 are starting guesses.
+  Run dry for the first 100-200 applicants and compare the distribution against
+  your own read before turning it off.
+- **Idempotency is the DB.** `UNIQUE (manatal_candidate_id, requisition_id)` on
+  `referral_applications`; `processRole` drops anyone already holding a row
+  before doing any work. Re-invoking the cron immediately is a no-op — which is
+  how you verify it.
+- **Only advance to `email_sent` when the send actually succeeded.**
+  `sendEmail()` returns null rather than throwing; a swallowed failure would
+  mark somebody emailed who was not, and the idempotency guard would then stop
+  us ever retrying them. A failed send stays `qualified` and visibly outstanding.
+- **Only downstream stages are hand-settable** (`MANUAL_STATUSES`). Letting a
+  human move a row back into a pipeline-owned status would put the email record
+  and the idempotency guard into disagreement about whether anyone was contacted.
+- **Every skip reason is counted** in the cron's response. "0 emailed" with no
+  breakdown is the state someone would otherwise have to debug from scratch.
+
+### Setup (manual, per role)
+
+1. Micro1 org in Manatal; the People System company row is **Andrews Recruitment
+   Group** with `manatal_client_id` set by hand on the client Overview tab.
+2. Create the requisition, then **Publish to Manatal** — this sets
+   `requisitions.manatal_job_id`, which is what matches applicants to the role.
+3. Run the JD through the friction analyse route once so
+   `requisitions.ivylens_role_id` is populated; scans then pass a stable
+   `role_id` instead of re-sending JD text every call.
+4. Fill in the referral panel on the requisition page: partner name, referral
+   URL, thresholds, **approved countries**, mandatory criteria.
+5. The `IVYLENS_API_KEY` needs the **`candidate_scan.run`** partner scope.
+6. Leave dry run ON.
+
+### Env
+
+`IVYLENS_API_URL` / `IVYLENS_API_KEY` are now needed on the **admin** app too
+(previously portal-only). `MANATAL_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM` and
+`CRON_SECRET` are already set.
+

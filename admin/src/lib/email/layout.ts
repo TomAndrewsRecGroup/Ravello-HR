@@ -34,8 +34,13 @@ export const BRAND = {
  * preheader text shows in inbox previews ("from / subject / preheader…")
  * so it's worth setting per-email — it's the second-most important
  * marketing surface after the subject line.
+ *
+ * footerNote overrides the "you have an account with us" line. Set it
+ * whenever that sentence would be untrue of the recipient — a job
+ * applicant has no account, and an inaccurate reason-for-receipt line
+ * is both a deliverability signal and simply wrong.
  */
-export function wrapEmail(body: string, preheader?: string): string {
+export function wrapEmail(body: string, preheader?: string, footerNote?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,7 +77,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
         </tr>
       </table>
       <p style="margin:16px 0 0 0;font-size:11px;color:${BRAND.inkFaint};text-align:center;">
-        You received this email because you have an account with The People System.
+        ${footerNote ?? 'You received this email because you have an account with The People System.'}
       </p>
     </td>
   </tr>

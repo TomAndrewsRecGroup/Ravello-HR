@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import RequisitionPanel from './RequisitionPanel';
+import ReferralConfigPanel from '@/components/modules/ReferralConfigPanel';
 import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
@@ -45,7 +46,7 @@ function daysOpen(createdAt: string) {
 export default async function RequisitionDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
 
-  const [{ data: req }, { data: candidates }, { data: interviews }] = await Promise.all([
+  const [{ data: req }, { data: candidates }, { data: interviews }, { data: referralConfig }] = await Promise.all([
     supabase
       .from('requisitions')
       .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,companies(id,slug,name,manatal_client_id)')
@@ -61,6 +62,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
       .select('id,candidate_id,stage_number,stage_label,interview_type,scheduled_at,duration_mins,status,outcome,notes')
       .eq('requisition_id', params.id)
       .order('scheduled_at', { ascending: true }),
+    supabase
+      .from('referral_role_config')
+      .select('enabled,dry_run,partner_name,referral_url,email_process_note,auto_send_threshold,review_threshold,approved_countries,mandatory_criteria')
+      .eq('requisition_id', params.id)
+      .maybeSingle(),
   ]);
 
   if (!req) notFound();
@@ -240,7 +246,17 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               candidates={cands.map((c: any) => ({ id: c.id, full_name: c.full_name }))}
               initialInterviews={(interviews ?? []) as any[]}
             />
-          </div>
+          
+            {/* Referral pipeline configuration. Saving this row is what
+                makes the role a referral role — the hourly pipeline only
+                looks at requisitions that have one. */}
+            <ReferralConfigPanel
+              requisitionId={r.id}
+              hasManatalJob={Boolean(r.manatal_job_id)}
+              existing={(referralConfig as any) ?? null}
+            />
+
+</div>
 
           {/* ── Right: updater + friction ─────────────────── */}
           <div>
