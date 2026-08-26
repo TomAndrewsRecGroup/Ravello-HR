@@ -17,10 +17,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import {
   DEFAULT_BATCH_CAP,
+  RUN_BUDGET_MS,
   emptyTally,
   processRole,
   type RoleRow,
 } from '@/lib/referral/pipeline';
+import { breakerSnapshot } from '@/lib/http/resilient';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -85,7 +87,10 @@ async function run(req: NextRequest) {
     return NextResponse.json({ ran_at: ranAt, ...tally });
   }
 
-  const budget = { left: cap };
+  // Two ceilings: a candidate count and a wall clock. maxDuration is
+  // 300s and being killed mid-write loses the tally, which is what turns
+  // "0 emailed" into a mystery rather than a number.
+  const budget = { left: cap, deadline: Date.now() + RUN_BUDGET_MS };
 
   // Roles are processed in sequence rather than in parallel: they share
   // one Manatal rate-limit budget and one IvyLens partner key, and the
@@ -118,6 +123,7 @@ async function run(req: NextRequest) {
     (attempted > 0 && tally.scan_errors / attempted > 0.5) ||
     (tally.roles_considered === 0 && tally.roles_skipped > 0);
 
+  tally.vendor_breakers = breakerSnapshot();
   const payload = { ran_at: ranAt, cap, ...tally };
 
   console.log(JSON.stringify({

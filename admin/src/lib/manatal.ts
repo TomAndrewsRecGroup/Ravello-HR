@@ -16,6 +16,8 @@
 //   - the last error is captured for the caller to surface via
 //     lastManatalError() (mirrors lastEmailError() in lib/email).
 
+import { resilientFetch } from './http/resilient';
+
 const API_KEY       = process.env.MANATAL_API_KEY ?? '';
 const READ_API_URL  = process.env.MANATAL_API_URL ?? 'https://api.manatal.com/open/v1';
 const WRITE_API_URL = 'https://api.manatal.com/open/v3';
@@ -55,7 +57,7 @@ export interface ManatalMatch {
 async function manatalFetch(
   path: string,
   params?: Record<string, string>,
-  options?: { method?: string; body?: unknown; baseUrl?: string; noCache?: boolean },
+  options?: { method?: string; body?: unknown; baseUrl?: string; noCache?: boolean; timeoutMs?: number; deadline?: number },
 ): Promise<any> {
   if (!API_KEY) {
     lastError = { status: 0, message: 'MANATAL_API_KEY not configured', path };
@@ -76,17 +78,38 @@ async function manatalFetch(
     ? { next: { revalidate: 60 } }
     : { cache: 'no-store' as const };
 
-  try {
-    const res = await fetch(url.toString(), {
+  // Retried with jittered backoff and a per-vendor circuit breaker.
+  // Before this there was no retry at all: one 10s timeout and the call
+  // returned null, which the referral pipeline recorded as a scan error.
+  // A single transient 502 cost a candidate their referral.
+  //
+  // Writes (POST/PATCH) are NOT retried — a timed-out POST may have
+  // succeeded with the response lost, and repeating it would create a
+  // second job or a second organisation.
+  const { response: res, error: transportError } = await resilientFetch(
+    url.toString(),
+    {
       method,
       headers: {
         'Authorization': `Token ${API_KEY}`,
         'Content-Type':  'application/json',
       },
-      body:   options?.body ? JSON.stringify(options.body) : undefined,
-      signal: AbortSignal.timeout(10_000),
+      body: options?.body ? JSON.stringify(options.body) : undefined,
       ...cacheConfig,
-    });
+    } as RequestInit,
+    {
+      vendor:    'manatal',
+      timeoutMs: options?.timeoutMs ?? 15_000,
+      deadline:  options?.deadline,
+    },
+  );
+
+  try {
+    if (!res) {
+      lastError = { status: 0, message: transportError ?? 'transport error', path };
+      console.warn('[Manatal] call failed', { path, error: transportError });
+      return null;
+    }
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       let parsedMessage = body;
@@ -118,8 +141,9 @@ async function manatalFetch(
       return {};
     }
   } catch (err) {
-    lastError = { status: 0, message: (err as Error)?.message ?? 'transport error', path };
-    console.warn('[Manatal] fetch failed', err);
+    // resilientFetch never throws, so this now only guards body reading.
+    lastError = { status: 0, message: (err as Error)?.message ?? 'response read error', path };
+    console.warn('[Manatal] response read failed', err);
     return null;
   }
 }
@@ -226,10 +250,14 @@ export interface ManatalEducation {
  *  CV said nothing, and scores them accordingly. That is why
  *  buildScanText records which source it actually used.
  */
-export async function getManatalCandidate(candidateId: string | number): Promise<ManatalCandidate | null> {
+export async function getManatalCandidate(
+  candidateId: string | number,
+  opts?: { deadline?: number },
+): Promise<ManatalCandidate | null> {
   const data = await manatalFetch(`/candidates/${candidateId}/`, undefined, {
-    baseUrl: WRITE_API_URL,
-    noCache: true,
+    baseUrl:  WRITE_API_URL,
+    noCache:  true,
+    deadline: opts?.deadline,
   });
   if (!data?.id) return null;
   return data as ManatalCandidate;
@@ -259,12 +287,12 @@ export async function getManatalCandidatesSince(
  *  with no Manatal job id can never pull in applicants. */
 export async function getManatalMatchesForJob(
   jobId: string,
-  opts?: { pageSize?: number },
+  opts?: { pageSize?: number; deadline?: number },
 ): Promise<ManatalMatch[]> {
   const data = await manatalFetch('/matches/', {
     job_id:    jobId,
     page_size: String(opts?.pageSize ?? 200),
-  }, { baseUrl: WRITE_API_URL, noCache: true });
+  }, { baseUrl: WRITE_API_URL, noCache: true, deadline: opts?.deadline });
   return (data?.results ?? []) as ManatalMatch[];
 }
 

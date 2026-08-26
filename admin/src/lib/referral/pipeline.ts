@@ -26,6 +26,23 @@ import type { MandatoryCriterion, ReferralRoleConfig, ReferralStatus, ScanSource
  *  maxDuration and losing the whole batch. */
 export const DEFAULT_BATCH_CAP = 25;
 
+/** Wall-clock reserve. The cron's maxDuration is 300s; stopping at 255s
+ *  leaves room to finish the row in flight and write the tally. Being
+ *  killed at 300s mid-write loses the whole run's reporting, which is
+ *  how "0 emailed" becomes a mystery instead of a number. */
+export const RUN_BUDGET_MS = 255_000;
+
+export interface RunBudget {
+  /** Candidates still allowed this run. */
+  left: number;
+  /** Absolute epoch-ms ceiling for the whole run. */
+  deadline: number;
+}
+
+export function budgetExhausted(budget: RunBudget): boolean {
+  return budget.left <= 0 || Date.now() >= budget.deadline;
+}
+
 export interface RoleRow extends ReferralRoleConfig {
   requisition: {
     id:              string;
@@ -58,6 +75,9 @@ export interface Tally {
   cv_pdf:             number;
   manatal_parsed:     number;
   remaining:          number;
+  /** Circuit-breaker state per vendor at the end of the run. An open
+   *  breaker explains a run that processed far fewer than it could. */
+  vendor_breakers:    Record<string, { failures: number; open: boolean }>;
   notes:              string[];
 }
 
@@ -68,7 +88,7 @@ export function emptyTally(): Tally {
     rejected_country: 0, rejected_criteria: 0, rejected_score: 0,
     scan_errors: 0, email_failures: 0, dry_run_skips: 0,
     no_consent_skips: 0, no_email_skips: 0,
-    cv_pdf: 0, manatal_parsed: 0, remaining: 0, notes: [],
+    cv_pdf: 0, manatal_parsed: 0, remaining: 0, vendor_breakers: {}, notes: [],
   };
 }
 
@@ -152,6 +172,7 @@ export async function processMatch(
   role: RoleRow,
   match: ManatalMatch,
   tally: Tally,
+  budget: RunBudget,
 ): Promise<void> {
   const manatalCandidateId = String(match.candidate?.id ?? '');
   if (!manatalCandidateId) {
@@ -178,7 +199,7 @@ export async function processMatch(
   try {
     // Read fresh: this is the only call that yields a live presigned
     // resume URL, and it expires about an hour after issue.
-    candidate = await getManatalCandidate(manatalCandidateId);
+    candidate = await getManatalCandidate(manatalCandidateId, { deadline: budget.deadline });
     if (!candidate) throw new Error('Candidate could not be read from Manatal.');
 
     // ── Country first, so an ineligible applicant costs no AI ──
@@ -195,6 +216,7 @@ export async function processMatch(
         candidateText: cv.text,
         roleId:        role.requisition.ivylens_role_id,
         roleText:      role.requisition.jd_text ?? role.requisition.description,
+        deadline:      budget.deadline,
       });
 
       if (!outcome.scan) {
@@ -351,7 +373,7 @@ export async function processRole(
   supabase: SupabaseClient,
   role: RoleRow,
   tally: Tally,
-  budget: { left: number },
+  budget: RunBudget,
 ): Promise<void> {
   const jobId = role.requisition.manatal_job_id;
   if (!jobId) {
@@ -369,7 +391,7 @@ export async function processRole(
 
   tally.roles_considered++;
 
-  const matches = await getManatalMatchesForJob(jobId);
+  const matches = await getManatalMatchesForJob(jobId, { deadline: budget.deadline });
   tally.matches_seen += matches.length;
   if (!matches.length) return;
 
@@ -392,8 +414,11 @@ export async function processRole(
   fresh.sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
 
   for (const match of fresh) {
-    if (budget.left <= 0) { tally.remaining++; continue; }
+    // Two ceilings, not one. The count stops a backlog swamping a single
+    // run; the clock stops a slow vendor doing the same. Hitting either
+    // leaves the rest queued for the next hour rather than half-written.
+    if (budgetExhausted(budget)) { tally.remaining++; continue; }
     budget.left--;
-    await processMatch(supabase, role, match, tally);
+    await processMatch(supabase, role, match, tally, budget);
   }
 }

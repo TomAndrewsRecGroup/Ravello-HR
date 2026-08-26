@@ -4,6 +4,7 @@
 // 429 handling (caller can fall back to stale cache), request timeouts.
 
 import { createClient } from '@supabase/supabase-js';
+import { backoffDelay, parseRetryAfter } from './http/resilient';
 
 const API_URL = process.env.IVYLENS_API_URL ?? '';
 const API_KEY = process.env.IVYLENS_API_KEY ?? '';
@@ -13,6 +14,13 @@ interface FetchOptions {
   body?: any;
   timeout?: number;
   retries?: number;
+  /** Wait out a 429 rather than returning immediately. Interactive
+   *  callers want the fast answer so they can fall back to cache; a
+   *  background job would rather wait a few seconds than lose the
+   *  candidate. Off by default so no existing caller changes. */
+  waitOutRateLimit?: boolean;
+  /** Absolute epoch-ms ceiling for the whole call including retries. */
+  deadline?: number;
 }
 
 export interface IvylensResponse<T> {
@@ -32,7 +40,7 @@ export async function ivylensRequest<T = any>(
   path: string,
   opts: FetchOptions = {},
 ): Promise<IvylensResponse<T>> {
-  const { method = 'GET', body, timeout = 20_000, retries = 3 } = opts;
+  const { method = 'GET', body, timeout = 20_000, retries = 3, waitOutRateLimit = false, deadline } = opts;
   const started = Date.now();
 
   if (!API_URL) {
@@ -65,15 +73,31 @@ export async function ivylensRequest<T = any>(
       lastStatus = res.status;
       lastError  = (await res.text().catch(() => '')) || `HTTP ${res.status}`;
 
-      // 429: signal rate-limited so caller can use stale cache
+      // 429. An interactive caller wants to know immediately so it can
+      // serve stale cache. A background job would rather wait — losing a
+      // candidate to a rate limit we were told how to avoid is worse
+      // than a few seconds of latency nobody is watching.
       if (res.status === 429) {
+        const waitMs = parseRetryAfter(res.headers.get('retry-after'))
+          ?? backoffDelay(attempt, 1_000, 15_000);
+        const canWait = waitOutRateLimit
+          && attempt < retries
+          && (!deadline || Date.now() + waitMs + timeout <= deadline);
+
+        if (canWait) { await sleep(waitMs); continue; }
+
         const telemetry = recordCall(path, method, 429, Date.now() - started, true, lastError);
         return { data: null, error: lastError, status: 429, rate_limited: true, telemetry };
       }
 
-      // 5xx: retry with exponential backoff (2s, 4s, 8s)
+      // 5xx: retry with FULL JITTER rather than a fixed 2s/4s/8s ladder.
+      // Deterministic backoff synchronises retries across the candidates
+      // in a batch, so a wobbling service gets a thundering herd at
+      // exactly the moment it is least able to cope.
       if (res.status >= 500 && attempt < retries) {
-        await sleep(2_000 * Math.pow(2, attempt));
+        const delay = backoffDelay(attempt, 2_000, 8_000);
+        if (deadline && Date.now() + delay + timeout > deadline) break;
+        await sleep(delay);
         continue;
       }
 
@@ -83,7 +107,9 @@ export async function ivylensRequest<T = any>(
     } catch (err: any) {
       lastError = err?.message ?? 'Network error';
       if (attempt < retries) {
-        await sleep(2_000 * Math.pow(2, attempt));
+        const delay = backoffDelay(attempt, 2_000, 8_000);
+        if (deadline && Date.now() + delay + timeout > deadline) break;
+        await sleep(delay);
         continue;
       }
     }

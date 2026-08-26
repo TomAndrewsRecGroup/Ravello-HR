@@ -37,6 +37,9 @@ export interface ScanRequest {
   roleId?:   string | null;
   /** Fallback when the requisition has no ivylens_role_id yet. */
   roleText?: string | null;
+  /** Absolute epoch-ms ceiling, so a slow vendor cannot push the batch
+   *  past the cron's maxDuration and lose everything after it. */
+  deadline?: number;
 }
 
 export interface ScanOutcome {
@@ -72,6 +75,10 @@ export async function runCandidateScan(req: ScanRequest): Promise<ScanOutcome> {
     body,
     timeout: 45_000,
     retries: 2,
+    // Background job: waiting out a rate limit beats losing the
+    // candidate. Bounded by the run deadline the cron passes down.
+    waitOutRateLimit: true,
+    deadline: req.deadline,
   });
 
   if (!res.data) {
