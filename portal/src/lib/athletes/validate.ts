@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_BYTES } from '@/lib/uploadLimits';
 export interface AthleteFields {
   full_name?: string;
   email?: string | null;
@@ -19,7 +20,9 @@ export const CV_MIME_ALLOW = new Set([
 
 export const CV_EXT_ALLOW = new Set(['pdf', 'doc', 'docx', 'txt']);
 
-export const CV_MAX_BYTES = 10 * 1024 * 1024;
+// Vercel refuses a >4.5 MB request body at the edge, so a 10 MB ceiling
+// here was unreachable — see lib/uploadLimits.
+export const CV_MAX_BYTES = MAX_UPLOAD_BYTES;
 
 export function buildPatch(body: AthleteFields): Record<string, unknown> | { error: string } {
   const patch: Record<string, unknown> = {};

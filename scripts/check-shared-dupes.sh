@@ -21,6 +21,7 @@ PAIRS=(
   "admin/src/components/ui/AvatarInitials.tsx|portal/src/components/ui/AvatarInitials.tsx"
   "admin/src/components/ui/useModalShell.ts|portal/src/components/ui/useModalShell.ts"
   "admin/src/lib/athletes/validate.ts|portal/src/lib/athletes/validate.ts"
+  "admin/src/lib/uploadLimits.ts|portal/src/lib/uploadLimits.ts"
   "admin/src/lib/interests/validate.ts|portal/src/lib/interests/validate.ts"
   "admin/src/lib/ui/statusMaps.ts|portal/src/lib/ui/statusMaps.ts"
   "admin/src/lib/frictionLens.ts|portal/src/lib/frictionLens.ts"
