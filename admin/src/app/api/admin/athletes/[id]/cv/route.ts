@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { CV_MIME_ALLOW, CV_EXT_ALLOW, CV_MAX_BYTES } from '@/lib/athletes/validate';
+import { tooLargeMessage } from '@/lib/uploadLimits';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   if (file.size > CV_MAX_BYTES) {
-    return NextResponse.json({ error: 'file exceeds 10 MB limit' }, { status: 400 });
+    return NextResponse.json({ error: tooLargeMessage(file.size, 'The CV') }, { status: 413 });
   }
   if (!CV_MIME_ALLOW.has(file.type)) {
     return NextResponse.json({ error: `unsupported mime: ${file.type}` }, { status: 400 });

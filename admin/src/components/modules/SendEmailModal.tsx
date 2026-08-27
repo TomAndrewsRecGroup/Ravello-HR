@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { X, Send, Paperclip, Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { MAX_UPLOAD_BYTES, formatBytes, tooLargeMessage } from '@/lib/uploadLimits';
 import { useModalShell } from '@/components/ui/useModalShell';
 
 const TiptapEditor = dynamic(() => import('./TiptapEditor'), { ssr: false });
@@ -39,8 +40,6 @@ interface Props {
   onSent?:   (logId: string | null) => void;
 }
 
-const MAX_TOTAL = 25 * 1024 * 1024;
-
 export default function SendEmailModal({
   target, defaults = {}, smtpConfigured, smtpFromEmail, onClose, onSent,
 }: Props) {
@@ -71,7 +70,10 @@ export default function SendEmailModal({
     : null;
 
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
-  const tooBig = totalBytes > MAX_TOTAL;
+  // The HTML body rides in the same request, so it spends the same budget.
+  const bodyBytes  = new Blob([body]).size;
+  const requestBytes = totalBytes + bodyBytes;
+  const tooBig = requestBytes > MAX_UPLOAD_BYTES;
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -90,7 +92,10 @@ export default function SendEmailModal({
       return;
     }
     if (tooBig) {
-      setResult({ kind: 'err', text: 'Total attachments exceed the 25 MB limit.' });
+      setResult({
+        kind: 'err',
+        text: tooLargeMessage(requestBytes, 'The message and its attachments total'),
+      });
       return;
     }
     setSending(true);
@@ -232,7 +237,7 @@ export default function SendEmailModal({
               <span className="text-[11px]" style={{ color: tooBig ? 'var(--red)' : 'var(--ink-faint)' }}>
                 {files.length === 0
                   ? 'No files'
-                  : `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}${tooBig ? ' — over 25 MB' : ''}`}
+                  : `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}${tooBig ? ` — over the ${formatBytes(MAX_UPLOAD_BYTES)} limit` : ''}`}
               </span>
             </div>
             {files.length > 0 && (
@@ -282,8 +287,3 @@ export default function SendEmailModal({
   );
 }
 
-function formatBytes(b: number): string {
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  return `${(b / (1024 * 1024)).toFixed(2)} MB`;
-}

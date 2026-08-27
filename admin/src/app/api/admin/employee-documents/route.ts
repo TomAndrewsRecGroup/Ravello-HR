@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaff } from '@/lib/auth/requireStaff';
+import { MAX_UPLOAD_BYTES, tooLargeMessage } from '@/lib/uploadLimits';
 
 // POST /api/admin/employee-documents
 // Multipart upload from the admin client profile → PROTECT tab.
@@ -11,7 +12,9 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 
 export const runtime = 'nodejs';
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+// Vercel refuses a >4.5 MB body at the edge, so a 10 MB ceiling here was
+// unreachable — see lib/uploadLimits.
+const MAX_BYTES = MAX_UPLOAD_BYTES;
 
 const ALLOWED_MIME = new Set([
   'application/pdf',
@@ -46,7 +49,9 @@ export async function POST(request: NextRequest) {
   if (!employee_name) return NextResponse.json({ error: 'employee_name is required' }, { status: 400 });
   if (!(file instanceof File)) return NextResponse.json({ error: 'file is required' }, { status: 400 });
   if (file.size === 0)    return NextResponse.json({ error: 'File is empty' }, { status: 400 });
-  if (file.size > MAX_BYTES) return NextResponse.json({ error: 'File exceeds 10 MB limit' }, { status: 400 });
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: tooLargeMessage(file.size) }, { status: 413 });
+  }
   if (!ALLOWED_MIME.has(file.type)) {
     return NextResponse.json({ error: 'Only PDF or image files are allowed' }, { status: 400 });
   }

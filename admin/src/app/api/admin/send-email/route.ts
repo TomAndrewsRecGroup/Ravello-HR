@@ -4,6 +4,7 @@ import { parseForm } from '@/lib/validation/parseForm';
 import { email as emailField, htmlBody, optionalUuid, shortText, uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
+import { MAX_UPLOAD_BYTES, formatBytes, tooLargeMessage } from '@/lib/uploadLimits';
 import { auditLog } from '@/lib/audit';
 import { sendEmail, wrapEmail, lastEmailError } from '@/lib/email';
 import {
@@ -16,8 +17,12 @@ import {
 export const runtime    = 'nodejs';
 export const maxDuration = 60;
 
-const ATTACHMENT_TOTAL_CAP = 25 * 1024 * 1024;     // 25 MB across all files
-const ATTACHMENT_FILE_CAP  = 15 * 1024 * 1024;     // single-file cap, slightly under
+// Ceilings live in lib/uploadLimits — Vercel refuses a >4.5 MB body at the
+// edge before this handler runs, so the 15 MB / 25 MB caps that used to sit
+// here were unreachable. These are a backstop (and the honest number the UI
+// quotes); on Vercel the platform refuses first.
+const ATTACHMENT_TOTAL_CAP = MAX_UPLOAD_BYTES;
+const ATTACHMENT_FILE_CAP  = MAX_UPLOAD_BYTES;
 
 const TARGET_TYPES = new Set(['athlete', 'company', 'candidate'] as const);
 type TargetType = 'athlete' | 'company' | 'candidate';
@@ -83,11 +88,15 @@ export async function POST(req: NextRequest) {
     if (!key.startsWith('attachment')) continue;
     if (!(value instanceof File))      continue;
     if (value.size > ATTACHMENT_FILE_CAP) {
-      return NextResponse.json({ error: `Attachment "${value.name}" exceeds 15 MB limit` }, { status: 413 });
+      return NextResponse.json({
+        error: tooLargeMessage(value.size, `Attachment "${value.name}"`),
+      }, { status: 413 });
     }
     totalBytes += value.size;
     if (totalBytes > ATTACHMENT_TOTAL_CAP) {
-      return NextResponse.json({ error: 'Total attachments exceed 25 MB limit' }, { status: 413 });
+      return NextResponse.json({
+        error: tooLargeMessage(totalBytes, 'The message and its attachments total'),
+      }, { status: 413 });
     }
     const buf = Buffer.from(await value.arrayBuffer());
     attachments.push({ filename: value.name, content: buf, contentType: value.type || undefined });
@@ -220,6 +229,3 @@ export async function POST(req: NextRequest) {
     sender_email: senderEmail,
   });
 }
-
-// Helper so the validation lines stay one-per-rule.
-const status400 = { status: 400 } as const;

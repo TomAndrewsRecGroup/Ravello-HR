@@ -10,6 +10,7 @@ import {
 import AvatarInitials from '@/components/ui/AvatarInitials';
 import SendEmailButton from '@/components/modules/SendEmailButton';
 import { openAthleteCv } from './openCv';
+import { MAX_UPLOAD_BYTES, tooLargeMessage } from '@/lib/uploadLimits';
 import type {
   AthleteRow, InterestRow, PartnerRow, TrainingInterestRow, TrainingProviderRow,
 } from './types';
@@ -179,8 +180,8 @@ export default function AthletesClient({
   async function create() {
     if (!draft.company_id) { setError('Pick a client.'); return; }
     if (!draft.full_name.trim()) { setError('Name is required.'); return; }
-    if (cvKindNew === 'file' && cvFileNew && cvFileNew.size > 10 * 1024 * 1024) {
-      setError('CV file exceeds 10 MB limit.'); return;
+    if (cvKindNew === 'file' && cvFileNew && cvFileNew.size > MAX_UPLOAD_BYTES) {
+      setError(tooLargeMessage(cvFileNew.size, 'The CV')); return;
     }
     setSaving(true);
     setError('');
@@ -246,8 +247,8 @@ export default function AthletesClient({
   // file, then updates local state so the new CV link appears
   // without a hard refresh.
   async function uploadCvForAthlete(athleteId: string, file: File) {
-    if (file.size > 10 * 1024 * 1024) {
-      alert('CV file exceeds 10 MB limit.');
+    if (file.size > MAX_UPLOAD_BYTES) {
+      alert(tooLargeMessage(file.size, 'The CV'));
       return;
     }
     setBusyFor(athleteId, true);
