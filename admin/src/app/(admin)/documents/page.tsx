@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import FileLink from '@/components/modules/FileLink';
 import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
@@ -14,7 +15,7 @@ export default async function AdminDocumentsPage() {
   const supabase = createServerSupabaseClient();
   const { data: docs } = await readAllPages<any>((from, to) => supabase
     .from('documents')
-    .select('id,name,category,version,review_due_at,file_url,file_size,created_at,companies(name)')
+    .select('id,name,category,version,review_due_at,file_path,file_url,file_size,created_at,companies(name)')
     .order('created_at', { ascending: false }).order('id').range(from, to));
 
   const all = docs ?? [];
@@ -51,9 +52,9 @@ export default async function AdminDocumentsPage() {
                         {urgent && <span className="ml-1 text-[10px]">⚠</span>}
                       </td>
                       <td>
-                        <a href={d.file_url} download target="_blank" rel="noopener noreferrer" className="btn-icon" aria-label="Download">
+                        <FileLink kind="document" id={d.id} storagePath={d.file_path} fileUrl={d.file_url} download className="btn-icon" aria-label="Download">
                           <Download size={14} />
-                        </a>
+                        </FileLink>
                       </td>
                     </tr>
                   );

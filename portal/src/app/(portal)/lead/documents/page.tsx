@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import FileLink from '@/components/modules/FileLink';
 import DocumentUpload from '@/components/modules/DocumentUpload';
 import {
   FolderOpen, Download, CheckCircle, ChevronDown,
@@ -185,16 +186,17 @@ export default async function DocumentsPage() {
                             </td>
                             <td>
                               <div className="flex items-center gap-2">
-                                <a
-                                  href={d.file_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <FileLink
+                                  kind="document"
+                                  id={d.id}
+                                  storagePath={d.file_path}
+                                  fileUrl={d.file_url}
                                   className="btn-secondary btn-sm flex items-center gap-1.5"
                                   aria-label="Download"
                                 >
                                   <Download size={12} />
                                   Download
-                                </a>
+                                </FileLink>
                               </div>
                             </td>
                           </tr>

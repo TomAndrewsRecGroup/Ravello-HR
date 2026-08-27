@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import { Plus, X, Loader2, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
+import FileLink from '@/components/modules/FileLink';
 
 interface EmpDoc {
   id: string;
@@ -11,6 +12,7 @@ interface EmpDoc {
   department: string | null;
   doc_type: string;
   title: string;
+  file_storage_path: string | null;
   file_url: string | null;
   expiry_date: string | null;
   status: string;
@@ -261,10 +263,10 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
                       </span>
                     </td>
                     <td>
-                      {d.file_url && (
-                        <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1">
+                      {(d.file_storage_path || d.file_url) && (
+                        <FileLink kind="employee_document" id={d.id} storagePath={d.file_storage_path} fileUrl={d.file_url} className="btn-ghost btn-sm flex items-center gap-1">
                           <ExternalLink size={12} /> View
-                        </a>
+                        </FileLink>
                       )}
                     </td>
                   </tr>

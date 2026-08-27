@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import FileLink from '@/components/modules/FileLink';
 import ExportCSVButton from '@/components/modules/ExportCSVButton';
 import { BarChart3, Download } from 'lucide-react';
 
@@ -21,7 +22,7 @@ export default async function ReportsPage() {
     { data: actions },
   ] = await Promise.all([
     supabase.from('companies').select('name').eq('id', companyId).single(),
-    supabase.from('reports').select('id,title,period,file_url,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+    supabase.from('reports').select('id,title,period,storage_path,file_url,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     supabase.from('requisitions').select('title,department,seniority,location,working_model,stage,salary_min,salary_max,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     supabase.from('candidates').select('full_name,email,requisition_id,client_status,approved_for_client,created_at').eq('company_id', companyId).eq('approved_for_client', true).order('created_at', { ascending: false }),
     supabase.from('compliance_items').select('title,category,status,due_date').eq('company_id', companyId).order('due_date', { ascending: true }),
@@ -150,15 +151,16 @@ export default async function ReportsPage() {
                       <td style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
                       <td style={{ color: 'var(--ink-faint)' }}>{new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td>
-                        <a
-                          href={r.file_url}
+                        <FileLink
+                          kind="report"
+                          id={r.id}
+                          storagePath={r.storage_path}
+                          fileUrl={r.file_url}
                           download
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className="btn-secondary btn-sm flex items-center gap-1.5"
                         >
                           <Download size={13} /> Download
-                        </a>
+                        </FileLink>
                       </td>
                     </tr>
                   ))}

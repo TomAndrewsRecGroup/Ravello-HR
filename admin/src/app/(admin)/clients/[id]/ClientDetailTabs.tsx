@@ -17,6 +17,7 @@ import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
 
 import { COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import FileLink from '@/components/modules/FileLink';
 /* ─── Helpers ─────────────────────────────────────── */
 
 const STAGE_BADGE: Record<string, string> = {
@@ -849,10 +850,10 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                         </td>
                         <td>
                           <div className="flex items-center gap-2">
-                            {d.file_url && (
-                              <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm flex items-center gap-1">
+                            {(d.file_path || d.file_url) && (
+                              <FileLink kind="document" id={d.id} storagePath={d.file_path} fileUrl={d.file_url} className="btn-ghost btn-sm flex items-center gap-1">
                                 <Download size={12} /> Download
-                              </a>
+                              </FileLink>
                             )}
                             {!isApproved && (
                               <button

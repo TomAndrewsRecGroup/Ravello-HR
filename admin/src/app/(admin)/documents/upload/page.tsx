@@ -48,14 +48,16 @@ function UploadInner() {
 
     if (uploadErr) { setError(uploadErr.message); setLoading(false); return; }
 
-    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
+    // No getPublicUrl: the `documents` bucket is private, so that URL
+    // could never resolve. `file_path` is the canonical reference and
+    // readers sign it on demand via /api/files/sign.
 
     const { data: { user } } = await supabase.auth.getUser();
     const { error: dbErr } = await supabase.from('documents').insert({
       company_id:     form.company_id,
       name:           form.name || file.name,
       category:       form.category,
-      file_url:       publicUrl,
+      file_path:      path,
       file_size:      file.size,
       version:        1,
       uploaded_by:    user?.id ?? '',

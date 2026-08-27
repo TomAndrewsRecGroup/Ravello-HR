@@ -6,6 +6,7 @@ import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, FileText, ExternalLink
 import { COMPLIANCE_STATUS_LABELS, COMPLIANCE_CATEGORY_LABELS, EMPLOYEE_DOC_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import AddComplianceItem from './AddComplianceItem';
 import RowActions from './RowActions';
+import FileLink from '@/components/modules/FileLink';
 
 export const metadata: Metadata = { title: 'Compliance Dashboard' };
 export const revalidate = 30;
@@ -42,7 +43,7 @@ export default async function AdminComplianceDashboard() {
       .order('due_date', { ascending: true }),
     supabase
       .from('employee_documents')
-      .select('id,company_id,employee_name,doc_type,title,file_url,expiry_date,status,companies(id, slug, name)')
+      .select('id,company_id,employee_name,doc_type,title,file_storage_path,file_url,expiry_date,status,companies(id, slug, name)')
       .not('expiry_date', 'is', null)
       .in('status', ['active', 'expired', 'pending_renewal'])
       .order('expiry_date', { ascending: true }),
@@ -166,10 +167,10 @@ export default async function AdminComplianceDashboard() {
                           {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
                         </td>
                         <td>
-                          {d.file_url ? (
-                            <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
+                          {(d.file_storage_path || d.file_url) ? (
+                            <FileLink kind="employee_document" id={d.id} storagePath={d.file_storage_path} fileUrl={d.file_url} className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
                               {d.title} <ExternalLink size={10} />
-                            </a>
+                            </FileLink>
                           ) : (
                             <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
                           )}

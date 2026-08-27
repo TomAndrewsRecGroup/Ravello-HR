@@ -66,18 +66,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Upload failed: ${upErr.message}` }, { status: 500 });
   }
 
-  // file_storage_path is the canonical reference (mig 062). file_url
-  // is retained for backward compat with existing readers but should
-  // not be used by new code — sign on demand via lib/storage/files.ts.
-  const { data: pub } = sb.storage.from('documents').getPublicUrl(path);
-  const file_url = pub?.publicUrl ?? null;
+  // file_storage_path is the canonical reference (mig 062). file_url used
+  // to be filled with a getPublicUrl() against this PRIVATE bucket "for
+  // backward compat" — a link that could never resolve. Every reader now
+  // signs the path on demand, so storing the dead URL was writing down a
+  // wrong answer for nobody. Left NULL; readers fall back to it only for
+  // rows that genuinely carry an operator-pasted external link.
 
   const { data: row, error: insErr } = await sb.from('employee_documents').insert({
     company_id,
     employee_name,
     doc_type,
     title:             title || file.name,
-    file_url,           // legacy compat
     file_storage_path: path,         // canonical
     file_size:         file.size,
     expiry_date,
@@ -91,5 +91,5 @@ export async function POST(request: NextRequest) {
   revalidatePath('/compliance');
   revalidateTag(`client:${company_id}`);
 
-  return NextResponse.json({ id: row?.id, file_url });
+  return NextResponse.json({ id: row?.id, file_storage_path: path });
 }

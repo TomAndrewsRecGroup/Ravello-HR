@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     case 'PROTECT': {
       const [{ data: absenceRecords }, { data: empDocs }] = await Promise.all([
         supabase.from('absence_records').select('id,employee_name,absence_type,start_date,end_date,status,days,created_at').eq('company_id', companyId).order('start_date', { ascending: false }),
-        supabase.from('employee_documents').select('id,employee_name,doc_type,expiry_date,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('employee_documents').select('id,employee_name,doc_type,title,file_storage_path,file_url,expiry_date,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
       ]);
       return NextResponse.json({ absenceRecords: absenceRecords ?? [], empDocs: empDocs ?? [] });
     }

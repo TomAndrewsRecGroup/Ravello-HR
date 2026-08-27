@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import FileLink from '@/components/modules/FileLink';
 import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
@@ -24,7 +25,7 @@ export default async function AdminReportsPage() {
   // total order two pages can be ordered differently, dropping or
   // duplicating rows across the boundary.
   const [reportsRes, companiesRes, reqs, cands, comp, tickets] = await Promise.all([
-    supabase.from('reports').select('id,title,period,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
+    supabase.from('reports').select('id,title,period,storage_path,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
     supabase.from('companies').select('id,slug,name').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('requisitions')
       .select('id,title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)')
@@ -186,14 +187,15 @@ export default async function AdminReportsPage() {
                           {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={r.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <FileLink
+                            kind="report"
+                            id={r.id}
+                            storagePath={r.storage_path}
+                            fileUrl={r.file_url}
                             className="btn-secondary btn-sm flex items-center gap-1.5 w-fit"
                           >
                             <ExternalLink size={12} /> Open
-                          </a>
+                          </FileLink>
                         </td>
                       </tr>
                     ))}

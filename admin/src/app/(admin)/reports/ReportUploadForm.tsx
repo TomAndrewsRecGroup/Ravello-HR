@@ -52,7 +52,8 @@ export default function ReportUploadForm({ companies }: Props) {
       return;
     }
 
-    let fileUrl = form.file_url;
+    let fileUrl: string | null = form.file_url || null;
+    let storagePath: string | null = null;
 
     // Upload file to Supabase Storage if mode=file
     if (mode === 'file') {
@@ -77,11 +78,14 @@ export default function ReportUploadForm({ companies }: Props) {
         .from('documents')
         .upload(path, file, { upsert: false });
       if (uploadErr) { setError(uploadErr.message); setLoading(false); return; }
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
-      fileUrl = urlData.publicUrl;
+      // The `documents` bucket is PRIVATE, so getPublicUrl() here returned
+      // a link that could never resolve. The path is the canonical
+      // reference now; readers sign it on demand via /api/files/sign.
+      storagePath = path;
+      fileUrl = null;
     }
 
-    if (!fileUrl) { setError('Please provide a file URL or upload a file.'); setLoading(false); return; }
+    if (!fileUrl && !storagePath) { setError('Please provide a file URL or upload a file.'); setLoading(false); return; }
 
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -90,6 +94,7 @@ export default function ReportUploadForm({ companies }: Props) {
       title:        form.title,
       period:       form.period || null,
       file_url:     fileUrl,
+      storage_path: storagePath,
       generated_by: user?.id,
     });
 

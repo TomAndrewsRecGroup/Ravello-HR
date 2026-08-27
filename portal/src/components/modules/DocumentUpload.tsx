@@ -85,15 +85,14 @@ export default function DocumentUpload({ companyId, userId, onUploaded }: Props)
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(filePath);
+    // No getPublicUrl: the `documents` bucket is private, so that URL
+    // could never resolve. `file_path` (already written below) is the
+    // canonical reference; readers sign it via /api/files/sign.
 
     const { error: insertErr } = await supabase.from('documents').insert({
       company_id:        companyId,
       name:              name || file.name,
       category:          uiCat.dbCat as any,
-      file_url:          publicUrl,
       file_path:         filePath,
       file_size:         file.size,
       uploaded_by:       userId,

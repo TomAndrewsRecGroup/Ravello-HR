@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
 import { ABSENCE_TYPE_LABELS, EMPLOYEE_DOC_TYPE_LABELS, ABSENCE_STATUS_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import FileLink from '@/components/modules/FileLink';
 interface Props {
   companyId: string;
   initialAbsenceRecords: any[];
@@ -230,10 +231,10 @@ export default function ProtectTab({ companyId, initialAbsenceRecords, initialEm
                         {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
                       </td>
                       <td>
-                        {d.file_url ? (
-                          <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
+                        {(d.file_storage_path || d.file_url) ? (
+                          <FileLink kind="employee_document" id={d.id} storagePath={d.file_storage_path} fileUrl={d.file_url} className="flex items-center gap-1 text-sm" style={{ color: 'var(--purple)' }}>
                             {d.title} <ExternalLink size={11} />
-                          </a>
+                          </FileLink>
                         ) : (
                           <span className="text-sm" style={{ color: 'var(--ink-soft)' }}>{d.title}</span>
                         )}
