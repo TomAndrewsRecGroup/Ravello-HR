@@ -42,6 +42,24 @@ export const REQUEST_SLACK = 100_000;
 /** The budget a request's file payload may actually spend. */
 export const MAX_UPLOAD_BYTES = REQUEST_BODY_CAP - REQUEST_SLACK;
 
+/**
+ * What a STAGED email attachment may weigh.
+ *
+ * An attachment now goes browser → Supabase Storage directly and never
+ * passes through a Vercel function, so `REQUEST_BODY_CAP` does not apply
+ * to it — only to the small JSON body that carries its path afterwards.
+ * This is the `email-attachments` bucket's own `file_size_limit`
+ * (migration 081) and the two MUST agree: the bucket rejects server-side
+ * with a storage error the operator never sees phrased usefully, so the
+ * browser has to refuse first with a message that names the number.
+ *
+ * Deliberately NOT raised further. Resend accepts more, but most
+ * receiving servers reject a message over ~10-25 MB, so a larger
+ * attachment would be accepted here and bounce at the far end — which
+ * is worse than being told no.
+ */
+export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+
 /** Human-readable size, for a message that has to name the real number. */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

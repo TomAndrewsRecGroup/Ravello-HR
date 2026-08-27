@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { X, Send, Paperclip, Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { MAX_UPLOAD_BYTES, formatBytes, tooLargeMessage } from '@/lib/uploadLimits';
+import { MAX_ATTACHMENT_BYTES, formatBytes, tooLargeMessage } from '@/lib/uploadLimits';
+import { ATTACHMENT_BUCKET, stagedAttachmentPath } from '@/lib/email/attachmentPaths';
 import { useModalShell } from '@/components/ui/useModalShell';
 
 const TiptapEditor = dynamic(() => import('./TiptapEditor'), { ssr: false });
@@ -59,6 +60,7 @@ export default function SendEmailModal({
   const [body,      setBody]      = useState(defaults.bodyHtml ?? '');
   const [sender,    setSender]    = useState<'smtp' | 'resend'>(smtpConfigured ? 'smtp' : 'resend');
   const [files,     setFiles]     = useState<File[]>([]);
+  const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [sending,   setSending]   = useState(false);
   const [result,    setResult]    = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
@@ -70,10 +72,11 @@ export default function SendEmailModal({
     : null;
 
   const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
-  // The HTML body rides in the same request, so it spends the same budget.
-  const bodyBytes  = new Blob([body]).size;
-  const requestBytes = totalBytes + bodyBytes;
-  const tooBig = requestBytes > MAX_UPLOAD_BYTES;
+  // Attachments go browser → Storage and never enter the request, so they
+  // are bounded by the bucket's own limit rather than the 4.5 MB Vercel
+  // request-body cap. Only the JSON body travels through the function, and
+  // body_html is capped at 200 KB by its own schema.
+  const tooBig = totalBytes > MAX_ATTACHMENT_BYTES;
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -94,26 +97,54 @@ export default function SendEmailModal({
     if (tooBig) {
       setResult({
         kind: 'err',
-        text: tooLargeMessage(requestBytes, 'The message and its attachments total'),
+        text: tooLargeMessage(totalBytes, 'The attachments total'),
       });
       return;
     }
     setSending(true);
     setResult(null);
     try {
-      const fd = new FormData();
-      fd.set('target_type', target.type);
-      fd.set('target_id',   target.id);
-      if (target.company_id) fd.set('company_id', target.company_id);
-      const profileId = target.profile_id ?? pickedProfileId;
-      if (profileId) fd.set('profile_id', profileId);
-      fd.set('to',        recipient);
-      fd.set('subject',   subject);
-      fd.set('body_html', body);
-      fd.set('sender',    sender);
-      files.forEach((f, i) => fd.append(`attachment-${i}`, f, f.name));
+      // ── Stage the attachments straight to Storage ──
+      // Browser → Supabase, never through a Vercel function, so the 4.5 MB
+      // request-body limit does not apply. RLS (migration 081) confines the
+      // write to `outbox/<my uid>/…` in the staff-only bucket.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setResult({ kind: 'err', text: 'Your session has expired. Reload and sign in again.' });
+        return;
+      }
 
-      const res = await fetch('/api/admin/send-email', { method: 'POST', body: fd });
+      const staged: Array<{ path: string; name: string; size: number; mime?: string }> = [];
+      for (const [i, f] of files.entries()) {
+        setUploading({ done: i, total: files.length });
+        const unique = `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`;
+        const path = stagedAttachmentPath(user.id, f.name, unique);
+        const { error: upErr } = await supabase.storage
+          .from(ATTACHMENT_BUCKET)
+          .upload(path, f, { upsert: false, contentType: f.type || undefined });
+        if (upErr) {
+          setResult({ kind: 'err', text: `Could not upload "${f.name}": ${upErr.message}` });
+          return;
+        }
+        staged.push({ path, name: f.name, size: f.size, mime: f.type || undefined });
+      }
+      setUploading(null);
+
+      const res = await fetch('/api/admin/send-email', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_type: target.type,
+          target_id:   target.id,
+          company_id:  target.company_id ?? undefined,
+          profile_id:  (target.profile_id ?? pickedProfileId) ?? undefined,
+          to:          recipient,
+          subject,
+          body_html:   body,
+          sender,
+          attachments: staged,
+        }),
+      });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setResult({ kind: 'err', text: json.error ?? `Send failed (${res.status})` });
@@ -127,6 +158,7 @@ export default function SendEmailModal({
       setResult({ kind: 'err', text: (e as Error).message });
     } finally {
       setSending(false);
+      setUploading(null);
     }
   }
 
@@ -237,7 +269,7 @@ export default function SendEmailModal({
               <span className="text-[11px]" style={{ color: tooBig ? 'var(--red)' : 'var(--ink-faint)' }}>
                 {files.length === 0
                   ? 'No files'
-                  : `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}${tooBig ? ` — over the ${formatBytes(MAX_UPLOAD_BYTES)} limit` : ''}`}
+                  : `${files.length} file${files.length === 1 ? '' : 's'} · ${formatBytes(totalBytes)}${tooBig ? ` — over the ${formatBytes(MAX_ATTACHMENT_BYTES)} limit` : ''}`}
               </span>
             </div>
             {files.length > 0 && (
@@ -279,7 +311,9 @@ export default function SendEmailModal({
             className="btn-cta btn-sm ml-auto"
           >
             {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            {sending ? 'Sending…' : 'Send'}
+            {uploading
+              ? `Uploading ${uploading.done + 1} of ${uploading.total}…`
+              : sending ? 'Sending…' : 'Send'}
           </button>
         </div>
       </div>

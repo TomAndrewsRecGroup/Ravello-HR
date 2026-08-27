@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
-import { parseForm } from '@/lib/validation/parseForm';
+import { parseBody } from '@/lib/validation/parseBody';
 import { email as emailField, htmlBody, optionalUuid, shortText, uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
-import { MAX_UPLOAD_BYTES, formatBytes, tooLargeMessage } from '@/lib/uploadLimits';
+import { MAX_ATTACHMENT_BYTES, tooLargeMessage } from '@/lib/uploadLimits';
+import { ATTACHMENT_BUCKET, checkStagedPath } from '@/lib/email/attachmentPaths';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { auditLog } from '@/lib/audit';
 import { sendEmail, wrapEmail, lastEmailError } from '@/lib/email';
 import {
@@ -17,12 +19,17 @@ import {
 export const runtime    = 'nodejs';
 export const maxDuration = 60;
 
-// Ceilings live in lib/uploadLimits — Vercel refuses a >4.5 MB body at the
-// edge before this handler runs, so the 15 MB / 25 MB caps that used to sit
-// here were unreachable. These are a backstop (and the honest number the UI
-// quotes); on Vercel the platform refuses first.
-const ATTACHMENT_TOTAL_CAP = MAX_UPLOAD_BYTES;
-const ATTACHMENT_FILE_CAP  = MAX_UPLOAD_BYTES;
+// Attachments do NOT ride in this request. The browser uploads each file
+// straight to the `email-attachments` bucket (migration 081) and sends only
+// its path; this route fetches the bytes server-side.
+//
+// That is the whole point: a browser→Storage upload never passes through a
+// Vercel function, so it is not bound by the 4.5 MB request-body limit that
+// the platform enforces at the EDGE — which is what turned a 5.7 MB
+// attachment into a bare 413 with no JSON body for the UI to explain.
+//
+// The body is now JSON. `body_html` is bounded at 200,000 characters, so the
+// request stays far under any platform limit whatever is attached.
 
 const TARGET_TYPES = new Set(['athlete', 'company', 'candidate'] as const);
 type TargetType = 'athlete' | 'company' | 'candidate';
@@ -34,7 +41,7 @@ type TargetType = 'athlete' | 'company' | 'candidate';
 // member's SMTP, attaches files from the multipart body, and
 // records the send in the email_log table for activity surfacing.
 //
-// Body is multipart/form-data because attachments are real files:
+// Body is JSON. Attachments arrive as storage paths, not bytes:
 //   target_type     'athlete' | 'company' | 'candidate'
 //   target_id       UUID of the recipient entity
 //   company_id      optional UUID — passed straight to the log
@@ -44,7 +51,8 @@ type TargetType = 'athlete' | 'company' | 'candidate';
 //   subject         email subject
 //   body_html       HTML body from the Tiptap editor
 //   sender          'resend' | 'smtp'
-//   attachment-*    one or more File parts
+//   attachments     [{ path, name, size, mime }] — staged in the
+//                   email-attachments bucket by the browser
 // This sends arbitrary HTML to an arbitrary address on behalf of the
 // business. The previous checks caught missing fields but never checked
 // that `to` was an email at all, and put no ceiling on subject or body.
@@ -57,7 +65,24 @@ const SendEmailSchema = z.object({
   subject:     shortText(300),
   body_html:   htmlBody(200_000),
   sender:      z.enum(['resend', 'smtp']).default('resend'),
+  // Staged attachments, by storage path. Bounded: a caller cannot make
+  // this route fetch an unbounded number of objects.
+  attachments: z.array(z.object({
+    path: z.string().min(1).max(512),
+    name: z.string().min(1).max(200),
+    size: z.number().int().nonnegative().max(MAX_ATTACHMENT_BYTES),
+    mime: z.string().max(200).optional(),
+  })).max(20).optional().default([]),
 });
+
+/** Service-role client. Bypasses RLS, so every path it is handed must have
+ *  cleared `checkStagedPath` against the CALLER's id first. */
+function storageClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase service credentials missing');
+  return createServiceClient(url, key, { auth: { persistSession: false } });
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireStaff();
@@ -68,9 +93,8 @@ export async function POST(req: NextRequest) {
   const rl = limiters.email.check(getUserRateLimitKey(req, auth.userId));
   if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
-  const parsed = await parseForm(req, SendEmailSchema);
+  const parsed = await parseBody(req, SendEmailSchema);
   if (!parsed.ok) return parsed.response;
-  const form = parsed.form!;
 
   const targetType = parsed.data.target_type;
   const targetId   = parsed.data.target_id;
@@ -81,26 +105,63 @@ export async function POST(req: NextRequest) {
   const bodyHtml   = parsed.data.body_html;
   const sender     = parsed.data.sender;
 
-  // ── Collect attachments ────────────────────────────────
+  // ── Fetch the staged attachments ───────────────────────
+  // Every path is checked against the CALLER's own id before the service
+  // role touches it. The service role bypasses RLS, so this check is the
+  // only thing standing between "attach my file" and "read any object in
+  // the bucket". Migration 081's RLS enforces the same rule on the upload
+  // and on any client-side read; a bypass needs both to be wrong at once.
+  const staged = parsed.data.attachments;
   const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = [];
   let totalBytes = 0;
-  for (const [key, value] of form.entries()) {
-    if (!key.startsWith('attachment')) continue;
-    if (!(value instanceof File))      continue;
-    if (value.size > ATTACHMENT_FILE_CAP) {
-      return NextResponse.json({
-        error: tooLargeMessage(value.size, `Attachment "${value.name}"`),
-      }, { status: 413 });
+
+  if (staged.length) {
+    let store;
+    try {
+      store = storageClient();
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }
-    totalBytes += value.size;
-    if (totalBytes > ATTACHMENT_TOTAL_CAP) {
-      return NextResponse.json({
-        error: tooLargeMessage(totalBytes, 'The message and its attachments total'),
-      }, { status: 413 });
+
+    for (const item of staged) {
+      const verdict = checkStagedPath(item.path, auth.userId);
+      if (!verdict.ok) {
+        // Loud: a refusal here is either a bug in our own uploader or
+        // somebody reaching for a file that is not theirs. Both are worth
+        // seeing in a log drain rather than inferring from a 400.
+        console.warn(JSON.stringify({
+          _audit: true, action: 'email.attachment.refused',
+          actor_id: auth.userId, reason: verdict.reason, path: item.path,
+        }));
+        return NextResponse.json({ error: `Attachment rejected: ${verdict.reason}` }, { status: 400 });
+      }
+
+      const { data: blob, error: dlErr } = await store.storage
+        .from(ATTACHMENT_BUCKET)
+        .download(item.path);
+      if (dlErr || !blob) {
+        return NextResponse.json({
+          error: `Could not read attachment "${item.name}" — it may have expired. Re-attach it and try again.`,
+        }, { status: 400 });
+      }
+
+      const buf = Buffer.from(await blob.arrayBuffer());
+      // Trust the BYTES, not the caller's `size`. A client that under-reports
+      // would otherwise walk past the ceiling.
+      totalBytes += buf.byteLength;
+      if (totalBytes > MAX_ATTACHMENT_BYTES) {
+        return NextResponse.json({
+          error: tooLargeMessage(totalBytes, 'The attachments total'),
+        }, { status: 413 });
+      }
+      attachments.push({
+        filename: item.name,
+        content: buf,
+        contentType: item.mime || undefined,
+      });
     }
-    const buf = Buffer.from(await value.arrayBuffer());
-    attachments.push({ filename: value.name, content: buf, contentType: value.type || undefined });
   }
+
   const attachmentMeta = attachments.map(a => ({
     name: a.filename,
     size: a.content.byteLength,
@@ -208,6 +269,21 @@ export async function POST(req: NextRequest) {
 
   if (errorMessage) {
     return NextResponse.json({ error: errorMessage, log_id: logRow?.id ?? null }, { status: 502 });
+  }
+
+  // The mail has gone, so the staged copies are dead weight. Best-effort:
+  // a failed delete cannot un-send anything and must not fail the request.
+  // Anything missed is swept by /api/cron/prune-email-attachments — the
+  // abandoned-modal case never reaches here at all, so the cron is the
+  // real guarantee and this is just the tidy path.
+  if (staged.length) {
+    try {
+      await storageClient().storage
+        .from(ATTACHMENT_BUCKET)
+        .remove(staged.map(a => a.path));
+    } catch (err) {
+      console.warn('[send-email] staged attachment cleanup failed', err);
+    }
   }
 
   auditLog({
