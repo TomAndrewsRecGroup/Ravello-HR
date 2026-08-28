@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: app, error: readErr } = await supabase
     .from('referral_applications')
     .select(`
-      id, status, candidate_id, company_id, requisition_id, status_history,
+      id, status, candidate_id, company_id, requisition_id, manatal_candidate_id, status_history,
       candidate:candidates!inner ( id, full_name, email ),
       requisition:requisitions!inner ( id, title ),
       config:referral_role_config!inner (
@@ -80,6 +80,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       roleTitle:   requisition.title,
       companyId:   app.company_id,
       candidateId: app.candidate_id,
+      // So an approved candidate gets the same per-candidate parameters
+      // in their link as one the cron sent automatically.
+      manatalCandidateId: (app as any).manatal_candidate_id ?? null,
+      requisitionId:      app.requisition_id,
       config,
       sentBy:      auth.userId,
     });

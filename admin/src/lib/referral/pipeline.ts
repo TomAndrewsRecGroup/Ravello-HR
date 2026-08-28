@@ -16,7 +16,8 @@ import {
 } from '../manatal';
 import { lastEmailError, sendEmail } from '../email/client';
 import { referralInviteEmail } from '../email/templates/referralInvite';
-import { greetingName, placeholderName } from './candidateName';
+import { greetingName, isPlaceholderName, placeholderName } from './candidateName';
+import { buildReferralUrl } from './referralUrl';
 import { buildScanText } from './cvText';
 import { evaluate } from './gate';
 import { runCandidateScan } from './ivylensScan';
@@ -129,9 +130,29 @@ export async function sendReferralInvite(args: {
   roleTitle:   string;
   companyId:   string | null;
   candidateId: string;
+  /** Manatal's id for this person, for the {candidate_id} parameter. */
+  manatalCandidateId?: string | null;
+  /** The requisition, for the {role_id} parameter. */
+  requisitionId?:      string | null;
   config:      ReferralRoleConfig;
   sentBy?:     string | null;
 }): Promise<SendOutcome> {
+  // Per-candidate parameters are filled HERE, in the one send path, so
+  // the cron and the review queue's Approve button cannot diverge about
+  // what link a candidate was given. A placeholder label must never
+  // become a {name} value, so it is filtered the same way the greeting
+  // is.
+  const realName = isPlaceholderName(args.fullName) ? null : args.fullName;
+  const referralUrl = buildReferralUrl(args.config.referral_url, {
+    ref:          args.candidateId,
+    email:        args.toEmail,
+    name:         realName,
+    first_name:   greetingName(args.fullName),
+    candidate_id: args.manatalCandidateId,
+    role:         args.roleTitle,
+    role_id:      args.requisitionId,
+  });
+
   const mail = referralInviteEmail({
     to:          args.toEmail,
     // greetingName, never the raw label: `fullName` may be a
@@ -140,7 +161,7 @@ export async function sendReferralInvite(args: {
     firstName:   greetingName(args.fullName),
     roleTitle:   args.roleTitle,
     partnerName: args.config.partner_name,
-    referralUrl: args.config.referral_url,
+    referralUrl,
     processNote: args.config.email_process_note ?? undefined,
   });
 
@@ -318,6 +339,8 @@ export async function processMatch(
         roleTitle:   role.requisition.title,
         companyId:   role.requisition.company_id,
         candidateId: candidateRow.id,
+        manatalCandidateId: manatalCandidateId,
+        requisitionId:      role.requisition.id,
         config,
       });
       if (sent.sent) {

@@ -9,6 +9,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, FlaskConical, Plus, Trash2 } from 'lucide-react';
 import type { MandatoryCriterion } from '@/lib/referral/types';
+import {
+  REFERRAL_URL_TOKENS,
+  REFERRAL_URL_SAMPLE,
+  buildReferralUrl,
+  findUnknownTokens,
+  hasTokens,
+} from '@/lib/referral/referralUrl';
 
 interface Props {
   requisitionId:  string;
@@ -133,9 +140,16 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
           <input className="input" value={partner} onChange={e => setPartner(e.target.value)} placeholder="Micro1" />
           <p className="text-xs" style={{ color: 'var(--ink-faint)', marginTop: 4 }}>Named in the candidate email.</p>
         </div>
-        <div>
-          <label className="label">Referral URL</label>
-          <input className="input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label className="label" htmlFor="referral-url">Referral URL</label>
+          <input
+            id="referral-url"
+            className="input"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            placeholder="https://apply.partner.com/roles?ref=arg&cid={ref}"
+          />
+          <ReferralUrlHelp url={url} />
         </div>
         <div>
           <label className="label">Auto-send at or above (%)</label>
@@ -229,6 +243,72 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
       <button className="btn-cta" onClick={save} disabled={saving}>
         {saving ? 'Saving…' : 'Save referral configuration'}
       </button>
+    </div>
+  );
+}
+
+/* ─── Per-candidate parameters ────────────────────────────── */
+
+/**
+ * Shows what the pasted URL becomes for one candidate.
+ *
+ * The preview is not decoration. The sample values carry a space, an
+ * apostrophe and a plus-address precisely because those are what break
+ * a hand-built query string, and seeing them encoded is the only way an
+ * operator can tell that the link they are about to send 200 people is
+ * actually well-formed.
+ */
+function ReferralUrlHelp({ url }: { url: string }) {
+  const unknown = findUnknownTokens(url);
+  const preview = buildReferralUrl(url, REFERRAL_URL_SAMPLE);
+
+  return (
+    <div className="space-y-2" style={{ marginTop: 6 }}>
+      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+        Sent to the candidate as the “Complete your application” button. Add any of these in the URL and they are
+        filled in per candidate, URL-encoded:
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {Object.entries(REFERRAL_URL_TOKENS).map(([token, description]) => (
+          <span
+            key={token}
+            title={description}
+            className="text-[11px] px-1.5 py-0.5 rounded-[6px] font-mono"
+            style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}
+          >
+            {`{${token}}`}
+          </span>
+        ))}
+      </div>
+
+      {unknown.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--red)' }}>
+          {unknown.map(t => `{${t}}`).join(', ')} {unknown.length > 1 ? 'are not' : 'is not'} a parameter we can fill —
+          it would be sent to the candidate exactly as written. Saving will be refused.
+        </p>
+      )}
+
+      {hasTokens(url) && unknown.length === 0 && (
+        <div>
+          <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
+            Example for one candidate
+          </p>
+          <p
+            className="text-[11px] font-mono break-all"
+            style={{ color: 'var(--ink-soft)', background: 'var(--surface-soft)', padding: '6px 8px', borderRadius: 8 }}
+          >
+            {preview}
+          </p>
+        </div>
+      )}
+
+      {!hasTokens(url) && url.trim() !== '' && (
+        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+          No per-candidate parameters — every applicant for this role receives an identical link, so the partner
+          cannot tell them apart. Fine if they only need to know the traffic came from you.
+        </p>
+      )}
     </div>
   );
 }

@@ -4,9 +4,9 @@
 // requisition a referral role, so this endpoint is the on-switch.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { findUnknownTokens, REFERRAL_URL_TOKEN_NAMES } from '@/lib/referral/referralUrl';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaff } from '@/lib/auth/requireStaff';
-
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -61,11 +61,25 @@ export async function POST(req: NextRequest) {
 
   if (!partnerName) return NextResponse.json({ error: 'A partner name is required — it appears in the candidate email.' }, { status: 400 });
   if (!referralUrl) return NextResponse.json({ error: 'A referral URL is required.' }, { status: 400 });
+  // Placeholders are stripped before parsing: `{email}` is not valid in
+  // a URL, so a template carrying one would fail this check even though
+  // the link it produces at send time is fine.
   try {
-    const u = new URL(referralUrl);
+    const u = new URL(referralUrl.replace(/\{[A-Za-z0-9_]+\}/g, 'x'));
     if (u.protocol !== 'https:') throw new Error();
   } catch {
     return NextResponse.json({ error: 'The referral URL must be a valid https:// address.' }, { status: 400 });
+  }
+
+  // An unknown token would ship LITERALLY — every candidate arriving at
+  // the partner with "?name=%7Bfirstname%7D" — and nobody would notice
+  // until a fee reconciliation failed weeks later. Refused here, at the
+  // one moment somebody is looking at the field.
+  const unknownTokens = findUnknownTokens(referralUrl);
+  if (unknownTokens.length > 0) {
+    return NextResponse.json({
+      error: `Unknown parameter${unknownTokens.length > 1 ? 's' : ''} in the referral URL: ${unknownTokens.map(t => `{${t}}`).join(', ')}. Available: ${REFERRAL_URL_TOKEN_NAMES.map(t => `{${t}}`).join(', ')}.`,
+    }, { status: 400 });
   }
 
   if (![autoSend, review].every(n => Number.isInteger(n) && n >= 0 && n <= 100)) {
