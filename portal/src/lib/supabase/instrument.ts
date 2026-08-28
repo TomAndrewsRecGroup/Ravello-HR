@@ -122,12 +122,54 @@ function wrapBuilder(builder: any, context: string, table: string): any {
   });
 }
 
+/**
+ * Marks a client that already carries this instrumentation.
+ *
+ * THIS GUARD IS LOAD-BEARING — it is not defensive noise.
+ *
+ * `instrumentSupabase` MUTATES the client: it replaces `from`/`rpc` and
+ * captures whatever was there as "the original". And `createBrowserClient`
+ * from `@supabase/ssr` returns a SINGLETON in the browser (`isSingleton`
+ * defaults true; it hands back `cachedBrowserClient`). So a second call
+ * wraps the first wrapper, a third wraps that, and so on — the layers are
+ * cumulative and never collected.
+ *
+ * `createClient()` is called in the body of 65 client components, which
+ * runs on EVERY RENDER. A controlled input re-renders per keystroke, so
+ * an editing session adds one layer per character typed.
+ *
+ * Every layer costs a nested Proxy per chained method and a nested
+ * SYNCHRONOUS `then` frame. Measured against the real supabase-js, timing
+ * only the BUILD of `from().insert().select().single()` — no network:
+ *
+ *     layers:    1     60     100     150     200      300      500    800
+ *     build:   1ms  106ms   487ms  1652ms  3868ms  13406ms  63012ms  RangeError
+ *
+ * That last cell is the bug as the operator meets it: "Maximum call stack
+ * size exceeded" from a Save button, with nothing in the message pointing
+ * at Supabase — reported on the dev-plan editor, which is the page with
+ * the most typing in it and therefore the most renders. Long before the
+ * throw, Save is simply slow for no visible reason. Each layer also
+ * re-reports the same failed query, so the error log multiplies too.
+ *
+ * `Symbol.for` rather than a fresh Symbol: Next bundles this module more
+ * than once (server graph, client graph), and two module instances must
+ * agree about one client object.
+ */
+const INSTRUMENTED = Symbol.for('ravello.supabase.instrumented');
+
 /** Wrap a Supabase client so every failed query is reported.
  *
  *  `context` names the surface for the log line — 'admin:server',
  *  'portal:browser', 'cron:referral-scan'. Without it a fault says what
- *  broke but not where, which is half an answer. */
+ *  broke but not where, which is half an answer.
+ *
+ *  Idempotent: a client that is already instrumented is returned
+ *  unchanged. See INSTRUMENTED above for why that matters. */
 export function instrumentSupabase<T extends Record<string, any>>(client: T, context: string): T {
+  if (!client || typeof client !== 'object') return client;
+  if ((client as any)[INSTRUMENTED]) return client;
+
   const originalFrom = typeof client.from === 'function' ? client.from.bind(client) : null;
   const originalRpc  = typeof client.rpc  === 'function' ? client.rpc.bind(client)  : null;
 
@@ -148,6 +190,9 @@ export function instrumentSupabase<T extends Record<string, any>>(client: T, con
         wrapBuilder(originalRpc(fn, ...rest), context, `rpc:${fn}`),
     });
   }
+
+  // Non-enumerable, so it never reaches a JSON body or an Object.keys walk.
+  Object.defineProperty(client, INSTRUMENTED, { value: context, configurable: true });
 
   return client;
 }

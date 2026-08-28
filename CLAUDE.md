@@ -589,6 +589,8 @@ already zero.
   centrally instead of being fixed at 114 call sites. Sentry is inert
   without a DSN; **no session replay** — it would record employee, salary
   and absence data — and `sendDefaultPii: false`.
+  **`instrumentSupabase` MUST stay idempotent** — see below; it shipped
+  without that and broke every Save button in the admin app.
 - **Rate limiting (`lib/rateLimit.ts`, shared).** Five named `limiters`.
   Keyed by **user id, falling back to IP**: IP alone puts a whole office
   behind one NAT in one bucket.
@@ -615,3 +617,55 @@ and to the test suite, because the code was valid and the page rendered.
 Assert the thing that was actually wrong — which route highlighted, which
 error was reported, how many round trips — and reintroduce the bug to
 watch the test fail before trusting it.
+
+---
+
+## The instrumentation stacked, and Save died (2026-08-28)
+
+Operator: *"trying to create a athletes to industry development plan and
+it wont let me save, it says maximum call stack reached … this is just a
+new one of the same plan being saved"*.
+
+**`instrumentSupabase` MUTATES the client** — it replaces `from`/`rpc`
+and captures whatever was there as "the original". **`createBrowserClient`
+returns a SINGLETON in the browser** (`isSingleton` defaults true; it
+hands back `cachedBrowserClient`). And **`createClient()` is called in the
+body of 65 client components**, which runs on every render.
+
+So each render wrapped the previous wrapper. A controlled input
+re-renders per keystroke, so an editing session added one layer per
+character typed, and the layers never went away.
+
+Measured against the real supabase-js, timing only the BUILD of
+`from().insert().select().single()` — no network:
+
+| layers | 1 | 60 | 100 | 150 | 200 | 300 | 500 | 800 |
+|---|---|---|---|---|---|---|---|---|
+| build | 1ms | 106ms | 487ms | 1652ms | 3868ms | 13406ms | 63012ms | **RangeError** |
+
+The dev-plan editor is simply the page with the most typing in it. Every
+other Save in the admin app was on the same curve, just further left.
+
+### Rules
+
+- **The guard is a per-CLIENT marker, never a module-level flag.**
+  `Symbol.for('ravello.supabase.instrumented')` — `Symbol.for` because
+  Next bundles this module more than once and two instances must agree
+  about one object; per-client because a global flag silently strips
+  reporting from the second client in a process. A mutation test pins
+  both.
+- **The layer count is the property to assert, and "does the query still
+  work" cannot see it.** A twenty-layer client returns exactly the right
+  answer, slowly. What it also does is **re-report the same failed query
+  once per layer**, so the fault count for ONE failure counts the layers
+  exactly. That is the assertion.
+- **`instrumentSupabase` returns the object it was given**, so
+  `expect(twice.from).toBe(once.from)` compares a property against itself
+  and passes however broken the guard is. It did, under mutation, until it
+  was rewritten to capture the wrapper BEFORE the second call. Third time
+  this sweep that a test measured the wrong thing until mutated.
+- **The singleton premise is measured, not asserted in a comment** —
+  a test stubs `window.document` (what `isBrowser()` actually reads; a
+  bare `globalThis.document` is not enough, and getting that wrong makes
+  the test pass while measuring nothing) and checks
+  `createBrowserClient` twice returns the same object.
