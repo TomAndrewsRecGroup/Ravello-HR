@@ -23,11 +23,15 @@ interface Props {
   companies: { id: string; name: string }[];
   adminUserId: string;
   template?: Template | null;
+  /** Every JD template, for the picker. The portal has had this since
+   *  Phase 36; admin only ever accepted `?template=` in the URL, so a
+   *  template was reachable from the Templates page and nowhere else. */
+  templates: Template[];
   recruiters: string[];
   presetCompanyId?: string | null;
 }
 
-export default function AdminNewRoleForm({ companies, adminUserId, template, recruiters, presetCompanyId }: Props) {
+export default function AdminNewRoleForm({ companies, adminUserId, template, templates, recruiters, presetCompanyId }: Props) {
   const router  = useRouter();
   const supabase = createClient();
 
@@ -52,8 +56,70 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
   const [scoring,  setScoring]  = useState(false);
   const [error,    setError]    = useState('');
 
+  // Analyse-before-save, as the portal has. Submitting still scores the
+  // role if this was never pressed, so nothing is lost by ignoring it —
+  // but pressing it means the score is SEEN before the role is created,
+  // and an IvyLens failure is reported instead of silently leaving
+  // ivylens_role_id null.
+  const [preview,      setPreview]      = useState<any>(null);
+  const [previewError, setPreviewError] = useState('');
+  const [appliedTpl,   setAppliedTpl]   = useState<string>(template?.id ?? '');
+
   function set(k: string, v: string) {
     setForm(prev => ({ ...prev, [k]: v }));
+    // The preview describes the text as it was when analysed. Editing
+    // any field makes it stale, and a stale score next to changed
+    // requirements is worse than no score.
+    setPreview(null);
+  }
+
+  function applyTemplate(id: string) {
+    const t = templates.find(x => x.id === id);
+    if (!t) return;
+    setAppliedTpl(id);
+    setPreview(null);
+    setForm(prev => ({
+      ...prev,
+      title:          t.title ?? prev.title,
+      department:     t.department ?? prev.department,
+      seniority:      t.seniority ?? prev.seniority,
+      working_model:  (t.working_model ?? prev.working_model) as typeof prev.working_model,
+      must_haves_raw: (t.must_haves ?? []).join('\n') || prev.must_haves_raw,
+      description:    t.description ?? prev.description,
+    }));
+  }
+
+  function currentJdText(): string {
+    return buildJdText({
+      title:         form.title,
+      department:    form.department,
+      seniority:     form.seniority,
+      location:      form.location,
+      working_model: form.working_model,
+      salary_min:    form.salary_min ? Number(form.salary_min) : null,
+      salary_max:    form.salary_max ? Number(form.salary_max) : null,
+      must_haves:    form.must_haves_raw.split('\n').map(x => x.trim()).filter(Boolean),
+      description:   form.description,
+    });
+  }
+
+  async function analyseNow() {
+    setScoring(true);
+    setPreviewError('');
+    try {
+      const res  = await fetch('/api/friction/analyze', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jd_text: currentJdText(), title: form.title }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setPreviewError(json.error ?? `Analysis failed (${res.status})`); return; }
+      setPreview(json);
+    } catch (e) {
+      setPreviewError((e as Error).message);
+    } finally {
+      setScoring(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,8 +136,12 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
     const salary_max = form.salary_max ? Number(form.salary_max) : 0;
     const interview_stages = form.interview_stages ? Number(form.interview_stages) : 2;
 
-    setScoring(true);
-    let frictionResult: any = null;
+    // A preview is cleared by any field edit, so one that survives to
+    // here was computed from exactly this text. Reusing it saves a
+    // second metered IvyLens call and — more importantly — guarantees
+    // the role is saved with the score the operator actually looked at.
+    let frictionResult: any = preview;
+    if (!frictionResult) setScoring(true);
 
     // Composed OUTSIDE the try so it is stored whether or not the
     // analyse call succeeds. It is the referral scan's fallback text —
@@ -91,17 +161,19 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
       description:   form.description,
     });
 
-    try {
-      const res = await fetch('/api/friction/analyze', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ jd_text, title: form.title }),
-      });
-      if (res.ok) frictionResult = await res.json();
-    } catch {
-      frictionResult = null;
+    if (!frictionResult) {
+      try {
+        const res = await fetch('/api/friction/analyze', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ jd_text, title: form.title }),
+        });
+        if (res.ok) frictionResult = await res.json();
+      } catch {
+        frictionResult = null;
+      }
+      setScoring(false);
     }
-    setScoring(false);
 
     const { data, error: err } = await supabase
       .from('requisitions')
@@ -137,13 +209,28 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-[760px]">
 
-      {template && (
-        <div
-          className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-sm"
-          style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)', color: 'var(--purple)' }}
-        >
-          <Zap size={13} />
-          Pre-filled from template: <strong>{template.title}</strong>
+      {templates.length > 0 && (
+        <div className="card p-4 space-y-2">
+          <label className="label" htmlFor="jd-template">Start from a JD template</label>
+          <select
+            id="jd-template"
+            className="input"
+            value={appliedTpl}
+            onChange={e => { if (e.target.value) applyTemplate(e.target.value); }}
+          >
+            <option value="">— No template —</option>
+            {templates.map(t => (
+              <option key={t.id} value={t.id}>
+                {t.title}{t.department ? ` · ${t.department}` : ''}
+              </option>
+            ))}
+          </select>
+          {appliedTpl && (
+            <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--purple)' }}>
+              <Zap size={12} />
+              Pre-filled from <strong>{templates.find(t => t.id === appliedTpl)?.title}</strong> — edit anything below.
+            </p>
+          )}
         </div>
       )}
 
@@ -156,6 +243,60 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
           </span>
         </div>
       )}
+
+      {/* Analyse before saving, as the portal allows. Optional: saving
+          still scores the role. What this adds is SEEING the score, and
+          being told when IvyLens could not produce one — which is
+          otherwise silent, and leaves ivylens_role_id null. */}
+      <div className="card p-4 space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Friction Lens</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {preview
+                ? 'Scored. Saving will store this result.'
+                : 'Optional — check the score before you create the role. It runs on save either way.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-secondary btn-sm"
+            onClick={analyseNow}
+            disabled={scoring || !form.title.trim()}
+          >
+            {scoring ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+            {preview ? 'Re-analyse' : 'Analyse now'}
+          </button>
+        </div>
+
+        {previewError && <p className="text-xs" style={{ color: 'var(--red)' }}>{previewError}</p>}
+
+        {preview && (
+          <div className="flex items-center gap-4 flex-wrap pt-2" style={{ borderTop: '1px solid var(--line)' }}>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Overall</p>
+              <p className="text-lg font-bold" style={{ color: 'var(--ink)' }}>
+                {preview.overall_score ?? '—'}/100
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Friction</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{preview.overall_level ?? 'Unknown'}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>IvyLens</p>
+              <p className="text-sm font-semibold" style={{ color: preview.ivylens_role_id ? 'var(--teal)' : 'var(--gold)' }}>
+                {preview.ivylens_role_id ? 'Linked' : 'Scored locally'}
+              </p>
+            </div>
+            {Array.isArray(preview.recommendations) && preview.recommendations.length > 0 && (
+              <ul className="text-xs list-disc pl-4 w-full" style={{ color: 'var(--ink-soft)' }}>
+                {preview.recommendations.slice(0, 3).map((r: string, i: number) => <li key={i}>{r}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="rounded-[10px] px-4 py-3 text-sm"

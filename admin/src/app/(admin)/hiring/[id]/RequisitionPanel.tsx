@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
+import RoleApplicants from '@/components/modules/RoleApplicants';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle, Send,
          MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText, Sparkles } from 'lucide-react';
 
@@ -528,6 +529,11 @@ export default function RequisitionPanel({ req }: Props) {
             </p>
           )}
       </div>
+
+      {/* Manatal applicants — the admin half of the portal's pipeline
+          view. Placed after Publish so the order on the page matches the
+          order of the actual flow: publish, then applicants arrive. */}
+      <RoleApplicants requisitionId={req.id} manatalJobId={manatalJobId} />
 
       {/* Offers panel */}
       <AdminOfferPanel requisitionId={req.id} companyId={req.company_id} />
