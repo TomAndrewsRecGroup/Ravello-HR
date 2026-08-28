@@ -160,7 +160,6 @@ export async function sendReferralInvite(args: {
     // candidates.full_name. See candidateName.ts.
     firstName:   greetingName(args.fullName),
     roleTitle:   args.roleTitle,
-    partnerName: args.config.partner_name,
     referralUrl,
     processNote: args.config.email_process_note ?? undefined,
   });

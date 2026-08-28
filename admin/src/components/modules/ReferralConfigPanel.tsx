@@ -45,7 +45,10 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
   const [partner,   setPartner]   = useState(existing?.partner_name ?? '');
   const [url,       setUrl]       = useState(existing?.referral_url ?? '');
   const [note,      setNote]      = useState(existing?.email_process_note ?? '');
-  const [autoSend,  setAutoSend]  = useState(existing?.auto_send_threshold ?? 85);
+  // 75 to match the operator's rule — see the config route. Setting
+  // auto-send ABOVE review creates a review band; equal means everyone
+  // at or above the bar is emailed and nothing queues.
+  const [autoSend,  setAutoSend]  = useState(existing?.auto_send_threshold ?? 75);
   const [review,    setReview]    = useState(existing?.review_threshold ?? 75);
   const [countries, setCountries] = useState((existing?.approved_countries ?? []).join(', '));
   const [criteria,  setCriteria]  = useState<MandatoryCriterion[]>(existing?.mandatory_criteria ?? []);

@@ -43,7 +43,12 @@ export async function POST(req: NextRequest) {
   const enabled     = Boolean(body.enabled);
   const dryRun      = body.dry_run === undefined ? true : Boolean(body.dry_run);
 
-  const autoSend = Number(body.auto_send_threshold ?? 85);
+  // Both default to 75: the operator's rule is "anyone over 75% gets the
+  // email" (2026-08-28). With the previous 85/75 defaults a role left
+  // untouched parked every 75-84% candidate in the review queue instead
+  // of emailing them — the right people, silently held back, which is
+  // the hardest kind of wrong to notice.
+  const autoSend = Number(body.auto_send_threshold ?? 75);
   const review   = Number(body.review_threshold ?? 75);
   const countries = cleanStrings(body.approved_countries);
 
