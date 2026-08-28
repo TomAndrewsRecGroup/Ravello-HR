@@ -16,6 +16,7 @@ import {
 } from '../manatal';
 import { lastEmailError, sendEmail } from '../email/client';
 import { referralInviteEmail } from '../email/templates/referralInvite';
+import { greetingName, placeholderName } from './candidateName';
 import { buildScanText } from './cvText';
 import { evaluate } from './gate';
 import { runCandidateScan } from './ivylensScan';
@@ -99,13 +100,6 @@ export function emptyTally(): Tally {
   };
 }
 
-function firstName(fullName: string): string | undefined {
-  const n = (fullName ?? '').trim().split(/\s+/)[0];
-  if (!n) return undefined;
-  // Job-board applicants often arrive SHOUTING ("AARON KASANAMA").
-  return /^[A-Z]{2,}$/.test(n) ? n.charAt(0) + n.slice(1).toLowerCase() : n;
-}
-
 function coerceCriteria(raw: unknown): MandatoryCriterion[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(c => c && typeof c === 'object' && 'key' in c) as MandatoryCriterion[];
@@ -129,7 +123,9 @@ export interface SendOutcome {
 export async function sendReferralInvite(args: {
   supabase:    SupabaseClient;
   toEmail:     string;
-  fullName:    string;
+  /** The stored label. May be a placeholder — the greeting is derived
+   *  through greetingName(), which refuses to use one. */
+  fullName:    string | null;
   roleTitle:   string;
   companyId:   string | null;
   candidateId: string;
@@ -138,7 +134,10 @@ export async function sendReferralInvite(args: {
 }): Promise<SendOutcome> {
   const mail = referralInviteEmail({
     to:          args.toEmail,
-    firstName:   firstName(args.fullName),
+    // greetingName, never the raw label: `fullName` may be a
+    // placeholder, and on the Approve path it is read straight out of
+    // candidates.full_name. See candidateName.ts.
+    firstName:   greetingName(args.fullName),
     roleTitle:   args.roleTitle,
     partnerName: args.config.partner_name,
     referralUrl: args.config.referral_url,
@@ -257,7 +256,12 @@ export async function processMatch(
   if (cvError) decision.reasons.push(`CV note: ${cvError}`);
 
   // ── Persist the person, then the journey ──
-  const fullName = candidate?.full_name ?? `Manatal candidate ${manatalCandidateId}`;
+  // Two different things, deliberately not one variable. `realName` is
+  // what this person is called and is the ONLY thing the email may
+  // greet them by; `fullName` is the row label, which may be a
+  // placeholder because every applicant needs a row.
+  const realName = (candidate?.full_name ?? '').trim() || null;
+  const fullName = realName ?? placeholderName(manatalCandidateId);
   const email    = candidate?.email ?? null;
 
   // cv_url is deliberately NOT stored. Manatal's resume link is a
@@ -310,7 +314,7 @@ export async function processMatch(
       const sent = await sendReferralInvite({
         supabase,
         toEmail:     email,
-        fullName,
+        fullName:    realName,
         roleTitle:   role.requisition.title,
         companyId:   role.requisition.company_id,
         candidateId: candidateRow.id,
