@@ -4,7 +4,34 @@
 // Next request machinery — and because the rule it enforces is the kind
 // that fails silently: EVERY match must produce a row.
 
-import { isJobBoardApplicant, manatalRefId, type ManatalMatch, type ManatalMatchCandidate } from './manatal';
+import { isJobBoardApplicant, manatalRefId, type ManatalMatch } from './manatal';
+
+/**
+ * A candidate as it arrives from EITHER Manatal API version.
+ *
+ * Measured 2026-08-28 — the two reads disagree about the name:
+ *   /open/v1/matches/     → candidate: { first_name, last_name, email }
+ *   /open/v3/candidates/  → { full_name, email }
+ *
+ * Reading only one shape is how this page ends up listing seven rows of
+ * "Candidate #163544005". Both are accepted, and `displayName` is the
+ * one place that decides.
+ */
+export interface NamedCandidate {
+  id?:         number | string;
+  full_name?:  string | null;
+  first_name?: string | null;
+  last_name?:  string | null;
+  email?:      string | null;
+}
+
+export function displayName(c: NamedCandidate | undefined): string | null {
+  if (!c) return null;
+  const full = (c.full_name ?? '').trim();
+  if (full) return full;
+  const joined = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
+  return joined || null;
+}
 
 export interface AdminPipelineRow {
   id:            number;
@@ -34,21 +61,23 @@ export interface AdminPipelineRow {
 export function buildPipelineRows(
   matches: ManatalMatch[],
   orgMatches: ManatalMatch[],
+  /** Extra names keyed by candidate id, from the per-candidate v3 read.
+   *  Used to fill in anyone the bulk lookup could not name. */
+  extraNames: Map<string, NamedCandidate> = new Map(),
 ): AdminPipelineRow[] {
-  const byCandidate = new Map<string, ManatalMatchCandidate>();
+  const byCandidate = new Map<string, NamedCandidate>();
   for (const m of orgMatches) {
     const c = m.candidate;
-    if (c && typeof c === 'object') byCandidate.set(manatalRefId(c), c as ManatalMatchCandidate);
+    if (c && typeof c === 'object') byCandidate.set(manatalRefId(c), c as NamedCandidate);
   }
 
   return matches.map(m => {
     const candidateId = manatalRefId(m.candidate);
-    const c = byCandidate.get(candidateId);
-    const name = c ? [c.first_name, c.last_name].filter(Boolean).join(' ').trim() : '';
+    const c = byCandidate.get(candidateId) ?? extraNames.get(candidateId);
     return {
       id:           m.id,
       candidate_id: candidateId,
-      full_name:    name || null,
+      full_name:    displayName(c),
       email:        c?.email ?? null,
       stage:        m.stage ?? { id: 0, name: 'Unknown' },
       is_active:    m.is_active,

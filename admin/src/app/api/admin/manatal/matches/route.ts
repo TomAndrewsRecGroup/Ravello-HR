@@ -29,17 +29,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import {
+  getManatalCandidate,
   getManatalMatches,
   getManatalMatchesForJob,
   getManatalStages,
   isManatalConfigured,
+  manatalRefId,
 } from '@/lib/manatal';
-import { buildPipelineRows } from '@/lib/manatalPipeline';
+import { buildPipelineRows, type NamedCandidate } from '@/lib/manatalPipeline';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Ceiling on the per-candidate fallback read.
+ *
+ *  The bulk lookup is one call and usually names everybody. When it does
+ *  not — a job created under a different Manatal organisation from the
+ *  client's, or a v1 response shaped other than expected — this fills the
+ *  gap one candidate at a time. Bounded because that is N calls: the
+ *  first 40 unnamed rows get a name, the rest keep their id. Slow is
+ *  worse than plain here, and a row is never dropped either way. */
+const NAME_FALLBACK_LIMIT = 40;
 
 export async function GET(req: NextRequest) {
   const auth = await requireStaff();
@@ -83,12 +95,36 @@ export async function GET(req: NextRequest) {
     organizationId ? getManatalMatches(organizationId).catch(() => []) : Promise.resolve([]),
   ]);
 
-  const rows = buildPipelineRows(matches, orgMatches);
+  // Anyone the bulk lookup could not name, resolved individually. This
+  // is the difference between a readable table and a page of
+  // "Candidate #163544005" — see NamedCandidate for why the bulk read
+  // cannot be relied on alone.
+  const provisional = buildPipelineRows(matches, orgMatches);
+  const unnamed = provisional.filter(r => !r.full_name).slice(0, NAME_FALLBACK_LIMIT);
+
+  const extraNames = new Map<string, NamedCandidate>();
+  if (unnamed.length > 0) {
+    const fetched = await Promise.all(
+      unnamed.map(r => getManatalCandidate(r.candidate_id).catch(() => null)),
+    );
+    for (const c of fetched) {
+      if (c?.id) extraNames.set(manatalRefId(c.id), c as NamedCandidate);
+    }
+  }
+
+  const rows = extraNames.size > 0
+    ? buildPipelineRows(matches, orgMatches, extraNames)
+    : provisional;
+
+  // Reported so a table full of ids is a visible condition rather than
+  // something the operator has to guess at.
+  const unresolvedNames = rows.filter(r => !r.full_name).length;
 
   return NextResponse.json({
     rows,
     stages,
     state: 'ok',
+    unresolved_names: unresolvedNames,
     // Surfaced rather than swallowed: a partial read presented as a
     // complete one is how "everyone applied" quietly stops being true.
     truncated,

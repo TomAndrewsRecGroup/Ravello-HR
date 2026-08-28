@@ -69,6 +69,7 @@ export default function RoleApplicants({
   const [stages,    setStages]    = useState<Stage[]>([]);
   const [state,     setState]     = useState<State>('ok');
   const [truncated, setTruncated] = useState(false);
+  const [unnamed,   setUnnamed]   = useState(0);
   const [moving,    setMoving]    = useState<number | null>(null);
   const [toast,     setToast]     = useState<{ msg: string; ok: boolean } | null>(null);
 
@@ -83,6 +84,7 @@ export default function RoleApplicants({
       setStages(json.stages ?? []);
       setState(json.state ?? 'ok');
       setTruncated(Boolean(json.truncated));
+      setUnnamed(Number(json.unresolved_names ?? 0));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -152,6 +154,13 @@ export default function RoleApplicants({
       {truncated && (
         <p className="text-xs p-2 rounded-[8px]" style={{ background: 'rgba(191,143,40,0.10)', color: 'var(--gold)' }}>
           Manatal did not return every applicant for this role — this list is incomplete.
+        </p>
+      )}
+
+      {unnamed > 0 && (
+        <p className="text-xs p-2 rounded-[8px]" style={{ background: 'rgba(191,143,40,0.10)', color: 'var(--gold)' }}>
+          {unnamed} applicant{unnamed === 1 ? '' : 's'} could not be named — shown by candidate id below. They are still
+          on the role and are still scanned; only the name lookup failed.
         </p>
       )}
 
