@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Zap } from 'lucide-react';
+import { buildJdText } from '@/lib/jdText';
 
 const WORKING_MODELS   = ['office', 'hybrid', 'remote'] as const;
 const SENIORITY_OPTS   = ['Junior/Graduate', 'Mid-level', 'Senior', 'Head of/Director', 'C-suite/Executive'];
@@ -71,18 +72,26 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
 
     setScoring(true);
     let frictionResult: any = null;
-    try {
-      const jd_text = [
-        `Role: ${form.title}`,
-        form.department  ? `Department: ${form.department}` : '',
-        form.seniority   ? `Seniority: ${form.seniority}` : '',
-        form.location    ? `Location: ${form.location}` : '',
-        form.working_model ? `Working model: ${form.working_model}` : '',
-        salary_min || salary_max ? `Salary: £${salary_min?.toLocaleString()}-£${salary_max?.toLocaleString()}` : '',
-        must_haves.length ? `Requirements:\n${must_haves.map(s => `- ${s}`).join('\n')}` : '',
-        form.description ? `\n${form.description}` : '',
-      ].filter(Boolean).join('\n');
 
+    // Composed OUTSIDE the try so it is stored whether or not the
+    // analyse call succeeds. It is the referral scan's fallback text —
+    // leaving it null drops that fallback to the bare `description`,
+    // without the title, seniority, salary or requirements.
+    // Same composition the re-analyse route uses, so a role scored here
+    // and re-scored later is scored against the same text.
+    const jd_text = buildJdText({
+      title:         form.title,
+      department:    form.department,
+      seniority:     form.seniority,
+      location:      form.location,
+      working_model: form.working_model,
+      salary_min,
+      salary_max,
+      must_haves,
+      description:   form.description,
+    });
+
+    try {
       const res = await fetch('/api/friction/analyze', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,6 +118,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, rec
         interview_stages,
         must_haves:         must_haves.length ? must_haves : null,
         description:        form.description      || null,
+        jd_text,
         stage:              form.stage,
         assigned_recruiter: form.assigned_recruiter || null,
         friction_score:     frictionResult        ?? null,

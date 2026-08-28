@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle, Send,
-         MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText } from 'lucide-react';
+         MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText, Sparkles } from 'lucide-react';
 
 /* ── Friction display helpers ─────────────────────────────── */
 
@@ -328,6 +328,43 @@ export default function RequisitionPanel({ req }: Props) {
   const [publishingManatal,  setPublishingManatal]  = useState(false);
   const [manatalError,       setManatalError]       = useState<string | null>(null);
 
+  // Friction analysis. Held in local state so the card and the IvyLens
+  // link-status line update the moment the call returns, rather than
+  // waiting on a refresh — the whole point of the button is to see that
+  // the role now HAS an ivylens_role_id.
+  const [frictionScore,  setFrictionScore]  = useState<any>(req.friction_score ?? null);
+  const [ivylensRoleId,  setIvylensRoleId]  = useState<string | null>(req.ivylens_role_id ?? null);
+  const [analysing,      setAnalysing]      = useState(false);
+  const [analyseError,   setAnalyseError]   = useState<string | null>(null);
+  const [analyseNote,    setAnalyseNote]    = useState<string | null>(null);
+
+  async function analyseRole() {
+    setAnalysing(true);
+    setAnalyseError(null);
+    setAnalyseNote(null);
+    try {
+      const res  = await fetch(`/api/admin/requisitions/${req.id}/analyze`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAnalyseError(json.error ?? `Analysis failed (${res.status})`);
+        return;
+      }
+      setFrictionScore(json.friction_score ?? null);
+      setIvylensRoleId(json.ivylens_role_id ?? null);
+      if (!json.from_ivylens) {
+        // Say so rather than letting a local heuristic score look like a
+        // successful IvyLens link. Referral scans would still fall back
+        // to JD text, which is the thing this button exists to avoid.
+        setAnalyseNote('Scored locally — IvyLens did not return a role id, so referral scans will still send the full JD per candidate. Check the Health page.');
+      }
+      revalidateAdminPath(`/hiring/${req.id}`);
+    } catch (e) {
+      setAnalyseError((e as Error).message);
+    } finally {
+      setAnalysing(false);
+    }
+  }
+
   async function publishToManatal() {
     setPublishingManatal(true);
     setManatalError(null);
@@ -453,8 +490,44 @@ export default function RequisitionPanel({ req }: Props) {
         </div>
       </div>
 
-      {/* Friction score */}
-      {req.friction_score && <FrictionCard frictionScore={req.friction_score} />}
+      {/* Friction score + IvyLens link.
+          The section renders whether or not a score exists — a role that
+          has never been analysed is exactly the one that needs the
+          button, and hiding it behind `friction_score` is why there was
+          no way to fill in ivylens_role_id after creation. */}
+      <div className="card p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Friction Lens &amp; IvyLens</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {ivylensRoleId
+                ? 'Linked to IvyLens — referral scans score candidates against the stored role.'
+                : 'Not linked to IvyLens yet. Referral scans will re-send the full job description for every applicant.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-secondary btn-sm"
+            onClick={analyseRole}
+            disabled={analysing}
+          >
+            {analysing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {analysing ? 'Analysing…' : frictionScore ? 'Re-analyse role' : 'Analyse role'}
+          </button>
+        </div>
+
+        {analyseError && <p className="text-xs" style={{ color: 'var(--red)' }}>{analyseError}</p>}
+        {analyseNote  && <p className="text-xs" style={{ color: 'var(--gold)' }}>{analyseNote}</p>}
+
+        {frictionScore
+          ? <FrictionCard frictionScore={frictionScore} />
+          : (
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              No friction score yet. Analysing reads the title, seniority, location, salary and requirements
+              already on this role — nothing to fill in.
+            </p>
+          )}
+      </div>
 
       {/* Offers panel */}
       <AdminOfferPanel requisitionId={req.id} companyId={req.company_id} />

@@ -79,6 +79,32 @@ export interface ManatalMatch {
   is_active:    boolean;
   created_at:   string;
   updated_at:   string;
+  /** The Manatal user who attached this candidate to the job, or null
+   *  when nobody did — i.e. the candidate applied through a job board or
+   *  the careers page. See isJobBoardApplicant(). */
+  creator?:     number | string | null;
+}
+
+/**
+ * Did this candidate APPLY, or did a recruiter put them on the job?
+ *
+ * Measured against the live account on 2026-08-28, job 4324606:
+ * seven matches, three with `creator: null` (Adzuna applicants, arriving
+ * with `source_details.channel = "free_job_board"`) and four with
+ * `creator: 1120238` — the operator's own Manatal user id, candidates
+ * they had sourced and attached by hand.
+ *
+ * The distinction is load-bearing for the referral pipeline: it exists
+ * to pass job-board applicants ON to a partner. Doing that to a
+ * candidate the operator sourced themselves would email their own
+ * shortlist a competitor's referral link.
+ *
+ * Deliberately NOT keyed on `is_active` or `dropped_at`. A rejected
+ * applicant is the single best referral candidate there is — that is the
+ * whole point of the feature.
+ */
+export function isJobBoardApplicant(match: ManatalMatch): boolean {
+  return match.creator === null || match.creator === undefined;
 }
 
 /* ─── Fetch helper ────────────────────────────────── */
@@ -314,15 +340,45 @@ export async function getManatalCandidatesSince(
 /** GET /matches/?job_id=… — every applicant attached to one job.
  *  This is the candidate→role link the pipeline runs on, so a role
  *  with no Manatal job id can never pull in applicants. */
+/** Every match on a job, across pages.
+ *
+ *  This used to request ONE page of 200 and return it. Manatal orders
+ *  `/matches/` deterministically, so a job with more than 200 applicants
+ *  returned the same first 200 on every hourly run and applicant 201
+ *  onwards was never seen — silently, since a short page and a full one
+ *  look identical in the returned array. The stated goal is that every
+ *  applicant is scanned, so the walk is exhaustive.
+ *
+ *  `maxPages` is a backstop against a pathological job rather than a
+ *  business rule; hitting it is reported by the caller, not swallowed.
+ */
 export async function getManatalMatchesForJob(
   jobId: string,
-  opts?: { pageSize?: number; deadline?: number },
-): Promise<ManatalMatch[]> {
-  const data = await manatalFetch('/matches/', {
-    job_id:    jobId,
-    page_size: String(opts?.pageSize ?? 200),
-  }, { baseUrl: WRITE_API_URL, noCache: true, deadline: opts?.deadline });
-  return (data?.results ?? []) as ManatalMatch[];
+  opts?: { pageSize?: number; deadline?: number; maxPages?: number },
+): Promise<{ matches: ManatalMatch[]; truncated: boolean }> {
+  const pageSize = opts?.pageSize ?? 200;
+  const maxPages = opts?.maxPages ?? 25;   // 5,000 applicants on one role
+  const out: ManatalMatch[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    const data = await manatalFetch('/matches/', {
+      job_id:    jobId,
+      page:      String(page),
+      page_size: String(pageSize),
+    }, { baseUrl: WRITE_API_URL, noCache: true, deadline: opts?.deadline });
+
+    // A failed page returns null. Stop and report what we have rather
+    // than treating a vendor error as "no more applicants" — the caller
+    // must not record a partial read as a complete one.
+    if (!data) return { matches: out, truncated: true };
+
+    const results = (data.results ?? []) as ManatalMatch[];
+    out.push(...results);
+
+    if (!data.next || results.length === 0) return { matches: out, truncated: false };
+  }
+
+  return { matches: out, truncated: true };
 }
 
 /** Experience + education rows, used to thicken the fallback scan

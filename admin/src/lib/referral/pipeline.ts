@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getManatalCandidate,
   getManatalMatchesForJob,
+  isJobBoardApplicant,
   manatalRefId,
   type ManatalCandidate,
   type ManatalMatch,
@@ -61,6 +62,10 @@ export interface Tally {
   roles_skipped:      number;
   matches_seen:       number;
   already_processed:  number;
+  /** Matches skipped because a recruiter attached them, rather than the
+   *  candidate applying. Counted so "fewer than I expected" has an
+   *  answer instead of being something to debug. */
+  recruiter_added_skips: number;
   scanned:            number;
   qualified:          number;
   emailed:            number;
@@ -85,6 +90,7 @@ export interface Tally {
 export function emptyTally(): Tally {
   return {
     roles_considered: 0, roles_skipped: 0, matches_seen: 0, already_processed: 0,
+    recruiter_added_skips: 0,
     scanned: 0, qualified: 0, emailed: 0, queued_for_review: 0,
     rejected_country: 0, rejected_criteria: 0, rejected_score: 0,
     scan_errors: 0, email_failures: 0, dry_run_skips: 0,
@@ -392,7 +398,19 @@ export async function processRole(
 
   tally.roles_considered++;
 
-  const matches = await getManatalMatchesForJob(jobId, { deadline: budget.deadline });
+  const { matches: allMatches, truncated } = await getManatalMatchesForJob(jobId, { deadline: budget.deadline });
+  if (truncated) {
+    // A partial read presented as complete is how "every applicant was
+    // scanned" quietly stops being true.
+    tally.notes.push(`"${role.requisition.title}": could not read every applicant from Manatal — some were not considered this run.`);
+  }
+
+  // Only people who APPLIED. A candidate the operator sourced and
+  // attached to the job themselves carries a `creator`; referring them
+  // on would email their own shortlist a partner's referral link.
+  const matches = allMatches.filter(isJobBoardApplicant);
+  tally.recruiter_added_skips += allMatches.length - matches.length;
+
   tally.matches_seen += matches.length;
   if (!matches.length) return;
 
