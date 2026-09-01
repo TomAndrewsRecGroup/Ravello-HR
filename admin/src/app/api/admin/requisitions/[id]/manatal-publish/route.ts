@@ -20,7 +20,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // row and every response, so "is the deployed route the one I am
 // reading?" is answerable from data instead of argued about. Two
 // rounds of this were spent unable to tell a stale deploy from a bug.
-const ROUTE_VERSION = 'manatal-publish/3';
+const ROUTE_VERSION = 'manatal-publish/4';
 
 /** Log a pre-Manatal exit and answer with the same reason. Every early
  *  return went through neither before, so an empty log read as "the
@@ -152,10 +152,27 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     // If publish fails (network blip etc.) a retry of this endpoint
     // will see the stored id and skip create — no duplicate Manatal
     // jobs. manatal_published_at stays null until publish succeeds.
-    const { error: stampErr } = await supabase
+    // `.select()` is not decoration. A supabase UPDATE that matches NO
+    // rows — because RLS refused it, say — returns `error: null` and
+    // reports success, so the route would answer 200 while the row
+    // never changed. Asking for the affected row back is the only way
+    // to tell "written" from "silently discarded".
+    const { data: stamped, error: stampErr } = await supabase
       .from('requisitions')
       .update({ manatal_job_id: jobId })
-      .eq('id', req.id);
+      .eq('id', req.id)
+      .select('id');
+    if (!stampErr && (stamped?.length ?? 0) === 0) {
+      await logPublishStep({
+        requisitionId: params.id, actorId: auth.userId, step: 'create', ok: false,
+        manatalJobId: jobId, httpStatus: 500,
+        message: `[${ROUTE_VERSION}] job created in Manatal but the local UPDATE matched no rows (RLS?)`,
+      });
+      return NextResponse.json({
+        error: `Created Manatal job ${jobId} but could not record it locally — the update matched no rows.`,
+        manatal_job_id: jobId, route_version: ROUTE_VERSION,
+      }, { status: 500 });
+    }
     if (stampErr) {
       // Soft-fail: the job exists in Manatal, our local row didn't
       // record it. Tell the caller so they can reconcile manually.
@@ -181,10 +198,25 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   }
 
   const now = new Date().toISOString();
-  const { error: updErr } = await supabase
+  const { data: finalised, error: updErr } = await supabase
     .from('requisitions')
     .update({ manatal_job_id: jobId, manatal_published_at: now })
-    .eq('id', req.id);
+    .eq('id', req.id)
+    .select('id');
+  // Same trap as above, and the one that matters most: without this the
+  // route reports a successful publish while manatal_published_at stays
+  // at whatever it was — which is precisely the symptom being chased.
+  if (!updErr && (finalised?.length ?? 0) === 0) {
+    await logPublishStep({
+      requisitionId: params.id, actorId: auth.userId, step: 'publish', ok: false,
+      manatalJobId: jobId, httpStatus: 500,
+      message: `[${ROUTE_VERSION}] published in Manatal but the local UPDATE matched no rows (RLS?)`,
+    });
+    return NextResponse.json({
+      error: 'Published in Manatal but could not record it locally — the update matched no rows.',
+      manatal_job_id: jobId, route_version: ROUTE_VERSION,
+    }, { status: 500 });
+  }
   if (updErr) {
     return NextResponse.json({
       error: `Published in Manatal but local update failed: ${updErr.message}`,
@@ -196,4 +228,66 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     ok: true, manatal_job_id: jobId, manatal_published_at: now,
     route_version: ROUTE_VERSION,
   });
+}
+
+
+// GET /api/admin/requisitions/[id]/manatal-publish
+//
+// A readiness check. It answers every question the POST would answer by
+// failing, WITHOUT contacting Manatal or writing anything — so it is
+// safe to press repeatedly and costs no vendor call.
+//
+// It exists because three rounds of diagnosis were spent unable to tell
+// which precondition was refusing: the POST reported its reason only in
+// the browser, an empty log was indistinguishable from a button never
+// pressed, and a stale deploy looked identical to a bug. Each of those
+// is now one value in this response.
+export async function GET(httpReq: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;   // a 401/403 here IS the answer
+
+  if (!UUID_RE.test(params.id)) {
+    return NextResponse.json({ error: 'Invalid id', route_version: ROUTE_VERSION }, { status: 400 });
+  }
+
+  const supabase = createServerSupabaseClient();
+  const { data: req, error: loadErr } = await supabase
+    .from('requisitions')
+    .select('id,title,manatal_job_id,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,companies(manatal_client_id)')
+    .eq('id', params.id)
+    .single();
+
+  const companyRel = (req as any)?.companies;
+  const organizationId: string | null = Array.isArray(companyRel)
+    ? companyRel[0]?.manatal_client_id ?? null
+    : companyRel?.manatal_client_id ?? null;
+
+  // Whether the diagnostic table itself is writable. If this is false,
+  // an empty publish log means nothing at all — which is exactly how
+  // the last round was misread.
+  const logWritable = await logPublishStep({
+    requisitionId: params.id, actorId: auth.userId, step: 'precondition', ok: true,
+    httpStatus: 200, message: `[${ROUTE_VERSION}] readiness check`,
+  });
+
+  const checks = {
+    route_version:        ROUTE_VERSION,
+    staff_session:        true,
+    manatal_key_present:  isManatalConfigured(),
+    requisition_readable: !loadErr && Boolean(req),
+    read_error:           loadErr?.message ?? null,
+    // The five columns migration 083 added. `null` is a legitimate
+    // unset; `undefined` means the column did not come back at all,
+    // which is a schema problem rather than an empty field.
+    new_columns_present:  req ? ['salary_currency','salary_period','salary_visible','headcount','manatal_industry_id']
+                                  .every(k => k in (req as Record<string, unknown>)) : false,
+    client_linked:        Boolean(organizationId),
+    manatal_organization: organizationId,
+    manatal_job_id:       (req as any)?.manatal_job_id ?? null,
+    would_do:             (req as any)?.manatal_job_id ? 'update then publish' : 'create then publish',
+    publish_log_writable: logWritable,
+  };
+
+  const ready = checks.manatal_key_present && checks.requisition_readable && checks.client_linked;
+  return NextResponse.json({ ready, ...checks });
 }

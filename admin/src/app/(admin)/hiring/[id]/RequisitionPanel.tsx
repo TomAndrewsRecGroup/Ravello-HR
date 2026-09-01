@@ -330,6 +330,24 @@ export default function RequisitionPanel({ req }: Props) {
   const [manatalPublishedAt, setManatalPublishedAt] = useState<string | null>(req.manatal_published_at ?? null);
   const [publishingManatal,  setPublishingManatal]  = useState(false);
   const [manatalError,       setManatalError]       = useState<string | null>(null);
+  const [diagnosis,          setDiagnosis]          = useState<any>(null);
+  const [diagnosing,         setDiagnosing]         = useState(false);
+
+  // Reads every precondition the publish would fail on, without
+  // contacting Manatal. Safe to press repeatedly, costs no vendor call.
+  async function diagnoseManatal() {
+    setDiagnosing(true);
+    setDiagnosis(null);
+    try {
+      const res  = await fetch(`/api/admin/requisitions/${req.id}/manatal-publish`);
+      const json = await res.json().catch(() => ({}));
+      setDiagnosis({ http: res.status, ...json });
+    } catch (e) {
+      setDiagnosis({ http: 0, error: (e as Error).message });
+    } finally {
+      setDiagnosing(false);
+    }
+  }
 
   // Job-board fields (migration 083). Held as strings because they are
   // form values; coerced once on save.
@@ -560,6 +578,15 @@ export default function RequisitionPanel({ req }: Props) {
                     : <Send size={12} />}
                   {manatalJobId ? 'Re-publish to Manatal' : 'Publish to Manatal'}
                 </button>
+                <button
+                  onClick={diagnoseManatal}
+                  disabled={diagnosing}
+                  className="btn-secondary btn-sm flex items-center gap-1.5"
+                  title="Check every precondition without contacting Manatal"
+                >
+                  {diagnosing ? <Loader2 size={12} className="animate-spin" /> : <HelpCircle size={12} />}
+                  Diagnose
+                </button>
                 {manatalJobId && (
                   <span
                     className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full inline-flex items-center gap-1"
@@ -578,6 +605,14 @@ export default function RequisitionPanel({ req }: Props) {
             )}
             {manatalError && (
               <p className="text-xs mt-1" style={{ color: 'var(--red)' }}>{manatalError}</p>
+            )}
+            {diagnosis && (
+              <pre
+                className="text-[11px] mt-2 p-2 rounded-[8px] whitespace-pre-wrap font-mono overflow-x-auto"
+                style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}
+              >
+{JSON.stringify(diagnosis, null, 2)}
+              </pre>
             )}
           </div>
         </div>

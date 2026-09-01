@@ -35,6 +35,7 @@ const logged: any[] = [];
 // undefined keys) and the assertion failed for a reason that had
 // nothing to do with the route.
 let logWriteOk = true;
+let updateMatches = 1;
 vi.mock('@/lib/manatalPublishLog', () => ({
   logPublishStep: (s: any) => { logged.push(s); return Promise.resolve(logWriteOk); },
 }));
@@ -63,7 +64,17 @@ vi.mock('@/lib/supabase/server', () => ({
       }),
       update: (patch: Record<string, any>) => {
         updates.push(patch);
-        return { eq: () => Promise.resolve({ error: null }) };
+        // The real chain ends in `.select('id')`, because an UPDATE
+        // matching no rows returns error:null and would otherwise
+        // report success. `updateMatches` is how many rows come back.
+        return {
+          eq: () => ({
+            select: () => Promise.resolve({
+              data: Array.from({ length: updateMatches }, () => ({ id: REQ_ID })),
+              error: null,
+            }),
+          }),
+        };
       },
     }),
   }),
@@ -107,6 +118,7 @@ beforeEach(() => {
   publishResult = true;
   configured = true;
   logWriteOk = true;
+  updateMatches = 1;
 });
 
 describe('a role that has never been published', () => {
@@ -293,5 +305,40 @@ describe('the exits that used to be silent', () => {
     expect((await (await post()).json()).logged).toBe(true);
     logWriteOk = false;
     expect((await (await post()).json()).logged).toBe(false);
+  });
+});
+
+describe('an UPDATE that silently matches no rows', () => {
+  // supabase answers error:null for an UPDATE that changed nothing —
+  // RLS refusing it looks identical to success. Without asking for the
+  // row back, the route would report a published role while
+  // manatal_published_at stayed exactly where it was, which is the
+  // symptom that started all of this.
+  // Each branch has its OWN guard and each must be driven separately.
+  // The first cut of these tests used a row with no manatal_job_id for
+  // both, so the CREATE guard returned first and disabling the PUBLISH
+  // guard changed nothing — the mutation passed and the test proved
+  // nothing about the branch it named.
+  it('fails the CREATE path rather than reporting a stored job id', async () => {
+    row = baseRow();               // no job id -> create branch
+    updateMatches = 0;
+    const body = await (await post()).json();
+    expect(body.error).toMatch(/Created Manatal job .* matched no rows/i);
+  });
+
+  it('fails the PUBLISH path rather than reporting a published role', async () => {
+    row = baseRow({ manatal_job_id: '4337074' });   // skips create
+    updateMatches = 0;
+    const res = await post();
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.error).toMatch(/Published in Manatal but could not record it locally/i);
+  });
+
+  it('records both in the log rather than passing silently', async () => {
+    row = baseRow({ manatal_job_id: '4337074' });
+    updateMatches = 0;
+    await post();
+    expect(logged.some(l => /matched no rows/i.test(l.message ?? ''))).toBe(true);
   });
 });
