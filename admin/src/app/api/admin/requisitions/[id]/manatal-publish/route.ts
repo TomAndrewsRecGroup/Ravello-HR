@@ -7,41 +7,12 @@ import {
   createManatalJob,
   publishManatalJob,
   lastManatalError,
-  type ManatalContractDetails,
 } from '@/lib/manatal';
+import { manatalContractDetails, manatalIsRemote, manatalSalary } from '@/lib/manatalJobFields';
 
 export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// Manatal's contract_details enum. Anything our requisitions row
-// has in employment_type is mapped through normaliseContract — we
-// lowercase + dash/space-to-underscore + check membership. Anything
-// off-list goes null so Manatal accepts the create.
-const MANATAL_CONTRACT: ReadonlySet<ManatalContractDetails> = new Set([
-  'full_time', 'part_time', 'temporary', 'freelance',
-  'internship', 'apprenticeship', 'contractor', 'consultancy',
-]);
-function normaliseContract(input: string | null | undefined): ManatalContractDetails | null {
-  if (!input) return null;
-  const v = input.trim().toLowerCase().replace(/[\s-]+/g, '_') as ManatalContractDetails;
-  return MANATAL_CONTRACT.has(v) ? v : null;
-}
-
-// Map "£40k-£60k" style strings to { min, max } in pence-free integers.
-// Keeps the wrapper simple: anything we can't parse stays null.
-function parseSalaryRange(s: string | null): { min: number | null; max: number | null } {
-  if (!s) return { min: null, max: null };
-  const nums = s.replace(/[£,]/g, '').match(/(\d+)(k)?/gi) ?? [];
-  const vals = nums.map(n => {
-    const k = /k$/i.test(n);
-    const v = parseInt(n.replace(/k$/i, ''), 10);
-    return k ? v * 1000 : v;
-  }).filter(n => !isNaN(n) && n > 0);
-  if (vals.length === 0) return { min: null, max: null };
-  if (vals.length === 1) return { min: vals[0], max: vals[0] };
-  return { min: Math.min(...vals), max: Math.max(...vals) };
-}
 
 // POST /api/admin/requisitions/[id]/manatal-publish
 // Pushes a requisition to Manatal: creates the job under the client's
@@ -68,7 +39,7 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   const supabase = createServerSupabaseClient();
   const { data: req, error: loadErr } = await supabase
     .from('requisitions')
-    .select('id,title,description,location,employment_type,seniority,salary_range,manatal_job_id,companies(manatal_client_id)')
+    .select('id,title,description,location,employment_type,seniority,working_model,salary_min,salary_max,salary_range,manatal_job_id,companies(manatal_client_id)')
     .eq('id', params.id)
     .single();
   if (loadErr || !req) {
@@ -93,13 +64,14 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   let jobId: string | null = req.manatal_job_id ?? null;
 
   if (!jobId) {
-    const { min, max } = parseSalaryRange(req.salary_range ?? null);
+    const { min, max } = manatalSalary(req as never);
     const created = await createManatalJob({
       organizationId,
       title:           req.title,
       description:     req.description ?? null,
       address:         req.location ?? null,
-      contractDetails: normaliseContract(req.employment_type),
+      contractDetails: manatalContractDetails(req.employment_type),
+      isRemote:        manatalIsRemote((req as { working_model?: string | null }).working_model),
       salaryMin:       min,
       salaryMax:       max,
       currency:        'GBP',
