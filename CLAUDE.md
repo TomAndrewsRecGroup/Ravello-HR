@@ -620,6 +620,97 @@ watch the test fail before trusting it.
 
 ---
 
+## Publishing to Manatal — nine defects, one HTTP 201 (2026-09-01)
+
+Operator: *"The role was not showing on Manatal as a lot of the fields it
+requires were empty. The text was not formatted correctly too, it was all
+like a single paragraph instead of spaced, bullet points."*
+
+Job **4337074** was the first role published through
+`/api/admin/requisitions/[id]/manatal-publish`. It was created, reported
+live, and arrived wrong in nine ways. **Nothing errored.** Manatal
+validates almost nothing here — it stores what it is given, and a field
+we never send is simply a field the advert does not have.
+
+Measured by reading the live job back and diffing it against the jobs
+the operator creates by hand in the same account:
+
+| field | his native jobs | ours, as created | cause |
+|---|---|---|---|
+| `description` | `<p>`/`<ul>`/`<li>` | one paragraph | **Manatal renders HTML**; ours is a textarea |
+| `salary_min/max` | 45000/60000 | null | route parsed `salary_range`, a column the admin form never writes |
+| `contract_details` | full_time | full_time | "Contract" matched no enum member → omitted → Manatal defaulted it |
+| `is_remote` | true/false | never sent | — |
+| `city` / `country` | "Leeds" / "United Kingdom" | `""` | whole `location` went into `address` |
+| `headcount` | 1 | null | not captured |
+| `currency` | GBP | **'GBP' hardcoded** | role pays in **USD** |
+| `frequency` | "year" | never sent | role pays **per hour** |
+| `is_salary_visible` | false | never sent | not captured |
+
+`currency` and `frequency` together are the one to remember: the advert
+asserted **£60–£120 per year** for a role paying **$60–$120 per hour**. A
+wrong salary is not cosmetic on a job board — it is the number candidates
+self-select on.
+
+### Rules
+
+- **`description` is HTML.** `manatalDescriptionHtml()` renders it.
+  A newline is not a line break and a blank line is not a paragraph, so
+  sending the textarea raw collapses the whole advert. It escapes `&`,
+  `<`, `>` — the live role is "AI **&** Software Engineers".
+- **The formatter infers lists, and nothing else.** A run of short
+  unpunctuated lines becomes a `<ul>`; an explicit `-`/`•` marker always
+  does. **Unmarked runs need THREE lines, or two after a colon** — two is
+  genuinely ambiguous and the live role opens with two standalone facts
+  that must not become bullets. It never invents `<strong>`: guessing
+  which lines are headings would mark up sentences the operator didn't.
+- **`must_haves` / `nice_to_haves` are appended.** We held six on the
+  live role and sent none of them, so the advert omitted the criteria the
+  referral gate judges candidates on.
+- **Everything is decided in `buildManatalJobArgs()`**, one pure function,
+  because the defect was four fields never mentioned in a handler behind
+  auth, a rate limiter and a DB read. `buildManatalJobArgs.test.ts`
+  asserts the SENT VALUE field by field, plus **the exact key set** — so
+  a newly-supported field that nobody wires up fails in the diff rather
+  than in production. That omission *was* the bug, four times over.
+- **An unset optional field is OMITTED, never sent as null.** Same rule
+  `contract_details` already had: `frequency`, `is_salary_visible` and
+  `industry` are enum/FK/non-nullable on v3, and a null 400s the create —
+  which blocks publishing entirely rather than leaving a field blank.
+- **Never default `frequency`.** Null omits it. A confident `'year'` on
+  an hourly rate advertises a wrong number, and wrong beats absent here.
+- **Never guess a country.** `splitLocation` recognises a country only as
+  the trailing segment, from a short explicit map; anything else leaves
+  `country` empty. "Cambridge" is a real place in three of them, and a
+  wrong country is a wrong audience. A lone "UK" is not consumed — that
+  would leave a job with no city at all.
+- **Re-publish PATCHes the fields first** (`updateManatalJob`). It used to
+  send only the publish flags, so correcting a role here changed nothing
+  in Manatal while reporting success — the only fix was editing Manatal
+  by hand, which is what this integration exists to avoid. It therefore
+  **overwrites hand edits in Manatal, deliberately**: re-publish means
+  "make Manatal match what I have here", and two sources of truth for one
+  advert is the drift this file keeps recording.
+- **`industry` is DISCOVERED, never hardcoded.** Ids are account-scoped
+  (this account: 7673654 Engineering-Others, 7673671 Manufacturing, …).
+  `listManatalIndustries()` fails soft to `[]`, which omits the field and
+  behaves exactly as before — guessing an id risks a 400 that blocks
+  publishing.
+- **The detail page MUST select the new columns.** The panel seeds its
+  editor from that row, so an unselected column reads `undefined`, the
+  editor shows its default, and Save writes GBP over a stored USD. That
+  is a data-loss path with no error on it.
+- **`.select()` must stay ONE string literal.** supabase-js infers the row
+  type from the literal type of the argument; splitting it with `+`
+  widens it to `string` and every field access becomes an error on
+  `GenericStringError`.
+
+Migration **083** adds `headcount`, `salary_currency`, `salary_period`,
+`salary_visible`, `manatal_industry_id`, all nullable, with CHECKs so a
+bad value cannot reach Manatal and fail the create.
+
+---
+
 ## The instrumentation stacked, and Save died (2026-08-28)
 
 Operator: *"trying to create a athletes to industry development plan and

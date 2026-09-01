@@ -464,11 +464,18 @@ export interface CreateJobArgs {
   city?:            string | null;
   state?:           string | null;
   country?:         string | null;
+  zipcode?:         string | null;
   isRemote?:        boolean | null;
   contractDetails?: ManatalContractDetails | null;
   salaryMin?:       number | null;
   salaryMax?:       number | null;
   currency?:        string | null;   // ISO-3 e.g. 'GBP'
+  /** Manatal `frequency` — the period the salary is quoted for. */
+  frequency?:       string | null;
+  /** Manatal `is_salary_visible` — whether the range shows publicly. */
+  isSalaryVisible?: boolean | null;
+  /** Account-scoped Manatal industry id. Discovered, never guessed. */
+  industryId?:      string | number | null;
   /** External id to round-trip the requisition's UUID. */
   externalId?:      string | null;
   headcount?:       number | null;
@@ -491,11 +498,24 @@ export async function createManatalJob(
     lastError = { status: 0, message: `organizationId is not numeric: ${args.organizationId}`, path: '/jobs/' };
     return null;
   }
+  const body = { organization: orgIdNum, ...manatalJobBody(args), status: 'active', is_published: false };
+  const data = await manatalFetch('/jobs/', undefined, {
+    method:  'POST',
+    baseUrl: WRITE_API_URL,
+    body,
+  });
+  if (!data?.id) return null;
+  return { id: String(data.id) };
+}
+
+/** The field half of a job body, shared by create and update so the two
+ *  cannot drift. `organization` and the publish flags are NOT here:
+ *  they belong to one operation each. */
+function manatalJobBody(args: CreateJobArgs): Record<string, unknown> {
   // contract_details is an ENUM on Manatal v3 with no nullable flag —
   // sending null 400s. Build the body conditionally so optional non-
   // nullable fields are omitted when unset rather than nulled out.
   const body: Record<string, unknown> = {
-    organization:     orgIdNum,
     position_name:    args.title,
     description:      args.description ?? '',
     external_id:      args.externalId ?? null,
@@ -506,19 +526,49 @@ export async function createManatalJob(
     is_remote:        args.isRemote ?? null,
     salary_min:       args.salaryMin != null ? String(args.salaryMin) : null,
     salary_max:       args.salaryMax != null ? String(args.salaryMax) : null,
+    zipcode:          args.zipcode ?? '',
     currency:         args.currency ?? null,
     headcount:        args.headcount ?? null,
-    status:           'active',
-    is_published:     false,
   };
   if (args.contractDetails) body.contract_details = args.contractDetails;
-  const data = await manatalFetch('/jobs/', undefined, {
-    method:  'POST',
+  // Same rule as contract_details: these are enum / FK / non-nullable
+  // fields on Manatal v3, so an unset one is OMITTED rather than sent
+  // as null. Sending null 400s the create, which would block
+  // publishing entirely rather than just leaving a field blank.
+  if (args.frequency) body.frequency = args.frequency;
+  if (typeof args.isSalaryVisible === 'boolean') body.is_salary_visible = args.isSalaryVisible;
+  if (args.industryId != null && String(args.industryId).trim() !== '') {
+    body.industry = Number(args.industryId);
+  }
+  return body;
+}
+
+/**
+ * PATCH an EXISTING job's fields.
+ *
+ * Re-publish used to send only `status` / `is_published` /
+ * `is_pinned_in_career_page`, so correcting a role on our side and
+ * pressing "Re-publish to Manatal" changed nothing about the advert —
+ * the button reported success and the job board kept showing the old
+ * salary, the old contract type and the unformatted description. The
+ * only way to fix a published role was to edit it by hand in Manatal,
+ * which is precisely what this integration exists to avoid.
+ *
+ * This deliberately OVERWRITES hand edits made in Manatal. Re-publish
+ * is an explicit operator action meaning "make Manatal match what I
+ * have here", and two sources of truth for one advert is the drift
+ * this codebase keeps paying for elsewhere.
+ */
+export async function updateManatalJob(
+  jobId: string,
+  args: CreateJobArgs,
+): Promise<boolean> {
+  const data = await manatalFetch(`/jobs/${jobId}/`, undefined, {
+    method:  'PATCH',
     baseUrl: WRITE_API_URL,
-    body,
+    body:    manatalJobBody(args),
   });
-  if (!data?.id) return null;
-  return { id: String(data.id) };
+  return data !== null;
 }
 
 /** PATCH /jobs/{id}/ on Manatal Open API v3 to flip a job live on
@@ -542,6 +592,33 @@ export async function publishManatalJob(jobId: string): Promise<boolean> {
     },
   });
   return data !== null;
+}
+
+/* ─── Industries ──────────────────────────────────── */
+
+export interface ManatalIndustry { id: string; name: string }
+
+/**
+ * The account's industry list, for the publish form's picker.
+ *
+ * DISCOVERED, never hardcoded. Industry ids are account-scoped — this
+ * account's live jobs carry 7696959 (Building Materials), 7673671
+ * (Manufacturing), 7673654 (Engineering - Others) and others — so a
+ * baked-in list would be right for exactly one Manatal account and
+ * silently wrong for any other.
+ *
+ * FAILS SOFT, on purpose. If the endpoint is absent or errors this
+ * returns `[]`, the picker shows nothing to choose, `industry` is
+ * omitted from the create, and publishing behaves exactly as it does
+ * today. The alternative — guessing an id — risks a 400 that blocks
+ * publishing outright, which is far worse than an unset field.
+ */
+export async function listManatalIndustries(): Promise<ManatalIndustry[]> {
+  const data = await manatalFetch('/industries/', { page_size: '200' }, { baseUrl: WRITE_API_URL });
+  const rows = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+  return rows
+    .filter((r: any) => r && r.id != null && r.name)
+    .map((r: any) => ({ id: String(r.id), name: String(r.name) }));
 }
 
 /* ─── Config check ────────────────────────────────── */

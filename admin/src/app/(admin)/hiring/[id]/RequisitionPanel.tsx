@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
+import { MANATAL_SALARY_PERIODS } from '@/lib/manatalJobFields';
 import RoleApplicants from '@/components/modules/RoleApplicants';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle, Send,
          MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText, Sparkles } from 'lucide-react';
@@ -329,6 +330,40 @@ export default function RequisitionPanel({ req }: Props) {
   const [publishingManatal,  setPublishingManatal]  = useState(false);
   const [manatalError,       setManatalError]       = useState<string | null>(null);
 
+  // Job-board fields (migration 083). Held as strings because they are
+  // form values; coerced once on save.
+  const [jobFields, setJobFields] = useState({
+    headcount:       req.headcount != null ? String(req.headcount) : '1',
+    salary_currency: req.salary_currency ?? 'GBP',
+    salary_period:   req.salary_period ?? '',
+    salary_visible:  req.salary_visible ? 'yes' : 'no',
+  });
+  const [savingJobFields, setSavingJobFields] = useState(false);
+  const [jobFieldsSaved,  setJobFieldsSaved]  = useState(false);
+  const [jobFieldsError,  setJobFieldsError]  = useState<string | null>(null);
+
+  function setJobField(k: keyof typeof jobFields, v: string) {
+    setJobFields(prev => ({ ...prev, [k]: v }));
+    setJobFieldsSaved(false);
+  }
+
+  async function saveJobFields() {
+    setSavingJobFields(true);
+    setJobFieldsError(null);
+    const { error } = await supabase.from('requisitions').update({
+      headcount:       Number(jobFields.headcount) > 0 ? Number(jobFields.headcount) : null,
+      salary_currency: jobFields.salary_currency || null,
+      // '' means "not stated", which OMITS `frequency` from the Manatal
+      // body. Storing '' would violate the CHECK; null is the unset.
+      salary_period:   jobFields.salary_period || null,
+      salary_visible:  jobFields.salary_visible === 'yes',
+    }).eq('id', req.id);
+    setSavingJobFields(false);
+    if (error) { setJobFieldsError(error.message); return; }
+    setJobFieldsSaved(true);
+    revalidateAdminPath(`/hiring/${req.id}`);
+  }
+
   // Friction analysis. Held in local state so the card and the IvyLens
   // link-status line update the moment the call returns, rather than
   // waiting on a refresh — the whole point of the button is to see that
@@ -448,6 +483,56 @@ export default function RequisitionPanel({ req }: Props) {
                     : null}
                 {recruiterSaved ? 'Saved' : 'Save'}
               </button>
+            </div>
+          </div>
+
+          {/* Job-board fields. Manatal carries all four, we captured
+              none of them, and the first published role therefore
+              advertised a USD hourly rate as pounds per year. They are
+              editable HERE because a role is usually published after it
+              was created, and re-publish now pushes field changes. */}
+          <div className="md:col-span-2">
+            <label className="label">Job board details</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[11px]" style={{ color: 'var(--ink-faint)' }} htmlFor="jb-headcount">Headcount</label>
+                <input id="jb-headcount" type="number" min="1" className="input"
+                  value={jobFields.headcount} onChange={e => setJobField('headcount', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-[11px]" style={{ color: 'var(--ink-faint)' }} htmlFor="jb-currency">Currency</label>
+                <select id="jb-currency" className="input" value={jobFields.salary_currency}
+                  onChange={e => setJobField('salary_currency', e.target.value)}>
+                  {['GBP','USD','EUR','AUD','CAD','CHF','SEK','AED','INR'].map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px]" style={{ color: 'var(--ink-faint)' }} htmlFor="jb-period">Salary per</label>
+                <select id="jb-period" className="input" value={jobFields.salary_period}
+                  onChange={e => setJobField('salary_period', e.target.value)}>
+                  <option value="">—</option>
+                  {MANATAL_SALARY_PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px]" style={{ color: 'var(--ink-faint)' }} htmlFor="jb-visible">Show salary</label>
+                <select id="jb-visible" className="input" value={jobFields.salary_visible}
+                  onChange={e => setJobField('salary_visible', e.target.value)}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <button onClick={saveJobFields} disabled={savingJobFields} className="btn-secondary btn-sm">
+                {savingJobFields ? <Loader2 size={12} className="animate-spin" /> : null} Save job board details
+              </button>
+              {jobFieldsSaved && (
+                <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--teal)' }}>
+                  <CheckCircle2 size={12} /> Saved — re-publish to push to Manatal
+                </span>
+              )}
+              {jobFieldsError && <span className="text-xs" style={{ color: 'var(--red)' }}>{jobFieldsError}</span>}
             </div>
           </div>
 

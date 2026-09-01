@@ -5,10 +5,11 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 import {
   isManatalConfigured,
   createManatalJob,
+  updateManatalJob,
   publishManatalJob,
   lastManatalError,
 } from '@/lib/manatal';
-import { manatalContractDetails, manatalIsRemote, manatalSalary } from '@/lib/manatalJobFields';
+import { buildManatalJobArgs, type RequisitionForManatal } from '@/lib/manatalJobFields';
 
 export const runtime = 'nodejs';
 
@@ -39,7 +40,11 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   const supabase = createServerSupabaseClient();
   const { data: req, error: loadErr } = await supabase
     .from('requisitions')
-    .select('id,title,description,location,employment_type,seniority,working_model,salary_min,salary_max,salary_range,manatal_job_id,companies(manatal_client_id)')
+    // ONE string literal, deliberately. supabase-js infers the row type
+    // from the literal type of this argument, so splitting it with `+`
+    // widens it to `string` and every field access below becomes an
+    // error on GenericStringError.
+    .select('id,title,description,location,employment_type,seniority,working_model,salary_min,salary_max,salary_range,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,must_haves,nice_to_haves,manatal_job_id,companies(manatal_client_id)')
     .eq('id', params.id)
     .single();
   if (loadErr || !req) {
@@ -62,21 +67,28 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   // otherwise create a new one. The publish step runs in both branches
   // so admins can re-publish if Manatal lost the toggle.
   let jobId: string | null = req.manatal_job_id ?? null;
+  const jobArgs = buildManatalJobArgs(req as RequisitionForManatal, organizationId);
+
+  if (jobId) {
+    // Push the current field values BEFORE re-publishing. Without this,
+    // "Re-publish" only toggled the publish flags: a corrected salary
+    // or description never reached Manatal and the button still
+    // reported success.
+    const updated = await updateManatalJob(jobId, jobArgs);
+    if (!updated) {
+      const err = lastManatalError();
+      return NextResponse.json({
+        error: err?.message ?? 'Manatal job update failed.',
+        manatal_job_id: jobId,
+      }, { status: 502 });
+    }
+  }
 
   if (!jobId) {
-    const { min, max } = manatalSalary(req as never);
-    const created = await createManatalJob({
-      organizationId,
-      title:           req.title,
-      description:     req.description ?? null,
-      address:         req.location ?? null,
-      contractDetails: manatalContractDetails(req.employment_type),
-      isRemote:        manatalIsRemote((req as { working_model?: string | null }).working_model),
-      salaryMin:       min,
-      salaryMax:       max,
-      currency:        'GBP',
-      externalId:      req.id,
-    });
+    // Every field mapping lives in buildManatalJobArgs, so what we send
+    // Manatal is one testable value rather than a shape assembled
+    // inside a handler behind auth, a rate limiter and a DB read.
+    const created = await createManatalJob(jobArgs);
     if (!created?.id) {
       const err = lastManatalError();
       return NextResponse.json({ error: err?.message ?? 'Manatal job create failed.' }, { status: 502 });

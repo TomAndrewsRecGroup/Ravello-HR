@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Zap } from 'lucide-react';
 import { buildJdText } from '@/lib/jdText';
+import { MANATAL_SALARY_PERIODS } from '@/lib/manatalJobFields';
 
 const WORKING_MODELS   = ['office', 'hybrid', 'remote'] as const;
 const SENIORITY_OPTS   = ['Junior/Graduate', 'Mid-level', 'Senior', 'Head of/Director', 'C-suite/Executive'];
@@ -45,6 +46,12 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, tem
     employment_type:  '',
     salary_min:       '',
     salary_max:       '',
+    // Manatal carries all four and we captured none of them, so the
+    // first published role advertised a USD hourly rate as £/year.
+    salary_currency:  'GBP',
+    salary_period:    'year',
+    salary_visible:   'no',
+    headcount:        '1',
     interview_stages: '2',
     must_haves_raw:   (template?.must_haves ?? []).join('\n'),
     description:      template?.description ?? '',
@@ -187,6 +194,10 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, tem
         employment_type:    form.employment_type  || null,
         salary_min:         salary_min            || null,
         salary_max:         salary_max            || null,
+        salary_currency:    form.salary_currency  || null,
+        salary_period:      form.salary_period    || null,
+        salary_visible:     form.salary_visible === 'yes',
+        headcount:          Number(form.headcount) > 0 ? Number(form.headcount) : null,
         interview_stages,
         must_haves:         must_haves.length ? must_haves : null,
         description:        form.description      || null,
@@ -376,14 +387,48 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, tem
             </select>
           </div>
           <div>
-            <label className="label">Salary Min (£)</label>
-            <input type="number" className="input" placeholder="40000" value={form.salary_min} onChange={e => set('salary_min', e.target.value)} />
+            <label className="label" htmlFor="headcount">Headcount</label>
+            <input id="headcount" type="number" min="1" className="input" placeholder="1"
+              value={form.headcount} onChange={e => set('headcount', e.target.value)} />
+          </div>
+          {/* The currency is a FIELD, not a "£" printed on a label.
+              It was hardcoded in both the label and the publish route,
+              and the first role published paid in dollars per hour. */}
+          <div>
+            <label className="label" htmlFor="salary_currency">Currency</label>
+            <select id="salary_currency" className="input" value={form.salary_currency}
+              onChange={e => set('salary_currency', e.target.value)}>
+              {['GBP','USD','EUR','AUD','CAD','CHF','SEK','AED','INR'].map(c => <option key={c}>{c}</option>)}
+            </select>
           </div>
           <div>
-            <label className="label">Salary Max (£)</label>
-            <input type="number" className="input" placeholder="55000" value={form.salary_max} onChange={e => set('salary_max', e.target.value)} />
+            <label className="label" htmlFor="salary_period">Salary per</label>
+            <select id="salary_period" className="input" value={form.salary_period}
+              onChange={e => set('salary_period', e.target.value)}>
+              {MANATAL_SALARY_PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label" htmlFor="salary_min">Salary Min ({form.salary_currency})</label>
+            <input id="salary_min" type="number" className="input" placeholder="40000" value={form.salary_min} onChange={e => set('salary_min', e.target.value)} />
+          </div>
+          <div>
+            <label className="label" htmlFor="salary_max">Salary Max ({form.salary_currency})</label>
+            <input id="salary_max" type="number" className="input" placeholder="55000" value={form.salary_max} onChange={e => set('salary_max', e.target.value)} />
+          </div>
+          <div>
+            <label className="label" htmlFor="salary_visible">Show salary publicly</label>
+            <select id="salary_visible" className="input" value={form.salary_visible}
+              onChange={e => set('salary_visible', e.target.value)}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
           </div>
         </div>
+        <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+          Headcount, currency, period and visibility are sent to Manatal when the role is
+          published, and appear on every job board it syndicates to.
+        </p>
       </div>
 
       {/* Description + must-haves */}

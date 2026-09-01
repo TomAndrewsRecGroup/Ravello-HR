@@ -7,7 +7,10 @@
 // the route reported success, and Manatal simply took what it was given.
 
 import { describe, expect, it } from 'vitest';
-import { manatalContractDetails, manatalIsRemote, manatalSalary, parseSalaryRange } from '../manatalJobFields';
+import {
+  manatalContractDetails, manatalCurrency, manatalFrequency, manatalHeadcount,
+  manatalIsRemote, manatalSalary, parseSalaryRange, splitLocation,
+} from '../manatalJobFields';
 
 /** Verbatim from the requisitions row. */
 const LIVE_ROLE = {
@@ -101,6 +104,111 @@ describe('parseSalaryRange', () => {
   it('gives up cleanly on prose', () => {
     expect(parseSalaryRange('Competitive')).toEqual({ min: null, max: null });
     expect(parseSalaryRange(null)).toEqual({ min: null, max: null });
+  });
+});
+
+describe('splitLocation', () => {
+  it('splits the live role rather than dumping it all in address', () => {
+    // Manatal received address:"London, UK", city:"", country:"" and
+    // Tom filled the other two in by hand. Every job he creates
+    // natively carries city + country, which is what job boards
+    // filter on.
+    expect(splitLocation('London, UK')).toEqual({
+      address: 'London, UK', city: 'London', state: '', country: 'United Kingdom',
+    });
+  });
+
+  it('recognises the country spellings an operator types', () => {
+    for (const s of ['Leeds, UK', 'Leeds, United Kingdom', 'Leeds, England', 'Leeds, GB']) {
+      expect(splitLocation(s).country, s).toBe('United Kingdom');
+    }
+    expect(splitLocation('Dublin, Ireland').country).toBe('Ireland');
+    expect(splitLocation('Austin, USA').country).toBe('United States');
+  });
+
+  it('keeps the middle segments as state', () => {
+    expect(splitLocation('Harlow, Essex, UK')).toEqual({
+      address: 'Harlow, Essex, UK', city: 'Harlow', state: 'Essex', country: 'United Kingdom',
+    });
+  });
+
+  it('never guesses a country it does not recognise', () => {
+    // "Cambridge" is a real place in three of the countries listed.
+    // Empty is the honest answer; a wrong country is a wrong audience.
+    expect(splitLocation('Cambridge')).toEqual({
+      address: 'Cambridge', city: 'Cambridge', state: '', country: '',
+    });
+    expect(splitLocation('Milton Keynes, Bucks').country).toBe('');
+  });
+
+  it('does not eat the only segment when it is a country', () => {
+    // Consuming "UK" here would leave a job with no city at all.
+    expect(splitLocation('UK')).toEqual({
+      address: 'UK', city: '', state: '', country: 'United Kingdom',
+    });
+  });
+
+  it('returns empties for nothing', () => {
+    const empty = { address: '', city: '', state: '', country: '' };
+    expect(splitLocation(null)).toEqual(empty);
+    expect(splitLocation('  ')).toEqual(empty);
+    expect(splitLocation(',, ,')).toEqual(empty);
+  });
+});
+
+describe('manatalFrequency', () => {
+  it('reads the live role as hourly', () => {
+    // $60-$120 PER HOUR. Defaulting this to 'year' would advertise
+    // £60-£120 a year on every job board.
+    expect(manatalFrequency('hour')).toBe('hour');
+    expect(manatalFrequency('per hour')).toBe('hour');
+    expect(manatalFrequency('Hourly')).toBe('hour');
+  });
+
+  it('maps the words an operator writes', () => {
+    expect(manatalFrequency('annum')).toBe('year');
+    expect(manatalFrequency('per annum')).toBe('year');
+    expect(manatalFrequency('Yearly')).toBe('year');
+    expect(manatalFrequency('PCM')).toBe('month');
+    expect(manatalFrequency('day')).toBe('day');
+  });
+
+  it('omits rather than defaults on the unknown', () => {
+    expect(manatalFrequency('per sprint')).toBeNull();
+    expect(manatalFrequency(null)).toBeNull();
+    expect(manatalFrequency('')).toBeNull();
+  });
+});
+
+describe('manatalCurrency', () => {
+  it('takes an ISO code in any case', () => {
+    expect(manatalCurrency('usd')).toBe('USD');
+    expect(manatalCurrency(' GBP ')).toBe('GBP');
+  });
+
+  it('refuses anything that is not three letters', () => {
+    // Manatal validates this and a bad value fails the whole create,
+    // so passing "£" or "pounds" through would block publishing.
+    expect(manatalCurrency('£')).toBeNull();
+    expect(manatalCurrency('pounds')).toBeNull();
+    expect(manatalCurrency('US$')).toBeNull();
+    expect(manatalCurrency(null)).toBeNull();
+  });
+});
+
+describe('manatalHeadcount', () => {
+  it('accepts a positive integer, from a number or a form string', () => {
+    expect(manatalHeadcount(3)).toBe(3);
+    expect(manatalHeadcount('2')).toBe(2);
+    expect(manatalHeadcount(2.7)).toBe(2);
+  });
+
+  it('treats zero, negatives and junk as unset', () => {
+    expect(manatalHeadcount(0)).toBeNull();
+    expect(manatalHeadcount(-1)).toBeNull();
+    expect(manatalHeadcount('')).toBeNull();
+    expect(manatalHeadcount('lots')).toBeNull();
+    expect(manatalHeadcount(null)).toBeNull();
   });
 });
 

@@ -43,7 +43,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const [{ data: req }, { data: candidates }, { data: interviews }, { data: referralConfig }] = await Promise.all([
     supabase
       .from('requisitions')
-      .select('id,company_id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,companies(id,slug,name,manatal_client_id)')
+      // The job-board columns (083) MUST be selected. The panel seeds its
+      // editor from this row, so an unselected column reads as undefined,
+      // the editor shows its default, and pressing Save writes that
+      // default over a real stored value — GBP over USD, silently.
+      .select('id,company_id,title,department,seniority,stage,salary_range,salary_min,salary_max,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,location,employment_type,working_model,description,must_haves,nice_to_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,companies(id,slug,name,manatal_client_id)')
       .eq('id', params.id)
       .single(),
     supabase
