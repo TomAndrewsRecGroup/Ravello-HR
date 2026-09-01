@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { MANATAL_SALARY_PERIODS } from '@/lib/manatalJobFields';
 import RoleApplicants from '@/components/modules/RoleApplicants';
+import ScanCandidatePanel from '@/components/modules/ScanCandidatePanel';
 import { Loader2, CheckCircle2, AlertCircle, XCircle, AlertTriangle, HelpCircle, Send,
          MapPin, PoundSterling, Layers, Monitor, Clock, Plus, FileText, Sparkles } from 'lucide-react';
 
@@ -618,6 +619,8 @@ export default function RequisitionPanel({ req }: Props) {
       {/* Manatal applicants — the admin half of the portal's pipeline
           view. Placed after Publish so the order on the page matches the
           order of the actual flow: publish, then applicants arrive. */}
+      <ScanCandidatePanel requisitionId={req.id} ivylensRoleId={ivylensRoleId} />
+
       <RoleApplicants requisitionId={req.id} manatalJobId={manatalJobId} />
 
       {/* Offers panel */}
