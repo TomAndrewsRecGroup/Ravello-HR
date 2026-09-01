@@ -10,6 +10,7 @@ import {
   lastManatalError,
 } from '@/lib/manatal';
 import { buildManatalJobArgs, type RequisitionForManatal } from '@/lib/manatalJobFields';
+import { logPublishStep } from '@/lib/manatalPublishLog';
 
 export const runtime = 'nodejs';
 
@@ -47,8 +48,20 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     .select('id,title,description,location,employment_type,seniority,working_model,salary_min,salary_max,salary_range,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,must_haves,nice_to_haves,manatal_job_id,companies(manatal_client_id)')
     .eq('id', params.id)
     .single();
-  if (loadErr || !req) {
-    return NextResponse.json({ error: loadErr?.message ?? 'Requisition not found' }, { status: 404 });
+  // A FAILED read and a MISSING role are different faults and must not
+  // share an answer. This select names five columns added by migration
+  // 083; until PostgREST reloads its schema cache it answers 400
+  // "column ... does not exist", and reporting that as "Requisition not
+  // found" sends whoever is debugging it looking for a deleted role
+  // instead of a stale cache.
+  if (loadErr) {
+    return NextResponse.json(
+      { error: `Could not read the requisition: ${loadErr.message}` },
+      { status: 500 },
+    );
+  }
+  if (!req) {
+    return NextResponse.json({ error: 'Requisition not found' }, { status: 404 });
   }
 
   // The PostgREST embed returns the FK relation as an object or, in
@@ -58,6 +71,10 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     ? companyRel[0]?.manatal_client_id ?? null
     : companyRel?.manatal_client_id ?? null;
   if (!organizationId) {
+    await logPublishStep({
+      requisitionId: params.id, actorId: auth.userId, step: 'precondition', ok: false,
+      httpStatus: 400, message: 'Client has no manatal_client_id',
+    });
     return NextResponse.json({
       error: "This client isn't linked to Manatal yet — set manatal_client_id on the client profile.",
     }, { status: 400 });
@@ -75,8 +92,14 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     // or description never reached Manatal and the button still
     // reported success.
     const updated = await updateManatalJob(jobId, jobArgs);
+    const updErrDetail = updated ? null : lastManatalError();
+    await logPublishStep({
+      requisitionId: params.id, actorId: auth.userId, step: 'update', ok: updated,
+      manatalJobId: jobId, httpStatus: updErrDetail?.status ?? 200,
+      message: updErrDetail?.message ?? null, sent: jobArgs,
+    });
     if (!updated) {
-      const err = lastManatalError();
+      const err = updErrDetail;
       return NextResponse.json({
         error: err?.message ?? 'Manatal job update failed.',
         manatal_job_id: jobId,
@@ -89,9 +112,14 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     // Manatal is one testable value rather than a shape assembled
     // inside a handler behind auth, a rate limiter and a DB read.
     const created = await createManatalJob(jobArgs);
+    const createErr = created?.id ? null : lastManatalError();
+    await logPublishStep({
+      requisitionId: params.id, actorId: auth.userId, step: 'create', ok: Boolean(created?.id),
+      manatalJobId: created?.id ?? null, httpStatus: createErr?.status ?? 201,
+      message: createErr?.message ?? null, sent: jobArgs,
+    });
     if (!created?.id) {
-      const err = lastManatalError();
-      return NextResponse.json({ error: err?.message ?? 'Manatal job create failed.' }, { status: 502 });
+      return NextResponse.json({ error: createErr?.message ?? 'Manatal job create failed.' }, { status: 502 });
     }
     jobId = created.id;
     // Persist the new job id immediately, BEFORE we attempt publish.
@@ -113,8 +141,13 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   }
 
   const published = await publishManatalJob(jobId);
+  const pubErr = published ? null : lastManatalError();
+  await logPublishStep({
+    requisitionId: params.id, actorId: auth.userId, step: 'publish', ok: published,
+    manatalJobId: jobId, httpStatus: pubErr?.status ?? 200, message: pubErr?.message ?? null,
+  });
   if (!published) {
-    const err = lastManatalError();
+    const err = pubErr;
     return NextResponse.json({
       error: err?.message ?? 'Manatal job publish failed.',
       manatal_job_id: jobId,
