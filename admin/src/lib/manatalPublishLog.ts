@@ -15,6 +15,12 @@ import { createClient } from '@supabase/supabase-js';
 export interface PublishStep {
   requisitionId: string;
   actorId?:      string | null;
+  /** `precondition` covers every exit BEFORE Manatal is contacted:
+   *  a denied session, a rate limit, a missing API key, a failed read,
+   *  an unlinked client. Those were silent in the first cut of this
+   *  file, and the first real failure landed in exactly that gap — an
+   *  empty log then means "nothing ran", which is indistinguishable
+   *  from "the button was never pressed". */
   step:          'precondition' | 'create' | 'update' | 'publish';
   ok:            boolean;
   manatalJobId?: string | null;
@@ -35,17 +41,17 @@ export interface PublishStep {
  * be frozen the moment the response is returned, which would drop the
  * write silently — the exact failure this file exists to prevent.
  */
-export async function logPublishStep(step: PublishStep): Promise<void> {
+export async function logPublishStep(step: PublishStep): Promise<boolean> {
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return;
+    if (!url || !key) return false;
 
     const sb = createClient(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    await sb.from('manatal_publish_log').insert({
+    const { error } = await sb.from('manatal_publish_log').insert({
       requisition_id: step.requisitionId,
       actor_id:       step.actorId ?? null,
       step:           step.step,
@@ -57,7 +63,12 @@ export async function logPublishStep(step: PublishStep): Promise<void> {
       message:        step.message ? String(step.message).slice(0, 4_000) : null,
       sent:           step.sent ?? null,
     });
+    // Reported, not thrown. A caller that knows the write failed can
+    // say "no diagnostics were recorded" instead of leaving an empty
+    // table to be read as "nothing happened".
+    return !error;
   } catch {
     // Swallowed on purpose — see the doc comment above.
+    return false;
   }
 }

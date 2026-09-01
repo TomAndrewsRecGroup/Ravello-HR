@@ -16,6 +16,29 @@ export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Bumped whenever this handler changes shape. It goes into every log
+// row and every response, so "is the deployed route the one I am
+// reading?" is answerable from data instead of argued about. Two
+// rounds of this were spent unable to tell a stale deploy from a bug.
+const ROUTE_VERSION = 'manatal-publish/3';
+
+/** Log a pre-Manatal exit and answer with the same reason. Every early
+ *  return went through neither before, so an empty log read as "the
+ *  button was never pressed" when it actually meant "we stopped in the
+ *  first ten lines". */
+async function refuse(
+  requisitionId: string,
+  status: number,
+  message: string,
+  actorId?: string | null,
+) {
+  const logged = await logPublishStep({
+    requisitionId, actorId, step: 'precondition', ok: false,
+    httpStatus: status, message: `[${ROUTE_VERSION}] ${message}`,
+  });
+  return NextResponse.json({ error: message, route_version: ROUTE_VERSION, logged }, { status });
+}
+
 // POST /api/admin/requisitions/[id]/manatal-publish
 // Pushes a requisition to Manatal: creates the job under the client's
 // Manatal organization, then publishes it (Careers page + free job
@@ -29,13 +52,23 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   // Ceiling on a metered/outbound action. Keyed by user rather
   // than IP so one person's bulk run does not throttle the office.
   const rl = limiters.vendor.check(getUserRateLimitKey(httpReq, auth.userId));
-  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
+  if (!rl.allowed) {
+    await logPublishStep({
+      requisitionId: params.id, actorId: auth.userId, step: 'precondition', ok: false,
+      httpStatus: 429, message: `[${ROUTE_VERSION}] rate limited`,
+    });
+    return rateLimitResponse(rl.resetAt);
+  }
   if (!UUID_RE.test(params.id)) {
-    return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    // Not logged: the id is the log's own foreign key, so there is
+    // nothing to attach a row to.
+    return NextResponse.json({ error: 'Invalid id', route_version: ROUTE_VERSION }, { status: 400 });
   }
 
   if (!isManatalConfigured()) {
-    return NextResponse.json({ error: 'Manatal is not configured on this environment.' }, { status: 503 });
+    return refuse(params.id, 503,
+      'MANATAL_API_KEY is not set on the admin app, so nothing can be sent to Manatal.',
+      auth.userId);
   }
 
   const supabase = createServerSupabaseClient();
@@ -55,13 +88,10 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   // found" sends whoever is debugging it looking for a deleted role
   // instead of a stale cache.
   if (loadErr) {
-    return NextResponse.json(
-      { error: `Could not read the requisition: ${loadErr.message}` },
-      { status: 500 },
-    );
+    return refuse(params.id, 500, `Could not read the requisition: ${loadErr.message}`, auth.userId);
   }
   if (!req) {
-    return NextResponse.json({ error: 'Requisition not found' }, { status: 404 });
+    return refuse(params.id, 404, 'Requisition not found', auth.userId);
   }
 
   // The PostgREST embed returns the FK relation as an object or, in
@@ -71,13 +101,9 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     ? companyRel[0]?.manatal_client_id ?? null
     : companyRel?.manatal_client_id ?? null;
   if (!organizationId) {
-    await logPublishStep({
-      requisitionId: params.id, actorId: auth.userId, step: 'precondition', ok: false,
-      httpStatus: 400, message: 'Client has no manatal_client_id',
-    });
-    return NextResponse.json({
-      error: "This client isn't linked to Manatal yet — set manatal_client_id on the client profile.",
-    }, { status: 400 });
+    return refuse(params.id, 400,
+      "This client isn't linked to Manatal yet — set manatal_client_id on the client profile.",
+      auth.userId);
   }
 
   // Reuse an existing job id if the requisition was already pushed,
@@ -166,5 +192,8 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
     }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, manatal_job_id: jobId, manatal_published_at: now });
+  return NextResponse.json({
+    ok: true, manatal_job_id: jobId, manatal_published_at: now,
+    route_version: ROUTE_VERSION,
+  });
 }

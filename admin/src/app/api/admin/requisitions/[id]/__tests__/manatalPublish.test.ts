@@ -19,9 +19,10 @@ const calls: { fn: string; args: any[] }[] = [];
 let createResult:  { id: string } | null = { id: '999' };
 let updateResult   = true;
 let publishResult  = true;
+let configured     = true;
 
 vi.mock('@/lib/manatal', () => ({
-  isManatalConfigured: () => true,
+  isManatalConfigured: () => configured,
   lastManatalError:    () => ({ status: 400, message: 'stub Manatal error', path: '/jobs/' }),
   createManatalJob:  (...args: any[]) => { calls.push({ fn: 'create',  args }); return Promise.resolve(createResult); },
   updateManatalJob:  (...args: any[]) => { calls.push({ fn: 'update',  args }); return Promise.resolve(updateResult); },
@@ -29,8 +30,13 @@ vi.mock('@/lib/manatal', () => ({
 }));
 
 const logged: any[] = [];
+// Returns a boolean, like the real one. A mock returning undefined
+// made `logged` vanish from the JSON response (JSON.stringify drops
+// undefined keys) and the assertion failed for a reason that had
+// nothing to do with the route.
+let logWriteOk = true;
 vi.mock('@/lib/manatalPublishLog', () => ({
-  logPublishStep: (s: any) => { logged.push(s); return Promise.resolve(); },
+  logPublishStep: (s: any) => { logged.push(s); return Promise.resolve(logWriteOk); },
 }));
 
 vi.mock('@/lib/auth/requireStaff', () => ({
@@ -99,6 +105,8 @@ beforeEach(() => {
   createResult = { id: '999' };
   updateResult = true;
   publishResult = true;
+  configured = true;
+  logWriteOk = true;
 });
 
 describe('a role that has never been published', () => {
@@ -235,5 +243,55 @@ describe('every attempt leaves a durable record', () => {
     await post();
     expect(logged.map(l => l.step)).toEqual(['create', 'publish']);
     expect(logged.every(l => l.ok)).toBe(true);
+  });
+});
+
+describe('the exits that used to be silent', () => {
+  // The first real failure landed in exactly this gap: the route
+  // returned before any logging, so an empty log read as "the button
+  // was never pressed" when it meant "we stopped in the first ten
+  // lines".
+  it('logs a missing MANATAL_API_KEY instead of exiting quietly', async () => {
+    configured = false;
+    const res = await post();
+    const body = await res.json();
+    expect(res.status).toBe(503);
+    expect(logged.map(l => l.step)).toEqual(['precondition']);
+    expect(logged[0].message).toContain('MANATAL_API_KEY');
+    expect(calls).toHaveLength(0);
+    expect(body.error).toContain('MANATAL_API_KEY');
+  });
+
+  it('logs a failed read, naming the column PostgREST rejected', async () => {
+    row = null;
+    rowError = { message: 'column requisitions.salary_period does not exist' };
+    await post();
+    expect(logged.map(l => l.step)).toEqual(['precondition']);
+    expect(logged[0].message).toContain('salary_period');
+  });
+
+  it('logs a genuinely missing role too', async () => {
+    row = null; rowError = null;
+    await post();
+    expect(logged[0].message).toContain('not found');
+  });
+
+  it('stamps the route version on every answer', async () => {
+    // Answers "is the deployed route the one I am reading?" from data.
+    // Two rounds were spent unable to tell a stale deploy from a bug.
+    const okBody = await (await post()).json();
+    expect(okBody.route_version).toMatch(/^manatal-publish\//);
+    configured = false;
+    const failBody = await (await post()).json();
+    expect(failBody.route_version).toMatch(/^manatal-publish\//);
+  });
+
+  it('reports whether the diagnostic row was actually written', async () => {
+    // A log write that fails must not leave an empty table to be read
+    // as "nothing happened".
+    configured = false;
+    expect((await (await post()).json()).logged).toBe(true);
+    logWriteOk = false;
+    expect((await (await post()).json()).logged).toBe(false);
   });
 });

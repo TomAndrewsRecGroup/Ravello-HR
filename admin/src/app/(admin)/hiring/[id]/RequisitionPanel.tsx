@@ -409,7 +409,13 @@ export default function RequisitionPanel({ req }: Props) {
       const res = await fetch(`/api/admin/requisitions/${req.id}/manatal-publish`, { method: 'POST' });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setManatalError(json.error ?? `Publish failed (${res.status})`);
+        // Carry the route version and whether a diagnostic row was
+        // written. Without those two facts a failure here is
+        // indistinguishable from a stale deploy, which cost two rounds
+        // of diagnosis on the first role published through this route.
+        const marker = json.route_version ? ` · ${json.route_version}` : ' · route version unknown (stale deploy?)';
+        const rec    = json.logged === false ? ' · NOT recorded' : json.logged ? ' · recorded' : '';
+        setManatalError(`${json.error ?? `Publish failed (${res.status})`} [${res.status}${marker}${rec}]`);
         return;
       }
       setManatalJobId(json.manatal_job_id ?? null);
