@@ -28,6 +28,22 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
+/** One row per invocation, whatever happens.
+ *
+ *  The route's tally went to a console log, which cannot be queried.
+ *  Four hours of zero applications could not be told apart from four
+ *  hours of the cron never firing. Best-effort: a logging failure must
+ *  not fail a run that already did its work. */
+async function recordRun(
+  sb: ReturnType<typeof serviceClient> | null,
+  row: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const client = sb ?? serviceClient();
+    await client.from('referral_scan_runs').insert(row);
+  } catch { /* see above */ }
+}
+
 function authorize(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
@@ -45,7 +61,19 @@ function serviceClient() {
 }
 
 async function run(req: NextRequest) {
+  const startedAt = Date.now();
   if (!authorize(req)) {
+    // Recorded ONLY when the secret is missing from the environment —
+    // that is a misconfiguration, and it is the difference between "the
+    // cron never fired" and "it fired and we turned it away". An
+    // arbitrary 401 is a caller, and logging those would let anyone
+    // fill the table.
+    if (!process.env.CRON_SECRET) {
+      await recordRun(null, {
+        ok: false, outcome: 'unauthorized', duration_ms: Date.now() - startedAt,
+        notes: ['CRON_SECRET is not set on this environment, so every scheduled run is refused.'],
+      });
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -75,6 +103,10 @@ async function run(req: NextRequest) {
     console.error(JSON.stringify({
       _audit: true, action: 'cron.referral.failed', error: error.message, ran_at: ranAt,
     }));
+    await recordRun(supabase, {
+      ok: false, outcome: 'error', duration_ms: Date.now() - startedAt,
+      notes: [`Could not read referral_role_config: ${error.message}`],
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -84,6 +116,12 @@ async function run(req: NextRequest) {
     console.log(JSON.stringify({
       _audit: true, action: 'cron.referral.noop', reason: 'no enabled referral roles', ran_at: ranAt,
     }));
+    // A healthy zero, recorded. Without this row it is identical to a
+    // cron that never fired.
+    await recordRun(supabase, {
+      ok: true, outcome: 'no_roles', duration_ms: Date.now() - startedAt,
+      notes: ['No referral-enabled roles to scan.'],
+    });
     return NextResponse.json({ ran_at: ranAt, ...tally });
   }
 
@@ -131,6 +169,19 @@ async function run(req: NextRequest) {
     action: unhealthy ? 'cron.referral.degraded' : 'cron.referral.ok',
     ...payload,
   }));
+
+  await recordRun(supabase, {
+    ok: !unhealthy,
+    outcome: unhealthy ? 'degraded' : 'ok',
+    duration_ms:      Date.now() - startedAt,
+    roles_considered: tally.roles_considered,
+    roles_skipped:    tally.roles_skipped,
+    matches_seen:     tally.matches_seen,
+    scanned:          tally.scanned,
+    emailed:          tally.emailed ?? 0,
+    tally:            payload,
+    notes:            tally.notes,
+  });
 
   return NextResponse.json(payload, { status: unhealthy ? 500 : 200 });
 }
