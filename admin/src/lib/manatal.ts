@@ -238,6 +238,64 @@ export async function getManatalMatches(organizationId: string): Promise<Manatal
   return (data?.results ?? data ?? []) as ManatalMatch[];
 }
 
+/**
+ * The same job's matches, read over **v1** so the candidate arrives
+ * EXPANDED — `{ id, first_name, last_name, email }` rather than a bare
+ * integer. Names for a whole role in ceil(N/100) calls.
+ *
+ * This is the fix for the read above. v3 is the right version for the
+ * match list itself (it is what ties an applicant to a job, and what
+ * the referral pipeline runs on) but it returns ids, so naming N
+ * applicants cost N further calls — 120 of them, at ~700ms each, on a
+ * route with no declared duration. That is what took the admin
+ * applicants page down: it fitted inside Vercel's default budget at 69
+ * applicants and stopped fitting somewhere past 100.
+ *
+ * `job_id` is passed on the ASSUMPTION that v1 honours it, which could
+ * not be verified from outside the deployment. Both ways of being
+ * wrong are safe and neither is silent:
+ *   - filter rejected  → `manatalFetch` returns null → empty map → the
+ *     per-candidate fallback names everybody, as before.
+ *   - filter IGNORED   → the org's matches come back instead. Harmless
+ *     as a name map (only ids we asked about are ever read out of it),
+ *     just more pages, and the deadline bounds it.
+ * The route reports how many names came from here versus the fallback,
+ * so which of the three it actually is, is a number on the page rather
+ * than a guess in a comment.
+ *
+ * Bounded by BOTH a page count and the caller's wall clock: this is a
+ * label lookup, and it must never be the reason a page fails to render.
+ */
+export async function getManatalMatchesForJobV1(
+  jobId: string,
+  opts?: { pageSize?: number; maxPages?: number; deadline?: number },
+): Promise<ManatalMatch[]> {
+  const pageSize = opts?.pageSize ?? 100;
+  const maxPages = opts?.maxPages ?? 12;
+  const out: ManatalMatch[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    if (opts?.deadline && Date.now() >= opts.deadline) break;
+
+    const data = await manatalFetch('/matches/', {
+      job_id:    jobId,
+      page:      String(page),
+      page_size: String(pageSize),
+    }, { noCache: true, deadline: opts?.deadline });
+
+    // Unlike the v3 walk, a failed page is NOT reported as truncation:
+    // nothing here is authoritative. Every applicant is already known
+    // from the v3 read; this only decides whether they have a name.
+    if (!data) break;
+
+    const results = (data.results ?? []) as ManatalMatch[];
+    out.push(...results);
+    if (!data.next || results.length === 0) break;
+  }
+
+  return out;
+}
+
 export async function updateMatchStage(matchId: number, stageId: number): Promise<ManatalMatch | null> {
   const data = await manatalFetch(`/matches/${matchId}/`, undefined, {
     method: 'PATCH',
