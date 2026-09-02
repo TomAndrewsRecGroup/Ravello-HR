@@ -541,14 +541,27 @@ function manatalJobBody(args: CreateJobArgs): Record<string, unknown> {
     city:             args.city ?? '',
     state:            args.state ?? '',
     country:          args.country ?? '',
-    is_remote:        args.isRemote ?? null,
-    salary_min:       args.salaryMin != null ? String(args.salaryMin) : null,
-    salary_max:       args.salaryMax != null ? String(args.salaryMax) : null,
     zipcode:          args.zipcode ?? '',
-    currency:         args.currency ?? null,
-    headcount:        args.headcount ?? null,
   };
   if (args.contractDetails) body.contract_details = args.contractDetails;
+  // OMITTED WHEN UNSET, never sent as null.
+  //
+  // This body is used by the re-publish PATCH as well as the create, so
+  // a null here does not mean "leave it alone" — it means CLEAR IT. A
+  // headcount we do not hold wiped the 100 the operator had set by hand
+  // in Manatal, twice, and the advert then showed no headcount at all.
+  //
+  // The rule already applied to contract_details, frequency,
+  // is_salary_visible and industry. Salary and currency join it for the
+  // same reason: a role whose pay we have not captured must not blank
+  // the figure somebody entered in Manatal.
+  if (args.headcount != null) body.headcount = args.headcount;
+  if (args.salaryMin != null) body.salary_min = String(args.salaryMin);
+  if (args.salaryMax != null) body.salary_max = String(args.salaryMax);
+  if (args.currency)          body.currency   = args.currency;
+  // Hybrid maps to null (Manatal has no hybrid flag), and null here
+  // would CLEAR a remote flag somebody set rather than leave it.
+  if (typeof args.isRemote === 'boolean') body.is_remote = args.isRemote;
   // Same rule as contract_details: these are enum / FK / non-nullable
   // fields on Manatal v3, so an unset one is OMITTED rather than sent
   // as null. Sending null 400s the create, which would block
