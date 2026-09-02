@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import { CheckCircle2, XCircle, MessageSquare, Loader2, UserPlus } from 'lucide-react';
 import HiredModal from './HiredModal';
+import { judgeWrite, COUNT_EXACT } from '@/lib/supabase/mutations';
 
 interface Props {
   candidateId: string;
@@ -33,8 +34,13 @@ export default function CandidateFeedbackButton({
     try {
       const upd: Record<string, string> = { client_status: status };
       if (fb) upd.client_feedback = fb;
-      const { error: err } = await supabase.from('candidates').update(upd).eq('id', candidateId);
-      if (err) throw err;
+      // A client approving or rejecting a candidate is the decision the
+      // whole hiring page exists for. A silent no-op here shows them a
+      // confirmation for feedback the recruiter never receives.
+      const { error: err, count } = await supabase
+        .from('candidates').update(upd, COUNT_EXACT).eq('id', candidateId);
+      const outcome = judgeWrite({ error: err, count }, 'Your feedback');
+      if (!outcome.ok) throw new Error(outcome.message!);
       setDone(true);
       revalidatePortalPath('/hiring');
     } catch (err) {

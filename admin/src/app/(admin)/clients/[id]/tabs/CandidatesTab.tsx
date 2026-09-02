@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 
 import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, labelFor, valueFor } from '@/lib/ui/statusMaps';
+import { judgeWrite, COUNT_EXACT } from '@/lib/supabase/mutations';
 
 interface Props {
   companyId: string;
@@ -43,7 +44,12 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
 
   async function toggleApproved(id: string, current: boolean) {
     setTogglingCand(id);
-    const { error } = await supabase.from('candidates').update({ approved_for_client: !current }).eq('id', id);
+    // Sharing a candidate with the client is what the client then sees
+    // on their portal. A silent no-op here shows the recruiter a shared
+    // candidate the client will never be offered.
+    const { error, count } = await supabase
+      .from('candidates').update({ approved_for_client: !current }, COUNT_EXACT).eq('id', id);
+    if (!judgeWrite({ error, count }).ok) { setTogglingCand(null); return; }
     if (!error) {
       setCandidates(prev => prev.map(c => c.id === id ? { ...c, approved_for_client: !current } : c));
       revalidateAdminPath('/clients');

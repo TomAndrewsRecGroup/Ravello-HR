@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
+import { judgeWrite, COUNT_EXACT } from '@/lib/supabase/mutations';
 
 interface Props {
   itemId: string;
@@ -29,11 +30,15 @@ export default function ComplianceStatusButton({ itemId, currentStatus }: Props)
     setLoading(true);
     setError(null);
     try {
-      const { error: err } = await supabase
+      // COUNT_EXACT: an UPDATE that RLS refuses matches no rows and
+      // returns error:null, so without a count this advanced the badge
+      // over a record that never changed.
+      const { error: err, count } = await supabase
         .from('compliance_items')
-        .update({ status: next.value })
+        .update({ status: next.value }, COUNT_EXACT)
         .eq('id', itemId);
-      if (err) throw err;
+      const outcome = judgeWrite({ error: err, count }, 'The status change');
+      if (!outcome.ok) throw new Error(outcome.message!);
       setStatus(next.value);
       if (next.value === 'complete') setDone(true);
       revalidatePortalPath('/compliance');

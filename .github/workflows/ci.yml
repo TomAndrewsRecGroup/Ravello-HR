@@ -24,6 +24,7 @@ jobs:
       - run: bash scripts/check-row-cap.sh
       - run: bash scripts/check-route-validation.sh
       - run: bash scripts/check-admin-routes-linked.sh
+      - run: bash scripts/check-blind-updates.sh
 
   quality:
     runs-on: ubuntu-latest
