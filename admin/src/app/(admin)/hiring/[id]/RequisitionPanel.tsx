@@ -335,6 +335,28 @@ export default function RequisitionPanel({ req }: Props) {
 
   // Reads every precondition the publish would fail on, without
   // contacting Manatal. Safe to press repeatedly, costs no vendor call.
+  const [scanning,  setScanning]  = useState(false);
+  const [scanResult, setScanResult] = useState<any>(null);
+
+  // Runs the referral gate over this role's Manatal applicants NOW.
+  // The hourly cron has never existed on this project — Vercel's Cron
+  // Jobs tab is empty — so without this the pipeline cannot be run at
+  // all. It stays useful afterwards for re-scanning after a change.
+  async function scanApplicants() {
+    setScanning(true);
+    setScanResult(null);
+    try {
+      const res  = await fetch(`/api/admin/requisitions/${req.id}/scan-applicants`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      setScanResult({ http: res.status, ...json });
+      revalidateAdminPath(`/hiring/${req.id}`);
+    } catch (e) {
+      setScanResult({ http: 0, error: (e as Error).message });
+    } finally {
+      setScanning(false);
+    }
+  }
+
   async function diagnoseManatal() {
     setDiagnosing(true);
     setDiagnosis(null);
@@ -688,6 +710,30 @@ export default function RequisitionPanel({ req }: Props) {
       {/* Manatal applicants — the admin half of the portal's pipeline
           view. Placed after Publish so the order on the page matches the
           order of the actual flow: publish, then applicants arrive. */}
+      <div className="card p-5 space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>Referral scan</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              Gate this role&rsquo;s Manatal applicants through country, CV scan, mandatory
+              criteria and score. Honours dry run — nothing is emailed while it is on.
+            </p>
+          </div>
+          <button onClick={scanApplicants} disabled={scanning} className="btn-cta btn-sm flex items-center gap-1.5">
+            {scanning ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {scanning ? 'Scanning…' : 'Run scan now'}
+          </button>
+        </div>
+        {scanResult && (
+          <pre
+            className="text-[11px] p-2 rounded-[8px] whitespace-pre-wrap font-mono overflow-x-auto"
+            style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}
+          >
+{JSON.stringify(scanResult, null, 2)}
+          </pre>
+        )}
+      </div>
+
       <ScanCandidatePanel requisitionId={req.id} ivylensRoleId={ivylensRoleId} />
 
       <RoleApplicants requisitionId={req.id} manatalJobId={manatalJobId} />

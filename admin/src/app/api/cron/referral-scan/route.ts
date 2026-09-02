@@ -15,14 +15,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import {
-  DEFAULT_BATCH_CAP,
-  RUN_BUDGET_MS,
-  emptyTally,
-  processRole,
-  type RoleRow,
-} from '@/lib/referral/pipeline';
-import { breakerSnapshot } from '@/lib/http/resilient';
+import { DEFAULT_BATCH_CAP } from '@/lib/referral/pipeline';
+import { runReferralScan } from '@/lib/referral/runScan';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -77,9 +71,7 @@ async function run(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const ranAt = new Date().toISOString();
   const capParam = Number(req.nextUrl.searchParams.get('cap') ?? DEFAULT_BATCH_CAP);
-  const cap = Number.isFinite(capParam) && capParam > 0 ? Math.min(capParam, 200) : DEFAULT_BATCH_CAP;
 
   let supabase;
   try {
@@ -88,81 +80,20 @@ async function run(req: NextRequest) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
-  const { data: roles, error } = await supabase
-    .from('referral_role_config')
-    .select(`
-      requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
-      auto_send_threshold, review_threshold, approved_countries, mandatory_criteria,
-      requisition:requisitions!inner (
-        id, title, company_id, manatal_job_id, ivylens_role_id, jd_text, description
-      )
-    `)
-    .eq('enabled', true);
+  // The scan itself lives in lib/referral/runScan so the operator's
+  // "Run scan now" button and this cron cannot diverge.
+  const { payload, unhealthy, error } = await runReferralScan(supabase, { cap: capParam });
 
   if (error) {
     console.error(JSON.stringify({
-      _audit: true, action: 'cron.referral.failed', error: error.message, ran_at: ranAt,
+      _audit: true, action: 'cron.referral.failed', error, ran_at: payload.ran_at,
     }));
     await recordRun(supabase, {
       ok: false, outcome: 'error', duration_ms: Date.now() - startedAt,
-      notes: [`Could not read referral_role_config: ${error.message}`],
+      notes: [`Could not read referral_role_config: ${error}`],
     });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error }, { status: 500 });
   }
-
-  const tally = emptyTally();
-
-  if (!roles?.length) {
-    console.log(JSON.stringify({
-      _audit: true, action: 'cron.referral.noop', reason: 'no enabled referral roles', ran_at: ranAt,
-    }));
-    // A healthy zero, recorded. Without this row it is identical to a
-    // cron that never fired.
-    await recordRun(supabase, {
-      ok: true, outcome: 'no_roles', duration_ms: Date.now() - startedAt,
-      notes: ['No referral-enabled roles to scan.'],
-    });
-    return NextResponse.json({ ran_at: ranAt, ...tally });
-  }
-
-  // Two ceilings: a candidate count and a wall clock. maxDuration is
-  // 300s and being killed mid-write loses the tally, which is what turns
-  // "0 emailed" into a mystery rather than a number.
-  const budget = { left: cap, deadline: Date.now() + RUN_BUDGET_MS };
-
-  // Roles are processed in sequence rather than in parallel: they share
-  // one Manatal rate-limit budget and one IvyLens partner key, and the
-  // batch cap is global. Parallelism here would buy little and risk 429s.
-  for (const raw of roles) {
-    // PostgREST types an !inner embed as an array; it is one row.
-    const requisition = Array.isArray((raw as any).requisition)
-      ? (raw as any).requisition[0]
-      : (raw as any).requisition;
-    if (!requisition) {
-      tally.roles_skipped++;
-      tally.notes.push('A referral config had no matching requisition and was skipped.');
-      continue;
-    }
-    try {
-      await processRole(supabase, { ...(raw as any), requisition } as RoleRow, tally, budget);
-    } catch (err) {
-      // One bad role must not take the rest of the run with it.
-      tally.roles_skipped++;
-      tally.notes.push(`Role "${requisition.title}" failed: ${(err as Error)?.message}`);
-    }
-  }
-
-  // Fail the HTTP response when a material share of the work errored, so
-  // Vercel's cron monitoring surfaces it. Mirrors ingest-feeds' >50% rule.
-  // Judged over ATTEMPTED candidates only: a quiet hour with nothing to do
-  // is a healthy zero, not a failure.
-  const attempted = tally.scanned + tally.scan_errors;
-  const unhealthy =
-    (attempted > 0 && tally.scan_errors / attempted > 0.5) ||
-    (tally.roles_considered === 0 && tally.roles_skipped > 0);
-
-  tally.vendor_breakers = breakerSnapshot();
-  const payload = { ran_at: ranAt, cap, ...tally };
 
   console.log(JSON.stringify({
     _audit: true,
@@ -172,15 +103,15 @@ async function run(req: NextRequest) {
 
   await recordRun(supabase, {
     ok: !unhealthy,
-    outcome: unhealthy ? 'degraded' : 'ok',
+    outcome: unhealthy ? 'degraded' : (payload.roles_considered === 0 ? 'no_roles' : 'ok'),
     duration_ms:      Date.now() - startedAt,
-    roles_considered: tally.roles_considered,
-    roles_skipped:    tally.roles_skipped,
-    matches_seen:     tally.matches_seen,
-    scanned:          tally.scanned,
-    emailed:          tally.emailed ?? 0,
+    roles_considered: payload.roles_considered,
+    roles_skipped:    payload.roles_skipped,
+    matches_seen:     payload.matches_seen,
+    scanned:          payload.scanned,
+    emailed:          (payload as any).emailed ?? 0,
     tally:            payload,
-    notes:            tally.notes,
+    notes:            payload.notes,
   });
 
   return NextResponse.json(payload, { status: unhealthy ? 500 : 200 });
