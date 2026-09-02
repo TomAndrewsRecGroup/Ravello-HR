@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   // the hardest kind of wrong to notice.
   const autoSend = Number(body.auto_send_threshold ?? 75);
   const review   = Number(body.review_threshold ?? 75);
-  const countries = cleanStrings(body.approved_countries);
+  const countries = cleanStrings(body.blocked_countries);
 
   const criteria = Array.isArray(body.mandatory_criteria)
     ? body.mandatory_criteria
@@ -94,15 +94,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'The review threshold cannot be higher than the auto-send threshold.' }, { status: 400 });
   }
 
-  // The country gate fails closed, so an empty list refuses every
-  // applicant. Refusing to ENABLE in that state turns a silent run of
-  // rejections into a message at the point the mistake is made.
-  if (enabled && !countries.length) {
-    return NextResponse.json(
-      { error: 'Add at least one approved country before enabling — an empty list refuses every applicant.' },
-      { status: 400 },
-    );
-  }
+  // NO empty-list check. Before migration 084 this was an ALLOW list,
+  // so an empty one refused every applicant and refusing to ENABLE in
+  // that state turned a silent run of rejections into a message at the
+  // point the mistake was made. An empty BLOCK list means "refuse
+  // nobody" — a legitimate configuration, and the most likely starting
+  // one — so the same check would now block a correct setup.
 
   const badCriterion = criteria.find((c: any) => !c.match_terms.length);
   if (badCriterion) {
@@ -139,7 +136,7 @@ export async function POST(req: NextRequest) {
     email_process_note:  String(body.email_process_note ?? '').trim() || null,
     auto_send_threshold: autoSend,
     review_threshold:    review,
-    approved_countries:  countries,
+    blocked_countries:   countries,
     mandatory_criteria:  criteria,
   }, { onConflict: 'requisition_id' });
 

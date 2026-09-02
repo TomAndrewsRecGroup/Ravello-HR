@@ -62,7 +62,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
       .order('scheduled_at', { ascending: true }),
     supabase
       .from('referral_role_config')
-      .select('enabled,dry_run,partner_name,referral_url,email_process_note,auto_send_threshold,review_threshold,approved_countries,mandatory_criteria')
+      .select('enabled,dry_run,partner_name,referral_url,email_process_note,auto_send_threshold,review_threshold,blocked_countries,mandatory_criteria')
       .eq('requisition_id', params.id)
       .maybeSingle(),
   ]);

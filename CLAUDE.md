@@ -497,13 +497,46 @@ orchestrates, decides, emails and tracks.
   this default is exactly the failure the feature exists to prevent — a
   candidate scoring 91% on adjacent experience who has never touched the
   mandatory skill. Mutation-tested.
-- **An empty `approved_countries` refuses everyone.** The country gate fails
-  CLOSED because a wrong pass emails a stranger in the operator's name. The
-  config API refuses to *enable* a role with an empty list.
-- **Gate order is country → [scan] → criteria veto → score.** Country genuinely
-  runs first and short-circuits, so an ineligible applicant costs zero AI. The
-  criteria cannot literally precede the scan (they are derived from it), so they
-  act as a veto over the score — which is the wanted behaviour.
+- **The country gate is a BLOCK list (migration 084, operator 2026-09-02), and
+  the fail direction is INVERTED from what it was.** An empty
+  `blocked_countries` blocks NOBODY. That is not an oversight to be
+  "fixed": an allow list could fail closed on a missing config because an
+  empty allow list refuses everyone, but making an empty block list refuse
+  everyone would mean every unconfigured role silently rejects every
+  applicant. The config API therefore no longer refuses to enable a role
+  with an empty list, and `processRole` no longer skips one.
+- **What carries the safety instead is the AUTO-SEND CAP on an unreadable
+  country.** `unknown` — a blank location, or one naming no country we
+  recognise — is *not* a rejection: they are scanned, scored and shown.
+  They simply can never reach `qualified`, so they land in the review queue
+  and a person decides. The property kept is narrower and exact: never
+  email a stranger in the operator's name that we cannot place. Four
+  mutations pin it.
+- **A country is recognised by NAME, never by string shape.** `KNOWN_COUNTRIES`
+  in `gate.ts` exists because bare "United Kingdom" is two words with no
+  comma and is three of the live rows, some of which qualified — any
+  word-count heuristic demotes real candidates to review or promotes real
+  bare cities to auto-send. An omission from that set only ever costs a
+  manual look, never a lost candidate, so it does not need to be perfect.
+  A test asserts every location seen in production resolves.
+- **The seed is evidence, not policy.** 084 could not invert the 17-country
+  allow list — its complement is "everywhere else", which cannot be
+  enumerated, and an empty seed would silently turn 7 existing rejections
+  into passes. So `blocked_countries` was seeded from the countries this
+  role has ACTUALLY refused (Angola, Brazil, Estonia, Macedonia, Nigeria,
+  Turkey), preserving every decision already made. It is meant to be
+  edited. `approved_countries_legacy` keeps the old list for reference.
+- **Pre-084 rows keep their own words.** `country_gate_result` accepts
+  `clear`/`blocked`/`unknown` (current) and `approved`/`rejected` (history).
+  A row recorded `rejected` means "not on the allow list", which is NOT the
+  same fact as "on the block list"; relabelling would assert something
+  about those seven people that was never measured.
+- **Gate order is country → [scan] → criteria veto → score.** Only a BLOCKED
+  country short-circuits, so a blocked applicant still costs zero AI; an
+  unreadable one is scanned, because under a block list nothing proves they
+  should be refused. The criteria cannot literally precede the scan (they
+  are derived from it), so they act as a veto over the score — which is the
+  wanted behaviour.
 - **`dry_run` defaults TRUE.** IvyLens's `POST /api/partner/scans/run` returns
   the RAW model score, skipping the objective-anchor blend its internal
   Candidate Match applies, and IvyLens's own `docs/CANDIDATE_MATCH_MODEL.md`
@@ -534,7 +567,8 @@ orchestrates, decides, emails and tracks.
    `requisitions.ivylens_role_id` is populated; scans then pass a stable
    `role_id` instead of re-sending JD text every call.
 4. Fill in the referral panel on the requisition page: partner name, referral
-   URL, thresholds, **approved countries**, mandatory criteria.
+   URL, thresholds, **blocked countries** (leave empty to accept everywhere),
+   mandatory criteria.
 5. The `IVYLENS_API_KEY` needs the **`candidate_scan.run`** partner scope.
 6. Leave dry run ON.
 

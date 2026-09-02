@@ -250,7 +250,12 @@ export async function processMatch(
         decision = {
           status:          'scan_error' as ReferralStatus,
           score:           null,
-          countryResult:   'approved',
+          // The real verdict from the pre-gate, not a hardcoded pass.
+          // It is 'clear' or 'unknown' here (a 'blocked' candidate
+          // short-circuited above and never reached a scan), and the
+          // review queue shows which — a scan failure should not erase
+          // the fact that we could not read their country.
+          countryResult:   preGate.countryResult,
           countryDetected: candidate.candidate_location ?? null,
           failedCriteria:  [],
           reasons:         [`Scan failed: ${outcome.error}`],
@@ -414,13 +419,18 @@ export async function processRole(
     tally.notes.push(`"${role.requisition.title}" has no manatal_job_id — publish it to Manatal first.`);
     return;
   }
-  if (!role.approved_countries?.length) {
-    // The gate would refuse everyone anyway; saying so is more useful
-    // than a run of silent country rejections.
-    tally.roles_skipped++;
-    tally.notes.push(`"${role.requisition.title}" has an empty approved-country list — every applicant would be refused. Configure it before enabling.`);
-    return;
-  }
+  // NOTE: there is deliberately no empty-list guard here any more.
+  //
+  // Until migration 084 this was an ALLOW list, so an empty one refused
+  // every applicant and skipping the role was strictly more useful than
+  // a run of silent country rejections. An empty BLOCK list is the
+  // opposite: it is a valid, fully-open configuration meaning "refuse
+  // nobody", and skipping the role would stop a correctly-configured
+  // pipeline dead.
+  //
+  // What stops an unconfigured role emailing strangers is no longer a
+  // refusal here — it is the auto-send cap on an unreadable country in
+  // gate.ts, plus dry_run, which still defaults TRUE.
 
   tally.roles_considered++;
 

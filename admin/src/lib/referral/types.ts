@@ -28,7 +28,8 @@ export interface ReferralRoleConfig {
   email_process_note?: string | null;
   auto_send_threshold: number;
   review_threshold:    number;
-  approved_countries:  string[];
+  /** Countries to REFUSE. Empty blocks nobody — see gate.ts. */
+  blocked_countries:   string[];
   mandatory_criteria:  MandatoryCriterion[];
 }
 
@@ -51,7 +52,18 @@ export interface ScanResult {
   experience_analysis?: string;
 }
 
-export type CountryGateResult = 'approved' | 'rejected' | 'unknown';
+/** `clear` = readable and not blocked. `blocked` = named a country on
+ *  the list. `unknown` = no country could be read — not blocked, but
+ *  never auto-sent (see gate.ts).
+ *
+ *  `approved` / `rejected` are PRE-084 history. Rows written under the
+ *  old allow list keep their own words: "was not on the allow list" is
+ *  not the same fact as "is on the block list", and relabelling them
+ *  would assert something never measured. Readers must handle all five;
+ *  only the first three are ever written now. */
+export type CountryGateResult =
+  | 'clear' | 'blocked' | 'unknown'
+  | 'approved' | 'rejected';
 
 export type ReferralStatus =
   | 'rejected_country'

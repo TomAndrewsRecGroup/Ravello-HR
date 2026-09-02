@@ -207,8 +207,23 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
                       </td>
                       <td style={{ color: 'var(--ink-soft)', fontSize: 13 }}>
                         {r.country_detected ?? '—'}
+                        {/* `unknown` is not a rejection under the block list —
+                            it is the reason someone scoring above the bar is
+                            sitting in this queue instead of being emailed, so
+                            the label says that rather than just "unresolved". */}
                         {r.country_gate_result === 'unknown' && (
-                          <span style={{ color: 'var(--gold)', fontSize: 11, display: 'block' }}>unresolved</span>
+                          <span style={{ color: 'var(--gold)', fontSize: 11, display: 'block' }}>
+                            no country read — review only
+                          </span>
+                        )}
+                        {r.country_gate_result === 'blocked' && (
+                          <span style={{ color: 'var(--red)', fontSize: 11, display: 'block' }}>blocked</span>
+                        )}
+                        {/* Pre-084 history, written under the old allow list. */}
+                        {r.country_gate_result === 'rejected' && (
+                          <span style={{ color: 'var(--ink-faint)', fontSize: 11, display: 'block' }}>
+                            not on the old allow list
+                          </span>
                         )}
                       </td>
                       <td>

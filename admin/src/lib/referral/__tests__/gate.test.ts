@@ -17,7 +17,7 @@ function config(over: Partial<ReferralRoleConfig> = {}): ReferralRoleConfig {
     referral_url:        'https://example.com/apply',
     auto_send_threshold: 85,
     review_threshold:    75,
-    approved_countries:  ['United Kingdom', 'Ireland'],
+    blocked_countries:   ['Nigeria', 'Brazil'],
     mandatory_criteria:  [],
     ...over,
   };
@@ -27,46 +27,93 @@ function scan(over: Partial<ScanResult> = {}): ScanResult {
   return { overall_score: 0.9, skill_matches: [], ...over };
 }
 
-describe('checkCountry', () => {
-  it('approves an exact country', () => {
-    expect(checkCountry('United Kingdom', ['United Kingdom']).result).toBe('approved');
+describe('checkCountry — a BLOCK list (migration 084)', () => {
+  it('blocks an exact country', () => {
+    expect(checkCountry('Nigeria', ['Nigeria']).result).toBe('blocked');
   });
 
-  it('approves on the country half of "City, Country"', () => {
-    expect(checkCountry('Cardiff, United Kingdom', ['United Kingdom']).result).toBe('approved');
+  it('blocks on the country half of "City, Country"', () => {
+    expect(checkCountry('Lagos, Lagos State, Nigeria', ['Nigeria']).result).toBe('blocked');
   });
 
-  it('approves via an alias in either direction', () => {
-    expect(checkCountry('London, UK', ['United Kingdom']).result).toBe('approved');
-    expect(checkCountry('Manchester, England', ['United Kingdom']).result).toBe('approved');
-    expect(checkCountry('United Kingdom', ['UK']).result).toBe('approved');
+  it('blocks via an alias in either direction', () => {
+    expect(checkCountry('London, UK', ['United Kingdom']).result).toBe('blocked');
+    expect(checkCountry('Cardiff, United Kingdom', ['UK']).result).toBe('blocked');
   });
 
-  it('rejects a readable, non-approved country', () => {
-    const r = checkCountry('Ndola, Zambia', ['United Kingdom']);
-    expect(r.result).toBe('rejected');
-    expect(r.detected).toBe('Ndola, Zambia');
+  it('does not match a country name inside a longer word', () => {
+    // "us" must not match "Belarus" — the word-boundary rule.
+    expect(checkCountry('Minsk, Belarus', ['US']).result).not.toBe('blocked');
   });
 
-  it('reports a bare unplaceable city as unknown, not approved', () => {
-    expect(checkCountry('Manchester', ['Ireland']).result).toBe('unknown');
+  it('passes anyone not on the list', () => {
+    expect(checkCountry('London, United Kingdom', ['Nigeria']).result).toBe('clear');
+    expect(checkCountry('Kraków, Poland', ['Nigeria', 'Brazil']).result).toBe('clear');
   });
 
-  it('reports a blank location as unknown', () => {
-    expect(checkCountry('', ['United Kingdom']).result).toBe('unknown');
-    expect(checkCountry(null, ['United Kingdom']).result).toBe('unknown');
+  // THE INVERSION. An empty ALLOW list refused everyone; an empty BLOCK
+  // list refuses nobody. Getting this backwards would make every
+  // unconfigured role silently reject every applicant.
+  it('an EMPTY list blocks nobody', () => {
+    expect(checkCountry('Lagos, Nigeria', []).result).toBe('clear');
+    expect(checkCountry('London, United Kingdom', []).result).toBe('clear');
   });
 
-  it('FAILS CLOSED on an empty approved list — refuses everyone', () => {
-    // The dangerous inversion: an unconfigured list must not mean
-    // "allow all". Flip this to `approved` and every applicant on
-    // earth becomes eligible.
-    expect(checkCountry('United Kingdom', []).result).toBe('rejected');
+  it('a blank location is unknown, not blocked and not clear', () => {
+    for (const loc of [null, undefined, '', '   ']) {
+      expect(checkCountry(loc, ['Nigeria']).result).toBe('unknown');
+    }
   });
 
-  it('does not match a country name embedded inside another word', () => {
-    // "us" must not match "Belarus".
-    expect(checkCountry('Minsk, Belarus', ['US']).result).toBe('rejected');
+  // A country is recognised by NAME, never by string shape. Bare
+  // "United Kingdom" is two words with no comma and is three of the
+  // live rows -- some of which qualified. A word-count heuristic
+  // demotes them to review, which is why there is a country set.
+  it('reads a bare country name as clear, not unknown', () => {
+    expect(checkCountry('United Kingdom', ['Nigeria']).result).toBe('clear');
+    expect(checkCountry('Luxembourg', ['Nigeria']).result).toBe('clear');
+    expect(checkCountry('Sweden, Sweden', ['Nigeria']).result).toBe('clear');
+  });
+
+  it('a bare city naming no country is unknown', () => {
+    expect(checkCountry('Manchester', ['Nigeria']).result).toBe('unknown');
+  });
+
+  // Every location this pipeline has actually seen, from the 50 rows
+  // processed to date. None may come back `unknown` -- an unknown here
+  // is a real candidate silently demoted out of auto-send.
+  it('resolves every location observed in production', () => {
+    const seen = [
+      'London, England, United Kingdom', 'London, United Kingdom',
+      'Oxford, United Kingdom', 'Southampton, United Kingdom', 'Sweden, Sweden',
+      'United Kingdom', 'Welwyn Garden City, Hertfordshire, United Kingdom',
+      'Cambridge, United Kingdom', 'Exeter, United Kingdom',
+      'Leamington, United Kingdom', 'London, Greater London, United Kingdom',
+      'Manchester, United Kingdom', 'Newcastle upon Tyne, United Kingdom',
+      'United Kingdom, United Kingdom', 'Worcester, United Kingdom',
+      'Elva, Estonia', 'Istanbul, Turkey', 'Lagos, Lagos State, Nigeria',
+      'Luanda, Angola', 'São Paulo, Brazil', 'Skopje, Macedonia',
+      'Tallinn, Estonia', 'Dublin, Ireland', 'Kraków, Poland',
+      'Bucharest, Romania', 'Durham, United Kingdom', 'Hatfield, United Kingdom',
+      'Toronto, ON, Canada',
+    ];
+    for (const loc of seen) {
+      expect(checkCountry(loc, []).result, loc).toBe('clear');
+    }
+  });
+
+  it('blocks exactly the seven the old allow list refused, given the seeded list', () => {
+    // What migration 084 seeds blocked_countries with.
+    const seeded = ['Estonia', 'Turkey', 'Nigeria', 'Angola', 'Brazil', 'Macedonia'];
+    const refused = [
+      'Elva, Estonia', 'Istanbul, Turkey', 'Lagos, Lagos State, Nigeria',
+      'Luanda, Angola', 'São Paulo, Brazil', 'Skopje, Macedonia', 'Tallinn, Estonia',
+    ];
+    for (const loc of refused) expect(checkCountry(loc, seeded).result, loc).toBe('blocked');
+
+    // ...and nobody the old list approved becomes newly refused.
+    const kept = ['London, United Kingdom', 'Dublin, Ireland', 'Kraków, Poland', 'Toronto, ON, Canada'];
+    for (const loc of kept) expect(checkCountry(loc, seeded).result, loc).toBe('clear');
   });
 });
 
@@ -163,17 +210,56 @@ describe('toPercent', () => {
 });
 
 describe('evaluate — order and vetoes', () => {
-  it('rejects on country BEFORE scoring, and reports no score', () => {
-    const d = evaluate({ location: 'Ndola, Zambia', config: config(), scan: scan({ overall_score: 0.99 }) });
+  it('rejects a BLOCKED country BEFORE scoring, and reports no score', () => {
+    const d = evaluate({ location: 'Lagos, Nigeria', config: config(), scan: scan({ overall_score: 0.99 }) });
     expect(d.status).toBe('rejected_country');
     expect(d.score).toBeNull();
-    expect(d.countryResult).toBe('rejected');
+    expect(d.countryResult).toBe('blocked');
   });
 
-  it('an unknown country never auto-sends', () => {
-    const d = evaluate({ location: 'Manchester', config: config({ approved_countries: ['Ireland'] }), scan: scan() });
-    expect(d.status).toBe('rejected_country');
+  // THE AUTO-SEND CAP -- the property that replaces the old allow
+  // list's outright refusal (operator, 2026-09-02). An unreadable
+  // country is NOT a rejection: they are scanned, scored, and shown.
+  // They simply never get an email without a person deciding.
+  it('an unreadable country is scored and reviewed, never auto-sent', () => {
+    const d = evaluate({
+      location: 'Manchester',                      // no country
+      config:   config({ auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.99 }),     // way over the bar
+    });
     expect(d.countryResult).toBe('unknown');
+    expect(d.status).toBe('review_pending');       // NOT 'qualified'
+    expect(d.score).toBe(99);                      // and it IS scored
+    expect(d.reasons.join(' ')).toMatch(/country could not be read/i);
+  });
+
+  it('a blank location is scored and reviewed too, never auto-sent', () => {
+    const d = evaluate({ location: null, config: config(), scan: scan({ overall_score: 0.99 }) });
+    expect(d.status).toBe('review_pending');
+    expect(d.countryResult).toBe('unknown');
+  });
+
+  // The same score with a READABLE country does auto-send -- otherwise
+  // the test above would pass against a gate that reviews everybody.
+  it('the identical score with a readable country DOES auto-send', () => {
+    const d = evaluate({
+      location: 'Manchester, United Kingdom',
+      config:   config({ auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.99 }),
+    });
+    expect(d.countryResult).toBe('clear');
+    expect(d.status).toBe('qualified');
+  });
+
+  // An empty block list must not become an accidental allow-all that
+  // also bypasses the cap.
+  it('an empty block list still holds an unreadable country for review', () => {
+    const d = evaluate({
+      location: 'Manchester',
+      config:   config({ blocked_countries: [] }),
+      scan:     scan({ overall_score: 0.99 }),
+    });
+    expect(d.status).toBe('review_pending');
   });
 
   it('a hard criterion failure VETOES a high score', () => {

@@ -28,7 +28,7 @@ interface Props {
     email_process_note:  string | null;
     auto_send_threshold: number;
     review_threshold:    number;
-    approved_countries:  string[];
+    blocked_countries:   string[];
     mandatory_criteria:  MandatoryCriterion[];
   } | null;
 }
@@ -50,7 +50,7 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
   // at or above the bar is emailed and nothing queues.
   const [autoSend,  setAutoSend]  = useState(existing?.auto_send_threshold ?? 75);
   const [review,    setReview]    = useState(existing?.review_threshold ?? 75);
-  const [countries, setCountries] = useState((existing?.approved_countries ?? []).join(', '));
+  const [countries, setCountries] = useState((existing?.blocked_countries ?? []).join(', '));
   const [criteria,  setCriteria]  = useState<MandatoryCriterion[]>(existing?.mandatory_criteria ?? []);
 
   const [saving, setSaving] = useState(false);
@@ -79,7 +79,7 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
           email_process_note:  note,
           auto_send_threshold: Number(autoSend),
           review_threshold:    Number(review),
-          approved_countries:  countries.split(',').map(s => s.trim()).filter(Boolean),
+          blocked_countries:   countries.split(',').map(s => s.trim()).filter(Boolean),
           mandatory_criteria:  criteria.map(c => ({
             key:         c.key || slugify(c.label),
             label:       c.label,
@@ -165,16 +165,18 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
       </div>
 
       <div>
-        <label className="label">Approved countries</label>
+        <label className="label">Blocked countries</label>
         <input
           className="input"
           value={countries}
           onChange={e => setCountries(e.target.value)}
-          placeholder="United Kingdom, Ireland"
+          placeholder="e.g. Nigeria, Brazil — leave empty to accept everywhere"
         />
         <p className="text-xs" style={{ color: 'var(--ink-faint)', marginTop: 4 }}>
-          Comma separated. Checked before any AI is spent. An empty list refuses every applicant, so the role
-          cannot be enabled without one.
+          Comma separated, and checked before any AI is spent. Everyone not listed passes:{' '}
+          <strong>an empty list blocks nobody</strong>. An applicant whose country cannot be read from
+          their Manatal location is not blocked either, but is always held for review rather than
+          auto-sent.
         </p>
       </div>
 

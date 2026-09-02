@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       requisition:requisitions!inner ( id, title ),
       config:referral_role_config!inner (
         requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
-        auto_send_threshold, review_threshold, approved_countries, mandatory_criteria
+        auto_send_threshold, review_threshold, blocked_countries, mandatory_criteria
       )
     `)
     .eq('id', params.id)

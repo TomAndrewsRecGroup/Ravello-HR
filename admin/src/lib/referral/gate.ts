@@ -89,26 +89,39 @@ function expand(country: string): string[] {
   return [...out];
 }
 
-/** Match an approved country against a free-text location.
+/** Match a free-text location against the BLOCKED country list.
  *
- *  Manatal's candidate_location is whatever the applicant typed —
- *  "Ndola, Zambia", "United Kingdom", or bare "Manchester". So there
- *  are three outcomes and the third is load-bearing: a location we
- *  cannot resolve is UNKNOWN, never approved. Reading "unrecognised"
- *  as "fine" is how an ineligible applicant gets emailed. */
+ *  This is a block list as of migration 084 (operator, 2026-09-02). The
+ *  allow list it replaced could only ever name countries somebody
+ *  thought of in advance, so every country nobody typed was a refusal —
+ *  it was refusing people the operator wanted.
+ *
+ *  Three outcomes, and the inversion changes what each one costs:
+ *
+ *    blocked — the location names a country on the list. Refused, and
+ *              it short-circuits before the scan, so a blocked
+ *              applicant still costs zero AI spend.
+ *    clear   — readable, and on nobody's block list. Full pass.
+ *    unknown — blank, or a location naming no country we can resolve
+ *              ("Manchester" alone). NOT blocked: nothing here proves
+ *              they are, and under a block list the burden is on the
+ *              list. They are scanned and scored like anyone else, but
+ *              `evaluate` caps them at review and they can never
+ *              auto-send. See the cap there for why.
+ *
+ *  Note the fail direction has genuinely flipped, and it had to. An
+ *  empty ALLOW list refused everybody, which is why the old gate could
+ *  fail closed on a missing config. An empty BLOCK list blocks nobody —
+ *  that is what the words mean, and pretending otherwise would make an
+ *  unconfigured role silently refuse every applicant, which is the
+ *  failure this repo keeps writing down. What carries the safety now is
+ *  the auto-send cap on `unknown`, not a refusal here. */
 export function checkCountry(
   location: string | null | undefined,
-  approvedCountries: string[],
+  blockedCountries: string[],
 ): { result: CountryGateResult; detected: string | null } {
   const raw = (location ?? '').trim();
   if (!raw) return { result: 'unknown', detected: null };
-
-  // An empty approved list refuses everyone. This gate fails CLOSED:
-  // the cost of a wrong pass is an email that should never have been
-  // sent, so "not configured" must not mean "allow all". The admin UI
-  // refuses to enable a role with an empty list, but the gate does not
-  // rely on the UI having done its job.
-  if (!approvedCountries.length) return { result: 'rejected', detected: raw };
 
   // Location is usually "City, Country". Compare against the whole
   // normalised string AND each comma-separated segment, so
@@ -122,30 +135,88 @@ export function checkCountry(
     ...raw.split(',').map(normalise),
   ].filter(Boolean);
 
-  for (const approved of approvedCountries) {
-    for (const variant of expand(approved)) {
+  for (const blocked of blockedCountries) {
+    for (const variant of expand(blocked)) {
       if (!variant) continue;
       for (const part of parts) {
-        if (part === variant) return { result: 'approved', detected: raw };
+        if (part === variant) return { result: 'blocked', detected: raw };
         // Word-boundary containment, so "us" does not match "Belarus".
         const re = new RegExp(`(^|\\s)${variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`);
-        if (re.test(part)) return { result: 'approved', detected: raw };
+        if (re.test(part)) return { result: 'blocked', detected: raw };
       }
     }
   }
 
-  // We have a location and it matched no approved country. That is a
-  // genuine rejection, not an unknown — the string was readable, it
-  // just is not on the list.
+  // Nothing on the block list matched. The remaining question is
+  // whether a country was actually READ — which decides auto-send
+  // eligibility, not eligibility itself.
   //
-  // A bare city we cannot place ("Manchester" with no country) is the
-  // ambiguous case, and it lands here as `rejected` rather than
-  // `unknown` only when it fails every variant. Callers route both
-  // rejected and unknown away from auto-send; the distinction exists
-  // so the review queue can show which happened.
-  const looksLikeBareCity = !raw.includes(',') && raw.split(/\s+/).length <= 2;
-  return { result: looksLikeBareCity ? 'unknown' : 'rejected', detected: raw };
+  // This must be answered by recognising country NAMES, not by shape.
+  // A word count cannot do it: "Manchester" and "Luxembourg" are both
+  // one word, and bare "United Kingdom" is two — and three of the live
+  // rows are exactly that string, including ones that qualified. Any
+  // shape heuristic either demotes them to review or promotes real
+  // bare cities to auto-send.
+  //
+  // Measured over all 50 applications to date, every location either
+  // carried a country ("London, England, United Kingdom", "Kraków,
+  // Poland", "Sweden, Sweden") or was null; no bare city has actually
+  // occurred. It is handled because Manatal's field is free text and
+  // nothing stops one, not because it is common.
+  return { result: namesAKnownCountry(parts) ? 'clear' : 'unknown', detected: raw };
 }
+
+/** Does any segment of the location name a country we recognise?
+ *
+ *  Only ever WIDENS eligibility — a country missing from this set makes
+ *  its applicant `unknown`, which still gets scanned and still reaches
+ *  the review queue. The cost of an omission is a manual look, not a
+ *  lost candidate, so the list does not need to be perfect. It does
+ *  need to cover everywhere people actually apply from. */
+function namesAKnownCountry(parts: string[]): boolean {
+  for (const part of parts) {
+    if (KNOWN_COUNTRIES.has(part)) return true;
+    // "london england united kingdom" as a whole string: look for a
+    // country name inside it, on word boundaries.
+    for (const c of KNOWN_COUNTRIES) {
+      if (c.length < 4) continue; // "chad", "cuba" are fine; 2-3 letter codes are not
+      const re = new RegExp(`(^|\\s)${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`);
+      if (re.test(part)) return true;
+    }
+  }
+  return false;
+}
+
+const KNOWN_COUNTRIES: Set<string> = new Set([
+  // Every alias already declared above, plus the canonical names.
+  ...Object.entries(COUNTRY_ALIASES).flatMap(([k, v]) => [k, ...v]),
+  'afghanistan', 'albania', 'algeria', 'andorra', 'angola', 'argentina', 'armenia',
+  'australia', 'austria', 'azerbaijan', 'bahamas', 'bahrain', 'bangladesh', 'barbados',
+  'belarus', 'belgium', 'belize', 'benin', 'bhutan', 'bolivia', 'bosnia',
+  'bosnia and herzegovina', 'botswana', 'brazil', 'brunei', 'bulgaria', 'burkina faso',
+  'burundi', 'cambodia', 'cameroon', 'canada', 'cape verde', 'chad', 'chile', 'china',
+  'colombia', 'congo', 'costa rica', 'croatia', 'cuba', 'cyprus', 'czechia',
+  'czech republic', 'denmark', 'djibouti', 'dominican republic', 'ecuador', 'egypt',
+  'el salvador', 'estonia', 'eswatini', 'ethiopia', 'fiji', 'finland', 'france',
+  'gabon', 'gambia', 'georgia', 'germany', 'ghana', 'greece', 'guatemala', 'guinea',
+  'guyana', 'haiti', 'honduras', 'hong kong', 'hungary', 'iceland', 'india',
+  'indonesia', 'iran', 'iraq', 'israel', 'italy', 'ivory coast', 'jamaica', 'japan',
+  'jordan', 'kazakhstan', 'kenya', 'kosovo', 'kuwait', 'kyrgyzstan', 'laos', 'latvia',
+  'lebanon', 'lesotho', 'liberia', 'libya', 'liechtenstein', 'lithuania', 'luxembourg',
+  'macau', 'macedonia', 'north macedonia', 'madagascar', 'malawi', 'malaysia',
+  'maldives', 'mali', 'malta', 'mauritania', 'mauritius', 'mexico', 'moldova',
+  'monaco', 'mongolia', 'montenegro', 'morocco', 'mozambique', 'myanmar', 'namibia',
+  'nepal', 'netherlands', 'holland', 'new zealand', 'nicaragua', 'niger', 'nigeria',
+  'north korea', 'norway', 'oman', 'pakistan', 'palestine', 'panama', 'papua new guinea',
+  'paraguay', 'peru', 'philippines', 'poland', 'portugal', 'qatar', 'romania', 'russia',
+  'russian federation', 'rwanda', 'saudi arabia', 'senegal', 'serbia', 'seychelles',
+  'sierra leone', 'singapore', 'slovakia', 'slovenia', 'somalia', 'south africa',
+  'south korea', 'korea', 'south sudan', 'sri lanka', 'sudan', 'suriname', 'sweden',
+  'switzerland', 'syria', 'taiwan', 'tajikistan', 'tanzania', 'thailand', 'togo',
+  'trinidad and tobago', 'tunisia', 'turkey', 'turkiye', 'turkmenistan', 'uganda',
+  'ukraine', 'uruguay', 'uzbekistan', 'venezuela', 'vietnam', 'yemen', 'zambia',
+  'zimbabwe',
+].map(normalise));
 
 /* ─── Mandatory criteria ───────────────────────────────────── */
 
@@ -273,15 +344,13 @@ export function evaluate(input: GateInput): GateDecision {
   const { location, config, scan } = input;
   const reasons: string[] = [];
 
-  // 1. Country — first, and short-circuiting, so an ineligible
-  //    applicant never reaches an AI call.
-  const country = checkCountry(location, config.approved_countries);
-  if (country.result !== 'approved') {
-    reasons.push(
-      country.result === 'unknown'
-        ? `Country could not be determined from "${country.detected ?? '(blank)'}" — not eligible for auto-send.`
-        : `Location "${country.detected ?? '(blank)'}" is not in the approved country list.`,
-    );
+  // 1. Country — first, so a BLOCKED applicant never reaches an AI
+  //    call. Only `blocked` short-circuits now: under a block list an
+  //    unreadable location is not evidence of anything, so it is not a
+  //    refusal. It costs a scan, and is capped at review below.
+  const country = checkCountry(location, config.blocked_countries);
+  if (country.result === 'blocked') {
+    reasons.push(`Location "${country.detected}" is on the blocked country list.`);
     return {
       status:          'rejected_country',
       score:           null,
@@ -291,7 +360,11 @@ export function evaluate(input: GateInput): GateDecision {
       reasons,
     };
   }
-  reasons.push(`Location "${country.detected}" is in the approved country list.`);
+  reasons.push(
+    country.result === 'clear'
+      ? `Location "${country.detected}" is not on the blocked country list.`
+      : `No country could be read from "${country.detected ?? '(blank)'}" — not blocked, but held back from auto-send.`,
+  );
 
   // A missing scan past the country gate means the scan itself failed.
   // Reported as a fault, never silently scored.
@@ -332,6 +405,25 @@ export function evaluate(input: GateInput): GateDecision {
 
   // 3. Score.
   if (score >= config.auto_send_threshold) {
+    // THE AUTO-SEND CAP. An applicant whose country we could not read
+    // is scanned and scored like anyone else, and may well score above
+    // the bar — but is never emailed automatically. It goes to the
+    // review queue instead, where a person decides.
+    //
+    // This is what carries the safety the old allow list used to carry
+    // by refusing outright (operator decision, 2026-09-02). A block
+    // list cannot refuse an unreadable location — nothing proves it is
+    // blocked — so the property worth keeping is narrower and exact:
+    // never send an email in the operator's name to someone we cannot
+    // place. Reaching the queue costs a manual look; auto-sending here
+    // would cost a stranger an email.
+    if (country.result === 'unknown') {
+      reasons.push(
+        `Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold, ` +
+        `but the country could not be read — held for review rather than auto-sent.`,
+      );
+      return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
+    }
     reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold.`);
     return { status: 'qualified', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
   }
