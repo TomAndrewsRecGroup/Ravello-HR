@@ -215,6 +215,24 @@ export async function getManatalStages(): Promise<ManatalStage[]> {
   return (data?.results ?? data ?? []) as ManatalStage[];
 }
 
+/**
+ * ⚠ DO NOT RELY ON THIS TO NAME ANYBODY.
+ *
+ * It passes an ORGANISATION id as `department_id`. A department is not
+ * an organisation, so the filter selects nothing relevant, and there is
+ * no paging either — `limit: 500` is a query param Manatal clamps.
+ *
+ * Measured 2026-09-02 against job 4337074: 69 job-board applicants,
+ * and this named ZERO of them. Callers that need names must resolve
+ * them per candidate over v3 (`getManatalCandidate`), which is what the
+ * referral pipeline does and what the admin applicants route now does.
+ *
+ * Left in place, and left alone, deliberately: the portal's pipeline
+ * board has called it this way since Phase 31, and changing the
+ * parameter blind — without a v1 request to verify against — risks
+ * breaking that in exchange for a call whose result is already treated
+ * as optional. It is an opportunistic head-start, nothing more.
+ */
 export async function getManatalMatches(organizationId: string): Promise<ManatalMatch[]> {
   const data = await manatalFetch('/matches/', { department_id: organizationId, limit: '500' });
   return (data?.results ?? data ?? []) as ManatalMatch[];
