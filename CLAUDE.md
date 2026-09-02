@@ -537,6 +537,39 @@ orchestrates, decides, emails and tracks.
   should be refused. The criteria cannot literally precede the scan (they
   are derived from it), so they act as a veto over the score — which is the
   wanted behaviour.
+- **The invite is branded ANDREWS RECRUITMENT GROUP, not The People
+  System.** The candidate answered an ARG advert and the email is signed
+  by Tom Andrews, but until 2026-09-02 it shipped in a shell headed,
+  footed and titled The People System — a company the recipient had
+  never heard of. Mismatched identity is a trust problem before it is a
+  design one, and a live spam signal. `wrapEmail` takes a
+  `SenderIdentity`; `TPS_SENDER` is the default so the other 11 emails
+  are untouched, and the referral template passes `ARG_SENDER`. A test
+  pins BOTH directions — no People System string in the invite, and the
+  default wrapper still fully People System — because rebranding
+  everything is the obvious way to get this wrong.
+- **No ARG logo is rendered until one is hosted on an ARG domain.**
+  `SenderIdentity.logoUrl` is nullable and falls back to a text
+  wordmark. Resend flags a logo hosted off the sending root domain, so
+  the People System blob on an ARG email would be wrong AND a
+  deliverability demerit. Set `ARG_EMAIL_LOGO_URL` when one exists.
+- **The FROM address is opt-in and still unset.** Resend answers a
+  from-address on an unverified domain with a 403, so hardcoding an ARG
+  sender would stop every referral email until the DNS records existed.
+  `REFERRAL_EMAIL_FROM` is read in the TEMPLATE, not at the call sites,
+  so the preview and the live send cannot disagree about who the email
+  is from; unset means `EMAIL_FROM` exactly as before. **The visual
+  identity is fixed but the envelope still says
+  `noreply@portal.thepeoplesystem.co.uk`** — verify
+  andrews-recruitment.com in Resend → Domains, then set the var.
+- **"Email me a preview"** on the referral panel
+  (`POST /api/admin/referrals/[id]/test-email`) renders the real
+  template with the role's saved config and sends it to the signed-in
+  staff member. The recipient comes from the SESSION, never the request
+  body — that is what stops it being a general-purpose mailer behind one
+  staff login. It writes no `referral_applications` row, and it marks
+  `[Preview]` in the subject only, so the body under review is
+  byte-identical to a candidate's.
 - **`dry_run` defaults TRUE.** IvyLens's `POST /api/partner/scans/run` returns
   the RAW model score, skipping the objective-anchor blend its internal
   Candidate Match applies, and IvyLens's own `docs/CANDIDATE_MATCH_MODEL.md`
@@ -577,6 +610,11 @@ orchestrates, decides, emails and tracks.
 `IVYLENS_API_URL` / `IVYLENS_API_KEY` are now needed on the **admin** app too
 (previously portal-only). `MANATAL_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM` and
 `CRON_SECRET` are already set.
+
+Optional, all unset today, all no-ops until configured:
+`REFERRAL_EMAIL_FROM` (needs andrews-recruitment.com verified in Resend
+first — a 403 otherwise stops every referral send), `ARG_EMAIL_LOGO_URL`
+(must be on an ARG domain), `ARG_WEBSITE_URL`.
 
 
 ---

@@ -89,3 +89,70 @@ describe('the email describes the actual next step', () => {
       .toContain('you applied for the Area Sales Manager role through Andrews Recruitment Group');
   });
 });
+
+/* ─── Sender identity ──────────────────────────────────────── */
+//
+// The candidate answered an Andrews Recruitment Group advert. Until
+// 2026-09-02 the email was signed by Tom Andrews but wrapped in a shell
+// headed, footed and titled The People System — so a recipient saw a
+// company they had never heard of. Mismatched identity is a trust
+// problem and a live spam signal.
+
+describe('the email is branded as the company the candidate applied to', () => {
+  const mail = () => referralInviteEmail({
+    to: 'x@example.com', roleTitle: 'AI Engineer', referralUrl: 'https://apply.example.com',
+  });
+
+  it('names Andrews Recruitment Group in the header, footer and tab title', () => {
+    const html = mail().html;
+    // The <title> is the tab name and some clients show it.
+    expect(html).toContain('<title>Andrews Recruitment Group</title>');
+    // Header: no ARG logo is hosted on an ARG domain yet, so the name
+    // renders as a wordmark. Asserting the ABSENCE of the People System
+    // logo is the half that matters — an off-domain image is both wrong
+    // and a deliverability demerit.
+    expect(html).not.toContain('the%20people%20system');
+    expect(html).not.toMatch(/alt="The People System"/);
+  });
+
+  it('carries no People System identity anywhere', () => {
+    const html = mail().html;
+    expect(html).not.toContain('The People System');
+    expect(html).not.toContain('thepeoplesystem.co.uk');
+    expect(html).not.toContain('HR consultancy');
+  });
+
+  it('points the footer link at the ARG site', () => {
+    expect(mail().html).toContain('andrews-recruitment.com');
+  });
+
+  // The envelope is a separate, opt-in step: Resend 403s a from-address
+  // on an unverified domain, so a hardcoded ARG sender would stop every
+  // referral email until the DNS records existed.
+  it('leaves `from` unset unless REFERRAL_EMAIL_FROM is configured', () => {
+    const before = process.env.REFERRAL_EMAIL_FROM;
+    try {
+      delete process.env.REFERRAL_EMAIL_FROM;
+      expect(mail().from).toBeUndefined();
+
+      process.env.REFERRAL_EMAIL_FROM = 'ARG <careers@andrews-recruitment.com>';
+      expect(mail().from).toBe('ARG <careers@andrews-recruitment.com>');
+    } finally {
+      if (before === undefined) delete process.env.REFERRAL_EMAIL_FROM;
+      else process.env.REFERRAL_EMAIL_FROM = before;
+    }
+  });
+});
+
+// Guard the guard: the change above must not have rebranded every other
+// email in the app. wrapEmail's default is still The People System.
+describe('every other email keeps the People System shell', () => {
+  it('the default wrapper is unchanged', async () => {
+    const { wrapEmail } = await import('../layout');
+    const html = wrapEmail('<p>hello</p>', 'preheader');
+    expect(html).toContain('<title>The People System</title>');
+    expect(html).toContain('thepeoplesystem.co.uk');
+    expect(html).toContain('You received this email because you have an account with The People System.');
+    expect(html).not.toContain('Andrews Recruitment Group');
+  });
+});

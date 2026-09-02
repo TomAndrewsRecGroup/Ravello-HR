@@ -1,4 +1,4 @@
-import { wrapEmail, ctaButton, BRAND } from '../layout';
+import { wrapEmail, ctaButton, ARG_SENDER, BRAND } from '../layout';
 
 // The next-step email for a job-board applicant who scored above the
 // threshold for their role.
@@ -70,11 +70,31 @@ ${ctaButton(input.referralUrl, 'Complete your application')}
 
   return {
     to:      input.to,
+    // FROM is opt-in and defaults to undefined, which makes sendEmail
+    // fall back to EMAIL_FROM exactly as before.
+    //
+    // Resend rejects a from-address on an unverified domain with a 403,
+    // so hardcoding an ARG address here would stop every referral email
+    // dead until somebody added the DNS records. The visual identity
+    // (header, footer, tab title) is fixed regardless; aligning the
+    // envelope is a separate step gated on ARG's domain being verified
+    // in Resend → Domains. Set REFERRAL_EMAIL_FROM then, e.g.
+    //   "Andrews Recruitment Group <careers@andrews-recruitment.com>"
+    //
+    // Declared HERE rather than at the call sites so the preview and
+    // the live send cannot disagree about who the email is from.
+    from:    process.env.REFERRAL_EMAIL_FROM,
     subject: `Your ${input.roleTitle} application — next step`,
+    // ARG_SENDER, not the default. The candidate answered an Andrews
+    // Recruitment Group advert and this email is signed by Tom Andrews;
+    // wrapping it in a People System shell showed them a company they
+    // had never heard of in the header, the footer and the tab title.
+    // See SenderIdentity in ../layout.
     html:    wrapEmail(
       body,
       'Complete your application online to move to the AI interview stage.',
       `You received this email because you applied for the ${input.roleTitle} role through Andrews Recruitment Group.`,
+      ARG_SENDER,
     ),
     tag:     'referral-invite',
   };

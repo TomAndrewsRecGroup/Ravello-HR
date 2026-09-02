@@ -27,6 +27,62 @@ export const BRAND = {
   websiteUrl: 'https://www.thepeoplesystem.co.uk',
 };
 
+/* ─── Who the email is FROM, visually ──────────────────────── */
+
+/**
+ * Not every email this app sends comes from The People System.
+ *
+ * The referral invite is signed "Tom Andrews, Andrews Recruitment
+ * Group" and answers an advert the candidate saw under that name — but
+ * it went out inside a shell headed, footed and titled The People
+ * System. A recipient who applied to an ARG job board ad received mail
+ * that looked like it came from a company they had never heard of.
+ * That is a trust problem before it is a design one, and mismatched
+ * identity is a live spam signal.
+ *
+ * So the shell takes an identity. `TPS` is the default and every
+ * existing caller keeps exactly the shell it had.
+ */
+export interface SenderIdentity {
+  /** Company name, in the header, the footer and the <title>. */
+  name:         string;
+  /** One line under the name in the footer. */
+  tagline:      string;
+  websiteUrl:   string;
+  websiteLabel: string;
+  /** Null renders the NAME as text instead.
+   *
+   *  Deliberately nullable. Resend's deliverability check flags a logo
+   *  hosted off the sending root domain, so the People System blob on
+   *  an ARG email would be both wrong and a demerit. A wordmark in the
+   *  brand's own type is the honest fallback until somebody hosts an
+   *  ARG logo on an ARG domain. */
+  logoUrl:      string | null;
+  /** Reason-for-receipt line under the card, when the caller does not
+   *  pass its own `footerNote`. */
+  defaultFooterNote: string;
+}
+
+export const TPS_SENDER: SenderIdentity = {
+  name:         'The People System',
+  tagline:      'HR consultancy &amp; people platform.',
+  websiteUrl:   BRAND.websiteUrl,
+  websiteLabel: 'thepeoplesystem.co.uk',
+  logoUrl:      BRAND.logoUrl,
+  defaultFooterNote: 'You received this email because you have an account with The People System.',
+};
+
+export const ARG_SENDER: SenderIdentity = {
+  name:         'Andrews Recruitment Group',
+  tagline:      'Recruitment for engineering, construction and technology.',
+  websiteUrl:   process.env.ARG_WEBSITE_URL ?? 'https://www.andrews-recruitment.com',
+  websiteLabel: 'andrews-recruitment.com',
+  // Set ARG_EMAIL_LOGO_URL once a logo is hosted on an ARG domain.
+  // Until then the name renders as text — see the field's note.
+  logoUrl:      process.env.ARG_EMAIL_LOGO_URL ?? null,
+  defaultFooterNote: 'You received this email because you applied for a role through Andrews Recruitment Group.',
+};
+
 /**
  * Wrap body content in the branded email shell. Body should be valid
  * HTML containing one or more block-level elements with inline styles.
@@ -40,14 +96,19 @@ export const BRAND = {
  * applicant has no account, and an inaccurate reason-for-receipt line
  * is both a deliverability signal and simply wrong.
  */
-export function wrapEmail(body: string, preheader?: string, footerNote?: string): string {
+export function wrapEmail(
+  body: string,
+  preheader?: string,
+  footerNote?: string,
+  sender: SenderIdentity = TPS_SENDER,
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="x-apple-disable-message-reformatting" />
-<title>The People System</title>
+<title>${sender.name}</title>
 </head>
 <body style="margin:0;padding:0;background:${BRAND.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${BRAND.ink};">
 ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:transparent;">${preheader}</div>` : ''}
@@ -58,7 +119,9 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
         <!-- Header -->
         <tr>
           <td style="padding:32px 32px 16px 32px;border-bottom:1px solid ${BRAND.line};">
-            <img src="${BRAND.logoUrl}" alt="The People System" width="180" style="display:block;height:auto;max-width:180px;" />
+            ${sender.logoUrl
+              ? `<img src="${sender.logoUrl}" alt="${sender.name}" width="180" style="display:block;height:auto;max-width:180px;" />`
+              : `<p style="margin:0;font-size:19px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.ink};">${sender.name}</p>`}
           </td>
         </tr>
         <!-- Body -->
@@ -70,14 +133,14 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
         <!-- Footer -->
         <tr>
           <td style="padding:24px 32px;border-top:1px solid ${BRAND.line};background:${BRAND.surfaceLt};font-size:12px;color:${BRAND.inkFaint};line-height:1.5;">
-            <p style="margin:0 0 8px 0;font-weight:600;color:${BRAND.inkSoft};">The People System</p>
-            <p style="margin:0;">HR consultancy &amp; people platform.</p>
-            <p style="margin:8px 0 0 0;"><a href="${BRAND.websiteUrl}" style="color:${BRAND.purple};text-decoration:none;">thepeoplesystem.co.uk</a></p>
+            <p style="margin:0 0 8px 0;font-weight:600;color:${BRAND.inkSoft};">${sender.name}</p>
+            <p style="margin:0;">${sender.tagline}</p>
+            <p style="margin:8px 0 0 0;"><a href="${sender.websiteUrl}" style="color:${BRAND.purple};text-decoration:none;">${sender.websiteLabel}</a></p>
           </td>
         </tr>
       </table>
       <p style="margin:16px 0 0 0;font-size:11px;color:${BRAND.inkFaint};text-align:center;">
-        ${footerNote ?? 'You received this email because you have an account with The People System.'}
+        ${footerNote ?? sender.defaultFooterNote}
       </p>
     </td>
   </tr>
