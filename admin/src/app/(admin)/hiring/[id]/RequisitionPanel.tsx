@@ -360,27 +360,47 @@ export default function RequisitionPanel({ req }: Props) {
   const [savingJobFields, setSavingJobFields] = useState(false);
   const [jobFieldsSaved,  setJobFieldsSaved]  = useState(false);
   const [jobFieldsError,  setJobFieldsError]  = useState<string | null>(null);
+  // Edits typed but not yet written. Publishing reads the DATABASE, so
+  // an unsaved edit would be silently ignored and the operator would
+  // watch the old value go to the job boards.
+  const [jobFieldsDirty,  setJobFieldsDirty]  = useState(false);
 
   function setJobField(k: keyof typeof jobFields, v: string) {
     setJobFields(prev => ({ ...prev, [k]: v }));
     setJobFieldsSaved(false);
+    setJobFieldsDirty(true);
   }
 
-  async function saveJobFields() {
+  /** Returns whether the values on screen are now in the database.
+   *
+   *  A boolean, not void, because publishToManatal has to refuse to
+   *  publish when the save did not land — otherwise it pushes stale
+   *  values to a job board and reports success. */
+  async function saveJobFields(): Promise<boolean> {
     setSavingJobFields(true);
     setJobFieldsError(null);
-    const { error } = await supabase.from('requisitions').update({
+    // `.select()` is load-bearing. A supabase UPDATE matching NO rows
+    // returns error:null, so without asking for the row back this
+    // showed a green "Saved" while writing nothing — which is exactly
+    // what happened to a headcount of 100 on 2026-09-02.
+    const { data, error } = await supabase.from('requisitions').update({
       headcount:       Number(jobFields.headcount) > 0 ? Number(jobFields.headcount) : null,
       salary_currency: jobFields.salary_currency || null,
       // '' means "not stated", which OMITS `frequency` from the Manatal
       // body. Storing '' would violate the CHECK; null is the unset.
       salary_period:   jobFields.salary_period || null,
       salary_visible:  jobFields.salary_visible === 'yes',
-    }).eq('id', req.id);
+    }).eq('id', req.id).select('id');
     setSavingJobFields(false);
-    if (error) { setJobFieldsError(error.message); return; }
+    if (error) { setJobFieldsError(error.message); return false; }
+    if (!data || data.length === 0) {
+      setJobFieldsError('Nothing was saved — the update matched no rows. Reload and try again.');
+      return false;
+    }
     setJobFieldsSaved(true);
+    setJobFieldsDirty(false);
     revalidateAdminPath(`/hiring/${req.id}`);
+    return true;
   }
 
   // Friction analysis. Held in local state so the card and the IvyLens
@@ -424,6 +444,14 @@ export default function RequisitionPanel({ req }: Props) {
     setPublishingManatal(true);
     setManatalError(null);
     try {
+      // Publish what is ON SCREEN. The route reads the database, so an
+      // unsaved job-board edit would be dropped without a word — type
+      // a headcount, press Re-publish, and the job board keeps the old
+      // one. Two buttons for one intention is a trap, so this closes it.
+      if (jobFieldsDirty && !(await saveJobFields())) {
+        setManatalError('Your job board details could not be saved, so nothing was published.');
+        return;
+      }
       const res = await fetch(`/api/admin/requisitions/${req.id}/manatal-publish`, { method: 'POST' });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
