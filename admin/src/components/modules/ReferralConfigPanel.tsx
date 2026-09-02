@@ -54,6 +54,8 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
   const [criteria,  setCriteria]  = useState<MandatoryCriterion[]>(existing?.mandatory_criteria ?? []);
 
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
   const [error,  setError]  = useState<string | null>(null);
   const [saved,  setSaved]  = useState(false);
 
@@ -62,6 +64,25 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
   }
   function updateCriterion(i: number, patch: Partial<MandatoryCriterion>) {
     setCriteria(criteria.map((c, idx) => idx === i ? { ...c, ...patch } : c));
+  }
+
+  // Sends the real invite for this role to YOUR OWN address. The route
+  // takes no recipient — it reads the signed-in session — so this button
+  // cannot be pointed at anybody else.
+  async function sendTest() {
+    setTesting(true); setTestMsg(null); setError(null);
+    try {
+      const res = await fetch(`/api/admin/referrals/${requisitionId}/test-email`, { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(json.error ?? `Preview send failed (${res.status})`); return; }
+      setTestMsg(json.delivered
+        ? `Preview sent to ${json.to}.`
+        : `Rendered, but no email was actually sent — RESEND_API_KEY is not set in this environment.`);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setTesting(false);
+    }
   }
 
   async function save() {
@@ -141,7 +162,9 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
         <div>
           <label className="label">Partner name</label>
           <input className="input" value={partner} onChange={e => setPartner(e.target.value)} placeholder="Micro1" />
-          <p className="text-xs" style={{ color: 'var(--ink-faint)', marginTop: 4 }}>Named in the candidate email.</p>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)', marginTop: 4 }}>
+            Internal label only — the candidate email deliberately never names the partner.
+          </p>
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <label className="label" htmlFor="referral-url">Referral URL</label>
@@ -245,9 +268,22 @@ export default function ReferralConfigPanel({ requisitionId, hasManatalJob, exis
         <p className="text-sm" style={{ color: 'var(--teal)', margin: 0 }}>Saved.</p>
       )}
 
-      <button className="btn-cta" onClick={save} disabled={saving}>
-        {saving ? 'Saving…' : 'Save referral configuration'}
-      </button>
+      {testMsg && !error && (
+        <p className="text-sm" style={{ color: 'var(--teal)', margin: 0 }}>{testMsg}</p>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn-cta" onClick={save} disabled={saving}>
+          {saving ? 'Saving…' : 'Save referral configuration'}
+        </button>
+        <button className="btn-secondary" onClick={sendTest} disabled={testing || saving}>
+          {testing ? 'Sending…' : 'Email me a preview'}
+        </button>
+      </div>
+      <p className="text-xs" style={{ color: 'var(--ink-faint)', margin: 0 }}>
+        The preview is the real template with this role&rsquo;s saved settings, sent to your own
+        address. Save first — it reads what is stored, not what is on screen.
+      </p>
     </div>
   );
 }
