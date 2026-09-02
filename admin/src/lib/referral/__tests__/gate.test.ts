@@ -221,3 +221,99 @@ describe('evaluate — order and vetoes', () => {
     expect(d.reasons.length).toBeGreaterThan(0);
   });
 });
+
+/* ── Degenerate match terms (2026-09-02) ─────────────────────
+ *
+ * Found while widening the live role's criteria. `normalise` strips
+ * punctuation, so "C++" becomes "c" — and the two-way containment
+ * check then matches almost every skill. A mandatory criterion would
+ * pass EVERY candidate while reading in the UI as a strict
+ * requirement: the exact inversion of "absence of evidence fails".
+ */
+describe('a match term that cannot discriminate', () => {
+  const skills = (...names: string[]) =>
+    names.map(skill => ({ skill, found: true, confidence: 0.9 })) as any;
+
+  it('does not let "C++" pass a candidate who has none of it', () => {
+    const failed = checkMandatoryCriteria(
+      [{ key: 'k', label: 'C++', match_terms: ['C++'] }],
+      { overall_score: 0.9, skill_matches: skills('JavaScript', 'Docker', 'Communication') } as any,
+    );
+    expect(failed).toHaveLength(1);
+    expect(failed[0].reason).toMatch(/too short to discriminate/i);
+  });
+
+  it('says WHICH terms were unusable, not just that it failed', () => {
+    const failed = checkMandatoryCriteria(
+      [{ key: 'k', label: 'C++', match_terms: ['C++'] }],
+      { overall_score: 0.9, skill_matches: skills('Python') } as any,
+    );
+    expect(failed[0].reason).toContain('C++');
+  });
+
+  it('still distinguishes that from no terms at all', () => {
+    const none = checkMandatoryCriteria(
+      [{ key: 'k', label: 'X', match_terms: [] }],
+      { overall_score: 0.9, skill_matches: skills('Python') } as any,
+    );
+    expect(none[0].reason).toMatch(/no match terms configured/i);
+  });
+
+  it('ignores the unusable term but honours the usable ones beside it', () => {
+    // A mixed list must not be condemned wholesale — "Python" is real
+    // evidence whatever else was typed next to it.
+    const failed = checkMandatoryCriteria(
+      [{ key: 'k', label: 'Languages', match_terms: ['C++', 'Python'] }],
+      { overall_score: 0.9, skill_matches: skills('Python') } as any,
+    );
+    expect(failed).toHaveLength(0);
+  });
+
+  it('keeps two-character terms usable', () => {
+    // "QA" and "ML" are real terms an operator would reasonably type.
+    const failed = checkMandatoryCriteria(
+      [{ key: 'k', label: 'QA', match_terms: ['QA'] }],
+      { overall_score: 0.9, skill_matches: skills('QA Automation') } as any,
+    );
+    expect(failed).toHaveLength(0);
+  });
+});
+
+/* ── The live role's criteria, against real applicant skills ── */
+describe('the terms configured on requisition 7ae62d7d', () => {
+  // Skills as IvyLens derives them from this role's must_haves.
+  const applicant = (...names: string[]) =>
+    ({ overall_score: 0.9, skill_matches: names.map(skill => ({ skill, found: true, confidence: 0.9 })) }) as any;
+
+  const CRITERIA = [
+    { key: 'ai_engineers', label: 'AI Engineering',
+      match_terms: ['Python', 'Golang', 'TypeScript', 'Rust', 'Java', 'Machine Learning', 'LLM', 'Artificial Intelligence'] },
+    { key: 'strong_software_engineering_or_ai_ml_exp', label: 'Strong software engineering or AI/ML experience',
+      match_terms: ['Software Engineering', 'Software Development', 'Programming', 'Backend', 'Full Stack', 'Debugging', 'Refactoring', 'Machine Learning'] },
+    { key: 'software_testing', label: 'Software testing',
+      match_terms: ['Software Testing', 'Testing', 'Test', 'QA', 'Unit Test', 'Test Driven Development'] },
+  ];
+
+  it('passes a Rust engineer, who the old "Python" term rejected', () => {
+    expect(checkMandatoryCriteria(CRITERIA,
+      applicant('Rust', 'Software Engineering', 'Software Testing'))).toHaveLength(0);
+  });
+
+  it('passes a Go engineer too', () => {
+    expect(checkMandatoryCriteria(CRITERIA,
+      applicant('Golang', 'Backend', 'Unit Testing'))).toHaveLength(0);
+  });
+
+  it('still vetoes somebody with none of it', () => {
+    // The Zambian auto-electrician in the live applicant list.
+    const failed = checkMandatoryCriteria(CRITERIA,
+      applicant('Electrical Fault Diagnostics', 'Hydraulic Systems Maintenance'));
+    expect(failed).toHaveLength(3);
+  });
+
+  it('vetoes a strong engineer with no testing evidence', () => {
+    // The AND is the point: three criteria, all must be evidenced.
+    const failed = checkMandatoryCriteria(CRITERIA, applicant('Python', 'Software Engineering'));
+    expect(failed.map(f => f.key)).toEqual(['software_testing']);
+  });
+});

@@ -163,9 +163,27 @@ function skillSatisfies(match: ScanSkillMatch, terms: string[]): boolean {
 
   return terms.some(term => {
     const t = normalise(term);
-    if (!t) return false;
+    if (!usableTerm(t)) return false;
     return skill.includes(t) || t.includes(skill);
   });
+}
+
+/** The shortest a normalised term may be before it stops discriminating.
+ *
+ *  `normalise` strips punctuation, so an operator typing **"C++"**
+ *  produces the term `"c"` — and `t.includes(skill) || skill.includes(t)`
+ *  then matches "JavaScript", "Docker", "Communication" and nearly
+ *  everything else. A mandatory criterion would pass EVERY candidate
+ *  while reading, in the UI, as a strict requirement.
+ *
+ *  That is the exact inversion of this module's rule: absence of
+ *  evidence must fail, and a term that cannot discriminate is not
+ *  evidence. Two characters is the floor — it keeps "QA" and "ML"
+ *  usable while refusing a bare letter. */
+const MIN_TERM_LENGTH = 2;
+
+function usableTerm(normalisedTerm: string): boolean {
+  return normalisedTerm.length >= MIN_TERM_LENGTH;
 }
 
 /** Evaluate every mandatory criterion against the scan's skill_matches[].
@@ -192,14 +210,19 @@ export function checkMandatoryCriteria(
   const failed: FailedCriterion[] = [];
   for (const criterion of criteria) {
     const terms = criterion.match_terms ?? [];
-    if (!terms.length) {
-      // A criterion with no terms can never be evidenced. Treat it as
-      // a configuration fault and fail it loudly rather than passing
-      // it by accident.
+    // A criterion with no USABLE terms can never be evidenced honestly.
+    // "No terms at all" and "only terms that normalise away to nothing"
+    // are the same fault — the second is worse, because "C++" looks
+    // like a real requirement in the UI while matching everything.
+    // Both fail loudly rather than passing by accident.
+    const usable = terms.filter(t => usableTerm(normalise(t)));
+    if (!usable.length) {
       failed.push({
         key:    criterion.key,
         label:  criterion.label,
-        reason: 'Criterion has no match terms configured — cannot be evidenced.',
+        reason: terms.length
+          ? `Criterion's match terms (${terms.join(', ')}) are too short to discriminate once punctuation is stripped — cannot be evidenced.`
+          : 'Criterion has no match terms configured — cannot be evidenced.',
       });
       continue;
     }
@@ -211,9 +234,9 @@ export function checkMandatoryCriteria(
     // came up", purely so the review queue reads usefully. Both fail.
     const mentioned = matches.find(m => {
       const skill = normalise(m.skill ?? '');
-      return terms.some(t => {
+      return usable.some(t => {
         const n = normalise(t);
-        return n && skill && (skill.includes(n) || n.includes(skill));
+        return usableTerm(n) && skill && (skill.includes(n) || n.includes(skill));
       });
     });
 
