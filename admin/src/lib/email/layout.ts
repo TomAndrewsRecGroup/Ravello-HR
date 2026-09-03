@@ -83,6 +83,84 @@ export const ARG_SENDER: SenderIdentity = {
   defaultFooterNote: 'You received this email because you applied for a role through Andrews Recruitment Group.',
 };
 
+/* ─── Athletes To Industry — its own dark gold/navy identity ──
+ *
+ * Operator, 2026-09-03: "we are using the same email format and
+ * address that we use for sending emails to Athletes in the Athletes
+ * to Industry section" — confirming the referral invite's ORIGINAL
+ * defect (Andrews-Recruitment-signed content in a People-System shell)
+ * is not a one-off: it is the SAME pattern the Athletes To Industry
+ * welcome email has been sending under.
+ *
+ * The portal app already built the right identity for this — see
+ * `wrapEmailGold` / A2I_* in portal/src/lib/email.ts, used today ONLY
+ * for the internal "new partner referral" notification TO Tom. Its
+ * footer already states the correct relationship: "Operated by
+ * Andrews Recruitment Group · Powered by The People System." The
+ * athlete-facing welcome email — the one an actual applicant reads —
+ * never used it, and instead went out in the generic purple TPS shell.
+ *
+ * This is a SEPARATE VISUAL DESIGN (dark navy/gold), not just a
+ * name-swap of `SenderIdentity` within the purple layout — hence its
+ * own wrap function rather than a third `SenderIdentity` constant.
+ * `wrapEmailA2I` here is deliberately kept in step with portal's
+ * `wrapEmailGold`: same palette, same structural shell. There is no
+ * shared-dupe entry for it (email/ isn't on that list — see
+ * check-shared-dupes.sh), so a future palette tweak must be made in
+ * both files by hand. */
+
+export const A2I = {
+  navyDeep: '#060a18',
+  navy:     '#0a1126',
+  cream:    '#f3ecd8',
+  creamMut: '#c9c4b3',
+  gold:     '#c9a24a',
+  border:   'rgba(243,236,216,0.14)',
+  logoUrl:  process.env.A2I_EMAIL_LOGO_URL
+    ?? 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Athletes%20To%20Industry%20Option%20A.png',
+};
+
+/** Athletes To Industry's own branded shell — dark navy/gold, distinct
+ *  from the purple TPS/ARG layout. Mirrors portal's `wrapEmailGold`. */
+export function wrapEmailA2I(body: string, preheader?: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="x-apple-disable-message-reformatting" />
+<title>Athletes To Industry</title>
+</head>
+<body style="margin:0;padding:0;background:${A2I.navyDeep};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${A2I.cream};">
+${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:transparent;">${preheader}</div>` : ''}
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${A2I.navyDeep};padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:${A2I.navy};border-radius:14px;overflow:hidden;border:1px solid ${A2I.border};">
+        <tr>
+          <td style="padding:28px 32px 18px 32px;border-bottom:1px solid ${A2I.border};">
+            <img src="${A2I.logoUrl}" alt="Athletes To Industry" width="64" style="display:block;height:auto;max-width:64px;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 32px;font-size:15px;line-height:1.6;color:${A2I.cream};">
+            ${body}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 32px;border-top:1px solid ${A2I.border};font-size:12px;color:${A2I.creamMut};line-height:1.5;">
+            <p style="margin:0 0 6px 0;font-weight:600;color:${A2I.gold};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
+            <p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by The People System.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+}
+
 /**
  * Wrap body content in the branded email shell. Body should be valid
  * HTML containing one or more block-level elements with inline styles.
@@ -147,6 +225,22 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
 </table>
 </body>
 </html>`;
+}
+
+/** A2I's own CTA button — solid gold, dark text. The purple `ctaButton`
+ *  below reads as a mismatch on the navy A2I background; this is the
+ *  one to use inside `wrapEmailA2I`. */
+export function ctaButtonA2I(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+  <tr>
+    <td style="border-radius:8px;background:${A2I.gold};">
+      <a href="${href}"
+         style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:${A2I.navyDeep};text-decoration:none;border-radius:8px;">
+         ${label}
+      </a>
+    </td>
+  </tr>
+</table>`;
 }
 
 /**

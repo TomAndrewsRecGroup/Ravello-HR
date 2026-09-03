@@ -37,53 +37,16 @@ function ctaButton(href: string, label: string): string {
 </td></tr></table>`;
 }
 
-export function buildInviteEmail(input: {
-  to:           string;
-  companyName:  string;
-  roleLabel:    string;
-  activateUrl:  string;
-}) {
-  const body = `
-<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">You've been invited to The People System</h1>
-<p style="margin:0 0 16px 0;"><strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their People System portal.</p>
-<p style="margin:0 0 16px 0;">Click the button below to set your password and access the platform. The link is valid for <strong>7 days</strong>.</p>
-${ctaButton(input.activateUrl, 'Accept invitation')}
-<p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If the button doesn't work, copy and paste this link into your browser:<br/><a href="${input.activateUrl}" style="color:${PURPLE};word-break:break-all;">${input.activateUrl}</a></p>
-`.trim();
-
-  return {
-    to:      input.to,
-    subject: `${input.companyName} invited you to The People System`,
-    html:    wrapEmail(body, `Accept your invitation to join ${input.companyName} on The People System.`),
-    tag:     'user-invited',
-  };
-}
-
-const ATHLETE_BOOKING_URL =
-  'https://outlook.office.com/bookwithme/user/1cf5276e70ab4ff38d6148488970b02b@andrews-recruitment.com/meetingtype/2SFLXpPozUKFYId3Ba1I-g2?bookingcode=baf24931-2d13-429f-89ff-2e1696e66feb&anonymous&ismsaljsauthenabled&ep=mLinkFromTile';
-
-export function buildAthleteWelcomeEmail(input: { to: string; firstName?: string; bookingUrl?: string }) {
-  const greeting = input.firstName ? `Hi ${input.firstName},` : 'Hi there,';
-  const url = input.bookingUrl ?? ATHLETE_BOOKING_URL;
-  const body = `
-<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">Welcome to Athletes To Industry</h1>
-<p style="margin:0 0 16px 0;">${greeting}</p>
-<p style="margin:0 0 16px 0;">Your details have been added to <strong>The People System's Athletes To Industry programme</strong>, the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
-<p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong>Tom Andrews</strong>. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
-${ctaButton(url, 'Book a call with Tom Andrews')}
-<p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If you'd rather get in touch first, just reply to this email and we'd love to hear from you.</p>
-`.trim();
-  return {
-    to:      input.to,
-    subject: 'Your Athletes To Industry journey starts here',
-    html:    wrapEmail(body, "Welcome to Athletes To Industry. Book a call with Tom Andrews to get started."),
-    tag:     'athlete-welcome',
-  };
-}
-
 // ── Athletes To Industry gold/navy email theme ──────────────────────────
-// Distinct from the purple People-System shell above so A2I referral
-// notifications stay on-brand. Used by buildPartnerReferralEmail.
+// Distinct from the purple People-System shell above. Moved ahead of
+// buildAthleteWelcomeEmail on 2026-09-03: that email is signed by Tom
+// Andrews and describes Andrews Recruitment Group's programme, but was
+// sending in the generic purple shell — the operator confirmed this is
+// the SAME pattern the referral invite had, and it needs the identity
+// this section already built for the partner-referral notification.
+// Mirrors admin/src/lib/email/layout.ts's A2I constants + wrapEmailA2I
+// (email/ is not on the shared-dupe list — scripts/check-shared-dupes.sh
+// — so keep the two palettes in step by hand).
 const A2I_NAVY_DEEP = '#060a18';
 const A2I_NAVY      = '#0a1126';
 const A2I_CREAM     = '#f3ecd8';
@@ -115,10 +78,74 @@ function wrapEmailGold(body: string, preheader: string): string {
 <tr><td style="padding:28px 32px;font-size:15px;line-height:1.6;color:${A2I_CREAM};">${body}</td></tr>
 <tr><td style="padding:22px 32px;border-top:1px solid ${A2I_BORDER};font-size:12px;color:${A2I_CREAM_MUT};line-height:1.5;">
 <p style="margin:0 0 6px 0;font-weight:600;color:${A2I_GOLD};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
-<p style="margin:0;">Operated by Andrews Recruitment Group · Powered by The People System.</p>
+<p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by The People System.</p>
 </td></tr></table>
 </td></tr></table></body></html>`;
 }
+
+/** A2I's own CTA button — solid gold, dark text. Mirrors
+ *  admin/src/lib/email/layout.ts's `ctaButtonA2I`; the purple button
+ *  above reads as a mismatch on the navy A2I background. */
+function ctaButtonGold(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr>
+<td style="border-radius:8px;background:${A2I_GOLD};">
+<a href="${href}" style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:${A2I_NAVY_DEEP};text-decoration:none;border-radius:8px;">${label}</a>
+</td></tr></table>`;
+}
+
+export function buildInviteEmail(input: {
+  to:           string;
+  companyName:  string;
+  roleLabel:    string;
+  activateUrl:  string;
+}) {
+  const body = `
+<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">You've been invited to The People System</h1>
+<p style="margin:0 0 16px 0;"><strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their People System portal.</p>
+<p style="margin:0 0 16px 0;">Click the button below to set your password and access the platform. The link is valid for <strong>7 days</strong>.</p>
+${ctaButton(input.activateUrl, 'Accept invitation')}
+<p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If the button doesn't work, copy and paste this link into your browser:<br/><a href="${input.activateUrl}" style="color:${PURPLE};word-break:break-all;">${input.activateUrl}</a></p>
+`.trim();
+
+  return {
+    to:      input.to,
+    subject: `${input.companyName} invited you to The People System`,
+    html:    wrapEmail(body, `Accept your invitation to join ${input.companyName} on The People System.`),
+    tag:     'user-invited',
+  };
+}
+
+const ATHLETE_BOOKING_URL =
+  'https://outlook.office.com/bookwithme/user/1cf5276e70ab4ff38d6148488970b02b@andrews-recruitment.com/meetingtype/2SFLXpPozUKFYId3Ba1I-g2?bookingcode=baf24931-2d13-429f-89ff-2e1696e66feb&anonymous&ismsaljsauthenabled&ep=mLinkFromTile';
+
+// Athletes To Industry's own identity (wrapEmailGold), not the purple
+// People-System shell. Until 2026-09-03 this shipped in the purple
+// shell AND its copy attributed the programme entirely to "The People
+// System's Athletes To Industry programme" -- omitting Andrews
+// Recruitment Group by name altogether, even though this is literally
+// their programme and the booking link is on their domain. This is
+// the LIVE auto-send path (fired from the public, unauthenticated
+// /api/r/athlete/[slug] route on every real athlete signup), so it is
+// the one that mattered most to fix.
+export function buildAthleteWelcomeEmail(input: { to: string; firstName?: string; bookingUrl?: string }) {
+  const greeting = input.firstName ? `Hi ${input.firstName},` : 'Hi there,';
+  const url = input.bookingUrl ?? ATHLETE_BOOKING_URL;
+  const body = `
+<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${A2I_CREAM};">Welcome to Athletes To Industry</h1>
+<p style="margin:0 0 16px 0;">${greeting}</p>
+<p style="margin:0 0 16px 0;">Your details have been added to <strong style="color:${A2I_GOLD};">Andrews Recruitment Group's Athletes To Industry programme</strong>, the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
+<p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong style="color:${A2I_GOLD};">Tom Andrews</strong>. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
+${ctaButtonGold(url, 'Book a call with Tom Andrews')}
+<p style="margin:24px 0 0 0;font-size:13px;color:${A2I_CREAM_MUT};">If you'd rather get in touch first, just reply to this email and we'd love to hear from you.</p>
+`.trim();
+  return {
+    to:      input.to,
+    subject: 'Your Athletes To Industry journey starts here',
+    html:    wrapEmailGold(body, "Welcome to Athletes To Industry. Book a call with Tom Andrews to get started."),
+    tag:     'athlete-welcome',
+  };
+}
+
 
 /** Notification to Tom when a partner submits via a client's /r/partner/[slug] link. */
 export function buildPartnerReferralEmail(input: {

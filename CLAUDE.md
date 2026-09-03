@@ -562,6 +562,19 @@ orchestrates, decides, emails and tracks.
   identity is fixed but the envelope still says
   `noreply@portal.thepeoplesystem.co.uk`** — verify
   andrews-recruitment.com in Resend → Domains, then set the var.
+- **The Athletes To Industry welcome emails had the SAME defect, worse
+  in one place.** Operator, 2026-09-03: "we are using the same email
+  format and address that we use for sending emails to Athletes in the
+  Athletes to Industry section" — confirming the referral invite's
+  original mismatch (Andrews-Recruitment-signed content in a
+  People-System shell) was not a one-off. `athleteWelcome.ts` (admin,
+  fired on manual staff-add + resend) and `buildAthleteWelcomeEmail`
+  (portal, the LIVE auto-send from the public unauthenticated
+  `/api/r/athlete/[slug]` route) both went out purple/TPS-branded. The
+  portal one was worse: its copy said "The People System's Athletes To
+  Industry programme," dropping Andrews Recruitment Group by name
+  entirely, even though the booking link is on their domain and the
+  call is with their owner. See below.
 - **"Email me a preview"** on the referral panel
   (`POST /api/admin/referrals/[id]/test-email`) renders the real
   template with the role's saved config and sends it to the signed-in
@@ -832,3 +845,58 @@ other Save in the admin app was on the same curve, just further left.
   bare `globalThis.document` is not enough, and getting that wrong makes
   the test pass while measuring nothing) and checks
   `createBrowserClient` twice returns the same object.
+
+---
+
+## Athletes To Industry emails moved to their own identity (2026-09-03)
+
+The codebase already had the right shell for this: `wrapEmailGold` in
+`portal/src/lib/email.ts` — dark navy/gold, footer reading "Operated by
+Andrews Recruitment Group · Powered by The People System" — built for
+the internal "new partner referral" notification TO Tom. The two
+athlete-facing welcome emails, the ones an actual applicant reads,
+never used it.
+
+- **Admin's `athleteWelcome.ts`** (fired from `POST
+  /api/admin/athletes` on create, and from the manual
+  `/api/admin/athletes/[id]/welcome-email` resend route) now uses
+  `wrapEmailA2I` + `ctaButtonA2I`, new exports in
+  `admin/src/lib/email/layout.ts` mirroring portal's `wrapEmailGold` /
+  A2I constants. Body copy unchanged — it already correctly said
+  "Andrews Recruitment Groups... via The People System portal."
+- **Portal's `buildAthleteWelcomeEmail`** — the LIVE path, firing on
+  every real, unauthenticated athlete signup via `/api/r/athlete/[slug]`
+  — now uses the existing `wrapEmailGold` + a new `ctaButtonGold`. Its
+  copy is fixed too: "The People System's Athletes To Industry
+  programme" becomes "Andrews Recruitment Group's Athletes To Industry
+  programme," matching the attribution the partner-notification email
+  already stated correctly.
+- **This is a SEPARATE VISUAL DESIGN, not a `SenderIdentity` swap.**
+  A2I is dark navy/gold; TPS and ARG_SENDER share the light purple
+  layout. `wrapEmailA2I` / `wrapEmailGold` are their own wrap functions
+  for that reason — `SenderIdentity` only swaps name/logo/tagline
+  within one shared visual design.
+- **No shared-dupe entry.** `admin/src/lib/email/` isn't on
+  `scripts/check-shared-dupes.sh`'s list (see the migrations section on
+  why email/ is per-app), so admin's A2I palette and portal's are kept
+  in step by hand, not by the CI guard. A future palette tweak needs
+  both files edited.
+- **The FROM address is untouched, same reasoning as `REFERRAL_EMAIL_FROM`.**
+  Both athlete emails still send via `EMAIL_FROM` /
+  `noreply@portal.thepeoplesystem.co.uk`. Resend 403s an unverified
+  domain, so this is a DNS/Resend-domain job before it can change, not
+  a code one.
+
+Five mutations reintroduced and watched to fail: admin's shell and
+button both reverted to purple/TPS, portal's shell and button reverted
+to purple, and portal's copy reverted to omitting Andrews Recruitment
+Group. A sixth confirmed the OTHER portal emails (client invite,
+partner-referral notification) are unaffected.
+
+tsc clean and full test suites green on both apps (328 admin, 27
+portal — the portal suite had none for `lib/email.ts` before this).
+Both production builds compile; the portal build's prerender step fails
+in this sandbox only on `Missing Supabase env vars` (no
+`NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` in this container) — unrelated to
+this change, on pages this change never touched, and Vercel carries the
+real values.
