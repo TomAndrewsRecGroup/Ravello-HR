@@ -562,6 +562,12 @@ orchestrates, decides, emails and tracks.
   identity is fixed but the envelope still says
   `noreply@portal.thepeoplesystem.co.uk`** — verify
   andrews-recruitment.com in Resend → Domains, then set the var.
+  **Reply-To travels with it** (`referralFromAddress()` extracts the
+  bare address out of `REFERRAL_EMAIL_FROM`) — otherwise a candidate
+  hitting reply on an ARG-branded email lands in
+  hello@thepeoplesystem.co.uk, the same mismatch one header over.
+  `REFERRAL_EMAIL_REPLY_TO` overrides it if the reply inbox should ever
+  differ from the sending address.
 - **The Athletes To Industry welcome emails had the SAME defect, worse
   in one place.** Operator, 2026-09-03: "we are using the same email
   format and address that we use for sending emails to Athletes in the

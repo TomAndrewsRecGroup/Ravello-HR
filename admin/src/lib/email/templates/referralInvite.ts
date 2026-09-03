@@ -36,6 +36,20 @@ import { wrapEmail, ctaButton, ARG_SENDER, BRAND } from '../layout';
 // Tom time to prepare; this candidate is mid-jobsearch and should hear
 // back while they still remember applying.
 
+/** The bare address inside REFERRAL_EMAIL_FROM, e.g.
+ *  "Andrews Recruitment Group <careers@andrews-recruitment.com>" -> the
+ *  "careers@..." part. Resend's reply_to accepts a display-name form
+ *  too, but a bare address is universally safe, and this mirrors the
+ *  same extraction admin/src/app/api/admin/send-email/route.ts already
+ *  does against EMAIL_FROM. Returns undefined when REFERRAL_EMAIL_FROM
+ *  is unset (still the common case), which lets replyTo fall through to
+ *  sendEmail's own EMAIL_REPLY_TO default — unchanged behaviour. */
+function referralFromAddress(): string | undefined {
+  const raw = process.env.REFERRAL_EMAIL_FROM;
+  if (!raw) return undefined;
+  return raw.match(/<([^>]+)>/)?.[1] ?? raw.trim();
+}
+
 export interface ReferralInviteInput {
   to:            string;
   /** First name for the greeting; falls back to "Hi there,". */
@@ -84,6 +98,18 @@ ${ctaButton(input.referralUrl, 'Complete your application')}
     // Declared HERE rather than at the call sites so the preview and
     // the live send cannot disagree about who the email is from.
     from:    process.env.REFERRAL_EMAIL_FROM,
+    // The body says "just reply to this email and it'll come straight
+    // back to us" — so Reply-To has to land somewhere ARG actually
+    // reads. sendEmail's own default is EMAIL_REPLY_TO
+    // (hello@thepeoplesystem.co.uk), which is correct for every OTHER
+    // email but is exactly the mismatch this file exists to fix: a
+    // candidate hitting reply on an ARG-branded email would land in
+    // the People System inbox. Default it to the bare address inside
+    // REFERRAL_EMAIL_FROM so the two travel together — set one env var,
+    // not two — with REFERRAL_EMAIL_REPLY_TO as an escape hatch for the
+    // rare case they should differ (e.g. a monitored shared inbox that
+    // isn't the sending address).
+    replyTo: process.env.REFERRAL_EMAIL_REPLY_TO ?? referralFromAddress(),
     subject: `Your ${input.roleTitle} application — next step`,
     // ARG_SENDER, not the default. The candidate answered an Andrews
     // Recruitment Group advert and this email is signed by Tom Andrews;

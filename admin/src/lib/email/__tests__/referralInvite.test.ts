@@ -156,3 +156,48 @@ describe('every other email keeps the People System shell', () => {
     expect(html).not.toContain('Andrews Recruitment Group');
   });
 });
+
+/* ─── Reply-To follows the From address ────────────────────── */
+//
+// The body says "just reply to this email and it'll come straight
+// back to us." Once REFERRAL_EMAIL_FROM is an ARG address, a reply
+// landing in hello@thepeoplesystem.co.uk (sendEmail's own default) is
+// the same identity mismatch this file exists to fix, one header over.
+
+describe('reply-to travels with REFERRAL_EMAIL_FROM', () => {
+  const withEnv = (from: string | undefined, replyTo: string | undefined, fn: () => void) => {
+    const beforeFrom = process.env.REFERRAL_EMAIL_FROM;
+    const beforeReply = process.env.REFERRAL_EMAIL_REPLY_TO;
+    try {
+      if (from === undefined) delete process.env.REFERRAL_EMAIL_FROM; else process.env.REFERRAL_EMAIL_FROM = from;
+      if (replyTo === undefined) delete process.env.REFERRAL_EMAIL_REPLY_TO; else process.env.REFERRAL_EMAIL_REPLY_TO = replyTo;
+      fn();
+    } finally {
+      if (beforeFrom === undefined) delete process.env.REFERRAL_EMAIL_FROM; else process.env.REFERRAL_EMAIL_FROM = beforeFrom;
+      if (beforeReply === undefined) delete process.env.REFERRAL_EMAIL_REPLY_TO; else process.env.REFERRAL_EMAIL_REPLY_TO = beforeReply;
+    }
+  };
+  const mail = () => referralInviteEmail({ to: 'x@example.com', roleTitle: 'AI Engineer', referralUrl: 'https://apply.example.com' });
+
+  it('is undefined (falls through to EMAIL_REPLY_TO) when FROM is unset', () => {
+    withEnv(undefined, undefined, () => expect(mail().replyTo).toBeUndefined());
+  });
+
+  it('extracts the bare address out of a display-name FROM', () => {
+    withEnv('Andrews Recruitment Group <careers@andrews-recruitment.com>', undefined, () => {
+      expect(mail().replyTo).toBe('careers@andrews-recruitment.com');
+    });
+  });
+
+  it('accepts a bare-address FROM with no display name', () => {
+    withEnv('careers@andrews-recruitment.com', undefined, () => {
+      expect(mail().replyTo).toBe('careers@andrews-recruitment.com');
+    });
+  });
+
+  it('REFERRAL_EMAIL_REPLY_TO overrides the derived address', () => {
+    withEnv('Andrews Recruitment Group <careers@andrews-recruitment.com>', 'tom@andrews-recruitment.com', () => {
+      expect(mail().replyTo).toBe('tom@andrews-recruitment.com');
+    });
+  });
+});
