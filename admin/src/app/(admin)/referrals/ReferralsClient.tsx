@@ -46,6 +46,18 @@ interface Props {
 
 const REVIEW = 'review_pending';
 
+// Both a row waiting on a human call (review_pending — a mandatory
+// criterion or country came back `unknown`) and a row that already
+// cleared the bar but was HELD by dry_run (qualified, never sent) need
+// the same two actions: send it, or don't. The API route has always
+// accepted `approve`/`reject` for both statuses — see
+// admin/src/app/api/admin/referrals/[id]/route.ts — but this table used
+// to gate the buttons on review_pending alone, so a qualified-but-dry-run
+// candidate had no way to be sent at all: the "Advance to…" dropdown only
+// offers downstream stages (applied_to_partner, accepted, …), none of
+// which call sendReferralInvite.
+const ACTIONABLE = new Set(['review_pending', 'qualified']);
+
 export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -164,9 +176,10 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
             </thead>
             <tbody>
               {filtered.map(r => {
-                const isOpen  = expanded === r.id;
-                const isQueue = r.status === REVIEW;
-                const thin    = r.scan_source === 'manatal_parsed';
+                const isOpen      = expanded === r.id;
+                const isActionable = ACTIONABLE.has(r.status);
+                const heldByDryRun = r.status === 'qualified';
+                const thin        = r.scan_source === 'manatal_parsed';
                 return (
                   <Fragment key={r.id}>
                     <tr>
@@ -232,14 +245,14 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        {isQueue ? (
+                        {isActionable ? (
                           <div className="flex gap-2 justify-end">
                             <button
                               className="btn-cta btn-sm"
                               disabled={busy === r.id}
                               onClick={() => act(r.id, { action: 'approve' })}
                             >
-                              <Check size={13} /> Approve
+                              <Check size={13} /> {heldByDryRun ? 'Send invite' : 'Approve'}
                             </button>
                             <button
                               className="btn-secondary btn-sm"

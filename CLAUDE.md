@@ -1036,3 +1036,51 @@ what the database contains).
   indexes and `pg_policies` back rather than trusting the apply call's own
   success response.
 
+---
+
+## A `qualified` (dry-run-held) applicant had no way to be sent (2026-09-04)
+
+Operator, after the first real dry-run scan produced its first `qualified`
+result: *"existing qualified people do not have an approve button, only the
+ones in the review queue do. I need to be able to send the email to the people
+who already hit the auto approved benchmark but held back as we had dry run
+on."*
+
+`PATCH /api/admin/referrals/[id]`'s approve branch has always accepted
+`status === 'qualified'` as well as `'review_pending'` — that was part of the
+PGRST200 fix earlier the same day. **The UI never did.**
+`ReferralsClient.tsx` gated the Approve/Reject buttons on
+`r.status === 'review_pending'` alone (`isQueue`); everything else, `qualified`
+included, fell through to the "Advance to…" dropdown, which is populated from
+`MANUAL_STATUSES` — the downstream, hand-settable stages
+(`applied_to_partner`, `accepted`, …) — none of which call
+`sendReferralInvite`. So a candidate who cleared the auto-send bar and was
+correctly held back by `dry_run` (see `pipeline.ts`'s one dry_run check, at the
+email-send site) had **no control anywhere in the product** that could send
+them the invite. Only `review_pending` — the "a mandatory criterion or country
+came back `unknown`" case — had one.
+
+- **The backend already did the right thing; only the table's button gate was
+  wrong.** `ACTIONABLE` replaces the single-status `isQueue` check with a set
+  of both statuses a human may act on. Read `pipeline.ts:322-338` before
+  touching this again: `dry_run` is checked in exactly one place, and it never
+  touches whether a row is APPROVABLE, only whether the automatic path sends.
+- **The button is relabelled "Send invite" for a `qualified` row**, "Approve"
+  for `review_pending` — same action (`{ action: 'approve' }`), same route,
+  same underlying call. The distinction is for the operator reading the table,
+  not the code: one is a human override of an "unknown" verdict, the other is
+  the pipeline's own auto-send being manually released.
+- **Turning `dry_run` off does NOT retroactively touch existing rows.**
+  `referral_applications` has `UNIQUE (manatal_candidate_id, requisition_id)`
+  and `processRole` drops anyone already holding a row before doing any work —
+  that is the pipeline's whole idempotency guard (see "Idempotency is the DB"
+  above). A `qualified` row created while `dry_run` was on stays exactly there,
+  un-re-evaluated, however many times the cron runs afterwards. The only way
+  to move it is this button, or the "Advance to…" dropdown for a genuinely
+  downstream change.
+- **The `review_pending` filter/count (`REVIEW`, `queueCount`) is deliberately
+  unchanged** — it still means "a human verdict is needed", which is a
+  narrower thing than "a human action is available". Widening it to include
+  `qualified` would have made the "Review queue (N)" badge count rows that
+  never needed review at all, just a send.
+
