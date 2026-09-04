@@ -998,3 +998,41 @@ approve, every reject, since the route was written.
   case included (it degraded to the generic "application not found"
   again).
 
+---
+
+## The IvyLens telemetry table existed only on disk (2026-09-04)
+
+Once the cron 307 fix (above) let `/api/cron/referral-scan` actually run, Vercel
+logs filled with one new line per IvyLens call:
+`[ivylens.recordCall] insert failed: Could not find the table
+'public.ivylens_api_calls' in the schema cache`.
+
+`admin/src/lib/ivylens.ts`'s `recordCall()` — called after every outbound
+IvyLens request — has always written to `ivylens_api_calls`, and
+`supabase/migrations/035_ivylens_telemetry.sql` has defined that exact table,
+with a matching column set, since Phase 42. Querying
+`information_schema.tables` on the live project confirmed it: the table did
+not exist. The migration file was written, committed, and never applied — the
+same gap this repo's own migration culture warns about (`.sql` on disk is a
+record of intent, applied by hand in the Supabase SQL editor, not proof of
+what the database contains).
+
+- **No code drift, so no code fix.** `recordCall()`'s insert payload
+  (`{ endpoint, method, status, duration_ms, rate_limited, error }`) matches
+  migration 035's columns exactly — this was purely a missing `apply_migration`
+  call, not a schema mismatch to reconcile.
+- **It never broke anything it wrote to.** `recordCall()` wraps every insert
+  in a `.then(…, err => { console.error(...); resolve(); })` — the promise
+  always resolves, so a missing table only ever produced a log line, never a
+  failed cron run or a 500 to a caller. That is also why it was invisible
+  until someone actually read the logs: `referral_scan_runs` kept recording
+  real `ok` rows underneath it the whole time.
+- **What it DID cost**: the IvyLens Health Status dashboard
+  (`admin/src/lib/ivylens/health.ts`, which reads FROM this table) had zero
+  data for every day the table was missing — a real "no signal" gap for
+  anyone checking rate-limit usage or error trends before this fix.
+- Applied via `mcp__Supabase__apply_migration` against project
+  `sbmekaviwkiyorvmtgcu`; verified afterwards by reading the live columns,
+  indexes and `pg_policies` back rather than trusting the apply call's own
+  success response.
+
