@@ -40,11 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .select(`
       id, status, candidate_id, company_id, requisition_id, manatal_candidate_id, status_history,
       candidate:candidates!inner ( id, full_name, email ),
-      requisition:requisitions!inner ( id, title ),
-      config:referral_role_config!inner (
-        requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
-        auto_send_threshold, review_threshold, blocked_countries, mandatory_criteria
-      )
+      requisition:requisitions!inner ( id, title )
     `)
     .eq('id', params.id)
     .single();
@@ -56,7 +52,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const one = <T,>(v: T | T[]): T => (Array.isArray(v) ? v[0] : v);
   const candidate   = one((app as any).candidate);
   const requisition = one((app as any).requisition);
-  const config      = one((app as any).config);
+
+  // referral_role_config has NO foreign key to referral_applications —
+  // both tables independently reference requisitions, which is not the
+  // same thing. PostgREST can only embed a table across a real FK
+  // edge, so `config:referral_role_config!inner(...)` chained onto the
+  // select above (the original shape here) could never resolve: every
+  // single call failed with PGRST200 ("no relationship … in the schema
+  // cache"), readErr was always truthy, and the route reported "not
+  // found" for every approve/reject click regardless of whether the
+  // row existed. See CLAUDE.md, 2026-09-04.
+  //
+  // Fetched as its own query instead — the same pattern runScan.ts
+  // already uses to read this table.
+  const { data: config, error: configErr } = await supabase
+    .from('referral_role_config')
+    .select(`
+      requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
+      auto_send_threshold, review_threshold, blocked_countries, mandatory_criteria
+    `)
+    .eq('requisition_id', app.requisition_id)
+    .single();
+
+  if (configErr || !config) {
+    return NextResponse.json({ error: 'This role has no referral configuration saved.' }, { status: 404 });
+  }
 
   const now     = new Date().toISOString();
   const history = Array.isArray(app.status_history) ? app.status_history : [];

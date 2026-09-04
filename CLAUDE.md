@@ -965,3 +965,36 @@ cause. Admin's middleware now carries the same `PUBLIC_ROUTES` pattern.
   anything about the 80/68 thresholds, which were calibrated against
   the old broken scoring and will need re-deriving from a fresh batch.
 
+---
+
+## Approve/Reject 404'd on every referral, always (2026-09-04)
+
+Operator: *"reviewing the referrals and approving them does not work, I
+get an error message saying - Referral application not found"*.
+
+`PATCH /api/admin/referrals/[id]` selected `referral_applications` with
+three chained `!inner` embeds — `candidates`, `requisitions`, and
+`referral_role_config`. The first two resolve: real foreign keys exist.
+The third does not. **`referral_role_config` has no foreign key to
+`referral_applications` at all** — both tables independently reference
+`requisitions`, which is not the same thing, and PostgREST can only
+embed a table across a real FK edge between the two named tables. Every
+single call to this route failed with `PGRST200` ("no relationship …
+in the schema cache"), `readErr` was always truthy, and the route
+reported "not found" for a row that was sitting right there — for every
+approve, every reject, since the route was written.
+
+- **Fetched as its own query instead**, keyed on
+  `app.requisition_id` — the same pattern `runScan.ts` already uses to
+  read this table, and the one that was sitting right there to copy.
+- **Never assume PostgREST can chain a relationship through a shared
+  referenced table.** Both tables pointing at `requisitions` looks like
+  a join path to a human; PostgREST requires the direct edge.
+- **Test drives the real `PATCH` handler against a fake Postgrest that
+  reproduces the actual `PGRST200`** if the embed regresses, not a
+  generic "and now it's broken" stand-in — the same discipline as the
+  middleware fix above. One mutation reintroduced and watched to fail:
+  restoring the three-way embed failed all four tests, the config-404
+  case included (it degraded to the generic "application not found"
+  again).
+
