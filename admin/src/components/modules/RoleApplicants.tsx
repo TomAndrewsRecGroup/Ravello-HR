@@ -25,6 +25,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Users, AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react';
+import Pagination, { usePagination } from './Pagination';
 
 interface Stage { id: number; name: string }
 
@@ -124,6 +125,16 @@ export default function RoleApplicants({
 
   const applied = rows.filter(r => r.applied);
 
+  // Recent-first: Manatal's own match order is not a date order, and
+  // once a role has been live for a while this list is exactly where an
+  // operator wants to see who JUST applied, not who applied first.
+  const sorted = [...rows].sort((a, b) => {
+    const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bt - at;
+  });
+  const { paged, page, totalPages, setPage, totalItems, pageSize } = usePagination(sorted, 25);
+
   return (
     <div className="card p-5 space-y-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -219,7 +230,7 @@ export default function RoleApplicants({
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => {
+              {paged.map(r => {
                 const st = stageStyle(r.stage.name);
                 const isMoving = moving === r.id;
                 return (
@@ -276,6 +287,7 @@ export default function RoleApplicants({
               })}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} totalItems={totalItems} />
         </div>
       )}
 

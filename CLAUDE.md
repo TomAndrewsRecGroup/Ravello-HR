@@ -1084,3 +1084,63 @@ came back `unknown`" case — had one.
   `qualified` would have made the "Review queue (N)" badge count rows that
   never needed review at all, just a send.
 
+---
+
+## The role page's Candidates table used the wrong status vocabulary for referral-sourced rows (2026-09-04)
+
+Operator: *"it also needs the client status to match their outcome as the
+all say 'awaiting your review' but they have been reviewed havent they?"*
+
+`admin/hiring/[id]/page.tsx`'s Candidates table reads `candidates.client_status`
+and labels it via `CANDIDATE_CLIENT_STATUS_LABELS` — correct for the classic
+flow, where an admin shares a candidate with the client and the client reviews
+them. It is the wrong column entirely for a candidate `pipeline.ts` created:
+those never go to a client for review at all — they are being referred on to
+Micro1 — so `client_status` is simply never written and sits at its DB default
+for ever. The badge said "Awaiting your review" not because anything was
+stale, but because that field never applied to these rows in the first place.
+The real outcome — qualified, rejected on score, email sent, … — lives on
+`referral_applications`, keyed by `candidate_id`.
+
+- **Detect the source, not the status.** `pipeline.ts` stamps
+  `source: 'job_board'` on every candidate row it creates (already an
+  established value — the same one `/candidates`'s source filter uses). A
+  `job_board`-sourced row now looks up its `referral_applications.status` and
+  renders that via the referral funnel's own `statusLabel`/`statusColour`
+  (`@/lib/referral/statusMeta`) instead of the client-review badge, with a
+  small "via referral pipeline" caption so the two vocabularies are never
+  confused for one another on screen.
+- **One extra query, not a join on every row.** The candidate ids on the
+  current page that are `job_board`-sourced are batched into a single
+  `.in('candidate_id', […])` read against `referral_applications` — there is
+  no FK-embeddable path from `candidates` to `referral_applications` worth
+  relying on for a display list, and this is the same "fetch by id list"
+  shape `runScan.ts` and the referrals PATCH route already use elsewhere.
+
+Same operator turn also asked for pagination on **both** candidate-shaped
+lists on that page, 25 at a time, recent first:
+
+- **The Candidates table** now does real server-side pagination —
+  `.range()` + `{ count: 'exact' }` on the query, a `?page=` search param,
+  Prev/Next links. It was already ordered `created_at desc`, so "recent on
+  top" was free; what was missing was a bound. A role scanned by the referral
+  pipeline for months adds one candidates row per applicant — unbounded was
+  never going to end well, and would eventually run into the PostgREST
+  1,000-row cap this codebase has hit (and fixed) four times before.
+- **The regression this nearly shipped**: `InterviewSchedulePanel`'s
+  candidate-picker dropdown was fed from the SAME `cands` array as the table.
+  Paginating the table without noticing would have silently shrunk who a
+  recruiter could book an interview for to whichever 25 happened to be on
+  screen. Fixed by fetching a second, lightweight `id,full_name` list with no
+  range for that panel alone — the display table paginates, the scheduler's
+  picker does not.
+- **The Applicants table** (`RoleApplicants.tsx`, the live Manatal pipeline
+  list) sorts by `created_at` descending before paginating — Manatal's match
+  order is not a date order — and reuses the existing
+  `Pagination`/`usePagination` client-side helper (`components/modules/
+  Pagination.tsx`) rather than inventing a second pager pattern.
+- **A disabled Prev/Next is a `<span>`, never a `<Link>` with
+  `pointerEvents: none`.** That CSS blocks a mouse click but not keyboard
+  Enter on a focused, still-navigable anchor — the same class of accessibility
+  gap the F8/F9 sweep (above) exists to catch.
+

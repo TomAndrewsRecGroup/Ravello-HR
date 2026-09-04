@@ -9,6 +9,7 @@ import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
 
 import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, HIRING_STAGE_LABELS, labelFor, valueFor } from '@/lib/ui/statusMaps';
+import { statusColour, statusLabel } from '@/lib/referral/statusMeta';
 export const metadata: Metadata = { title: 'Requisition Detail' };
 // Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
 // AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
@@ -37,10 +38,26 @@ function daysOpen(createdAt: string) {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
 }
 
-export default async function RequisitionDetailPage({ params }: { params: { id: string } }) {
+// Recent-first, 25 at a time. A role scanned by the referral pipeline for
+// months accumulates one candidates row per applicant — unbounded here
+// would eventually run into PostgREST's 1,000-row cap and silently drop
+// the oldest half of the table.
+const CANDIDATES_PAGE_SIZE = 25;
+
+export default async function RequisitionDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { page?: string };
+}) {
   const supabase = createServerSupabaseClient();
 
-  const [{ data: req }, { data: candidates }, { data: interviews }, { data: referralConfig }] = await Promise.all([
+  const candPage  = Math.max(1, Number(searchParams?.page ?? '1') || 1);
+  const candFrom  = (candPage - 1) * CANDIDATES_PAGE_SIZE;
+  const candTo    = candFrom + CANDIDATES_PAGE_SIZE - 1;
+
+  const [{ data: req }, { data: candidates, count: candCount }, { data: allCandidateNames }, { data: interviews }, { data: referralConfig }] = await Promise.all([
     supabase
       .from('requisitions')
       // The job-board columns (083) MUST be selected. The panel seeds its
@@ -52,9 +69,18 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
       .single(),
     supabase
       .from('candidates')
-      .select('id,full_name,email,cv_url,summary,approved_for_client,client_status,client_feedback,screening_score,created_at')
+      .select('id,full_name,email,cv_url,summary,approved_for_client,client_status,client_feedback,screening_score,source,created_at', { count: 'exact' })
       .eq('requisition_id', params.id)
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .range(candFrom, candTo),
+    // The interview scheduler's candidate picker needs every candidate
+    // on the role, not just the page on screen — id + name only, so
+    // paginating the display table above doesn't also shrink who a
+    // recruiter can book an interview for.
+    supabase
+      .from('candidates')
+      .select('id,full_name')
+      .eq('requisition_id', params.id),
     supabase
       .from('interview_schedules')
       .select('id,candidate_id,stage_number,stage_label,interview_type,scheduled_at,duration_mins,status,outcome,notes')
@@ -74,6 +100,28 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const cands    = candidates ?? [];
   const days     = daysOpen(r.created_at);
   const friction = r.friction_level ?? 'Unknown';
+  const candTotal      = candCount ?? cands.length;
+  const candTotalPages = Math.max(1, Math.ceil(candTotal / CANDIDATES_PAGE_SIZE));
+
+  // Candidates the referral pipeline created (pipeline.ts stamps
+  // source:'job_board' on every one) were never sent to the client for
+  // review at all — they are being referred on to a partner, not shared
+  // here. `client_status` on those rows is simply never touched, so it
+  // sits at its DB default for ever. Showing it as "Awaiting your
+  // review" is not stale data, it is the wrong vocabulary for what
+  // happened to them — the real outcome lives on referral_applications,
+  // keyed by candidate_id, and that is what gets shown for this source
+  // instead. See CLAUDE.md, 2026-09-04.
+  const referralCandidateIds = cands.filter((c: any) => c.source === 'job_board').map((c: any) => c.id);
+  const { data: referralOutcomes } = referralCandidateIds.length > 0
+    ? await supabase
+        .from('referral_applications')
+        .select('candidate_id,status')
+        .in('candidate_id', referralCandidateIds)
+    : { data: [] as { candidate_id: string; status: string }[] };
+  const referralStatusByCandidateId = new Map(
+    (referralOutcomes ?? []).map((row: any) => [row.candidate_id, row.status as string]),
+  );
 
   const meta = [
     { label: 'Department',       value: r.department },
@@ -176,7 +224,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             {/* Candidates */}
             <div className="card p-5">
               <h3 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--ink)' }}>
-                Candidates ({cands.length})
+                Candidates ({candTotal})
               </h3>
               {cands.length === 0 ? (
                 <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No candidates added yet.</p>
@@ -185,13 +233,16 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                        {['Name', 'Email', 'Summary', 'Client Status', 'Shared'].map(h => (
+                        {['Name', 'Email', 'Summary', 'Status', 'Shared'].map(h => (
                           <th key={h} className="pb-2.5 text-left text-[11px] font-semibold uppercase tracking-wide pr-4" style={{ color: 'var(--ink-faint)' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {cands.map((c: any) => (
+                      {cands.map((c: any) => {
+                        const isReferral      = c.source === 'job_board';
+                        const referralStatus  = referralStatusByCandidateId.get(c.id);
+                        return (
                         <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td className="py-3 pr-4">
                             <div className="flex items-center gap-2">
@@ -211,9 +262,21 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                             )}
                           </td>
                           <td className="py-3 pr-4">
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
-                              {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
-                            </span>
+                            {isReferral ? (
+                              <>
+                                <span
+                                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                                  style={{ background: 'rgba(7,11,29,0.06)', color: statusColour(referralStatus ?? '') }}
+                                >
+                                  {referralStatus ? statusLabel(referralStatus) : 'Referral — not yet scanned'}
+                                </span>
+                                <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>via referral pipeline</p>
+                              </>
+                            ) : (
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
+                                {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
+                              </span>
+                            )}
                           </td>
                           <td className="py-3">
                             <span className={`badge ${c.approved_for_client ? 'badge-active' : 'badge-normal'}`}>
@@ -221,9 +284,30 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                             </span>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {candTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                    {candFrom + 1}-{Math.min(candFrom + CANDIDATES_PAGE_SIZE, candTotal)} of {candTotal}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {candPage <= 1 ? (
+                      <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>← Prev</span>
+                    ) : (
+                      <Link prefetch={false} href={`/hiring/${params.id}?page=${candPage - 1}`} className="btn-secondary btn-sm">← Prev</Link>
+                    )}
+                    <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Page {candPage} of {candTotalPages}</span>
+                    {candPage >= candTotalPages ? (
+                      <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>Next →</span>
+                    ) : (
+                      <Link prefetch={false} href={`/hiring/${params.id}?page=${candPage + 1}`} className="btn-secondary btn-sm">Next →</Link>
+                    )}
+                  </div>
                 </div>
               )}
               <div className="mt-3">
@@ -241,7 +325,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             <InterviewSchedulePanel
               requisitionId={r.id}
               companyId={r.company_id}
-              candidates={cands.map((c: any) => ({ id: c.id, full_name: c.full_name }))}
+              candidates={(allCandidateNames ?? []).map((c: any) => ({ id: c.id, full_name: c.full_name }))}
               initialInterviews={(interviews ?? []) as any[]}
             />
           
