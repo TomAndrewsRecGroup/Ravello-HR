@@ -906,3 +906,62 @@ in this sandbox only on `Missing Supabase env vars` (no
 `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` in this container) — unrelated to
 this change, on pages this change never touched, and Vercel carries the
 real values.
+
+---
+
+## Every cron and the Stripe webhook were 307-redirected to login (2026-09-04)
+
+Vercel Logs, checked on the operator's report of the referral cron:
+hourly, every hit, HTTP 307. `admin/src/lib/supabase/middleware.ts` had
+exactly one public-route exemption — `pathname.startsWith('/auth')` —
+so a server-to-server caller with no Supabase session cookie hit
+`if (!user && !isPublic)` and got redirected to `/auth/login` before
+its own body ever ran. Vercel's cron invoker and Stripe's webhook
+sender do not follow redirects; they record the 307 and stop.
+
+**Portal's own middleware already solved this** — it carries an
+explicit `PUBLIC_ROUTES` allowlist for exactly this shape of route
+(`/api/r/`, `/api/partner/`, `/api/learning/webhook`). Admin's simpler
+`isPublic` check never got the same treatment, so admin ended up
+silently broken for every cron in `vercel.json`'s `crons[]`
+(referral-scan, ingest-feeds, prune-latest-updates,
+prune-email-attachments) AND `/api/stripe/webhook`
+(`invoice.paid`, `customer.subscription.*`) — five routes, one root
+cause. Admin's middleware now carries the same `PUBLIC_ROUTES` pattern.
+
+- **The evidence was in `referral_scan_runs`, and it was unambiguous
+  once read correctly.** Three rows, all `outcome: 'manual'` — a value
+  the cron route itself never writes (it writes `ok`/`degraded`/
+  `no_roles`/`error`/`unauthorized`). Zero rows in the route's own
+  vocabulary meant zero evidence the schedule had EVER actually reached
+  the handler, not just "stopped recently."
+- **The route's own `CRON_SECRET` check never got a chance to run**,
+  so this was never a secret-mismatch problem — don't go looking there
+  first for the next one of these.
+- **The fix is a scoped allowlist, not a blanket `/api` exemption.**
+  One admin route — `POST /api/admin/clients/[id]/raise-invoice` —
+  deliberately has no self-contained `requireStaff()` check; its own
+  comment says "gated by the admin app's auth layer." Excluding all of
+  `/api` from the middleware would have unauthenticated it. Every other
+  `/api/*` route in this app DOES self-check
+  (`requireStaff`/`requirePermission`/`CRON_SECRET`/`stripe-signature`)
+  — verified by scanning every `route.ts` for one of those before
+  touching the matcher.
+- **Test drives the real `updateSession()` against fabricated requests
+  and asserts the RESPONSE SHAPE** (redirect-to-login or not) — a
+  source-text check ("does the file mention CRON_SECRET") would have
+  stayed green through the whole outage, since the route's own auth was
+  fine and simply unreachable. Three mutations reintroduced and watched
+  to fail: the original `/auth`-only check restored, a sloppy regex
+  missing the trailing slash (would also exempt `/api/crontab-anything`),
+  and the accidental blanket `/api` exemption (would have exposed
+  `raise-invoice`).
+- **What this means for the referral pipeline's own readiness**: the
+  50 applications and 3 scan runs on record all predate this fix AND
+  predate the IvyLens `scan_engine.rs` fix (2026-09-02, ~80 minutes
+  after the last of those runs) — so there is currently zero data from
+  either corrected system. Once this deploys, watch `referral_scan_runs`
+  for real `ok`/`no_roles` rows appearing hourly before trusting
+  anything about the 80/68 thresholds, which were calibrated against
+  the old broken scoring and will need re-deriving from a fresh batch.
+

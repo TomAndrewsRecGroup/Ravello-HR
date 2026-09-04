@@ -4,8 +4,32 @@ import { NextResponse, type NextRequest } from 'next/server';
 const ALLOWED_ROLES = ['tps_admin'];
 const ROLE_CACHE_SECONDS = 60 * 15; // 15 minutes: short enough to revoke access promptly
 
+// Routes with no browser session to check — server-to-server callers
+// that verify themselves (CRON_SECRET, stripe-signature), not a
+// Supabase cookie. Mirrors the PUBLIC_ROUTES allowlist portal's own
+// middleware already uses for its equivalent case (/api/r/, /api/partner/).
+//
+// Found 2026-09-04: every cron in vercel.json's crons[] — referral-scan,
+// ingest-feeds, prune-latest-updates, prune-email-attachments — and the
+// Stripe webhook were all being 307-redirected to /auth/login before
+// ever reaching their own auth check, because this file's ONLY
+// exemption was pathname.startsWith('/auth'). A cron or webhook caller
+// carries no session cookie, so `!user` was always true, and the
+// redirect fired unconditionally. Vercel's cron invoker and Stripe's
+// webhook sender do not follow redirects — they record the 307 and
+// stop — so the route body, including its OWN auth check, never ran.
+// referral_scan_runs never recorded a real scheduled run because
+// nothing ever reached recordRun(); Stripe's invoice.paid /
+// subscription.* events were never processed for the same reason.
+const PUBLIC_ROUTES = [
+  /^\/auth/,
+  /^\/api\/cron\//,
+  /^\/api\/stripe\/webhook$/,
+];
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC_ROUTES.some(pattern => pattern.test(pathname));
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -32,7 +56,6 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  const isPublic = pathname.startsWith('/auth');
 
   // Log auth infrastructure errors (not routine "no session" cases)
   if (authError && authError.message !== 'Auth session missing!') {
