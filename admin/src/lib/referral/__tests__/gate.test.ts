@@ -182,6 +182,43 @@ describe('checkMandatoryCriteria — absence of evidence is a FAIL', () => {
   it('returns nothing when no criteria are configured', () => {
     expect(checkMandatoryCriteria([], scan())).toEqual([]);
   });
+
+  // Operator, 2026-09-05: "the Requirements I list ... this is not 'they
+  // must have all these', this should be 'any sign of Mechanical
+  // Engineering, which will include skills such as ...'". `match_terms` on
+  // ONE criterion has always been an OR list — `skillSatisfies` accepts any
+  // term matching any skill_matches entry — but this pins the operator's
+  // exact scenario so it stays true on purpose rather than by accident.
+  it('one criterion with many example terms passes on evidence of just ONE of them', () => {
+    const mechanicalEngineering: MandatoryCriterion = {
+      key:   'mechanical_engineering',
+      label: 'Mechanical Engineering',
+      match_terms: [
+        'diagnosing', 'problem solving', 'hydraulics', 'pneumatics', 'bearings',
+        'pumps', 'motors', 'mechanical systems', 'maintenance', 'fault finding',
+      ],
+    };
+    const failed = checkMandatoryCriteria([mechanicalEngineering], scan({
+      skill_matches: [{ skill: 'hydraulics', found: true, confidence: 0.8 }],
+    }));
+    expect(failed).toEqual([]);
+  });
+
+  it('the same criterion still fails when NONE of the example terms are evidenced', () => {
+    const mechanicalEngineering: MandatoryCriterion = {
+      key:   'mechanical_engineering',
+      label: 'Mechanical Engineering',
+      match_terms: [
+        'diagnosing', 'problem solving', 'hydraulics', 'pneumatics', 'bearings',
+        'pumps', 'motors', 'mechanical systems', 'maintenance', 'fault finding',
+      ],
+    };
+    const failed = checkMandatoryCriteria([mechanicalEngineering], scan({
+      skill_matches: [{ skill: 'customer service', found: true, confidence: 0.8 }],
+    }));
+    expect(failed).toHaveLength(1);
+    expect(failed[0].label).toBe('Mechanical Engineering');
+  });
 });
 
 describe('toPercent', () => {

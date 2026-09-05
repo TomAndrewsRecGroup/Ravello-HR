@@ -1144,3 +1144,50 @@ lists on that page, 25 at a time, recent first:
   Enter on a focused, still-navigable anchor — the same class of accessibility
   gap the F8/F9 sweep (above) exists to catch.
 
+---
+
+## "Any sign of X" was already the local rule — the harshness was upstream in IvyLens (2026-09-05)
+
+Operator: a JD requirement like *"Mechanical Engineering: diagnosing, problem
+solving, hydraulics, pneumatics, bearings, pumps, motors, mechanical systems,
+maintenance, fault finding"* was scoring candidates as if they needed ALL ten,
+when the intent was "any sign of Mechanical Engineering, which will include
+skills such as [these examples]".
+
+**Checked, not assumed, before touching anything**: `gate.ts`'s
+`checkMandatoryCriteria` already implements exactly this. A
+`MandatoryCriterion.match_terms` array is an OR list —
+`matches.find(m => skillSatisfies(m, terms))` passes the criterion the moment
+ANY term matches ANY scan `skill_matches[]` entry — so a single "Mechanical
+Engineering" criterion configured with all ten example terms already only
+needs evidence of one of them. This code needed no change; a test
+(`gate.test.ts`) was added pinning the operator's exact scenario (ten terms,
+one evidenced → passes; ten terms, none evidenced → still fails), mutation-
+checked by requiring every term and watching it fail.
+
+**The actual harshness was upstream, in IvyLens's own role analysis and
+candidate scoring** — a different codebase, fixed there the same day (see
+`/home/user/IvyLens/CLAUDE.md`, "A checklist item is not the same as a
+requirement"). In short: when a JD names one competency followed by
+comma-separated examples, IvyLens's role-extraction prompt was atomising the
+examples into N separate `required_skills` entries, each becoming its own
+independent line in the candidate-scan model's checklist — the exact "must
+have all of these" reading the operator was describing, just one layer up
+from where it was reported. Fixed at the extraction prompt (keep the examples
+grouped under one entry), the candidate-scan prompt (an explicit rule for
+already-atomised roles), and — the part that would have made things silently
+*worse* without it — the deterministic no-AI fallback, which does literal
+substring matching and would never match a composed "Category (e.g. ...)"
+phrase verbatim against a CV.
+
+**Why this matters for the referral pipeline specifically**: `ivylensScan.ts`
+never sends `mandatory_criteria` to IvyLens at all — it only sends
+`candidate_text` and `role_id`/`role_text`. The `overall_score` IvyLens
+returns (what `auto_send_threshold`/`review_threshold` are compared against)
+is scored against the role's OWN `required_skills`/`preferred_skills`, set
+when the role was last analysed (`ivylens_role_id`). So a role whose JD lists
+grouped-example requirements benefits from the IvyLens fix the next time it
+is re-analysed (**Analyse role** / **Re-analyse role** on the requisition
+page) — the local `mandatory_criteria` veto in `gate.ts` was correct all
+along and needed no re-run.
+
