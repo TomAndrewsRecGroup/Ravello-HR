@@ -1191,3 +1191,76 @@ is re-analysed (**Analyse role** / **Re-analyse role** on the requisition
 page) — the local `mandatory_criteria` veto in `gate.ts` was correct all
 along and needed no re-run.
 
+---
+
+## Two real bugs found auditing the rejected pile, one config fix, one one-off rescore (2026-09-05)
+
+Same-day follow-up to the section above. Auditing every `rejected_score`/
+`rejected_criteria` row across the two live referral roles (357 applications
+total) found the mandatory-criteria bug was real, but not the one first
+suspected — and turned up a second, unrelated one.
+
+**"Mechanical Engineering AI Expert" (`aaceaceb-7bef-41dd-bff9-3da45e253983`) —
+the Documentation criterion was unpassable by ANY candidate.** Its three
+mandatory criteria were all correctly configured as OR-lists (see above) — the
+bug was not "must have all of these" after all. It was that the
+**"Documentation" criterion's terms shared zero vocabulary with what IvyLens
+had actually extracted as this role's `required_skills`/`preferred_skills`**.
+`checkMandatoryCriteria` can only find evidence inside `scan.skill_matches[]`,
+which is reconciled 1:1 to the role's own extracted skill list
+(`reconcile_skill_matches`) — so a criterion whose terms (technical drawings,
+specifications, reports, spreadsheets, datasets, procedures, written
+explanations, engineering standards) never appear anywhere in that list is
+unsatisfiable BY CONSTRUCTION, however good the candidate. Proof: **37 of 37**
+applicants failed Documentation with "No evidence found in the CV" — a 100%
+fail rate regardless of score (68% down to 18%), which a criterion measuring
+anything real would never produce. Fixed by removing the Documentation
+criterion from `referral_role_config.mandatory_criteria` for this role
+(operator, 2026-09-05: "remove documentation from the criteria").
+**Lesson for next time a criterion is written**: its `match_terms` need to
+share real words with the role's OWN extracted skill list (visible via
+`friction_lens_roles.required_skills`/`preferred_skills` in the IvyLens
+project, or just what the JD actually says), not just with the JD's prose —
+IvyLens paraphrases independently, and the gate only ever sees IvyLens's
+paraphrase.
+
+**"AI & Software Engineers – Remote Opportunities" (`7ae62d7d-…`) — audited
+and NOT found to be a bug.** Its criteria share real vocabulary with the
+role's extracted skills (Python/Java/Golang/TypeScript/Rust/LLM/Debugging/
+Refactoring all appear literally in both) and its 166 criteria-rejections look
+like genuine mismatches. Its 120 score-rejections average 36% against a 65%
+review threshold — real volume noise from a broad remote posting, not
+harshness. Only 6 of the 120 scored close to the line (56-60%) and are worth
+a manual look if the operator wants it; this was reported but no code or
+config was changed for this role over the criteria question.
+
+**The one-off rescore (operator: "rescore all existing applicants").** Both
+roles' 323 currently-rejected applications (203 `rejected_criteria` + 120
+`rejected_score`, across both roles — `rejected_country` and everything past
+review untouched) were backed up in full to a local JSON file, then deleted
+from `referral_applications`. This is the ONLY way to make the pipeline
+reconsider them: `processRole`'s idempotency guard checks ROW EXISTENCE, not
+status, so as long as any row exists — however old the scoring that produced
+it — the candidate is invisible to every future scan, cron or manual, forever.
+There is no "rescan one candidate" or "override a rejection" control anywhere
+in the product; clearing the row is the only lever that exists today.
+
+- **No code change, no product feature** — this was explicitly a one-off
+  (operator: "this is a one off"), not the standing "re-evaluate" action
+  floated earlier the same day. If this recurs, that's the thing worth
+  building instead of repeating this by hand.
+- **Both roles have `dry_run = false`, and the operator was asked and chose
+  live sends** ("let it auto-email as normal") over scoring-only — so from
+  the next cron tick onward, any of these 323 who now score above
+  `auto_send_threshold` gets a REAL referral email sent automatically,
+  exactly as any new applicant would. Nothing about this is a preview.
+- **This is not instant.** `runScan.ts`'s `budget` (`DEFAULT_BATCH_CAP = 25`)
+  is shared across the WHOLE run, not per role, so both roles' backlog drains
+  through the SAME hourly 25-candidate allowance as genuinely new applicants
+  — expect roughly a working day for the backlog to clear, competing with
+  real new arrivals the whole time. Nothing needed to trigger it: once the
+  rows were gone, Manatal still shows these people as applicants, so the very
+  next hourly tick reads them as fresh matches with no idempotency block.
+
+
+
