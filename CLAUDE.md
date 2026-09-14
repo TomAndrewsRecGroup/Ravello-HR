@@ -1262,5 +1262,98 @@ in the product; clearing the row is the only lever that exists today.
   rows were gone, Manatal still shows these people as applicants, so the very
   next hourly tick reads them as fresh matches with no idempotency block.
 
+---
+
+## A scan's own score and its own skill evidence can disagree — and the criteria veto only ever saw the evidence (2026-09-14)
+
+Operator, after the rescore had run for nine days: *"double and triple check
+the scoring on candidates against the role, we should not need the criteria
+cos IvyLens has the ability to scan roles and then scan candidates directly
+against that role with accurate scores"*.
+
+**Checked, not assumed.** Compared, for every criteria-rejected candidate on
+both live roles, what would have happened on `overall_score` alone:
+
+| Role | Criteria-rejected | Would auto-send on score alone |
+|---|---|---|
+| Mechanical Engineering AI Expert | 94 | **0** (avg score 20, max 65 — score alone already rejects all of them) |
+| AI & Software Engineers | 382 | **33** |
+
+So the criteria are NOT redundant with score in general — on the live "AI &
+Software Engineers" role they change the outcome for 33 people. Reading the
+scan evidence behind those 33 split them into two genuinely different
+things:
+
+- **25 of 33 are the criteria working correctly.** High overall_score
+  (85-95%), but the specific mandatory skill genuinely has no evidence in
+  `skill_matches[]` — exactly the "adjacent experience shouldn't sneak
+  through" protection the feature exists for.
+- **8 of 33 are a real scan-engine defect, not a candidate defect.**
+  `overall_score` (avg 90.1) and `strengths` ("11 years across Python, Java,
+  C++, Golang, TypeScript, Rust... Dropbox and Agari") both confidently
+  described a strong candidate, while the SAME scan's `matched_skills[]` had
+  **every single entry** read `found:false, confidence:0` — no evidence for
+  ANYTHING, not just the failed criterion's own terms. IvyLens's own
+  narrative judgement and its own structured evidence disagreed completely
+  within one scan record, and `checkMandatoryCriteria` can only read the
+  structured half.
+
+**The auto-send path was never contaminated** — checked, not assumed: all
+156 already-`email_sent` rows on this role have clean, populated skill
+arrays. The defect only ever produces false REJECTIONS, never false sends.
+
+### The fix — capped at review, not removed
+
+Deleting the criteria check was rejected: the 25/33 genuine catches prove it
+is doing real work, and score alone would have auto-sent all of them.
+Instead, `gate.ts` gained `scanHasNoSkillEvidence()` — true when
+`skill_matches[]` is non-empty but **wholesale** empty (not one `found:true`
+anywhere in the array, not just among the failed criterion's terms). When
+that is true, the criteria check is treated as **unverifiable rather than
+failed**:
+
+- A score that would have auto-sent is capped at `review_pending` instead —
+  the identical shape as the unknown-country cap already in this file: never
+  auto-send in the operator's name on a check that could not actually run.
+- A score too low to qualify anyway still falls through to `rejected_score`
+  unchanged — no added review burden for a candidate who was never going to
+  pass regardless (this is exactly the shape of the 16 genuinely-thin-CV
+  Mechanical Engineering candidates who scored 0 with the same wholesale-empty
+  array — a different, unrelated cause, not this defect).
+- A **partial** array — real evidence for other skills, none for the failed
+  criterion specifically — is untouched and still vetoes normally. So is a
+  genuinely **empty** array (`skill_matches: []`, nothing scanned at all) —
+  a different, pre-existing shape `checkMandatoryCriteria` already handles.
+
+Six tests in `gate.test.ts`, two mutations reintroduced and watched to fail:
+disabling the safety net (the review-not-reject cases revert to
+`rejected_criteria`) and treating every scan as degenerate (the
+partial-evidence and empty-array cases wrongly stop vetoing).
+
+**The root cause inside IvyLens's scan engine — why `skill_matches[]`
+sometimes comes back wholesale empty despite a confident score and detailed
+strengths — is still open.** This fix is a policy safety net at the
+consuming end, not a fix to the producer. `reconcile_skill_matches`
+(`scan_engine.rs`) defaults an unmatched skill to `found:false, confidence:0`
+by design (see "A checklist item is not the same as a requirement" in
+IvyLens's own CLAUDE.md) — that default is correct when the model genuinely
+found nothing, and wrong only in the rarer case where the model's answer for
+`skill_matches` came back empty or unmatched independent of its own
+`overall_score`/`strengths` judgement. Nothing in this session traced why
+that happens (candidate names differ, dates span six days, not one incident
+— see the raw evidence in the commit `3294102` message and gate.test.ts).
+
+**Applied to the 8 already-misrejected rows the same day.** The idempotency
+guard is row-EXISTENCE, not status (see "Idempotency is the DB" above), so
+the code fix alone does nothing for candidates who already hold a
+`rejected_criteria` row — the fix only changes what happens on the NEXT
+scan of a candidate with no row yet. The 8 exact rows (score ≥75, wholesale-
+empty `matched_skills`, requisition `7ae62d7d`) were identified by the same
+SQL used to diagnose the bug, backed up, and deleted — the next hourly cron
+re-scans them under the fixed gate. Because the fix caps at `review_pending`
+rather than auto-sending, this is safe by construction: no email can go out
+to any of the 8 without a human approving it from the review queue, however
+IvyLens re-scores them.
+
 
 
