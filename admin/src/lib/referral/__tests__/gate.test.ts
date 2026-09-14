@@ -402,6 +402,104 @@ describe('a match term that cannot discriminate', () => {
   });
 });
 
+/* ── An unverifiable scan is capped at review, never auto-rejected
+ * or auto-sent (2026-09-14) ──────────────────────────────────
+ *
+ * Measured on requisition 7ae62d7d: 8 real candidates scored 85-95%
+ * with detailed, specific `strengths` text, and a `skill_matches[]`
+ * where EVERY entry read found:false, confidence:0 — IvyLens's own
+ * narrative judgement and its own structured evidence for the SAME
+ * scan disagreed completely. The criteria veto could only see the
+ * (broken) structured array and auto-rejected genuinely strong
+ * candidates for a defect in the scan, not a defect in the person.
+ */
+describe('evaluate — an unverifiable scan is capped at review, not rejected or auto-sent', () => {
+  // Reproduces one of the 8: a high score, rich strengths (not modelled
+  // here — the gate never reads it), and an entirely empty evidence array.
+  const wholesaleEmptyMatches = [
+    { skill: 'Python', found: false, confidence: 0 },
+    { skill: 'Golang', found: false, confidence: 0 },
+    { skill: 'Debugging', found: false, confidence: 0 },
+    { skill: 'Refactoring', found: false, confidence: 0 },
+  ];
+
+  it('a high score with a wholesale-empty skill array is held for review, not qualified or rejected_criteria', () => {
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.95, skill_matches: wholesaleEmptyMatches }),
+    });
+    expect(d.status).toBe('review_pending');
+    expect(d.score).toBe(95);
+    // The criteria that "failed" are still surfaced, for the reviewer's
+    // context, even though they no longer drive the decision.
+    expect(d.failedCriteria).toHaveLength(1);
+    expect(d.reasons.join(' ')).toMatch(/no evidence for any skill at all/i);
+  });
+
+  it('a low score with the identical wholesale-empty array still rejects on SCORE, not criteria', () => {
+    // The 16 genuinely-thin-CV candidates on Mechanical Engineering: no
+    // review burden for someone who was never going to qualify anyway.
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.10, skill_matches: wholesaleEmptyMatches }),
+    });
+    expect(d.status).toBe('rejected_score');
+    expect(d.score).toBe(10);
+  });
+
+  it('a mid-band score with a wholesale-empty array stays review_pending, same as any mid-band score', () => {
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.80, skill_matches: wholesaleEmptyMatches }),
+    });
+    expect(d.status).toBe('review_pending');
+    expect(d.failedCriteria).toHaveLength(1);
+  });
+
+  it('a PARTIAL array — real evidence for other skills, none for this criterion — still VETOES normally', () => {
+    // This is the genuine case, not the bug: the scan clearly has
+    // signal (Python is found), it just never evidences MCP. Must not
+    // be swept into the "unverifiable" safety net.
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.95, skill_matches: [{ skill: 'Python', found: true, confidence: 0.9 }] }),
+    });
+    expect(d.status).toBe('rejected_criteria');
+  });
+
+  it('a genuinely EMPTY skill_matches array (nothing to check at all) is unaffected — still rejected_criteria', () => {
+    // Different shape from "populated but all false": no scan of
+    // anything happened, as opposed to a scan that scanned everything
+    // and found nothing. checkMandatoryCriteria already covers this;
+    // the new safety net must not swallow it.
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.95, skill_matches: [] }),
+    });
+    expect(d.status).toBe('rejected_criteria');
+  });
+
+  it('one low-confidence found:true anywhere in the array proves it is not degenerate', () => {
+    const d = evaluate({
+      location: 'London, UK',
+      config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({
+        overall_score: 0.95,
+        skill_matches: [
+          { skill: 'Python', found: true, confidence: 0.1 },
+          { skill: 'Golang', found: false, confidence: 0 },
+        ],
+      }),
+    });
+    expect(d.status).toBe('rejected_criteria');
+  });
+});
+
 /* ── The live role's criteria, against real applicant skills ── */
 describe('the terms configured on requisition 7ae62d7d', () => {
   // Skills as IvyLens derives them from this role's must_haves.

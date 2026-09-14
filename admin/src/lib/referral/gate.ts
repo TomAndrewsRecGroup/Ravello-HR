@@ -257,6 +257,32 @@ function usableTerm(normalisedTerm: string): boolean {
   return normalisedTerm.length >= MIN_TERM_LENGTH;
 }
 
+/** True when the scan's skill_matches[] carries NO positive evidence for
+ *  ANYTHING — not just for one criterion's terms, for the WHOLE array.
+ *
+ *  Measured 2026-09-14, AI & Software Engineers: 8 real candidates scored
+ *  85-95% with detailed, specific `strengths` text ("11 years across
+ *  Python, Java, C++, Golang, TypeScript, Rust... Dropbox and Agari") and a
+ *  `skill_matches` array where EVERY entry read `found:false, confidence:0`
+ *  — IvyLens's own narrative judgement and its own structured evidence for
+ *  the SAME scan disagreed completely. `checkMandatoryCriteria` can only
+ *  read the structured array, so it auto-rejected genuinely strong
+ *  candidates for a defect in the scan, not a defect in the person.
+ *
+ *  Deliberately independent of confidence: a single low-confidence
+ *  `found:true` anywhere is enough to prove the array carries SOME signal,
+ *  so it is not treated as degenerate.
+ *
+ *  An empty `skill_matches` array is a DIFFERENT, unrelated shape (a role
+ *  with nothing configured to check) and returns false here — that case
+ *  never reaches this function, because `checkMandatoryCriteria` already
+ *  short-circuits on `!criteria.length` before any scan is looked at. */
+function scanHasNoSkillEvidence(scan: ScanResult): boolean {
+  const matches = scan.skill_matches ?? [];
+  if (!matches.length) return false;
+  return !matches.some(m => m.found === true);
+}
+
 /** Evaluate every mandatory criterion against the scan's skill_matches[].
  *
  *  THE TRAP THIS EXISTS TO AVOID: defaulting an unmentioned criterion
@@ -384,7 +410,17 @@ export function evaluate(input: GateInput): GateDecision {
 
   // 2. Mandatory criteria — a veto over the score, not a tiebreaker.
   const failedCriteria = checkMandatoryCriteria(config.mandatory_criteria ?? [], scan);
-  if (failedCriteria.length) {
+
+  // UNVERIFIABLE, not passed. See scanHasNoSkillEvidence(): when the
+  // scan's ENTIRE skill_matches[] carries no positive evidence for
+  // anything, the array is not trustworthy enough to auto-reject on —
+  // it may be a defect in the scan, not in the candidate. It must not
+  // become a silent PASS either (that would auto-send on a score the
+  // criteria exist specifically to distrust); it is capped at review,
+  // the same shape as the unknown-country cap below.
+  const criteriaUnverifiable = failedCriteria.length > 0 && scanHasNoSkillEvidence(scan);
+
+  if (failedCriteria.length && !criteriaUnverifiable) {
     reasons.push(
       `Scored ${score}% but failed ${failedCriteria.length} mandatory ` +
       `criteri${failedCriteria.length === 1 ? 'on' : 'a'}: ` +
@@ -399,7 +435,13 @@ export function evaluate(input: GateInput): GateDecision {
       reasons,
     };
   }
-  if ((config.mandatory_criteria ?? []).length) {
+  if (criteriaUnverifiable) {
+    reasons.push(
+      `Scored ${score}% but the scan returned NO evidence for any skill at all ` +
+      `(not just the ${failedCriteria.length} failed criteri${failedCriteria.length === 1 ? 'on' : 'a'}) — ` +
+      `treating the mandatory-criteria check as unreliable for this scan rather than rejecting on it.`,
+    );
+  } else if ((config.mandatory_criteria ?? []).length) {
     reasons.push('All mandatory criteria evidenced.');
   }
 
@@ -417,20 +459,25 @@ export function evaluate(input: GateInput): GateDecision {
     // never send an email in the operator's name to someone we cannot
     // place. Reaching the queue costs a manual look; auto-sending here
     // would cost a stranger an email.
-    if (country.result === 'unknown') {
+    //
+    // A scan with unverifiable criteria gets the identical cap, for the
+    // identical reason: never auto-send on a check we could not run.
+    if (country.result === 'unknown' || criteriaUnverifiable) {
       reasons.push(
         `Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold, ` +
-        `but the country could not be read — held for review rather than auto-sent.`,
+        (criteriaUnverifiable
+          ? 'but the mandatory-criteria scan was unreliable — held for review rather than auto-sent.'
+          : 'but the country could not be read — held for review rather than auto-sent.'),
       );
-      return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
+      return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: criteriaUnverifiable ? failedCriteria : [], reasons };
     }
     reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold.`);
     return { status: 'qualified', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
   }
   if (score >= config.review_threshold) {
     reasons.push(`Scored ${score}%, between the ${config.review_threshold}% review and ${config.auto_send_threshold}% auto-send thresholds.`);
-    return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
+    return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: criteriaUnverifiable ? failedCriteria : [], reasons };
   }
   reasons.push(`Scored ${score}%, below the ${config.review_threshold}% review threshold.`);
-  return { status: 'rejected_score', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
+  return { status: 'rejected_score', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: criteriaUnverifiable ? failedCriteria : [], reasons };
 }
