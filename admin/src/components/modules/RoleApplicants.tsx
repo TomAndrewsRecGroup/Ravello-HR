@@ -217,39 +217,105 @@ export default function RoleApplicants({
       )}
 
       {rows.length > 0 && (
-        <div className="table-wrapper">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Email</th>
-                <th>Source</th>
-                <th>Stage</th>
-                <th>Move to</th>
-                <th>Applied</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paged.map(r => {
-                const st = stageStyle(r.stage.name);
-                const isMoving = moving === r.id;
-                return (
-                  <tr key={r.id} style={isMoving ? { opacity: 0.6 } : undefined}>
-                    <td>
-                      <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
-                        {r.full_name ?? `Candidate #${r.candidate_id}`}
-                      </p>
-                      {!r.is_active && (
-                        <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>Dropped</span>
-                      )}
-                    </td>
-                    <td><span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.email ?? '—'}</span></td>
-                    <td>
+        <>
+          {/* Desktop / tablet table, hidden below md — the phone card list
+              beside it puts the stage-move control within thumb reach. */}
+          <div className="table-wrapper hidden md:block">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Email</th>
+                  <th>Source</th>
+                  <th>Stage</th>
+                  <th>Move to</th>
+                  <th>Applied</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map(r => {
+                  const st = stageStyle(r.stage.name);
+                  const isMoving = moving === r.id;
+                  return (
+                    <tr key={r.id} style={isMoving ? { opacity: 0.6 } : undefined}>
+                      <td>
+                        <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
+                          {r.full_name ?? `Candidate #${r.candidate_id}`}
+                        </p>
+                        {!r.is_active && (
+                          <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>Dropped</span>
+                        )}
+                      </td>
+                      <td><span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.email ?? '—'}</span></td>
+                      <td>
+                        <span className="text-xs" style={{ color: r.applied ? 'var(--teal)' : 'var(--ink-faint)' }}>
+                          {r.applied ? 'Applied' : 'Recruiter added'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ background: st.bg, color: st.text }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
+                          {r.stage.name}
+                        </span>
+                      </td>
+                      <td>
+                        {isMoving ? (
+                          <Loader2 size={14} className="animate-spin" style={{ color: 'var(--purple)' }} />
+                        ) : (
+                          <select
+                            className="input text-xs py-1 px-2"
+                            style={{ minWidth: 140 }}
+                            value={r.stage.id}
+                            aria-label={`Move ${r.full_name ?? 'candidate'} to a different stage`}
+                            onChange={e => {
+                              const next = stages.find(s => s.id === Number(e.target.value));
+                              if (next) moveStage(r, next);
+                            }}
+                          >
+                            {stages.length === 0 && <option value={r.stage.id}>{r.stage.name}</option>}
+                            {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        )}
+                      </td>
+                      <td>
+                        <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                          {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB') : '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Phone: one card per applicant. */}
+          <div className="mobile-card-list">
+            {paged.map(r => {
+              const st = stageStyle(r.stage.name);
+              const isMoving = moving === r.id;
+              return (
+                <div key={r.id} className="mobile-card" style={isMoving ? { opacity: 0.6 } : undefined}>
+                  <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
+                    {r.full_name ?? `Candidate #${r.candidate_id}`}
+                    {!r.is_active && (
+                      <span className="text-[11px] ml-2" style={{ color: 'var(--ink-faint)' }}>Dropped</span>
+                    )}
+                  </p>
+                  {r.email && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.email}</p>}
+
+                  <div className="mt-3">
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Source</span>
                       <span className="text-xs" style={{ color: r.applied ? 'var(--teal)' : 'var(--ink-faint)' }}>
                         {r.applied ? 'Applied' : 'Recruiter added'}
                       </span>
-                    </td>
-                    <td>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Stage</span>
                       <span
                         className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
                         style={{ background: st.bg, color: st.text }}
@@ -257,38 +323,42 @@ export default function RoleApplicants({
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
                         {r.stage.name}
                       </span>
-                    </td>
-                    <td>
-                      {isMoving ? (
-                        <Loader2 size={14} className="animate-spin" style={{ color: 'var(--purple)' }} />
-                      ) : (
-                        <select
-                          className="input text-xs py-1 px-2"
-                          style={{ minWidth: 140 }}
-                          value={r.stage.id}
-                          aria-label={`Move ${r.full_name ?? 'candidate'} to a different stage`}
-                          onChange={e => {
-                            const next = stages.find(s => s.id === Number(e.target.value));
-                            if (next) moveStage(r, next);
-                          }}
-                        >
-                          {stages.length === 0 && <option value={r.stage.id}>{r.stage.name}</option>}
-                          {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                      )}
-                    </td>
-                    <td>
-                      <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Applied</span>
+                      <span className="mobile-card-value">
                         {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB') : '—'}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+
+                  <div className="mobile-card-actions">
+                    {isMoving ? (
+                      <div className="flex items-center justify-center py-1.5">
+                        <Loader2 size={14} className="animate-spin" style={{ color: 'var(--purple)' }} />
+                      </div>
+                    ) : (
+                      <select
+                        className="input text-sm"
+                        value={r.stage.id}
+                        aria-label={`Move ${r.full_name ?? 'candidate'} to a different stage`}
+                        onChange={e => {
+                          const next = stages.find(s => s.id === Number(e.target.value));
+                          if (next) moveStage(r, next);
+                        }}
+                      >
+                        {stages.length === 0 && <option value={r.stage.id}>{r.stage.name}</option>}
+                        {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} totalItems={totalItems} />
-        </div>
+        </>
       )}
 
       {toast && (

@@ -229,66 +229,128 @@ export default async function RequisitionDetailPage({
               {cands.length === 0 ? (
                 <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No candidates added yet.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                        {['Name', 'Email', 'Summary', 'Status', 'Shared'].map(h => (
-                          <th key={h} className="pb-2.5 text-left text-[11px] font-semibold uppercase tracking-wide pr-4" style={{ color: 'var(--ink-faint)' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cands.map((c: any) => {
-                        const isReferral      = c.source === 'job_board';
-                        const referralStatus  = referralStatusByCandidateId.get(c.id);
-                        return (
-                        <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
-                          <td className="py-3 pr-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
-                                <User size={12} style={{ color: 'var(--purple)' }} />
+                <>
+                  {/* Desktop / tablet table, hidden below md — the phone
+                      card list beside it puts the CV link and status
+                      within thumb reach instead of a sideways scroll. */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                          {['Name', 'Email', 'Summary', 'Status', 'Shared'].map(h => (
+                            <th key={h} className="pb-2.5 text-left text-[11px] font-semibold uppercase tracking-wide pr-4" style={{ color: 'var(--ink-faint)' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cands.map((c: any) => {
+                          const isReferral      = c.source === 'job_board';
+                          const referralStatus  = referralStatusByCandidateId.get(c.id);
+                          return (
+                          <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                                  <User size={12} style={{ color: 'var(--purple)' }} />
+                                </div>
+                                <span className="font-medium" style={{ color: 'var(--ink)' }}>{c.full_name}</span>
                               </div>
-                              <span className="font-medium" style={{ color: 'var(--ink)' }}>{c.full_name}</span>
+                            </td>
+                            <td className="py-3 pr-4" style={{ color: 'var(--ink-soft)' }}>{c.email ?? '-'}</td>
+                            <td className="py-3 pr-4 max-w-[180px]">
+                              <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '-'}</p>
+                              {c.cv_url && (
+                                <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] mt-0.5" style={{ color: 'var(--purple)' }}>
+                                  CV <ExternalLink size={9} />
+                                </a>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4">
+                              {isReferral ? (
+                                <>
+                                  <span
+                                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                                    style={{ background: 'rgba(7,11,29,0.06)', color: statusColour(referralStatus ?? '') }}
+                                  >
+                                    {referralStatus ? statusLabel(referralStatus) : 'Referral — not yet scanned'}
+                                  </span>
+                                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>via referral pipeline</p>
+                                </>
+                              ) : (
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
+                                  {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3">
+                              <span className={`badge ${c.approved_for_client ? 'badge-active' : 'badge-normal'}`}>
+                                {c.approved_for_client ? 'Yes' : 'No'}
+                              </span>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Phone: one card per candidate. */}
+                  <div className="mobile-card-list">
+                    {cands.map((c: any) => {
+                      const isReferral      = c.source === 'job_board';
+                      const referralStatus  = referralStatusByCandidateId.get(c.id);
+                      return (
+                        <div key={c.id} className="mobile-card">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                              <User size={12} style={{ color: 'var(--purple)' }} />
                             </div>
-                          </td>
-                          <td className="py-3 pr-4" style={{ color: 'var(--ink-soft)' }}>{c.email ?? '-'}</td>
-                          <td className="py-3 pr-4 max-w-[180px]">
-                            <p className="text-xs truncate" style={{ color: 'var(--ink-soft)' }}>{c.summary ?? '-'}</p>
-                            {c.cv_url && (
-                              <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] mt-0.5" style={{ color: 'var(--purple)' }}>
-                                CV <ExternalLink size={9} />
-                              </a>
-                            )}
-                          </td>
-                          <td className="py-3 pr-4">
-                            {isReferral ? (
-                              <>
+                            <div>
+                              <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
+                              {c.email && <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{c.email}</p>}
+                            </div>
+                          </div>
+
+                          {c.summary && (
+                            <p className="text-xs mt-3" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>
+                          )}
+                          {c.cv_url && (
+                            <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] mt-2" style={{ color: 'var(--purple)' }}>
+                              View CV <ExternalLink size={9} />
+                            </a>
+                          )}
+
+                          <div className="mt-3">
+                            <div className="mobile-card-row">
+                              <span className="mobile-card-label">Status</span>
+                              {isReferral ? (
                                 <span
                                   className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                                   style={{ background: 'rgba(7,11,29,0.06)', color: statusColour(referralStatus ?? '') }}
                                 >
                                   {referralStatus ? statusLabel(referralStatus) : 'Referral — not yet scanned'}
                                 </span>
-                                <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>via referral pipeline</p>
-                              </>
-                            ) : (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
-                                {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
-                              </span>
+                              ) : (
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
+                                  {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
+                                </span>
+                              )}
+                            </div>
+                            {isReferral && (
+                              <p className="text-[10px] text-right mt-0.5" style={{ color: 'var(--ink-faint)' }}>via referral pipeline</p>
                             )}
-                          </td>
-                          <td className="py-3">
-                            <span className={`badge ${c.approved_for_client ? 'badge-active' : 'badge-normal'}`}>
-                              {c.approved_for_client ? 'Yes' : 'No'}
-                            </span>
-                          </td>
-                        </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            <div className="mobile-card-row">
+                              <span className="mobile-card-label">Shared</span>
+                              <span className={`badge ${c.approved_for_client ? 'badge-active' : 'badge-normal'}`}>
+                                {c.approved_for_client ? 'Yes' : 'No'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
               {candTotalPages > 1 && (
                 <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--line)' }}>

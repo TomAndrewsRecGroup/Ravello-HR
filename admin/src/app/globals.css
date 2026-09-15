@@ -282,6 +282,36 @@
   .table tbody tr { transition: background 0.1s; }
   .table tbody tr:hover { background: var(--surface-soft); }
 
+  /* ─── Mobile card list — the table's phone-width alternative ──
+     A `.table-wrapper` scrolls sideways, which is fine for scanning
+     but wrong for a table an operator needs to ACT on from a phone
+     (approve/reject, move a candidate's stage): every tap has to
+     first scroll to find the control. Below `md` these components
+     hide the table and render one card per row instead, full-width,
+     with the row's own action controls inline and reachable with a
+     thumb. `.table-wrapper` itself gains `hidden md:block` at the
+     call site; this list is the `md:hidden` sibling. */
+  .mobile-card-list { @apply flex flex-col gap-3 md:hidden; }
+  .mobile-card {
+    @apply p-4;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .mobile-card-row {
+    @apply flex items-start justify-between gap-3 py-1.5;
+    border-bottom: 1px solid var(--line-lt);
+  }
+  .mobile-card-row:last-child { border-bottom: none; }
+  .mobile-card-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.06em] flex-shrink-0 pt-0.5;
+    color: var(--ink-faint);
+  }
+  .mobile-card-value { @apply text-sm text-right; color: var(--ink); }
+  .mobile-card-actions { @apply flex flex-col gap-2 mt-3 pt-3; border-top: 1px solid var(--line); }
+  .mobile-card-actions .btn,
+  .mobile-card-actions select { @apply w-full justify-center; }
+
   /* ─── Status-first utilities ─────────────────────── */
   .status-dot {
     @apply w-2 h-2 rounded-full flex-shrink-0;

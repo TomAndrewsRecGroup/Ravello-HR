@@ -93,6 +93,151 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
     }
   }
 
+  function scoreCell(r: Row) {
+    return r.match_score === null
+      ? <span style={{ color: 'var(--ink-faint)' }}>—</span>
+      : <strong style={{ color: 'var(--ink)' }}>{r.match_score}%</strong>;
+  }
+
+  function scanSourceCell(r: Row) {
+    if (!r.scan_source) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+    const thin = r.scan_source === 'manatal_parsed';
+    return (
+      <span
+        className="badge"
+        title={thin
+          ? 'Scored from Manatal’s parsed fields because the CV PDF could not be read. Thinner evidence than a full CV.'
+          : 'Scored from the full CV text.'}
+        style={{ color: thin ? 'var(--gold)' : 'var(--ink-soft)' }}
+      >
+        {thin && <AlertTriangle size={11} style={{ marginRight: 4, display: 'inline' }} />}
+        {SCAN_SOURCE_LABEL[r.scan_source] ?? r.scan_source}
+      </span>
+    );
+  }
+
+  function locationCell(r: Row) {
+    return (
+      <>
+        {r.country_detected ?? '—'}
+        {/* `unknown` is not a rejection under the block list — it is the
+            reason someone scoring above the bar is sitting in this queue
+            instead of being emailed, so the label says that rather than
+            just "unresolved". */}
+        {r.country_gate_result === 'unknown' && (
+          <span style={{ color: 'var(--gold)', fontSize: 11, display: 'block' }}>
+            no country read — review only
+          </span>
+        )}
+        {r.country_gate_result === 'blocked' && (
+          <span style={{ color: 'var(--red)', fontSize: 11, display: 'block' }}>blocked</span>
+        )}
+        {/* Pre-084 history, written under the old allow list. */}
+        {r.country_gate_result === 'rejected' && (
+          <span style={{ color: 'var(--ink-faint)', fontSize: 11, display: 'block' }}>
+            not on the old allow list
+          </span>
+        )}
+      </>
+    );
+  }
+
+  function actionControl(r: Row) {
+    const isActionable = ACTIONABLE.has(r.status);
+    const heldByDryRun = r.status === 'qualified';
+    if (isActionable) {
+      return (
+        <div className="flex gap-2 justify-end w-full">
+          <button
+            className="btn-cta btn-sm"
+            disabled={busy === r.id}
+            onClick={() => act(r.id, { action: 'approve' })}
+          >
+            <Check size={13} /> {heldByDryRun ? 'Send invite' : 'Approve'}
+          </button>
+          <button
+            className="btn-secondary btn-sm"
+            disabled={busy === r.id}
+            onClick={() => act(r.id, { action: 'reject' })}
+          >
+            <X size={13} /> Reject
+          </button>
+        </div>
+      );
+    }
+    return (
+      <select
+        className="input btn-sm"
+        style={{ maxWidth: 190 }}
+        value=""
+        disabled={busy === r.id}
+        onChange={e => e.target.value && act(r.id, { status: e.target.value })}
+      >
+        <option value="">Advance to…</option>
+        {MANUAL_STATUSES.map(s => (
+          <option key={s} value={s}>{STATUS_META[s].label}</option>
+        ))}
+      </select>
+    );
+  }
+
+  function detailBody(r: Row) {
+    return (
+      <div className="space-y-3 text-sm">
+        {r.scan_error && (
+          <p style={{ color: 'var(--red)', margin: 0 }}>
+            <strong>Scan error:</strong> {r.scan_error}
+          </p>
+        )}
+
+        {!!r.failed_criteria?.length && (
+          <div>
+            <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>
+              Failed mandatory criteria
+            </p>
+            <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink-soft)' }}>
+              {r.failed_criteria.map(f => (
+                <li key={f.key}><strong>{f.label}</strong> — {f.reason}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {!!r.matched_skills?.length && (
+          <div>
+            <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>
+              Skills the scan evidenced
+            </p>
+            <p style={{ color: 'var(--ink-soft)', margin: 0 }}>
+              {r.matched_skills
+                .filter(s => s.found)
+                .map(s => s.skill)
+                .filter(Boolean)
+                .join(', ') || 'None.'}
+            </p>
+          </div>
+        )}
+
+        {!!r.gaps?.length && (
+          <div>
+            <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>Gaps</p>
+            <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink-soft)' }}>
+              {r.gaps.map((g, i) => <li key={i}>{g}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <p style={{ color: 'var(--ink-faint)', margin: 0, fontSize: 12 }}>
+          <FileText size={11} style={{ display: 'inline', marginRight: 4 }} />
+          Manatal candidate {r.manatal_candidate_id}
+          {' '}·{' '}
+          applied {new Date(r.created_at).toLocaleDateString('en-GB')}
+          {r.email_sent_at && ` · emailed ${new Date(r.email_sent_at).toLocaleDateString('en-GB')}`}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
 
@@ -161,188 +306,140 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
           </p>
         </div>
       ) : (
-        <div className="table-wrapper">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Role</th>
-                <th>Score</th>
-                <th>Scanned from</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(r => {
-                const isOpen      = expanded === r.id;
-                const isActionable = ACTIONABLE.has(r.status);
-                const heldByDryRun = r.status === 'qualified';
-                const thin        = r.scan_source === 'manatal_parsed';
-                return (
-                  <Fragment key={r.id}>
-                    <tr>
-                      <td>
-                        <button
-                          onClick={() => setExpanded(isOpen ? null : r.id)}
-                          className="text-left"
-                          style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
-                        >
-                          <span style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                            {r.candidate?.full_name ?? '—'}
-                          </span>
-                          <br />
-                          <span style={{ color: 'var(--ink-faint)', fontSize: 12 }}>
-                            {r.candidate?.email ?? 'no email on file'}
-                          </span>
-                        </button>
-                      </td>
-                      <td style={{ color: 'var(--ink-soft)' }}>{r.requisition?.title ?? '—'}</td>
-                      <td>
-                        {r.match_score === null
-                          ? <span style={{ color: 'var(--ink-faint)' }}>—</span>
-                          : <strong style={{ color: 'var(--ink)' }}>{r.match_score}%</strong>}
-                      </td>
-                      <td>
-                        {r.scan_source ? (
-                          <span
-                            className="badge"
-                            title={thin
-                              ? 'Scored from Manatal’s parsed fields because the CV PDF could not be read. Thinner evidence than a full CV.'
-                              : 'Scored from the full CV text.'}
-                            style={{ color: thin ? 'var(--gold)' : 'var(--ink-soft)' }}
-                          >
-                            {thin && <AlertTriangle size={11} style={{ marginRight: 4, display: 'inline' }} />}
-                            {SCAN_SOURCE_LABEL[r.scan_source] ?? r.scan_source}
-                          </span>
-                        ) : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
-                      </td>
-                      <td style={{ color: 'var(--ink-soft)', fontSize: 13 }}>
-                        {r.country_detected ?? '—'}
-                        {/* `unknown` is not a rejection under the block list —
-                            it is the reason someone scoring above the bar is
-                            sitting in this queue instead of being emailed, so
-                            the label says that rather than just "unresolved". */}
-                        {r.country_gate_result === 'unknown' && (
-                          <span style={{ color: 'var(--gold)', fontSize: 11, display: 'block' }}>
-                            no country read — review only
-                          </span>
-                        )}
-                        {r.country_gate_result === 'blocked' && (
-                          <span style={{ color: 'var(--red)', fontSize: 11, display: 'block' }}>blocked</span>
-                        )}
-                        {/* Pre-084 history, written under the old allow list. */}
-                        {r.country_gate_result === 'rejected' && (
-                          <span style={{ color: 'var(--ink-faint)', fontSize: 11, display: 'block' }}>
-                            not on the old allow list
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span className="badge" style={{ color: statusColour(r.status) }}>
-                          {statusLabel(r.status)}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        {isActionable ? (
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              className="btn-cta btn-sm"
-                              disabled={busy === r.id}
-                              onClick={() => act(r.id, { action: 'approve' })}
-                            >
-                              <Check size={13} /> {heldByDryRun ? 'Send invite' : 'Approve'}
-                            </button>
-                            <button
-                              className="btn-secondary btn-sm"
-                              disabled={busy === r.id}
-                              onClick={() => act(r.id, { action: 'reject' })}
-                            >
-                              <X size={13} /> Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            className="input btn-sm"
-                            style={{ maxWidth: 190 }}
-                            value=""
-                            disabled={busy === r.id}
-                            onChange={e => e.target.value && act(r.id, { status: e.target.value })}
-                          >
-                            <option value="">Advance to…</option>
-                            {MANUAL_STATUSES.map(s => (
-                              <option key={s} value={s}>{STATUS_META[s].label}</option>
-                            ))}
-                          </select>
-                        )}
-                      </td>
-                    </tr>
-
-                    {isOpen && (
+        <>
+          {/* Desktop / tablet: the full table, horizontally scrollable if it
+              has to be. Hidden below md — see the mobile card list beside it,
+              which exists so Approve/Reject/Advance are reachable with a
+              thumb instead of a scroll-then-tap. */}
+          <div className="table-wrapper hidden md:block">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Role</th>
+                  <th>Score</th>
+                  <th>Scanned from</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(r => {
+                  const isOpen = expanded === r.id;
+                  return (
+                    <Fragment key={r.id}>
                       <tr>
-                        <td colSpan={7} style={{ background: 'var(--surface-soft)' }}>
-                          <div className="p-4 space-y-3 text-sm">
-                            {r.scan_error && (
-                              <p style={{ color: 'var(--red)', margin: 0 }}>
-                                <strong>Scan error:</strong> {r.scan_error}
-                              </p>
-                            )}
-
-                            {!!r.failed_criteria?.length && (
-                              <div>
-                                <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>
-                                  Failed mandatory criteria
-                                </p>
-                                <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink-soft)' }}>
-                                  {r.failed_criteria.map(f => (
-                                    <li key={f.key}><strong>{f.label}</strong> — {f.reason}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {!!r.matched_skills?.length && (
-                              <div>
-                                <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>
-                                  Skills the scan evidenced
-                                </p>
-                                <p style={{ color: 'var(--ink-soft)', margin: 0 }}>
-                                  {r.matched_skills
-                                    .filter(s => s.found)
-                                    .map(s => s.skill)
-                                    .filter(Boolean)
-                                    .join(', ') || 'None.'}
-                                </p>
-                              </div>
-                            )}
-
-                            {!!r.gaps?.length && (
-                              <div>
-                                <p style={{ color: 'var(--ink)', fontWeight: 600, margin: '0 0 4px' }}>Gaps</p>
-                                <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink-soft)' }}>
-                                  {r.gaps.map((g, i) => <li key={i}>{g}</li>)}
-                                </ul>
-                              </div>
-                            )}
-
-                            <p style={{ color: 'var(--ink-faint)', margin: 0, fontSize: 12 }}>
-                              <FileText size={11} style={{ display: 'inline', marginRight: 4 }} />
-                              Manatal candidate {r.manatal_candidate_id}
-                              {' '}·{' '}
-                              applied {new Date(r.created_at).toLocaleDateString('en-GB')}
-                              {r.email_sent_at && ` · emailed ${new Date(r.email_sent_at).toLocaleDateString('en-GB')}`}
-                            </p>
+                        <td>
+                          <button
+                            onClick={() => setExpanded(isOpen ? null : r.id)}
+                            className="text-left"
+                            style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
+                          >
+                            <span style={{ color: 'var(--ink)', fontWeight: 600 }}>
+                              {r.candidate?.full_name ?? '—'}
+                            </span>
+                            <br />
+                            <span style={{ color: 'var(--ink-faint)', fontSize: 12 }}>
+                              {r.candidate?.email ?? 'no email on file'}
+                            </span>
+                          </button>
+                        </td>
+                        <td style={{ color: 'var(--ink-soft)' }}>{r.requisition?.title ?? '—'}</td>
+                        <td>{scoreCell(r)}</td>
+                        <td>{scanSourceCell(r)}</td>
+                        <td style={{ color: 'var(--ink-soft)', fontSize: 13 }}>{locationCell(r)}</td>
+                        <td>
+                          <span className="badge" style={{ color: statusColour(r.status) }}>
+                            {statusLabel(r.status)}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="flex justify-end">
+                            {actionControl(r)}
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+
+                      {isOpen && (
+                        <tr>
+                          <td colSpan={7} style={{ background: 'var(--surface-soft)' }}>
+                            <div className="p-4">{detailBody(r)}</div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Phone: one card per applicant, full-width action controls. */}
+          <div className="mobile-card-list">
+            {filtered.map(r => {
+              const isOpen = expanded === r.id;
+              return (
+                <div key={r.id} className="mobile-card">
+                  <button
+                    onClick={() => setExpanded(isOpen ? null : r.id)}
+                    className="text-left w-full"
+                    style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}
+                  >
+                    <span style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 15 }}>
+                      {r.candidate?.full_name ?? '—'}
+                    </span>
+                    <br />
+                    <span style={{ color: 'var(--ink-faint)', fontSize: 12 }}>
+                      {r.candidate?.email ?? 'no email on file'}
+                    </span>
+                  </button>
+
+                  <div className="mt-3">
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Role</span>
+                      <span className="mobile-card-value">{r.requisition?.title ?? '—'}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Score</span>
+                      <span className="mobile-card-value">{scoreCell(r)}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Scanned from</span>
+                      <span className="mobile-card-value">{scanSourceCell(r)}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Location</span>
+                      <span className="mobile-card-value">{locationCell(r)}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Status</span>
+                      <span className="badge" style={{ color: statusColour(r.status) }}>
+                        {statusLabel(r.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mobile-card-actions">
+                    {actionControl(r)}
+                    <button
+                      className="btn-ghost btn-sm"
+                      onClick={() => setExpanded(isOpen ? null : r.id)}
+                    >
+                      {isOpen ? 'Hide details' : 'Show details'}
+                    </button>
+                  </div>
+
+                  {isOpen && (
+                    <div className="mt-3 pt-3 text-sm" style={{ borderTop: '1px solid var(--line)' }}>
+                      {detailBody(r)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
