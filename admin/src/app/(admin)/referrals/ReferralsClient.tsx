@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Check, FileText, FlaskConical, X } from 'lucide-react';
@@ -40,6 +40,8 @@ interface Config {
   requisition:    { id: string; title: string } | null;
 }
 
+type SortKey = 'candidate' | 'role' | 'score' | 'location' | 'status' | 'created_at';
+
 interface Props {
   rows:        Row[];
   configs:     Config[];
@@ -47,31 +49,33 @@ interface Props {
   /** Server-side pagination — the page this `rows` slice came from. */
   page:        number;
   pageSize:    number;
-  /** Total rows across every page, not just this one. */
+  /** Rows matching the CURRENT filter, across every page — not just this one. */
   total:       number;
+  /** Rows in the whole book, ignoring every filter — distinguishes an
+   *  empty book from filters that simply match nothing. */
+  grandTotal:  number;
+  /** How many rows sit in the review queue, across the whole book. */
+  queueCount:  number;
+  /** The sort/filter this page was fetched with — sorting and filtering
+   *  happen server-side (see migration 086: PostgREST cannot order a
+   *  top-level resource by a joined column, so candidate name and role
+   *  title sort could never move server-side through a plain
+   *  `.select()`/`.order()` call), so this component reflects state
+   *  rather than owning it. Clicking a header or picking a filter
+   *  navigates to a new URL instead of re-sorting the array in memory. */
+  sortKey:      SortKey;
+  sortDir:      'asc' | 'desc';
+  statusFilter: string;
+  roleFilter:   string;
 }
 
-const REVIEW = 'review_pending';
-
-type SortKey = 'candidate' | 'role' | 'score' | 'location' | 'status';
-
-const SORT_LABEL: Record<SortKey, string> = {
+const SORT_LABEL: Record<Exclude<SortKey, 'created_at'>, string> = {
   candidate: 'Candidate',
   role:      'Role',
   score:     'Score',
   location:  'Location',
   status:    'Status',
 };
-
-function sortValue(r: Row, key: SortKey): string | number | null {
-  switch (key) {
-    case 'candidate': return r.candidate?.full_name ?? '';
-    case 'role':      return r.requisition?.title ?? '';
-    case 'score':     return r.match_score;
-    case 'location':  return r.country_detected ?? '';
-    case 'status':    return statusLabel(r.status);
-  }
-}
 
 // Both a row waiting on a human call (review_pending — a mandatory
 // criterion or country came back `unknown`) and a row that already
@@ -85,53 +89,38 @@ function sortValue(r: Row, key: SortKey): string | number | null {
 // which call sendReferralInvite.
 const ACTIONABLE = new Set(['review_pending', 'qualified']);
 
-export default function ReferralsClient({ rows, configs, dryRunCount, page, pageSize, total }: Props) {
+export default function ReferralsClient({
+  rows, configs, dryRunCount, page, pageSize, total, grandTotal, queueCount,
+  sortKey, sortDir, statusFilter, roleFilter,
+}: Props) {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter,   setRoleFilter]   = useState<string>('all');
-  const [busy,         setBusy]         = useState<string | null>(null);
-  const [error,        setError]        = useState<string | null>(null);
-  const [expanded,     setExpanded]     = useState<string | null>(null);
-  // Score defaults to descending (top score first) on first click — every
-  // other column defaults to ascending (A→Z / earliest first).
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [busy,     setBusy]     = useState<string | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const queueCount = rows.filter(r => r.status === REVIEW).length;
+  // Every navigation from here resets to page 1 — a page number only
+  // means something for ONE particular sort/filter, and carrying it
+  // across a change would land on an arbitrary slice of the new one.
+  function navigate(overrides: { sort?: SortKey; dir?: 'asc' | 'desc'; status?: string; role?: string }) {
+    const params = new URLSearchParams();
+    params.set('sort', overrides.sort ?? sortKey);
+    params.set('dir',  overrides.dir  ?? sortDir);
+    const nextStatus = overrides.status ?? statusFilter;
+    const nextRole   = overrides.role   ?? roleFilter;
+    if (nextStatus !== 'all') params.set('status', nextStatus);
+    if (nextRole   !== 'all') params.set('role',   nextRole);
+    router.push(`/referrals?${params.toString()}`);
+  }
 
-  const filtered = useMemo(() => rows.filter(r => {
-    if (statusFilter === 'queue' && r.status !== REVIEW) return false;
-    if (statusFilter !== 'all' && statusFilter !== 'queue' && r.status !== statusFilter) return false;
-    if (roleFilter !== 'all' && r.requisition?.id !== roleFilter) return false;
-    return true;
-  }), [rows, statusFilter, roleFilter]);
-
-  const sorted = useMemo(() => {
-    if (!sortKey) return filtered;
-    const dir = sortDir === 'asc' ? 1 : -1;
-    return [...filtered].sort((a, b) => {
-      const av = sortValue(a, sortKey);
-      const bv = sortValue(b, sortKey);
-      // A missing score (never scored) sorts to the bottom regardless of
-      // direction — "no score" is not a low score, it is an absence.
-      if (av === null && bv === null) return 0;
-      if (av === null) return 1;
-      if (bv === null) return -1;
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
-      return String(av).localeCompare(String(bv)) * dir;
-    });
-  }, [filtered, sortKey, sortDir]);
-
-  function toggleSort(key: SortKey) {
+  function toggleSort(key: Exclude<SortKey, 'created_at'>) {
     if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      navigate({ sort: key, dir: sortDir === 'asc' ? 'desc' : 'asc' });
     } else {
-      setSortKey(key);
-      setSortDir(key === 'score' ? 'desc' : 'asc');
+      navigate({ sort: key, dir: key === 'score' ? 'desc' : 'asc' });
     }
   }
 
-  function sortHeader(sortKeyName: SortKey) {
+  function sortHeader(sortKeyName: Exclude<SortKey, 'created_at'>) {
     const active = sortKey === sortKeyName;
     const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
     return (
@@ -349,13 +338,15 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
         </div>
       )}
 
-      {/* Filters */}
+      {/* Filters — both sort and filter across the WHOLE book (see
+          migration 086), so picking one re-fetches page 1 rather than
+          narrowing what's already on screen. */}
       <div className="flex flex-wrap items-center gap-3">
         <select
           className="input"
           style={{ maxWidth: 260 }}
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
+          onChange={e => navigate({ status: e.target.value })}
         >
           <option value="all">All statuses</option>
           <option value="queue">Review queue ({queueCount})</option>
@@ -368,7 +359,7 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
           className="input"
           style={{ maxWidth: 260 }}
           value={roleFilter}
-          onChange={e => setRoleFilter(e.target.value)}
+          onChange={e => navigate({ role: e.target.value })}
         >
           <option value="all">All roles</option>
           {configs.map(c => (
@@ -383,12 +374,12 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
         <select
           className="input md:hidden"
           style={{ maxWidth: 220 }}
-          value={sortKey ? `${sortKey}:${sortDir}` : ''}
+          value={sortKey === 'created_at' ? '' : `${sortKey}:${sortDir}`}
           onChange={e => {
             const v = e.target.value;
-            if (!v) { setSortKey(null); return; }
-            const [key, dir] = v.split(':') as [SortKey, 'asc' | 'desc'];
-            setSortKey(key); setSortDir(dir);
+            if (!v) { navigate({ sort: 'created_at', dir: 'desc' }); return; }
+            const [key, dir] = v.split(':') as [Exclude<SortKey, 'created_at'>, 'asc' | 'desc'];
+            navigate({ sort: key, dir });
           }}
         >
           <option value="">Sort by…</option>
@@ -405,14 +396,14 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
         </select>
 
         <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>
-          {sorted.length} of {rows.length} on this page shown
+          {total} matching application{total === 1 ? '' : 's'}
         </span>
       </div>
 
-      {sorted.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="empty-state">
           <p style={{ color: 'var(--ink-soft)' }}>
-            {rows.length === 0
+            {grandTotal === 0
               ? 'No applicants have been processed yet. The pipeline runs hourly once a role has a referral configuration and has been published to Manatal.'
               : 'No applications match these filters.'}
           </p>
@@ -437,7 +428,7 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(r => {
+                {rows.map(r => {
                   const isOpen = expanded === r.id;
                   return (
                     <Fragment key={r.id}>
@@ -489,7 +480,7 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
 
           {/* Phone: one card per applicant, full-width action controls. */}
           <div className="mobile-card-list">
-            {sorted.map(r => {
+            {rows.map(r => {
               const isOpen = expanded === r.id;
               return (
                 <div key={r.id} className="mobile-card">
@@ -559,6 +550,20 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
         if (totalPages <= 1) return null;
         const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
         const to   = Math.min(page * pageSize, total);
+        // Prev/Next must carry the current sort and filter, or paging
+        // forward would silently drop back to the unsorted, unfiltered
+        // default — the same "state a click quietly threw away" shape
+        // as the referral-list bare-URL bug this codebase already hit.
+        const pageParams = new URLSearchParams();
+        pageParams.set('sort', sortKey);
+        pageParams.set('dir', sortDir);
+        if (statusFilter !== 'all') pageParams.set('status', statusFilter);
+        if (roleFilter   !== 'all') pageParams.set('role', roleFilter);
+        const hrefForPage = (p: number) => {
+          const sp = new URLSearchParams(pageParams);
+          sp.set('page', String(p));
+          return `/referrals?${sp.toString()}`;
+        };
         return (
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
@@ -568,13 +573,13 @@ export default function ReferralsClient({ rows, configs, dryRunCount, page, page
               {page <= 1 ? (
                 <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>← Prev</span>
               ) : (
-                <Link prefetch={false} href={`/referrals?page=${page - 1}`} className="btn-secondary btn-sm">← Prev</Link>
+                <Link prefetch={false} href={hrefForPage(page - 1)} className="btn-secondary btn-sm">← Prev</Link>
               )}
               <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Page {page} of {totalPages}</span>
               {page >= totalPages ? (
                 <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>Next →</span>
               ) : (
-                <Link prefetch={false} href={`/referrals?page=${page + 1}`} className="btn-secondary btn-sm">Next →</Link>
+                <Link prefetch={false} href={hrefForPage(page + 1)} className="btn-secondary btn-sm">Next →</Link>
               )}
             </div>
           </div>
