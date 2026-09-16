@@ -2,13 +2,15 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Check, FileText, FlaskConical, X } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Check, FileText, FlaskConical, X } from 'lucide-react';
 import {
   ALL_STATUSES,
   MANUAL_STATUSES,
   SCAN_SOURCE_LABEL,
   STATUS_META,
   statusColour,
+  statusGroup,
   statusLabel,
 } from '@/lib/referral/statusMeta';
 
@@ -42,9 +44,34 @@ interface Props {
   rows:        Row[];
   configs:     Config[];
   dryRunCount: number;
+  /** Server-side pagination — the page this `rows` slice came from. */
+  page:        number;
+  pageSize:    number;
+  /** Total rows across every page, not just this one. */
+  total:       number;
 }
 
 const REVIEW = 'review_pending';
+
+type SortKey = 'candidate' | 'role' | 'score' | 'location' | 'status';
+
+const SORT_LABEL: Record<SortKey, string> = {
+  candidate: 'Candidate',
+  role:      'Role',
+  score:     'Score',
+  location:  'Location',
+  status:    'Status',
+};
+
+function sortValue(r: Row, key: SortKey): string | number | null {
+  switch (key) {
+    case 'candidate': return r.candidate?.full_name ?? '';
+    case 'role':      return r.requisition?.title ?? '';
+    case 'score':     return r.match_score;
+    case 'location':  return r.country_detected ?? '';
+    case 'status':    return statusLabel(r.status);
+  }
+}
 
 // Both a row waiting on a human call (review_pending — a mandatory
 // criterion or country came back `unknown`) and a row that already
@@ -58,13 +85,17 @@ const REVIEW = 'review_pending';
 // which call sendReferralInvite.
 const ACTIONABLE = new Set(['review_pending', 'qualified']);
 
-export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
+export default function ReferralsClient({ rows, configs, dryRunCount, page, pageSize, total }: Props) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter,   setRoleFilter]   = useState<string>('all');
   const [busy,         setBusy]         = useState<string | null>(null);
   const [error,        setError]        = useState<string | null>(null);
   const [expanded,     setExpanded]     = useState<string | null>(null);
+  // Score defaults to descending (top score first) on first click — every
+  // other column defaults to ascending (A→Z / earliest first).
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const queueCount = rows.filter(r => r.status === REVIEW).length;
 
@@ -74,6 +105,49 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
     if (roleFilter !== 'all' && r.requisition?.id !== roleFilter) return false;
     return true;
   }), [rows, statusFilter, roleFilter]);
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const av = sortValue(a, sortKey);
+      const bv = sortValue(b, sortKey);
+      // A missing score (never scored) sorts to the bottom regardless of
+      // direction — "no score" is not a low score, it is an absence.
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+  }, [filtered, sortKey, sortDir]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'score' ? 'desc' : 'asc');
+    }
+  }
+
+  function sortHeader(sortKeyName: SortKey) {
+    const active = sortKey === sortKeyName;
+    const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+    return (
+      <th key={sortKeyName}>
+        <button
+          type="button"
+          onClick={() => toggleSort(sortKeyName)}
+          className="inline-flex items-center gap-1"
+          style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit', textTransform: 'inherit', letterSpacing: 'inherit' }}
+        >
+          {SORT_LABEL[sortKeyName]}
+          <Icon size={11} style={{ opacity: active ? 1 : 0.4 }} />
+        </button>
+      </th>
+    );
+  }
 
   async function act(id: string, payload: Record<string, unknown>) {
     setBusy(id); setError(null);
@@ -165,15 +239,27 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
         </div>
       );
     }
+    // Apply is only offered where it means something — overruling a
+    // rejection or a scan fault. It is refused server-side for anything
+    // already sent or downstream of that (see route.ts); not offering it
+    // there either keeps the dropdown honest about what it can do.
+    const canApply = statusGroup(r.status) === 'rejected' || statusGroup(r.status) === 'fault';
+
     return (
       <select
         className="input btn-sm"
         style={{ maxWidth: 190 }}
         value=""
         disabled={busy === r.id}
-        onChange={e => e.target.value && act(r.id, { status: e.target.value })}
+        onChange={e => {
+          const v = e.target.value;
+          if (!v) return;
+          if (v === '__apply__') act(r.id, { action: 'apply' });
+          else act(r.id, { status: v });
+        }}
       >
         <option value="">Advance to…</option>
+        {canApply && <option value="__apply__">Apply — send invite anyway</option>}
         {MANUAL_STATUSES.map(s => (
           <option key={s} value={s}>{STATUS_META[s].label}</option>
         ))}
@@ -292,12 +378,38 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
           ))}
         </select>
 
+        {/* Desktop sorts by clicking a column header; phone has no header
+            row to tap, so it gets the same sort as a dropdown instead. */}
+        <select
+          className="input md:hidden"
+          style={{ maxWidth: 220 }}
+          value={sortKey ? `${sortKey}:${sortDir}` : ''}
+          onChange={e => {
+            const v = e.target.value;
+            if (!v) { setSortKey(null); return; }
+            const [key, dir] = v.split(':') as [SortKey, 'asc' | 'desc'];
+            setSortKey(key); setSortDir(dir);
+          }}
+        >
+          <option value="">Sort by…</option>
+          <option value="candidate:asc">Candidate (A→Z)</option>
+          <option value="candidate:desc">Candidate (Z→A)</option>
+          <option value="role:asc">Role (A→Z)</option>
+          <option value="role:desc">Role (Z→A)</option>
+          <option value="score:desc">Score (high→low)</option>
+          <option value="score:asc">Score (low→high)</option>
+          <option value="location:asc">Location (A→Z)</option>
+          <option value="location:desc">Location (Z→A)</option>
+          <option value="status:asc">Status (A→Z)</option>
+          <option value="status:desc">Status (Z→A)</option>
+        </select>
+
         <span className="text-sm" style={{ color: 'var(--ink-faint)' }}>
-          {filtered.length} shown
+          {sorted.length} of {rows.length} on this page shown
         </span>
       </div>
 
-      {filtered.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="empty-state">
           <p style={{ color: 'var(--ink-soft)' }}>
             {rows.length === 0
@@ -315,17 +427,17 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Candidate</th>
-                  <th>Role</th>
-                  <th>Score</th>
+                  {sortHeader('candidate')}
+                  {sortHeader('role')}
+                  {sortHeader('score')}
                   <th>Scanned from</th>
-                  <th>Location</th>
-                  <th>Status</th>
+                  {sortHeader('location')}
+                  {sortHeader('status')}
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => {
+                {sorted.map(r => {
                   const isOpen = expanded === r.id;
                   return (
                     <Fragment key={r.id}>
@@ -377,7 +489,7 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
 
           {/* Phone: one card per applicant, full-width action controls. */}
           <div className="mobile-card-list">
-            {filtered.map(r => {
+            {sorted.map(r => {
               const isOpen = expanded === r.id;
               return (
                 <div key={r.id} className="mobile-card">
@@ -441,6 +553,33 @@ export default function ReferralsClient({ rows, configs, dryRunCount }: Props) {
           </div>
         </>
       )}
+
+      {(() => {
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        if (totalPages <= 1) return null;
+        const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+        const to   = Math.min(page * pageSize, total);
+        return (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {from}-{to} of {total} applications
+            </span>
+            <div className="flex items-center gap-2">
+              {page <= 1 ? (
+                <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>← Prev</span>
+              ) : (
+                <Link prefetch={false} href={`/referrals?page=${page - 1}`} className="btn-secondary btn-sm">← Prev</Link>
+              )}
+              <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Page {page} of {totalPages}</span>
+              {page >= totalPages ? (
+                <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>Next →</span>
+              ) : (
+                <Link prefetch={false} href={`/referrals?page=${page + 1}`} className="btn-secondary btn-sm">Next →</Link>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

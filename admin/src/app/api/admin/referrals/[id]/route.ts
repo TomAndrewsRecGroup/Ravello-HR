@@ -81,14 +81,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const now     = new Date().toISOString();
   const history = Array.isArray(app.status_history) ? app.status_history : [];
 
-  /* ─── Approve: send the invitation ─────────────────────── */
-  if (body.action === 'approve') {
-    if (app.status !== 'review_pending' && app.status !== 'qualified') {
+  /* ─── Approve, or Apply — both send the invitation ─────────
+   * 'approve' is the review-queue/qualified-hold flow and keeps its
+   * existing status guard. 'apply' is the funnel table's override: it
+   * exists to overrule a rejection (rejected_country/criteria/score,
+   * review_rejected, scan_error) when the operator has looked at the
+   * row and wants the candidate emailed regardless of what the gate
+   * decided. Both call the identical sendReferralInvite() path so the
+   * "only mark sent when it actually sent" rule is one rule, not two. */
+  if (body.action === 'approve' || body.action === 'apply') {
+    const isOverride = body.action === 'apply';
+
+    if (isOverride) {
+      // Refused once an invite has already gone out (email_sent) or the
+      // row has moved downstream of that (MANUAL_STATUSES) — Apply
+      // overrules a REJECTION, it does not re-send to someone already
+      // contacted, which would put the email record out of step with
+      // reality and confuse the idempotency guard.
+      if (app.status === 'email_sent' || MANUAL_STATUSES.includes(app.status as ReferralStatus)) {
+        return NextResponse.json(
+          { error: `An invite has already gone out for this application (status "${STATUS_META[app.status as ReferralStatus]?.label ?? app.status}") — Apply cannot re-send it.` },
+          { status: 409 },
+        );
+      }
+    } else if (app.status !== 'review_pending' && app.status !== 'qualified') {
       return NextResponse.json(
         { error: `Only a queued or qualified candidate can be approved (this one is "${app.status}").` },
         { status: 409 },
       );
     }
+
     if (!candidate?.email) {
       return NextResponse.json({ error: 'No email address on file for this candidate.' }, { status: 422 });
     }
@@ -119,7 +141,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       email_provider_id: sent.providerId,
       reviewed_by:       auth.userId,
       reviewed_at:       now,
-      status_history:    [...history, { at: now, from: app.status, to: 'email_sent', by: auth.userId, reasons: ['Approved from the review queue.'] }],
+      status_history:    [...history, { at: now, from: app.status, to: 'email_sent', by: auth.userId, reasons: [
+        isOverride
+          ? `Manually applied — overrides the "${STATUS_META[app.status as ReferralStatus]?.label ?? app.status}" decision.`
+          : 'Approved from the review queue.',
+      ] }],
     }).eq('id', params.id);
 
     return NextResponse.json({ ok: true, status: 'email_sent' });

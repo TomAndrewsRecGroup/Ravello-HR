@@ -152,6 +152,46 @@ describe('config is fetched as its own query, never embedded on referral_applica
   });
 });
 
+describe('apply overrules a rejection and sends, but never re-sends', () => {
+  it('sends and marks email_sent from a rejected status', async () => {
+    appRow!.status = 'rejected_criteria';
+    const res  = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.status).toBe('email_sent');
+    expect(sendCalls).toHaveLength(1);
+
+    const update = updates.find(u => u.table === 'referral_applications');
+    expect(update?.patch.status).toBe('email_sent');
+    expect(update?.patch.status_history.at(-1).reasons[0]).toMatch(/overrides/i);
+  });
+
+  it('refuses to re-send once an invite has already gone out', async () => {
+    appRow!.status = 'email_sent';
+    const res  = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const json = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(json.error).toMatch(/already gone out/i);
+    expect(sendCalls).toHaveLength(0);
+  });
+
+  it('refuses to re-send once the row has moved downstream', async () => {
+    appRow!.status = 'accepted';
+    const res = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    expect(res.status).toBe(409);
+    expect(sendCalls).toHaveLength(0);
+  });
+
+  it('a review_pending row (never rejected) can still be applied — same send path as approve', async () => {
+    appRow!.status = 'review_pending';
+    const res = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    expect(res.status).toBe(200);
+    expect(sendCalls).toHaveLength(1);
+  });
+});
+
 describe('a real application with no saved config is reported distinctly', () => {
   it('404s with a config-specific message, not "application not found"', async () => {
     configRow = null;

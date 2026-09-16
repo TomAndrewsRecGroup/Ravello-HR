@@ -50,6 +50,10 @@ export function statusColour(s: string): string {
   return (STATUS_META as Record<string, StatusMeta>)[s]?.colour ?? 'var(--ink-faint)';
 }
 
+export function statusGroup(s: string): StatusMeta['group'] | undefined {
+  return (STATUS_META as Record<string, StatusMeta>)[s]?.group;
+}
+
 export const SCAN_SOURCE_LABEL: Record<string, string> = {
   cv_pdf:         'Full CV',
   manatal_parsed: 'Parsed data only',
