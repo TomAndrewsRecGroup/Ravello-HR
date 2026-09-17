@@ -254,31 +254,33 @@ describe('evaluate — order and vetoes', () => {
     expect(d.countryResult).toBe('blocked');
   });
 
-  // THE AUTO-SEND CAP -- the property that replaces the old allow
-  // list's outright refusal (operator, 2026-09-02). An unreadable
-  // country is NOT a rejection: they are scanned, scored, and shown.
-  // They simply never get an email without a person deciding.
-  it('an unreadable country is scored and reviewed, never auto-sent', () => {
+  // THE AUTO-SEND CAP on an unreadable country was REMOVED 2026-09-17
+  // (operator: "make sure that anyone who is over the threshold ... is
+  // actually accepted and automatically sent the email" -- shown the
+  // risk it was carrying and chose score-is-gospel anyway). Below the
+  // threshold, `unknown` still behaves exactly as before (see the
+  // mid-band test further down); this pins only the auto-send branch.
+  it('an unreadable country now auto-sends once the score clears the bar', () => {
     const d = evaluate({
       location: 'Manchester',                      // no country
       config:   config({ auto_send_threshold: 85, review_threshold: 75 }),
       scan:     scan({ overall_score: 0.99 }),     // way over the bar
     });
     expect(d.countryResult).toBe('unknown');
-    expect(d.status).toBe('review_pending');       // NOT 'qualified'
-    expect(d.score).toBe(99);                      // and it IS scored
-    expect(d.reasons.join(' ')).toMatch(/country could not be read/i);
+    expect(d.status).toBe('qualified');            // NOT held for review any more
+    expect(d.score).toBe(99);
+    // Still visible on the row that this one cleared on an unreadable
+    // country -- "auto-sent" must not read identically to a clean pass.
+    expect(d.reasons.join(' ')).toMatch(/country being unreadable/i);
   });
 
-  it('a blank location is scored and reviewed too, never auto-sent', () => {
+  it('a blank location auto-sends too, once the score clears the bar', () => {
     const d = evaluate({ location: null, config: config(), scan: scan({ overall_score: 0.99 }) });
-    expect(d.status).toBe('review_pending');
+    expect(d.status).toBe('qualified');
     expect(d.countryResult).toBe('unknown');
   });
 
-  // The same score with a READABLE country does auto-send -- otherwise
-  // the test above would pass against a gate that reviews everybody.
-  it('the identical score with a readable country DOES auto-send', () => {
+  it('the identical score with a readable country also auto-sends, with the plain reason', () => {
     const d = evaluate({
       location: 'Manchester, United Kingdom',
       config:   config({ auto_send_threshold: 85, review_threshold: 75 }),
@@ -286,15 +288,29 @@ describe('evaluate — order and vetoes', () => {
     });
     expect(d.countryResult).toBe('clear');
     expect(d.status).toBe('qualified');
+    expect(d.reasons.join(' ')).not.toMatch(/unreadable|unreliable/i);
   });
 
-  // An empty block list must not become an accidental allow-all that
-  // also bypasses the cap.
-  it('an empty block list still holds an unreadable country for review', () => {
+  // An empty block list must not change this -- it was never what
+  // carried the safety.
+  it('an empty block list ALSO auto-sends an unreadable country above threshold', () => {
     const d = evaluate({
       location: 'Manchester',
       config:   config({ blocked_countries: [] }),
       scan:     scan({ overall_score: 0.99 }),
+    });
+    expect(d.status).toBe('qualified');
+  });
+
+  // The cap is gone ONLY at/above auto-send. In the review band
+  // (below auto-send, at/above review) an unreadable country is
+  // untouched -- there was never anything to override there, since
+  // the row was already going to a human either way.
+  it('below the auto-send threshold, an unreadable country is still just review_pending', () => {
+    const d = evaluate({
+      location: 'Manchester',
+      config:   config({ auto_send_threshold: 85, review_threshold: 75 }),
+      scan:     scan({ overall_score: 0.80 }),
     });
     expect(d.status).toBe('review_pending');
   });
@@ -413,9 +429,10 @@ describe('a match term that cannot discriminate', () => {
  * (broken) structured array and auto-rejected genuinely strong
  * candidates for a defect in the scan, not a defect in the person.
  */
-describe('evaluate — an unverifiable scan is capped at review, not rejected or auto-sent', () => {
-  // Reproduces one of the 8: a high score, rich strengths (not modelled
-  // here — the gate never reads it), and an entirely empty evidence array.
+describe('evaluate — an unverifiable scan is capped at review below auto-send, but no longer above it (2026-09-17)', () => {
+  // Reproduces one of the 8 (and Gabriel Toríz Mejía, req 7ae62d7d,
+  // 2026-09-17): a high score, rich strengths (not modelled here — the
+  // gate never reads it), and an entirely empty evidence array.
   const wholesaleEmptyMatches = [
     { skill: 'Python', found: false, confidence: 0 },
     { skill: 'Golang', found: false, confidence: 0 },
@@ -423,18 +440,22 @@ describe('evaluate — an unverifiable scan is capped at review, not rejected or
     { skill: 'Refactoring', found: false, confidence: 0 },
   ];
 
-  it('a high score with a wholesale-empty skill array is held for review, not qualified or rejected_criteria', () => {
+  // Until 2026-09-17 this was `review_pending` -- the operator removed
+  // the cap for the identical reason as the country one above, having
+  // seen exactly this shape (93%, wholesale-empty array) land in the
+  // queue and approved it by hand.
+  it('a high score with a wholesale-empty skill array now auto-sends, not held for review', () => {
     const d = evaluate({
       location: 'London, UK',
       config:   config({ mandatory_criteria: [MCP], auto_send_threshold: 85, review_threshold: 75 }),
       scan:     scan({ overall_score: 0.95, skill_matches: wholesaleEmptyMatches }),
     });
-    expect(d.status).toBe('review_pending');
+    expect(d.status).toBe('qualified');
     expect(d.score).toBe(95);
-    // The criteria that "failed" are still surfaced, for the reviewer's
-    // context, even though they no longer drive the decision.
+    // Still surfaced on the row -- an auto-send off an unreliable scan
+    // must remain visibly distinct from a clean pass.
     expect(d.failedCriteria).toHaveLength(1);
-    expect(d.reasons.join(' ')).toMatch(/no evidence for any skill at all/i);
+    expect(d.reasons.join(' ')).toMatch(/scan being unreliable/i);
   });
 
   it('a low score with the identical wholesale-empty array still rejects on SCORE, not criteria', () => {

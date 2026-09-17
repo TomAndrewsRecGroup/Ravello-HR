@@ -105,17 +105,18 @@ function expand(country: string): string[] {
  *    unknown — blank, or a location naming no country we can resolve
  *              ("Manchester" alone). NOT blocked: nothing here proves
  *              they are, and under a block list the burden is on the
- *              list. They are scanned and scored like anyone else, but
- *              `evaluate` caps them at review and they can never
- *              auto-send. See the cap there for why.
+ *              list. They are scanned and scored like anyone else.
+ *              Until 2026-09-17, `evaluate` capped them at review
+ *              rather than auto-sending; the operator removed that cap
+ *              (score is the deciding factor) — see `evaluate` for the
+ *              decision and what is still recorded about it.
  *
  *  Note the fail direction has genuinely flipped, and it had to. An
  *  empty ALLOW list refused everybody, which is why the old gate could
  *  fail closed on a missing config. An empty BLOCK list blocks nobody —
  *  that is what the words mean, and pretending otherwise would make an
  *  unconfigured role silently refuse every applicant, which is the
- *  failure this repo keeps writing down. What carries the safety now is
- *  the auto-send cap on `unknown`, not a refusal here. */
+ *  failure this repo keeps writing down. */
 export function checkCountry(
   location: string | null | undefined,
   blockedCountries: string[],
@@ -447,32 +448,33 @@ export function evaluate(input: GateInput): GateDecision {
 
   // 3. Score.
   if (score >= config.auto_send_threshold) {
-    // THE AUTO-SEND CAP. An applicant whose country we could not read
-    // is scanned and scored like anyone else, and may well score above
-    // the bar — but is never emailed automatically. It goes to the
-    // review queue instead, where a person decides.
+    // THE AUTO-SEND CAP — REMOVED at or above threshold (operator,
+    // 2026-09-17): "make sure that anyone who is over the threshold
+    // that I put on the role is actually accepted and automatically
+    // sent the email." The cap used to hold an unreadable-country or
+    // unverifiable-scan candidate at `review_pending` even at 90%+
+    // (see Gabriel Toríz Mejía, requisition 7ae62d7d, scored 93% with a
+    // wholesale-empty skill array and landed in the queue for no reason
+    // a score-is-gospel operator would accept). The operator was shown
+    // BOTH caps and what each protects — country-unknown risks emailing
+    // someone in a location that could turn out to be blocked under a
+    // name the gate doesn't recognise; the scan-contradiction cap risks
+    // trusting a scan IvyLens's own structured evidence disagrees with
+    // — and asked for both removed, explicitly, having already approved
+    // several of exactly this shape by hand.
     //
-    // This is what carries the safety the old allow list used to carry
-    // by refusing outright (operator decision, 2026-09-02). A block
-    // list cannot refuse an unreadable location — nothing proves it is
-    // blocked — so the property worth keeping is narrower and exact:
-    // never send an email in the operator's name to someone we cannot
-    // place. Reaching the queue costs a manual look; auto-sending here
-    // would cost a stranger an email.
-    //
-    // A scan with unverifiable criteria gets the identical cap, for the
-    // identical reason: never auto-send on a check we could not run.
-    if (country.result === 'unknown' || criteriaUnverifiable) {
-      reasons.push(
-        `Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold, ` +
-        (criteriaUnverifiable
-          ? 'but the mandatory-criteria scan was unreliable — held for review rather than auto-sent.'
-          : 'but the country could not be read — held for review rather than auto-sent.'),
-      );
-      return { status: 'review_pending', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: criteriaUnverifiable ? failedCriteria : [], reasons };
+    // Both conditions are still recorded in `reasons` and on the row
+    // (`countryResult`/`failedCriteria`) so a `qualified` row that
+    // cleared on an unreadable country or a contradictory scan is
+    // still VISIBLE as such, not indistinguishable from a clean pass.
+    if (country.result === 'unknown') {
+      reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold — sent despite the country being unreadable (score overrides).`);
+    } else if (criteriaUnverifiable) {
+      reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold — sent despite the mandatory-criteria scan being unreliable (score overrides).`);
+    } else {
+      reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold.`);
     }
-    reasons.push(`Scored ${score}%, at or above the ${config.auto_send_threshold}% auto-send threshold.`);
-    return { status: 'qualified', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: [], reasons };
+    return { status: 'qualified', score, countryResult: country.result, countryDetected: country.detected, failedCriteria: criteriaUnverifiable ? failedCriteria : [], reasons };
   }
   if (score >= config.review_threshold) {
     reasons.push(`Scored ${score}%, between the ${config.review_threshold}% review and ${config.auto_send_threshold}% auto-send thresholds.`);
