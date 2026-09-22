@@ -25,17 +25,29 @@ export default function InviteUserPanel({ companyId }: Props) {
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/invite', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, company_id: companyId, role, full_name: fullName || undefined }),
-    });
+    let res: Response;
+    try {
+      res = await fetch('/api/invite', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, company_id: companyId, role, full_name: fullName || undefined }),
+      });
+    } catch {
+      setLoading(false);
+      setError('Network error. Please try again.');
+      return;
+    }
 
-    const body = await res.json();
+    // A non-2xx from the platform itself (405, a redirect landing on
+    // an HTML page, a gateway timeout) has no JSON body -- res.json()
+    // throws SyntaxError on that, uncaught, which is worse than the
+    // failure it was reporting: the user sees a blank console error
+    // instead of "Invite failed."
+    const body = await res.json().catch(() => ({}));
     setLoading(false);
 
     if (!res.ok) {
-      setError(body.error ?? 'Invite failed. Please try again.');
+      setError(body.error ?? `Invite failed (HTTP ${res.status}). Please try again.`);
       return;
     }
 
