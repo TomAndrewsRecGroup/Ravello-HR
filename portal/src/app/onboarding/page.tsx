@@ -25,7 +25,7 @@ const TOTAL_STEPS = 5;
 // wizard refuses to advance past a required step until it succeeds.
 const STEPS: Array<{ n: Step; label: string; required: boolean }> = [
   { n: 1, label: 'Welcome',         required: true  },
-  { n: 2, label: 'Friction Lens',   required: true  },
+  { n: 2, label: 'Friction Lens',   required: false },
   { n: 3, label: 'Invite Editor',   required: false },
   { n: 4, label: 'First employee',  required: true  },
   { n: 5, label: 'Done',            required: true  },
@@ -401,7 +401,7 @@ export default function OnboardingPage() {
               Five questions about your business. We&rsquo;ll score how hard hiring will be for you right now and tell you which dimensions are dragging you down.
             </p>
             <p className="text-xs mb-6" style={{ color: 'var(--ink-faint)' }}>
-              Takes about 5 minutes. You can update it any time from the portal.
+              Takes about 5 minutes. You can update it any time from the portal. This step is optional — skip it if you&rsquo;d rather come back later.
             </p>
 
             {/* Embed the existing FrictionLensClient. It handles its own
@@ -423,14 +423,18 @@ export default function OnboardingPage() {
               >
                 <ArrowLeft size={12} /> Back
               </button>
-              <button
-                onClick={() => goTo(3)}
-                disabled={!assessment}
-                className="btn-cta btn-sm"
-                title={!assessment ? 'Please complete the Friction Lens form first.' : ''}
-              >
-                Continue <ArrowRight size={14} />
-              </button>
+              {assessment ? (
+                <button onClick={() => goTo(3)} className="btn-cta btn-sm">
+                  Continue <ArrowRight size={14} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => goTo(3)}
+                  className="btn-secondary btn-sm flex items-center gap-1.5"
+                >
+                  <SkipForward size={13} /> Skip for now
+                </button>
+              )}
             </div>
           </Card>
         )}

@@ -187,11 +187,13 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
     if (!showForm || schema) return;
     fetch('/api/company/form-schema')
       .then(r => {
-        if (!r.ok) throw new Error('Failed to load form schema');
+        if (!r.ok) throw new Error('unavailable');
         return r.json();
       })
       .then(d => setSchema(d))
-      .catch(e => setSchemaErr(e.message));
+      .catch(() => setSchemaErr(
+        'The Company Assessment tool is currently unavailable. You can skip this and continue — nothing else in your portal depends on it.',
+      ));
   }, [showForm, schema]);
 
   function setField(dimKey: string, fieldKey: string, value: any) {
@@ -302,15 +304,26 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
     const dims = allDims.filter(d => visibleFields(d).length > 0);
     const totalSteps = dims.length + 1; // step 0 = employee count
 
+    // A failed schema load is a dead end, not a transient hiccup to show
+    // beside a form that can never be completed — the employee-count step
+    // below still renders with no schema behind it, and Continue leads to
+    // a blank step 1 with no way out. Show a clear terminal state instead.
+    if (schemaErr) {
+      return (
+        <main className="portal-page flex-1 max-w-[720px]">
+          <div className="card p-6 flex flex-col items-center text-center gap-3">
+            <AlertTriangle size={22} style={{ color: 'var(--gold)' }} />
+            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>{schemaErr}</p>
+            <button onClick={() => setShowForm(false)} className="btn-secondary mt-1">
+              Back
+            </button>
+          </div>
+        </main>
+      );
+    }
+
     return (
         <main className="portal-page flex-1 max-w-[720px]">
-
-          {schemaErr && (
-            <div className="card p-4 mb-4 flex items-center gap-2" style={{ background: 'rgba(217,68,68,0.06)' }}>
-              <AlertTriangle size={14} style={{ color: 'var(--red)' }} />
-              <p className="text-sm" style={{ color: 'var(--red)' }}>{schemaErr}</p>
-            </div>
-          )}
 
           {/* Progress bar */}
           <div className="w-full h-1.5 rounded-full mb-6" style={{ background: 'var(--surface-alt)' }}>
