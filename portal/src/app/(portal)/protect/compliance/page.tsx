@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import ComplianceStatusButton from '@/components/modules/ComplianceStatusButton';
 import { ShieldCheck, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Compliance' };
@@ -163,9 +162,6 @@ export default async function CompliancePage() {
                                   </div>
                                 </div>
                               </div>
-                              {eff !== 'complete' && (
-                                <ComplianceStatusButton itemId={ci.id} currentStatus={ci.status} />
-                              )}
                             </div>
                           </div>
                         );

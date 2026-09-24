@@ -198,7 +198,7 @@ Verified live (project `sbmekaviwkiyorvmtgcu`) after migration 078:
 hiring_stage:            submitted | in_progress | shortlist_ready | interview | offer | filled | cancelled
 candidate_client_status: pending | approved | rejected | info_requested | hired | shared
 doc_category:            contract | policy | letter | report | other | handbook
-user_role:               client_admin | client_user | tps_admin | tps_client | client_editor
+user_role:               client_admin | client_user | tps_admin | tps_client | client_editor | hs_provider
 ticket_status:           open | in_progress | resolved | closed
 ticket_priority:         low | normal | high | urgent
 compliance_status:       pending | in_review | complete | overdue
@@ -308,7 +308,6 @@ portal/src/
 │   │   ├── Sidebar.tsx          # nav with feature-flag gating + notification badges
 │   │   └── Topbar.tsx
 │   └── modules/
-│       ├── ComplianceStatusButton.tsx
 │       ├── ActionButtons.tsx
 │       ├── DocumentUpload.tsx
 │       └── ...
@@ -647,7 +646,7 @@ one of these defects compiled, rendered and reported success.
 ### The four CI guards — run them before merging
 
 ```
-bash scripts/check-shared-dupes.sh         # 20 byte-identical pairs across the two apps
+bash scripts/check-shared-dupes.sh         # 21 byte-identical pairs across the two apps
 bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
 bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
 bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
@@ -1722,3 +1721,53 @@ in rolled-back transactions) found:
 - **Still open (not this PR):** Next 14.2.4 predates the
   CVE-2025-29927 middleware-bypass fix (14.2.25). Vercel's edge
   mitigates it, so it bites only off Vercel; upgrade in its own PR.
+
+---
+
+## Defects under Health & Safety's foundations (fixed 2026-09-24, migrations 089-090)
+
+Found during H&S discovery. Every affected table was empty, which is
+the only reason none had been reported — each fails the first time
+anybody uses the feature. Probed in production before and after
+(`supabase/probes/089_hs_defect_fixes.sql`).
+
+- **Storage: any signed-in user could write into any company's folder**
+  in the `documents` bucket ("Authenticated upload to documents bucket"
+  checked only `athletes/`). Replaced by
+  `documents_client_insert_own_folder` (first folder = your company).
+  Staff keep `tps_write_storage`. Clients also can no longer drop files
+  into `reports/<their company>/`, which they could have used to plant
+  a "report".
+- **Clients could not open their own reports**: they are stored at
+  `reports/<company_id>/…` and the client read policy matched only a
+  first folder equal to the company. `documents_client_read_reports`.
+- **Every file upload orphaned its file.** `documents.file_url` and
+  `reports.file_url` were NOT NULL while every uploader now writes only
+  the storage key (the buckets are private; public URLs never resolved).
+  Now nullable with a CHECK that one of url / key is present.
+- **Clients could not add documents at all**: no client INSERT policy.
+  `client_documents_insert` requires the caller's company, their own
+  uid as `uploaded_by`, a file in their own folder, and no approval
+  fields — a client cannot upload a document already signed off.
+- **`compliance_items.notes` did not exist** while the portal register
+  and the admin client tab selected it, so both lists were always empty.
+- **Admin `/health` filtered `status <> 'completed'`**, a value
+  `compliance_status` never had (22P02; the overdue column was always
+  empty). `COMPLIANCE_STATUSES` is now a tuple in `statusMaps.ts` and
+  `complianceStatusLiterals.test.ts` checks every status literal in any
+  `compliance_items` chain in both apps against it.
+- **Employee-document upload always failed** (`file_size` is not a
+  column on `employee_documents`) and left the stored file behind. The
+  column is gone from the insert, `uploaded_by` is recorded, and a
+  failed insert removes the file.
+- **The client "mark compliance done" button could never work** (no
+  client UPDATE policy) and is removed. The register is recorded by
+  staff and providers from Phase 1 on.
+- **Deleting a client left files behind**: `wipeCompany` never listed
+  `documents/reports/<id>` or the `athlete-cvs` bucket.
+- `lib/storage/fileKinds.ts` is now a shared-dupe pair (it already was
+  byte-identical, by hand).
+- **090 adds `user_role` 'hs_provider'** alone in its own migration (a
+  value added by ADD VALUE cannot be used in the same transaction).
+  Inert until staff grant it — 088 refuses any non-staff role change or
+  profile insert. `USER_ROLES` / `ROLE_LABELS` carry it in both apps.

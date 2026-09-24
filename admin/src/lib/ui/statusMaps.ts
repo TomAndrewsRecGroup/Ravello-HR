@@ -71,8 +71,19 @@ export type DocCategory = typeof DOC_CATEGORIES[number];
 
 export const USER_ROLES = [
   'tps_admin', 'tps_client', 'client_admin', 'client_editor', 'client_user',
+  'hs_provider', // 090: an external Health & Safety provider's user
 ] as const;
 export type UserRole = typeof USER_ROLES[number];
+
+// compliance_status. Not yet used to type COMPLIANCE_STATUS_LABELS
+// (which also labels legacy spellings); it is what
+// complianceStatusLiterals.test.ts checks every query literal against —
+// admin /health filtered on 'completed', a value this enum never had, so
+// the query 22P02'd and the overdue column was always empty.
+export const COMPLIANCE_STATUSES = [
+  'pending', 'in_review', 'complete', 'overdue',
+] as const;
+export type ComplianceStatus = typeof COMPLIANCE_STATUSES[number];
 
 /* ─── Hiring ──────────────────────────────────────────────────── */
 
@@ -282,6 +293,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   client_admin:  'Admin',
   client_editor: 'Editor',
   client_user:   'User',
+  hs_provider:   'H&S Provider',
 };
 
 /* ─── Athletes To Industry interest status ────────────────────── */

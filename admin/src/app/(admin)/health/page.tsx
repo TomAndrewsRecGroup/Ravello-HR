@@ -50,7 +50,7 @@ export default async function HealthStatusPage() {
     rlsAuditRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,slug,name,active').order('name'),
-    supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'completed'),
+    supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'complete'),
     supabase.from('tickets').select('company_id').in('status', ['open', 'in_progress']),
     supabase.from('requisitions').select('company_id,updated_at,stage').not('stage', 'in', '(filled,cancelled)').lt('updated_at', fortnightAgo),
     computeIvylensHealth(supabase),

@@ -73,18 +73,24 @@ export async function POST(request: NextRequest) {
   // wrong answer for nobody. Left NULL; readers fall back to it only for
   // rows that genuinely carry an operator-pasted external link.
 
+  // No file_size: employee_documents has no such column, and sending it
+  // failed EVERY insert with PGRST204 after the file had uploaded.
   const { data: row, error: insErr } = await sb.from('employee_documents').insert({
     company_id,
     employee_name,
     doc_type,
     title:             title || file.name,
     file_storage_path: path,         // canonical
-    file_size:         file.size,
     expiry_date,
     status:            'active',
+    uploaded_by:       auth.userId,
   }).select('id').single();
 
   if (insErr) {
+    // The object is already stored. Without a row nothing references it,
+    // nothing can sign it and wipeCompany is the only thing that would
+    // ever find it, so take it back out.
+    await sb.storage.from('documents').remove([path]);
     return NextResponse.json({ error: `DB insert failed: ${insErr.message}` }, { status: 500 });
   }
 

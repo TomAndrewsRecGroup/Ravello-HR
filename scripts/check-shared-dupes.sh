@@ -38,6 +38,7 @@ PAIRS=(
   "admin/src/components/brand/BrandIntro.tsx|portal/src/components/brand/BrandIntro.tsx"
   "admin/src/components/brand/BrandIntro.module.css|portal/src/components/brand/BrandIntro.module.css"
   "admin/src/lib/auth/existingInvitee.ts|portal/src/lib/auth/existingInvitee.ts"
+  "admin/src/lib/storage/fileKinds.ts|portal/src/lib/storage/fileKinds.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
