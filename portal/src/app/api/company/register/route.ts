@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseBody } from '@/lib/validation/parseBody';
 import { optionalEmail, optionalShortText, shortText, smallCount, z } from '@/lib/validation/primitives';
 import { ivylensRequest } from '@/lib/ivylens';
-import { getSessionProfile } from '@/lib/supabase/server';
+import { requireLiveSession } from '@/lib/auth/liveSession';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
 
 // POST /api/company/register
@@ -20,8 +20,10 @@ const RegisterSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { user, companyId } = await getSessionProfile();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Live check: the company write below uses the service role.
+    const live = await requireLiveSession();
+    if (!live) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const companyId = live.companyId;
 
     const parsed = await parseBody(req, RegisterSchema);
     if (!parsed.ok) return parsed.response;

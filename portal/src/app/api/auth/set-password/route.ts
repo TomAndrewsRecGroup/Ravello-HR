@@ -1,17 +1,23 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { assertBodySize } from '@/lib/http/bodySize';
+import { normaliseAccessToken, redeemAccessToken } from '@/lib/auth/accessTokens';
 
 export const runtime = 'nodejs';
 
 /**
  * Atomically consume a 7-day invite token and set the user's password.
  *
- * The CAS (UPDATE … WHERE invite_token = ? AND expires > now()
- * RETURNING) makes this single-use under contention — a fast double-
- * click can't burn the token twice. After the consume, we set the
- * password via auth.admin.updateUserById, which is the only Supabase
- * call here that needs the service role.
+ * The claim (DELETE … WHERE token_hash = sha256(token) AND not expired
+ * RETURNING, in redeemAccessToken) makes this single-use under
+ * contention — a fast double-click can't burn the token twice — and
+ * burns the account's other outstanding links with it. After the
+ * claim, we set the password via auth.admin.updateUserById.
+ *
+ * Tokens live hashed in profile_access_tokens (migration 091), which
+ * only the service role can read. Until 2026-09-24 they sat in plain
+ * text in profiles.invite_token, where a client_admin could read a
+ * colleague's reset token and choose their password.
  *
  * Returns the user's email so the client can immediately sign in
  * with signInWithPassword and avoid the magic-link redirect dance.
@@ -27,10 +33,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const token    = (body.token ?? '').trim();
+  const token    = normaliseAccessToken(body.token);
   const password = (body.password ?? '').toString();
 
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
+  if (!token) {
     return NextResponse.json({ error: 'Invalid token format.' }, { status: 400 });
   }
   if (password.length < 8) {
@@ -57,23 +63,21 @@ export async function POST(req: NextRequest) {
   });
 
   // Atomic consume: race-safe single-use.
-  const nowIso = new Date().toISOString();
-  const { data: claimed, error: claimErr } = await sb
-    .from('profiles')
-    .update({ invite_token: null, invite_token_expires_at: null })
-    .eq('invite_token', token)
-    .gt('invite_token_expires_at', nowIso)
-    .select('id, email')
-    .maybeSingle();
-
-  if (claimErr) {
-    console.error('[set-password] CAS update failed:', claimErr.message);
+  const redeemed = await redeemAccessToken(sb, token);
+  if (redeemed && 'error' in redeemed) {
+    console.error('[set-password] token claim failed:', redeemed.error);
     return NextResponse.json({ error: 'Could not validate link.' }, { status: 500 });
   }
-  if (!claimed) {
+  if (!redeemed) {
     return NextResponse.json({
       error: 'This activation link has already been used or has expired. Ask Core OS 360 for a fresh link.',
     }, { status: 410 });
+  }
+  const { data: claimed, error: profErr } = await sb
+    .from('profiles').select('id, email').eq('id', redeemed.profileId).maybeSingle();
+  if (profErr || !claimed) {
+    console.error('[set-password] profile read failed:', profErr?.message ?? 'no profile');
+    return NextResponse.json({ error: 'Could not find the account for this link.' }, { status: 500 });
   }
 
   // Set the password.

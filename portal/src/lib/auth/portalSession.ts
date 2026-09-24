@@ -31,6 +31,19 @@ export interface PortalSessionPayload {
 
 const COOKIE_NAME = 'tps_portal_session';
 
+/**
+ * How long a signed session is trusted, SERVER-side. The browser drops
+ * the cookie after this too (the middleware sets maxAge from it), but
+ * that is the browser's choice: until 2026-09-24 nothing here checked
+ * `iat`, so a cookie value copied out of devtools verified for ever —
+ * a user deleted, demoted or moved months ago could replay it, with no
+ * Supabase session at all, against every route that trusts
+ * getSessionProfile(). Now a cookie older than this, or claiming to be
+ * issued in the future, does not verify, and the middleware falls
+ * through to a real auth.getUser().
+ */
+export const PORTAL_SESSION_TTL_SECONDS = 60 * 15;
+
 function b64urlEncode(bytes: Uint8Array): string {
   let s = '';
   for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
@@ -100,7 +113,10 @@ export async function signPortalSession(payload: PortalSessionPayload): Promise<
  * null on any tamper/missing-secret/parse failure — the caller MUST
  * fall through to a fresh auth round-trip in that case.
  */
-export async function verifyPortalSession(raw: string | undefined | null): Promise<PortalSessionPayload | null> {
+export async function verifyPortalSession(
+  raw: string | undefined | null,
+  nowSeconds: number = Math.floor(Date.now() / 1000),
+): Promise<PortalSessionPayload | null> {
   if (!raw) return null;
   const secret = getSecret();
   if (!secret) return null;
@@ -121,8 +137,14 @@ export async function verifyPortalSession(raw: string | undefined | null): Promi
   const expectedSig = await hmac(secret, payloadBytes);
   if (!timingSafeEqual(sigBytes, expectedSig)) return null;
 
+  let payload: PortalSessionPayload;
   try {
-    const json = new TextDecoder().decode(payloadBytes);
-    return JSON.parse(json) as PortalSessionPayload;
+    payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as PortalSessionPayload;
   } catch { return null; }
+
+  // A signature proves who MINTED the cookie, not that it is still true.
+  if (typeof payload?.iat !== 'number') return null;
+  if (payload.iat > nowSeconds + 60) return null;                            // issued in the future
+  if (nowSeconds - payload.iat > PORTAL_SESSION_TTL_SECONDS) return null;   // past its window
+  return payload;
 }

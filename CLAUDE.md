@@ -198,7 +198,7 @@ Verified live (project `sbmekaviwkiyorvmtgcu`) after migration 078:
 hiring_stage:            submitted | in_progress | shortlist_ready | interview | offer | filled | cancelled
 candidate_client_status: pending | approved | rejected | info_requested | hired | shared
 doc_category:            contract | policy | letter | report | other | handbook
-user_role:               client_admin | client_user | tps_admin | tps_client | client_editor
+user_role:               client_admin | client_user | tps_admin | tps_client | client_editor | hs_provider
 ticket_status:           open | in_progress | resolved | closed
 ticket_priority:         low | normal | high | urgent
 compliance_status:       pending | in_review | complete | overdue
@@ -308,7 +308,6 @@ portal/src/
 │   │   ├── Sidebar.tsx          # nav with feature-flag gating + notification badges
 │   │   └── Topbar.tsx
 │   └── modules/
-│       ├── ComplianceStatusButton.tsx
 │       ├── ActionButtons.tsx
 │       ├── DocumentUpload.tsx
 │       └── ...
@@ -647,7 +646,7 @@ one of these defects compiled, rendered and reported success.
 ### The four CI guards — run them before merging
 
 ```
-bash scripts/check-shared-dupes.sh         # 20 byte-identical pairs across the two apps
+bash scripts/check-shared-dupes.sh         # 22 byte-identical pairs across the two apps
 bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
 bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
 bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
@@ -1722,3 +1721,136 @@ in rolled-back transactions) found:
 - **Still open (not this PR):** Next 14.2.4 predates the
   CVE-2025-29927 middleware-bypass fix (14.2.25). Vercel's edge
   mitigates it, so it bites only off Vercel; upgrade in its own PR.
+
+---
+
+## Defects under Health & Safety's foundations (fixed 2026-09-24, migrations 089-090)
+
+Found during H&S discovery. Every affected table was empty, which is
+the only reason none had been reported — each fails the first time
+anybody uses the feature. Probed in production before and after
+(`supabase/probes/089_hs_defect_fixes.sql`).
+
+- **Storage: any signed-in user could write into any company's folder**
+  in the `documents` bucket ("Authenticated upload to documents bucket"
+  checked only `athletes/`). Replaced by
+  `documents_client_insert_own_folder` (first folder = your company).
+  Staff keep `tps_write_storage`. Clients also can no longer drop files
+  into `reports/<their company>/`, which they could have used to plant
+  a "report".
+- **Clients could not open their own reports**: they are stored at
+  `reports/<company_id>/…` and the client read policy matched only a
+  first folder equal to the company. `documents_client_read_reports`.
+- **Every file upload orphaned its file.** `documents.file_url` and
+  `reports.file_url` were NOT NULL while every uploader now writes only
+  the storage key (the buckets are private; public URLs never resolved).
+  Now nullable with a CHECK that one of url / key is present.
+- **Clients could not add documents at all**: no client INSERT policy.
+  `client_documents_insert` requires the caller's company, their own
+  uid as `uploaded_by`, a file in their own folder, and no approval
+  fields — a client cannot upload a document already signed off.
+- **`compliance_items.notes` did not exist** while the portal register
+  and the admin client tab selected it, so both lists were always empty.
+- **Admin `/health` filtered `status <> 'completed'`**, a value
+  `compliance_status` never had (22P02; the overdue column was always
+  empty). `COMPLIANCE_STATUSES` is now a tuple in `statusMaps.ts` and
+  `complianceStatusLiterals.test.ts` checks every status literal in any
+  `compliance_items` chain in both apps against it.
+- **Employee-document upload always failed** (`file_size` is not a
+  column on `employee_documents`) and left the stored file behind. The
+  column is gone from the insert, `uploaded_by` is recorded, and a
+  failed insert removes the file.
+- **The client "mark compliance done" button could never work** (no
+  client UPDATE policy) and is removed. The register is recorded by
+  staff and providers from Phase 1 on.
+- **Deleting a client left files behind**: `wipeCompany` never listed
+  `documents/reports/<id>` or the `athlete-cvs` bucket.
+- `lib/storage/fileKinds.ts` is now a shared-dupe pair (it already was
+  byte-identical, by hand).
+- **090 adds `user_role` 'hs_provider'** alone in its own migration (a
+  value added by ADD VALUE cannot be used in the same transaction).
+  Inert until staff grant it — 088 refuses any non-staff role change or
+  profile insert. `USER_ROLES` / `ROLE_LABELS` carry it in both apps.
+
+---
+
+## The second security review (2026-09-24, migrations 091-093)
+
+A second adversarial round, run on the merged 088 hotfix, found five
+more. Each was verified live (rolled-back probes in `supabase/probes/`)
+or in the code before fixing.
+
+- **Set-password tokens were readable.** They sat in plain text in
+  `profiles.invite_token`, and `client_profiles_admin_manage` lets a
+  client_admin SELECT every profile in their company. So when staff sent
+  an ACTIVE user a reset, any admin there could read the token and
+  choose that colleague's password. And because unredeemed tokens were
+  never cleared, "holds a token" had come to mean "pending invite", so
+  the portal's resend path would mint fresh links for active colleagues.
+  - Tokens now live in **`profile_access_tokens` as SHA-256 only**, RLS
+    on and NO policies (service role only). `lib/auth/accessTokens.ts`
+    (shared pair) mints, peeks and redeems. Redeeming is a
+    `DELETE … RETURNING`, so it's single-use, and it burns the account's
+    other links. An account may hold several live links, so a resend no
+    longer kills the one already in someone's inbox.
+  - **"Pending" means never signed in** (`auth.users.last_sign_in_at`),
+    read with `auth.admin.getUserById`.
+  - **The portal never returns a set-password link to a client
+    inviter.** A failed email is a 502 the inviter sees (the UI used to
+    say "sent" regardless), and retrying is safe: the account now
+    exists, has never signed in and is in the inviter's company, so the
+    retry takes the resend path. A returned link would let a client set
+    the password on an account in someone else's name, and an email
+    failure can be forced.
+  - **Every refusal of an existing account gives a client the same
+    answer.** Staff, another client, an active colleague: one generic
+    409, with the reason logged server-side. At the seat cap, an
+    existing outside address and an unknown one both get
+    `seat_cap_reached`. The distinct messages used to tell one client
+    which addresses belong to other clients or to staff. The seat count
+    runs before the lookup for that reason, and the route is
+    rate-limited (`limiters.account`).
+  - **Interim, applied 2026-09-24:** the one plain-text token left in
+    production (expired) was cleared by hand, so the live code's
+    token-means-pending path had nothing to re-arm before the deploy.
+  - **092 must be applied AFTER this deploys.** It re-copies any
+    late-minted tokens and clears `profiles.invite_token`; before the
+    deploy, the live code still redeems from that column.
+  - The admin resend-invite and reset-password routes used to return a
+    link whose token was never saved when the email failed: a dead link
+    handed to staff. They now mint first, so the link works.
+- **The portal session cookie never expired server-side.**
+  `verifyPortalSession()` checked the signature but never `iat`. A
+  cookie value copied out of devtools therefore verified for ever: a
+  user deleted, demoted or moved months ago could replay it, with no
+  Supabase session, past the middleware fast path.
+  - It now refuses a cookie older than `PORTAL_SESSION_TTL_SECONDS`
+    (15 min), dated in the future, or missing `iat`.
+  - Routes that write with the service role no longer trust the cookie
+    at all. `lib/auth/liveSession.ts` `requireLiveSession()` verifies
+    the JWT with `auth.getUser()` and reads role and company fresh via
+    `get_my_role` / `get_my_profile`. Used by the portal invite,
+    employee leave-token regenerate, and IvyLens register/assessment.
+  - **Rule: a service-role route uses `requireLiveSession()`, never
+    `getSessionProfile()`.** RLS and 088 do not see service-role writes,
+    so the route is the only boundary.
+- **Portal Manatal move-stage moved ANY match in the account.** The only
+  check was that the caller's company had a Manatal id; the PATCH uses
+  the platform key, and the response echoed the candidate's name and
+  email. The match must now be in the caller's own
+  `getManatalMatches(manatalId)` set and the stage must be real. The
+  response no longer carries the upstream record.
+- **`prune_latest_updates()` was executable by anon.** 060's
+  `REVOKE … FROM PUBLIC` removed nothing, because Supabase grants
+  EXECUTE to anon and authenticated BY NAME. **Revoke from `PUBLIC,
+  anon, authenticated` explicitly** for any SECURITY DEFINER function
+  that isn't meant for clients (093).
+- **`bd_leads_view` bypassed the staff-only RLS** under it: it was owned
+  by postgres, not security_invoker, and granted to anon. It is now
+  security_invoker with those grants revoked (093). Nothing reads it.
+- **088's allow-list was per column, not per row.** A client_admin could
+  still set a COLLEAGUE's consent or erasure-request fields. 093 applies
+  the self-service list to your own profile only. On anyone else's
+  profile, a non-staff caller can change nothing.
+- `securityHardeningSql.test.ts` now pins the LATEST migration that
+  defines each guard function (093 replaced 088's), not the first.

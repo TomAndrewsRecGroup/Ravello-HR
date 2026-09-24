@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
-  PORTAL_SESSION_COOKIE, signPortalSession, verifyPortalSession,
+  PORTAL_SESSION_COOKIE, PORTAL_SESSION_TTL_SECONDS, signPortalSession, verifyPortalSession,
 } from '@/lib/auth/portalSession';
 import { disabledFlagFor, requiredFlagsFor } from '@/lib/moduleAccess';
 
@@ -37,8 +37,9 @@ function redirectKeepingCookies(request: NextRequest, from: NextResponse, pathna
 
 // 15-minute TTL: feature-flag changes made in the admin portal won't
 // be visible to an active portal session until this cookie expires
-// or the user triggers a fresh auth (sign-out / sign-in).
-const SESSION_TTL = 60 * 15;
+// or the user triggers a fresh auth (sign-out / sign-in). The same
+// window is enforced server-side by verifyPortalSession().
+const SESSION_TTL = PORTAL_SESSION_TTL_SECONDS;
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;

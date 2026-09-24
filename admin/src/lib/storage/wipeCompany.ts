@@ -12,6 +12,13 @@ const BUCKET_PREFIXES: Array<{ bucket: string; prefix: (companyId: string) => st
   { bucket: 'documents', prefix: (id) => `${id}` },
   // documents/athletes/<company_id>/<athlete_id>/<file>
   { bucket: 'documents', prefix: (id) => `athletes/${id}` },
+  // documents/reports/<company_id>/<file> — where ReportUploadForm
+  // actually writes. The `reports` bucket entry below predates it.
+  { bucket: 'documents', prefix: (id) => `reports/${id}` },
+  // athlete-cvs/<company_id>/<athlete_id>/<file> — the CV bucket since
+  // the athlete CV migration; never listed here until 2026-09-24, so a
+  // deleted client's athlete CVs survived the delete.
+  { bucket: 'athlete-cvs', prefix: (id) => `${id}` },
   // reports/<company_id>/...
   { bucket: 'reports',   prefix: (id) => `${id}` },
   // cvs/<company_id>/...

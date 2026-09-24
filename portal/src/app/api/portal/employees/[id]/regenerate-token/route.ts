@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSessionProfile } from '@/lib/supabase/server';
+import { requireLiveSession } from '@/lib/auth/liveSession';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,8 +16,12 @@ interface Ctx { params: { id: string } }
 // migration default so format stays consistent.
 
 export async function POST(_request: NextRequest, { params }: Ctx) {
-  const { user, role, companyId } = await getSessionProfile();
-  if (!user) {
+  // Live check, not the session cookie: the write below uses the service
+  // role, so this route is the only thing scoping it to the caller.
+  const live = await requireLiveSession();
+  const role = live?.role ?? '';
+  const companyId = live?.companyId ?? '';
+  if (!live || !companyId) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
   if (role !== 'client_admin' && role !== 'client_editor') {

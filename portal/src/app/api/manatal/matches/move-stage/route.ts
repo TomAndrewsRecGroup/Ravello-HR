@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { updateMatchStage, isManatalConfigured } from '@/lib/manatal';
+import { getManatalMatches, getManatalStages, updateMatchStage, isManatalConfigured } from '@/lib/manatal';
 
 // POST /api/manatal/matches/move-stage
 // Moves a candidate to a new pipeline stage in Manatal and notifies admin.
@@ -31,11 +31,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No Manatal client ID configured' }, { status: 400 });
   }
 
-  const body = await req.json();
-  const { matchId, stageId, stageName, candidateName, jobName } = body;
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const matchId = Number(body?.matchId);
+  const stageId = Number(body?.stageId);
+  const { stageName, candidateName, jobName } = body ?? {};
 
-  if (!matchId || !stageId) {
+  if (!Number.isInteger(matchId) || matchId <= 0 || !Number.isInteger(stageId) || stageId <= 0) {
     return NextResponse.json({ error: 'matchId and stageId are required' }, { status: 400 });
+  }
+
+  // The match must belong to THIS client's Manatal organisation. The PATCH
+  // below uses the platform-wide API key, so without this any signed-in
+  // client could move — and read back — any match in the whole account by
+  // guessing ids, including other clients' candidates and the referral
+  // pipeline's applicants. Same set the GET route shows this client.
+  const [ownMatches, stages] = await Promise.all([getManatalMatches(manatalId), getManatalStages()]);
+  if (!ownMatches.some(m => m.id === matchId)) {
+    return NextResponse.json({ error: 'Match not found' }, { status: 404 });
+  }
+  if (!stages.some(s => s.id === stageId)) {
+    return NextResponse.json({ error: 'Unknown stage' }, { status: 400 });
   }
 
   // Move the candidate in Manatal
@@ -64,5 +80,7 @@ export async function POST(req: NextRequest) {
     await supabase.from('notifications').insert(notifications);
   }
 
-  return NextResponse.json({ success: true, match: updated });
+  // Not the raw Manatal object: the client already has the match, and
+  // echoing the upstream record back is how this route leaked data.
+  return NextResponse.json({ success: true });
 }

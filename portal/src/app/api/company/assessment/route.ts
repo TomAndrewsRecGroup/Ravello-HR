@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ivylensRequest } from '@/lib/ivylens';
-import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireLiveSession } from '@/lib/auth/liveSession';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 
@@ -32,8 +33,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { user, companyId } = await getSessionProfile();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Live check: the company writes below use the service role.
+    const live = await requireLiveSession();
+    if (!live) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const companyId = live.companyId;
     if (!companyId) {
       return NextResponse.json({ error: 'No company associated' }, { status: 400 });
     }

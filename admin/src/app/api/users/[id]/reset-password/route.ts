@@ -3,6 +3,7 @@ import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimi
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
+import { mintAccessToken } from '@/lib/auth/accessTokens';
 import { auditLog } from '@/lib/audit';
 import { sendEmail, lastEmailError, passwordResetEmail } from '@/lib/email';
 
@@ -56,12 +57,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'User has no email on file' }, { status: 400 });
   }
 
-  // Mint a candidate token but DON'T persist it until Resend has
-  // accepted the email. If we wrote first and the email failed,
-  // the previously-issued reset/invite link would already be dead
-  // even though the recipient never got the new one.
-  const token   = crypto.randomUUID();
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  // A reset link, stored hashed (lib/auth/accessTokens). It does not
+  // revoke earlier links and does not touch the current password, so a
+  // failed send below costs nothing, and the link handed back on failure
+  // is a real one. (It used to be an unpersisted token: a dead link.)
+  const minted = await mintAccessToken(adminClient, userId, 'reset', auth.userId);
+  if ('error' in minted) {
+    return NextResponse.json({ error: `Could not create the reset link: ${minted.error}` }, { status: 500 });
+  }
+  const token = minted.token;
 
   // Reset uses the same direct set-password page as fresh invites
   // — both flows end with 'user types a password and is signed in'.
@@ -75,31 +79,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     resetUrl,
   }));
 
-  // Persist the token only on confirmed Resend acceptance.
-  if (result) {
-    const { error: tokenErr } = await adminClient
-      .from('profiles')
-      .update({
-        invite_token:            token,
-        invite_token_expires_at: expires,
-      })
-      .eq('id', userId);
-    if (tokenErr) {
-      auditLog({
-        action:      'user.password_reset_sent',
-        actor_id:    auth.userId,
-        target_id:   userId,
-        target_type: 'profile',
-        metadata:    { email: profile.email, email_sent: true, token_persist_failed: true, db_error: tokenErr.message },
-      });
-      return NextResponse.json({
-        success:       false,
-        email_sent:    true,
-        email_warning: `Email sent but token write failed: ${tokenErr.message}. Recipient's link will fail; please retry.`,
-      }, { status: 500 });
-    }
-  }
-
   auditLog({
     action:      'user.password_reset_sent',
     actor_id:    auth.userId,
@@ -111,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!result) {
     const last = lastEmailError();
     const reason = !process.env.RESEND_API_KEY
-      ? 'RESEND_API_KEY is not set on this Vercel project. No email was sent and no token was rotated; the user can keep using their existing password.'
+      ? 'RESEND_API_KEY is not set on this Vercel project. No email was sent. The link below works; their current password is unchanged until it is used.'
       : last
         ? `Resend rejected the send (HTTP ${last.status}) from "${last.from}": ${last.message}`
         : 'Resend rejected the send. Check the Vercel function logs for details.';
