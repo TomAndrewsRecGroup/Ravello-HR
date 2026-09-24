@@ -46,3 +46,8 @@ export function brandFromAddress(from: string | null | undefined): string {
   if (m && /people\s*system|^tps$/i.test(m[1].trim())) return `${BRAND_NAME} <${m[2].trim()}>`;
   return from;
 }
+
+/** Set by the login form just before it navigates in; the app layout
+ *  reads it to render the sign-in intro (components/brand/BrandIntro)
+ *  in the first paint, and the intro clears it. Short-lived by design. */
+export const BRAND_INTRO_COOKIE = 'cos360_intro';
