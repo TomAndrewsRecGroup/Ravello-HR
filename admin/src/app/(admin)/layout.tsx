@@ -8,6 +8,8 @@ import { ClientSwitcherProvider } from '@/components/layout/ClientSwitcher';
 import { ToastProvider } from '@/components/modules/Toast';
 import BrandIntro from '@/components/brand/BrandIntro';
 import { BRAND_INTRO_COOKIE } from '@/lib/brand';
+import { ADMIN_ROLE_COOKIE, verifyAdminRole } from '@/lib/auth/adminRoleCookie';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 const ALLOWED_ROLES = ['tps_admin'];
 
@@ -31,12 +33,24 @@ const fetchActiveCompanies = unstable_cache(
 );
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Middleware already validates auth + role and caches in tpo_admin_role cookie.
-  // Reading the cookie avoids 2 redundant DB calls (getUser + get_my_role) per page load.
+  // Middleware already validates auth + role and caches it in a SIGNED
+  // tpo_admin_role cookie (lib/auth/adminRoleCookie.ts). This is the
+  // second gate, not a copy of the first: it must hold on its own for
+  // any request the middleware did not see. So the cookie is accepted
+  // only for the user whose session this is (getUser verifies the JWT),
+  // and anything else falls back to the RPC. It never trusts the raw
+  // value, which any signed-in user could set by hand until 2026-09-24.
   const cookieStore = cookies();
-  const cachedRole = cookieStore.get('tpo_admin_role')?.value;
-
-  if (!cachedRole || !ALLOWED_ROLES.includes(cachedRole)) {
+  const supabase = createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login?reason=no-session');
+  const cached = await verifyAdminRole(cookieStore.get(ADMIN_ROLE_COOKIE)?.value, user.id);
+  let isStaff = !!cached && ALLOWED_ROLES.includes(cached.role);
+  if (!isStaff) {
+    const { data: role } = await supabase.rpc('get_my_role');
+    isStaff = typeof role === 'string' && ALLOWED_ROLES.includes(role);
+  }
+  if (!isStaff) {
     redirect('/auth/login?reason=unauthorised');
   }
 

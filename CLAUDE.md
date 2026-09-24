@@ -647,7 +647,7 @@ one of these defects compiled, rendered and reported success.
 ### The four CI guards — run them before merging
 
 ```
-bash scripts/check-shared-dupes.sh         # 13 byte-identical pairs across the two apps
+bash scripts/check-shared-dupes.sh         # 20 byte-identical pairs across the two apps
 bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
 bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
 bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
@@ -1613,3 +1613,112 @@ the platform comes into shot.
   `POST`, `runtime`, `maxDuration`, …). An exported constant from
   `send-qualified/route.ts` passed `tsc` and the tests and failed
   `next build`. Run a production build before pushing a new route.
+
+---
+
+## Any signed-in user could make themselves staff (fixed 2026-09-24)
+
+Found while planning Health & Safety provider logins, verified live and
+reproduced in a rolled-back transaction before fixing:
+
+- **`profiles_update` had no WITH CHECK, there was no trigger on
+  `profiles`, and `authenticated` holds UPDATE on `role` and
+  `company_id`.** `update({ role: 'tps_admin' })` on your own row from
+  the browser console succeeded, and `is_tps_staff()` then opened every
+  table. `company_id` could be pointed at another client the same way,
+  and a client_admin could promote a colleague.
+- **The admin app trusted an unsigned `tpo_admin_role` cookie.** The
+  middleware skipped the role check whenever it read `tps_admin`, and
+  `(admin)/layout.tsx` trusted it outright. Both apps share Supabase
+  auth, so any client user could set it in devtools and load staff
+  pages, some of which read with the service role. API routes calling
+  `requireStaff()` were safe; `raise-invoice`, which relied on the
+  middleware alone, was not.
+- **Clients could switch on paid modules:** `client_company_update`
+  allowed a client_admin to write `feature_flags`.
+
+### The first fix was broken the same day, four ways
+
+The first 088 guarded NAMED columns. An adversarial review (three
+lenses, each finding re-verified by a refuter, several reproduced live
+in rolled-back transactions) found:
+
+- **DELETE your profile, INSERT it again with another company.**
+  `profiles_insert` checks only `id = auth.uid()`; the guard's INSERT
+  branch looked only at role.
+- **Email squatting.** Set your own `profiles.email` to a new hire's
+  address. Both invite routes found an existing account BY
+  `profiles.email` and upserted company + role onto it with the service
+  role, which the guard exempts. You became that client's admin.
+- **Invite takeover.** A client_admin inviting a staff email demoted
+  that staff member to their client editor; inviting another client's
+  user moved them. The invite path is service role, so no trigger sees
+  it.
+- **`invite_token`, `manatal_client_id`, `ivylens_company_id` were
+  writable.** Set a colleague's token and redeem it at
+  `/api/auth/set-password`; repoint your company's Manatal or IvyLens
+  id and the server reads another client's data with the platform key.
+
+### The fix, and the traps in it
+
+- **Both guards are ALLOW-LISTS** (`self_service` in each function).
+  A non-staff caller may change only the columns the product lets a
+  client edit; every other column, including any added later, is
+  staff-only by default. Non-staff INSERT and DELETE on `profiles` are
+  refused outright (no client path does either). Applied 2026-09-24,
+  probed against production: twelve attacks blocked, name /
+  preferences / onboarding / company-settings edits still work, staff
+  and service-role writes unaffected.
+- **Widening an allow-list is a security decision.**
+  `securityHardeningSql.test.ts` pins both lists EXACTLY and scans every
+  portal `.update()` made with the user's own session: a column outside
+  the list fails the suite instead of 42501-ing a client's Save.
+  A write that genuinely needs a guarded column goes through the
+  service role in a route that takes the company from the SESSION
+  (`lib/supabase/service.ts`) — see `api/company/register` and
+  `/assessment`, which also now refuse an IvyLens id that is not the
+  one stored for the caller's company.
+- **Invites resolve an existing account in `auth.users`**
+  (`auth_user_id_by_email()`, service role only), never by
+  `profiles.email`, and `lib/auth/existingInvitee.ts` (shared pair)
+  decides what may happen to it: never moved between companies, never
+  demoted from a staff or provider role, and a client_admin may only
+  RESEND a pending invite in their own company. An existing account's
+  row is updated only while still in the target company. Route tests
+  drive both handlers against a stateful fake with the real unique
+  email index; the original code fails 3 (admin) and 4 (portal).
+- **The service role is exempt from every trigger.** Any route that
+  writes `profiles` or `companies` with it is its own security boundary
+  and needs the same care as a policy.
+- **A column REVOKE does nothing here.** `authenticated` has table-level
+  UPDATE, and column privileges only add to that. Guards are triggers.
+- **The triggers are SECURITY INVOKER and key on `current_user`.**
+  Through PostgREST that is `authenticated` or `anon`; the service role,
+  the SQL editor, auth's `handle_new_user` and DEFINER RPCs such as
+  `record_portal_login` are unaffected. `auth.uid() IS NULL` is the
+  wrong test: it is true for anon AND the service role.
+- **`lib/auth/adminRoleCookie.ts` signs the cached role** (HMAC over
+  `{userId, role, iat}`, env var `ADMIN_SESSION_SECRET`). A cookie
+  verifies only for the user it was minted for and only inside the
+  15-minute window. Without the secret nothing is signed and every
+  request re-checks via the RPC: slower, never open.
+- **The layout is a second gate, not a copy of the first.** It binds
+  the cookie to `getUser()` itself. The middleware matcher used to skip
+  any path ending in `.png`/`.svg`/`.woff2`…, which included
+  `/clients/x.png` — so for those requests the layout WAS the only
+  gate, and it did not bind. Static files are now excluded by folder
+  (`brand/`, `fonts/`), with a test on page paths ending in extensions.
+- **A failed role check is not a "no".** A transient `get_my_role`
+  error now sends staff to sign in with the session intact; it used to
+  call `signOut()`, whose default scope is GLOBAL. A refused non-staff
+  user is signed out with `scope: 'local'` — both apps share auth, and
+  global would end a client's portal sessions everywhere.
+- **`raise-invoice` checks `requireStaff()` itself** and takes
+  `created_by` from the session; it read an `x-tps-admin-id` header
+  that nothing set and anyone could.
+- **Supabase Auth → "Allow new users to sign up" should be OFF.**
+  `handle_new_user` gives every auth user a profile; invites use
+  `auth.admin.createUser` and are unaffected.
+- **Still open (not this PR):** Next 14.2.4 predates the
+  CVE-2025-29927 middleware-bypass fix (14.2.25). Vercel's edge
+  mitigates it, so it bites only off Vercel; upgrade in its own PR.

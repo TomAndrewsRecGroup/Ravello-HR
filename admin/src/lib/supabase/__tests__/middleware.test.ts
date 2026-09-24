@@ -100,4 +100,10 @@ describe('static app files bypass the auth middleware', async () => {
   it.each(['/dashboard', '/auth/login', '/api/anything'])('%s still is', (p) => {
     expect(matcher.test(p)).toBe(true);
   });
+  // The exclusion used to be by EXTENSION, which also skipped the
+  // middleware for any dynamic page whose last segment ended in one.
+  it.each(['/clients/x.png', '/hiring/abc.svg', '/support/t.woff2', '/dev-plans/p.webp'])(
+    'a page path ending in a file extension (%s) still runs through the middleware', (p) => {
+      expect(matcher.test(p)).toBe(true);
+    });
 });

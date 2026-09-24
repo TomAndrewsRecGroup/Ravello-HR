@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { ADMIN_ROLE_COOKIE } from '@/lib/auth/adminRoleCookie';
 
 async function handleSignOut(request: Request) {
   const cookieStore = cookies();
@@ -19,7 +20,7 @@ async function handleSignOut(request: Request) {
   // 303 See Other so POST → GET on /auth/login. The default 307
   // would forward the POST and trigger 405 on the login page.
   const res = NextResponse.redirect(new URL('/auth/login', request.url), 303);
-  res.cookies.set('tpo_admin_role', '', {
+  res.cookies.set(ADMIN_ROLE_COOKIE, '', {
     httpOnly: true, sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     maxAge: 0, path: '/',

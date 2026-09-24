@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ivylensRequest } from '@/lib/ivylens';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 5 }); // 5 assessments per minute
@@ -43,7 +44,21 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues.map(i => i.message).join('; ') }, { status: 400 });
     }
-    const { company_id: ivylensCompanyId, form_responses, employee_count } = parsed.data;
+    const { company_id: bodyIvylensId, form_responses, employee_count } = parsed.data;
+
+    // The IvyLens company is the one STORED for this client, never one the
+    // body names: otherwise any client could submit an assessment into
+    // another company's IvyLens record. register runs first and stores it.
+    const service = createServiceSupabaseClient();
+    const { data: own } = await service
+      .from('companies').select('ivylens_company_id').eq('id', companyId).maybeSingle();
+    const ivylensCompanyId: string | null = own?.ivylens_company_id ?? null;
+    if (!ivylensCompanyId) {
+      return NextResponse.json({ error: 'Register your company with Friction Lens first.' }, { status: 409 });
+    }
+    if (bodyIvylensId && bodyIvylensId !== ivylensCompanyId) {
+      return NextResponse.json({ error: 'That assessment does not belong to your company.' }, { status: 403 });
+    }
 
     // Submit to IvyLens
     const { data: result, error: apiError } = await ivylensRequest('/company/assessment', {
@@ -81,14 +96,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dbErr.message }, { status: 500 });
     }
 
-    // Update company friction_band
-    await supabase
+    // Update company friction_band. Service role: 088 keeps friction_* and
+    // ivylens_* out of a client's own writes.
+    const { error: bandErr, count: bandSaved } = await service
       .from('companies')
       .update({
         friction_band: result?.overall?.band ?? null,
         friction_assessment_id: assessment?.id ?? null,
-      })
+      }, { count: 'exact' })
       .eq('id', companyId);
+    if (bandErr || !bandSaved) {
+      console.error('[assessment] could not store friction_band on the company:', bandErr ?? 'no row matched');
+    }
 
     // Generate friction items (things they don't have) for admin checklist
     if (result?.dimensions) {
