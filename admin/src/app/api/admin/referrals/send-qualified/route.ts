@@ -27,7 +27,7 @@ export const maxDuration = 120;
 
 /** One batch. Far below the 1,000-row read cap, and at ~1s a send it
  *  finishes well inside maxDuration. Anything left is a second click. */
-export const SEND_QUALIFIED_BATCH = 50;
+const SEND_QUALIFIED_BATCH = 50;
 const MAX_CONSECUTIVE_FAILURES = 3;
 
 const Schema = z.object({
