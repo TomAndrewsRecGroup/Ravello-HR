@@ -12,6 +12,10 @@ const ORDER = [
   '/lead/policy-acknowledgements',
   '/lead/learning',
   '/lead/hr-reports',
+  '/lead/absence',
+  '/lead/employee-docs',
+  '/lead/offboarding',
+  '/lead/hr-dashboard',
 ];
 
 export default async function LeadIndexPage() {

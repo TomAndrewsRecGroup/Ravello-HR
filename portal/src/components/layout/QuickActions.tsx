@@ -20,7 +20,7 @@ const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.Ele
   upload_doc:     { label: 'Upload Document', href: '/lead/documents',        icon: FileText,     color: 'var(--blue)' },
   add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,     color: 'var(--teal)' },
   view_calendar:  { label: 'View Calendar',   href: '/calendar',              icon: CalendarDays, color: '#6366F1' },
-  compliance:     { label: 'Compliance',      href: '/protect/compliance',    icon: ShieldCheck,  color: 'var(--danger)' },
+  compliance:     { label: 'H&S Register',    href: '/protect/compliance',    icon: ShieldCheck,  color: 'var(--danger)' },
   learning:       { label: 'Learning',        href: '/lead/learning',         icon: BookOpen,     color: '#8B5CF6' },
 };
 

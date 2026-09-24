@@ -9,6 +9,12 @@ interface Tab {
 
 export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
   const path = usePathname();
+  // One winner, the longest matching tab: a section index tab such as
+  // /protect (Overview) is a prefix of every other tab and would
+  // otherwise light up alongside whichever one is open.
+  const current = tabs
+    .filter(t => path === t.href || path.startsWith(t.href + '/'))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <div
@@ -16,11 +22,12 @@ export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
       style={{ borderBottom: '1px solid var(--line)' }}
     >
       {tabs.map(tab => {
-        const active = path === tab.href || path.startsWith(tab.href + '/');
+        const active = tab.href === current;
         return (
           <Link prefetch={false}
             key={tab.href}
             href={tab.href}
+            aria-current={active ? 'page' : undefined}
             className="px-4 py-2.5 text-sm font-medium transition-colors"
             style={{
               color: active ? 'var(--purple)' : 'var(--ink-faint)',

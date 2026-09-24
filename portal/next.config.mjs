@@ -1,4 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { PORTAL_REDIRECTS } from './redirects.mjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -12,6 +13,9 @@ const nextConfig = {
     instrumentationHook: true,
     // Tree-shake lucide-react icons — only bundle icons actually imported
     optimizePackageImports: ['lucide-react'],
+  },
+  async redirects() {
+    return PORTAL_REDIRECTS;
   },
   async headers() {
     return [

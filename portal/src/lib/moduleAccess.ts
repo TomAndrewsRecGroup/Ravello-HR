@@ -33,13 +33,20 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/hire/metrics':                ['metrics'],
   '/hire/friction-lens':          ['friction_lens'],
 
-  // LEAD
+  // LEAD — the HR half. Absence, employee documents, offboarding and
+  // the HR dashboard moved here from PROTECT on 2026-09-24 when PROTECT
+  // became Health & Safety; their old /protect/* addresses redirect
+  // (portal/redirects.mjs).
   '/lead':                        ['lead'],
   '/lead/employee-records':       ['lead', 'employee_records'],
   '/lead/org-chart':              ['lead', 'org_chart'],
   '/lead/onboarding':             ['lead', 'onboarding'],
+  '/lead/offboarding':            ['lead', 'offboarding'],
+  '/lead/absence':                ['lead', 'absence'],
   '/lead/documents':              ['lead', 'documents'],
+  '/lead/employee-docs':          ['lead', 'employee_docs'],
   '/lead/policy-acknowledgements':['lead', 'policy_acknowledgement'],
+  '/lead/hr-dashboard':           ['lead', 'protect_dashboard'],
   '/lead/hr-reports':             ['lead', 'hr_reports'],
   '/lead/reviews':                ['lead', 'reviews'],
   '/lead/training':               ['lead', 'training'],
@@ -47,13 +54,10 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/lead/roadmap':                ['lead', 'roadmap'],
   '/lead/learning':               ['learning'],
 
-  // PROTECT
+  // PROTECT — Health & Safety
   '/protect':                     ['protect'],
   '/protect/compliance':          ['protect', 'compliance'],
-  '/protect/absence':             ['protect', 'absence'],
-  '/protect/employee-docs':       ['protect', 'employee_docs'],
-  '/protect/offboarding':         ['protect', 'offboarding'],
-  '/protect/hr-dashboard':        ['protect', 'protect_dashboard'],
+  '/protect/timeline':            ['protect'],
   '/protect/reports':             ['protect', 'protect_reports'],
 
   // Everything else that is a module
