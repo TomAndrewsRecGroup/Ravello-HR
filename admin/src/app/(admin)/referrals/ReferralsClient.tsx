@@ -56,6 +56,8 @@ interface Props {
   grandTotal:  number;
   /** How many rows sit in the review queue, across the whole book. */
   queueCount:  number;
+  /** Rows at `qualified` across the whole book — held by dry run, never sent. */
+  qualifiedCount: number;
   /** The sort/filter this page was fetched with — sorting and filtering
    *  happen server-side (see migration 086: PostgREST cannot order a
    *  top-level resource by a joined column, so candidate name and role
@@ -90,13 +92,46 @@ const SORT_LABEL: Record<Exclude<SortKey, 'created_at'>, string> = {
 const ACTIONABLE = new Set(['review_pending', 'qualified']);
 
 export default function ReferralsClient({
-  rows, configs, dryRunCount, page, pageSize, total, grandTotal, queueCount,
+  rows, configs, dryRunCount, page, pageSize, total, grandTotal, queueCount, qualifiedCount,
   sortKey, sortDir, statusFilter, roleFilter,
 }: Props) {
   const router = useRouter();
   const [busy,     setBusy]     = useState<string | null>(null);
   const [error,    setError]    = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNote, setBulkNote] = useState<string | null>(null);
+
+  // One click for every row dry run held back. The server sends them one
+  // at a time through the same path as "Send invite", refuses anyone who
+  // has already had this role's invite, and reports what it skipped.
+  async function sendAllQualified() {
+    if (!window.confirm(
+      `Send the referral invite to all ${qualifiedCount} qualified candidate${qualifiedCount === 1 ? '' : 's'}? ` +
+      'Anyone already sent this role\'s invite is skipped automatically.',
+    )) return;
+    setBulkBusy(true); setError(null); setBulkNote(null);
+    try {
+      const res  = await fetch('/api/admin/referrals/send-qualified', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({}),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(json.error ?? `Request failed (${res.status})`); return; }
+      const parts = [`${json.sent} sent`];
+      if (json.skipped?.length) parts.push(`${json.skipped.length} skipped (${json.skipped.map((s: { reason: string }) => s.reason).join('; ')})`);
+      if (json.failed?.length)  parts.push(`${json.failed.length} failed (${json.failed[0].reason})`);
+      if (json.stopped_early)   parts.push('stopped after repeated send failures — try again later');
+      if (json.more_remaining)  parts.push('more remain — click again to send the next batch');
+      setBulkNote(parts.join(' · '));
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   // Every navigation from here resets to page 1 — a page number only
   // means something for ONE particular sort/filter, and carrying it
@@ -329,6 +364,22 @@ export default function ReferralsClient({
             </p>
           </div>
         </div>
+      )}
+
+      {qualifiedCount > 0 && (
+        <div className="card flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: 'var(--purple)' }}>
+          <p className="text-sm" style={{ color: 'var(--ink)', margin: 0 }}>
+            <strong>{qualifiedCount}</strong> qualified candidate{qualifiedCount === 1 ? ' has' : 's have'} not been sent the invite yet
+            {' '}(held back while dry run was on).
+          </p>
+          <button className="btn-cta btn-sm" disabled={bulkBusy} onClick={sendAllQualified}>
+            <Check size={13} /> {bulkBusy ? 'Sending…' : `Send all qualified (${qualifiedCount})`}
+          </button>
+        </div>
+      )}
+
+      {bulkNote && (
+        <div className="card p-4 text-sm" style={{ color: 'var(--ink)' }}>{bulkNote}</div>
       )}
 
       {error && (

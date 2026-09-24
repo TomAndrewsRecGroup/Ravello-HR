@@ -1546,3 +1546,34 @@ emails, worst 43.** `email_failures: 0` and `notes: []` on every run.
   hand once this deploys; nothing does it automatically.
 - `check-row-cap.sh` cannot see this class: it catches `.limit(N>1000)`,
   not an unbounded `.in()` whose RESULT grows past the cap.
+
+---
+
+## Sending by hand claims first, too (2026-09-24)
+
+The approve/apply route had the same send-then-record order the cron
+had until the same morning: read `qualified`, send, write `email_sent`.
+Two clicks, or a bulk run racing a click, both sent. And three people
+the duplicate bug had emailed 21+ times were still at `qualified`,
+because that bug never recorded its sends, so "Send invite" would have
+emailed them again. Their rows were corrected to `email_sent` by hand
+with a history note.
+
+- **`lib/referral/approve.ts` is the one manual send path** (single
+  Approve/Apply and bulk). Order: refuse if `email_log` already holds a
+  successful send to this address with this role's subject (matched on
+  address, not candidate_id, since the old bug made a new candidates row
+  per send), then a CONDITIONAL claim (`status = <what we read>`, checked
+  count), then send, then record. A failed send puts the status back.
+- **`referralInviteSubject()`** is exported from the template so the
+  guard and the email cannot disagree about the subject line.
+- **`POST /api/admin/referrals/send-qualified`** plus a "Send all
+  qualified (N)" button on the Referrals page: up to 50 per click, one
+  at a time, stops after 3 consecutive send failures (Resend quota), and
+  reports what it skipped and why.
+- `approve.test.ts` uses a stateful fake (conditional updates, a real
+  email log). Three mutations caught: unconditional claim, no
+  already-sent guard, no release on failure.
+- **Still open:** 7 of the 21 duplicate recipients are recorded as
+  `rejected_score` although they were emailed (a later re-scan scored
+  them lower). Left as is pending the operator's call.

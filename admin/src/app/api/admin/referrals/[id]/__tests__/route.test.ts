@@ -78,6 +78,12 @@ vi.mock('@supabase/supabase-js', () => ({
           return { eq: () => ({ single: () => Promise.resolve({ data: appRow, error: appRow ? null : { message: 'not found' } }) }) };
         }
 
+        if (table === 'email_log') {
+          // The already-sent guard: nobody in these tests was emailed before.
+          const q: any = { eq: () => q, is: () => q, then: (res: any) => Promise.resolve({ count: 0, error: null }).then(res) };
+          return q;
+        }
+
         if (table === 'referral_role_config') {
           return { eq: () => ({ single: () => Promise.resolve({ data: configRow, error: configRow ? null : { message: 'not found' } }) }) };
         }
@@ -86,7 +92,10 @@ vi.mock('@supabase/supabase-js', () => ({
       },
       update: (patch: Record<string, any>) => {
         updates.push({ table, patch });
-        return { eq: () => Promise.resolve({ data: null, error: null }) };
+        // Chainable and thenable, reporting one row changed — the claim
+        // and the record step both check the count.
+        const q: any = { eq: () => q, then: (res: any) => Promise.resolve({ data: null, error: null, count: 1 }).then(res) };
+        return q;
       },
     }),
   }),
@@ -164,7 +173,8 @@ describe('apply overrules a rejection and sends, but never re-sends', () => {
 
     const update = updates.find(u => u.table === 'referral_applications');
     expect(update?.patch.status).toBe('email_sent');
-    expect(update?.patch.status_history.at(-1).reasons[0]).toMatch(/overrides/i);
+    const recorded = updates.filter(u => u.table === 'referral_applications').at(-1);
+    expect(recorded?.patch.status_history.at(-1).reasons[0]).toMatch(/overrides/i);
   });
 
   it('refuses to re-send once an invite has already gone out', async () => {

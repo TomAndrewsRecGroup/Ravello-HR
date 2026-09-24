@@ -65,6 +65,14 @@ export interface ReferralInviteInput {
   processNote?:  string;
 }
 
+/** The invite's subject line. Exported because the approve path uses
+ *  it to recognise an invite this address has ALREADY been sent for this
+ *  role — see lib/referral/approve.ts. One definition, so the guard and
+ *  the email cannot drift apart. */
+export function referralInviteSubject(roleTitle: string): string {
+  return `Your ${roleTitle} application — next step`;
+}
+
 export function referralInviteEmail(input: ReferralInviteInput) {
   const greeting = input.firstName?.trim() ? `Hi ${input.firstName.trim()},` : 'Hi there,';
 
@@ -110,7 +118,7 @@ ${ctaButton(input.referralUrl, 'Complete your application', ARG_SENDER)}
     // rare case they should differ (e.g. a monitored shared inbox that
     // isn't the sending address).
     replyTo: process.env.REFERRAL_EMAIL_REPLY_TO ?? referralFromAddress(),
-    subject: `Your ${input.roleTitle} application — next step`,
+    subject: referralInviteSubject(input.roleTitle),
     // ARG_SENDER, not the default. The candidate answered an Andrews
     // Recruitment Group advert and this email is signed by Tom Andrews;
     // wrapping it in a People System shell showed them a company they
