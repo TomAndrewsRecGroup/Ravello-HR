@@ -141,7 +141,9 @@ describe('module flags are enforced on the page, not just the menu', () => {
 describe('static app files bypass the auth middleware', async () => {
   const { config } = await import('../../../middleware');
   const matcher = new RegExp(`^${config.matcher[0]}$`);
-  it.each(['/manifest.json', '/sw.js', '/favicon.ico', '/brand/core-os-360-logo.svg', '/brand/icon-192.png'])(
+  // Self-hosted fonts too: a signed-out login page requests them, and a
+  // redirected font request silently falls back to a system face.
+  it.each(['/manifest.json', '/sw.js', '/favicon.ico', '/brand/core-os-360-logo.svg', '/brand/icon-192.png', '/fonts/inter-latin.woff2', '/fonts/unbounded-latin.woff2'])(
     '%s is not run through the middleware', (p) => {
       expect(matcher.test(p)).toBe(false);
     });

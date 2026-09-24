@@ -1501,3 +1501,13 @@ on thepeoplesystem.co.uk keep working.
   `accent` on `SenderIdentity` — it goes out under ARG's name. Tests pin
   the token values, AA contrast of every white-text gradient stop, zero
   old-brand purple outside that one accent, and the sender split.
+- **Fonts are self-hosted** (after the palette change, same day). The
+  portal CI build failed because `next/font/google` in `app/r/layout.tsx`
+  fetched Oswald/Inter from Google DURING THE BUILD and got a response
+  its parser choked on. Inter, Oswald and Unbounded (the wordmark face)
+  are now variable woff2 files in each app's `public/fonts/`, declared by
+  `@font-face` in `globals.css`; the root layouts' runtime Google `<link>`
+  is gone too. `.woff2`/`.woff` are excluded from the auth matcher (a
+  signed-out login page requests them). `brand.test.ts` fails on any
+  `next/font/google` import or Google Fonts URL. The logo lockups are
+  outlined SVG and never depended on a font.

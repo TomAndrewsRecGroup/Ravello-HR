@@ -11,6 +11,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Fonts — self-hosted (2026-09-24) ───────────────────────────
+   Served from /public/fonts, never fetched from Google. The portal CI
+   build failed when next/font pulled Oswald/Inter from Google Fonts and
+   got an unparseable response; a runtime <link> to Google also leaves
+   every page's type at the mercy of a third party. Variable woff2, Latin
+   subset (covers £, é, etc.), all SIL Open Font Licence.
+     Inter      — all UI text
+     Oswald     — Athletes To Industry + dev-plan display type
+     Unbounded  — the Core OS 360 wordmark typeface (the logo itself is
+                  outlined SVG and needs no font; this is for brand text) */
+@font-face { font-family: 'Inter';     src: url('/fonts/inter-latin.woff2') format('woff2');     font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Oswald';    src: url('/fonts/oswald-latin.woff2') format('woff2');    font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Unbounded'; src: url('/fonts/unbounded-latin.woff2') format('woff2'); font-weight: 300 500; font-style: normal; font-display: swap; }
+
 @layer base {
   :root {
     /* ─── Palette — Core OS 360 (white / navy / cyan) ─── */
@@ -40,6 +54,7 @@
     --brand-accent-dk:#075E77;
     --brand-cyan:     #3FD6F2;
     --brand-navy:     #070B20;
+    --font-brand:     'Unbounded', var(--font-inter, 'Inter'), sans-serif;
     --purple:         var(--brand-accent);
     --purple-lt:      var(--brand-cyan);
     --blue:           #3B82F6;

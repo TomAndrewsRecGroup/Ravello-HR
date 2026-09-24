@@ -1,23 +1,12 @@
 import type { Metadata } from 'next';
-import { Oswald, Inter } from 'next/font/google';
 import { IrisShaderLazy } from '@/components/a2i/IrisShaderLazy';
 import '@/components/a2i/a2i-theme.css';
 
-// Athletes To Industry display + body fonts, scoped to the /r subtree via
-// CSS variables on the wrapper. The portal's global Inter link is unaffected.
-const oswald = Oswald({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-a2i-oswald',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-a2i-inter',
-  display: 'swap',
-});
+// Athletes To Industry display + body fonts. These used next/font/google,
+// which downloads from Google Fonts DURING THE BUILD — and on 2026-09-24 a
+// bad response from Google failed the portal build outright. Both fonts are
+// now self-hosted (@font-face in globals.css); a2i-theme.css maps the
+// --font-a2i-* variables onto them, so nothing below needs a class.
 
 const ATI_LOGO =
   'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/Athletes%20To%20Industry%20Option%20A.png';
@@ -30,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function ReferralLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`a2i-scope ${oswald.variable} ${inter.variable}`}>
+    <div className="a2i-scope">
       {/* Background layers — mirror the Athletes To Industry site:
           solid navy fill, then the WebGL iris shader on top. No smoke. */}
       <div aria-hidden className="a2i-bg-solid" />

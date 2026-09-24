@@ -137,3 +137,34 @@ describe('Core OS 360 colour palette', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+// Fonts are self-hosted. The portal build failed on 2026-09-24 because
+// next/font/google fetched Oswald/Inter from Google during the build and
+// got a response it could not parse. Nothing in either app may fetch fonts
+// from Google again, at build time or in the browser.
+describe('fonts are self-hosted, never fetched from Google', () => {
+  const FONTS = ['inter-latin.woff2', 'oswald-latin.woff2', 'unbounded-latin.woff2'];
+  it.each(['admin', 'portal'])('%s ships the font files and declares them', (app) => {
+    for (const f of FONTS) {
+      const file = path.join(ROOT, app, 'public/fonts', f);
+      expect(existsSync(file), f).toBe(true);
+      expect(readFileSync(file).subarray(0, 4).toString('latin1')).toBe('wOF2');
+    }
+    const css = readFileSync(path.join(ROOT, app, 'src/app/globals.css'), 'utf8');
+    for (const fam of ['Inter', 'Oswald', 'Unbounded']) {
+      expect(css).toMatch(new RegExp(`@font-face \\{ font-family: '${fam}';`));
+    }
+  });
+  it('no next/font/google import and no Google Fonts URL in either app', () => {
+    const offenders: string[] = [];
+    for (const d of ['admin/src', 'portal/src']) {
+      for (const f of walk(path.join(ROOT, d))) {
+        readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+          if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+          if (/next\/font\/google|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(line)) offenders.push(`${path.relative(ROOT, f)}:${i + 1}`);
+        });
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
