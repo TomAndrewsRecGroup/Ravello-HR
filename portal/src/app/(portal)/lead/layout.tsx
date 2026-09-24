@@ -1,5 +1,7 @@
 import Topbar from '@/components/layout/Topbar';
 import GroupedTabs from '@/components/layout/GroupedTabs';
+import { isRouteEnabled } from '@/lib/moduleAccess';
+import { currentModuleFlags } from '@/lib/auth/moduleFlags';
 
 const TAB_GROUPS = [
   {
@@ -26,11 +28,17 @@ const TAB_GROUPS = [
   },
 ];
 
-export default function LeadLayout({ children }: { children: React.ReactNode }) {
+export default async function LeadLayout({ children }: { children: React.ReactNode }) {
+  // Hide tabs for modules this client does not have — the middleware
+  // would only bounce the click back to the dashboard.
+  const flags = await currentModuleFlags();
+  const groups = TAB_GROUPS
+    .map(g => ({ ...g, tabs: g.tabs.filter(t => isRouteEnabled(t.href, flags)) }))
+    .filter(g => g.tabs.length > 0);
   return (
     <>
       <Topbar title="LEAD" subtitle="People, documents and development" />
-      <GroupedTabs groups={TAB_GROUPS} />
+      <GroupedTabs groups={groups} />
       {children}
     </>
   );

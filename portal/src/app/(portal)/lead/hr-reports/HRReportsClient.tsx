@@ -5,6 +5,7 @@ import {
   Palmtree, Thermometer, Calendar,
 } from 'lucide-react';
 import { calculateLeaveBalance } from '@/lib/leaveCalculations';
+import { ABSENCE_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import type { LeaveYearConfig } from '@/lib/leaveCalculations';
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -167,7 +168,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
       ['Employee', 'Leave Type', 'Start', 'End', 'Days', 'Status'],
       leaveRecords.map(r => [
         (r.employee_records as any)?.full_name ?? '',
-        r.leave_type.replace(/_/g, ' '),
+        labelFor(ABSENCE_TYPE_LABELS, r.leave_type),
         r.start_date, r.end_date,
         String(r.days_count), r.status,
       ])
@@ -385,7 +386,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
                 return (
                   <div key={type} className="rounded-lg p-3" style={{ background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
-                      {type.replace(/_/g, ' ')}
+                      {labelFor(ABSENCE_TYPE_LABELS, type, type.replace(/_/g, ' '))}
                     </p>
                     <p className="text-xl font-bold mt-1" style={{ color: 'var(--ink)' }}>{total} <span className="text-xs font-normal" style={{ color: 'var(--ink-faint)' }}>days</span></p>
                     <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>{records.length} records</p>

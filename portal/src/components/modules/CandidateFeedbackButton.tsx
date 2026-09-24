@@ -5,6 +5,7 @@ import { revalidatePortalPath } from '@/app/actions';
 import { CheckCircle2, XCircle, MessageSquare, Loader2, UserPlus } from 'lucide-react';
 import HiredModal from './HiredModal';
 import { judgeWrite, COUNT_EXACT } from '@/lib/supabase/mutations';
+import { clientCanDecide } from '@/lib/hiring/candidateDecision';
 
 interface Props {
   candidateId: string;
@@ -93,7 +94,7 @@ export default function CandidateFeedbackButton({
     return <span className="badge badge-filled">Hired</span>;
   }
 
-  if (currentStatus === 'pending') {
+  if (clientCanDecide(currentStatus)) {
     return (
       <div className="flex flex-wrap gap-2">
         <button

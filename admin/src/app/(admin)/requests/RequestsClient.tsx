@@ -68,6 +68,7 @@ export default function RequestsClient({ requests }: Props) {
   const [responseNotes, setResponseNotes] = useState<Record<string, string>>({});
   const [savingNotes,   setSavingNotes]   = useState<string | null>(null);
   const [savedNotes,    setSavedNotes]    = useState<Record<string, boolean>>({});
+  const [sendResult,    setSendResult]    = useState<Record<string, { ok: boolean; message: string }>>({});
 
   async function updateStatus(id: string, newStatus: string) {
     setUpdating(id);
@@ -95,21 +96,33 @@ export default function RequestsClient({ requests }: Props) {
     setSavingNotes(null);
   }
 
-  async function completeWithResponse(id: string) {
+  // Completing goes through the server so the client is EMAILED their
+  // response — this used to be a bare update that closed the request
+  // and told nobody. The route reports whether the email actually went.
+  async function completeWithResponse(id: string, currentNotes: string) {
     setSavingNotes(id);
-    const { error } = await supabase
-      .from('service_requests')
-      .update({
-        response_notes: responseNotes[id] ?? '',
-        status:         'complete',
-        responded_at:   new Date().toISOString(),
-      })
-      .eq('id', id);
-    if (!error) {
+    setSendResult(prev => { const n = { ...prev }; delete n[id]; return n; });
+    try {
+      const res = await fetch(`/api/admin/service-requests/${id}/respond`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ response_notes: responseNotes[id] ?? currentNotes }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSendResult(prev => ({ ...prev, [id]: { ok: false, message: data.error ?? 'Could not complete the request.' } }));
+        return;
+      }
       setLocalStatus(prev => ({ ...prev, [id]: 'complete' }));
+      setSendResult(prev => ({ ...prev, [id]: data.email_error
+        ? { ok: false, message: data.email_error }
+        : { ok: true,  message: `Completed — the client was emailed your response.` } }));
       revalidateAdminPath('/requests');
+    } catch {
+      setSendResult(prev => ({ ...prev, [id]: { ok: false, message: 'Network error — nothing was sent. Try again.' } }));
+    } finally {
+      setSavingNotes(null);
     }
-    setSavingNotes(null);
   }
 
   const filtered = useMemo(() => {
@@ -285,20 +298,26 @@ export default function RequestsClient({ requests }: Props) {
                                     {savedNotes[r.id] ? 'Saved!' : 'Save Notes'}
                                   </button>
                                   <button
-                                    onClick={() => completeWithResponse(r.id)}
-                                    disabled={savingNotes === r.id}
+                                    onClick={() => completeWithResponse(r.id, notesVal)}
+                                    disabled={savingNotes === r.id || !notesVal.trim()}
+                                    title={!notesVal.trim() ? 'Write a response first — it is emailed to the client' : undefined}
                                     className="btn-cta btn-sm"
                                   >
                                     {savingNotes === r.id
                                       ? <Loader2 size={11} className="animate-spin" />
-                                      : 'Save & Mark Complete'
+                                      : 'Complete & Email Client'
                                     }
                                   </button>
                                 </div>
                               )}
-                              {isComplete && notesVal && (
+                              {sendResult[r.id] && (
+                                <p className="text-xs mt-2" role="status" style={{ color: sendResult[r.id].ok ? 'var(--teal)' : 'var(--red)' }}>
+                                  {sendResult[r.id].message}
+                                </p>
+                              )}
+                              {isComplete && notesVal && !sendResult[r.id] && (
                                 <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
-                                  Response sent to client. Mark a new request to add further notes.
+                                  Response saved on this request. See the client&rsquo;s email log for delivery.
                                 </p>
                               )}
                             </div>

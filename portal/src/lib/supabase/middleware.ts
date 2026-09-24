@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import {
   PORTAL_SESSION_COOKIE, signPortalSession, verifyPortalSession,
 } from '@/lib/auth/portalSession';
+import { disabledFlagFor, requiredFlagsFor } from '@/lib/moduleAccess';
 
 const PUBLIC_ROUTES = [
   /^\/auth\//,
@@ -11,7 +12,28 @@ const PUBLIC_ROUTES = [
   /^\/api\/partner\//,
   /^\/r\//,                          // public Athletes/Partners referral pages — open, no login
   /^\/api\/r\//,                     // their submission endpoints — open, anonymous athletes/partners
+  // Employee leave requests via the personal link an admin shares. The
+  // employee has no portal login by design (no seat consumed), so this
+  // page redirecting to /auth/login made the whole feature unreachable
+  // for the only people it exists for. Both routes authorise by the
+  // 128-bit token in the URL, through the service-role client, with
+  // per-IP and per-token rate limits (api/leave/[token]/route.ts). The
+  // page's server-side preflight also calls the API with no cookie, so
+  // the API must be public too.
+  /^\/leave\//,
+  /^\/api\/leave\//,
 ];
+
+// Carry any cookies Supabase refreshed (and our signed session cookie)
+// onto a redirect, so bouncing a locked page never logs anyone out.
+function redirectKeepingCookies(request: NextRequest, from: NextResponse, pathname: string): NextResponse {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = '';
+  const res = NextResponse.redirect(url);
+  for (const c of from.cookies.getAll()) res.cookies.set(c);
+  return res;
+}
 
 // 15-minute TTL: feature-flag changes made in the admin portal won't
 // be visible to an active portal session until this cookie expires
@@ -57,6 +79,22 @@ export async function updateSession(request: NextRequest) {
   const cached = await verifyPortalSession(cachedSessionRaw);
   if (cached && !isPublicRoute) {
     if (cached.userId && (cached.companyId || cached.isTpsStaff)) {
+      // Module gate. The cookie's flags can be 15 minutes stale, and an
+      // admin switching a module off must take effect now (the layout
+      // reads flags fresh for the same reason), so read them fresh —
+      // but only for a path a module owns; ungated pages stay free.
+      if (cached.companyId && requiredFlagsFor(pathname).length > 0) {
+        const { data, error } = await supabase
+          .from('companies').select('feature_flags').eq('id', cached.companyId).single();
+        if (error) {
+          // Fail OPEN: this gate is commercial, not a data boundary —
+          // RLS still scopes every row to the caller's company — and a
+          // transient DB error must not lock a paying client out.
+          console.error('[auth] module-gate flag read failed:', error.message);
+        } else if (disabledFlagFor(pathname, (data as any)?.feature_flags)) {
+          return redirectKeepingCookies(request, supabaseResponse, '/dashboard');
+        }
+      }
       return supabaseResponse;
     }
   }
@@ -75,6 +113,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Stamp signed session cookie with fresh data from DB.
+  let lastFlags: Record<string, boolean> = {};
   if (user && !isPublicRoute) {
     const [{ data: rpcRole, error: roleErr }, { data: profileRows, error: profErr }] = await Promise.all([
       supabase.rpc('get_my_role'),
@@ -100,6 +139,8 @@ export async function updateSession(request: NextRequest) {
         .from('companies').select('feature_flags').eq('id', companyId).single();
       featureFlags = (company as any)?.feature_flags ?? {};
     }
+
+    lastFlags = featureFlags;
 
     const sessionData = {
       userId: user.id,
@@ -129,6 +170,12 @@ export async function updateSession(request: NextRequest) {
       console.error('[auth] PORTAL_SESSION_SECRET missing — refusing to stamp unsigned session cookie');
       supabaseResponse.cookies.set(PORTAL_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
     }
+  }
+
+  // Module gate on the slow path — featureFlags was just read fresh above.
+  // TPS staff with no company of their own have no flags to apply.
+  if (user && !isPublicRoute && disabledFlagFor(pathname, lastFlags)) {
+    return redirectKeepingCookies(request, supabaseResponse, '/dashboard');
   }
 
   // Authenticated on auth pages → redirect to dashboard

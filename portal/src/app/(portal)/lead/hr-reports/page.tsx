@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import HRReportsClient from './HRReportsClient';
+import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 
 export const metadata: Metadata = { title: 'HR Reports' };
 export const revalidate = 60;
@@ -28,8 +29,8 @@ export default async function HRReportsPage() {
       .eq('company_id', companyId)
       .order('start_date'),
     supabase
-      .from('leave_records')
-      .select('id,employee_id,leave_type,start_date,end_date,days_count,status,employee_records(full_name, department)')
+      .from('absence_records')
+      .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status,employee_records(full_name, department)')
       .eq('company_id', companyId)
       .order('start_date'),
   ]);
@@ -38,7 +39,7 @@ export default async function HRReportsPage() {
     <main className="portal-page flex-1">
       <HRReportsClient
         employees={empRes.data ?? []}
-        leaveRecords={(leaveRes.data ?? []) as any}
+        leaveRecords={normaliseAbsenceRows(leaveRes.data as any) as any}
       />
     </main>
   );

@@ -8,19 +8,20 @@ import {
 } from 'lucide-react';
 import { useUserPreferences } from './UserPreferences';
 import { useLockedFeature } from './LockedFeature';
+import { isRouteEnabled } from '@/lib/moduleAccess';
 
-/* All available quick actions. `flag` is the feature_flag key that
-   gates the action — when the flag is false on the company, the
-   action renders locked and clicking opens the upgrade modal. */
-const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.ElementType; color: string; flag: string | null }> = {
-  raise_role:     { label: 'Raise a Role',    href: '/hire/hiring/new',       icon: Briefcase,    color: 'var(--purple)',  flag: 'hiring'    },
-  log_leave:      { label: 'Log Leave',       href: '/calendar',              icon: Palmtree,     color: 'var(--success)', flag: null        },
-  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',           icon: LifeBuoy,     color: 'var(--amber)',   flag: 'support'   },
-  upload_doc:     { label: 'Upload Document', href: '/lead/documents',        icon: FileText,     color: 'var(--blue)',    flag: 'documents' },
-  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,     color: 'var(--teal)',    flag: 'protect'   },
-  view_calendar:  { label: 'View Calendar',   href: '/calendar',              icon: CalendarDays, color: '#6366F1',        flag: null        },
-  compliance:     { label: 'Compliance',      href: '/protect/compliance',    icon: ShieldCheck,  color: 'var(--danger)',  flag: 'compliance'},
-  learning:       { label: 'Learning',        href: '/lead/learning',         icon: BookOpen,     color: '#8B5CF6',        flag: 'lead'      },
+/* All available quick actions. Each is locked (clicking opens the
+   upgrade modal) when its page is switched off for the company — the
+   rule lives in lib/moduleAccess.ts, keyed by `href`. */
+const ALL_ACTIONS: Record<string, { label: string; href: string; icon: React.ElementType; color: string }> = {
+  raise_role:     { label: 'Raise a Role',    href: '/hire/hiring/new',       icon: Briefcase,    color: 'var(--purple)' },
+  log_leave:      { label: 'Log Leave',       href: '/calendar',              icon: Palmtree,     color: 'var(--success)' },
+  raise_ticket:   { label: 'Raise a Ticket',  href: '/support/new',           icon: LifeBuoy,     color: 'var(--amber)' },
+  upload_doc:     { label: 'Upload Document', href: '/lead/documents',        icon: FileText,     color: 'var(--blue)' },
+  add_employee:   { label: 'Add Employee',    href: '/lead/employee-records', icon: UserPlus,     color: 'var(--teal)' },
+  view_calendar:  { label: 'View Calendar',   href: '/calendar',              icon: CalendarDays, color: '#6366F1' },
+  compliance:     { label: 'Compliance',      href: '/protect/compliance',    icon: ShieldCheck,  color: 'var(--danger)' },
+  learning:       { label: 'Learning',        href: '/lead/learning',         icon: BookOpen,     color: '#8B5CF6' },
 };
 
 const DEFAULT_ACTIONS = ['raise_role', 'log_leave', 'raise_ticket', 'upload_doc'];
@@ -40,7 +41,11 @@ export default function QuickActions({ flags = {} }: Props) {
   const activeActions = activeKeys
     .map(k => ({ key: k, ...ALL_ACTIONS[k] }))
     .filter(a => a.label !== undefined)
-    .map(a => ({ ...a, disabled: a.flag !== null && flags[a.flag] === false }));
+    // Disabled exactly when the middleware would refuse the page, so an
+    // action never looks available and then bounces. (A per-action flag
+    // used to disagree: Add Employee checked `protect` for a LEAD page,
+    // Learning checked `lead` for a free programme.)
+    .map(a => ({ ...a, disabled: !isRouteEnabled(a.href, flags) }));
 
   async function toggleAction(key: string) {
     const current = [...activeKeys];

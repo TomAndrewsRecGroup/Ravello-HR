@@ -1,13 +1,13 @@
 # Ravello HR — System Features Inventory
 
-**As of 24 September 2026.** Covers both apps: the **Admin app** (People System staff) and the **Client Portal** (client companies).
+**As of 24 September 2026.** *(Updated the same day: Issues 1, 2, 4, 5 and 6 fixed. See the Issues table.)* Covers both apps: the **Admin app** (People System staff) and the **Client Portal** (client companies).
 
 ## How each feature is rated
 
 | Column | What it means | How it was checked |
 |---|---|---|
 | **Built** | ✅ Complete: works end to end · 🟡 Partial: works but part is missing, or it depends on an integration that isn't set up · ❌ Broken: a defect stops it working | Every page, button and back-end route in both apps was read |
-| **Tested** | ✅ Automated tests cover it · 🟡 Partly covered · — No automated tests | All test suites run today. **Admin: 359 tests pass. Portal: 27 tests pass.** No record of manual testing exists in the system, so this column covers automated tests only |
+| **Tested** | ✅ Automated tests cover it · 🟡 Partly covered · — No automated tests | All test suites run today. **Admin: 366 tests pass. Portal: 106 tests pass** (after the fixes; 359 and 27 before). No record of manual testing exists in the system, so this column covers automated tests only |
 | **In use** | ✅ Live: real records in the live database · ⚪ Not used yet: zero records · 🔒 Not switched on: needs an account or key first (e.g. Stripe) | Row counts read directly from the live database today |
 
 ## Headline picture
@@ -27,12 +27,12 @@
 
 | # | App | Issue in plain terms | Impact |
 |---|---|---|---|
-| 1 | Portal | **The employee "request leave" link does not work.** Employees who open their personal leave link are sent to the login screen instead of the form. That page is missing from the list of pages allowed without a login. | Employees cannot request leave through the link at all |
-| 2 | Portal | **Leave is recorded in two separate places that never meet.** Leave requested or approved through the link or the Absence page is not shown on the Calendar or in HR Reports leave balances, which read a different table. | Leave balances and calendar will be wrong once used |
+| 1 | Portal | ✅ **Fixed 24 Sep.** **The employee "request leave" link does not work.** Employees who open their personal leave link are sent to the login screen instead of the form. That page is missing from the list of pages allowed without a login. | Employees cannot request leave through the link at all |
+| 2 | Portal | ✅ **Fixed 24 Sep.** **Leave is recorded in two separate places that never meet.** Leave requested or approved through the link or the Absence page is not shown on the Calendar or in HR Reports leave balances, which read a different table. | Leave balances and calendar will be wrong once used |
 | 3 | Admin | **The Roadmap page is broken.** It asks the database for a column (`track`) that does not exist, so the page errors or shows nothing. | Cross-client roadmap unusable |
-| 4 | Portal | **Candidates an admin "Sends" to a client get no Approve/Reject buttons.** The buttons only appear for candidates in "pending" status. The admin Send button marks candidates "shared", so the client sees the candidate and a badge but cannot act. | Clients cannot give feedback on candidates sent the normal way |
-| 5 | Admin | **Replying to a client's service request never emails the client.** The notes are saved and the email template exists, but nothing sends it. | Client doesn't know you've responded unless they log in |
-| 6 | Both | **Module switches only hide menu items.** Most client pages still open if someone types the web address directly, even with that module switched off. Many finer-grained switches (org chart, skills, calendar, benchmarks and others) are never checked at all. | Clients could reach modules they haven't paid for |
+| 4 | Portal | ✅ **Fixed 24 Sep.** **Candidates an admin "Sends" to a client get no Approve/Reject buttons.** The buttons only appear for candidates in "pending" status. The admin Send button marks candidates "shared", so the client sees the candidate and a badge but cannot act. | Clients cannot give feedback on candidates sent the normal way |
+| 5 | Admin | ✅ **Fixed 24 Sep.** **Replying to a client's service request never emails the client.** The notes are saved and the email template exists, but nothing sends it. | Client doesn't know you've responded unless they log in |
+| 6 | Both | ✅ **Fixed 24 Sep.** **Module switches only hide menu items.** Most client pages still open if someone types the web address directly, even with that module switched off. Many finer-grained switches (org chart, skills, calendar, benchmarks and others) are never checked at all. | Clients could reach modules they haven't paid for |
 | 7 | Portal | **Seven finished pages have no link to them:** HR Dashboard, Performance Reviews, Training Needs, Skills Matrix, Absence, Employee Documents, People Roadmap (plus Hiring Analytics). | Clients can't find them |
 | 8 | Email | **The daily email sending limit was hit on 22–23 Sep.** 24 candidates' invites failed. 21 went through on a later attempt and **3 never received theirs**. | Plan upgrade may be needed as volume grows |
 | 9 | Portal | The Protect Reports upgrade link points to `hello@thepeopleoffice.co.uk`, which looks like the wrong domain. | Upgrade enquiries could go nowhere |
@@ -122,7 +122,7 @@
 | Internal task board (To Do / In Progress / Done) | ✅ | 🟡 | ⚪ |
 | Activity feed (last 7 days) | ✅ | — | ✅ (view only) |
 | Enquiries inbox and top-bar enquiries drop-down | ✅ (nothing feeds it yet) | — | ⚪ |
-| Service requests: view, change status, write response notes | 🟡 client not emailed (Issue 5) | — | ⚪ |
+| Service requests: view, change status, write response notes; **Complete & Email Client** | ✅ | ✅ | ⚪ |
 | Support tickets: view, reply, change status | ✅ | 🟡 | ⚪ |
 | Broadcast an action item to many clients at once (emails them) | ✅ | 🟡 | ⚪ |
 | Cross-client compliance dashboard: add, complete, delete items; document expiry alerts | ✅ | — | ⚪ |
@@ -176,7 +176,7 @@
 |---|---|---|---|
 | Menu with red badges (actions, tickets, candidates to review) | ✅ | — | ✅ |
 | Reorder or hide menu items ("Customise menu") | ✅ | — | ✅ |
-| Locked modules show "not in your package" with account manager contact | ✅ | — | ✅ (Old Albanians) |
+| Locked modules show "not in your package" with account manager contact; locked pages can no longer be opened by typing the address, and tabs for locked sub-modules are hidden | ✅ | ✅ | ✅ (Old Albanians) |
 | Quick Actions button (raise role, log leave, ticket, upload, add employee…), customisable | ✅ | — | ✅ |
 | Notification bell | ✅ | — | ⚪ (0 notifications) |
 | Open private files through secure time-limited links | ✅ | — | ⚪ |
@@ -196,7 +196,7 @@
 | See all roles with stage | ✅ | — | ✅ |
 | Raise a new role (template, JD upload, IvyLens analysis fills the form) | ✅ (analysis needs IvyLens) | — | ⚪ (no client-raised roles yet) |
 | Role page: details, stage tracker, friction score | ✅ | — | ✅ |
-| **Review shortlisted candidates: view CV, approve, reject, ask for info** | 🟡 (Issue 4) | — | ⚪ |
+| **Review shortlisted candidates: view CV, approve, reject, ask for info** | ✅ | ✅ | ⚪ |
 | Mark a candidate hired (creates employee, fills role) | ✅ | — | ⚪ |
 | See interview schedule | ✅ | — | ⚪ |
 | Create offers and track status | ✅ | — | ⚪ |
@@ -213,7 +213,7 @@
 | Feature | Built | Tested | In use |
 |---|---|---|---|
 | Employee records: add, edit, search (job, salary, diversity, leave allowance) | ✅ | — | ⚪ (0 employees) |
-| Share / regenerate an employee's personal leave link | ✅ but the link is broken (Issue 1) | — | ⚪ |
+| Share / regenerate an employee's personal leave link | ✅ | ✅ | ⚪ |
 | Org chart: view, search, drag to change manager, import from CSV | ✅ | — | ⚪ |
 | Onboarding checklists: templates, start, tick tasks, complete | ✅ | — | ⚪ |
 | Company documents: browse by category, upload | ✅ | — | ⚪ |
@@ -221,7 +221,7 @@
 | E-learning: browse, search, filter, recommendations, course pages | ✅ | — | ✅ (1 course) |
 | Free course access (7 days) | ✅ | — | ⚪ |
 | Buy a course by card | 🟡 needs Stripe | — | 🔒 |
-| HR reports (growth, diversity, leave balances, departments) with CSV export | ✅ (leave figures affected by Issue 2) | — | ⚪ |
+| HR reports (growth, diversity, leave balances, departments) with CSV export | ✅ | ✅ (leave maths) | ⚪ |
 | Performance reviews | ✅ but no link to it | — | ⚪ |
 | Training needs | ✅ but no link to it | — | ⚪ |
 | Skills matrix (add only, no edit/delete) | 🟡 no link to it | — | ⚪ |
@@ -234,7 +234,7 @@
 | Compliance tracker: move items through pending, in review, complete | ✅ | — | ⚪ |
 | Offboarding checklists: templates, start (sets leaver date), tasks, exit notes | ✅ | — | ⚪ |
 | Reports: CSV exports and download reports published by The People System | ✅ (Issue 9) | — | ⚪ |
-| Absence: log, approve, deny with reason | ✅ but no link to it (Issue 2) | — | ⚪ |
+| Absence: log, approve, deny with reason | ✅ but no link to it | — | ⚪ |
 | Employee documents with expiry (paste a link, no file upload) | 🟡 no link to it | — | ⚪ |
 | HR dashboard (headcount, turnover, absence KPIs) | ✅ but no link to it | — | ⚪ |
 
@@ -252,7 +252,7 @@
 | Feature | Built | Tested | In use |
 |---|---|---|---|
 | Month view of company events and leave | ✅ | — | ⚪ |
-| Add company event; log employee leave (admin only) | ✅ (Issue 2) | — | ⚪ |
+| Add company event; log employee leave | ✅ | — | ⚪ |
 
 ### Support
 | Feature | Built | Tested | In use |
@@ -289,7 +289,7 @@
 |---|---|---|---|
 | Athlete sign-up form via a client's link (with CV; welcome email sent) | ✅ | ✅ (email) | ✅ |
 | Partner enquiry form via a client's link (emails Tom) | ✅ | ✅ (email) | ✅ (nothing stored to count) |
-| Employee leave request via a personal link | ❌ (Issue 1) | — | ⚪ |
+| Employee leave request via a personal link (the link changes after each request, so share a fresh one) | ✅ | ✅ | ⚪ |
 
 ### Login
 | Feature | Built | Tested | In use |
@@ -305,10 +305,10 @@
 | | Admin | Portal |
 |---|---|---|
 | Features listed | 89 | 75 |
-| Built but not fully working (🟡 or ❌) | 9 | 14 (plus 8 finished pages with no link to them) |
-| Covered by automated tests (✅ or 🟡) | 42 | 6 |
+| Built but not fully working (🟡 or ❌) | 8 | 12 (plus 8 finished pages with no link to them) |
+| Covered by automated tests (✅ or 🟡) | 43 | 11 |
 | In live use today | 55 | 28 (mostly Athletes To Industry, settings and the shell) |
 
 **Integrations not switched on:** Stripe (payments, billing, revenue), Sentry (error monitoring). IvyLens and Manatal are live. Resend email is live but hit its daily limit (Issue 8).
 
-**Suggested priority before onboarding a real HR client:** fix Issues 1, 2, 4, 5 and 6. Then add links to the orphaned portal pages (Issue 7) and connect Stripe if clients will pay through the portal.
+**Suggested priority before onboarding a real HR client:** Issues 1, 2, 4, 5 and 6 are fixed. Next: add links to the orphaned portal pages (Issue 7) and connect Stripe if clients will pay through the portal.

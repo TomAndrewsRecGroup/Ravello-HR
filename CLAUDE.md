@@ -1357,3 +1357,56 @@ IvyLens re-scores them.
 
 
 
+
+---
+
+## Five fixes from the system inventory (2026-09-24)
+
+`docs/SYSTEM_FEATURES_INVENTORY.md` lists every feature in both apps
+with build / test / live-usage status. Five of its issues were fixed in
+the same pass:
+
+- **Employee leave link was unreachable.** `/leave/<token>` and
+  `/api/leave/<token>` were missing from the portal middleware's
+  `PUBLIC_ROUTES`, so the employee (who has no login, by design) was
+  redirected to `/auth/login`. The page's own server-side preflight
+  calls the API with no cookie, so BOTH must be public. Same defect
+  class as the admin cron 307. Note the token rotates after every
+  submission (anti-replay), so each request needs a freshly shared link.
+- **Leave is ONE table: `absence_records`.** The leave link, the
+  Absence page and approve/deny wrote it; Calendar, HR Reports and
+  Employee Records read `leave_records`, which nothing else wrote. All
+  now read absence_records, aliasing `absence_type`→`leave_type` and
+  `days`→`days_count` in the select and passing rows through
+  `normaliseAbsenceRows()` (blank end date = one day, blank count = the
+  inclusive span). `calculateLeaveBalance` accepts both vocabularies
+  (`holiday`/`annual_leave`, `sick`/`sick_day`). `leave_records` is now
+  unused; it was empty, so nothing was migrated and it was not dropped.
+- **Clients could not act on a "Sent" candidate.** The admin Send
+  button sets `shared`; the portal buttons showed only for `pending`.
+  `lib/hiring/candidateDecision.ts` — `pending`, `shared` and
+  `info_requested` all mean "waiting on the client".
+- **Service request responses now email the client.** `POST
+  /api/admin/service-requests/[id]/respond` saves, completes, sends
+  `serviceRequestResponseEmail` to the raiser (falling back to the
+  company's client_admins), writes `email_log`, and REPORTS a failed
+  send. The Requests screen used to say "Response sent to client" when
+  nothing had been sent.
+- **Module flags are enforced on pages, not just the menu.**
+  `portal/src/lib/moduleAccess.ts` is the one route→flags map; the
+  middleware redirects a switched-off page to `/dashboard`, section
+  tabs hide it, index pages land on the first enabled tab, Quick
+  Actions disable by it. The middleware reads flags FRESH for gated
+  paths (the session cookie can be 15 min stale) and fails OPEN on a
+  DB error — the gate is commercial; RLS is the data boundary. Free
+  programmes are gated by their own flag only (`/lead/learning` →
+  `learning`, `/hire/friction-lens` → `friction_lens`). A test walks
+  `app/(portal)` and fails on any page that is neither in the map nor
+  in `UNGATED_ROUTES`. Calendar is now gated by `calendar` in the
+  sidebar too.
+
+Portal gained `vitest.config.ts` (the `@/` alias) so the middleware can
+be tested. Every fix was mutation-checked (10 reintroductions, all
+caught). `resilient.test.ts > stops retrying when the budget runs out
+mid-ladder` is timing-sensitive and fails roughly 1 run in 6 under load;
+it predates this change.

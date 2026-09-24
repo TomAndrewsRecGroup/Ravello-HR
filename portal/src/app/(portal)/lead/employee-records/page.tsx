@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import EmployeeRecordsClient from './EmployeeRecordsClient';
+import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 
 export const metadata: Metadata = { title: 'Employee Records' };
 export const revalidate = 30;
@@ -33,8 +34,8 @@ export default async function EmployeeRecordsPage() {
       .eq('company_id', companyId)
       .order('full_name'),
     supabase
-      .from('leave_records')
-      .select('id,employee_id,leave_type,start_date,end_date,days_count,status')
+      .from('absence_records')
+      .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status')
       .eq('company_id', companyId)
       .order('start_date', { ascending: false }),
   ]);
@@ -47,7 +48,7 @@ export default async function EmployeeRecordsPage() {
         isAdmin={isAdmin}
         canManageLeave={canManageLeave}
         initialEmployees={empRes.data ?? []}
-        leaveRecords={leaveRes.data ?? []}
+        leaveRecords={normaliseAbsenceRows(leaveRes.data as any) as any}
       />
     </main>
   );
