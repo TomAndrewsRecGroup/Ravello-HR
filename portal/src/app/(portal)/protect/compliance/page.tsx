@@ -78,7 +78,7 @@ export default async function CompliancePage() {
                 No compliance items
               </p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                The People System will add compliance obligations here as they arise.
+                Core OS 360 will add compliance obligations here as they arise.
               </p>
             </div>
           </div>

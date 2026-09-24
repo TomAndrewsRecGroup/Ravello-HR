@@ -415,7 +415,7 @@ function StatCard({ label, sublabel, value, tone, icon: Icon }: StatCardProps) {
               : tone === 'amber'     ? 'var(--amber)'
               : tone === 'ink-faint' ? 'var(--ink-faint)'
               :                        'var(--ink)';
-  const bg     = tone === 'purple'    ? 'rgba(124,58,237,0.08)'
+  const bg     = tone === 'purple'    ? 'rgba(11,120,150,0.08)'
               : tone === 'teal'      ? 'rgba(20,184,166,0.10)'
               : tone === 'amber'     ? 'rgba(245,158,11,0.12)'
               :                        'var(--surface-soft)';

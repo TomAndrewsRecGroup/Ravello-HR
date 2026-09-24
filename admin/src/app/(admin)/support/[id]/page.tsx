@@ -56,11 +56,11 @@ export default async function AdminTicketPage({ params }: { params: { id: string
               const isTPO = m.is_internal || (m.sender_id !== t.submitted_by);
               return (
                 <div key={m.id} className="rounded-[12px] p-4"
-                  style={{ background: isTPO ? 'rgba(143,114,246,0.06)' : 'var(--surface)', border: `1px solid ${isTPO ? 'rgba(143,114,246,0.15)' : 'var(--line)'}`, marginLeft: isTPO ? '1.5rem' : '0' }}
+                  style={{ background: isTPO ? 'rgba(11,120,150,0.06)' : 'var(--surface)', border: `1px solid ${isTPO ? 'rgba(11,120,150,0.15)' : 'var(--line)'}`, marginLeft: isTPO ? '1.5rem' : '0' }}
                 >
                   <div className="flex justify-between mb-2">
                     <span className="text-xs font-semibold" style={{ color: isTPO ? 'var(--purple)' : 'var(--teal)' }}>
-                      {isTPO ? 'The People System' : 'Client'}
+                      {isTPO ? 'Core OS 360' : 'Client'}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                       {new Date(m.created_at).toLocaleString('en-GB', { day:'numeric',month:'short',hour:'2-digit',minute:'2-digit' })}

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     case 'Roadmap': {
       const { data } = await supabase
         .from('milestones')
-        .select('id,pillar,title,status,quarter,due_date')
+        .select('id,pillar,title,description,owner,status,quarter,due_date')
         .eq('company_id', companyId)
         .order('due_date', { ascending: true });
       return NextResponse.json({ milestones: data ?? [] });

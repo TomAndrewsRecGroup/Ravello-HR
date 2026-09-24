@@ -25,7 +25,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<Enquiry['status'], { bg: string; fg: string }> = {
-  new:       { bg: 'rgba(124,58,237,0.12)', fg: 'var(--purple)'    },
+  new:       { bg: 'rgba(11,120,150,0.12)', fg: 'var(--purple)'    },
   contacted: { bg: 'rgba(59,111,255,0.12)', fg: 'var(--blue)'      },
   booked:    { bg: 'rgba(20,184,166,0.12)', fg: 'var(--teal)'      },
   closed:    { bg: 'var(--surface-alt)',     fg: 'var(--ink-faint)' },

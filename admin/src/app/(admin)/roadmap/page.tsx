@@ -5,34 +5,42 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import {
   Map, CheckCircle2, Circle, Clock,
-  Briefcase, BookOpen, ShieldCheck, TrendingUp, Users, BarChart3,
+  Briefcase, BookOpen, ShieldCheck, TrendingUp, Users, BarChart3, AlertTriangle,
 } from 'lucide-react';
+import { MILESTONE_PILLARS, quarterKey, quarterLabel, type MilestonePillar } from '@/lib/roadmap/milestones';
 
 export const metadata: Metadata = { title: 'Roadmap' };
 export const revalidate = 60;
 
-type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
-type Track   = 'HIRE' | 'LEAD' | 'PROTECT';
+type Track = MilestonePillar;
 
-// HIRE = recruitment / talent acquisition (Business pillar in our framing)
-// LEAD = people development / training (HR pillar)
-// PROTECT = compliance / risk (Data + Risk pillar)
+// This page used to select and order by `milestones.track` — a column
+// that has never existed (the table has `pillar`). The query failed,
+// readAllPages returned no rows, and the page showed "no milestones" for
+// every client whatever was stored. It now reads the shared vocabulary in
+// lib/roadmap/milestones.ts, the same one the client tab writes.
+//
+// hire = recruitment / talent acquisition (Business pillar in our framing)
+// lead = people development / training (HR pillar)
+// protect = compliance / risk (Data + Risk pillar)
 const TRACK_META: Record<Track, { label: string; pillar: string; icon: typeof Briefcase; bg: string; text: string; border: string }> = {
-  HIRE:    { label: 'Hire',    pillar: 'Business', icon: Briefcase,    bg: 'rgba(124,58,237,0.08)',  text: 'var(--purple)', border: 'rgba(124,58,237,0.2)' },
-  LEAD:    { label: 'Lead',    pillar: 'HR',       icon: BookOpen,     bg: 'rgba(20,184,166,0.08)',  text: 'var(--teal)',   border: 'rgba(20,184,166,0.2)' },
-  PROTECT: { label: 'Protect', pillar: 'Data',     icon: ShieldCheck,  bg: 'rgba(59,130,246,0.08)',  text: 'var(--blue)',   border: 'rgba(59,130,246,0.2)' },
+  hire:    { label: 'Hire',    pillar: 'Business', icon: Briefcase,    bg: 'rgba(11,120,150,0.08)',  text: 'var(--purple)', border: 'rgba(11,120,150,0.2)' },
+  lead:    { label: 'Lead',    pillar: 'HR',       icon: BookOpen,     bg: 'rgba(20,184,166,0.08)',  text: 'var(--teal)',   border: 'rgba(20,184,166,0.2)' },
+  protect: { label: 'Protect', pillar: 'Data',     icon: ShieldCheck,  bg: 'rgba(59,130,246,0.08)',  text: 'var(--blue)',   border: 'rgba(59,130,246,0.2)' },
 };
 
 const STATUS_ICON: Record<string, React.ElementType> = {
   complete:    CheckCircle2,
   in_progress: Clock,
-  pending:     Circle,
+  at_risk:     AlertTriangle,
+  not_started: Circle,
 };
 
 const STATUS_COLOR: Record<string, string> = {
   complete:    'var(--teal)',
   in_progress: 'var(--purple)',
-  pending:     'var(--ink-faint)',
+  at_risk:     'var(--red)',
+  not_started: 'var(--ink-faint)',
 };
 
 function currentYear() {
@@ -44,7 +52,6 @@ function fmtDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-const QUARTERS: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 export default async function AdminRoadmapPage() {
   const supabase = createServerSupabaseClient();
@@ -52,9 +59,9 @@ export default async function AdminRoadmapPage() {
   const [milestonesRes, companiesRes] = await Promise.all([
     readAllPages<any>((from, to) => supabase
       .from('milestones')
-      .select('id,company_id,track,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,slug,name)')
+      .select('id,company_id,pillar,title,description,quarter,due_date,status,owner,sort_order,companies(id,slug,name)')
       .order('quarter')
-      .order('track').order('id').range(from, to)),
+      .order('pillar').order('id').range(from, to)),
     supabase
       .from('companies')
       .select('id,slug,name')
@@ -69,7 +76,8 @@ export default async function AdminRoadmapPage() {
   const totalMilestones = milestones.length;
   const completed       = milestones.filter((m: any) => m.status === 'complete').length;
   const inProgress      = milestones.filter((m: any) => m.status === 'in_progress').length;
-  const pending         = milestones.filter((m: any) => m.status === 'pending').length;
+  const atRisk          = milestones.filter((m: any) => m.status === 'at_risk').length;
+  const pending         = milestones.filter((m: any) => m.status === 'not_started').length;
   const completionPct   = totalMilestones === 0 ? 0 : Math.round((completed / totalMilestones) * 100);
 
   // Three-way pillar breakdown — derived from track for now (one
@@ -77,7 +85,7 @@ export default async function AdminRoadmapPage() {
   // table grows a richer pillar enum this read can switch to it.
   const byPillar = (['HR', 'Business', 'Data'] as const).map(p => {
     const tracks = (Object.keys(TRACK_META) as Track[]).filter(t => TRACK_META[t].pillar === p);
-    const items  = milestones.filter((m: any) => tracks.includes(m.track as Track));
+    const items  = milestones.filter((m: any) => tracks.includes(m.pillar as Track));
     const done   = items.filter((m: any) => m.status === 'complete').length;
     return {
       pillar: p,
@@ -127,6 +135,7 @@ export default async function AdminRoadmapPage() {
             <div className="flex items-center gap-3">
               <span className="text-xs font-medium" style={{ color: 'var(--teal)' }}>{completed} done</span>
               <span className="text-xs font-medium" style={{ color: 'var(--purple)' }}>{inProgress} in progress</span>
+              {atRisk > 0 && <span className="text-xs font-medium" style={{ color: 'var(--red)' }}>{atRisk} at risk</span>}
               <span className="text-xs font-medium" style={{ color: 'var(--ink-faint)' }}>{pending} pending</span>
             </div>
           </div>
@@ -146,7 +155,7 @@ export default async function AdminRoadmapPage() {
           {byPillar.map(p => {
             const Icon = p.pillar === 'HR' ? Users : p.pillar === 'Business' ? TrendingUp : BarChart3;
             const accent = p.pillar === 'HR' ? 'var(--teal)' : p.pillar === 'Business' ? 'var(--purple)' : 'var(--blue)';
-            const bg     = p.pillar === 'HR' ? 'rgba(20,184,166,0.08)' : p.pillar === 'Business' ? 'rgba(124,58,237,0.08)' : 'rgba(59,130,246,0.08)';
+            const bg     = p.pillar === 'HR' ? 'rgba(20,184,166,0.08)' : p.pillar === 'Business' ? 'rgba(11,120,150,0.08)' : 'rgba(59,130,246,0.08)';
             return (
               <div key={p.pillar} className="card p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -156,7 +165,7 @@ export default async function AdminRoadmapPage() {
                     </div>
                     <div>
                       <p className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{p.pillar}</p>
-                      <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{p.tracks.join(' · ')}</p>
+                      <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{p.tracks.map(t => TRACK_META[t].label).join(' · ')}</p>
                     </div>
                   </div>
                   <p className="text-2xl font-bold font-display" style={{ color: accent }}>{p.pct}%</p>
@@ -181,17 +190,27 @@ export default async function AdminRoadmapPage() {
 
             const byQuarter: Record<string, any[]> = {};
             for (const m of client.milestones) {
-              const q = m.quarter ?? 'Q1';
+              const q = m.quarter ?? '';
               if (!byQuarter[q]) byQuarter[q] = [];
               byQuarter[q].push(m);
             }
+            // One row of four quarters per year this client has plans in,
+            // always including the current year.
+            const years = Array.from(new Set([
+              currentYear(),
+              ...client.milestones
+                .map((m: any) => /^Q[1-4]-(\d{4})$/.exec(m.quarter ?? '')?.[1])
+                .filter(Boolean)
+                .map(Number),
+            ])).sort((a, b) => a - b);
+            const quarterKeys = years.flatMap(y => [1, 2, 3, 4].map(q => quarterKey(y, q)));
 
             return (
               <section key={cid} className="card overflow-hidden">
                 <div className="flex items-center justify-between flex-wrap gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-soft)' }}>
                   <div className="flex items-center gap-3">
                     <h2 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>{client.name}</h2>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
                       {pct}% delivered
                     </span>
                   </div>
@@ -208,19 +227,19 @@ export default async function AdminRoadmapPage() {
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 divide-x" style={{ borderColor: 'var(--line)' }}>
-                  {QUARTERS.map((q) => {
+                  {quarterKeys.map((q) => {
                     const qMilestones = byQuarter[q] ?? [];
                     return (
                       <div key={q} className="p-4 min-h-[120px]">
                         <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>
-                          {q} {currentYear()}
+                          {quarterLabel(q)}
                         </p>
                         {qMilestones.length === 0 ? (
                           <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>—</p>
                         ) : (
                           <div className="space-y-3">
-                            {(['HIRE', 'LEAD', 'PROTECT'] as Track[]).map((track) => {
-                              const trackItems = qMilestones.filter((m: any) => m.track === track);
+                            {MILESTONE_PILLARS.map((track) => {
+                              const trackItems = qMilestones.filter((m: any) => m.pillar === track);
                               if (trackItems.length === 0) return null;
                               const meta = TRACK_META[track];
                               const TIcon = meta.icon;

@@ -112,6 +112,72 @@ export interface LeaveRecordRow {
   end_date: string;
 }
 
+// Leave lives in ONE table: `absence_records`. The employee leave link,
+// the Absence page and the approve/deny routes all write there, so the
+// calendar, HR Reports and Employee Records read it too. They used to
+// read a second table (`leave_records`) that nothing else wrote, so leave
+// approved through the link never reached a balance or the calendar.
+//
+// absence_records speaks its own vocabulary ('holiday', 'sick'); the
+// retired leave_records enum said 'annual_leave' / 'sick_day'. Both are
+// accepted so a row written under either still counts.
+export const ANNUAL_LEAVE_TYPES: ReadonlySet<string> = new Set(['holiday', 'annual', 'annual_leave']);
+export const SICK_LEAVE_TYPES:   ReadonlySet<string> = new Set(['sick', 'sick_day']);
+
+/** An absence_records row as the leave screens select it, with
+ *  `absence_type` / `days` aliased to the names those screens use. */
+export interface AbsenceLeaveRow {
+  id:              string;
+  employee_id:     string | null;
+  employee_name:   string | null;
+  leave_type:      string;
+  start_date:      string;
+  end_date:        string | null;
+  days_count:      number | string | null;
+  status:          string;
+  notes?:          string | null;
+  employee_records?: { full_name?: string | null; job_title?: string | null; department?: string | null } | null;
+}
+
+export interface NormalisedLeaveRow extends LeaveRecordRow {
+  id:            string;
+  employee_id:   string | null;
+  notes:         string | null;
+  employee_records: { full_name: string | null; job_title: string | null; department: string | null };
+}
+
+/**
+ * absence_records allows a blank end date and a blank day count (the
+ * Absence page's manual form leaves both optional). The balance maths
+ * needs both, so a blank end date means a single day and a blank count
+ * is the inclusive calendar-day span. The employee name falls back to
+ * the free-text name for rows not linked to an employee record.
+ */
+export function normaliseAbsenceRows(rows: AbsenceLeaveRow[] | null | undefined): NormalisedLeaveRow[] {
+  return (rows ?? []).map(r => {
+    const end = r.end_date || r.start_date;
+    const stored = r.days_count == null || r.days_count === '' ? NaN : Number(r.days_count);
+    const days = Number.isFinite(stored)
+      ? stored
+      : daysBetween(new Date(r.start_date), new Date(end)) + 1;
+    return {
+      id:          r.id,
+      employee_id: r.employee_id,
+      leave_type:  r.leave_type,
+      start_date:  r.start_date,
+      end_date:    end,
+      days_count:  days,
+      status:      r.status,
+      notes:       r.notes ?? null,
+      employee_records: {
+        full_name:  r.employee_records?.full_name ?? r.employee_name ?? null,
+        job_title:  r.employee_records?.job_title ?? null,
+        department: r.employee_records?.department ?? null,
+      },
+    };
+  });
+}
+
 /**
  * Calculate leave balance for an employee given their config and leave records.
  */
@@ -128,15 +194,15 @@ export function calculateLeaveBalance(
   );
 
   const approvedAnnual = inYear
-    .filter(r => r.leave_type === 'annual_leave' && r.status === 'approved')
+    .filter(r => ANNUAL_LEAVE_TYPES.has(r.leave_type) && r.status === 'approved')
     .reduce((sum, r) => sum + r.days_count, 0);
 
   const pendingAnnual = inYear
-    .filter(r => r.leave_type === 'annual_leave' && r.status === 'pending')
+    .filter(r => ANNUAL_LEAVE_TYPES.has(r.leave_type) && r.status === 'pending')
     .reduce((sum, r) => sum + r.days_count, 0);
 
   const approvedSick = inYear
-    .filter(r => r.leave_type === 'sick_day' && (r.status === 'approved' || r.status === 'pending'))
+    .filter(r => SICK_LEAVE_TYPES.has(r.leave_type) && (r.status === 'approved' || r.status === 'pending'))
     .reduce((sum, r) => sum + r.days_count, 0);
 
   const totalTaken = inYear

@@ -147,7 +147,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     sb.from('actions').insert({
       company_id:       newClientId,
       action_type:      'general',
-      title:            'Welcome to The People System portal',
+      title:            'Welcome to Core OS 360 portal',
       description:      'Your HR portal is now active. Start by completing the initial compliance checklist and adding your team members.',
       priority:         'normal',
       status:           'active',

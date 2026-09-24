@@ -77,8 +77,8 @@ export default function LeaveRequestForm({ token, employeeName, companyName, lea
 
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 mx-auto rounded-[12px] flex items-center justify-center mb-3" style={{ background: 'rgba(124,58,237,0.10)' }}>
-            <Palmtree size={20} style={{ color: 'var(--purple, #7C3AED)' }} />
+          <div className="w-12 h-12 mx-auto rounded-[12px] flex items-center justify-center mb-3" style={{ background: 'rgba(11,120,150,0.10)' }}>
+            <Palmtree size={20} style={{ color: 'var(--purple, #0B7896)' }} />
           </div>
           <h1 className="font-display font-bold text-xl mb-1" style={{ color: '#0A0F1E' }}>
             Request leave
@@ -161,7 +161,7 @@ export default function LeaveRequestForm({ token, employeeName, companyName, lea
         </form>
 
         <p className="text-xs text-center mt-5" style={{ color: 'var(--ink-faint)' }}>
-          Powered by The People System
+          Powered by Core OS 360
         </p>
       </div>
     </main>

@@ -9,7 +9,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
-  active:    { bg: 'rgba(124,58,237,0.10)', fg: 'var(--purple)' },
+  active:    { bg: 'rgba(11,120,150,0.10)', fg: 'var(--purple)' },
   completed: { bg: 'rgba(20,184,166,0.12)', fg: 'var(--teal)' },
 };
 

@@ -34,7 +34,7 @@ export default async function ValueReportsPage() {
 
   return (
     <>
-      <AdminTopbar title="Client Value Reports" subtitle="Generate monthly reports showing what TPS delivered" />
+      <AdminTopbar title="Client Value Reports" subtitle="Generate monthly reports showing what Core OS 360 delivered" />
       <main className="admin-page flex-1">
         <ValueReportClient
           companies={compRes.data ?? []}

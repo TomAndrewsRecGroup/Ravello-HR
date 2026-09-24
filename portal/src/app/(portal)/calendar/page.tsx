@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import CalendarClient from './CalendarClient';
+import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 
 export const metadata: Metadata = { title: 'Company Calendar' };
 export const revalidate = 30;
@@ -42,10 +43,12 @@ export default async function CalendarPage() {
       .lte('start_date', yearEnd)
       .order('start_date'),
     supabase
-      .from('leave_records')
-      .select('id,employee_id,leave_type,start_date,end_date,days_count,status,notes,employee_records(full_name, job_title)')
+      .from('absence_records')
+      .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status,notes,employee_records(full_name, job_title)')
       .eq('company_id', companyId)
-      .gte('end_date', yearStart)
+      // end_date may be blank (single-day absence), so a row counts as
+      // in range when it ends in range OR has no end and starts in range.
+      .or(`end_date.gte.${yearStart},and(end_date.is.null,start_date.gte.${yearStart})`)
       .lte('start_date', yearEnd)
       .order('start_date'),
     supabase
@@ -64,7 +67,7 @@ export default async function CalendarPage() {
           companyId={companyId}
           isAdmin={isAdmin}
           initialEvents={eventsRes.data ?? []}
-          initialLeave={(leaveRes.data ?? []) as any}
+          initialLeave={normaliseAbsenceRows(leaveRes.data as any) as any}
           employees={employeesRes.data ?? []}
         />
       </main>

@@ -127,7 +127,7 @@ export default async function BDIntelligencePage() {
         subtitle="Companies and roles identified through market scanning"
         actions={
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-semibold"
-            style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+            style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
             <Target size={13} /> Live Data
           </div>
         }

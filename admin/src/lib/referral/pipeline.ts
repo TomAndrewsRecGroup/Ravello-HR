@@ -315,11 +315,13 @@ export async function processMatch(
     return;
   }
 
-  let status: ReferralStatus = decision.status;
-  let emailSentAt: string | null = null;
-  let emailProviderId: string | null = null;
+  const status: ReferralStatus = decision.status;
 
-  // ── Email, only when everything lines up ──
+  // ── Decide whether to email BEFORE anything is written ──
+  // Only the decision is made here; the send happens after the row
+  // exists (below). The skip reasons go into the row's first history
+  // entry, so they are settled first.
+  let shouldSend = false;
   if (status === 'qualified') {
     tally.qualified++;
 
@@ -336,29 +338,7 @@ export async function processMatch(
       tally.no_consent_skips++;
       decision.reasons.push('Qualified but the candidate has not consented to contact in Manatal.');
     } else {
-      const sent = await sendReferralInvite({
-        supabase,
-        toEmail:     email,
-        fullName:    realName,
-        roleTitle:   role.requisition.title,
-        companyId:   role.requisition.company_id,
-        candidateId: candidateRow.id,
-        manatalCandidateId: manatalCandidateId,
-        requisitionId:      role.requisition.id,
-        config,
-      });
-      if (sent.sent) {
-        status          = 'email_sent';
-        emailSentAt     = new Date().toISOString();
-        emailProviderId = sent.providerId;
-        tally.emailed++;
-        decision.reasons.push('Referral invitation sent.');
-      } else {
-        // Stays 'qualified' so it is visibly outstanding rather than
-        // silently marked done.
-        tally.email_failures++;
-        decision.reasons.push(`Email failed: ${sent.error}`);
-      }
+      shouldSend = true;
     }
   }
 
@@ -368,6 +348,14 @@ export async function processMatch(
   if (status === 'rejected_score')    tally.rejected_score++;
   if (status === 'scan_error')        tally.scan_errors++;
 
+  // ── Claim the candidate, THEN email ──
+  // The row is the idempotency guard, so it is written before the send,
+  // never after. Until 2026-09-24 the email went first: when the insert
+  // then failed (a unique violation, because the guard in processRole
+  // had missed an existing row), the send had already happened and
+  // nothing recorded it — so the same people were emailed every hour,
+  // up to 29 times each. With the row first, a failed insert means no
+  // email, whatever the reason.
   const now = new Date().toISOString();
   const { error: appErr } = await supabase.from('referral_applications').insert({
     candidate_id:         candidateRow.id,
@@ -387,22 +375,98 @@ export async function processMatch(
     ivylens_scan_id:      scanId,
     scan_error:           scanErr,
     scanned_at:           now,
-    email_sent_at:        emailSentAt,
-    email_provider_id:    emailProviderId,
+    email_sent_at:        null,
+    email_provider_id:    null,
     status_history:       [{ at: now, from: null, to: status, by: 'cron', reasons: decision.reasons }],
   });
 
   if (appErr) {
     // A unique violation means a concurrent run beat us to it — benign.
     // The orphan candidate row is removed either way so a retry is not
-    // blocked by a half-written pair.
+    // blocked by a half-written pair. No email is sent on this path.
     await supabase.from('candidates').delete().eq('id', candidateRow.id);
     if (/duplicate key|unique/i.test(appErr.message)) {
       tally.already_processed++;
     } else {
       tally.notes.push(`Could not record referral application for Manatal ${manatalCandidateId}: ${appErr.message}`);
     }
+    return;
   }
+
+  if (!shouldSend || !email) return;
+
+  const sent = await sendReferralInvite({
+    supabase,
+    toEmail:     email,
+    fullName:    realName,
+    roleTitle:   role.requisition.title,
+    companyId:   role.requisition.company_id,
+    candidateId: candidateRow.id,
+    manatalCandidateId: manatalCandidateId,
+    requisitionId:      role.requisition.id,
+    config,
+  });
+
+  if (!sent.sent) {
+    // Stays 'qualified' so it is visibly outstanding rather than
+    // silently marked done.
+    tally.email_failures++;
+    tally.notes.push(`Referral email to Manatal ${manatalCandidateId} failed: ${sent.error}`);
+    return;
+  }
+
+  tally.emailed++;
+  const sentAt = new Date().toISOString();
+  const { error: updErr, count: updCount } = await supabase
+    .from('referral_applications')
+    .update({
+      status:            'email_sent',
+      email_sent_at:     sentAt,
+      email_provider_id: sent.providerId,
+      status_history: [
+        { at: now,    from: null,        to: status,       by: 'cron', reasons: decision.reasons },
+        { at: sentAt, from: status,      to: 'email_sent', by: 'cron', reasons: ['Referral invitation sent.'] },
+      ],
+    }, { count: 'exact' })
+    .eq('requisition_id', role.requisition.id)
+    .eq('manatal_candidate_id', manatalCandidateId);
+
+  if (updErr || updCount !== 1) {
+    // The email DID go. The row still exists, so nobody is re-sent;
+    // it just reads 'qualified' until someone settles it by hand.
+    tally.notes.push(`Referral email to Manatal ${manatalCandidateId} was sent but the row could not be marked email_sent: ${updErr?.message ?? `${updCount ?? 0} rows updated`}`);
+  }
+}
+
+/** How many ids go in one `.in()` read. Each read then returns at most
+ *  this many rows, far below PostgREST's 1,000-row cap, and the URL
+ *  stays short (a Manatal id is ~8 chars). */
+export const PROCESSED_ID_CHUNK = 200;
+
+/** Every Manatal candidate id in `ids` that already holds a row for this
+ *  requisition — or null if any read failed.
+ *
+ *  One `.in()` over every applicant is what broke on 2026-09-22: the
+ *  role passed 1,000 rows, the server silently returned the first
+ *  1,000, and the oldest 26 applicants looked new again every hour.
+ *  Chunking bounds each response by the chunk, not by the table. */
+export async function readProcessedIds(
+  supabase: SupabaseClient,
+  requisitionId: string,
+  ids: string[],
+): Promise<Set<string> | null> {
+  const seen = new Set<string>();
+  for (let i = 0; i < ids.length; i += PROCESSED_ID_CHUNK) {
+    const chunk = ids.slice(i, i + PROCESSED_ID_CHUNK);
+    const { data, error } = await supabase
+      .from('referral_applications')
+      .select('manatal_candidate_id')
+      .eq('requisition_id', requisitionId)
+      .in('manatal_candidate_id', chunk);
+    if (error) return null;
+    for (const r of data ?? []) seen.add(r.manatal_candidate_id as string);
+  }
+  return seen;
 }
 
 /* ─── One role ─────────────────────────────────────────────── */
@@ -454,13 +518,14 @@ export async function processRole(
   // already hold a row for is never reconsidered for this role, so
   // nobody can be emailed twice.
   const ids = matches.map(m => manatalRefId(m.candidate)).filter(Boolean);
-  const { data: existing } = await supabase
-    .from('referral_applications')
-    .select('manatal_candidate_id')
-    .eq('requisition_id', role.requisition.id)
-    .in('manatal_candidate_id', ids);
-
-  const seen  = new Set((existing ?? []).map(r => r.manatal_candidate_id as string));
+  const seen = await readProcessedIds(supabase, role.requisition.id, ids);
+  if (!seen) {
+    // Fail closed: without the guard we cannot tell who was already
+    // contacted, so nobody on this role is processed this run.
+    tally.roles_skipped++;
+    tally.notes.push(`"${role.requisition.title}": could not read which applicants were already processed — role skipped this run.`);
+    return;
+  }
   const fresh = matches.filter(m => !seen.has(manatalRefId(m.candidate)));
   tally.already_processed += matches.length - fresh.length;
 

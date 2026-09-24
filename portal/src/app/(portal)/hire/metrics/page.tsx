@@ -76,9 +76,9 @@ export default async function MetricsPage() {
               <BarChart3 size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>Metrics not enabled</p>
               <p className="text-sm max-w-[300px] text-center" style={{ color: 'var(--ink-faint)' }}>
-                Analytics and reporting insights are available on higher-tier plans. Contact The People System to upgrade.
+                Analytics and reporting insights are available on higher-tier plans. Contact Core OS 360 to upgrade.
               </p>
-              <a href="mailto:hello@thepeopleoffice.co.uk?subject=Metrics module" className="btn-cta btn-sm mt-1">
+              <a href="mailto:hello@thepeoplesystem.co.uk?subject=Metrics module" className="btn-cta btn-sm mt-1">
                 Get in touch
               </a>
             </div>

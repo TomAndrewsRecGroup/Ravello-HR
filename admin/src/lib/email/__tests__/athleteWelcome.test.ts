@@ -19,6 +19,7 @@ describe('the athlete welcome email uses the A2I identity, not the purple TPS sh
   it('carries no People System branding', () => {
     const html = mail().html;
     expect(html).not.toContain('<title>The People System</title>');
+    expect(html).not.toContain('<title>Core OS 360</title>');
     expect(html).not.toContain('thepeoplesystem.co.uk');
     expect(html).not.toContain('HR consultancy');
     expect(html).not.toContain('the%20people%20system');
@@ -32,7 +33,8 @@ describe('the athlete welcome email uses the A2I identity, not the purple TPS sh
 
   it('states the correct relationship in the footer', () => {
     expect(mail().html).toContain('Operated by Andrews Recruitment Group');
-    expect(mail().html).toContain('Powered by The People System');
+    expect(mail().html).toContain('Powered by Core OS 360');
+    expect(mail().html).not.toContain('People System');
   });
 
   it('names Andrews Recruitment Group in the body copy', () => {

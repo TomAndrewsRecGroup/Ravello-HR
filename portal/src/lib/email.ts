@@ -1,9 +1,11 @@
 // Minimal Resend email helper for portal API routes.
 // Same approach as admin/src/lib/email — plain fetch, no SDK.
 
+import { BRAND_EMAIL_LOGO_URL, BRAND_NAME, BRAND_TAGLINE, brandFromAddress } from '@/lib/brand';
+
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const PURPLE          = '#7C3AED';
-const PURPLE_DK       = '#5A2AC8';
+const PURPLE          = '#0B7896';
+const PURPLE_DK       = '#075E77';
 const INK             = '#070B1D';
 const INK_SOFT        = '#38436A';
 const INK_FAINT       = '#748099';
@@ -11,22 +13,25 @@ const BG              = '#EFF0F7';
 const SURFACE         = '#FFFFFF';
 const SURFACE_LT      = '#F4F5FB';
 const LINE            = '#E2E4EE';
-const LOGO_URL        = process.env.EMAIL_LOGO_URL ?? 'https://www.thepeoplesystem.co.uk/email-logo.png';
+// Core OS 360 logo on the portal's own host (thepeoplesystem.co.uk, kept for
+// Resend). EMAIL_LOGO_URL is no longer read: it pointed at the People System
+// artwork and would have overridden the rebrand if still set in Vercel.
+const LOGO_URL        = BRAND_EMAIL_LOGO_URL;
 
 function wrapEmail(body: string, preheader: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>The People System</title></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Core OS 360</title></head>
 <body style="margin:0;padding:0;background:${BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${INK};">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">${preheader}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${BG};padding:32px 16px;"><tr><td align="center">
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:${SURFACE};border-radius:16px;overflow:hidden;border:1px solid ${LINE};">
-<tr><td style="padding:32px 32px 16px 32px;border-bottom:1px solid ${LINE};"><img src="${LOGO_URL}" alt="The People System" width="180" style="display:block;height:auto;max-width:180px;"/></td></tr>
+<tr><td style="padding:32px 32px 16px 32px;border-bottom:1px solid ${LINE};"><img src="${LOGO_URL}" alt="${BRAND_NAME}" width="200" style="display:block;height:auto;max-width:200px;"/></td></tr>
 <tr><td style="padding:32px;font-size:15px;line-height:1.6;color:${INK};">${body}</td></tr>
 <tr><td style="padding:24px 32px;border-top:1px solid ${LINE};background:${SURFACE_LT};font-size:12px;color:${INK_FAINT};line-height:1.5;">
-<p style="margin:0 0 8px 0;font-weight:600;color:${INK_SOFT};">The People System</p>
-<p style="margin:0;">HR consultancy &amp; people platform.</p>
+<p style="margin:0 0 8px 0;font-weight:600;color:${INK_SOFT};">Core OS 360</p>
+<p style="margin:0;">${BRAND_TAGLINE} &middot; Health &amp; Safety &middot; HR &middot; Recruitment</p>
 <p style="margin:8px 0 0 0;"><a href="https://www.thepeoplesystem.co.uk" style="color:${PURPLE};text-decoration:none;">thepeoplesystem.co.uk</a></p>
 </td></tr></table>
-<p style="margin:16px 0 0 0;font-size:11px;color:${INK_FAINT};text-align:center;">You received this email because you have an account with The People System.</p>
+<p style="margin:16px 0 0 0;font-size:11px;color:${INK_FAINT};text-align:center;">You received this email because you have an account with Core OS 360.</p>
 </td></tr></table></body></html>`;
 }
 
@@ -78,7 +83,7 @@ function wrapEmailGold(body: string, preheader: string): string {
 <tr><td style="padding:28px 32px;font-size:15px;line-height:1.6;color:${A2I_CREAM};">${body}</td></tr>
 <tr><td style="padding:22px 32px;border-top:1px solid ${A2I_BORDER};font-size:12px;color:${A2I_CREAM_MUT};line-height:1.5;">
 <p style="margin:0 0 6px 0;font-weight:600;color:${A2I_GOLD};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
-<p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by The People System.</p>
+<p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by Core OS 360.</p>
 </td></tr></table>
 </td></tr></table></body></html>`;
 }
@@ -100,8 +105,8 @@ export function buildInviteEmail(input: {
   activateUrl:  string;
 }) {
   const body = `
-<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">You've been invited to The People System</h1>
-<p style="margin:0 0 16px 0;"><strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their People System portal.</p>
+<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${INK};">You've been invited to Core OS 360</h1>
+<p style="margin:0 0 16px 0;"><strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their Core OS 360 portal.</p>
 <p style="margin:0 0 16px 0;">Click the button below to set your password and access the platform. The link is valid for <strong>7 days</strong>.</p>
 ${ctaButton(input.activateUrl, 'Accept invitation')}
 <p style="margin:24px 0 0 0;font-size:13px;color:${INK_SOFT};">If the button doesn't work, copy and paste this link into your browser:<br/><a href="${input.activateUrl}" style="color:${PURPLE};word-break:break-all;">${input.activateUrl}</a></p>
@@ -109,8 +114,8 @@ ${ctaButton(input.activateUrl, 'Accept invitation')}
 
   return {
     to:      input.to,
-    subject: `${input.companyName} invited you to The People System`,
-    html:    wrapEmail(body, `Accept your invitation to join ${input.companyName} on The People System.`),
+    subject: `${input.companyName} invited you to Core OS 360`,
+    html:    wrapEmail(body, `Accept your invitation to join ${input.companyName} on Core OS 360.`),
     tag:     'user-invited',
   };
 }
@@ -236,7 +241,7 @@ export async function sendEmail(input: {
     return null;
   }
 
-  const from    = process.env.EMAIL_FROM     ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
+  const from    = brandFromAddress(process.env.EMAIL_FROM);
   const replyTo = process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 

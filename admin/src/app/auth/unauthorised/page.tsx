@@ -39,10 +39,10 @@ export default function UnauthorisedPage() {
             Sign in with a different account
           </Link>
           <a
-            href="https://thepeopleoffice.co.uk"
+            href="https://thepeoplesystem.co.uk"
             className="btn-secondary block w-full text-center py-2.5"
           >
-            Return to The People System
+            Return to Core OS 360
           </a>
         </div>
 

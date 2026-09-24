@@ -177,7 +177,7 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                       <div className="flex items-center gap-1.5 flex-wrap mb-2">
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: p.bg, color: p.color }}>{p.label}</span>
                         {task.companies && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
                             <Building2 size={8} /> {(task.companies as any).name}
                           </span>
                         )}
@@ -201,9 +201,9 @@ export default function TaskBoardClient({ userId, tasks: initialTasks, staff, co
                               onClick={() => moveTask(task.id, 'in_progress')}
                               className="text-[11px] font-bold px-3 py-1.5 rounded-md inline-flex items-center gap-1 transition-all hover:opacity-90"
                               style={{
-                                background: 'linear-gradient(135deg,#7C3AED 0%,#5A2AC8 100%)',
+                                background: 'linear-gradient(135deg,#0B7896 0%,#075E77 100%)',
                                 color: '#FFFFFF',
-                                boxShadow: '0 1px 4px rgba(124,58,237,0.30)',
+                                boxShadow: '0 1px 4px rgba(11,120,150,0.30)',
                               }}
                             >
                               Start →

@@ -11,7 +11,7 @@ export const revalidate = 30;
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
 
 const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  new:         { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' },
+  new:         { background: 'rgba(11,120,150,0.12)', color: '#075E77' },
   in_progress: { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' },
   complete:    { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
 };
@@ -82,7 +82,7 @@ export default async function SupportPage() {
               <LifeBuoy size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No support tickets</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Raise a query and The People System will respond within one business day.
+                Raise a query and Core OS 360 will respond within one business day.
               </p>
               <Link prefetch={false} href="/support/new" className="btn-cta mt-2">Raise a Query</Link>
             </div>
@@ -198,7 +198,7 @@ export default async function SupportPage() {
                               style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.2)' }}
                             >
                               <p className="text-xs font-semibold mb-1" style={{ color: 'var(--emerald)' }}>
-                                Response from The People System
+                                Response from Core OS 360
                               </p>
                               <p className="text-sm" style={{ color: 'var(--ink)' }}>{r.response_notes}</p>
                             </div>

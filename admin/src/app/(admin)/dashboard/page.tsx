@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
     <>
       <AdminTopbar
         title="Admin Dashboard"
-        subtitle="The People System: internal operations"
+        subtitle="Core OS 360: internal operations"
         actions={<Link href="/clients/onboard" className="btn-cta btn-sm">+ New Client</Link>}
       />
       <main className="admin-page flex-1">
@@ -152,7 +152,7 @@ export default async function AdminDashboardPage() {
 
         {/* Friction Health */}
         {(highFriction.length > 0 || unassessedCount > 0) && (
-          <div className="card p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3" style={{ borderLeft: '3px solid var(--purple)', background: 'rgba(124,58,237,0.03)' }}>
+          <div className="card p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3" style={{ borderLeft: '3px solid var(--purple)', background: 'rgba(11,120,150,0.03)' }}>
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <Gauge size={16} style={{ color: 'var(--purple)', flexShrink: 0, marginTop: 2 }} />
               <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>

@@ -158,7 +158,7 @@ export default function ClientNotesTimeline({ companyId, companyName, userId, in
 
       {/* Quick add form */}
       {showForm && (
-        <div className="card p-4 mb-4" style={{ border: '1px solid rgba(124,58,237,0.15)' }}>
+        <div className="card p-4 mb-4" style={{ border: '1px solid rgba(11,120,150,0.15)' }}>
           <div className="flex items-center gap-2 mb-3">
             {NOTE_TYPES.map(t => (
               <button

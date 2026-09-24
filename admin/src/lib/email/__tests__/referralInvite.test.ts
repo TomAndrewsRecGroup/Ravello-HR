@@ -118,6 +118,8 @@ describe('the email is branded as the company the candidate applied to', () => {
   it('carries no People System identity anywhere', () => {
     const html = mail().html;
     expect(html).not.toContain('The People System');
+    // Nor the platform's new name: the candidate answered an ARG advert.
+    expect(html).not.toContain('Core OS 360');
     expect(html).not.toContain('thepeoplesystem.co.uk');
     expect(html).not.toContain('HR consultancy');
   });
@@ -145,14 +147,18 @@ describe('the email is branded as the company the candidate applied to', () => {
 });
 
 // Guard the guard: the change above must not have rebranded every other
-// email in the app. wrapEmail's default is still The People System.
-describe('every other email keeps the People System shell', () => {
+// email in the app. wrapEmail's default is the platform identity —
+// Core OS 360 since the 2026-09-24 rebrand, on the unchanged domain.
+describe('every other email keeps the platform (Core OS 360) shell', () => {
   it('the default wrapper is unchanged', async () => {
     const { wrapEmail } = await import('../layout');
     const html = wrapEmail('<p>hello</p>', 'preheader');
-    expect(html).toContain('<title>The People System</title>');
-    expect(html).toContain('thepeoplesystem.co.uk');
-    expect(html).toContain('You received this email because you have an account with The People System.');
+    expect(html).toContain('<title>Core OS 360</title>');
+    expect(html).toContain('thepeoplesystem.co.uk');   // domain kept through the rebrand
+    expect(html).toContain('You received this email because you have an account with Core OS 360.');
+    expect(html).toContain('/brand/core-os-360-email.png');
+    expect(html).not.toContain('People System');
+    expect(html).not.toContain('blob.vercel-storage.com/the%20people%20system');
     expect(html).not.toContain('Andrews Recruitment Group');
   });
 });
@@ -199,5 +205,22 @@ describe('reply-to travels with REFERRAL_EMAIL_FROM', () => {
     withEnv('Andrews Recruitment Group <careers@andrews-recruitment.com>', 'tom@andrews-recruitment.com', () => {
       expect(mail().replyTo).toBe('tom@andrews-recruitment.com');
     });
+  });
+});
+
+// The Core OS 360 restyle recoloured the platform shell's button and links
+// to the brand cyan. The ARG referral email must NOT follow it: it goes out
+// under Andrews Recruitment Group's name, so its accent is its own.
+describe('accent colour follows the sender, not the platform', async () => {
+  const { wrapEmail, ctaButton } = await import('../layout');
+  it('the platform shell uses the Core OS 360 cyan', () => {
+    const html = wrapEmail(ctaButton('https://x.example', 'Go'), 'pre');
+    expect(html).toContain('#0B7896');
+    expect(html).not.toContain('#7C3AED');
+  });
+  it('the ARG referral invite keeps its original accent', () => {
+    const html = referralInviteEmail(BASE).html;
+    expect(html).toContain('#7C3AED');
+    expect(html).not.toContain('#0B7896');
   });
 });

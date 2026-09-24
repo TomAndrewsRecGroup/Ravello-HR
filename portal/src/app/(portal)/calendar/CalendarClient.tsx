@@ -7,6 +7,7 @@ import {
   CalendarDays, Palmtree, Thermometer, Building2, Star,
 } from 'lucide-react';
 import { ABSENCE_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 
 /* ─── Types ─────────────────────────────────────────── */
 interface CalendarEvent {
@@ -52,15 +53,23 @@ const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   closed_day:    { bg: 'rgba(217,68,68,0.10)',  border: '#D94444', text: 'var(--rose)' },
-  bank_holiday:  { bg: 'rgba(124,58,237,0.10)', border: 'var(--purple)', text: '#5A1EC0' },
+  bank_holiday:  { bg: 'rgba(11,120,150,0.10)', border: 'var(--purple)', text: '#075E77' },
   company_event: { bg: 'rgba(59,111,255,0.10)', border: 'var(--blue)', text: 'var(--blue)' },
   other:         { bg: 'rgba(148,163,184,0.10)', border: '#94A3B8', text: 'var(--slate)' },
 };
 
+// Keys are absence_records.absence_type values (the one leave table);
+// the old leave_records names are kept so a legacy row still colours.
+const ANNUAL_COLOR = { bg: 'rgba(52,211,153,0.14)', text: 'var(--emerald)', icon: Palmtree };
+const SICK_COLOR   = { bg: 'rgba(245,158,11,0.14)', text: '#92400E', icon: Thermometer };
 const LEAVE_COLORS: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
-  annual_leave:   { bg: 'rgba(52,211,153,0.14)', text: 'var(--emerald)', icon: Palmtree },
-  sick_day:       { bg: 'rgba(245,158,11,0.14)', text: '#92400E', icon: Thermometer },
-  bank_holiday:   { bg: 'rgba(124,58,237,0.10)', text: '#5A1EC0', icon: Star },
+  holiday:        ANNUAL_COLOR,
+  annual:         ANNUAL_COLOR,
+  annual_leave:   ANNUAL_COLOR,
+  sick:           SICK_COLOR,
+  sick_day:       SICK_COLOR,
+  shared_parental: { bg: 'rgba(234,61,196,0.10)', text: '#9E1880', icon: CalendarDays },
+  bank_holiday:   { bg: 'rgba(11,120,150,0.10)', text: '#075E77', icon: Star },
   unpaid:         { bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', icon: CalendarDays },
   maternity:      { bg: 'rgba(234,61,196,0.10)', text: '#9E1880', icon: CalendarDays },
   paternity:      { bg: 'rgba(59,111,255,0.10)', text: 'var(--blue)', icon: CalendarDays },
@@ -106,7 +115,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
 
   // Leave form
   const [leaveForm, setLeaveForm] = useState({
-    employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '',
+    employee_id: '', leave_type: 'holiday', start_date: '', end_date: '',
     days_count: '1', status: 'approved', notes: '',
   });
 
@@ -192,35 +201,38 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
     if (!leaveForm.start_date || !leaveForm.end_date) { setLeaveError('Both dates are required.'); return; }
     if (leaveForm.start_date > leaveForm.end_date) { setLeaveError('Start date must be on or before the end date.'); return; }
     setSaving(true);
+    const employee = employees.find(e => e.id === leaveForm.employee_id);
+    // Written to absence_records — the same table the employee leave
+    // link, the Absence page and approve/deny use — so logged leave
+    // shows in balances, HR Reports and the approval queue alike.
     const { data, error } = await supabase
-      .from('leave_records')
+      .from('absence_records')
       .insert({
-        company_id: companyId,
-        employee_id: leaveForm.employee_id,
-        leave_type: leaveForm.leave_type,
-        start_date: leaveForm.start_date,
-        end_date: leaveForm.end_date,
-        days_count: parseFloat(leaveForm.days_count) || 1,
-        status: leaveForm.status,
-        notes: leaveForm.notes || null,
+        company_id:    companyId,
+        employee_id:   leaveForm.employee_id,
+        employee_name: employee?.full_name ?? null,
+        absence_type:  leaveForm.leave_type,
+        start_date:    leaveForm.start_date,
+        end_date:      leaveForm.end_date,
+        days:          parseFloat(leaveForm.days_count) || 1,
+        status:        leaveForm.status,
+        notes:         leaveForm.notes || null,
       })
-      .select('*, employee_records(full_name, job_title)')
+      .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status,notes,employee_records(full_name, job_title)')
       .single();
     if (error || !data) {
-      // Surface the actual error rather than silently keeping the form
-      // open. Most common: RLS denial when the caller isn't a
-      // client_admin (only Admins can log leave for the whole company).
+      // Surface the actual error rather than silently keeping the form open.
       const msg = error?.message ?? 'Could not save leave';
       const friendly = /policy|permission|denied|rls|new row violates/i.test(msg)
-        ? 'Only the company Admin can log leave directly here. Ask your admin, or use the personal leave link they emailed you.'
+        ? 'You do not have permission to log leave for this company. Ask your admin, or use the personal leave link they sent you.'
         : msg;
       setLeaveError(friendly);
       setSaving(false);
       return;
     }
-    setLeave(prev => [...prev, data as LeaveRecord]);
+    setLeave(prev => [...prev, ...(normaliseAbsenceRows([data as any]) as unknown as LeaveRecord[])]);
     setShowLeaveForm(false);
-    setLeaveForm({ employee_id: '', leave_type: 'annual_leave', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
+    setLeaveForm({ employee_id: '', leave_type: 'holiday', start_date: '', end_date: '', days_count: '1', status: 'approved', notes: '' });
     revalidatePortalPath('/calendar');
     setSaving(false);
   }
@@ -277,14 +289,14 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--rose)' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.closed_day.bg, border: `1px solid ${EVENT_COLORS.closed_day.border}` }} /> Closed
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#5A1EC0' }}>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#075E77' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.bank_holiday.bg, border: `1px solid ${EVENT_COLORS.bank_holiday.border}` }} /> Bank Holiday
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--emerald)' }}>
-          <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.annual_leave.bg }} /> Annual Leave
+          <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.holiday.bg }} /> Annual Leave
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#92400E' }}>
-          <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.sick_day.bg }} /> Sick Day
+          <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.sick.bg }} /> Sick Day
         </span>
       </div>
 
@@ -314,7 +326,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                 className="min-h-[72px] sm:min-h-[90px] p-1 sm:p-1.5 border-b border-r cursor-pointer transition-colors"
                 style={{
                   borderColor: 'var(--line)',
-                  background: isSelected ? 'rgba(124,58,237,0.04)' : isWeekend ? 'rgba(0,0,0,0.015)' : 'transparent',
+                  background: isSelected ? 'rgba(11,120,150,0.04)' : isWeekend ? 'rgba(0,0,0,0.015)' : 'transparent',
                   opacity: cell.inMonth ? 1 : 0.35,
                 }}
                 onClick={() => setSelectedDate(cell.date)}
@@ -506,11 +518,13 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
               <div className="form-group">
                 <label className="label">Leave Type</label>
                 <select className="input" value={leaveForm.leave_type} onChange={e => setLeaveForm(f => ({ ...f, leave_type: e.target.value }))}>
-                  <option value="annual_leave">Annual Leave</option>
-                  <option value="sick_day">Sick Day</option>
+                  {/* Same values the employee leave link accepts (api/leave/[token]). */}
+                  <option value="holiday">Annual Leave</option>
+                  <option value="sick">Sick Day</option>
                   <option value="unpaid">Unpaid Leave</option>
                   <option value="maternity">Maternity</option>
                   <option value="paternity">Paternity</option>
+                  <option value="shared_parental">Shared Parental</option>
                   <option value="compassionate">Compassionate</option>
                   <option value="other">Other</option>
                 </select>

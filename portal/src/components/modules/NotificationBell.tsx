@@ -61,7 +61,22 @@ export default function NotificationBell() {
     }
   }
 
-  useEffect(() => { fetchNotifications(); }, []);
+  useEffect(() => {
+    // Turn IvyLens ticket replies/resolutions into notifications before
+    // listing them. Throttled to once per 5 minutes per browser: the bell
+    // mounts with every section's Topbar. The route returns immediately
+    // for a company with no IvyLens tickets.
+    let shouldPoll = true;
+    try {
+      const last = Number(sessionStorage.getItem('ivylens_poll_at') ?? 0);
+      shouldPoll = Date.now() - last > 5 * 60_000;
+      if (shouldPoll) sessionStorage.setItem('ivylens_poll_at', String(Date.now()));
+    } catch { /* storage blocked: poll anyway */ }
+    const poll = shouldPoll
+      ? fetch('/api/support/poll').catch(() => undefined)
+      : Promise.resolve(undefined);
+    poll.finally(() => fetchNotifications());
+  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -166,7 +181,7 @@ export default function NotificationBell() {
                     className="w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-alt)] transition-colors"
                     style={{
                       borderBottom: '1px solid var(--line)',
-                      background: n.read ? 'transparent' : 'rgba(124,58,237,0.03)',
+                      background: n.read ? 'transparent' : 'rgba(11,120,150,0.03)',
                     }}
                   >
                     <div

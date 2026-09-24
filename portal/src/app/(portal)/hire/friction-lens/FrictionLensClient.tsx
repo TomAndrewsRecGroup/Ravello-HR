@@ -501,7 +501,7 @@ export default function FrictionLensClient({ initialAssessment, company, onAsses
         <div className="text-center max-w-md">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-            style={{ background: 'rgba(124,58,237,0.08)' }}
+            style={{ background: 'rgba(11,120,150,0.08)' }}
           >
             <Gauge size={32} style={{ color: 'var(--purple)' }} />
           </div>

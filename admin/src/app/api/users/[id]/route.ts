@@ -45,7 +45,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
   if ((profile.role as string)?.startsWith('tps_')) {
     return NextResponse.json({
-      error: 'Refusing to delete a People System staff account from this endpoint. Manage internal accounts via Supabase directly.',
+      error: 'Refusing to delete a Core OS 360 staff account from this endpoint. Manage internal accounts via Supabase directly.',
     }, { status: 400 });
   }
 

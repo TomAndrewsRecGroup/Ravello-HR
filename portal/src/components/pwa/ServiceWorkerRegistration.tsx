@@ -93,13 +93,13 @@ export default function ServiceWorkerRegistration() {
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: 'rgba(124,58,237,0.08)' }}
+        style={{ background: 'rgba(11,120,150,0.08)' }}
       >
         <Download size={18} style={{ color: 'var(--purple)' }} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-          Install The People System
+          Install Core OS 360
         </p>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
           Add to your home screen for quick access

@@ -29,7 +29,7 @@ export default function ReferralLinksAdmin({
           <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Client referral links</h2>
           <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
             Open links a client can share with any athlete or partner. Athlete submissions land on the
-            client&rsquo;s roster; partner submissions email the The People System team. Pick a client to grab their links.
+            client&rsquo;s roster; partner submissions email the Core OS 360 team. Pick a client to grab their links.
           </p>
         </div>
       </div>

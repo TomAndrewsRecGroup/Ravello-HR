@@ -36,7 +36,7 @@ const REQUEST_TYPES = [
   {
     id:          'strategic_review',
     label:       'Book a Strategic Review',
-    description: 'Schedule time with The People System to plan ahead.',
+    description: 'Schedule time with Core OS 360 to plan ahead.',
     icon:        Calendar,
     color:       'var(--warning)',
   },
@@ -296,7 +296,7 @@ export default function NewServiceRequestPage() {
                 Request received
               </p>
               <p className="text-sm max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-                The People System will respond within 1 business day.
+                Core OS 360 will respond within 1 business day.
               </p>
               <a href="/support" className="btn-secondary btn-sm flex items-center gap-1.5 mt-2">
                 <ArrowLeft size={13} /> Back to Support

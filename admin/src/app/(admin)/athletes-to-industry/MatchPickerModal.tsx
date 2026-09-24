@@ -248,7 +248,7 @@ export default function MatchPickerModal({ athlete, partners, initialInterests, 
                             <button type="button" onClick={() => togglePending(p.id, null)} disabled={saved}
                                     className="inline-flex items-center gap-1.5 text-xs font-semibold mt-1 px-2.5 py-1 rounded-full"
                                     style={{
-                                      background: saved || queued ? 'rgba(124,58,237,0.10)' : 'var(--surface)',
+                                      background: saved || queued ? 'rgba(11,120,150,0.10)' : 'var(--surface)',
                                       color: saved || queued ? 'var(--purple)' : 'var(--ink-soft)',
                                       border: '1px dashed var(--line)',
                                       opacity: saved ? 0.6 : 1,

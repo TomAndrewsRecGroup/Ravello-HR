@@ -277,8 +277,8 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
 /* ─── User roles (UI labels, never expose the raw enum) ───────── */
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  tps_admin:     'TPS Staff',
-  tps_client:    'TPS Client',
+  tps_admin:     'Core OS 360 Staff',
+  tps_client:    'Core OS 360 Client',
   client_admin:  'Admin',
   client_editor: 'Editor',
   client_user:   'User',

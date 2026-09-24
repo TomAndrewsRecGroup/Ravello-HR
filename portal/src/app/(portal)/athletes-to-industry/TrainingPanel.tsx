@@ -64,7 +64,7 @@ export default function TrainingPanel({ providers, interests, athletes = [] }: P
             <GraduationCap size={32} className="mb-3 opacity-30" style={{ color: 'var(--ink-faint)' }} />
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-soft)' }}>No providers listed yet</p>
             <p className="text-xs max-w-[260px]" style={{ color: 'var(--ink-faint)' }}>
-              The People System will publish training providers and workshops here as they join the programme.
+              Core OS 360 will publish training providers and workshops here as they join the programme.
             </p>
           </div>
         ) : (

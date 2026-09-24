@@ -32,6 +32,8 @@ PAIRS=(
   "admin/src/lib/rateLimit.ts|portal/src/lib/rateLimit.ts"
   "admin/src/lib/validation/primitives.ts|portal/src/lib/validation/primitives.ts"
   "admin/src/lib/validation/parseBody.ts|portal/src/lib/validation/parseBody.ts"
+  "admin/src/lib/roadmap/milestones.ts|portal/src/lib/roadmap/milestones.ts"
+  "admin/src/lib/brand.ts|portal/src/lib/brand.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

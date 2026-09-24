@@ -179,7 +179,7 @@ export default function TrainingNeedsClient({ companyId, userId, initialNeeds }:
           <div className="empty-state py-4">
             <BookOpen size={24} />
             <p className="text-sm">No training needs {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
-            <p className="text-xs max-w-[280px]">Flag skill gaps and development needs for your team. Your consultant at The People System will help build L&D plans.</p>
+            <p className="text-xs max-w-[280px]">Flag skill gaps and development needs for your team. Your consultant at Core OS 360 will help build L&D plans.</p>
           </div>
         </div>
       ) : (

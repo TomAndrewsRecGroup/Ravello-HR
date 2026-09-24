@@ -305,7 +305,7 @@ export default function OnboardWizard({ staff }: Props) {
                     <span
                       className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md"
                       style={{
-                        background: isFree ? 'rgba(20,184,166,0.12)' : 'rgba(124,58,237,0.10)',
+                        background: isFree ? 'rgba(20,184,166,0.12)' : 'rgba(11,120,150,0.10)',
                         color:      isFree ? 'var(--teal)'           : 'var(--purple)',
                       }}
                     >
@@ -384,17 +384,17 @@ export default function OnboardWizard({ staff }: Props) {
           <div className="space-y-5">
             <div>
               <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Account manager</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The TPS team member who looks after this client. Optional &mdash; you can assign later.</p>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The team member who looks after this client. Optional &mdash; you can assign later.</p>
             </div>
             {staff.length === 0 ? (
-              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No TPS staff found. Skip and assign later.</p>
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No staff found. Skip and assign later.</p>
             ) : (
               <div className="space-y-2">
                 <label
                   className="flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors"
                   style={{
                     border: `1px solid ${ownerId === '' ? 'var(--purple)' : 'var(--line)'}`,
-                    background: ownerId === '' ? 'rgba(124,58,237,0.04)' : 'transparent',
+                    background: ownerId === '' ? 'rgba(11,120,150,0.04)' : 'transparent',
                   }}
                 >
                   <input type="radio" name="owner" value="" checked={ownerId === ''} onChange={() => setOwnerId('')} className="w-4 h-4" />
@@ -406,13 +406,13 @@ export default function OnboardWizard({ staff }: Props) {
                     className="flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors"
                     style={{
                       border: `1px solid ${ownerId === s.id ? 'var(--purple)' : 'var(--line)'}`,
-                      background: ownerId === s.id ? 'rgba(124,58,237,0.04)' : 'transparent',
+                      background: ownerId === s.id ? 'rgba(11,120,150,0.04)' : 'transparent',
                     }}
                   >
                     <input type="radio" name="owner" value={s.id} checked={ownerId === s.id} onChange={() => setOwnerId(s.id)} className="w-4 h-4" />
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                      style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
                     >
                       {s.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
                     </div>
@@ -451,8 +451,8 @@ export default function OnboardWizard({ staff }: Props) {
               <label
                 className="flex items-center gap-3 rounded-[10px] px-4 py-3 cursor-pointer"
                 style={{
-                  background: sendInvite ? 'rgba(124,58,237,0.06)' : 'var(--surface-soft)',
-                  border:     `1px solid ${sendInvite ? 'rgba(124,58,237,0.20)' : 'var(--line)'}`,
+                  background: sendInvite ? 'rgba(11,120,150,0.06)' : 'var(--surface-soft)',
+                  border:     `1px solid ${sendInvite ? 'rgba(11,120,150,0.20)' : 'var(--line)'}`,
                 }}
               >
                 <input

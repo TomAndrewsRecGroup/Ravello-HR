@@ -1,5 +1,5 @@
 /**
- * The People System — Admin Service Worker
+ * Core OS 360 — Admin Service Worker
  *
  * Same strategy as the portal service worker:
  * - Static assets: cache-first (fingerprinted, safe to cache)
@@ -12,7 +12,7 @@
 // users might see stuck (manifest URL, layout HTML, etc.) — the
 // activate handler below deletes every cache whose name doesn't
 // match the current CACHE_NAME.
-const CACHE_NAME = 'tps-admin-v2';
+const CACHE_NAME = 'coreos-admin-v3';
 const OFFLINE_URL = '/offline';
 
 // manifest.json deliberately excluded: it's the file that points at

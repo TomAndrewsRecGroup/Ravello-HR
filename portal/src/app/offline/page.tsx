@@ -7,7 +7,7 @@ export default function OfflinePage() {
       <div className="text-center max-w-sm">
         <div
           className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: 'rgba(124,58,237,0.08)' }}
+          style={{ background: 'rgba(11,120,150,0.08)' }}
         >
           <WifiOff size={28} style={{ color: 'var(--purple)' }} />
         </div>
@@ -15,7 +15,7 @@ export default function OfflinePage() {
           You're offline
         </h1>
         <p className="text-sm mb-6" style={{ color: 'var(--ink-faint)' }}>
-          The People System needs an internet connection to load your data securely. Check your connection and try again.
+          Core OS 360 needs an internet connection to load your data securely. Check your connection and try again.
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -26,7 +26,7 @@ export default function OfflinePage() {
           Try again
         </button>
         <p className="text-xs mt-8" style={{ color: 'var(--ink-faint)' }}>
-          The People System Portal
+          Core OS 360 Portal
         </p>
       </div>
     </div>

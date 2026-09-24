@@ -449,7 +449,7 @@ interface TeamMembersProps {
 const ROLE_LABELS: Record<string, string> = {
   client_admin:   'Admin',
   client_editor:  'Editor',
-  tps_admin:      'The People System Admin',
+  tps_admin:      'Core OS 360 Admin',
 };
 
 const PORTAL_SEAT_CAP = 2;
@@ -493,7 +493,7 @@ export function TeamMembers({ members, currentUserId, currentUserRole }: TeamMem
                   type="button"
                   disabled
                   className="btn-icon opacity-30"
-                  title="Contact The People System to remove team members"
+                  title="Contact Core OS 360 to remove team members"
                   aria-label="Remove"
                 >
                   <Trash2 size={13} />
@@ -515,10 +515,10 @@ export function TeamMembers({ members, currentUserId, currentUserRole }: TeamMem
         >
           {isAdmin && seatsUsed >= PORTAL_SEAT_CAP ? (
             <>You&rsquo;ve used both seats on your plan. Contact{' '}
-              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a> to add more.</>
+              <a href="mailto:hello@thepeoplesystem.co.uk" style={{ color: 'var(--purple)' }}>Core OS 360</a> to add more.</>
           ) : (
             <>To add team members, contact{' '}
-              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a>.</>
+              <a href="mailto:hello@thepeoplesystem.co.uk" style={{ color: 'var(--purple)' }}>Core OS 360</a>.</>
           )}
         </div>
       )}

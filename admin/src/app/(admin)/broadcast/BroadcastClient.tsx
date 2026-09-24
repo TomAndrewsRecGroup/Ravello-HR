@@ -194,8 +194,8 @@ export default function BroadcastClient({ companies }: Props) {
                 onClick={() => toggle(c.id)}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[8px] text-left transition-colors"
                 style={{
-                  background: on ? 'rgba(124,58,237,0.07)' : 'transparent',
-                  border:     `1px solid ${on ? 'rgba(124,58,237,0.2)' : 'transparent'}`,
+                  background: on ? 'rgba(11,120,150,0.07)' : 'transparent',
+                  border:     `1px solid ${on ? 'rgba(11,120,150,0.2)' : 'transparent'}`,
                 }}
               >
                 {on

@@ -498,8 +498,8 @@ export default function PlanEditor(props: Props) {
               <div key={k}>
                 <label className="label">{k.replace('_', ' ')}</label>
                 <div className="flex items-center gap-2">
-                  <input type="color" value={brand[k] ?? '#7c3aed'} onChange={e => setBrand({ ...brand, [k]: e.target.value })} className="w-10 h-10 rounded-md border cursor-pointer" style={{ borderColor: 'var(--line)' }} />
-                  <input className="input flex-1" value={brand[k] ?? ''} onChange={e => setBrand({ ...brand, [k]: e.target.value || null })} placeholder="#7c3aed" />
+                  <input type="color" value={brand[k] ?? '#0B7896'} onChange={e => setBrand({ ...brand, [k]: e.target.value })} className="w-10 h-10 rounded-md border cursor-pointer" style={{ borderColor: 'var(--line)' }} />
+                  <input className="input flex-1" value={brand[k] ?? ''} onChange={e => setBrand({ ...brand, [k]: e.target.value || null })} placeholder="#0B7896" />
                 </div>
               </div>
             ))}

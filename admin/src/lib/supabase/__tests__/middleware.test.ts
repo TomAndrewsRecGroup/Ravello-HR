@@ -82,3 +82,22 @@ describe('an unrelated path under /api/cron is not swept in by accident', () => 
     expect(isRedirectToLogin(res)).toBe(true);
   });
 });
+
+// The web-app manifest and service worker are fetched by the browser
+// itself, often before anyone signs in (the login page links both). They
+// used to fall inside the matcher, so a signed-out fetch was redirected
+// and came back as the login page's HTML — "Add to home screen" and the
+// offline worker silently broke. Asserted against the real matcher.
+describe('static app files bypass the auth middleware', async () => {
+  const { config } = await import('../../../middleware');
+  const matcher = new RegExp(`^${config.matcher[0]}$`);
+  // Self-hosted fonts too: a signed-out login page requests them, and a
+  // redirected font request silently falls back to a system face.
+  it.each(['/manifest.json', '/sw.js', '/favicon.ico', '/brand/core-os-360-logo.svg', '/brand/icon-192.png', '/fonts/inter-latin.woff2', '/fonts/unbounded-latin.woff2'])(
+    '%s is not run through the middleware', (p) => {
+      expect(matcher.test(p)).toBe(false);
+    });
+  it.each(['/dashboard', '/auth/login', '/api/anything'])('%s still is', (p) => {
+    expect(matcher.test(p)).toBe(true);
+  });
+});

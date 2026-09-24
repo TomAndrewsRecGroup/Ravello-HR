@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
     if ((seatCount ?? 0) >= SEAT_CAP) {
       return NextResponse.json({
-        error: 'You have reached your seat limit. Contact The People System to add more seats.',
+        error: 'You have reached your seat limit. Contact Core OS 360 to add more seats.',
         code:  'seat_cap_reached',
       }, { status: 409 });
     }

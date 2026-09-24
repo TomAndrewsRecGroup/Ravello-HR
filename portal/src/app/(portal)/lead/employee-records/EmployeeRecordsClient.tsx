@@ -420,7 +420,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
                   {/* Avatar */}
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                    style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                    style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
                   >
                     {emp.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
@@ -465,7 +465,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
                       title="Share leave-request link"
                       aria-label={`Share leave-request link for ${emp.full_name}`}
                       className="flex-shrink-0 p-1.5 rounded-[8px] transition-colors"
-                      style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}
+                      style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}
                     >
                       <LinkIcon size={14} />
                     </button>
@@ -536,7 +536,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
           >
             <div className="flex items-start justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--line)' }}>
               <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.10)' }}>
+                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.10)' }}>
                   <LinkIcon size={16} style={{ color: 'var(--purple)' }} />
                 </div>
                 <div>

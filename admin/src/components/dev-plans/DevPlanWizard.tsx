@@ -111,7 +111,7 @@ export default function DevPlanWizard({ companies, athletes, onClose }: Props) {
 
         {/* progress bar */}
         <div className="h-1" style={{ background: 'var(--surface-alt)' }}>
-          <div className="h-full" style={{ width: `${((step + 1) / (reviewStep + 1)) * 100}%`, background: 'var(--gradient, #7C3AED)', transition: 'width .2s' }} />
+          <div className="h-full" style={{ width: `${((step + 1) / (reviewStep + 1)) * 100}%`, background: 'var(--gradient, #0B7896)', transition: 'width .2s' }} />
         </div>
 
         {/* body */}

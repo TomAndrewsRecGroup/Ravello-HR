@@ -12,6 +12,10 @@ import Stripe from 'stripe';
 //     subscription onto it (with proration), archives the old Price.
 // ─────────────────────────────────────────────────────────────────
 
+// Kept under the pre-rebrand name ON PURPOSE: getRetainerProductId() finds the
+// product by searching for this exact string, so renaming it would create a
+// second retainer product and orphan every existing Price. Rename the product
+// in the Stripe dashboard and this constant together, or not at all.
 const RETAINER_PRODUCT_NAME = 'The People System Monthly Retainer';
 
 // Legal entity that issues every invoice. The Stripe account itself is
@@ -20,7 +24,7 @@ const RETAINER_PRODUCT_NAME = 'The People System Monthly Retainer';
 // via the customer's invoice_settings.footer so it shows on the PDF
 // regardless of who creates the invoice.
 const INVOICE_LEGAL_FOOTER =
-  'Andrews Recruitment Group Limited t/a The People System';
+  'Andrews Recruitment Group Limited t/a Core OS 360';
 
 let _stripe: Stripe | null = null;
 function client(): Stripe {
@@ -66,7 +70,7 @@ async function getRetainerProductId(): Promise<string> {
   // First call ever: create the product.
   const created = await sb.products.create({
     name: RETAINER_PRODUCT_NAME,
-    description: 'Monthly retainer engagement with The People System.',
+    description: 'Monthly retainer engagement with Core OS 360.',
   });
   _retainerProductId = created.id;
   return _retainerProductId;
@@ -88,7 +92,7 @@ export async function createCustomer(args: CreateCustomerArgs): Promise<string> 
   const customer = await sb.customers.create({
     name:        args.companyName,
     email:       args.contactEmail ?? undefined,
-    description: `The People System client: ${args.companyName}`,
+    description: `Core OS 360 client: ${args.companyName}`,
     // Tag with our company UUID so webhook handlers can resolve the
     // local row without a separate lookup.
     metadata: { tps_company_id: args.metadataCompanyId },
@@ -241,6 +245,8 @@ export async function cancelSubscriptionAtPeriodEnd(subscriptionId: string): Pro
 // One-off invoices (separate from the monthly retainer)
 // ─────────────────────────────────────────────────────────────────
 
+// Pre-rebrand name kept ON PURPOSE: the tax rate is found by matching this
+// display_name, so changing it would create a duplicate rate in Stripe.
 const VAT_RATE_DISPLAY_NAME = 'TPS UK VAT 20%';
 let _vatTaxRateId: string | null = null;
 

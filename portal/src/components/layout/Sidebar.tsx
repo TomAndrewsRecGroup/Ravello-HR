@@ -12,8 +12,9 @@ import {
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
 import { useLockedFeature } from './LockedFeature';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 const COUNT_KEY: Record<string, string> = {
   '/protect': 'actions',
@@ -43,7 +44,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/protect',              label: 'PROTECT',              icon: Users,           flag: 'protect',               fixed: false },
   { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true, group: 'Programmes' },
   { href: '/dev-plans',            label: 'Development Plans',    icon: ClipboardList,   flag: null,                    fixed: false, group: 'Programmes' },
-  { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: null,                    fixed: false },
+  { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: 'calendar',              fixed: false },
   { href: '/support',              label: 'Support',              icon: LifeBuoy,        flag: 'support',               fixed: false },
   { href: '/billing',              label: 'Billing',              icon: CreditCard,      flag: null,                    fixed: false, requireRole: ['client_admin', 'tps_admin'] },
   { href: '/settings',             label: 'Settings',             icon: Settings,        flag: null,                    fixed: false },
@@ -246,7 +247,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
             <item.icon size={15} />
             <span>{item.label}</span>
             {count > 0 && (
-              <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
+              <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}>
                 {count}
               </span>
             )}
@@ -267,9 +268,9 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <Link prefetch={false} href="/dashboard" className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
+            <Image src={LOGO} alt={BRAND_NAME} width={131} height={28} className="h-7 w-auto object-contain" sizes="160px" priority unoptimized />
           </Link>
-          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>Portal</span>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline" style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}>Portal</span>
           <button onClick={close} className="lg:hidden ml-auto flex items-center justify-center w-7 h-7 rounded-md" style={{ color: 'var(--ink-faint)' }} aria-label="Close">
             <X size={16} />
           </button>

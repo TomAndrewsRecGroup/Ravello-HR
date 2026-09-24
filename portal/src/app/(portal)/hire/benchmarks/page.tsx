@@ -192,7 +192,7 @@ export default async function BenchmarksPage() {
                     </>
                   ) : (
                     <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                      No benchmark data available for this role type. Contact your consultant at The People System for a market rate analysis.
+                      No benchmark data available for this role type. Contact your consultant at Core OS 360 for a market rate analysis.
                     </p>
                   )}
                 </div>

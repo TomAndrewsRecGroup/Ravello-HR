@@ -206,12 +206,12 @@ export default function IvyLensSupportClient({ initialTickets }: Props) {
                     className="px-4 py-2 rounded-[8px] text-sm font-medium transition-all capitalize"
                     style={{
                       background: priority === p
-                        ? p === 'high' ? 'rgba(239,68,68,0.12)' : p === 'low' ? 'rgba(59,111,255,0.08)' : 'rgba(124,58,237,0.08)'
+                        ? p === 'high' ? 'rgba(239,68,68,0.12)' : p === 'low' ? 'rgba(59,111,255,0.08)' : 'rgba(11,120,150,0.08)'
                         : 'var(--surface-alt)',
                       color: priority === p
                         ? p === 'high' ? 'var(--danger)' : p === 'low' ? 'var(--blue)' : 'var(--purple)'
                         : 'var(--ink-faint)',
-                      border: `1.5px solid ${priority === p ? (p === 'high' ? '#ef444440' : p === 'low' ? '#3b82f640' : '#7c3aed30') : 'transparent'}`,
+                      border: `1.5px solid ${priority === p ? (p === 'high' ? '#ef444440' : p === 'low' ? '#3b82f640' : '#0b789630') : 'transparent'}`,
                     }}
                   >
                     {p}

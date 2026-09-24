@@ -31,7 +31,8 @@ describe('the athlete welcome email uses the A2I identity, not the purple People
   it('states the correct relationship in the footer', () => {
     const html = mail().html;
     expect(html).toContain('Operated by Andrews Recruitment Group');
-    expect(html).toContain('Powered by The People System');
+    expect(html).toContain('Powered by Core OS 360');
+    expect(html).not.toContain('People System');
   });
 
   it('names Andrews Recruitment Group in the body copy', () => {
@@ -54,14 +55,16 @@ describe('the athlete welcome email uses the A2I identity, not the purple People
 });
 
 // Guard the guard: this must not have rebranded the genuinely
-// People-System emails, or broken the existing A2I consumer.
+// platform emails (Core OS 360 since 2026-09-24), or broken the A2I consumer.
 describe('other portal emails are unaffected', () => {
-  it('the client invite email keeps the purple People-System shell', () => {
+  it('the client invite email keeps the purple platform (Core OS 360) shell', () => {
     const html = buildInviteEmail({
       to: 'x@example.com', companyName: 'Acme Ltd', roleLabel: 'Admin', activateUrl: 'https://x.example/activate',
     }).html;
-    expect(html).toContain('<title>The People System</title>');
-    expect(html).toContain('thepeoplesystem.co.uk');
+    expect(html).toContain('<title>Core OS 360</title>');
+    expect(html).toContain('thepeoplesystem.co.uk');   // domain kept through the rebrand
+    expect(html).toContain('/brand/core-os-360-email.png');
+    expect(html).not.toContain('People System');
     expect(html).not.toContain('Andrews Recruitment');
   });
 

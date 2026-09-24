@@ -4,6 +4,10 @@ import { ivylensRequest } from '@/lib/ivylens';
 
 // GET /api/support/poll: check for ticket updates and create notifications.
 //
+// Until 2026-09-24 nothing called this — no page, no cron — so IvyLens
+// replies and resolutions never produced a portal notification. The
+// notification bell now calls it on load, throttled per browser.
+//
 // Was: per-ticket loop with ~4 sequential round-trips each (1 IvyLens detail
 // fetch, 1 local status select, 1 update, 1-2 notification inserts).
 // Now: 4 parallel waves total regardless of ticket count.
@@ -13,15 +17,21 @@ export async function GET() {
   if (!companyId) return NextResponse.json({ updated: 0 });
 
   const supabase = createServerSupabaseClient();
-  // ── Step 1: ticket list + last-poll timestamp + owned ticket ids in parallel.
+  // ── Step 0: a company that has never raised an IvyLens ticket has
+  // nothing to poll. The notification bell calls this on load, so this
+  // one indexed read is what keeps every other page view from costing an
+  // IvyLens API call.
+  const { data: companyTickets } = await supabase.from('ivylens_tickets')
+    .select('ivylens_ticket_id, status')
+    .eq('company_id', companyId);
+  if (!companyTickets?.length) return NextResponse.json({ updated: 0 });
+
+  // ── Step 1: ticket list + last-poll timestamp in parallel.
   const pollKey = `ticket_poll_${companyId}`;
-  const [{ data: syncRow }, ticketsResult, { data: companyTickets }] = await Promise.all([
+  const [{ data: syncRow }, ticketsResult] = await Promise.all([
     supabase.from('sync_state').select('value').eq('key', pollKey).single(),
     // Poll wants the freshest data — opt out of the 60s default cache.
     ivylensRequest<{ tickets: any[] }>('/tickets', { revalidate: 0 }),
-    supabase.from('ivylens_tickets')
-      .select('ivylens_ticket_id, status')
-      .eq('company_id', companyId),
   ]);
 
   if (ticketsResult.error || !ticketsResult.data?.tickets) {

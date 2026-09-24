@@ -247,7 +247,7 @@ export default function AdminNewRoleForm({ companies, adminUserId, template, tem
 
       {scoring && (
         <div className="flex items-center gap-3 rounded-[12px] px-4 py-3"
-          style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
+          style={{ background: 'rgba(11,120,150,0.08)', border: '1px solid rgba(11,120,150,0.18)' }}>
           <Loader2 size={14} className="animate-spin flex-shrink-0" style={{ color: 'var(--purple)' }} />
           <span className="text-sm font-medium" style={{ color: 'var(--purple)' }}>
             Running Friction Lens: scoring against live market data…

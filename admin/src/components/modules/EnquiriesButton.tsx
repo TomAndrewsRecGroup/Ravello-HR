@@ -97,7 +97,7 @@ export default function EnquiriesButton() {
         aria-label="Enquiries"
         onClick={() => setOpen((o) => !o)}
         className="relative w-9 h-9 rounded-[10px] flex items-center justify-center transition-colors"
-        style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--ink-soft)' }}
+        style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--ink-soft)' }}
       >
         <Inbox size={17} />
         {newCount > 0 && (
@@ -174,7 +174,7 @@ function Row({ enquiry, onStatus }: { enquiry: Enquiry; onStatus: (id: string, s
       className="px-4 py-3"
       style={{
         borderBottom: '1px solid var(--line)',
-        background: isNew ? 'rgba(124,58,237,0.04)' : 'transparent',
+        background: isNew ? 'rgba(11,120,150,0.04)' : 'transparent',
       }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -184,7 +184,7 @@ function Row({ enquiry, onStatus }: { enquiry: Enquiry; onStatus: (id: string, s
             <span
               className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded"
               style={{
-                background: isNew ? 'rgba(124,58,237,0.12)' : 'var(--surface-alt)',
+                background: isNew ? 'rgba(11,120,150,0.12)' : 'var(--surface-alt)',
                 color:      isNew ? 'var(--purple)'        : 'var(--ink-faint)',
               }}
             >

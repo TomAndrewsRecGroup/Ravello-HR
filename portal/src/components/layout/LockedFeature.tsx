@@ -54,7 +54,7 @@ function LockedFeatureModal({
   const managerName = accountManagerName?.trim() || 'your account manager';
   const fallbackContactEmail = 'hello@thepeoplesystem.co.uk';
   const contactEmail = accountManagerEmail?.trim() || fallbackContactEmail;
-  const subject = `Unlocking ${featureLabel} on our People System portal`;
+  const subject = `Unlocking ${featureLabel} on our Core OS 360 portal`;
   const mailto  = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}`;
 
   return (
@@ -72,7 +72,7 @@ function LockedFeatureModal({
           <div className="flex items-center gap-2">
             <div
               className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}
+              style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}
             >
               <Lock size={15} />
             </div>
@@ -108,7 +108,7 @@ function LockedFeatureModal({
 
         {!accountManagerName && (
           <p className="text-[11px] mt-4" style={{ color: 'var(--ink-faint)' }}>
-            No account manager assigned yet — your message goes to The People System team.
+            No account manager assigned yet — your message goes to Core OS 360 team.
           </p>
         )}
       </div>

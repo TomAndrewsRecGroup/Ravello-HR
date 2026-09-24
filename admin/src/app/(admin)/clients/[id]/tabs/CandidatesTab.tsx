@@ -146,7 +146,7 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
                         <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.1)' }}>
                                 <User size={13} style={{ color: 'var(--purple)' }} />
                               </div>
                               <div>

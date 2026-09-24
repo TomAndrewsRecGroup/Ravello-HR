@@ -1,3 +1,9 @@
+/* Self-hosted fonts (globals.css @font-face) — replaces next/font/google. */
+.a2i-scope {
+  --font-a2i-oswald: 'Oswald';
+  --font-a2i-inter:  'Inter';
+}
+
 /*
  * Athletes To Industry theme — SCOPED to the public referral pages only.
  *

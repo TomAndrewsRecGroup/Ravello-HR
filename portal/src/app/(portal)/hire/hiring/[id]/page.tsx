@@ -34,13 +34,15 @@ export default async function RequisitionDetailPage({
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   const { data: req } = await supabase
-    .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();
+    .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,interview_stages,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();
 
   if (!req) notFound();
 
   const [{ data: candidates }, { data: offers }, { data: interviews }] = await Promise.all([
     supabase
       .from('candidates')
+      // recruiter_notes is deliberately NOT selected: admin labels it "Internal notes
+      // (not shown to client)". The client-facing text is `summary`.
       .select('id,full_name,email,cv_url,summary,client_status,client_feedback,created_at')
       .eq('requisition_id', params.id)
       .eq('approved_for_client', true)
@@ -106,7 +108,7 @@ export default async function RequisitionDetailPage({
                     Friction Lens not yet scored
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-                    Contact your consultant at The People System to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
+                    Contact your consultant at Core OS 360 to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
                   </p>
                 </div>
               </div>
@@ -192,11 +194,11 @@ export default async function RequisitionDetailPage({
                 Candidates ({cands.length})
               </h2>
               <p className="text-xs mb-5" style={{ color: 'var(--ink-faint)' }}>
-                Only candidates approved by The People System are shown here.
+                Only candidates approved by Core OS 360 are shown here.
               </p>
               {cands.length === 0 ? (
                 <div className="empty-state py-8">
-                  <p className="text-sm">No candidates yet: The People System will add them as sourcing progresses.</p>
+                  <p className="text-sm">No candidates yet: Core OS 360 will add them as sourcing progresses.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -216,12 +218,6 @@ export default async function RequisitionDetailPage({
                       {c.summary && (
                         <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>
                       )}
-                      {c.recruiter_notes && (
-                        <div className="rounded-[8px] p-3 mb-4" style={{ background: 'var(--surface-alt)' }}>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--ink-faint)' }}>Recruiter Notes</p>
-                          <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{c.recruiter_notes}</p>
-                        </div>
-                      )}
                       <div className="flex flex-wrap gap-2">
                         {c.cv_url && (
                           <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="btn-secondary btn-sm">
@@ -239,7 +235,7 @@ export default async function RequisitionDetailPage({
                         />
                       </div>
                       {c.client_feedback && (
-                        <div className="mt-3 flex items-start gap-2 text-xs p-3 rounded-[8px]" style={{ background: 'rgba(143,114,246,0.06)', border: '1px solid rgba(143,114,246,0.1)' }}>
+                        <div className="mt-3 flex items-start gap-2 text-xs p-3 rounded-[8px]" style={{ background: 'rgba(11,120,150,0.06)', border: '1px solid rgba(11,120,150,0.1)' }}>
                           <MessageSquare size={12} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--purple)' }} />
                           <span style={{ color: 'var(--ink-soft)' }}>{c.client_feedback}</span>
                         </div>
@@ -343,7 +339,7 @@ export default async function RequisitionDetailPage({
                     className="rounded-[8px] p-3 text-xs leading-relaxed"
                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                   >
-                    To re-score this role against updated market data, contact your consultant at The People System.
+                    To re-score this role against updated market data, contact your consultant at Core OS 360.
                   </div>
                 </div>
               ) : (
@@ -351,7 +347,7 @@ export default async function RequisitionDetailPage({
                   className="rounded-[8px] p-3 text-xs leading-relaxed"
                   style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                 >
-                  This role has not yet been scored. Contact your consultant at The People System to run Friction Lens.
+                  This role has not yet been scored. Contact your consultant at Core OS 360 to run Friction Lens.
                 </div>
               )}
             </div>

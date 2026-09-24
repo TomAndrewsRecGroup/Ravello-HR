@@ -97,14 +97,14 @@ export default function AthletesModal({
                           <span
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                             style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
-                            title="The People System has been in touch with this athlete"
+                            title="Core OS 360 has been in touch with this athlete"
                           >
                             <PhoneCall size={9} /> Called
                           </span>
                         )}
                         {matches > 0 && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+                                style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
                             {matches} match{matches === 1 ? '' : 'es'}
                           </span>
                         )}

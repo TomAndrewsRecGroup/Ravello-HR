@@ -1357,3 +1357,191 @@ IvyLens re-scores them.
 
 
 
+
+---
+
+## Five fixes from the system inventory (2026-09-24)
+
+`docs/SYSTEM_FEATURES_INVENTORY.md` lists every feature in both apps
+with build / test / live-usage status. Five of its issues were fixed in
+the same pass:
+
+- **Employee leave link was unreachable.** `/leave/<token>` and
+  `/api/leave/<token>` were missing from the portal middleware's
+  `PUBLIC_ROUTES`, so the employee (who has no login, by design) was
+  redirected to `/auth/login`. The page's own server-side preflight
+  calls the API with no cookie, so BOTH must be public. Same defect
+  class as the admin cron 307. Note the token rotates after every
+  submission (anti-replay), so each request needs a freshly shared link.
+- **Leave is ONE table: `absence_records`.** The leave link, the
+  Absence page and approve/deny wrote it; Calendar, HR Reports and
+  Employee Records read `leave_records`, which nothing else wrote. All
+  now read absence_records, aliasing `absence_type`→`leave_type` and
+  `days`→`days_count` in the select and passing rows through
+  `normaliseAbsenceRows()` (blank end date = one day, blank count = the
+  inclusive span). `calculateLeaveBalance` accepts both vocabularies
+  (`holiday`/`annual_leave`, `sick`/`sick_day`). `leave_records` is now
+  unused; it was empty, so nothing was migrated and it was not dropped.
+- **Clients could not act on a "Sent" candidate.** The admin Send
+  button sets `shared`; the portal buttons showed only for `pending`.
+  `lib/hiring/candidateDecision.ts` — `pending`, `shared` and
+  `info_requested` all mean "waiting on the client".
+- **Service request responses now email the client.** `POST
+  /api/admin/service-requests/[id]/respond` saves, completes, sends
+  `serviceRequestResponseEmail` to the raiser (falling back to the
+  company's client_admins), writes `email_log`, and REPORTS a failed
+  send. The Requests screen used to say "Response sent to client" when
+  nothing had been sent.
+- **Module flags are enforced on pages, not just the menu.**
+  `portal/src/lib/moduleAccess.ts` is the one route→flags map; the
+  middleware redirects a switched-off page to `/dashboard`, section
+  tabs hide it, index pages land on the first enabled tab, Quick
+  Actions disable by it. The middleware reads flags FRESH for gated
+  paths (the session cookie can be 15 min stale) and fails OPEN on a
+  DB error — the gate is commercial; RLS is the data boundary. Free
+  programmes are gated by their own flag only (`/lead/learning` →
+  `learning`, `/hire/friction-lens` → `friction_lens`). A test walks
+  `app/(portal)` and fails on any page that is neither in the map nor
+  in `UNGATED_ROUTES`. Calendar is now gated by `calendar` in the
+  sidebar too.
+
+Portal gained `vitest.config.ts` (the `@/` alias) so the middleware can
+be tested. Every fix was mutation-checked (10 reintroductions, all
+caught). `resilient.test.ts > stops retrying when the budget runs out
+mid-ladder` is timing-sensitive and fails roughly 1 run in 6 under load;
+it predates this change.
+
+### Second pass, same day
+
+- **Milestones have ONE vocabulary** (`lib/roadmap/milestones.ts`,
+  shared-dupe pair): pillar `hire|lead|protect`, status
+  `not_started|in_progress|complete|at_risk`, quarter `Q3-2026`. The admin
+  client tab wrote `HIRE`/`Q2 2026`/`Not Started`, the portal read the
+  lowercase form, and the admin Roadmap selected a `track` column that
+  never existed, so its query failed and the page was always empty.
+  Migration **087** adds CHECKs for the vocabulary. **It must be applied
+  AFTER this code deploys**: the previously deployed admin still writes
+  `HIRE`, and the CHECK would refuse it. A test pins the tuples against
+  087's SQL.
+- **Orphaned portal pages** are now in the section tabs, and
+  `portalPagesLinked.test.ts` fails on any static page that no other file
+  links to. A page naming its own path and `revalidate*Path()` calls do
+  not count as links; both hid orphans until mutation-tested.
+- **`candidates.recruiter_notes` is INTERNAL.** Admin's form says "not
+  shown to client". The portal role page had a panel for it that never
+  rendered because the column was not selected; the panel is removed, not
+  filled. RLS is row-level, so a client can still read the column
+  directly. 0 rows hold notes today; move them to a staff-only table
+  before that changes.
+- `/api/support/poll` had no caller. The notification bell now calls it,
+  throttled to once per 5 min per browser, and it returns before any
+  IvyLens call when the company has no IvyLens tickets.
+- `thepeopleoffice.co.uk` → `thepeoplesystem.co.uk` in 7 places.
+- Removed dead code: the dashboard's two unused LEAD/PROTECT queries,
+  admin's unreachable `saveService` / Services state, and the unimported
+  `HiringStageUpdater` / `ClientStatusToggle` components. With the
+  Services tab gone, nothing can write `client_services`, so the portal's
+  "Active Services" panel stays empty until that is decided.
+
+---
+
+## The People System → Core OS 360 (2026-09-24)
+
+Operator: change every logo, favicon and piece of branding to **Core OS
+360**, but **keep the domain** so emails, athlete links and anything live
+on thepeoplesystem.co.uk keep working.
+
+- **`lib/brand.ts`** (shared-dupe pair) is the one source for the name,
+  tagline, logo paths, the email logo URL and the default sender.
+- **Assets** in each app's `public/brand/` + `public/favicon.ico` were
+  generated from the brand mockups: the SVG marks were lifted from the
+  rendered artboards (not traced), the lockup text is outlined Unbounded
+  (no web-font dependency), favicons use the SIMPLIFIED mark (mockup rule:
+  simplified below 112px), home-screen icons the full mark on the navy
+  tile, plus a 512 maskable. Email logo is a PNG, because mail clients do
+  not render SVG.
+- **Domain kept on purpose.** URLs, `noreply@portal.thepeoplesystem.co.uk`,
+  Reply-To, the website link in email footers and the Resend-verified
+  domain are unchanged. The email logo is served from
+  `portal.thepeoplesystem.co.uk/brand/…` because Resend flags images off
+  the sending root domain.
+- **`EMAIL_LOGO_URL` is no longer read.** It pointed at the old artwork;
+  if it was still set in Vercel it would have kept the old logo on every
+  email.
+- **`brandFromAddress()`** swaps ONLY a pre-rebrand display name in
+  `EMAIL_FROM` ("The People System <x>" → "Core OS 360 <x>"), keeping the
+  address. Staff senders and the ARG referral sender pass through as
+  given.
+- **Deliberately NOT renamed (they are lookup keys or stored data):**
+  Stripe `RETAINER_PRODUCT_NAME` and `VAT_RATE_DISPLAY_NAME` (found by
+  exact name; renaming creates duplicates), Manatal `'TPS'` industry and
+  `'TPS-managed client'` tags, the `'TPS'` sector value, `tps_*` role
+  enums and `tps_company_id` metadata. Comments that record history still
+  say The People System.
+- **The referral invite stays Andrews Recruitment Group**, and a test now
+  also asserts it carries no Core OS 360 string.
+- `brand.test.ts` fails on any non-comment "People System" string or any
+  reference to the old blob logo in either app, and checks every asset
+  exists in both apps. Mutation-checked.
+- Also fixed: `manifest.json` and `sw.js` were inside the auth matcher, so
+  a signed-out fetch (the login page links both) got the login HTML back.
+  They are now excluded in both apps, with tests.
+- **UI colour palette moved to Core OS 360** (operator, same day). The
+  token NAME `--purple` is kept (375 call sites) but its VALUE is
+  `var(--brand-accent)` = `#0B7896`, the darkest brand cyan that passes
+  WCAG AA both as text on white and under white text (5.1:1). The bright
+  logo cyan `#3FD6F2` (1.7:1 on white) is decoration only
+  (`--purple-lt` / `--brand-cyan`) — never text. `--gradient` and
+  `--gradient-cta` carry white button text, so both stay within AA-safe
+  stops (`#0B7896 → #075E77`). ~200 hardcoded purples across 78 files
+  were converted; lavender neutrals became cool grey-blue.
+- **Categorical colours were NOT converted** (violet skill levels /
+  learning types, pink leave categories): they distinguish data, not
+  brand. **The ARG referral email keeps its purple** via a per-sender
+  `accent` on `SenderIdentity` — it goes out under ARG's name. Tests pin
+  the token values, AA contrast of every white-text gradient stop, zero
+  old-brand purple outside that one accent, and the sender split.
+- **Fonts are self-hosted** (after the palette change, same day). The
+  portal CI build failed because `next/font/google` in `app/r/layout.tsx`
+  fetched Oswald/Inter from Google DURING THE BUILD and got a response
+  its parser choked on. Inter, Oswald and Unbounded (the wordmark face)
+  are now variable woff2 files in each app's `public/fonts/`, declared by
+  `@font-face` in `globals.css`; the root layouts' runtime Google `<link>`
+  is gone too. `.woff2`/`.woff` are excluded from the auth matcher (a
+  signed-out login page requests them). `brand.test.ts` fails on any
+  `next/font/google` import or Google Fonts URL. The logo lockups are
+  outlined SVG and never depended on a font.
+
+---
+
+## The referral cron re-emailed 21 people every hour (2026-09-21 → 09-24)
+
+Found while baselining live activity before merging PR #200. "AI &
+Software Engineers" passed **1,000** `referral_applications` rows on
+21 Sep. `processRole`'s already-processed read was ONE `.in()` over
+every applicant (1,868), and PostgREST answered with its first 1,000
+rows, silently. The rows past the cap looked new again, and since the
+backlog drains oldest-first they came up every run. Each run re-scanned
+them and **sent the email BEFORE the insert**; the insert then hit the
+unique constraint, was counted as `already_processed` (benign, by the
+old comment), and nothing recorded the send. **21 people, 518 extra
+emails, worst 43.** `email_failures: 0` and `notes: []` on every run.
+
+- **The read is chunked** (`readProcessedIds`, 200 ids per request), so
+  each response is bounded by the chunk, not the table. A failed read
+  **skips the role** (fail closed) — the old code treated an error as
+  "nobody processed".
+- **The row is claimed BEFORE the email.** Insert first (status
+  `qualified`), send, then update to `email_sent` with
+  `{ count: 'exact' }`. A failed insert, for ANY reason, now means no
+  email. The unique constraint is the real guard; the pre-read is only
+  an optimisation to avoid paying for scans.
+- `pipelineIdempotency.test.ts` drives `processRole` against a fake
+  that reproduces the 1,000-row cap and the unique constraint. Two
+  mutations caught: the original code (4 fail) and the new ordering
+  with an unbounded chunk (2 fail).
+- **Mitigation applied live:** `dry_run = true` on all three enabled
+  referral roles at ~11:20 UTC 24 Sep. It must be turned back off by
+  hand once this deploys; nothing does it automatically.
+- `check-row-cap.sh` cannot see this class: it catches `.limit(N>1000)`,
+  not an unbounded `.in()` whose RESULT grows past the cap.

@@ -76,7 +76,7 @@ export default function CostModellerClient() {
       </div>
 
       {/* Disclaimer */}
-      <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
+      <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(11,120,150,0.04)', border: '1px solid rgba(11,120,150,0.12)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> Figures are based on HMRC 2025/26 employer NI rates (15%, £5,000 threshold), statutory minimum auto-enrolment pension (3%), and your inputs. Actual costs may vary depending on salary sacrifice arrangements, apprenticeship levy liability, benefits in kind, and other employer obligations. Always consult your accountant or payroll provider for precise figures.
         </p>
@@ -128,7 +128,7 @@ export default function CostModellerClient() {
               type="button"
               onClick={() => setClaimAllowance(!claimAllowance)}
               className="input flex items-center gap-2 text-left"
-              style={{ background: claimAllowance ? 'rgba(124,58,237,0.06)' : undefined }}
+              style={{ background: claimAllowance ? 'rgba(11,120,150,0.06)' : undefined }}
             >
               <span
                 className="flex-shrink-0 w-8 h-5 rounded-full relative transition-colors"

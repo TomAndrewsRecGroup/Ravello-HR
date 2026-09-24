@@ -34,7 +34,7 @@ export default function AdminTopbar({ title, subtitle, actions, breadcrumbLabel 
       <div
         className="absolute bottom-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.12), rgba(59,111,255,0.08), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(11,120,150,0.12), rgba(59,111,255,0.08), transparent)',
         }}
       />
       <div className="flex items-center gap-3 min-w-0">

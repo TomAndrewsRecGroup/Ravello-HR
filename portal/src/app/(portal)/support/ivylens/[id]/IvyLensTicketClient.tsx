@@ -176,8 +176,8 @@ export default function IvyLensTicketClient({ ticketId, initialTicket, initialRe
                   key={r.id}
                   className="rounded-[12px] p-4"
                   style={{
-                    background: isAdmin ? 'rgba(124,58,237,0.05)' : 'rgba(6,182,212,0.05)',
-                    border: `1px solid ${isAdmin ? 'rgba(124,58,237,0.12)' : 'rgba(6,182,212,0.12)'}`,
+                    background: isAdmin ? 'rgba(11,120,150,0.05)' : 'rgba(6,182,212,0.05)',
+                    border: `1px solid ${isAdmin ? 'rgba(11,120,150,0.12)' : 'rgba(6,182,212,0.12)'}`,
                     marginLeft: isAdmin ? '0' : 'auto',
                     marginRight: isAdmin ? 'auto' : '0',
                     maxWidth: '85%',

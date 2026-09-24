@@ -155,7 +155,7 @@ export default async function BDRolesPage() {
         subtitle="Flat feed of every role sourced from IvyLens and local BD scanning"
         actions={
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-xs font-semibold"
-            style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+            style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
             <Radar size={13} /> {stats.fromIvylens} from IvyLens
           </div>
         }

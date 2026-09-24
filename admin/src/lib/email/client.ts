@@ -1,3 +1,5 @@
+import { brandFromAddress } from '@/lib/brand';
+
 // Resend HTTP client.
 //
 // Uses the Resend REST API directly (no SDK dep) — emails are simple
@@ -89,7 +91,9 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult 
     return null;
   }
 
-  const from    = input.from ?? process.env.EMAIL_FROM ?? 'The People System <noreply@portal.thepeoplesystem.co.uk>';
+  // input.from (a staff member's own name, the ARG referral sender) is
+  // passed through as given; only the platform default is rebranded.
+  const from    = input.from ?? brandFromAddress(process.env.EMAIL_FROM);
   const replyTo = input.replyTo ?? process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 

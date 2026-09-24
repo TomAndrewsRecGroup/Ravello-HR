@@ -37,7 +37,7 @@ export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
               <span
                 className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5 flex-shrink-0"
                 style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)' }}
-                title="The People System has been in touch with this athlete"
+                title="Core OS 360 has been in touch with this athlete"
               >
                 <PhoneCall size={8} /> Called
               </span>
@@ -50,7 +50,7 @@ export default function AthleteCard({ athlete, matchCount, onEdit }: Props) {
         {matchCount > 0 && (
           <span
             className="text-[10px] font-bold px-2 py-1 rounded-full"
-            style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}
+            style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}
           >
             {matchCount} match{matchCount === 1 ? '' : 'es'}
           </span>

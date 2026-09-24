@@ -250,7 +250,7 @@ export default async function RequisitionDetailPage({
                           <tr key={c.id} style={{ borderBottom: '1px solid var(--line)' }}>
                             <td className="py-3 pr-4">
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.1)' }}>
                                   <User size={12} style={{ color: 'var(--purple)' }} />
                                 </div>
                                 <span className="font-medium" style={{ color: 'var(--ink)' }}>{c.full_name}</span>
@@ -302,7 +302,7 @@ export default async function RequisitionDetailPage({
                       return (
                         <div key={c.id} className="mobile-card">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.1)' }}>
                               <User size={12} style={{ color: 'var(--purple)' }} />
                             </div>
                             <div>

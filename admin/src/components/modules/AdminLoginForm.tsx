@@ -67,7 +67,7 @@ export default function AdminLoginForm() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           className="input"
-          placeholder="you@thepeopleoffice.co.uk"
+          placeholder="you@thepeoplesystem.co.uk"
           style={{ background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         />
       </div>

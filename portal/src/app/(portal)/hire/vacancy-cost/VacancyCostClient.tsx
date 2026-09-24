@@ -97,7 +97,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
       </div>
 
       {/* Disclaimer */}
-      <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
+      <div className="rounded-lg p-3 mb-5" style={{ background: 'rgba(11,120,150,0.04)', border: '1px solid rgba(11,120,150,0.12)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           <strong style={{ color: 'var(--purple)' }}>Estimate only.</strong> An employee typically generates 2.5-4× their salary in revenue and output. When a seat is empty, that value is lost: plus hidden costs like overtime, contractor cover, and missed targets. Multipliers are adjusted by your Friction Lens score (higher friction = more specialised role = greater revenue impact). Based on Oxford Economics and CIPD research. Actual figures vary by business model.
         </p>
@@ -116,7 +116,7 @@ export default function VacancyCostClient({ roles }: { roles: Role[] }) {
       ) : (
         <>
           {/* Impact headline */}
-          <div className="card p-6 mb-5" style={{ background: 'var(--gradient-soft)', border: '1px solid rgba(124,58,237,0.12)' }}>
+          <div className="card p-6 mb-5" style={{ background: 'var(--gradient-soft)', border: '1px solid rgba(11,120,150,0.12)' }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(217,68,68,0.1)' }}>
                 <AlertTriangle size={18} style={{ color: 'var(--danger)' }} />

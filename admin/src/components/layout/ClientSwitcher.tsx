@@ -77,9 +77,9 @@ export function ClientSwitcherDropdown() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
         style={{
-          background: selectedClientId ? 'rgba(124,58,237,0.06)' : 'var(--surface-alt)',
+          background: selectedClientId ? 'rgba(11,120,150,0.06)' : 'var(--surface-alt)',
           color: selectedClientId ? 'var(--purple)' : 'var(--ink-soft)',
-          border: `1px solid ${selectedClientId ? 'rgba(124,58,237,0.20)' : 'var(--line)'}`,
+          border: `1px solid ${selectedClientId ? 'rgba(11,120,150,0.20)' : 'var(--line)'}`,
         }}
       >
         <Building2 size={12} />
@@ -117,7 +117,7 @@ export function ClientSwitcherDropdown() {
               className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-[var(--surface-soft)] transition-colors flex items-center gap-2"
               style={{
                 color: !selectedClientId ? 'var(--purple)' : 'var(--ink-soft)',
-                background: !selectedClientId ? 'rgba(124,58,237,0.04)' : undefined,
+                background: !selectedClientId ? 'rgba(11,120,150,0.04)' : undefined,
                 borderBottom: '1px solid var(--line)',
               }}
             >
@@ -134,7 +134,7 @@ export function ClientSwitcherDropdown() {
                   className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-soft)] transition-colors flex items-center gap-2"
                   style={{
                     color: selectedClientId === c.id ? 'var(--purple)' : 'var(--ink)',
-                    background: selectedClientId === c.id ? 'rgba(124,58,237,0.04)' : undefined,
+                    background: selectedClientId === c.id ? 'rgba(11,120,150,0.04)' : undefined,
                   }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selectedClientId === c.id ? 'var(--purple)' : 'transparent' }} />

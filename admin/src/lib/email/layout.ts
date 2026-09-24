@@ -1,3 +1,5 @@
+import { BRAND_EMAIL_LOGO_URL, BRAND_NAME, BRAND_TAGLINE } from '@/lib/brand';
+
 // Branded HTML shell for transactional emails.
 //
 // Built as inline-styled HTML strings — every email client renders
@@ -9,14 +11,20 @@
 //
 // Deliverability note: the logo MUST be hosted on the same root domain
 // as the sending address (Resend's deliverability check flags any
-// off-domain image link). Default points to thepeoplesystem.co.uk;
-// override via EMAIL_LOGO_URL env var if you host it elsewhere on the
-// same root (e.g. assets.thepeoplesystem.co.uk).
+// off-domain image link). The Core OS 360 logo is served from the
+// portal's own public/brand/ on thepeoplesystem.co.uk — the domain was
+// kept through the rebrand for exactly this reason.
+//
+// EMAIL_LOGO_URL is deliberately NO LONGER READ. It pointed at the old
+// People System artwork, and an env var left set in Vercel would have
+// silently kept that logo on every email after the rebrand.
 
 export const BRAND = {
-  logoUrl:   process.env.EMAIL_LOGO_URL ?? 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png',
-  purple:    '#7C3AED',
-  purpleDk:  '#5A2AC8',
+  logoUrl:   BRAND_EMAIL_LOGO_URL,
+  // Core OS 360 accent (the key names predate the rebrand). Email has no
+  // CSS variables, so these literals mirror --brand-accent / -dk.
+  purple:    '#0B7896',
+  purpleDk:  '#075E77',
   ink:       '#070B1D',
   inkSoft:   '#38436A',
   inkFaint:  '#748099',
@@ -61,15 +69,21 @@ export interface SenderIdentity {
   /** Reason-for-receipt line under the card, when the caller does not
    *  pass its own `footerNote`. */
   defaultFooterNote: string;
+  /** Button and link colour. Per sender so a platform restyle cannot
+   *  repaint an email that goes out under another company's name. */
+  accent:       string;
+  accentDark:   string;
 }
 
 export const TPS_SENDER: SenderIdentity = {
-  name:         'The People System',
-  tagline:      'HR consultancy &amp; people platform.',
+  name:         BRAND_NAME,
+  tagline:      `${BRAND_TAGLINE} &middot; Health &amp; Safety &middot; HR &middot; Recruitment`,
   websiteUrl:   BRAND.websiteUrl,
   websiteLabel: 'thepeoplesystem.co.uk',
   logoUrl:      BRAND.logoUrl,
-  defaultFooterNote: 'You received this email because you have an account with The People System.',
+  defaultFooterNote: `You received this email because you have an account with ${BRAND_NAME}.`,
+  accent:       BRAND.purple,
+  accentDark:   BRAND.purpleDk,
 };
 
 export const ARG_SENDER: SenderIdentity = {
@@ -81,6 +95,11 @@ export const ARG_SENDER: SenderIdentity = {
   // Until then the name renders as text — see the field's note.
   logoUrl:      process.env.ARG_EMAIL_LOGO_URL ?? null,
   defaultFooterNote: 'You received this email because you applied for a role through Andrews Recruitment Group.',
+  // Unchanged by the Core OS 360 restyle on purpose: this email goes out
+  // under Andrews Recruitment Group's name, and ARG's own colours were not
+  // part of that brief. These are the values it has always shipped with.
+  accent:       '#7C3AED',
+  accentDark:   '#5A2AC8',
 };
 
 /* ─── Athletes To Industry — its own dark gold/navy identity ──
@@ -150,7 +169,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
         <tr>
           <td style="padding:22px 32px;border-top:1px solid ${A2I.border};font-size:12px;color:${A2I.creamMut};line-height:1.5;">
             <p style="margin:0 0 6px 0;font-weight:600;color:${A2I.gold};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
-            <p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by The People System.</p>
+            <p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by Core OS 360.</p>
           </td>
         </tr>
       </table>
@@ -198,7 +217,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
         <tr>
           <td style="padding:32px 32px 16px 32px;border-bottom:1px solid ${BRAND.line};">
             ${sender.logoUrl
-              ? `<img src="${sender.logoUrl}" alt="${sender.name}" width="180" style="display:block;height:auto;max-width:180px;" />`
+              ? `<img src="${sender.logoUrl}" alt="${sender.name}" width="200" style="display:block;height:auto;max-width:200px;" />`
               : `<p style="margin:0;font-size:19px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.ink};">${sender.name}</p>`}
           </td>
         </tr>
@@ -213,7 +232,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
           <td style="padding:24px 32px;border-top:1px solid ${BRAND.line};background:${BRAND.surfaceLt};font-size:12px;color:${BRAND.inkFaint};line-height:1.5;">
             <p style="margin:0 0 8px 0;font-weight:600;color:${BRAND.inkSoft};">${sender.name}</p>
             <p style="margin:0;">${sender.tagline}</p>
-            <p style="margin:8px 0 0 0;"><a href="${sender.websiteUrl}" style="color:${BRAND.purple};text-decoration:none;">${sender.websiteLabel}</a></p>
+            <p style="margin:8px 0 0 0;"><a href="${sender.websiteUrl}" style="color:${sender.accent};text-decoration:none;">${sender.websiteLabel}</a></p>
           </td>
         </tr>
       </table>
@@ -244,16 +263,16 @@ export function ctaButtonA2I(href: string, label: string): string {
 }
 
 /**
- * Standardised purple gradient CTA button. Pass href + label.
+ * Standardised gradient CTA button in the sender's accent. Pass href + label.
  * Renders as an HTML table for Outlook compatibility (Outlook ignores
  * border-radius on <a> but respects it on <td>).
  */
-export function ctaButton(href: string, label: string): string {
+export function ctaButton(href: string, label: string, sender: SenderIdentity = TPS_SENDER): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
   <tr>
-    <td style="border-radius:10px;background:${BRAND.purple};">
+    <td style="border-radius:10px;background:${sender.accent};">
       <a href="${href}"
-         style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;background:linear-gradient(135deg,${BRAND.purple} 0%,${BRAND.purpleDk} 100%);">
+         style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:10px;background:linear-gradient(135deg,${sender.accent} 0%,${sender.accentDark} 100%);">
          ${label}
       </a>
     </td>

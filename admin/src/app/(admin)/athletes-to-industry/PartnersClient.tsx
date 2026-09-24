@@ -192,7 +192,7 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
     <section className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-             style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+             style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
           <Building2 size={15} />
         </div>
         <div className="flex-1">
@@ -389,7 +389,7 @@ export default function PartnersClient({ initial, interests, athletes }: Props) 
                               <span
                                 className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                                 style={{
-                                  background: count > 0 ? 'rgba(124,58,237,0.10)' : 'var(--surface-alt)',
+                                  background: count > 0 ? 'rgba(11,120,150,0.10)' : 'var(--surface-alt)',
                                   color: count > 0 ? 'var(--purple)' : 'var(--ink-faint)',
                                 }}
                               >

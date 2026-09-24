@@ -165,7 +165,7 @@ export default function PartnersModal({
                       </div>
                       {matched > 0 && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+                              style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
                           {matched} matched
                         </span>
                       )}
@@ -226,7 +226,7 @@ export default function PartnersModal({
                                         <span
                                           className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
                                           style={{
-                                            background: 'rgba(124,58,237,0.10)',
+                                            background: 'rgba(11,120,150,0.10)',
                                             color: 'var(--purple)',
                                             border: '1px solid var(--line)',
                                           }}

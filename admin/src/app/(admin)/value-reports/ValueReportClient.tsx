@@ -104,7 +104,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
 
     // Brand tokens — kept inline so the PDF doesn't pull in the
     // application's CSS variables.
-    const PURPLE   = [124, 58, 237] as [number, number, number];
+    const PURPLE   = [11, 120, 150] as [number, number, number]; // Core OS 360 accent (#0B7896)
     const INK      = [7, 11, 29]    as [number, number, number];
     const INK_SOFT = [56, 67, 106]  as [number, number, number];
     const SURFACE  = [244, 245, 251] as [number, number, number];
@@ -120,7 +120,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.setTextColor(...INK);
-    doc.text('The People System', 40, y);
+    doc.text('Core OS 360', 40, y);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -234,7 +234,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
           <FileText size={28} />
           <p className="text-sm font-medium">Select a client to generate their value report</p>
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-            Shows what The People System delivered during the selected month.
+            Shows what Core OS 360 delivered during the selected month.
           </p>
         </div>
       ) : (
@@ -245,7 +245,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
               <h2 className="font-display text-xl" style={{ color: 'var(--ink)' }}>{report.company?.name}</h2>
               <span className="eyebrow">{report.month}</span>
             </div>
-            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: The People System</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: Core OS 360</p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-5">
@@ -331,7 +331,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                 <div className="flex flex-wrap gap-1 mt-1">
                   {report.usage.activeServices.length > 0
                     ? report.usage.activeServices.map((s: any) => (
-                      <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                      <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
                         {s.service_name}
                       </span>
                     ))

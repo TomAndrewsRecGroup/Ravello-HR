@@ -42,7 +42,7 @@ export async function GET() {
   // ── Role gate: must be The People System staff ──
   const { data: roleData } = await supabase.rpc('get_my_role');
   if (roleData !== 'tps_admin') {
-    return NextResponse.json({ error: 'Forbidden: The People System staff only' }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden: Core OS 360 staff only' }, { status: 403 });
   }
 
   // Session cookie (names only for security: no raw values)

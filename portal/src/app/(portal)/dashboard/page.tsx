@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   // is read alongside the data queries.
   const [{ data: fullProfile },
     reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
-    trainingRes, absenceRes, frictionRes] = await Promise.all([
+    frictionRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
     supabase
       .from('requisitions')
@@ -81,14 +81,6 @@ export default async function DashboardPage() {
       .eq('company_id', companyId ?? '')
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
-    // LEAD module: use session flags (available immediately, no waterfall)
-    flagsFromSession.lead !== false
-      ? supabase.from('training_needs').select('id,title,status,employee_name').eq('company_id', companyId ?? '').eq('status', 'open').limit(4)
-      : Promise.resolve({ data: null }),
-    // PROTECT module
-    flagsFromSession.protect !== false
-      ? supabase.from('absence_records').select('id,employee_name,absence_type,start_date,status').eq('company_id', companyId ?? '').eq('status', 'pending').limit(4)
-      : Promise.resolve({ data: null }),
     // Company friction assessment
     supabase.from('company_assessments').select('overall_band,top_signals,confidence,created_at').eq('company_id', companyId ?? '').order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
@@ -99,8 +91,6 @@ export default async function DashboardPage() {
   const complianceItems = complianceRes.data ?? [];
   const services        = servicesRes.data  ?? [];
   const actions         = actionsRes.data   ?? [];
-  const openTraining    = trainingRes.data  ?? [];
-  const pendingAbsences = absenceRes.data   ?? [];
   const frictionAssessment = frictionRes.data ?? null;
 
   const firstName = (fullProfile as any)?.full_name?.split(' ')[0] ?? 'there';
@@ -224,7 +214,7 @@ export default async function DashboardPage() {
               </Link>
             ) : (
               <Link prefetch={false} href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.08)' }}>
                   <Zap size={20} style={{ color: 'var(--purple)' }} />
                 </div>
                 <div className="flex-1">
@@ -346,7 +336,7 @@ export default async function DashboardPage() {
               </h2>
               <div className="flex flex-wrap gap-2">
                 {services.map((s: any) => (
-                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,0.12)' }}>
+                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)', border: '1px solid rgba(11,120,150,0.12)' }}>
                     {s.service_name}{s.service_tier ? `: ${s.service_tier}` : ''}
                   </span>
                 ))}

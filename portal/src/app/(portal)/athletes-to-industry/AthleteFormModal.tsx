@@ -158,7 +158,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
             <span
               className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full inline-flex items-center gap-1 whitespace-nowrap"
               style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)', border: '1px solid rgba(20,184,166,0.35)' }}
-              title={`The People System called on ${new Date(athlete.called_at).toLocaleString('en-GB')}`}
+              title={`Core OS 360 called on ${new Date(athlete.called_at).toLocaleString('en-GB')}`}
             >
               <PhoneCall size={10} /> Called
             </span>
@@ -188,7 +188,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
           {mode === 'edit' && notes && notes.length > 0 && (
             <div
               className="rounded-md p-3 space-y-2"
-              style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.18)' }}
+              style={{ background: 'rgba(11,120,150,0.05)', border: '1px solid rgba(11,120,150,0.18)' }}
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--purple)' }}>
                 Notes from your account manager
