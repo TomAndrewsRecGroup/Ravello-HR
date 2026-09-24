@@ -1135,10 +1135,11 @@ lists on that page, 25 at a time, recent first:
   range for that panel alone — the display table paginates, the scheduler's
   picker does not.
 - **The Applicants table** (`RoleApplicants.tsx`, the live Manatal pipeline
-  list) sorts by `created_at` descending before paginating — Manatal's match
-  order is not a date order — and reuses the existing
-  `Pagination`/`usePagination` client-side helper (`components/modules/
-  Pagination.tsx`) rather than inventing a second pager pattern.
+  list) was REMOVED on 2026-09-24 (operator: it duplicated the Candidates
+  table at the bottom of the page and showed "1055 applicants could not be
+  named"). Its `Pagination.tsx` helper went with it. The
+  `/api/admin/manatal/matches` and `/move-stage` routes it called now have
+  no caller in the admin app.
 - **A disabled Prev/Next is a `<span>`, never a `<Link>` with
   `pointerEvents: none`.** That CSS blocks a mouse click but not keyboard
   Enter on a focused, still-navigable anchor — the same class of accessibility
