@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { BRAND_INTRO_COOKIE } from '@/lib/brand';
 
 export default function LoginForm() {
   const [email,    setEmail]    = useState('');
@@ -35,6 +36,8 @@ export default function LoginForm() {
         return;
       }
 
+      // Plays the Core OS 360 intro on the first page after sign-in.
+      document.cookie = `${BRAND_INTRO_COOKIE}=1; path=/; max-age=60; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
       window.location.href = '/dashboard';
     } catch {
       setError('Something went wrong. Please try again.');

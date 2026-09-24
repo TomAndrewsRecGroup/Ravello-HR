@@ -34,6 +34,9 @@ PAIRS=(
   "admin/src/lib/validation/parseBody.ts|portal/src/lib/validation/parseBody.ts"
   "admin/src/lib/roadmap/milestones.ts|portal/src/lib/roadmap/milestones.ts"
   "admin/src/lib/brand.ts|portal/src/lib/brand.ts"
+  "admin/src/lib/brandIntroMark.ts|portal/src/lib/brandIntroMark.ts"
+  "admin/src/components/brand/BrandIntro.tsx|portal/src/components/brand/BrandIntro.tsx"
+  "admin/src/components/brand/BrandIntro.module.css|portal/src/components/brand/BrandIntro.module.css"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

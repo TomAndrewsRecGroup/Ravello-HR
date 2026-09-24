@@ -6,6 +6,8 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import { MobileMenuProvider } from '@/components/layout/MobileMenuContext';
 import { ClientSwitcherProvider } from '@/components/layout/ClientSwitcher';
 import { ToastProvider } from '@/components/modules/Toast';
+import BrandIntro from '@/components/brand/BrandIntro';
+import { BRAND_INTRO_COOKIE } from '@/lib/brand';
 
 const ALLOWED_ROLES = ['tps_admin'];
 
@@ -39,11 +41,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const initialCompanies = await fetchActiveCompanies();
+  const playIntro = cookieStore.get(BRAND_INTRO_COOKIE)?.value === '1';
 
   return (
     <MobileMenuProvider>
       <ClientSwitcherProvider initialCompanies={initialCompanies}>
         <ToastProvider>
+          {playIntro && <BrandIntro />}
           <div className="flex min-h-screen">
             <AdminSidebar />
             <div

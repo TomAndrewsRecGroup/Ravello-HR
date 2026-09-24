@@ -1577,3 +1577,39 @@ with a history note.
 - **Still open:** 7 of the 21 duplicate recipients are recorded as
   `rejected_score` although they were emailed (a later re-scan scored
   them lower). Left as is pending the operator's call.
+
+---
+
+## Sign-in intro (2026-09-24)
+
+Operator: animate the new logo on sign-in, centre screen, fading away as
+the platform comes into shot.
+
+- **`components/brand/BrandIntro.tsx` + `.module.css`** (shared-dupe
+  pairs). Navy stage; the three blades sweep a full 360° into place
+  around the core, an orbit ring draws, the wordmark (Unbounded) settles,
+  then the camera pushes through the core while the navy fades. About
+  1.7s minimum, 3.8s maximum, and any click or key skips it.
+- **Triggered by a cookie, not client state.** The login form sets
+  `cos360_intro` (`BRAND_INTRO_COOKIE` in `lib/brand.ts`, max-age 60)
+  before navigating. The (admin)/(portal) layout reads it server-side and
+  renders the overlay in the FIRST paint; a sessionStorage flag would let
+  the dashboard flash before the intro mounted. The intro clears the
+  cookie on mount, so a reload does not replay.
+- **The mark is inlined** (`lib/brandIntroMark.ts`, generated from
+  `public/brand/core-os-360-mark.svg`, gradient ids prefixed `cosi-`)
+  because CSS cannot reach inside an `<img>`. The stylesheet targets the
+  parts by position (blades = `g` 1–3, core = `g` 4);
+  `brandIntro.test.ts` pins that structure. Regenerate from the SVG, never
+  hand-edit.
+- **The SVG is a memoised child that never re-renders.** Switching the
+  overlay to its exit class re-rendered it, React re-set the inline SVG,
+  and the blades restarted their spin from invisible just as the exit
+  began. Found by filming the exit frame by frame, not by any test.
+- Motion is transform/opacity only. `prefers-reduced-motion` gets a still
+  logo and a plain fade. A CSS `autoExit` at 4.5s removes the overlay
+  even if JavaScript never runs.
+- **Next.js route files may export only Next's own names** (`GET`,
+  `POST`, `runtime`, `maxDuration`, …). An exported constant from
+  `send-qualified/route.ts` passed `tsc` and the tests and failed
+  `next build`. Run a production build before pushing a new route.

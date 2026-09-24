@@ -1,7 +1,10 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import PortalShell from '@/components/layout/PortalShell';
 import { hasPaidFlag } from '@/lib/featureFlags';
+import BrandIntro from '@/components/brand/BrandIntro';
+import { BRAND_INTRO_COOKIE } from '@/lib/brand';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const {
@@ -78,7 +81,11 @@ export default async function PortalLayout({ children }: { children: React.React
   // invoices). TPS staff always see it for support purposes.
   const showBilling = isTpsStaff || paidEnabled || hasStripeSub;
 
+  const playIntro = cookies().get(BRAND_INTRO_COOKIE)?.value === '1';
+
   return (
+    <>
+    {playIntro && <BrandIntro />}
     <PortalShell
       flags={flags}
       counts={counts}
@@ -92,5 +99,6 @@ export default async function PortalLayout({ children }: { children: React.React
     >
       {children}
     </PortalShell>
+    </>
   );
 }

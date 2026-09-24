@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { BRAND_INTRO_COOKIE } from '@/lib/brand';
 
 const MESSAGES: Record<string, string> = {
   'no-session': 'Your session has expired. Please sign in again.',
@@ -48,6 +49,8 @@ export default function AdminLoginForm() {
         return;
       }
 
+      // Plays the Core OS 360 intro on the first page after sign-in.
+      document.cookie = `${BRAND_INTRO_COOKIE}=1; path=/; max-age=60; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
       window.location.href = '/dashboard';
     } catch {
       setError('Something went wrong. Please try again.');
