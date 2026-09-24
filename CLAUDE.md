@@ -1511,3 +1511,37 @@ on thepeoplesystem.co.uk keep working.
   signed-out login page requests them). `brand.test.ts` fails on any
   `next/font/google` import or Google Fonts URL. The logo lockups are
   outlined SVG and never depended on a font.
+
+---
+
+## The referral cron re-emailed 21 people every hour (2026-09-21 → 09-24)
+
+Found while baselining live activity before merging PR #200. "AI &
+Software Engineers" passed **1,000** `referral_applications` rows on
+21 Sep. `processRole`'s already-processed read was ONE `.in()` over
+every applicant (1,868), and PostgREST answered with its first 1,000
+rows, silently. The rows past the cap looked new again, and since the
+backlog drains oldest-first they came up every run. Each run re-scanned
+them and **sent the email BEFORE the insert**; the insert then hit the
+unique constraint, was counted as `already_processed` (benign, by the
+old comment), and nothing recorded the send. **21 people, 518 extra
+emails, worst 43.** `email_failures: 0` and `notes: []` on every run.
+
+- **The read is chunked** (`readProcessedIds`, 200 ids per request), so
+  each response is bounded by the chunk, not the table. A failed read
+  **skips the role** (fail closed) — the old code treated an error as
+  "nobody processed".
+- **The row is claimed BEFORE the email.** Insert first (status
+  `qualified`), send, then update to `email_sent` with
+  `{ count: 'exact' }`. A failed insert, for ANY reason, now means no
+  email. The unique constraint is the real guard; the pre-read is only
+  an optimisation to avoid paying for scans.
+- `pipelineIdempotency.test.ts` drives `processRole` against a fake
+  that reproduces the 1,000-row cap and the unique constraint. Two
+  mutations caught: the original code (4 fail) and the new ordering
+  with an unbounded chunk (2 fail).
+- **Mitigation applied live:** `dry_run = true` on all three enabled
+  referral roles at ~11:20 UTC 24 Sep. It must be turned back off by
+  hand once this deploys; nothing does it automatically.
+- `check-row-cap.sh` cannot see this class: it catches `.limit(N>1000)`,
+  not an unbounded `.in()` whose RESULT grows past the cap.
