@@ -74,9 +74,12 @@ function query() {
   return q;
 }
 
+let tokens: Row[] = [];
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
-    from: () => query(),
+    from: (table: string) => table === 'profile_access_tokens'
+      ? { insert: (r: Row) => { tokens.push(r); return Promise.resolve({ error: null }); } }
+      : query(),
     rpc: (_fn: string, args: { p_email: string }) =>
       Promise.resolve({ data: users.get(args.p_email.trim().toLowerCase()) ?? null, error: null }),
     auth: { admin: {
@@ -95,6 +98,7 @@ vi.mock('@supabase/supabase-js', () => ({
         profiles.set(id, { id, email, role: 'client_user', company_id: null, invite_token: null });
         return Promise.resolve({ data: { user: { id } }, error: null });
       },
+      getUserById: (id: string) => Promise.resolve({ data: { user: { id, last_sign_in_at: null } }, error: null }),
     } },
   }),
 }));
@@ -112,6 +116,7 @@ function invite(email: string, role = 'client_admin') {
 beforeEach(() => {
   users = new Map();
   profiles = new Map();
+  tokens = [];
   sent.length = 0;
 });
 
@@ -127,7 +132,8 @@ describe('a staff invite never takes over an account that already exists', () =>
     // squat itself; this is the route holding even if one existed.
     const res = await invite('newhire@target.example');
     expect(res.status).toBe(400);
-    expect(profiles.get('attacker')).toMatchObject({ role: 'client_user', company_id: OTHER_CO, invite_token: null });
+    expect(profiles.get('attacker')).toMatchObject({ role: 'client_user', company_id: OTHER_CO });
+    expect(tokens).toEqual([]);
     expect(sent).toEqual([]);
   });
 
@@ -135,7 +141,8 @@ describe('a staff invite never takes over an account that already exists', () =>
     seed('staff-2', 'colleague@corestaff.example', { role: 'tps_admin', company_id: null });
     const res = await invite('colleague@corestaff.example');
     expect(res.status).toBe(409);
-    expect(profiles.get('staff-2')).toMatchObject({ role: 'tps_admin', company_id: null, invite_token: null });
+    expect(profiles.get('staff-2')).toMatchObject({ role: 'tps_admin', company_id: null });
+    expect(tokens).toEqual([]);
     expect(sent).toEqual([]);
   });
 
@@ -151,6 +158,7 @@ describe('a staff invite never takes over an account that already exists', () =>
     const res = await invite('member@target.example', 'client_admin');
     expect(res.status).toBe(200);
     expect(profiles.get('in-1')).toMatchObject({ role: 'client_admin', company_id: TARGET_CO });
-    expect(profiles.get('in-1')!.invite_token).toBeTruthy();
+    expect(tokens.map(t => t.profile_id)).toEqual(['in-1']);
+    expect(tokens[0].token_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 });

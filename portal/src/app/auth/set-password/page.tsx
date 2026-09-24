@@ -6,19 +6,20 @@
 // allowlist dependency.
 //
 // Token-validation contract:
-//   1. Server component validates the 7-day UUID token in profiles
-//      .invite_token before rendering. If invalid/expired we show
+//   1. Server component looks the 7-day token up by its hash in
+//      profile_access_tokens before rendering. If invalid/expired we show
 //      a clear message and a 'request a new link' CTA — we DO NOT
 //      consume the token here, so a refresh on the password page
 //      doesn't burn the user's chance.
 //   2. Token is consumed atomically by the form-submit POST to
-//      /api/auth/set-password (CAS UPDATE).
+//      /api/auth/set-password (DELETE … RETURNING).
 //   3. After password set, client signs in with email+password and
 //      lands on /dashboard.
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import SetPasswordForm from './SetPasswordForm';
+import { peekAccessToken } from '@/lib/auth/accessTokens';
 import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
 // Never statically optimise: token validation runs server-side per
@@ -54,17 +55,23 @@ export default async function SetPasswordPage({ searchParams }: Props) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  // Tokens are stored hashed in profile_access_tokens (service role only).
+  const found = await peekAccessToken(sb, token);
+  if (found === 'expired') {
+    return <SetPasswordError reason="expired" />;
+  }
+  if (!found) {
+    return <SetPasswordError reason="invalid" />;
+  }
+
   const { data: profile } = await sb
     .from('profiles')
-    .select('id, email, full_name, invite_token_expires_at, companies:company_id(name)')
-    .eq('invite_token', token)
+    .select('id, email, full_name, companies:company_id(name)')
+    .eq('id', found.profileId)
     .maybeSingle();
 
   if (!profile) {
     return <SetPasswordError reason="invalid" />;
-  }
-  if (!profile.invite_token_expires_at || new Date(profile.invite_token_expires_at) < new Date()) {
-    return <SetPasswordError reason="expired" />;
   }
 
   const companyName = (profile as any).companies?.name ?? null;

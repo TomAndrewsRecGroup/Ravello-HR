@@ -12,6 +12,7 @@ import { labelFor, PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps'
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
 import { decideExistingInvite } from '@/lib/auth/existingInvitee';
+import { mintAccessToken } from '@/lib/auth/accessTokens';
 
 
 // The role list comes from PORTAL_INVITE_ROLES rather than a literal, so
@@ -113,38 +114,26 @@ export async function POST(request: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Could not create user.' }, { status: 400 });
 
   if (!isNew) {
-    const { data: existing, error: existingErr } = await adminClient
-      .from('profiles')
-      .select('role, company_id, invite_token')
-      .eq('id', userId)
-      .maybeSingle();
-    if (existingErr) {
-      return NextResponse.json({ error: `Could not read the existing account: ${existingErr.message}` }, { status: 500 });
+    const [{ data: existing, error: existingErr }, { data: authUser, error: authErr }] = await Promise.all([
+      adminClient.from('profiles').select('role, company_id').eq('id', userId).maybeSingle(),
+      adminClient.auth.admin.getUserById(userId),
+    ]);
+    if (existingErr || authErr) {
+      return NextResponse.json({ error: `Could not read the existing account: ${(existingErr ?? authErr)!.message}` }, { status: 500 });
     }
     const decision = decideExistingInvite(
-      existing ? { role: existing.role, companyId: existing.company_id, pendingInvite: !!existing.invite_token } : null,
+      existing ? { role: existing.role, companyId: existing.company_id, pendingInvite: !authUser?.user?.last_sign_in_at } : null,
       company_id,
       'staff',
     );
     if (!decision.ok) return NextResponse.json({ error: decision.error }, { status: decision.status });
   }
 
-  // ── Generate a 7-day invite token and store it on the profile. ──
-  // This replaces the 1-hour access_token that Supabase's native
-  // inviteUserByEmail embeds directly in the email link. The portal's
-  // /auth/activate page validates this token and generates a fresh
-  // Supabase magic link on-demand, so the 1-hour window only starts
-  // when the client actually clicks — not when we sent the email.
-  const inviteToken   = crypto.randomUUID();
-  const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
   const profileFields = {
-    full_name:               full_name || null,
-    role:                    safeRole,
-    onboarding_completed:    false,
-    onboarding_step:         1,
-    invite_token:            inviteToken,
-    invite_token_expires_at: inviteExpires,
+    full_name:            full_name || null,
+    role:                 safeRole,
+    onboarding_completed: false,
+    onboarding_step:      1,
   };
   // A new account's profile row was made by handle_new_user; an existing
   // one is updated only while it is still in THIS company, so a
@@ -161,6 +150,15 @@ export async function POST(request: NextRequest) {
   if (writeErr || !written) {
     return NextResponse.json({ error: `Could not save the invite: ${writeErr?.message ?? 'account changed while inviting'}` }, { status: 500 });
   }
+
+  // ── 7-day set-password token, stored hashed (lib/auth/accessTokens). ──
+  // The link goes to /auth/set-password, which checks it and lets the
+  // recipient choose a password; nothing is valid until they click.
+  const minted = await mintAccessToken(adminClient, userId, 'invite', auth.userId);
+  if ('error' in minted) {
+    return NextResponse.json({ error: `Could not create the invite link: ${minted.error}` }, { status: 500 });
+  }
+  const inviteToken = minted.token;
 
   auditLog({
     action:      'user.invited',

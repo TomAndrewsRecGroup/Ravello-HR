@@ -20,12 +20,19 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const REPO = resolve(__dirname, '../../../../..');
-const sql = readFileSync(join(REPO, 'supabase/migrations/088_security_hardening.sql'), 'utf8');
+const MIGRATIONS = join(REPO, 'supabase/migrations');
+const sql = readFileSync(join(MIGRATIONS, '088_security_hardening.sql'), 'utf8');
 
+// The LATEST migration that (re)defines a function is what is live —
+// 093 replaced 088's profile guard — so pin that one, not the first.
 function body(fn: string): string {
-  const start = sql.indexOf(`FUNCTION public.${fn}(`);
-  expect(start).toBeGreaterThan(-1);
-  return sql.slice(start, sql.indexOf('$$;', start));
+  const files = readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort();
+  for (const f of files.reverse()) {
+    const src = readFileSync(join(MIGRATIONS, f), 'utf8');
+    const start = src.indexOf(`CREATE OR REPLACE FUNCTION public.${fn}(`);
+    if (start > -1) return src.slice(start, src.indexOf('$$;', start));
+  }
+  throw new Error(`no migration defines ${fn}`);
 }
 
 function allowList(fn: string): string[] {
@@ -53,10 +60,17 @@ describe('088 security hardening', () => {
   });
 
   it('compares every other column, not a named few', () => {
+    expect(body('companies_guard_commercial')).toMatch(/jsonb_each\(to_jsonb\(NEW\) - self_service\)/);
+    expect(body('profiles_guard_privileged')).toMatch(/jsonb_each\(to_jsonb\(NEW\) - allowed\)/);
     for (const fn of ['profiles_guard_privileged', 'companies_guard_commercial']) {
-      expect(body(fn)).toMatch(/jsonb_each\(to_jsonb\(NEW\) - self_service\)/);
       expect(body(fn)).toMatch(/IS DISTINCT FROM \(to_jsonb\(OLD\) -> n\.key\)/);
     }
+  });
+
+  it("allows the self-service columns on your OWN profile only — nothing on a colleague's (093)", () => {
+    expect(body('profiles_guard_privileged')).toMatch(
+      /allowed := CASE WHEN OLD\.id = \(SELECT auth\.uid\(\)\) THEN self_service ELSE ARRAY\[\]::text\[\] END;/,
+    );
   });
 
   it('refuses every non-staff INSERT and DELETE of a profile', () => {

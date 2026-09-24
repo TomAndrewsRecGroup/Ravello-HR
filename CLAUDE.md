@@ -646,7 +646,7 @@ one of these defects compiled, rendered and reported success.
 ### The four CI guards — run them before merging
 
 ```
-bash scripts/check-shared-dupes.sh         # 21 byte-identical pairs across the two apps
+bash scripts/check-shared-dupes.sh         # 22 byte-identical pairs across the two apps
 bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
 bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
 bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
@@ -1771,3 +1771,86 @@ anybody uses the feature. Probed in production before and after
   value added by ADD VALUE cannot be used in the same transaction).
   Inert until staff grant it — 088 refuses any non-staff role change or
   profile insert. `USER_ROLES` / `ROLE_LABELS` carry it in both apps.
+
+---
+
+## The second security review (2026-09-24, migrations 091-093)
+
+A second adversarial round, run on the merged 088 hotfix, found five
+more. Each was verified live (rolled-back probes in `supabase/probes/`)
+or in the code before fixing.
+
+- **Set-password tokens were readable.** They sat in plain text in
+  `profiles.invite_token`, and `client_profiles_admin_manage` lets a
+  client_admin SELECT every profile in their company. So when staff sent
+  an ACTIVE user a reset, any admin there could read the token and
+  choose that colleague's password. And because unredeemed tokens were
+  never cleared, "holds a token" had come to mean "pending invite", so
+  the portal's resend path would mint fresh links for active colleagues.
+  - Tokens now live in **`profile_access_tokens` as SHA-256 only**, RLS
+    on and NO policies (service role only). `lib/auth/accessTokens.ts`
+    (shared pair) mints, peeks and redeems. Redeeming is a
+    `DELETE … RETURNING`, so it's single-use, and it burns the account's
+    other links. An account may hold several live links, so a resend no
+    longer kills the one already in someone's inbox.
+  - **"Pending" means never signed in** (`auth.users.last_sign_in_at`),
+    read with `auth.admin.getUserById`.
+  - **The portal never returns a set-password link to a client
+    inviter.** A failed email is a 502 the inviter sees (the UI used to
+    say "sent" regardless), and retrying is safe: the account now
+    exists, has never signed in and is in the inviter's company, so the
+    retry takes the resend path. A returned link would let a client set
+    the password on an account in someone else's name, and an email
+    failure can be forced.
+  - **Every refusal of an existing account gives a client the same
+    answer.** Staff, another client, an active colleague: one generic
+    409, with the reason logged server-side. At the seat cap, an
+    existing outside address and an unknown one both get
+    `seat_cap_reached`. The distinct messages used to tell one client
+    which addresses belong to other clients or to staff. The seat count
+    runs before the lookup for that reason, and the route is
+    rate-limited (`limiters.account`).
+  - **Interim, applied 2026-09-24:** the one plain-text token left in
+    production (expired) was cleared by hand, so the live code's
+    token-means-pending path had nothing to re-arm before the deploy.
+  - **092 must be applied AFTER this deploys.** It re-copies any
+    late-minted tokens and clears `profiles.invite_token`; before the
+    deploy, the live code still redeems from that column.
+  - The admin resend-invite and reset-password routes used to return a
+    link whose token was never saved when the email failed: a dead link
+    handed to staff. They now mint first, so the link works.
+- **The portal session cookie never expired server-side.**
+  `verifyPortalSession()` checked the signature but never `iat`. A
+  cookie value copied out of devtools therefore verified for ever: a
+  user deleted, demoted or moved months ago could replay it, with no
+  Supabase session, past the middleware fast path.
+  - It now refuses a cookie older than `PORTAL_SESSION_TTL_SECONDS`
+    (15 min), dated in the future, or missing `iat`.
+  - Routes that write with the service role no longer trust the cookie
+    at all. `lib/auth/liveSession.ts` `requireLiveSession()` verifies
+    the JWT with `auth.getUser()` and reads role and company fresh via
+    `get_my_role` / `get_my_profile`. Used by the portal invite,
+    employee leave-token regenerate, and IvyLens register/assessment.
+  - **Rule: a service-role route uses `requireLiveSession()`, never
+    `getSessionProfile()`.** RLS and 088 do not see service-role writes,
+    so the route is the only boundary.
+- **Portal Manatal move-stage moved ANY match in the account.** The only
+  check was that the caller's company had a Manatal id; the PATCH uses
+  the platform key, and the response echoed the candidate's name and
+  email. The match must now be in the caller's own
+  `getManatalMatches(manatalId)` set and the stage must be real. The
+  response no longer carries the upstream record.
+- **`prune_latest_updates()` was executable by anon.** 060's
+  `REVOKE … FROM PUBLIC` removed nothing, because Supabase grants
+  EXECUTE to anon and authenticated BY NAME. **Revoke from `PUBLIC,
+  anon, authenticated` explicitly** for any SECURITY DEFINER function
+  that isn't meant for clients (093).
+- **`bd_leads_view` bypassed the staff-only RLS** under it: it was owned
+  by postgres, not security_invoker, and granted to anon. It is now
+  security_invoker with those grants revoked (093). Nothing reads it.
+- **088's allow-list was per column, not per row.** A client_admin could
+  still set a COLLEAGUE's consent or erasure-request fields. 093 applies
+  the self-service list to your own profile only. On anyone else's
+  profile, a non-staff caller can change nothing.
+- `securityHardeningSql.test.ts` now pins the LATEST migration that
+  defines each guard function (093 replaced 088's), not the first.
