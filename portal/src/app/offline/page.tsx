@@ -15,7 +15,7 @@ export default function OfflinePage() {
           You're offline
         </h1>
         <p className="text-sm mb-6" style={{ color: 'var(--ink-faint)' }}>
-          The People System needs an internet connection to load your data securely. Check your connection and try again.
+          Core OS 360 needs an internet connection to load your data securely. Check your connection and try again.
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -26,7 +26,7 @@ export default function OfflinePage() {
           Try again
         </button>
         <p className="text-xs mt-8" style={{ color: 'var(--ink-faint)' }}>
-          The People System Portal
+          Core OS 360 Portal
         </p>
       </div>
     </div>

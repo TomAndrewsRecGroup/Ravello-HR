@@ -108,7 +108,7 @@ export default function BenchmarkClient({ userId, initialBenchmarks }: Props) {
 
       <div className="flex items-center justify-between">
         <p className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
-          The People System curated benchmarks
+          Core OS 360 curated benchmarks
         </p>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
           Manually-entered salary data that overrides or supplements IvyLens

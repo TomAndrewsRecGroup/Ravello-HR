@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import LoginForm from '@/components/modules/LoginForm';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
 export const metadata: Metadata = { title: 'Sign In' };
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 const REASON_MESSAGES: Record<string, { tone: 'info' | 'warn'; text: string }> = {
-  archived:     { tone: 'warn', text: 'This client portal has been archived. Contact The People System if you believe this is in error.' },
-  'no-profile': { tone: 'info', text: 'We could not find your profile. Please sign in again or contact The People System.' },
+  archived:     { tone: 'warn', text: 'This client portal has been archived. Contact Core OS 360 if you believe this is in error.' },
+  'no-profile': { tone: 'info', text: 'We could not find your profile. Please sign in again or contact Core OS 360.' },
   'no-session': { tone: 'info', text: 'Your session expired. Please sign in again.' },
   // 'error' is set by /auth/activate when something goes wrong on
   // the password-set redirect. Most common: 'config' (server is
   // missing SUPABASE_SERVICE_ROLE_KEY, e.g. someone hit a stray
   // www. subdomain that wasn't configured). Tell the user to ask
   // for a fresh link rather than 'log in', because they can't.
-  config:       { tone: 'warn', text: 'The portal is missing a required configuration value. Ask The People System to send you a fresh activation link.' },
-  invalid:      { tone: 'warn', text: 'This activation link has already been used or is no longer valid. Ask The People System for a fresh link.' },
-  expired:      { tone: 'warn', text: 'This activation link has expired. Ask The People System for a fresh link.' },
-  link:         { tone: 'warn', text: 'We could not generate your sign-in link. Ask The People System to resend your invitation.' },
+  config:       { tone: 'warn', text: 'The portal is missing a required configuration value. Ask Core OS 360 to send you a fresh activation link.' },
+  invalid:      { tone: 'warn', text: 'This activation link has already been used or is no longer valid. Ask Core OS 360 for a fresh link.' },
+  expired:      { tone: 'warn', text: 'This activation link has expired. Ask Core OS 360 for a fresh link.' },
+  link:         { tone: 'warn', text: 'We could not generate your sign-in link. Ask Core OS 360 to resend your invitation.' },
   'set-password': { tone: 'info', text: 'Your password is set. Please sign in below.' },
 };
 
@@ -40,12 +41,11 @@ export default function LoginPage({ searchParams }: { searchParams?: { reason?: 
         <div className="flex justify-center mb-8">
           <Image
             src={LOGO}
-            alt="The People System"
-            width={140}
-            height={48}
-            className="h-10 w-auto object-contain brightness-110"
-            priority
-          />
+            alt={BRAND_NAME}
+            width={187}
+            height={40}
+            className="h-10 w-auto object-contain"
+            priority unoptimized />
         </div>
 
         {/* Card */}

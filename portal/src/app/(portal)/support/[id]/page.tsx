@@ -61,7 +61,7 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold" style={{ color: m.sender_id === user?.id ? 'var(--purple)' : 'var(--teal)' }}>
-                    {m.sender_id === user?.id ? 'You' : 'The People System'}
+                    {m.sender_id === user?.id ? 'You' : 'Core OS 360'}
                   </span>
                   <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                     {new Date(m.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}

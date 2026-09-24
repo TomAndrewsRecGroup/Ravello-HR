@@ -686,7 +686,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
             </div>
 
             {/* Internal notes — what the engagement page calls
-                "Last The People System Note" reads from this table. */}
+                "Last Core OS 360 Note" reads from this table. */}
             {staffUserId && (
               <div className="card p-5">
                 <ClientNotesTimeline

@@ -223,7 +223,7 @@ export default function SendEmailModal({
               {smtpConfigured && (
                 <option value="smtp">Your SMTP — {smtpFromEmail ?? 'configured account'}</option>
               )}
-              <option value="resend">The People System (Resend, branded shell)</option>
+              <option value="resend">Core OS 360 (Resend, branded shell)</option>
             </select>
             {!smtpConfigured && (
               <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>

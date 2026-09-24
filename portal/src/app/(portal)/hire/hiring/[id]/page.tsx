@@ -108,7 +108,7 @@ export default async function RequisitionDetailPage({
                     Friction Lens not yet scored
                   </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-faint)' }}>
-                    Contact your consultant at The People System to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
+                    Contact your consultant at Core OS 360 to run a Friction Lens score on this role. Scores give you a real-time read on time-to-fill risk and tailored market recommendations.
                   </p>
                 </div>
               </div>
@@ -194,11 +194,11 @@ export default async function RequisitionDetailPage({
                 Candidates ({cands.length})
               </h2>
               <p className="text-xs mb-5" style={{ color: 'var(--ink-faint)' }}>
-                Only candidates approved by The People System are shown here.
+                Only candidates approved by Core OS 360 are shown here.
               </p>
               {cands.length === 0 ? (
                 <div className="empty-state py-8">
-                  <p className="text-sm">No candidates yet: The People System will add them as sourcing progresses.</p>
+                  <p className="text-sm">No candidates yet: Core OS 360 will add them as sourcing progresses.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -339,7 +339,7 @@ export default async function RequisitionDetailPage({
                     className="rounded-[8px] p-3 text-xs leading-relaxed"
                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                   >
-                    To re-score this role against updated market data, contact your consultant at The People System.
+                    To re-score this role against updated market data, contact your consultant at Core OS 360.
                   </div>
                 </div>
               ) : (
@@ -347,7 +347,7 @@ export default async function RequisitionDetailPage({
                   className="rounded-[8px] p-3 text-xs leading-relaxed"
                   style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}
                 >
-                  This role has not yet been scored. Contact your consultant at The People System to run Friction Lens.
+                  This role has not yet been scored. Contact your consultant at Core OS 360 to run Friction Lens.
                 </div>
               )}
             </div>

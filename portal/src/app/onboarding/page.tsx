@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import FrictionLensClient from '../(portal)/hire/friction-lens/FrictionLensClient';
 import type { CompanyAssessment } from '@/lib/supabase/types';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO    = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 const SECTORS = ['Retail & Hospitality','Technology & SaaS','Professional Services','Finance','Manufacturing','Healthcare','Logistics','Other'];
 // Keep this in sync with admin/src/app/(admin)/clients/onboard/OnboardWizard.tsx
 // and portal/src/components/modules/SettingsForm.tsx — same bands so a
@@ -80,7 +81,7 @@ export default function OnboardingPage() {
         // a useless "session expired" form.
         setFatal(pErr?.message
           ? `Couldn't load your profile: ${pErr.message}`
-          : 'Your profile could not be found. Please contact The People System.');
+          : 'Your profile could not be found. Please contact Core OS 360.');
         setInit(false);
         return;
       }
@@ -114,7 +115,7 @@ export default function OnboardingPage() {
         // Profile loaded but no company — was the bug pre-47fe03e.
         // Surface it so the user knows what to do rather than seeing
         // a generic "session expired" on save.
-        setFatal('Your account isn\'t linked to a company yet. Contact The People System to finish setup.');
+        setFatal('Your account isn\'t linked to a company yet. Contact Core OS 360 to finish setup.');
         setInit(false);
         return;
       }
@@ -166,7 +167,7 @@ export default function OnboardingPage() {
       return;
     }
     if (!company?.id) {
-      setError('No company is linked to your account yet. Contact The People System to get this set up before continuing.');
+      setError('No company is linked to your account yet. Contact Core OS 360 to get this set up before continuing.');
       return;
     }
 
@@ -291,7 +292,7 @@ export default function OnboardingPage() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FAFAF8' }}>
         <div className="w-full max-w-[420px]">
           <div className="flex justify-center mb-6">
-            <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto" priority />
+            <Image src={LOGO} alt={BRAND_NAME} width={187} height={40} className="h-10 w-auto" priority unoptimized />
           </div>
           <div className="rounded-[20px] p-7" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] mb-2" style={{ color: 'var(--red)' }}>
@@ -323,7 +324,7 @@ export default function OnboardingPage() {
 
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <Image src={LOGO} alt="The People System" width={130} height={44} className="h-10 w-auto" priority />
+          <Image src={LOGO} alt={BRAND_NAME} width={187} height={40} className="h-10 w-auto" priority unoptimized />
         </div>
 
         {/* Progress bar */}
@@ -569,7 +570,7 @@ export default function OnboardingPage() {
             <CheckCircle2 size={48} style={{ color: 'var(--teal)' }} />
             <p className="font-display font-bold text-2xl" style={{ color: '#0A0F1E' }}>You&rsquo;re all set.</p>
             <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-              Welcome to The People System. Taking you to your dashboard now…
+              Welcome to Core OS 360. Taking you to your dashboard now…
             </p>
           </div>
         )}

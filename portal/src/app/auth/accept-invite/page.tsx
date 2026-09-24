@@ -5,8 +5,9 @@ import { Suspense } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 const ERROR_MESSAGES: Record<string, string> = {
   expired: 'Your invitation link has expired. Ask whoever invited you to send a new one.',
@@ -104,7 +105,7 @@ function AcceptInviteInner() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFFFFF' }}>
       <div className="w-full max-w-[400px]">
         <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="The People System" width={140} height={48} className="h-10 w-auto object-contain brightness-110" priority />
+          <Image src={LOGO} alt={BRAND_NAME} width={187} height={40} className="h-10 w-auto object-contain" priority unoptimized />
         </div>
 
         <div className="rounded-[20px] p-8" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>

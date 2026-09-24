@@ -99,7 +99,7 @@ export default function ServiceWorkerRegistration() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
-          Install The People System
+          Install Core OS 360
         </p>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
           Add to your home screen for quick access

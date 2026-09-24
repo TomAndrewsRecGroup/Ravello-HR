@@ -144,7 +144,7 @@ export default function ManatalPipeline() {
           <Users size={24} />
           <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>ATS not connected</p>
           <p className="text-xs max-w-[320px]" style={{ color: 'var(--ink-faint)' }}>
-            Your Manatal ATS is not linked yet. The People System will set this up for you.
+            Your Manatal ATS is not linked yet. Core OS 360 will set this up for you.
           </p>
         </div>
       </div>

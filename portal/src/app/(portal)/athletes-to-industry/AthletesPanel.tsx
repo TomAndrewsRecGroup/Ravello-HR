@@ -94,7 +94,7 @@ export default function AthletesPanel({ athletes, interests, partners = [], prov
               Your athletes
             </h2>
             <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
-              {athletes.length} on your roster · The People System manages matches
+              {athletes.length} on your roster · Core OS 360 manages matches
             </p>
           </div>
           {athletes.length > 6 && (
@@ -114,7 +114,7 @@ export default function AthletesPanel({ athletes, interests, partners = [], prov
             <AvatarInitials name="?" size={48} className="mb-3 opacity-30" />
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-soft)' }}>No athletes yet</p>
             <p className="text-xs max-w-[260px]" style={{ color: 'var(--ink-faint)' }}>
-              Add your first athlete and upload their CV — The People System will take it from there.
+              Add your first athlete and upload their CV — Core OS 360 will take it from there.
             </p>
             <button onClick={() => setCreating(true)} className="btn-cta btn-sm flex items-center gap-1.5 mt-4">
               <Plus size={12} /> Add your first athlete

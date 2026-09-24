@@ -123,7 +123,7 @@ export default function EmailSettingsForm({ initial, ownEmail }: Props) {
   }
 
   async function clearConfig() {
-    if (!confirm('Clear your SMTP configuration? Future outbound emails from you will fall back to the The People System Resend account.')) return;
+    if (!confirm('Clear your SMTP configuration? Future outbound emails from you will fall back to the Core OS 360 Resend account.')) return;
     setClearing(true);
     setMessage(null);
     try {
@@ -241,7 +241,7 @@ export default function EmailSettingsForm({ initial, ownEmail }: Props) {
         <textarea
           className="input font-mono text-xs"
           rows={8}
-          placeholder={`Best regards,\nTom Andrews\nThe People System\n<a href="https://thepeoplesystem.co.uk">thepeoplesystem.co.uk</a>`}
+          placeholder={`Best regards,\nTom Andrews\nCore OS 360\n<a href="https://thepeoplesystem.co.uk">thepeoplesystem.co.uk</a>`}
           value={signature}
           onChange={e => setSignature(e.target.value)}
         />

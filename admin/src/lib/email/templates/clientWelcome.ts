@@ -20,7 +20,7 @@ export function clientWelcomeEmail(input: ClientWelcomeInput) {
     : `<p style="margin:0 0 16px 0;">Your account is ready — sign in any time to get started.</p>`;
 
   const body = `
-<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">Welcome to The People System</h1>
+<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">Welcome to Core OS 360</h1>
 <p style="margin:0 0 16px 0;">${greeting}</p>
 <p style="margin:0 0 16px 0;">Your account for <strong>${input.companyName}</strong> is now active. We're delighted to have you on board.</p>
 ${onboardingNote}
@@ -30,7 +30,7 @@ ${ctaButton(input.portalUrl, 'Sign in to your portal')}
 
   return {
     to:      input.to,
-    subject: `Welcome to The People System, ${input.companyName}`,
+    subject: `Welcome to Core OS 360, ${input.companyName}`,
     html:    wrapEmail(body, `Your account for ${input.companyName} is ready — sign in to get started.`),
     tag:     'client-welcome',
   };

@@ -27,7 +27,7 @@ export default async function TasksPage() {
 
   return (
     <>
-      <AdminTopbar title="Tasks" subtitle="Internal TPS to-do board" />
+      <AdminTopbar title="Tasks" subtitle="Internal team to-do board" />
       <main className="admin-page flex-1">
         <TaskBoardClient
           userId={user?.id ?? ''}

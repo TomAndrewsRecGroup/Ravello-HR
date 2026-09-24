@@ -14,8 +14,8 @@ export function userInvitedEmail(input: UserInvitedInput) {
   const inviter = input.inviterName ? `${input.inviterName} from ` : '';
 
   const body = `
-<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">You've been invited to The People System</h1>
-<p style="margin:0 0 16px 0;">${inviter}<strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their People System portal.</p>
+<h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">You've been invited to Core OS 360</h1>
+<p style="margin:0 0 16px 0;">${inviter}<strong>${input.companyName}</strong> has added you as an <strong>${input.roleLabel}</strong> on their Core OS 360 portal.</p>
 <p style="margin:0 0 16px 0;">You don't have a password yet. Click the button below to <strong>set your password</strong> and sign in. The link is valid for <strong>7 days</strong>.</p>
 ${ctaButton(input.acceptUrl, 'Set your password')}
 <p style="margin:24px 0 0 0;font-size:13px;color:${BRAND.inkSoft};">If the button doesn't work, copy and paste this link into your browser:<br/><a href="${input.acceptUrl}" style="color:${BRAND.purple};word-break:break-all;">${input.acceptUrl}</a></p>
@@ -23,8 +23,8 @@ ${ctaButton(input.acceptUrl, 'Set your password')}
 
   return {
     to:      input.to,
-    subject: `${input.companyName} invited you to The People System — set your password`,
-    html:    wrapEmail(body, `Set your password to access ${input.companyName} on The People System.`),
+    subject: `${input.companyName} invited you to Core OS 360 — set your password`,
+    html:    wrapEmail(body, `Set your password to access ${input.companyName} on Core OS 360.`),
     tag:     'user-invited',
   };
 }

@@ -108,7 +108,7 @@ export default async function DocumentsPage() {
               <FolderOpen size={28} />
               <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No documents yet</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Upload your first document above, or The People System will share documents with you here.
+                Upload your first document above, or Core OS 360 will share documents with you here.
               </p>
             </div>
           </div>

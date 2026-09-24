@@ -120,7 +120,7 @@ export const DEV_PLAN_SECTIONS: SectionDef[] = [
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Field label="Date"><input className="input" value={cov.date_label ?? ''} placeholder="July 2026" onChange={e => set({ date_label: e.target.value })} /></Field>
             <Field label="Location"><input className="input" value={cov.location ?? ''} placeholder="United Kingdom" onChange={e => set({ location: e.target.value })} /></Field>
-            <Field label="Prepared by"><input className="input" value={cov.prepared_by ?? ''} placeholder="The People System" onChange={e => set({ prepared_by: e.target.value })} /></Field>
+            <Field label="Prepared by"><input className="input" value={cov.prepared_by ?? ''} placeholder="Core OS 360" onChange={e => set({ prepared_by: e.target.value })} /></Field>
           </div>
         </div>
       );

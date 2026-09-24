@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'User has no email on file' }, { status: 400 });
   }
   if ((profile.role as string)?.startsWith('tps_')) {
-    return NextResponse.json({ error: 'Cannot resend invites for The People System staff accounts' }, { status: 400 });
+    return NextResponse.json({ error: 'Cannot resend invites for Core OS 360 staff accounts' }, { status: 400 });
   }
 
   // Mint a candidate token but DON'T persist it yet. We persist

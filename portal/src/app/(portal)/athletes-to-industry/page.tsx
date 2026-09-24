@@ -94,7 +94,7 @@ export default async function AthletesToIndustryPage() {
                 <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Your referral links</p>
                 <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
                   Share these open links with any athlete or partner. Submissions come straight back to
-                  your Athletes To Industry roster (athletes) or the The People System team (partners) —
+                  your Athletes To Industry roster (athletes) or the Core OS 360 team (partners) —
                   no login needed.
                 </p>
               </div>
@@ -137,7 +137,7 @@ export default async function AthletesToIndustryPage() {
               Welcome to the Athletes To Industry programme
             </p>
             <p className="text-xs max-w-md mx-auto" style={{ color: 'var(--ink-soft)' }}>
-              The People System will publish athletes, partners and training providers
+              Core OS 360 will publish athletes, partners and training providers
               for the programme here. Sit tight while we get it set up — or get in touch
               to start building your roster.
             </p>

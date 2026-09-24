@@ -158,7 +158,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
             <span
               className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full inline-flex items-center gap-1 whitespace-nowrap"
               style={{ background: 'rgba(20,184,166,0.12)', color: 'var(--teal)', border: '1px solid rgba(20,184,166,0.35)' }}
-              title={`The People System called on ${new Date(athlete.called_at).toLocaleString('en-GB')}`}
+              title={`Core OS 360 called on ${new Date(athlete.called_at).toLocaleString('en-GB')}`}
             >
               <PhoneCall size={10} /> Called
             </span>

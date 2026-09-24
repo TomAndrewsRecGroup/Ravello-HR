@@ -1,5 +1,5 @@
 /**
- * The People System — Portal Service Worker
+ * Core OS 360 — Portal Service Worker
  *
  * Strategy:
  * - STATIC ASSETS (JS, CSS, fonts, images): Cache-first with network fallback.
@@ -18,7 +18,7 @@
  * - Auth cookies are never intercepted or modified
  */
 
-const CACHE_NAME = 'tps-portal-v2';
+const CACHE_NAME = 'coreos-portal-v3';
 const OFFLINE_URL = '/offline';
 
 // Static asset patterns to cache (fingerprinted by Next.js)

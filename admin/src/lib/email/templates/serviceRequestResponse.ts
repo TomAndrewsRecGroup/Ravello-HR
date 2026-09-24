@@ -13,7 +13,7 @@ export function serviceRequestResponseEmail(input: ServiceRequestResponseInput) 
   // Quote-style block for the original subject + response note.
   const body = `
 <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">We've responded to your request</h1>
-<p style="margin:0 0 16px 0;">Your account team at The People System has responded to a service request from <strong>${escapeHtml(input.companyName)}</strong>.</p>
+<p style="margin:0 0 16px 0;">Your account team at Core OS 360 has responded to a service request from <strong>${escapeHtml(input.companyName)}</strong>.</p>
 <div style="margin:16px 0;padding:16px;border-left:3px solid ${BRAND.purple};background:${BRAND.surfaceLt};border-radius:0 8px 8px 0;">
   <p style="margin:0 0 8px 0;font-size:12px;color:${BRAND.inkFaint};text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Your request</p>
   <p style="margin:0 0 12px 0;font-size:14px;color:${BRAND.ink};font-weight:600;">${escapeHtml(input.requestSubject)}</p>

@@ -43,8 +43,9 @@ import {
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 interface NavItem { href: string; label: string; icon: React.ElementType; }
 interface NavGroup { label: string; items: NavItem[]; }
@@ -166,7 +167,7 @@ export default function AdminSidebar() {
           style={{ borderBottom: '1px solid var(--line)' }}
         >
           <Link href="/dashboard" prefetch={false} className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
+            <Image src={LOGO} alt={BRAND_NAME} width={131} height={28} className="h-7 w-auto object-contain" sizes="160px" priority unoptimized />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
             Admin

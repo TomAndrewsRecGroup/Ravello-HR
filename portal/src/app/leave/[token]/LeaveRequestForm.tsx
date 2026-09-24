@@ -161,7 +161,7 @@ export default function LeaveRequestForm({ token, employeeName, companyName, lea
         </form>
 
         <p className="text-xs text-center mt-5" style={{ color: 'var(--ink-faint)' }}>
-          Powered by The People System
+          Powered by Core OS 360
         </p>
       </div>
     </main>

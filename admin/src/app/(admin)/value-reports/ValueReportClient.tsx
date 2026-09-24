@@ -120,7 +120,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.setTextColor(...INK);
-    doc.text('The People System', 40, y);
+    doc.text('Core OS 360', 40, y);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -234,7 +234,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
           <FileText size={28} />
           <p className="text-sm font-medium">Select a client to generate their value report</p>
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-            Shows what The People System delivered during the selected month.
+            Shows what Core OS 360 delivered during the selected month.
           </p>
         </div>
       ) : (
@@ -245,7 +245,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
               <h2 className="font-display text-xl" style={{ color: 'var(--ink)' }}>{report.company?.name}</h2>
               <span className="eyebrow">{report.month}</span>
             </div>
-            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: The People System</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: Core OS 360</p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-5">

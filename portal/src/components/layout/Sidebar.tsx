@@ -12,8 +12,9 @@ import {
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
 import { useLockedFeature } from './LockedFeature';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 const COUNT_KEY: Record<string, string> = {
   '/protect': 'actions',
@@ -267,7 +268,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <Link prefetch={false} href="/dashboard" className="flex items-center">
-            <Image src={LOGO} alt="The People System" width={160} height={52} className="h-7 w-auto object-contain" sizes="160px" priority />
+            <Image src={LOGO} alt={BRAND_NAME} width={131} height={28} className="h-7 w-auto object-contain" sizes="160px" priority unoptimized />
           </Link>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded-md hidden lg:inline" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>Portal</span>
           <button onClick={close} className="lg:hidden ml-auto flex items-center justify-center w-7 h-7 rounded-md" style={{ color: 'var(--ink-faint)' }} aria-label="Close">

@@ -19,6 +19,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import SetPasswordForm from './SetPasswordForm';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
 // Never statically optimise: token validation runs server-side per
 // request and we don't want any cached redirect-to-login response.
@@ -80,19 +81,19 @@ export default async function SetPasswordPage({ searchParams }: Props) {
 
 function SetPasswordError({ reason }: { reason: 'config' | 'invalid' | 'expired' }) {
   const messages: Record<string, string> = {
-    config:  'The portal is missing a required configuration value. Contact The People System and ask them to send you a fresh activation link.',
-    invalid: 'This activation link has already been used or is no longer valid. Ask The People System for a fresh link.',
-    expired: 'This activation link has expired. Ask The People System for a fresh link.',
+    config:  'The portal is missing a required configuration value. Contact Core OS 360 and ask them to send you a fresh activation link.',
+    invalid: 'This activation link has already been used or is no longer valid. Ask Core OS 360 for a fresh link.',
+    expired: 'This activation link has expired. Ask Core OS 360 for a fresh link.',
   };
 
-  const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+  const LOGO = BRAND_LOGO;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFFFFF' }}>
       <div className="relative w-full max-w-[400px]">
         <div className="flex justify-center mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO} alt="The People System" style={{ height: 40, objectFit: 'contain' }} />
+          <img src={LOGO} alt={BRAND_NAME} style={{ height: 40, objectFit: 'contain' }} />
         </div>
         <div className="rounded-[20px] p-8" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
           <h1 className="font-display font-bold text-xl mb-3" style={{ color: '#0A0F1E' }}>Link unavailable</h1>

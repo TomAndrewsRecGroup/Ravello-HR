@@ -67,7 +67,7 @@ export default function DevPlanDocument(props: DevPlanDocumentProps) {
   const metaItems = [
     cover.date_label && { k: 'Prepared', v: cover.date_label },
     cover.location && { k: 'Location', v: cover.location },
-    (cover.prepared_by || props.companyName) && { k: 'Prepared by', v: cover.prepared_by || 'The People System' },
+    (cover.prepared_by || props.companyName) && { k: 'Prepared by', v: cover.prepared_by || 'Core OS 360' },
   ].filter(Boolean) as { k: string; v: string }[];
 
   return (

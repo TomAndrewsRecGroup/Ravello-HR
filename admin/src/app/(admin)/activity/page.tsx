@@ -102,7 +102,7 @@ export default async function ActivityPage() {
     })),
     ...(notesRes.data ?? []).map((n: any) => ({
       id: `note-${n.id}`, type: 'service_request',
-      title: n.title ?? `${n.note_type} note`, subtitle: `by ${n.profiles?.full_name ?? 'TPS'}`,
+      title: n.title ?? `${n.note_type} note`, subtitle: `by ${n.profiles?.full_name ?? 'Core OS 360'}`,
       companyName: n.companies?.name ?? '', companyId: n.companies?.id ?? '',
       href: `/clients/${n.companies?.slug ?? n.companies?.id ?? ''}`, timestamp: n.created_at,
     })),

@@ -21,7 +21,7 @@ export default async function EmailSettingsPage() {
     <>
       <AdminTopbar
         title="Email Settings"
-        subtitle="Send outbound emails from your own SMTP — falls back to The People System Resend when unset."
+        subtitle="Send outbound emails from your own SMTP — falls back to Core OS 360 Resend when unset."
       />
       <main className="admin-page flex-1">
         <EmailSettingsForm

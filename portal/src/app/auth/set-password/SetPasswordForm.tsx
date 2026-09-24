@@ -3,8 +3,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Loader2, CheckCircle2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { BRAND_LOGO, BRAND_NAME } from '@/lib/brand';
 
-const LOGO = 'https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png';
+const LOGO = BRAND_LOGO;
 
 interface Props {
   token:       string;
@@ -71,14 +72,14 @@ export default function SetPasswordForm({ token, email, fullName, companyName }:
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFFFFF' }}>
       <div className="relative w-full max-w-[440px]">
         <div className="flex justify-center mb-8">
-          <Image src={LOGO} alt="The People System" width={140} height={48}
-                 className="h-10 w-auto object-contain" priority />
+          <Image src={LOGO} alt={BRAND_NAME} width={187} height={40}
+                 className="h-10 w-auto object-contain" priority unoptimized />
         </div>
 
         <div className="rounded-[20px] p-8" style={{ background: '#FFFFFF', border: '1px solid var(--line)' }}>
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 size={16} style={{ color: 'var(--purple)' }} />
-            <p className="eyebrow" style={{ margin: 0 }}>Welcome to The People System</p>
+            <p className="eyebrow" style={{ margin: 0 }}>Welcome to Core OS 360</p>
           </div>
           <h1 className="font-display font-bold text-xl mb-2" style={{ color: '#0A0F1E' }}>
             Set your password, {first}

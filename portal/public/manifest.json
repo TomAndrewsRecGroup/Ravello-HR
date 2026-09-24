@@ -1,30 +1,33 @@
 {
-  "name": "The People System",
-  "short_name": "TPS Portal",
-  "description": "Your People System client workspace — hiring, HR, documents, and support.",
+  "name": "Core OS 360",
+  "short_name": "Core OS 360",
+  "description": "Your Core OS 360 workspace \u2014 hiring, HR, documents, and support.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#FFFFFF",
-  "theme_color": "#7C3AED",
-  "categories": ["business", "productivity"],
+  "theme_color": "#070B20",
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png",
+      "src": "/brand/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png",
+      "src": "/brand/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://haaqtnq6favvrbuh.public.blob.vercel-storage.com/the%20people%20system%20%282%29.png",
-      "sizes": "192x192",
+      "src": "/brand/icon-maskable-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }

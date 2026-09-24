@@ -84,9 +84,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, verified_at: new Date().toISOString() });
   }
 
-  const subject = 'TPS — SMTP test email';
+  const subject = 'Core OS 360 — SMTP test email';
   const html = `
-    <p>This is a test email from your <strong>The People System</strong> admin SMTP configuration.</p>
+    <p>This is a test email from your <strong>Core OS 360</strong> admin SMTP configuration.</p>
     <p>If you can read this with your signature below, your SMTP settings are working correctly.</p>
     <p style="color:#6B7280;font-size:12px;">Sent ${new Date().toLocaleString('en-GB')} by ${creds.fromEmail}</p>
   `;

@@ -62,7 +62,7 @@ export default function PartnersPanel({ partners, interests, athletes = [] }: Pr
             <Building2 size={32} className="mb-3 opacity-30" style={{ color: 'var(--ink-faint)' }} />
             <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-soft)' }}>No partners listed yet</p>
             <p className="text-xs max-w-[260px]" style={{ color: 'var(--ink-faint)' }}>
-              The People System will publish partner companies here as they join the programme.
+              Core OS 360 will publish partner companies here as they join the programme.
             </p>
           </div>
         ) : (

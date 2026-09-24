@@ -384,10 +384,10 @@ export default function OnboardWizard({ staff }: Props) {
           <div className="space-y-5">
             <div>
               <h3 className="font-display text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>Account manager</h3>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The TPS team member who looks after this client. Optional &mdash; you can assign later.</p>
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>The team member who looks after this client. Optional &mdash; you can assign later.</p>
             </div>
             {staff.length === 0 ? (
-              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No TPS staff found. Skip and assign later.</p>
+              <p className="text-xs py-4 text-center" style={{ color: 'var(--ink-faint)' }}>No staff found. Skip and assign later.</p>
             ) : (
               <div className="space-y-2">
                 <label

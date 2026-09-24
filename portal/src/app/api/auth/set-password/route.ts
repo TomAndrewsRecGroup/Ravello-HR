@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       hasServiceKey:  !!key,
     });
     return NextResponse.json({
-      error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL on the portal Vercel project. Contact The People System.',
+      error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL on the portal Vercel project. Contact Core OS 360.',
     }, { status: 500 });
   }
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
   }
   if (!claimed) {
     return NextResponse.json({
-      error: 'This activation link has already been used or has expired. Ask The People System for a fresh link.',
+      error: 'This activation link has already been used or has expired. Ask Core OS 360 for a fresh link.',
     }, { status: 410 });
   }
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     // path. Operator can resend the invite to mint a new token.
     console.error('[set-password] updateUserById failed:', updateErr.message);
     return NextResponse.json({
-      error: `Could not save password: ${updateErr.message}. Ask The People System for a fresh link.`,
+      error: `Could not save password: ${updateErr.message}. Ask Core OS 360 for a fresh link.`,
     }, { status: 500 });
   }
 

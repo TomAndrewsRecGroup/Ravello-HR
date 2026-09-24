@@ -1442,3 +1442,49 @@ it predates this change.
   `HiringStageUpdater` / `ClientStatusToggle` components. With the
   Services tab gone, nothing can write `client_services`, so the portal's
   "Active Services" panel stays empty until that is decided.
+
+---
+
+## The People System → Core OS 360 (2026-09-24)
+
+Operator: change every logo, favicon and piece of branding to **Core OS
+360**, but **keep the domain** so emails, athlete links and anything live
+on thepeoplesystem.co.uk keep working.
+
+- **`lib/brand.ts`** (shared-dupe pair) is the one source for the name,
+  tagline, logo paths, the email logo URL and the default sender.
+- **Assets** in each app's `public/brand/` + `public/favicon.ico` were
+  generated from the brand mockups: the SVG marks were lifted from the
+  rendered artboards (not traced), the lockup text is outlined Unbounded
+  (no web-font dependency), favicons use the SIMPLIFIED mark (mockup rule:
+  simplified below 112px), home-screen icons the full mark on the navy
+  tile, plus a 512 maskable. Email logo is a PNG, because mail clients do
+  not render SVG.
+- **Domain kept on purpose.** URLs, `noreply@portal.thepeoplesystem.co.uk`,
+  Reply-To, the website link in email footers and the Resend-verified
+  domain are unchanged. The email logo is served from
+  `portal.thepeoplesystem.co.uk/brand/…` because Resend flags images off
+  the sending root domain.
+- **`EMAIL_LOGO_URL` is no longer read.** It pointed at the old artwork;
+  if it was still set in Vercel it would have kept the old logo on every
+  email.
+- **`brandFromAddress()`** swaps ONLY a pre-rebrand display name in
+  `EMAIL_FROM` ("The People System <x>" → "Core OS 360 <x>"), keeping the
+  address. Staff senders and the ARG referral sender pass through as
+  given.
+- **Deliberately NOT renamed (they are lookup keys or stored data):**
+  Stripe `RETAINER_PRODUCT_NAME` and `VAT_RATE_DISPLAY_NAME` (found by
+  exact name; renaming creates duplicates), Manatal `'TPS'` industry and
+  `'TPS-managed client'` tags, the `'TPS'` sector value, `tps_*` role
+  enums and `tps_company_id` metadata. Comments that record history still
+  say The People System.
+- **The referral invite stays Andrews Recruitment Group**, and a test now
+  also asserts it carries no Core OS 360 string.
+- `brand.test.ts` fails on any non-comment "People System" string or any
+  reference to the old blob logo in either app, and checks every asset
+  exists in both apps. Mutation-checked.
+- Also fixed: `manifest.json` and `sw.js` were inside the auth matcher, so
+  a signed-out fetch (the login page links both) got the login HTML back.
+  They are now excluded in both apps, with tests.
+- **UI colour palette NOT changed yet** (still purple `--purple` etc.);
+  the new brand is navy/cyan. That is a separate decision.

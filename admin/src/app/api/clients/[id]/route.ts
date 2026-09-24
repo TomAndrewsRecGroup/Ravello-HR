@@ -82,7 +82,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const staffProfile = (profiles ?? []).find((p) => (p.role as string)?.startsWith('tps_'));
   if (staffProfile) {
     return NextResponse.json({
-      error: `Refusing to delete: a People System staff account (${staffProfile.email}) is attached to this company. Reassign or remove them first.`,
+      error: `Refusing to delete: a Core OS 360 staff account (${staffProfile.email}) is attached to this company. Reassign or remove them first.`,
     }, { status: 400 });
   }
 

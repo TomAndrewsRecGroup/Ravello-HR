@@ -25,7 +25,7 @@ export interface DevPlanContent {
     tagline?: string;       // one-line positioning under the name
     date_label?: string;    // e.g. "July 2026"
     location?: string;
-    prepared_by?: string;   // e.g. "The People System"
+    prepared_by?: string;   // e.g. "Core OS 360"
   };
   exec_summary?: { heading?: string; body_html?: string };
   positioning?: string;     // pull-quote callout (HTML)

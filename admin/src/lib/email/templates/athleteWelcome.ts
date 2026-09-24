@@ -22,7 +22,7 @@ export function athleteWelcomeEmail(input: AthleteWelcomeInput) {
   const body = `
 <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:${A2I.cream};">Welcome to Athletes To Industry</h1>
 <p style="margin:0 0 16px 0;">${greeting}</p>
-<p style="margin:0 0 16px 0;">Your details have been added to <strong style="color:${A2I.gold};">Andrews Recruitment Group's Athletes To Industry programme</strong> via The People System portal. This is the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
+<p style="margin:0 0 16px 0;">Your details have been added to <strong style="color:${A2I.gold};">Andrews Recruitment Group's Athletes To Industry programme</strong> via Core OS 360 portal. This is the start of your transition into industry. We'll work alongside you to introduce you to partner companies, training providers and the right opportunities for your next chapter.</p>
 <p style="margin:0 0 16px 0;">The first step is a short, no-pressure call with <strong style="color:${A2I.gold};">Tom Andrews</strong>, Owner of Andrews Recruitment. He'll talk you through the programme, learn what you're looking for, and map out the support you'll get from us.</p>
 ${ctaButtonA2I(url, 'Book a call with Tom Andrews')}
 <p style="margin:24px 0 0 0;font-size:13px;color:${A2I.creamMut};">If you'd rather get in touch first, just reply to this email — we'd love to hear from you.</p>
