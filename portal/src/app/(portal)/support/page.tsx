@@ -11,7 +11,7 @@ export const revalidate = 30;
 const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
 
 const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
-  new:         { background: 'rgba(124,58,237,0.12)', color: '#5A1EC0' },
+  new:         { background: 'rgba(11,120,150,0.12)', color: '#075E77' },
   in_progress: { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' },
   complete:    { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
 };

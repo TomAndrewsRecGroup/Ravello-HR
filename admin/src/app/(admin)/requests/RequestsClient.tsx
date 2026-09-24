@@ -36,7 +36,7 @@ function urgencyBadge(urgency: string): React.CSSProperties {
 
 function statusBadge(status: string): React.CSSProperties {
   switch (status?.toLowerCase()) {
-    case 'new':         return { background: 'rgba(124,58,237,0.12)', color: 'var(--purple)' };
+    case 'new':         return { background: 'rgba(11,120,150,0.12)', color: 'var(--purple)' };
     case 'in_progress':
     case 'in progress': return { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' };
     case 'complete':

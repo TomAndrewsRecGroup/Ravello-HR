@@ -4,8 +4,8 @@
 import { BRAND_EMAIL_LOGO_URL, BRAND_NAME, BRAND_TAGLINE, brandFromAddress } from '@/lib/brand';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
-const PURPLE          = '#7C3AED';
-const PURPLE_DK       = '#5A2AC8';
+const PURPLE          = '#0B7896';
+const PURPLE_DK       = '#075E77';
 const INK             = '#070B1D';
 const INK_SOFT        = '#38436A';
 const INK_FAINT       = '#748099';

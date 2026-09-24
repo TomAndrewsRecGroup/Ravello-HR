@@ -93,7 +93,7 @@ export default function ServiceWorkerRegistration() {
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: 'rgba(124,58,237,0.08)' }}
+        style={{ background: 'rgba(11,120,150,0.08)' }}
       >
         <Download size={18} style={{ color: 'var(--purple)' }} />
       </div>

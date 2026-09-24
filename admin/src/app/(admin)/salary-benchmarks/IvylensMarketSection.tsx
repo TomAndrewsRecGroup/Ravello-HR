@@ -82,7 +82,7 @@ export default function IvylensMarketSection() {
   useEffect(() => { load(false); }, []);
 
   return (
-    <div className="card p-5 space-y-4" style={{ borderColor: 'rgba(124,58,237,0.25)' }}>
+    <div className="card p-5 space-y-4" style={{ borderColor: 'rgba(11,120,150,0.25)' }}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

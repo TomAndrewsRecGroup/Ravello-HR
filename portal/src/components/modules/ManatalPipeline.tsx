@@ -30,7 +30,7 @@ interface Match {
 const STAGE_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
   submission:      { bg: 'rgba(148,163,184,0.12)', text: 'var(--slate)', dot: '#94A3B8' },
   'phone screen':  { bg: 'rgba(59,111,255,0.10)',  text: '#1D4ED8', dot: 'var(--blue)' },
-  interview:       { bg: 'rgba(124,58,237,0.10)',   text: '#6D28D9', dot: 'var(--purple)' },
+  interview:       { bg: 'rgba(11,120,150,0.10)',   text: '#075E77', dot: 'var(--purple)' },
   'final interview': { bg: 'rgba(217,119,6,0.10)',  text: '#92400E', dot: 'var(--amber)' },
   offer:           { bg: 'rgba(20,184,166,0.10)',   text: '#0D9488', dot: 'var(--teal)' },
   hired:           { bg: 'rgba(22,163,74,0.10)',    text: 'var(--emerald)', dot: 'var(--success)' },

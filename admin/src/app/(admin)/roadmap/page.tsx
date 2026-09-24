@@ -24,7 +24,7 @@ type Track = MilestonePillar;
 // lead = people development / training (HR pillar)
 // protect = compliance / risk (Data + Risk pillar)
 const TRACK_META: Record<Track, { label: string; pillar: string; icon: typeof Briefcase; bg: string; text: string; border: string }> = {
-  hire:    { label: 'Hire',    pillar: 'Business', icon: Briefcase,    bg: 'rgba(124,58,237,0.08)',  text: 'var(--purple)', border: 'rgba(124,58,237,0.2)' },
+  hire:    { label: 'Hire',    pillar: 'Business', icon: Briefcase,    bg: 'rgba(11,120,150,0.08)',  text: 'var(--purple)', border: 'rgba(11,120,150,0.2)' },
   lead:    { label: 'Lead',    pillar: 'HR',       icon: BookOpen,     bg: 'rgba(20,184,166,0.08)',  text: 'var(--teal)',   border: 'rgba(20,184,166,0.2)' },
   protect: { label: 'Protect', pillar: 'Data',     icon: ShieldCheck,  bg: 'rgba(59,130,246,0.08)',  text: 'var(--blue)',   border: 'rgba(59,130,246,0.2)' },
 };
@@ -155,7 +155,7 @@ export default async function AdminRoadmapPage() {
           {byPillar.map(p => {
             const Icon = p.pillar === 'HR' ? Users : p.pillar === 'Business' ? TrendingUp : BarChart3;
             const accent = p.pillar === 'HR' ? 'var(--teal)' : p.pillar === 'Business' ? 'var(--purple)' : 'var(--blue)';
-            const bg     = p.pillar === 'HR' ? 'rgba(20,184,166,0.08)' : p.pillar === 'Business' ? 'rgba(124,58,237,0.08)' : 'rgba(59,130,246,0.08)';
+            const bg     = p.pillar === 'HR' ? 'rgba(20,184,166,0.08)' : p.pillar === 'Business' ? 'rgba(11,120,150,0.08)' : 'rgba(59,130,246,0.08)';
             return (
               <div key={p.pillar} className="card p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -210,7 +210,7 @@ export default async function AdminRoadmapPage() {
                 <div className="flex items-center justify-between flex-wrap gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-soft)' }}>
                   <div className="flex items-center gap-3">
                     <h2 className="font-display font-semibold text-base" style={{ color: 'var(--ink)' }}>{client.name}</h2>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
                       {pct}% delivered
                     </span>
                   </div>

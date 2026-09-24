@@ -7,7 +7,7 @@ export default function OfflinePage() {
       <div className="text-center max-w-sm">
         <div
           className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: 'rgba(124,58,237,0.08)' }}
+          style={{ background: 'rgba(11,120,150,0.08)' }}
         >
           <WifiOff size={28} style={{ color: 'var(--purple)' }} />
         </div>

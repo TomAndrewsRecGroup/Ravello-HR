@@ -104,7 +104,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
 
     // Brand tokens — kept inline so the PDF doesn't pull in the
     // application's CSS variables.
-    const PURPLE   = [124, 58, 237] as [number, number, number];
+    const PURPLE   = [11, 120, 150] as [number, number, number]; // Core OS 360 accent (#0B7896)
     const INK      = [7, 11, 29]    as [number, number, number];
     const INK_SOFT = [56, 67, 106]  as [number, number, number];
     const SURFACE  = [244, 245, 251] as [number, number, number];
@@ -331,7 +331,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                 <div className="flex flex-wrap gap-1 mt-1">
                   {report.usage.activeServices.length > 0
                     ? report.usage.activeServices.map((s: any) => (
-                      <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}>
+                      <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
                         {s.service_name}
                       </span>
                     ))

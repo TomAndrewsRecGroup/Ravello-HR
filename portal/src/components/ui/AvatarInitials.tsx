@@ -6,7 +6,7 @@ interface Props {
 
 // Deterministic colour based on a name, drawn from the brand palette.
 const PALETTE = [
-  '#7C3AED', '#5A1EC0', '#3B82F6', '#1848CC',
+  '#0B7896', '#075E77', '#3B82F6', '#1848CC',
   '#14B8A6', '#0E7A6A', '#BF8F28', '#EA3DC4',
 ];
 

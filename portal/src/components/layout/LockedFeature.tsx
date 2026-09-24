@@ -72,7 +72,7 @@ function LockedFeatureModal({
           <div className="flex items-center gap-2">
             <div
               className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}
+              style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}
             >
               <Lock size={15} />
             </div>

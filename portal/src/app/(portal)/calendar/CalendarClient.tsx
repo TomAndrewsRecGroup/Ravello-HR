@@ -53,7 +53,7 @@ const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   closed_day:    { bg: 'rgba(217,68,68,0.10)',  border: '#D94444', text: 'var(--rose)' },
-  bank_holiday:  { bg: 'rgba(124,58,237,0.10)', border: 'var(--purple)', text: '#5A1EC0' },
+  bank_holiday:  { bg: 'rgba(11,120,150,0.10)', border: 'var(--purple)', text: '#075E77' },
   company_event: { bg: 'rgba(59,111,255,0.10)', border: 'var(--blue)', text: 'var(--blue)' },
   other:         { bg: 'rgba(148,163,184,0.10)', border: '#94A3B8', text: 'var(--slate)' },
 };
@@ -69,7 +69,7 @@ const LEAVE_COLORS: Record<string, { bg: string; text: string; icon: React.Eleme
   sick:           SICK_COLOR,
   sick_day:       SICK_COLOR,
   shared_parental: { bg: 'rgba(234,61,196,0.10)', text: '#9E1880', icon: CalendarDays },
-  bank_holiday:   { bg: 'rgba(124,58,237,0.10)', text: '#5A1EC0', icon: Star },
+  bank_holiday:   { bg: 'rgba(11,120,150,0.10)', text: '#075E77', icon: Star },
   unpaid:         { bg: 'rgba(148,163,184,0.10)', text: 'var(--slate)', icon: CalendarDays },
   maternity:      { bg: 'rgba(234,61,196,0.10)', text: '#9E1880', icon: CalendarDays },
   paternity:      { bg: 'rgba(59,111,255,0.10)', text: 'var(--blue)', icon: CalendarDays },
@@ -289,7 +289,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--rose)' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.closed_day.bg, border: `1px solid ${EVENT_COLORS.closed_day.border}` }} /> Closed
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#5A1EC0' }}>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#075E77' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.bank_holiday.bg, border: `1px solid ${EVENT_COLORS.bank_holiday.border}` }} /> Bank Holiday
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--emerald)' }}>
@@ -326,7 +326,7 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
                 className="min-h-[72px] sm:min-h-[90px] p-1 sm:p-1.5 border-b border-r cursor-pointer transition-colors"
                 style={{
                   borderColor: 'var(--line)',
-                  background: isSelected ? 'rgba(124,58,237,0.04)' : isWeekend ? 'rgba(0,0,0,0.015)' : 'transparent',
+                  background: isSelected ? 'rgba(11,120,150,0.04)' : isWeekend ? 'rgba(0,0,0,0.015)' : 'transparent',
                   opacity: cell.inMonth ? 1 : 0.35,
                 }}
                 onClick={() => setSelectedDate(cell.date)}

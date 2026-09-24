@@ -130,7 +130,7 @@ export default function DocumentUpload({ companyId, userId, onUploaded }: Props)
         style={{
           minHeight: 120,
           borderColor: dragging ? 'var(--purple)' : 'var(--line)',
-          background: dragging ? 'rgba(124,58,237,0.04)' : 'var(--surface-alt)',
+          background: dragging ? 'rgba(11,120,150,0.04)' : 'var(--surface-alt)',
           cursor: file ? 'default' : 'pointer',
         }}
       >

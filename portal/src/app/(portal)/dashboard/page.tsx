@@ -214,7 +214,7 @@ export default async function DashboardPage() {
               </Link>
             ) : (
               <Link prefetch={false} href="/hire/friction-lens" className="card p-5 flex items-center gap-5 hover:shadow-md transition-shadow" style={{ borderLeft: '3px solid var(--purple)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.08)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.08)' }}>
                   <Zap size={20} style={{ color: 'var(--purple)' }} />
                 </div>
                 <div className="flex-1">
@@ -336,7 +336,7 @@ export default async function DashboardPage() {
               </h2>
               <div className="flex flex-wrap gap-2">
                 {services.map((s: any) => (
-                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,0.12)' }}>
+                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)', border: '1px solid rgba(11,120,150,0.12)' }}>
                     {s.service_name}{s.service_tier ? `: ${s.service_tier}` : ''}
                   </span>
                 ))}

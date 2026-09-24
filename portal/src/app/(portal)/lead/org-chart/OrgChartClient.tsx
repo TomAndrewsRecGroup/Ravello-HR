@@ -130,7 +130,7 @@ function OrgNode({
           background:
             isDropTarget    ? 'rgba(20,184,166,0.10)'
           : isInvalidTarget ? 'rgba(220,38,38,0.08)'
-          : matchesSearch   ? 'rgba(124,58,237,0.06)'
+          : matchesSearch   ? 'rgba(11,120,150,0.06)'
           :                   undefined,
           border: isDropTarget
             ? '1px dashed var(--teal)'

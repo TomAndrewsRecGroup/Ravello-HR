@@ -332,7 +332,7 @@ export default function BDCompanyModal({ company, onClose }: Props) {
 
               {showInsight && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-[10px]"
-                  style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
+                  style={{ background: 'rgba(11,120,150,0.08)', border: '1px solid rgba(11,120,150,0.18)' }}>
                   <AlertCircle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--purple)' }} />
                   <p className="text-sm" style={{ color: 'var(--purple)' }}>
                     <strong>Active hiring</strong>: potential HIRE Foundations or Embedded client

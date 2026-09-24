@@ -207,3 +207,20 @@ describe('reply-to travels with REFERRAL_EMAIL_FROM', () => {
     });
   });
 });
+
+// The Core OS 360 restyle recoloured the platform shell's button and links
+// to the brand cyan. The ARG referral email must NOT follow it: it goes out
+// under Andrews Recruitment Group's name, so its accent is its own.
+describe('accent colour follows the sender, not the platform', async () => {
+  const { wrapEmail, ctaButton } = await import('../layout');
+  it('the platform shell uses the Core OS 360 cyan', () => {
+    const html = wrapEmail(ctaButton('https://x.example', 'Go'), 'pre');
+    expect(html).toContain('#0B7896');
+    expect(html).not.toContain('#7C3AED');
+  });
+  it('the ARG referral invite keeps its original accent', () => {
+    const html = referralInviteEmail(BASE).html;
+    expect(html).toContain('#7C3AED');
+    expect(html).not.toContain('#0B7896');
+  });
+});

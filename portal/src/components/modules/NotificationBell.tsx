@@ -181,7 +181,7 @@ export default function NotificationBell() {
                     className="w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-alt)] transition-colors"
                     style={{
                       borderBottom: '1px solid var(--line)',
-                      background: n.read ? 'transparent' : 'rgba(124,58,237,0.03)',
+                      background: n.read ? 'transparent' : 'rgba(11,120,150,0.03)',
                     }}
                   >
                     <div

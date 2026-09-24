@@ -235,7 +235,7 @@ export default async function RequisitionDetailPage({
                         />
                       </div>
                       {c.client_feedback && (
-                        <div className="mt-3 flex items-start gap-2 text-xs p-3 rounded-[8px]" style={{ background: 'rgba(143,114,246,0.06)', border: '1px solid rgba(143,114,246,0.1)' }}>
+                        <div className="mt-3 flex items-start gap-2 text-xs p-3 rounded-[8px]" style={{ background: 'rgba(11,120,150,0.06)', border: '1px solid rgba(11,120,150,0.1)' }}>
                           <MessageSquare size={12} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--purple)' }} />
                           <span style={{ color: 'var(--ink-soft)' }}>{c.client_feedback}</span>
                         </div>

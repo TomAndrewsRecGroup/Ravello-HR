@@ -169,7 +169,7 @@ export default function AdminSidebar() {
           <Link href="/dashboard" prefetch={false} className="flex items-center">
             <Image src={LOGO} alt={BRAND_NAME} width={131} height={28} className="h-7 w-auto object-contain" sizes="160px" priority unoptimized />
           </Link>
-          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] ml-auto px-2 py-0.5 rounded-md" style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}>
             Admin
           </span>
           <button onClick={close} className="lg:hidden ml-auto flex items-center justify-center w-7 h-7 rounded-md" style={{ color: 'var(--ink-faint)' }} aria-label="Close menu">

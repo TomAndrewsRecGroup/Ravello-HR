@@ -188,7 +188,7 @@ export default function AthleteFormModal({ mode, athlete, notes, devPlans, onClo
           {mode === 'edit' && notes && notes.length > 0 && (
             <div
               className="rounded-md p-3 space-y-2"
-              style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.18)' }}
+              style={{ background: 'rgba(11,120,150,0.05)', border: '1px solid rgba(11,120,150,0.18)' }}
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--purple)' }}>
                 Notes from your account manager

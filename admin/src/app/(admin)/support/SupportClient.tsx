@@ -63,7 +63,7 @@ export default function SupportClient({ tickets }: Props) {
             <span
               className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
               style={{
-                background: filter === f.key ? 'rgba(124,58,237,0.12)' : 'rgba(7,11,29,0.07)',
+                background: filter === f.key ? 'rgba(11,120,150,0.12)' : 'rgba(7,11,29,0.07)',
                 color: filter === f.key ? 'var(--purple)' : 'var(--ink-faint)',
               }}
             >

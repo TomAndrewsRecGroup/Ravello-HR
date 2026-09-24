@@ -206,7 +206,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
             className="card p-4 text-left transition-all"
             style={{
               borderColor: activeReport === r.type ? 'var(--purple)' : undefined,
-              boxShadow: activeReport === r.type ? '0 0 0 2px rgba(124,58,237,0.12)' : undefined,
+              boxShadow: activeReport === r.type ? '0 0 0 2px rgba(11,120,150,0.12)' : undefined,
             }}
           >
             <r.icon size={16} style={{ color: activeReport === r.type ? 'var(--purple)' : 'var(--ink-faint)' }} />

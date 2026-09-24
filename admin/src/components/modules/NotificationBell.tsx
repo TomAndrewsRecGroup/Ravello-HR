@@ -239,7 +239,7 @@ export default function NotificationBell() {
                     className="w-full text-left px-4 py-3 hover:bg-[var(--surface-soft)] transition-colors flex gap-3"
                     style={{
                       borderBottom: '1px solid var(--line)',
-                      background: n.read ? undefined : 'rgba(124,58,237,0.03)',
+                      background: n.read ? undefined : 'rgba(11,120,150,0.03)',
                     }}
                   >
                     <div

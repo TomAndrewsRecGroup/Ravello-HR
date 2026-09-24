@@ -104,7 +104,7 @@ export default function AthletesModal({
                         )}
                         {matches > 0 && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+                                style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
                             {matches} match{matches === 1 ? '' : 'es'}
                           </span>
                         )}

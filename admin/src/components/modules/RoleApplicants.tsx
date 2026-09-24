@@ -46,7 +46,7 @@ const STAGE_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
   'new candidates':  { bg: 'rgba(116,128,153,0.12)', text: 'var(--ink-soft)', dot: 'var(--ink-faint)' },
   submission:        { bg: 'rgba(116,128,153,0.12)', text: 'var(--ink-soft)', dot: 'var(--ink-faint)' },
   'phone screen':    { bg: 'rgba(59,111,255,0.10)',  text: '#1D4ED8',         dot: 'var(--blue)' },
-  interview:         { bg: 'rgba(124,58,237,0.10)',  text: '#6D28D9',         dot: 'var(--purple)' },
+  interview:         { bg: 'rgba(11,120,150,0.10)',  text: '#075E77',         dot: 'var(--purple)' },
   'final interview': { bg: 'rgba(191,143,40,0.12)',  text: 'var(--gold)',     dot: 'var(--gold)' },
   offer:             { bg: 'rgba(20,184,166,0.10)',  text: '#0D9488',         dot: 'var(--teal)' },
   hired:             { bg: 'rgba(20,184,166,0.14)',  text: '#0D9488',         dot: 'var(--teal)' },

@@ -64,8 +64,8 @@ export default function LoginPage({ searchParams }: { searchParams?: { reason?: 
             <div
               className="rounded-[10px] px-4 py-3 mb-5 text-xs leading-relaxed"
               style={{
-                background: message.tone === 'warn' ? 'rgba(217,119,6,0.08)' : 'rgba(124,58,237,0.06)',
-                border:     message.tone === 'warn' ? '1px solid rgba(217,119,6,0.20)' : '1px solid rgba(124,58,237,0.18)',
+                background: message.tone === 'warn' ? 'rgba(217,119,6,0.08)' : 'rgba(11,120,150,0.06)',
+                border:     message.tone === 'warn' ? '1px solid rgba(217,119,6,0.20)' : '1px solid rgba(11,120,150,0.18)',
                 color:      message.tone === 'warn' ? '#92400E' : 'var(--ink-soft)',
               }}
             >

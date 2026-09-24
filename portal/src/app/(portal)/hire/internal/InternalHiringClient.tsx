@@ -38,7 +38,7 @@ interface Props {
 
 const CANDIDATE_STAGES = [
   { key: 'applied',    label: 'Applied',    bg: 'rgba(59,111,255,0.10)',  color: 'var(--blue)' },
-  { key: 'screening',  label: 'Screening',  bg: 'rgba(124,58,237,0.10)',  color: '#5A1EC0' },
+  { key: 'screening',  label: 'Screening',  bg: 'rgba(11,120,150,0.10)',  color: '#075E77' },
   { key: 'interview',  label: 'Interview',  bg: 'rgba(245,158,11,0.12)',  color: '#92400E' },
   { key: 'offer',      label: 'Offer',      bg: 'rgba(52,211,153,0.12)',  color: 'var(--emerald)' },
   { key: 'hired',      label: 'Hired',      bg: 'rgba(52,211,153,0.20)',  color: '#065F46' },
@@ -186,13 +186,13 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
       <div
         className="card p-5 mb-6 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.05) 0%, rgba(59,111,255,0.04) 100%)',
+          background: 'linear-gradient(135deg, rgba(11,120,150,0.05) 0%, rgba(59,111,255,0.04) 100%)',
           borderLeft: '3px solid var(--purple)',
         }}
       >
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.10)' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.10)' }}>
               <Sparkles size={18} style={{ color: 'var(--purple)' }} />
             </div>
             <div className="min-w-0">
@@ -320,8 +320,8 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                     {isStale && (
                       <button
                         onClick={e => { e.stopPropagation(); upgradeToTPO(role.id); }}
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-md hidden sm:inline-flex items-center gap-1 transition-colors hover:bg-[rgba(124,58,237,0.12)]"
-                        style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-md hidden sm:inline-flex items-center gap-1 transition-colors hover:bg-[rgba(11,120,150,0.12)]"
+                        style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
                       >
                         <Sparkles size={10} /> Transfer to Core OS 360
                       </button>
@@ -459,7 +459,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
                         <button
                           onClick={() => upgradeToTPO(role.id)}
                           className="text-xs font-bold flex items-center gap-1 flex-shrink-0 px-3 py-1.5 rounded-md transition-colors"
-                          style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}
+                          style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
                         >
                           Transfer to Core OS 360 <ArrowRight size={11} />
                         </button>
@@ -484,7 +484,7 @@ export default function InternalHiringClient({ companyId, userId, isAdmin, inter
             </div>
 
             {/* TPS suggestion */}
-            <div className="rounded-lg p-3 mb-4" style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.12)' }}>
+            <div className="rounded-lg p-3 mb-4" style={{ background: 'rgba(11,120,150,0.04)', border: '1px solid rgba(11,120,150,0.12)' }}>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
                 <span className="font-bold" style={{ color: 'var(--purple)' }}>Tip:</span> With Core OS 360, your role is managed by experienced recruiters, posted to 60+ job boards with proactive sourcing across our networks.{' '}
                 <Link prefetch={false} href="/hire/hiring/new" className="font-bold underline" style={{ color: 'var(--purple)' }}>

@@ -172,7 +172,7 @@ export default function LeadTab({ companyId, initialTrainingNeeds, initialPerfRe
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>
             Performance Reviews
-            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(124,58,237,0.1)', color: 'var(--purple)' }}>
+            <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: 'rgba(11,120,150,0.1)', color: 'var(--purple)' }}>
               {perfReviews.filter(r => ['pending', 'in_progress', 'scheduled'].includes(r.status)).length} pending
             </span>
           </h2>

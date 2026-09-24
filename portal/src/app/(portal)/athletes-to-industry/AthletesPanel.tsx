@@ -86,7 +86,7 @@ export default function AthletesPanel({ athletes, interests, partners = [], prov
       <section className="card p-5 flex flex-col">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-               style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+               style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
             <Trophy size={15} />
           </div>
           <div className="flex-1">

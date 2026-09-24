@@ -149,7 +149,7 @@ export default function RecentBroadcasts({ actions }: { actions: Action[] }) {
                               prefetch={false}
                               href={`/clients/${c.slug ?? c.id}`}
                               className="text-[10px] px-1.5 py-0.5 rounded-md hover:underline"
-                              style={{ background: 'rgba(124,58,237,0.06)', color: 'var(--purple)' }}
+                              style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}
                             >
                               {c.name}
                             </Link>

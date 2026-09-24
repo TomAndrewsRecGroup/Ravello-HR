@@ -142,7 +142,7 @@ export default function FeatureFlagToggles({
         const isFree       = group.tier === 'free';
 
         const accent = noneOn ? 'var(--ink-faint)' : 'var(--purple)';
-        const iconBg = noneOn ? 'var(--surface-soft)' : 'rgba(124,58,237,0.08)';
+        const iconBg = noneOn ? 'var(--surface-soft)' : 'rgba(11,120,150,0.08)';
 
         return (
           <div
@@ -150,7 +150,7 @@ export default function FeatureFlagToggles({
             className="card overflow-hidden"
             style={{
               transition: 'border-color 150ms, box-shadow 150ms',
-              borderColor: !isCollapsed && !noneOn ? 'rgba(124,58,237,0.18)' : 'var(--line)',
+              borderColor: !isCollapsed && !noneOn ? 'rgba(11,120,150,0.18)' : 'var(--line)',
             }}
           >
             <button

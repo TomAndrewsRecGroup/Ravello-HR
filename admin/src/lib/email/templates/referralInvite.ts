@@ -76,7 +76,7 @@ export function referralInviteEmail(input: ReferralInviteInput) {
 <p style="margin:0 0 16px 0;">${greeting}</p>
 <p style="margin:0 0 16px 0;">Thanks for applying for the <strong>${input.roleTitle}</strong> role through <strong>Andrews Recruitment Group</strong>. We&rsquo;ve reviewed your CV against what the role needs, and you&rsquo;ve come through as a strong match.</p>
 <p style="margin:0 0 16px 0;">The next step is to complete your application online. ${processNote}</p>
-${ctaButton(input.referralUrl, 'Complete your application')}
+${ctaButton(input.referralUrl, 'Complete your application', ARG_SENDER)}
 <p style="margin:24px 0 0 0;">There&rsquo;s no deadline from our side, but roles like this move quickly &mdash; worth doing while it&rsquo;s in front of you.</p>
 <p style="margin:16px 0 0 0;font-size:13px;color:${BRAND.inkSoft};">Any questions, just reply to this email and it&rsquo;ll come straight back to us.</p>
 <p style="margin:16px 0 0 0;font-size:13px;color:${BRAND.inkSoft};">Tom Andrews<br/>Andrews Recruitment Group</p>

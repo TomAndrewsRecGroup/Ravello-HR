@@ -468,7 +468,7 @@ export default function FeedSourcesClient({ initial }: Props) {
                         {r.source_type}
                       </span>
                       {r.category && (
-                        <span className="badge" style={{ background: 'rgba(124,58,237,0.08)', color: 'var(--purple)' }}>
+                        <span className="badge" style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}>
                           {r.category}
                         </span>
                       )}

@@ -228,7 +228,7 @@ export default function BDRolesClient({ roles }: Props) {
                   <td style={{ color: 'var(--ink-faint)' }}>{relative(r.scanned_at)}</td>
                   <td>
                     {r.company_source === 'ivylens' ? (
-                      <span className="badge text-[10px]" style={{ background: 'rgba(124,58,237,0.10)', color: 'var(--purple)' }}>
+                      <span className="badge text-[10px]" style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
                         IvyLens
                       </span>
                     ) : (

@@ -54,8 +54,8 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
                 key={m.id}
                 className="rounded-[12px] p-4"
                 style={{
-                  background: m.sender_id === user?.id ? 'rgba(143,114,246,0.06)' : 'var(--surface)',
-                  border: `1px solid ${m.sender_id === user?.id ? 'rgba(143,114,246,0.15)' : 'var(--line)'}`,
+                  background: m.sender_id === user?.id ? 'rgba(11,120,150,0.06)' : 'var(--surface)',
+                  border: `1px solid ${m.sender_id === user?.id ? 'rgba(11,120,150,0.15)' : 'var(--line)'}`,
                   marginLeft: m.sender_id === user?.id ? '0' : '1.5rem',
                 }}
               >

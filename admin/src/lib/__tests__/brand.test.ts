@@ -82,3 +82,58 @@ describe('no old branding left in code that renders', () => {
     expect(offenders.map(f => path.relative(ROOT, f))).toEqual([]);
   });
 });
+
+// ── Colour palette (2026-09-24, operator: "change the colours to the Core
+// OS 360 palette"). The old brand purple (#7C3AED family) was the primary
+// accent in both apps; it is now the Core OS 360 cyan. The ONE deliberate
+// survivor is ARG_SENDER's accent: the referral email goes out under
+// Andrews Recruitment Group's name and keeps the colours it has always had.
+const PURPLE = /#7C3AED|#5A2AC8|#6D28D9|#5A1EC0|124,\s*58,\s*237|143,\s*114,\s*246/i;
+
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+describe('Core OS 360 colour palette', () => {
+  const css = ['admin', 'portal'].map(app => readFileSync(path.join(ROOT, app, 'src/app/globals.css'), 'utf8'));
+
+  it('the primary accent token is the brand cyan in both apps', () => {
+    for (const c of css) {
+      expect(c).toMatch(/--brand-accent:\s*#0B7896;/);
+      expect(c).toMatch(/--purple:\s*var\(--brand-accent\);/);
+    }
+  });
+
+  it('the accent and every white-text gradient stop pass WCAG AA (4.5:1) against white', () => {
+    for (const c of css) {
+      const accent = /--brand-accent:\s*(#[0-9A-F]{6})/i.exec(c)![1];
+      expect(contrast(accent, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+      for (const name of ['--gradient', '--gradient-cta']) {
+        const g = new RegExp(`${name}:\\s*linear-gradient\\(([^;]*)\\);`).exec(c)![1];
+        for (const hex of g.match(/#[0-9A-F]{6}/gi)!) expect(contrast(hex, '#FFFFFF'), `${name} ${hex}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('no old brand purple left anywhere in either app, except the ARG email accent', () => {
+    const offenders: string[] = [];
+    for (const d of ['admin/src', 'portal/src']) {
+      for (const f of walk(path.join(ROOT, d)).concat(
+        readdirSync(path.join(ROOT, d, 'app')).filter(n => n.endsWith('.css')).map(n => path.join(ROOT, d, 'app', n)))) {
+        readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+          if (!PURPLE.test(line)) return;
+          if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+          if (f.endsWith('lib/email/layout.ts') && /accent(Dark)?:\s*'#(7C3AED|5A2AC8)'/.test(line)) return;
+          offenders.push(`${path.relative(ROOT, f)}:${i + 1}`);
+        });
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

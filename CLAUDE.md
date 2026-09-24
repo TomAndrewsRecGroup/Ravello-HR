@@ -1486,5 +1486,18 @@ on thepeoplesystem.co.uk keep working.
 - Also fixed: `manifest.json` and `sw.js` were inside the auth matcher, so
   a signed-out fetch (the login page links both) got the login HTML back.
   They are now excluded in both apps, with tests.
-- **UI colour palette NOT changed yet** (still purple `--purple` etc.);
-  the new brand is navy/cyan. That is a separate decision.
+- **UI colour palette moved to Core OS 360** (operator, same day). The
+  token NAME `--purple` is kept (375 call sites) but its VALUE is
+  `var(--brand-accent)` = `#0B7896`, the darkest brand cyan that passes
+  WCAG AA both as text on white and under white text (5.1:1). The bright
+  logo cyan `#3FD6F2` (1.7:1 on white) is decoration only
+  (`--purple-lt` / `--brand-cyan`) — never text. `--gradient` and
+  `--gradient-cta` carry white button text, so both stay within AA-safe
+  stops (`#0B7896 → #075E77`). ~200 hardcoded purples across 78 files
+  were converted; lavender neutrals became cool grey-blue.
+- **Categorical colours were NOT converted** (violet skill levels /
+  learning types, pink leave categories): they distinguish data, not
+  brand. **The ARG referral email keeps its purple** via a per-sender
+  `accent` on `SenderIdentity` — it goes out under ARG's name. Tests pin
+  the token values, AA contrast of every white-text gradient stop, zero
+  old-brand purple outside that one accent, and the sender split.

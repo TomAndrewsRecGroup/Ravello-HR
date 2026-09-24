@@ -1,9 +1,9 @@
 /*
   ═══════════════════════════════════════════════════════════════
-  THE PEOPLE SYSTEM — ADMIN PORTAL DESIGN SYSTEM
+  CORE OS 360 — ADMIN PORTAL DESIGN SYSTEM
   ═══════════════════════════════════════════════════════════════
   Typography: Inter (all UI) + JetBrains Mono (data)
-  Palette: Clean white/lavender + purple-blue gradient accent
+  Palette: Core OS 360 — white surfaces, navy ink, cyan accent (#0B7896).
   ═══════════════════════════════════════════════════════════════
 */
 
@@ -13,26 +13,35 @@
 
 @layer base {
   :root {
-    /* ─── Palette — white/purple ────────────────────── */
+    /* ─── Palette — Core OS 360 (white / navy / cyan) ─── */
     --bg:             #FFFFFF;
     --surface:        #FFFFFF;
-    --surface-alt:    #F5F3FF;
-    --surface-soft:   #FAF8FF;
+    --surface-alt:    #EEF5F8;
+    --surface-soft:   #F6FAFC;
     --ink:            #111827;
     --ink-soft:       #4B5563;
     --ink-faint:      #9CA3AF;
 
-    /* ─── Sidebar — white/purple ────────────────────── */
+    /* ─── Sidebar ───────────────────────────────────── */
     --sidebar-bg:     #FFFFFF;
-    --sidebar-border: #EDE9FE;
-    --sidebar-active: rgba(124,58,237,0.08);
+    --sidebar-border: #E2E8EE;
+    --sidebar-active: rgba(11,120,150,0.08);
     --sidebar-text:   #6B7280;
     --sidebar-text-active: #111827;
-    --navy:           #070B1D;
+    --navy:           #070B20;
 
-    /* ─── Brand ──────────────────────────────────────── */
-    --purple:         #7C3AED;
-    --purple-lt:      #A78BFA;
+    /* ─── Brand — Core OS 360 ─────────────────────────
+       `--purple` is the historical NAME of the primary accent token and is
+       kept so 375 call sites need no rename; its VALUE is the brand cyan.
+       #0B7896 is the darkest cyan that passes WCAG AA (5.1:1) for text and
+       for white text on it; the bright logo cyan (#3FD6F2) is 1.7:1 on
+       white, so it is decoration only (`--purple-lt`, `--brand-cyan`). */
+    --brand-accent:   #0B7896;
+    --brand-accent-dk:#075E77;
+    --brand-cyan:     #3FD6F2;
+    --brand-navy:     #070B20;
+    --purple:         var(--brand-accent);
+    --purple-lt:      var(--brand-cyan);
     --blue:           #3B82F6;
 
     /* ─── Status — simplified to 3 core colours ──────── */
@@ -51,19 +60,22 @@
     --slate:          #475569;
     --indigo:         #6366F1;
 
-    /* ─── Gradient — brand accent only ───────────────── */
-    --gradient:       linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
-    --gradient-cta:   linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
-    --gradient-soft:  linear-gradient(135deg, rgba(124,58,237,0.04) 0%, rgba(59,130,246,0.03) 100%);
-    --gradient-text:  linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
+    /* ─── Gradient — brand accent only ───────────────
+       Both gradients carry white text (.btn-cta uses --gradient), so they
+       stay within the AA-safe cyans; the bright cyan appears only in the
+       soft wash. */
+    --gradient:       linear-gradient(135deg, #0B7896 0%, #075E77 100%);
+    --gradient-cta:   linear-gradient(135deg, #0B7896 0%, #075E77 100%);
+    --gradient-soft:  linear-gradient(135deg, rgba(63,214,242,0.07) 0%, rgba(11,120,150,0.03) 100%);
+    --gradient-text:  linear-gradient(135deg, #0A93B6 0%, #075E77 100%);
 
     /* ─── Surfaces ───────────────────────────────────── */
     --surface-glass:  rgba(255,255,255,0.80);
     --surface-dark:   #111827;
 
     /* ─── Layout ─────────────────────────────────────── */
-    --line:           #EDE9FE;
-    --line-lt:        #F5F3FF;
+    --line:           #E2E8EE;
+    --line-lt:        #EEF5F8;
     --sidebar-w:      248px;
     --topbar-h:       56px;
 
@@ -103,10 +115,10 @@
     letter-spacing: -0.01em;
   }
 
-  ::selection { background: rgba(124,58,237,0.12); }
+  ::selection { background: rgba(11,120,150,0.12); }
   ::-webkit-scrollbar       { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.18); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb { background: rgba(11,120,150,0.18); border-radius: 99px; }
 }
 
 @layer components {
@@ -119,7 +131,7 @@
     @apply bg-white;
     border-radius: var(--radius-lg);
     border: 1px solid var(--line);
-    box-shadow: 0 1px 4px rgba(124,58,237,0.04);
+    box-shadow: 0 1px 4px rgba(11,120,150,0.04);
   }
   .stat-card { @apply card p-5 flex flex-col gap-1; }
 
@@ -133,20 +145,20 @@
   .btn-cta, .btn-primary {
     @apply btn text-white;
     background: var(--gradient);
-    box-shadow: 0 1px 8px rgba(124,58,237,0.25);
+    box-shadow: 0 1px 8px rgba(11,120,150,0.25);
   }
   .btn-cta:hover {
-    box-shadow: 0 2px 16px rgba(124,58,237,0.35);
+    box-shadow: 0 2px 16px rgba(11,120,150,0.35);
     transform: translateY(-1px);
   }
 
   .btn-gradient {
     @apply btn text-white;
     background: var(--gradient);
-    box-shadow: 0 1px 8px rgba(124,58,237,0.25);
+    box-shadow: 0 1px 8px rgba(11,120,150,0.25);
   }
   .btn-gradient:hover {
-    box-shadow: 0 2px 16px rgba(124,58,237,0.35);
+    box-shadow: 0 2px 16px rgba(11,120,150,0.35);
     transform: translateY(-1px);
   }
 
@@ -187,8 +199,8 @@
   }
   .input::placeholder { color: var(--ink-faint); }
   .input:focus {
-    border-color: rgba(124,58,237,0.40);
-    box-shadow: 0 0 0 3px rgba(124,58,237,0.06);
+    border-color: rgba(11,120,150,0.40);
+    box-shadow: 0 0 0 3px rgba(11,120,150,0.06);
   }
   .label {
     @apply block text-xs font-bold mb-1.5;
@@ -206,13 +218,13 @@
   }
   .badge-active     { background: rgba(52,211,153,0.12);  color: #047857; }
   .badge-inactive   { background: rgba(217,68,68,0.08);   color: #B02020; }
-  .badge-admin      { background: rgba(124,58,237,0.10);  color: #5A1EC0; }
+  .badge-admin      { background: rgba(11,120,150,0.10);  color: #075E77; }
   .badge-staff      { background: rgba(59,111,255,0.10);  color: #1848CC; }
   .badge-client     { background: rgba(10,15,30,0.06);    color: #3D4259; }
   .badge-on         { background: rgba(52,211,153,0.12);  color: #047857; }
   .badge-off        { background: rgba(217,68,68,0.08);   color: #B02020; }
   .badge-submitted  { background: rgba(59,111,255,0.10);  color: #1848CC; }
-  .badge-inprogress { background: rgba(124,58,237,0.10);  color: #5A1EC0; }
+  .badge-inprogress { background: rgba(11,120,150,0.10);  color: #075E77; }
   .badge-shortlist  { background: rgba(20,184,166,0.10);  color: #0E7A6A; }
   .badge-interview  { background: rgba(245,158,11,0.12);  color: #8A5500; }
   .badge-offer      { background: rgba(52,211,153,0.12);  color: #047857; }
@@ -392,7 +404,7 @@
   }
   .btn-glass:hover {
     background: rgba(255,255,255,0.95);
-    border-color: rgba(124,58,237,0.20);
+    border-color: rgba(11,120,150,0.20);
     box-shadow: 0 3px 16px rgba(10,15,30,0.08);
     transform: translateY(-1px);
   }
@@ -461,7 +473,7 @@
   .accent-line-gold { @apply block h-[2px] w-12; background: var(--gold-surface); border-radius: 99px; }
   .divider-gradient {
     @apply w-full h-px;
-    background: linear-gradient(90deg, transparent, rgba(124,58,237,0.14), transparent);
+    background: linear-gradient(90deg, transparent, rgba(11,120,150,0.14), transparent);
   }
 
   /* ─── Eyebrow variants ─────────────────────────── */
@@ -484,7 +496,7 @@
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-[0.04em];
     font-family: var(--font-inter, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
-  .pill-purple { @apply pill; background: rgba(124,58,237,0.08); color: #5A1EC0; }
+  .pill-purple { @apply pill; background: rgba(11,120,150,0.08); color: #075E77; }
   .pill-navy   { @apply pill; background: rgba(10,15,30,0.06);   color: var(--navy); }
   .pill-blue   { @apply pill; background: rgba(59,111,255,0.08); color: #1848CC; }
   .pill-pink   { @apply pill; background: rgba(234,61,196,0.08); color: #9E1880; }
@@ -493,8 +505,8 @@
   /* ─── Background textures ──────────────────────── */
   .data-grid {
     background-image:
-      linear-gradient(rgba(124,58,237,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124,58,237,0.025) 1px, transparent 1px);
+      linear-gradient(rgba(11,120,150,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(11,120,150,0.025) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
@@ -513,7 +525,7 @@
     top: -200px; right: -100px;
     border-radius: 50%;
     background: radial-gradient(ellipse,
-      rgba(124,58,237,0.04) 0%,
+      rgba(11,120,150,0.04) 0%,
       rgba(59,111,255,0.02) 40%,
       transparent 65%);
     animation: meshDrift 22s ease-in-out infinite alternate;
@@ -525,8 +537,8 @@
     bottom: -100px; left: -80px;
     border-radius: 50%;
     background: radial-gradient(ellipse,
-      rgba(234,61,196,0.03) 0%,
-      rgba(124,58,237,0.015) 40%,
+      rgba(63,214,242,0.04) 0%,
+      rgba(11,120,150,0.015) 40%,
       transparent 65%);
     animation: meshDrift 28s ease-in-out infinite alternate-reverse;
   }
@@ -646,15 +658,15 @@
   border-radius: 10px;
   cursor: pointer;
   color: #FFFFFF;
-  background: linear-gradient(135deg, #7C3AED 0%, #5A2AC8 100%);
+  background: linear-gradient(135deg, #0B7896 0%, #075E77 100%);
   transition: transform 0.15s, box-shadow 0.15s;
   border: none;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px rgba(11,120,150, 0.25);
 }
 .hamburger-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 12px rgba(11,120,150, 0.35);
 }
 
 /* ─── Mobile: < 768px ─────────────────────────────── */

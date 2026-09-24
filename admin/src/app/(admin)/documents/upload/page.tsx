@@ -106,7 +106,7 @@ function UploadInner() {
             <label className="label">File *</label>
             <div
               className="rounded-[10px] border-2 border-dashed p-6 text-center cursor-pointer transition-colors"
-              style={{ borderColor: file ? 'var(--purple)' : 'var(--line)', background: file ? 'rgba(143,114,246,0.04)' : 'var(--surface-alt)' }}
+              style={{ borderColor: file ? 'var(--purple)' : 'var(--line)', background: file ? 'rgba(11,120,150,0.04)' : 'var(--surface-alt)' }}
               onClick={()=>document.getElementById('file-input')?.click()}
             >
               <Upload size={20} className="mx-auto mb-2" style={{ color: 'var(--ink-faint)' }} />
