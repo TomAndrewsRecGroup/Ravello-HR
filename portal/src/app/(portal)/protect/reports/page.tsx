@@ -81,7 +81,7 @@ export default async function ReportsPage() {
               <p className="text-sm max-w-[300px] text-center" style={{ color: 'var(--ink-faint)' }}>
                 Regular reporting is available on higher-tier plans. Contact The People System to upgrade.
               </p>
-              <a href="mailto:hello@thepeopleoffice.co.uk?subject=Reports module" className="btn-cta btn-sm mt-1">
+              <a href="mailto:hello@thepeoplesystem.co.uk?subject=Reports module" className="btn-cta btn-sm mt-1">
                 Get in touch
               </a>
             </div>

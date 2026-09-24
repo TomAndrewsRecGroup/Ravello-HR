@@ -1410,3 +1410,35 @@ be tested. Every fix was mutation-checked (10 reintroductions, all
 caught). `resilient.test.ts > stops retrying when the budget runs out
 mid-ladder` is timing-sensitive and fails roughly 1 run in 6 under load;
 it predates this change.
+
+### Second pass, same day
+
+- **Milestones have ONE vocabulary** (`lib/roadmap/milestones.ts`,
+  shared-dupe pair): pillar `hire|lead|protect`, status
+  `not_started|in_progress|complete|at_risk`, quarter `Q3-2026`. The admin
+  client tab wrote `HIRE`/`Q2 2026`/`Not Started`, the portal read the
+  lowercase form, and the admin Roadmap selected a `track` column that
+  never existed, so its query failed and the page was always empty.
+  Migration **087** adds CHECKs for the vocabulary. **It must be applied
+  AFTER this code deploys**: the previously deployed admin still writes
+  `HIRE`, and the CHECK would refuse it. A test pins the tuples against
+  087's SQL.
+- **Orphaned portal pages** are now in the section tabs, and
+  `portalPagesLinked.test.ts` fails on any static page that no other file
+  links to. A page naming its own path and `revalidate*Path()` calls do
+  not count as links; both hid orphans until mutation-tested.
+- **`candidates.recruiter_notes` is INTERNAL.** Admin's form says "not
+  shown to client". The portal role page had a panel for it that never
+  rendered because the column was not selected; the panel is removed, not
+  filled. RLS is row-level, so a client can still read the column
+  directly. 0 rows hold notes today; move them to a staff-only table
+  before that changes.
+- `/api/support/poll` had no caller. The notification bell now calls it,
+  throttled to once per 5 min per browser, and it returns before any
+  IvyLens call when the company has no IvyLens tickets.
+- `thepeopleoffice.co.uk` → `thepeoplesystem.co.uk` in 7 places.
+- Removed dead code: the dashboard's two unused LEAD/PROTECT queries,
+  admin's unreachable `saveService` / Services state, and the unimported
+  `HiringStageUpdater` / `ClientStatusToggle` components. With the
+  Services tab gone, nothing can write `client_services`, so the portal's
+  "Active Services" panel stays empty until that is decided.

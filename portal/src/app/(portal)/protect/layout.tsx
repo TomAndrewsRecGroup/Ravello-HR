@@ -4,10 +4,13 @@ import { isRouteEnabled } from '@/lib/moduleAccess';
 import { currentModuleFlags } from '@/lib/auth/moduleFlags';
 
 const TABS = [
-  { href: '/protect/actions',      label: 'Actions' },
-  { href: '/protect/compliance',   label: 'Compliance' },
-  { href: '/protect/offboarding',  label: 'Offboarding' },
-  { href: '/protect/reports',      label: 'Reports' },
+  { href: '/protect/actions',       label: 'Actions' },
+  { href: '/protect/compliance',    label: 'Compliance' },
+  { href: '/protect/absence',       label: 'Absence' },
+  { href: '/protect/employee-docs', label: 'Employee Docs' },
+  { href: '/protect/offboarding',   label: 'Offboarding' },
+  { href: '/protect/hr-dashboard',  label: 'HR Dashboard' },
+  { href: '/protect/reports',       label: 'Reports' },
 ];
 
 export default async function ProtectLayout({ children }: { children: React.ReactNode }) {

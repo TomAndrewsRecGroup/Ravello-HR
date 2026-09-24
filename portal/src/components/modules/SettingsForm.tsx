@@ -515,10 +515,10 @@ export function TeamMembers({ members, currentUserId, currentUserRole }: TeamMem
         >
           {isAdmin && seatsUsed >= PORTAL_SEAT_CAP ? (
             <>You&rsquo;ve used both seats on your plan. Contact{' '}
-              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a> to add more.</>
+              <a href="mailto:hello@thepeoplesystem.co.uk" style={{ color: 'var(--purple)' }}>The People System</a> to add more.</>
           ) : (
             <>To add team members, contact{' '}
-              <a href="mailto:hello@thepeopleoffice.co.uk" style={{ color: 'var(--purple)' }}>The People System</a>.</>
+              <a href="mailto:hello@thepeoplesystem.co.uk" style={{ color: 'var(--purple)' }}>The People System</a>.</>
           )}
         </div>
       )}

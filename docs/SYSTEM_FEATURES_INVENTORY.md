@@ -1,13 +1,13 @@
 # Ravello HR — System Features Inventory
 
-**As of 24 September 2026.** *(Updated the same day: Issues 1, 2, 4, 5 and 6 fixed. See the Issues table.)* Covers both apps: the **Admin app** (People System staff) and the **Client Portal** (client companies).
+**As of 24 September 2026.** *(Updated the same day: Issues 1–7, 9 and 10 fixed; Issue 8 needs a Resend plan change, not code. See the Issues table.)* Covers both apps: the **Admin app** (People System staff) and the **Client Portal** (client companies).
 
 ## How each feature is rated
 
 | Column | What it means | How it was checked |
 |---|---|---|
 | **Built** | ✅ Complete: works end to end · 🟡 Partial: works but part is missing, or it depends on an integration that isn't set up · ❌ Broken: a defect stops it working | Every page, button and back-end route in both apps was read |
-| **Tested** | ✅ Automated tests cover it · 🟡 Partly covered · — No automated tests | All test suites run today. **Admin: 366 tests pass. Portal: 106 tests pass** (after the fixes; 359 and 27 before). No record of manual testing exists in the system, so this column covers automated tests only |
+| **Tested** | ✅ Automated tests cover it · 🟡 Partly covered · — No automated tests | All test suites run today. **Admin: 372 tests pass. Portal: 146 tests pass** (after the fixes; 359 and 27 before). No record of manual testing exists in the system, so this column covers automated tests only |
 | **In use** | ✅ Live: real records in the live database · ⚪ Not used yet: zero records · 🔒 Not switched on: needs an account or key first (e.g. Stripe) | Row counts read directly from the live database today |
 
 ## Headline picture
@@ -29,14 +29,14 @@
 |---|---|---|---|
 | 1 | Portal | ✅ **Fixed 24 Sep.** **The employee "request leave" link does not work.** Employees who open their personal leave link are sent to the login screen instead of the form. That page is missing from the list of pages allowed without a login. | Employees cannot request leave through the link at all |
 | 2 | Portal | ✅ **Fixed 24 Sep.** **Leave is recorded in two separate places that never meet.** Leave requested or approved through the link or the Absence page is not shown on the Calendar or in HR Reports leave balances, which read a different table. | Leave balances and calendar will be wrong once used |
-| 3 | Admin | **The Roadmap page is broken.** It asks the database for a column (`track`) that does not exist, so the page errors or shows nothing. | Cross-client roadmap unusable |
+| 3 | Admin | ✅ **Fixed 24 Sep.** The admin, client-tab and portal roadmaps now share one vocabulary, so a milestone added in admin reaches the client. **The Roadmap page is broken.** It asks the database for a column (`track`) that does not exist, so the page errors or shows nothing. | Cross-client roadmap unusable |
 | 4 | Portal | ✅ **Fixed 24 Sep.** **Candidates an admin "Sends" to a client get no Approve/Reject buttons.** The buttons only appear for candidates in "pending" status. The admin Send button marks candidates "shared", so the client sees the candidate and a badge but cannot act. | Clients cannot give feedback on candidates sent the normal way |
 | 5 | Admin | ✅ **Fixed 24 Sep.** **Replying to a client's service request never emails the client.** The notes are saved and the email template exists, but nothing sends it. | Client doesn't know you've responded unless they log in |
 | 6 | Both | ✅ **Fixed 24 Sep.** **Module switches only hide menu items.** Most client pages still open if someone types the web address directly, even with that module switched off. Many finer-grained switches (org chart, skills, calendar, benchmarks and others) are never checked at all. | Clients could reach modules they haven't paid for |
-| 7 | Portal | **Seven finished pages have no link to them:** HR Dashboard, Performance Reviews, Training Needs, Skills Matrix, Absence, Employee Documents, People Roadmap (plus Hiring Analytics). | Clients can't find them |
-| 8 | Email | **The daily email sending limit was hit on 22–23 Sep.** 24 candidates' invites failed. 21 went through on a later attempt and **3 never received theirs**. | Plan upgrade may be needed as volume grows |
-| 9 | Portal | The Protect Reports upgrade link points to `hello@thepeopleoffice.co.uk`, which looks like the wrong domain. | Upgrade enquiries could go nowhere |
-| 10 | Portal | The role page's "recruiter notes" and "interview stages" sections always show empty (the data is never fetched). | Clients never see those notes |
+| 7 | Portal | ✅ **Fixed 24 Sep** (now in the LEAD, PROTECT and HIRE tabs). **Seven finished pages have no link to them:** HR Dashboard, Performance Reviews, Training Needs, Skills Matrix, Absence, Employee Documents, People Roadmap (plus Hiring Analytics). | Clients can't find them |
+| 8 | Email | ⚠️ **No code fix needed.** The 3 unsent candidates are still waiting on the Referrals page (2 with **Send invite**, 1 in the review queue). The limit itself needs a Resend plan upgrade. **The daily email sending limit was hit on 22–23 Sep.** 24 candidates' invites failed. 21 went through on a later attempt and **3 never received theirs**. | Plan upgrade may be needed as volume grows |
+| 9 | Both | ✅ **Fixed 24 Sep** in all 7 places it appeared (login pages, Settings, Reports, Metrics). The Protect Reports upgrade link points to `hello@thepeopleoffice.co.uk`, which looks like the wrong domain. | Upgrade enquiries could go nowhere |
+| 10 | Portal | ✅ **Fixed 24 Sep.** "Interview stages" now loads. **Correction:** recruiter notes are labelled *internal, not shown to client* in admin, so the empty panel was correct. It has been removed rather than filled. | — |
 
 ---
 
@@ -65,7 +65,7 @@
 | Client's roles list | ✅ | — | ✅ |
 | Add candidates for a client; mark "approved for client" | ✅ | 🟡 | ✅ |
 | Client documents: view, download, approve | ✅ | 🟡 | ⚪ |
-| Client roadmap milestones: add, change status (quarters fixed to 2026, owners fixed to Lucy/Tom) | 🟡 | — | ⚪ |
+| Client roadmap milestones: add, change status (rolling quarter list, any owner) | ✅ | ✅ | ⚪ |
 | Client action items: add, mark complete | ✅ | — | ⚪ |
 | Client compliance items: add, change status | ✅ | — | ⚪ |
 | LEAD tab: training needs and review reminders | ✅ | — | ⚪ |
@@ -146,7 +146,7 @@
 |---|---|---|---|
 | Revenue dashboard (monthly recurring revenue, at-risk subscriptions) | 🟡 needs Stripe | — | 🔒 |
 | Value Reports: monthly client value report as a PDF | ✅ | 🟡 | ⚪ (no client data yet) |
-| Cross-client Roadmap | ❌ (Issue 3) | 🟡 | ⚪ |
+| Cross-client Roadmap | ✅ | ✅ | ⚪ |
 | CSV exports (roles, candidates, compliance, tickets) | ✅ | 🟡 | ✅ available |
 | Upload a report for a client | ✅ | 🟡 | ⚪ |
 | All documents: view, download, upload for a client | ✅ | 🟡 | ⚪ |
@@ -188,7 +188,7 @@
 | Greeting and stat cards (roles, tickets, compliance, documents, actions) | ✅ | — | ✅ |
 | Company Friction Score card or "Get your score" | ✅ | — | ⚪ (0 assessments) |
 | "Needs your attention" strip; live roles carousel; compliance, tickets and documents panels; active services | ✅ | — | ✅ (mostly empty) |
-| LEAD/PROTECT summary cards (training, absences) | 🟡 data fetched but never shown | — | ⚪ |
+| LEAD/PROTECT summary cards: intentionally removed from the design; the leftover queries were deleted | ✅ | — | — |
 
 ### HIRE
 | Feature | Built | Tested | In use |
@@ -207,7 +207,7 @@
 | Friction Lens company assessment (questionnaire, score, retake) | 🟡 needs IvyLens | — | ⚪ |
 | Metrics dashboard (hiring, candidates, compliance, support, LEAD/PROTECT) | ✅ | — | ✅ (little data) |
 | Salary benchmarks comparison | ✅ | — | ⚪ (0 benchmarks) |
-| Hiring analytics (funnel, time to fill) | ✅ but no link to it | 🟡 | ⚪ |
+| Hiring analytics (funnel, time to fill) | ✅ | 🟡 | ⚪ |
 
 ### LEAD (people)
 | Feature | Built | Tested | In use |
@@ -222,10 +222,10 @@
 | Free course access (7 days) | ✅ | — | ⚪ |
 | Buy a course by card | 🟡 needs Stripe | — | 🔒 |
 | HR reports (growth, diversity, leave balances, departments) with CSV export | ✅ | ✅ (leave maths) | ⚪ |
-| Performance reviews | ✅ but no link to it | — | ⚪ |
-| Training needs | ✅ but no link to it | — | ⚪ |
-| Skills matrix (add only, no edit/delete) | 🟡 no link to it | — | ⚪ |
-| People roadmap (view only) | ✅ but no link to it | — | ⚪ |
+| Performance reviews | ✅ | — | ⚪ |
+| Training needs | ✅ | — | ⚪ |
+| Skills matrix (add only, no edit/delete) | 🟡 add only | — | ⚪ |
+| People roadmap (view only) | ✅ | — | ⚪ |
 
 ### PROTECT (compliance and risk)
 | Feature | Built | Tested | In use |
@@ -234,9 +234,9 @@
 | Compliance tracker: move items through pending, in review, complete | ✅ | — | ⚪ |
 | Offboarding checklists: templates, start (sets leaver date), tasks, exit notes | ✅ | — | ⚪ |
 | Reports: CSV exports and download reports published by The People System | ✅ (Issue 9) | — | ⚪ |
-| Absence: log, approve, deny with reason | ✅ but no link to it | — | ⚪ |
-| Employee documents with expiry (paste a link, no file upload) | 🟡 no link to it | — | ⚪ |
-| HR dashboard (headcount, turnover, absence KPIs) | ✅ but no link to it | — | ⚪ |
+| Absence: log, approve, deny with reason | ✅ | — | ⚪ |
+| Employee documents with expiry (paste a link, no file upload) | 🟡 link only | — | ⚪ |
+| HR dashboard (headcount, turnover, absence KPIs) | ✅ | — | ⚪ |
 
 ### Athletes To Industry and Development Plans
 | Feature | Built | Tested | In use |
@@ -261,7 +261,7 @@
 | Raise a request: policy update, salary benchmark, manager support, book strategic review, HR audit, general query | ✅ | — | ⚪ (0 requests) |
 | Read and reply to a ticket thread | ✅ | — | ⚪ |
 | IvyLens product support tickets | 🟡 needs IvyLens | — | ⚪ |
-| Automatic ticket-update notifications | ❌ never runs (nothing triggers it) | — | ⚪ |
+| Automatic ticket-update notifications (checked when the notification bell loads, at most every 5 min) | ✅ | — | ⚪ |
 
 ### Billing (client admins, paid clients only)
 | Feature | Built | Tested | In use |
@@ -305,10 +305,19 @@
 | | Admin | Portal |
 |---|---|---|
 | Features listed | 89 | 75 |
-| Built but not fully working (🟡 or ❌) | 8 | 12 (plus 8 finished pages with no link to them) |
-| Covered by automated tests (✅ or 🟡) | 43 | 11 |
+| Built but not fully working (🟡 or ❌) | 6 | 10 |
+| Covered by automated tests (✅ or 🟡) | 44 | 11 |
 | In live use today | 55 | 28 (mostly Athletes To Industry, settings and the shell) |
 
 **Integrations not switched on:** Stripe (payments, billing, revenue), Sentry (error monitoring). IvyLens and Manatal are live. Resend email is live but hit its daily limit (Issue 8).
 
-**Suggested priority before onboarding a real HR client:** Issues 1, 2, 4, 5 and 6 are fixed. Next: add links to the orphaned portal pages (Issue 7) and connect Stripe if clients will pay through the portal.
+**Suggested priority before onboarding a real HR client:** all code issues in the table are fixed. What remains is setup and product decisions:
+- **Apply migration 087** (roadmap vocabulary rule) straight after this change deploys.
+- **Upgrade the Resend plan** before referral volume grows (Issue 8).
+- **Connect Stripe and Sentry** if clients will pay through the portal or you want error alerts.
+- **Decide on four half-built features:**
+  - policy sign-off has no page for employees to sign;
+  - employee documents take a pasted link, not an upload;
+  - Settings email preferences are saved in the browser only;
+  - the admin Services tab was removed, so the portal dashboard's **Active Services** panel can never be filled.
+- **Internal recruiter notes:** these live on the candidate record, which signed-in clients can read directly from the database. None are saved today. Move them to a staff-only table before anyone starts using them.

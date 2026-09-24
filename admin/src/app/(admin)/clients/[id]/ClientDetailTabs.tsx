@@ -18,6 +18,10 @@ import InvoicesTab from './tabs/InvoicesTab';
 
 import { COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import FileLink from '@/components/modules/FileLink';
+import {
+  MILESTONE_PILLARS, MILESTONE_PILLAR_LABELS, MILESTONE_STATUSES, MILESTONE_STATUS_LABELS,
+  quarterLabel, quarterOf, quarterOptions, quarterOrdinal,
+} from '@/lib/roadmap/milestones';
 /* ─── Helpers ─────────────────────────────────────── */
 
 const STAGE_BADGE: Record<string, string> = {
@@ -324,10 +328,12 @@ function BillingPanel({
 const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Friction', 'Invoices'] as const;
 type Tab = typeof TABS[number];
 
-const QUARTERS = ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026'];
-const PILLARS  = ['HIRE', 'LEAD', 'PROTECT'];
-const OWNERS   = ['Lucy', 'Tom'];
-const MS_STATUSES = ['Not Started', 'In Progress', 'Complete', 'Blocked'];
+// Milestone vocabulary is shared with the portal (lib/roadmap/milestones.ts):
+// what this tab writes is exactly what the client's People Roadmap reads.
+const emptyMilestoneForm = () => ({
+  pillar: 'hire' as string, title: '', description: '', owner: '', due_date: '',
+  quarter: quarterOf(new Date()), status: 'not_started' as string,
+});
 
 const PRIORITIES = ['high', 'medium', 'low'] as const;
 const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
@@ -459,14 +465,9 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   /* ── Roadmap state ── */
   const [milestones, setMilestones]   = useState<any[]>([]);
   const [showMSForm,  setShowMSForm]  = useState(false);
-  const [msForm,      setMSForm]      = useState({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
+  const [msForm,      setMSForm]      = useState(emptyMilestoneForm);
   const [savingMS,    setSavingMS]    = useState(false);
 
-  /* ── Services state ── */
-  const [services,      setServices]      = useState<any[]>([]);
-  const [showSvcForm,   setShowSvcForm]   = useState(false);
-  const [svcForm,       setSvcForm]       = useState({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
-  const [savingSvc,     setSavingSvc]     = useState(false);
 
   // LEAD + PROTECT state lives inside their respective tab components now.
 
@@ -487,9 +488,6 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   }, [tabData['Compliance']]);
   // LEAD + PROTECT data is consumed directly by the extracted tab components
   // via tabData[...] in render — no parent-level setState bridge needed.
-  useEffect(() => {
-    if (tabData['Services']?.services) setServices(tabData['Services'].services);
-  }, [tabData['Services']]);
 
   /* ── Doc approve ── */
   const [approvingDoc,  setApprovingDoc]  = useState<string | null>(null);
@@ -513,7 +511,12 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
     setSavingMS(true);
     const { data, error } = await supabase
       .from('milestones')
-      .insert({ ...msForm, company_id: company.id })
+      .insert({
+        ...msForm,
+        owner:      msForm.owner.trim() || null,
+        due_date:   msForm.due_date || null,
+        company_id: company.id,
+      })
       .select()
       .single();
     if (!error && data) {
@@ -522,7 +525,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
     }
     setSavingMS(false);
     setShowMSForm(false);
-    setMSForm({ pillar: 'HIRE', title: '', description: '', owner: 'Lucy', due_date: '', quarter: 'Q2 2026', status: 'Not Started' });
+    setMSForm(emptyMilestoneForm());
   }
 
   async function updateMilestoneStatus(id: string, status: string) {
@@ -531,23 +534,6 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
       setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
       revalidateAdminPath('/clients');
     }
-  }
-
-  async function saveService() {
-    if (!svcForm.service_name) return;
-    setSavingSvc(true);
-    const { data, error } = await supabase
-      .from('client_services')
-      .insert({ ...svcForm, company_id: company.id, monthly_fee: svcForm.monthly_fee ? parseFloat(svcForm.monthly_fee) : null })
-      .select()
-      .single();
-    if (!error && data) {
-      setServices(prev => [data, ...prev]);
-      revalidateAdminPath('/clients');
-    }
-    setSavingSvc(false);
-    setShowSvcForm(false);
-    setSvcForm({ service_name: '', service_tier: '', start_date: '', status: 'Active', monthly_fee: '' });
   }
 
   return (
@@ -894,13 +880,13 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 <div>
                   <label className="label">Pillar</label>
                   <select className="input" value={msForm.pillar} onChange={e => setMSForm(f => ({ ...f, pillar: e.target.value }))}>
-                    {PILLARS.map(p => <option key={p}>{p}</option>)}
+                    {MILESTONE_PILLARS.map(p => <option key={p} value={p}>{MILESTONE_PILLAR_LABELS[p]}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="label">Quarter</label>
                   <select className="input" value={msForm.quarter} onChange={e => setMSForm(f => ({ ...f, quarter: e.target.value }))}>
-                    {QUARTERS.map(q => <option key={q}>{q}</option>)}
+                    {quarterOptions(new Date()).map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
@@ -913,9 +899,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 </div>
                 <div>
                   <label className="label">Owner</label>
-                  <select className="input" value={msForm.owner} onChange={e => setMSForm(f => ({ ...f, owner: e.target.value }))}>
-                    {OWNERS.map(o => <option key={o}>{o}</option>)}
-                  </select>
+                  <input className="input" placeholder="Who owns this?" value={msForm.owner} onChange={e => setMSForm(f => ({ ...f, owner: e.target.value }))} />
                 </div>
                 <div>
                   <label className="label">Due Date</label>
@@ -924,7 +908,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 <div>
                   <label className="label">Status</label>
                   <select className="input" value={msForm.status} onChange={e => setMSForm(f => ({ ...f, status: e.target.value }))}>
-                    {MS_STATUSES.map(s => <option key={s}>{s}</option>)}
+                    {MILESTONE_STATUSES.map(s => <option key={s} value={s}>{MILESTONE_STATUS_LABELS[s]}</option>)}
                   </select>
                 </div>
               </div>
@@ -942,17 +926,19 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
             <div className="card empty-state">No milestones yet. Add the first one above.</div>
           ) : (
             <div className="space-y-8">
-              {[...new Set(milestones.map((m: any) => m.quarter).filter(Boolean))].map((quarter: any) => {
+              {[...new Set(milestones.map((m: any) => m.quarter).filter(Boolean))]
+                .sort((a: any, b: any) => quarterOrdinal(a) - quarterOrdinal(b))
+                .map((quarter: any) => {
                 const qMs = milestones.filter((m: any) => m.quarter === quarter);
                 return (
                   <div key={quarter}>
-                    <h3 className="font-display font-bold text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--purple)' }}>{quarter}</h3>
+                    <h3 className="font-display font-bold text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--purple)' }}>{quarterLabel(quarter)}</h3>
                     <div className="grid md:grid-cols-3 gap-4">
-                      {PILLARS.map(pillar => {
+                      {MILESTONE_PILLARS.map(pillar => {
                         const pMs = qMs.filter((m: any) => m.pillar === pillar);
                         return (
                           <div key={pillar} className="card p-4">
-                            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>{pillar}</p>
+                            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>{MILESTONE_PILLAR_LABELS[pillar]}</p>
                             {pMs.length === 0 ? (
                               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No milestones</p>
                             ) : (
@@ -966,10 +952,10 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                                       <select
                                         className="text-xs rounded-[6px] px-2 py-1 border"
                                         style={{ borderColor: 'var(--line)', color: 'var(--ink-soft)', fontSize: '11px' }}
-                                        value={m.status ?? 'Not Started'}
+                                        value={m.status ?? 'not_started'}
                                         onChange={e => updateMilestoneStatus(m.id, e.target.value)}
                                       >
-                                        {MS_STATUSES.map(s => <option key={s}>{s}</option>)}
+                                        {MILESTONE_STATUSES.map(s => <option key={s} value={s}>{MILESTONE_STATUS_LABELS[s]}</option>)}
                                       </select>
                                     </div>
                                   </div>

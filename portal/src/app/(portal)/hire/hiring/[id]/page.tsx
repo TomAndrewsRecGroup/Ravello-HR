@@ -34,13 +34,15 @@ export default async function RequisitionDetailPage({
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   const { data: req } = await supabase
-    .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();
+    .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,interview_stages,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();
 
   if (!req) notFound();
 
   const [{ data: candidates }, { data: offers }, { data: interviews }] = await Promise.all([
     supabase
       .from('candidates')
+      // recruiter_notes is deliberately NOT selected: admin labels it "Internal notes
+      // (not shown to client)". The client-facing text is `summary`.
       .select('id,full_name,email,cv_url,summary,client_status,client_feedback,created_at')
       .eq('requisition_id', params.id)
       .eq('approved_for_client', true)
@@ -215,12 +217,6 @@ export default async function RequisitionDetailPage({
                       </div>
                       {c.summary && (
                         <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>
-                      )}
-                      {c.recruiter_notes && (
-                        <div className="rounded-[8px] p-3 mb-4" style={{ background: 'var(--surface-alt)' }}>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-1" style={{ color: 'var(--ink-faint)' }}>Recruiter Notes</p>
-                          <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{c.recruiter_notes}</p>
-                        </div>
                       )}
                       <div className="flex flex-wrap gap-2">
                         {c.cv_url && (

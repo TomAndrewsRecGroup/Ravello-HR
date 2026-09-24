@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   // is read alongside the data queries.
   const [{ data: fullProfile },
     reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
-    trainingRes, absenceRes, frictionRes] = await Promise.all([
+    frictionRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
     supabase
       .from('requisitions')
@@ -81,14 +81,6 @@ export default async function DashboardPage() {
       .eq('company_id', companyId ?? '')
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
-    // LEAD module: use session flags (available immediately, no waterfall)
-    flagsFromSession.lead !== false
-      ? supabase.from('training_needs').select('id,title,status,employee_name').eq('company_id', companyId ?? '').eq('status', 'open').limit(4)
-      : Promise.resolve({ data: null }),
-    // PROTECT module
-    flagsFromSession.protect !== false
-      ? supabase.from('absence_records').select('id,employee_name,absence_type,start_date,status').eq('company_id', companyId ?? '').eq('status', 'pending').limit(4)
-      : Promise.resolve({ data: null }),
     // Company friction assessment
     supabase.from('company_assessments').select('overall_band,top_signals,confidence,created_at').eq('company_id', companyId ?? '').order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
@@ -99,8 +91,6 @@ export default async function DashboardPage() {
   const complianceItems = complianceRes.data ?? [];
   const services        = servicesRes.data  ?? [];
   const actions         = actionsRes.data   ?? [];
-  const openTraining    = trainingRes.data  ?? [];
-  const pendingAbsences = absenceRes.data   ?? [];
   const frictionAssessment = frictionRes.data ?? null;
 
   const firstName = (fullProfile as any)?.full_name?.split(' ')[0] ?? 'there';

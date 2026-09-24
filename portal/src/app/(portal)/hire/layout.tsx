@@ -10,6 +10,7 @@ const TABS = [
   { href: '/hire/vacancy-cost',  label: 'Vacancy Cost' },
   { href: '/hire/friction-lens', label: 'Friction Lens' },
   { href: '/hire/metrics',       label: 'Metrics' },
+  { href: '/hire/hiring/analytics', label: 'Analytics' },
   { href: '/hire/benchmarks',    label: 'Benchmarks' },
 ];
 

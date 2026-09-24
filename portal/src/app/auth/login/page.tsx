@@ -77,7 +77,7 @@ export default function LoginPage({ searchParams }: { searchParams?: { reason?: 
 
         <p className="text-center text-xs mt-6" style={{ color: 'var(--ink-faint)' }}>
           Need access?{' '}
-          <a href="mailto:hello@thepeopleoffice.co.uk" className="underline" style={{ color: 'var(--purple)' }}>
+          <a href="mailto:hello@thepeoplesystem.co.uk" className="underline" style={{ color: 'var(--purple)' }}>
             Contact us
           </a>
         </p>
