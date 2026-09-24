@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaff } from '@/lib/auth/requireStaff';
-import { sendReferralInvite } from '@/lib/referral/pipeline';
+import { sendInviteForApplication } from '@/lib/referral/approve';
 import { MANUAL_STATUSES, STATUS_META } from '@/lib/referral/statusMeta';
 import type { ReferralStatus } from '@/lib/referral/types';
 
@@ -35,13 +35,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const supabase = serviceClient();
 
+  /* ─── Approve, or Apply — both send the invitation ─────────
+   * 'approve' is the review-queue/qualified-hold flow; 'apply' is the
+   * funnel table's override for a rejection. Both go through
+   * sendInviteForApplication(), which claims the row before sending and
+   * refuses anyone already sent this role's invite. */
+  if (body.action === 'approve' || body.action === 'apply') {
+    const outcome = await sendInviteForApplication(supabase, params.id, {
+      actor: auth.userId,
+      mode:  body.action,
+    });
+    if (!outcome.ok) return NextResponse.json({ error: outcome.error }, { status: outcome.httpStatus });
+    return NextResponse.json({ ok: true, status: outcome.status });
+  }
+
   const { data: app, error: readErr } = await supabase
     .from('referral_applications')
-    .select(`
-      id, status, candidate_id, company_id, requisition_id, manatal_candidate_id, status_history,
-      candidate:candidates!inner ( id, full_name, email ),
-      requisition:requisitions!inner ( id, title )
-    `)
+    .select('id, status, status_history')
     .eq('id', params.id)
     .single();
 
@@ -49,107 +59,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Referral application not found' }, { status: 404 });
   }
 
-  const one = <T,>(v: T | T[]): T => (Array.isArray(v) ? v[0] : v);
-  const candidate   = one((app as any).candidate);
-  const requisition = one((app as any).requisition);
-
-  // referral_role_config has NO foreign key to referral_applications —
-  // both tables independently reference requisitions, which is not the
-  // same thing. PostgREST can only embed a table across a real FK
-  // edge, so `config:referral_role_config!inner(...)` chained onto the
-  // select above (the original shape here) could never resolve: every
-  // single call failed with PGRST200 ("no relationship … in the schema
-  // cache"), readErr was always truthy, and the route reported "not
-  // found" for every approve/reject click regardless of whether the
-  // row existed. See CLAUDE.md, 2026-09-04.
-  //
-  // Fetched as its own query instead — the same pattern runScan.ts
-  // already uses to read this table.
-  const { data: config, error: configErr } = await supabase
-    .from('referral_role_config')
-    .select(`
-      requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
-      auto_send_threshold, review_threshold, blocked_countries, mandatory_criteria
-    `)
-    .eq('requisition_id', app.requisition_id)
-    .single();
-
-  if (configErr || !config) {
-    return NextResponse.json({ error: 'This role has no referral configuration saved.' }, { status: 404 });
-  }
-
   const now     = new Date().toISOString();
   const history = Array.isArray(app.status_history) ? app.status_history : [];
-
-  /* ─── Approve, or Apply — both send the invitation ─────────
-   * 'approve' is the review-queue/qualified-hold flow and keeps its
-   * existing status guard. 'apply' is the funnel table's override: it
-   * exists to overrule a rejection (rejected_country/criteria/score,
-   * review_rejected, scan_error) when the operator has looked at the
-   * row and wants the candidate emailed regardless of what the gate
-   * decided. Both call the identical sendReferralInvite() path so the
-   * "only mark sent when it actually sent" rule is one rule, not two. */
-  if (body.action === 'approve' || body.action === 'apply') {
-    const isOverride = body.action === 'apply';
-
-    if (isOverride) {
-      // Refused once an invite has already gone out (email_sent) or the
-      // row has moved downstream of that (MANUAL_STATUSES) — Apply
-      // overrules a REJECTION, it does not re-send to someone already
-      // contacted, which would put the email record out of step with
-      // reality and confuse the idempotency guard.
-      if (app.status === 'email_sent' || MANUAL_STATUSES.includes(app.status as ReferralStatus)) {
-        return NextResponse.json(
-          { error: `An invite has already gone out for this application (status "${STATUS_META[app.status as ReferralStatus]?.label ?? app.status}") — Apply cannot re-send it.` },
-          { status: 409 },
-        );
-      }
-    } else if (app.status !== 'review_pending' && app.status !== 'qualified') {
-      return NextResponse.json(
-        { error: `Only a queued or qualified candidate can be approved (this one is "${app.status}").` },
-        { status: 409 },
-      );
-    }
-
-    if (!candidate?.email) {
-      return NextResponse.json({ error: 'No email address on file for this candidate.' }, { status: 422 });
-    }
-
-    const sent = await sendReferralInvite({
-      supabase,
-      toEmail:     candidate.email,
-      fullName:    candidate.full_name,
-      roleTitle:   requisition.title,
-      companyId:   app.company_id,
-      candidateId: app.candidate_id,
-      // So an approved candidate gets the same per-candidate parameters
-      // in their link as one the cron sent automatically.
-      manatalCandidateId: (app as any).manatal_candidate_id ?? null,
-      requisitionId:      app.requisition_id,
-      config,
-      sentBy:      auth.userId,
-    });
-
-    if (!sent.sent) {
-      // Left where it was so it stays visibly outstanding.
-      return NextResponse.json({ error: `Email failed: ${sent.error}` }, { status: 502 });
-    }
-
-    await supabase.from('referral_applications').update({
-      status:            'email_sent',
-      email_sent_at:     now,
-      email_provider_id: sent.providerId,
-      reviewed_by:       auth.userId,
-      reviewed_at:       now,
-      status_history:    [...history, { at: now, from: app.status, to: 'email_sent', by: auth.userId, reasons: [
-        isOverride
-          ? `Manually applied — overrides the "${STATUS_META[app.status as ReferralStatus]?.label ?? app.status}" decision.`
-          : 'Approved from the review queue.',
-      ] }],
-    }).eq('id', params.id);
-
-    return NextResponse.json({ ok: true, status: 'email_sent' });
-  }
 
   /* ─── Reject from the queue ────────────────────────────── */
   if (body.action === 'reject') {

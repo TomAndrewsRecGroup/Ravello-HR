@@ -46,7 +46,7 @@ export default async function ReferralsPage({
   // back in the same call via count(*) OVER(); the grand total across
   // every filter is a separate cheap head-count, needed only to tell
   // "no applications at all yet" apart from "none match these filters".
-  const [{ data: sortedRows, error: sortErr }, { count: grandTotal }, { count: queueTotal }, { data: configs }] = await Promise.all([
+  const [{ data: sortedRows, error: sortErr }, { count: grandTotal }, { count: queueTotal }, { count: qualifiedTotal }, { data: configs }] = await Promise.all([
     supabase.rpc('referral_applications_sorted', {
       p_sort:           sortKey,
       p_dir:             sortDir,
@@ -61,6 +61,9 @@ export default async function ReferralsPage({
     // however many review_pending rows happened to land on this page,
     // not the real queue size.
     supabase.from('referral_applications').select('*', { count: 'exact', head: true }).eq('status', 'review_pending'),
+    // "Send all qualified (N)" — qualified rows are the ones dry run held
+    // back, and nothing re-sends them automatically.
+    supabase.from('referral_applications').select('*', { count: 'exact', head: true }).eq('status', 'qualified'),
     supabase
       .from('referral_role_config')
       .select('requisition_id, enabled, dry_run, partner_name, auto_send_threshold, review_threshold, requisition:requisitions ( id, title )'),
@@ -113,6 +116,7 @@ export default async function ReferralsPage({
         total={total}
         grandTotal={grand}
         queueCount={queueTotal ?? 0}
+        qualifiedCount={qualifiedTotal ?? 0}
         sortKey={sortKey}
         sortDir={sortDir}
         statusFilter={searchParams?.status ?? 'all'}
