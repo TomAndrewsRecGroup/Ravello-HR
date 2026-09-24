@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
             <h1 className="font-display font-bold text-xl" style={{ color: 'var(--ink)' }}>Admin</h1>
             <span className="text-[9px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.25)', color: 'var(--danger)' }}>Internal</span>
           </div>
-          <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>Core OS 360 staff access only</p>
+          <p className="text-sm mb-7" style={{ color: 'var(--ink-soft)' }}>Core OS 360 staff and Health &amp; Safety partners</p>
           <Suspense>
             <AdminLoginForm />
           </Suspense>

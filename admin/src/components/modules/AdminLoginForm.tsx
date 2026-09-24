@@ -9,6 +9,7 @@ const MESSAGES: Record<string, string> = {
   'no-session': 'Your session has expired. Please sign in again.',
   'unauthorised': 'You do not have access to this area. Contact your administrator.',
   'role-check-failed': 'We could not confirm your access just now. Please sign in again.',
+  'password-set': 'Your password is set. Sign in with it to continue.',
 };
 
 export default function AdminLoginForm() {
@@ -52,7 +53,9 @@ export default function AdminLoginForm() {
 
       // Plays the Core OS 360 intro on the first page after sign-in.
       document.cookie = `${BRAND_INTRO_COOKIE}=1; path=/; max-age=60; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
-      window.location.href = '/dashboard';
+      // The middleware sends each role to its own home (an H&S provider
+      // to /hs), so '/' is right for everyone.
+      window.location.href = '/';
     } catch {
       setError('Something went wrong. Please try again.');
       setLoading(false);

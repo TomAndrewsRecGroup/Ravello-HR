@@ -49,6 +49,13 @@ export default function SetPasswordForm({ token, email, fullName, companyName }:
         throw new Error(body.error ?? 'Could not set password.');
       }
 
+      // A provider signs in to the admin app, on another domain; the
+      // route says where (its own config, never anything from the URL).
+      if (typeof body.next === 'string' && body.next.startsWith('https://')) {
+        window.location.href = body.next;
+        return;
+      }
+
       // 2. Sign in with the freshly-set password. Anon client + the
       // standard auth.signInWithPassword flow — no magic links, no
       // redirect dance. Cookies stamped, middleware re-runs on the

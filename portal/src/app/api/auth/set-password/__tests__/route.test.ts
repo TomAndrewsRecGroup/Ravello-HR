@@ -35,7 +35,7 @@ function tokenTable() {
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     from: (table: string) => table === 'profile_access_tokens' ? tokenTable() : ({
-      select: () => ({ eq: (_c: string, id: string) => ({ maybeSingle: () => Promise.resolve({ data: { id, email: `${id}@example.com` }, error: null }) }) }),
+      select: () => ({ eq: (_c: string, id: string) => ({ maybeSingle: () => Promise.resolve({ data: { id, email: `${id}@example.com`, role: id.startsWith('prov') ? 'hs_provider' : 'client_admin' }, error: null }) }) }),
     }),
     auth: { admin: {
       updateUserById: (id: string, attrs: { password: string }) => { passwordsSet.push({ id, password: attrs.password }); return Promise.resolve({ error: null }); },
@@ -93,5 +93,21 @@ describe('set-password', () => {
   it('refuses a token nobody issued', async () => {
     expect((await submit('11111111-2222-4333-8444-555555555555')).status).toBe(410);
     expect(passwordsSet).toEqual([]);
+  });
+});
+
+describe('an H&S provider is handed on to the admin app', () => {
+  it('sets the password and names the admin sign-in page as the next stop', async () => {
+    tokens.push({ token_hash: await hashAccessToken('1f8a3c1e-5b7d-4e2a-9c6f-1a2b3c4d5e6f'), profile_id: 'prov-1', expires_at: new Date(Date.now() + 86_400_000).toISOString() });
+    const res = await submit('1f8a3c1e-5b7d-4e2a-9c6f-1a2b3c4d5e6f');
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(passwordsSet).toEqual([{ id: 'prov-1', password: 'correct horse battery' }]);
+    expect(body.next).toBe('https://admin.thepeoplesystem.co.uk/auth/login?reason=password-set');
+  });
+
+  it('a client gets no next stop and signs in to the portal as before', async () => {
+    const body = await (await submit(TOKEN)).json();
+    expect(body.next).toBeUndefined();
   });
 });

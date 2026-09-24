@@ -19,6 +19,9 @@ process.env.PORTAL_SESSION_SECRET = 'test-secret-for-middleware';
 let currentUser: { id: string; email: string } | null = null;
 let companyFlags: Record<string, boolean> = {};
 let companyReads = 0;
+let role = 'client_admin';
+let companyId: string | null = 'co-1';
+const signOuts: unknown[] = [];
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: () => ({
@@ -26,10 +29,11 @@ vi.mock('@supabase/ssr', () => ({
       getUser: async () => currentUser
         ? { data: { user: currentUser }, error: null }
         : { data: { user: null }, error: { message: 'Auth session missing!' } },
+      signOut: async (opts?: unknown) => { signOuts.push(opts ?? 'global-default'); return { error: null }; },
     },
     rpc: async (fn: string) => {
-      if (fn === 'get_my_role')    return { data: 'client_admin', error: null };
-      if (fn === 'get_my_profile') return { data: [{ company_id: 'co-1', onboarding_completed: true }], error: null };
+      if (fn === 'get_my_role')    return { data: role, error: null };
+      if (fn === 'get_my_profile') return { data: [{ company_id: companyId, onboarding_completed: true }], error: null };
       return { data: null, error: null };
     },
     from: (table: string) => ({
@@ -72,6 +76,8 @@ beforeEach(() => {
   currentUser = null;
   companyFlags = {};
   companyReads = 0;
+  role = 'client_admin';
+  companyId = 'co-1';
 });
 
 describe('employee leave link is reachable without a login', () => {
@@ -149,5 +155,30 @@ describe('static app files bypass the auth middleware', async () => {
     });
   it.each(['/dashboard', '/auth/login', '/api/anything'])('%s still is', (p) => {
     expect(matcher.test(p)).toBe(true);
+  });
+});
+
+// An external H&S provider (hs_provider, 094) has no company and no
+// portal pages. They must be sent to the admin app's workspace, never
+// stamped a portal session (which would carry companyId '' and render
+// pages with nothing to scope them).
+describe('an H&S provider is sent to the admin app', () => {
+  beforeEach(() => {
+    currentUser = { id: 'prov-1', email: 'p@lighthouse.example' };
+    role = 'hs_provider'; companyId = null; signOuts.length = 0;
+  });
+
+  it.each(['/dashboard', '/protect/compliance', '/settings'])('from %s', async (path) => {
+    const res = await updateSession(req(path));
+    expect(res.headers.get('location')).toBe('https://admin.thepeoplesystem.co.uk/hs');
+    expect(res.cookies.get(PORTAL_SESSION_COOKIE)?.value ?? '').toBe('');
+    expect(signOuts).toEqual([{ scope: 'local' }]);
+  });
+
+  it('a client user is not', async () => {
+    role = 'client_admin'; companyId = 'co-1';
+    const res = await updateSession(req('/dashboard'));
+    expect(res.headers.get('location')).toBeNull();
+    expect(signOuts).toEqual([]);
   });
 });
