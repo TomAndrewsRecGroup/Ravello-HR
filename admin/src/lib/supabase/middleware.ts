@@ -1,8 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  ADMIN_ROLE_COOKIE,
+  ROLE_CACHE_SECONDS,
+  signAdminRole,
+  verifyAdminRole,
+} from '@/lib/auth/adminRoleCookie';
 
 const ALLOWED_ROLES = ['tps_admin'];
-const ROLE_CACHE_SECONDS = 60 * 15; // 15 minutes: short enough to revoke access promptly
 
 // Routes with no browser session to check — server-to-server callers
 // that verify themselves (CRON_SECRET, stripe-signature), not a
@@ -77,7 +82,7 @@ export async function updateSession(request: NextRequest) {
     url.searchParams.set('reason', reason);
     const response = NextResponse.redirect(url);
     // Clear role cookie
-    response.cookies.set('tpo_admin_role', '', {
+    response.cookies.set(ADMIN_ROLE_COOKIE, '', {
       httpOnly: true, sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 0, path: '/',
@@ -91,12 +96,17 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
-  // Authenticated on protected route → verify role
+  // Authenticated on protected route → verify role.
+  //
+  // The cached role is trusted ONLY when its signature verifies and it
+  // was minted for this exact user (see lib/auth/adminRoleCookie.ts).
+  // Until 2026-09-24 a bare `tpo_admin_role=tps_admin` cookie, which
+  // any signed-in user could set by hand, skipped this check entirely.
   if (user && !isPublic) {
-    const cachedRole = request.cookies.get('tpo_admin_role')?.value;
+    const cached = await verifyAdminRole(request.cookies.get(ADMIN_ROLE_COOKIE)?.value, user.id);
 
-    if (cachedRole && typeof cachedRole === 'string' && ALLOWED_ROLES.includes(cachedRole)) {
-      // Valid cached role: proceed
+    if (cached && ALLOWED_ROLES.includes(cached.role)) {
+      // Valid signed role for this user: proceed
     } else {
       // Use SECURITY DEFINER function to bypass RLS circular dependency
       // (profiles RLS calls is_tps_staff() which queries profiles again)
@@ -113,18 +123,23 @@ export async function updateSession(request: NextRequest) {
         return signOutAndRedirect('unauthorised');
       }
 
-      supabaseResponse.cookies.set('tpo_admin_role', role, {
-        httpOnly: true, sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: ROLE_CACHE_SECONDS, path: '/',
-      });
+      // No secret → no cookie: every request re-checks the role. Slower,
+      // never open.
+      const signed = await signAdminRole({ userId: user.id, role });
+      if (signed) {
+        supabaseResponse.cookies.set(ADMIN_ROLE_COOKIE, signed, {
+          httpOnly: true, sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: ROLE_CACHE_SECONDS, path: '/',
+        });
+      }
     }
   }
 
   // Authenticated on auth pages → redirect to dashboard ONLY if role is already confirmed
   if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
-    const cachedRole = request.cookies.get('tpo_admin_role')?.value;
-    if (cachedRole && ALLOWED_ROLES.includes(cachedRole)) {
+    const cached = await verifyAdminRole(request.cookies.get(ADMIN_ROLE_COOKIE)?.value, user.id);
+    if (cached && ALLOWED_ROLES.includes(cached.role)) {
       // Role confirmed: safe to redirect to dashboard. Build a clean
       // URL — DON'T clone the auth page's URL, otherwise leftover
       // query params like ?reason=unauthorised end up pinned to

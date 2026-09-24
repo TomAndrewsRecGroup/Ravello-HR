@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { ADMIN_ROLE_COOKIE, verifyAdminRole } from '@/lib/auth/adminRoleCookie';
 
 // GET /api/debug-session
 //
@@ -49,7 +50,8 @@ export async function GET(req: import('next/server').NextRequest) {
 
   // What cookies exist (names only, never values)
   const cookieNames = cookieStore.getAll().map(c => c.name);
-  const cachedRole  = cookieStore.get('tpo_admin_role')?.value ?? null;
+  // The signed role cookie's verified role, never its raw value.
+  const cachedRole  = (await verifyAdminRole(cookieStore.get(ADMIN_ROLE_COOKIE)?.value, user?.id ?? null))?.role ?? null;
 
   if (!user) {
     return NextResponse.json({
@@ -156,7 +158,7 @@ export async function GET(req: import('next/server').NextRequest) {
   } else if (dbProfile.role !== rpcRole) {
     diagnosis = `Role mismatch — DB has ${dbProfile.role} but get_my_role() returned ${rpcRole}. Likely a session cookie issue. Sign out fully and back in.`;
   } else if (dbProfile.role !== 'tps_admin' && cachedRole === 'tps_admin') {
-    diagnosis = 'Stale tpo_admin_role cookie. Clear cookies and sign in again.';
+    diagnosis = 'Stale role cookie. Clear cookies and sign in again.';
   } else if (dbProfile.role === 'tps_admin') {
     diagnosis = 'Staff account looks healthy. If the UI says you\'re unauthorised, hard-refresh after the latest deploy lands.';
   } else {

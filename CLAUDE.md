@@ -1613,3 +1613,56 @@ the platform comes into shot.
   `POST`, `runtime`, `maxDuration`, …). An exported constant from
   `send-qualified/route.ts` passed `tsc` and the tests and failed
   `next build`. Run a production build before pushing a new route.
+
+---
+
+## Any signed-in user could make themselves staff (fixed 2026-09-24)
+
+Found while planning Health & Safety provider logins, verified live and
+reproduced in a rolled-back transaction before fixing:
+
+- **`profiles_update` had no WITH CHECK, there was no trigger on
+  `profiles`, and `authenticated` holds UPDATE on `role` and
+  `company_id`.** `update({ role: 'tps_admin' })` on your own row from
+  the browser console succeeded, and `is_tps_staff()` then opened every
+  table. `company_id` could be pointed at another client the same way,
+  and a client_admin could promote a colleague.
+- **The admin app trusted an unsigned `tpo_admin_role` cookie.** The
+  middleware skipped the role check whenever it read `tps_admin`, and
+  `(admin)/layout.tsx` trusted it outright. Both apps share Supabase
+  auth, so any client user could set it in devtools and load staff
+  pages, some of which read with the service role. API routes were
+  safe because `requireStaff()` calls the RPC.
+- **Clients could switch on paid modules:** `client_company_update`
+  allowed a client_admin to write `feature_flags`.
+
+### The fix, and the traps in it
+
+- **Migration 088: two BEFORE triggers,** `profiles_guard_privileged`
+  (role, company_id; staff roles on INSERT) and
+  `companies_guard_commercial` (feature flags, billing, Stripe ids,
+  slug, owner, active/archived). Applied 2026-09-24 and probed with
+  `supabase/probes/088_security_hardening.sql`: four attacks blocked,
+  own-name and company-settings edits still work, staff still manage
+  roles.
+- **A column REVOKE does nothing here.** `authenticated` has table-level
+  UPDATE, and column privileges only add to that. Guards are triggers.
+- **The triggers are SECURITY INVOKER and key on `current_user`.**
+  Through PostgREST that is `authenticated` or `anon`; the service role,
+  the SQL editor and auth's `handle_new_user` are unaffected.
+  `auth.uid() IS NULL` is the wrong test: it is true for anon AND the
+  service role. A test pins both properties.
+- **`lib/auth/adminRoleCookie.ts` signs the cached role** (HMAC over
+  `{userId, role, iat}`, the `portalSession.ts` approach, env var
+  `ADMIN_SESSION_SECRET`). A cookie verifies only for the user it was
+  minted for and only inside the 15-minute cache window. Without the
+  secret nothing is signed and every request re-checks via the RPC:
+  slower, never open. `(admin)/layout.tsx` falls back to the RPC when
+  the cookie does not verify, never to the raw value.
+- Tests drive the real `updateSession()` with a forged cookie
+  (`middlewareRoleCookie.test.ts`). Mutation-checked: the old middleware
+  (4 fail), no user binding, no signature check, no expiry, and a column
+  dropped from the SQL guard.
+- **Supabase Auth → "Allow new users to sign up" should be OFF.**
+  `handle_new_user` gives every auth user a profile; invites use
+  `auth.admin.createUser` and are unaffected.
