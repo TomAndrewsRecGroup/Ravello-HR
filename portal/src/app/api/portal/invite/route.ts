@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionProfile } from '@/lib/supabase/server';
 import { sendEmail, lastEmailError, buildInviteEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
+import { decideExistingInvite } from '@/lib/auth/existingInvitee';
 
 const SEAT_CAP = 2;
 
@@ -53,12 +54,30 @@ export async function POST(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-  // ── Seat cap ──────────────────────────────────────────────────
-  const { count: seatCount, error: countErr } = await adminClient
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .in('role', ['client_admin', 'client_editor']);
+  // ── Find an existing account ──────────────────────────────────
+  // By auth.users email (auth_user_id_by_email, service role only), never
+  // profiles.email, which any signed-in user could rewrite on their own
+  // row until 2026-09-24. An existing account is never moved between
+  // companies, never demoted from staff, and never handed a fresh
+  // set-password link unless it is a PENDING invite in this company —
+  // see lib/auth/existingInvitee.ts.
+  const findAccount = async (): Promise<string | null> => {
+    const { data, error } = await adminClient.rpc('auth_user_id_by_email', { p_email: email });
+    if (error) throw new Error(`Account lookup failed: ${error.message}`);
+    return (data as string | null) ?? null;
+  };
+
+  let userId: string | null = await findAccount();
+  let isNew = false;
+  let inviteRole = 'client_editor';
+
+  if (!userId) {
+    // ── Seat cap (new accounts only; resending a pending invite is free) ──
+    const { count: seatCount, error: countErr } = await adminClient
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .in('role', ['client_admin', 'client_editor']);
 
     if (countErr) {
       console.error('[/api/portal/invite] seat count failed:', countErr);
@@ -71,6 +90,41 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
+    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: { company_id: companyId, role: 'client_editor' },
+    });
+    if (createData?.user) {
+      userId = createData.user.id;
+      isNew  = true;
+    } else {
+      // Lost a race with a parallel invite: treat it as existing.
+      userId = await findAccount();
+      if (!userId) {
+        return NextResponse.json({ error: createError?.message ?? 'Could not create user.' }, { status: 400 });
+      }
+    }
+  }
+
+  if (!isNew) {
+    const { data: existing, error: existingErr } = await adminClient
+      .from('profiles')
+      .select('role, company_id, invite_token')
+      .eq('id', userId)
+      .maybeSingle();
+    if (existingErr) {
+      return NextResponse.json({ error: `Could not read the existing account: ${existingErr.message}` }, { status: 500 });
+    }
+    const decision = decideExistingInvite(
+      existing ? { role: existing.role, companyId: existing.company_id, pendingInvite: !!existing.invite_token } : null,
+      companyId,
+      'client_admin',
+    );
+    if (!decision.ok) return NextResponse.json({ error: decision.error }, { status: decision.status });
+    inviteRole = existing?.role ?? inviteRole;   // a resend keeps the role they were invited with
+  }
+
   // ── Get company name for the email ────────────────────────────
   const { data: companyRow } = await adminClient
     .from('companies')
@@ -78,52 +132,32 @@ export async function POST(request: NextRequest) {
     .eq('id', companyId)
     .maybeSingle();
 
-  // ── Create or re-invite user ──────────────────────────────────
-  // Avoids the read-then-write race: try createUser first and fall
-  // back to a profiles lookup if Supabase says the address is taken.
-  // Migration 063 makes profiles.email case-insensitively unique so
-  // the fallback finds the right row deterministically.
-  let userId: string;
-
-  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { company_id: companyId, role: 'client_editor' },
-  });
-
-  if (createData?.user) {
-    userId = createData.user.id;
-  } else {
-    const { data: existingProfile } = await adminClient
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
-    if (existingProfile?.id) {
-      userId = existingProfile.id;
-    } else {
-      return NextResponse.json(
-        { error: createError?.message ?? 'Could not create user.' },
-        { status: 400 },
-      );
-    }
-  }
-
   // ── Generate 7-day invite token ───────────────────────────────
   const inviteToken   = crypto.randomUUID();
   const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  await adminClient.from('profiles').upsert({
-    id:                      userId,
-    email,
-    full_name,
-    company_id:              companyId,
-    role:                    'client_editor',
-    onboarding_completed:    false,
-    onboarding_step:         0,
-    invite_token:            inviteToken,
-    invite_token_expires_at: inviteExpires,
-  }, { onConflict: 'id' });
+  // A new account gets its company and role here (its profile row came
+  // from handle_new_user). A resend touches ONLY the token, and only
+  // while the account is still in this company.
+  const { error: writeErr, count: written } = isNew
+    ? await adminClient.from('profiles').upsert({
+        id:                      userId,
+        email,
+        full_name,
+        company_id:              companyId,
+        role:                    'client_editor',
+        onboarding_completed:    false,
+        onboarding_step:         0,
+        invite_token:            inviteToken,
+        invite_token_expires_at: inviteExpires,
+      }, { onConflict: 'id', count: 'exact' })
+    : await adminClient.from('profiles')
+        .update({ invite_token: inviteToken, invite_token_expires_at: inviteExpires }, { count: 'exact' })
+        .eq('id', userId)
+        .eq('company_id', companyId);
+  if (writeErr || !written) {
+    return NextResponse.json({ error: `Could not save the invite: ${writeErr?.message ?? 'account changed while inviting'}` }, { status: 500 });
+  }
 
   // ── Send branded invite email via Resend ──────────────────────
   const portalUrl   = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.thepeoplesystem.co.uk';
@@ -132,7 +166,7 @@ export async function POST(request: NextRequest) {
   const emailResult = await sendEmail(buildInviteEmail({
     to:          email,
     companyName: companyRow?.name ?? 'your company',
-    roleLabel:   ROLE_LABELS['client_editor'],
+    roleLabel:   ROLE_LABELS[inviteRole] ?? ROLE_LABELS['client_editor'],
     activateUrl,
   }));
 

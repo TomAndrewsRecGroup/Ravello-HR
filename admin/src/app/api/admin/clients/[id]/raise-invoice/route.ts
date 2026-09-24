@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { revalidateTag } from 'next/cache';
 import { raiseOneOffInvoice, stripeConfigured, createCustomer } from '@/lib/stripe';
 import { assertBodySize } from '@/lib/http/bodySize';
+import { requireStaff } from '@/lib/auth/requireStaff';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,12 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  // Its own staff check. This route was the one admin API with none, on
+  // the strength of "gated by the admin app's auth layer" — which, until
+  // 2026-09-24, trusted a role cookie any signed-in user could forge.
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
+
   if (!stripeConfigured()) {
     return NextResponse.json({ error: 'Stripe is not configured on this environment.' }, { status: 503 });
   }
@@ -102,10 +109,9 @@ export async function POST(
     await sb.from('companies').update({ stripe_customer_id: customerId }).eq('id', company.id);
   }
 
-  // Authenticated admin id (for created_by). The route is gated by
-  // the admin app's auth layer; service-role inside the route bypasses
-  // RLS but we still want to attribute the row to the operator.
-  const createdBy = req.headers.get('x-tps-admin-id') || null;
+  // The operator who raised it, from the session — never a request
+  // header, which any caller could set to any profile id.
+  const createdBy = auth.userId;
 
   let stripeRes: Awaited<ReturnType<typeof raiseOneOffInvoice>>;
   try {

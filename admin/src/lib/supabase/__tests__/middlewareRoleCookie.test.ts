@@ -14,15 +14,17 @@ const STAFF_ID  = '3f6b51bb-d9ac-43ef-9252-ff4274143897';
 
 let currentUserId = CLIENT_ID;
 let rpcRole = 'client_admin';
+let rpcError: { message: string } | null = null;
 let rpcCalls = 0;
+const signOuts: unknown[] = [];
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: () => ({
     auth: {
       getUser: async () => ({ data: { user: { id: currentUserId } }, error: null }),
-      signOut: async () => ({ error: null }),
+      signOut: async (opts?: unknown) => { signOuts.push(opts ?? 'global-default'); return { error: null }; },
     },
-    rpc: async () => { rpcCalls++; return { data: rpcRole, error: null }; },
+    rpc: async () => { rpcCalls++; return rpcError ? { data: null, error: rpcError } : { data: rpcRole, error: null }; },
   }),
 }));
 
@@ -44,7 +46,9 @@ beforeEach(() => {
   process.env.ADMIN_SESSION_SECRET = 'test-secret-that-is-long-enough';
   currentUserId = CLIENT_ID;
   rpcRole = 'client_admin';
+  rpcError = null;
   rpcCalls = 0;
+  signOuts.length = 0;
 });
 afterEach(() => { delete process.env.ADMIN_SESSION_SECRET; });
 
@@ -83,5 +87,24 @@ describe('the cached role cookie cannot be forged', () => {
   it('a forged cookie does not bounce a signed-in client off /auth/login to the dashboard', async () => {
     const res = await updateSession(request('/auth/login', 'tps_admin'));
     expect(res.headers.get('location') ?? '').not.toContain('/dashboard');
+  });
+});
+
+describe('what a refused or failed role check does to the session', () => {
+  it('a FAILED check does not sign a staff member out', async () => {
+    currentUserId = STAFF_ID;
+    rpcError = { message: 'connection reset' };
+    const res = await updateSession(request('/dashboard'));
+    expect(redirectsToLogin(res)).toBe(true);
+    expect(res.headers.get('location')).toContain('reason=role-check-failed');
+    expect(signOuts).toEqual([]);
+    // and the Supabase session cookies are left alone
+    expect(res.headers.getSetCookie?.() ?? []).not.toContainEqual(expect.stringMatching(/^sb-/));
+  });
+
+  it('a non-staff user is signed out of THIS app only, not their portal sessions everywhere', async () => {
+    const res = await updateSession(request('/dashboard'));
+    expect(redirectsToLogin(res)).toBe(true);
+    expect(signOuts).toEqual([{ scope: 'local' }]);
   });
 });

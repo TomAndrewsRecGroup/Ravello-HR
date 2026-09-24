@@ -8,6 +8,7 @@ import { BRAND_INTRO_COOKIE } from '@/lib/brand';
 const MESSAGES: Record<string, string> = {
   'no-session': 'Your session has expired. Please sign in again.',
   'unauthorised': 'You do not have access to this area. Contact your administrator.',
+  'role-check-failed': 'We could not confirm your access just now. Please sign in again.',
 };
 
 export default function AdminLoginForm() {

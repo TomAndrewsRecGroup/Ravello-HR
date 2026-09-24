@@ -11,6 +11,7 @@ import { auditLog } from '@/lib/audit';
 import { labelFor, PORTAL_INVITE_ROLES, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import { sendEmail, lastEmailError, userInvitedEmail } from '@/lib/email';
 import { assertBodySize } from '@/lib/http/bodySize';
+import { decideExistingInvite } from '@/lib/auth/existingInvitee';
 
 
 // The role list comes from PORTAL_INVITE_ROLES rather than a literal, so
@@ -68,44 +69,64 @@ export async function POST(request: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 
-  // ── Check if this email already has a profile (re-invite path). ──
-  // We look in profiles rather than auth.users so we can use our own
-  // indexed column and avoid a paginated admin.listUsers() scan.
-  // Avoid the read-then-write race: try createUser first and treat
-  // 'already registered' as the re-invite path. Two parallel invites
-  // for the same email previously both saw existingProfile=null and
-  // both called createUser; one stranded an auth user with no profile.
+  // ── Find or create the account. ──
+  // An existing account is found in auth.users, never by profiles.email:
+  // until 2026-09-24 any signed-in user could rewrite their own
+  // profiles.email to the address about to be invited, and this route
+  // then upserted company_id + role onto THEIR row with the service
+  // role. decideExistingInvite() refuses to move an existing account
+  // between companies or out of a staff/provider role.
+  //
+  // createUser runs only when no account exists; if it still loses a
+  // race with a parallel invite, the account it lost to is looked up
+  // again and goes through the same decision.
   const normalisedEmail = email.toLowerCase().trim();
-  let userId: string;
+  const findAccount = async (): Promise<string | null> => {
+    const { data, error } = await adminClient.rpc('auth_user_id_by_email', { p_email: normalisedEmail });
+    if (error) throw new Error(`Account lookup failed: ${error.message}`);
+    return (data as string | null) ?? null;
+  };
 
-  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-    email:         normalisedEmail,
-    email_confirm: true,
-    user_metadata: { company_id, role: safeRole },
-  });
-
-  if (createData?.user) {
-    userId = createData.user.id;
-  } else {
-    // Likely 'A user with this email address has already been registered'.
-    // Fall back to looking up the existing profile by email — RLS lets
-    // service-role through and migration 063 guarantees uniqueness.
-    const { data: existingProfile } = await adminClient
-      .from('profiles')
-      .select('id')
-      .eq('email', normalisedEmail)
-      .maybeSingle();
-
-    if (existingProfile?.id) {
-      userId = existingProfile.id;
-    } else {
-      // Auth says the user exists but profiles disagrees — surface
-      // the real createUser error rather than swallowing it silently.
-      return NextResponse.json(
-        { error: createError?.message ?? 'Could not create user.' },
-        { status: 400 },
-      );
+  let userId: string | null;
+  let isNew = false;
+  try {
+    userId = await findAccount();
+    if (!userId) {
+      const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+        email:         normalisedEmail,
+        email_confirm: true,
+        user_metadata: { company_id, role: safeRole },
+      });
+      if (createData?.user) {
+        userId = createData.user.id;
+        isNew  = true;
+      } else {
+        userId = await findAccount();
+        if (!userId) {
+          return NextResponse.json({ error: createError?.message ?? 'Could not create user.' }, { status: 400 });
+        }
+      }
     }
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Account lookup failed' }, { status: 500 });
+  }
+  if (!userId) return NextResponse.json({ error: 'Could not create user.' }, { status: 400 });
+
+  if (!isNew) {
+    const { data: existing, error: existingErr } = await adminClient
+      .from('profiles')
+      .select('role, company_id, invite_token')
+      .eq('id', userId)
+      .maybeSingle();
+    if (existingErr) {
+      return NextResponse.json({ error: `Could not read the existing account: ${existingErr.message}` }, { status: 500 });
+    }
+    const decision = decideExistingInvite(
+      existing ? { role: existing.role, companyId: existing.company_id, pendingInvite: !!existing.invite_token } : null,
+      company_id,
+      'staff',
+    );
+    if (!decision.ok) return NextResponse.json({ error: decision.error }, { status: decision.status });
   }
 
   // ── Generate a 7-day invite token and store it on the profile. ──
@@ -117,17 +138,29 @@ export async function POST(request: NextRequest) {
   const inviteToken   = crypto.randomUUID();
   const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  await adminClient.from('profiles').upsert({
-    id:                      userId,
-    email:                   email.toLowerCase().trim(),
+  const profileFields = {
     full_name:               full_name || null,
-    company_id,
     role:                    safeRole,
     onboarding_completed:    false,
     onboarding_step:         1,
     invite_token:            inviteToken,
     invite_token_expires_at: inviteExpires,
-  }, { onConflict: 'id' });
+  };
+  // A new account's profile row was made by handle_new_user; an existing
+  // one is updated only while it is still in THIS company, so a
+  // concurrent move cannot be overwritten.
+  const { error: writeErr, count: written } = isNew
+    ? await adminClient.from('profiles').upsert(
+        { id: userId, email: normalisedEmail, company_id, ...profileFields },
+        { onConflict: 'id', count: 'exact' },
+      )
+    : await adminClient.from('profiles')
+        .update({ ...profileFields, full_name: full_name || undefined }, { count: 'exact' })
+        .eq('id', userId)
+        .eq('company_id', company_id);
+  if (writeErr || !written) {
+    return NextResponse.json({ error: `Could not save the invite: ${writeErr?.message ?? 'account changed while inviting'}` }, { status: 500 });
+  }
 
   auditLog({
     action:      'user.invited',

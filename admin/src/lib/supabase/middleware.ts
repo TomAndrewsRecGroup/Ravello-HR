@@ -72,15 +72,26 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     url.searchParams.set('reason', 'no-session');
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    // A role cookie outliving its session (a shared browser after the
+    // session expired) should not sit there for the next person.
+    if (request.cookies.get(ADMIN_ROLE_COOKIE)) {
+      response.cookies.set(ADMIN_ROLE_COOKIE, '', {
+        httpOnly: true, sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 0, path: '/',
+      });
+    }
+    return response;
   }
 
   // Helper: sign out and redirect to login with a reason
-  function signOutAndRedirect(reason: string) {
+  function signOutAndRedirect(reason: string, opts: { keepSession?: boolean } = {}) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     url.searchParams.set('reason', reason);
     const response = NextResponse.redirect(url);
+    if (opts.keepSession) return response;
     // Clear role cookie
     response.cookies.set(ADMIN_ROLE_COOKIE, '', {
       httpOnly: true, sameSite: 'lax',
@@ -116,10 +127,21 @@ export async function updateSession(request: NextRequest) {
         console.error('[auth] get_my_role() failed:', roleError.message, '| user:', user.id);
       }
 
+      // A FAILED check is not a "no". Signing out on a transient RPC error
+      // ended a staff member's session — every session, since signOut()
+      // defaults to global scope — and with ADMIN_SESSION_SECRET unset this
+      // check runs on every request. Send them to sign in again instead,
+      // session intact.
+      if (roleError) {
+        return signOutAndRedirect('role-check-failed', { keepSession: true });
+      }
+
       const role = typeof rpcRole === 'string' ? rpcRole : null;
       if (typeof role !== 'string' || !ALLOWED_ROLES.includes(role)) {
-        // Sign out to prevent redirect loop, then send to login
-        await supabase.auth.signOut();
+        // Sign out HERE only: both apps share Supabase auth, so a global
+        // sign-out would also end a client's portal sessions everywhere
+        // just for opening the admin URL.
+        await supabase.auth.signOut({ scope: 'local' });
         return signOutAndRedirect('unauthorised');
       }
 
