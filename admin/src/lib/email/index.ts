@@ -18,6 +18,9 @@ export type { ClientWelcomeInput }       from './templates/clientWelcome';
 export { userInvitedEmail }              from './templates/userInvited';
 export type { UserInvitedInput }         from './templates/userInvited';
 
+export { hsProviderInvitedEmail }        from './templates/hsProviderInvited';
+export type { HsProviderInvitedInput }   from './templates/hsProviderInvited';
+
 export { passwordResetEmail }            from './templates/passwordReset';
 export type { PasswordResetInput }       from './templates/passwordReset';
 

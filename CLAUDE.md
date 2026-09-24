@@ -1854,3 +1854,74 @@ or in the code before fixing.
   profile, a non-staff caller can change nothing.
 - `securityHardeningSql.test.ts` now pins the LATEST migration that
   defines each guard function (093 replaced 088's), not the first.
+
+---
+
+## Health & Safety Phase 1a: providers and the workspace (2026-09-24, migrations 094-095)
+
+External H&S providers (a consultancy such as Lighthouse Safety, a
+training company such as Kentec) get their own logins and record work for
+the clients they are assigned to. Clients will review it on the Safety
+Timeline (the portal side is Phase 1b).
+
+### Rules
+
+- **The database is the boundary.** A provider holds a normal Supabase
+  JWT and can call PostgREST directly, so every rule lives in RLS and
+  triggers (094/095), never only in a route. `hs_can_access` /
+  `hs_can_write(company, scope)` are the one place an assignment's scope,
+  status, access level and date window are checked.
+  `supabase/probes/095_hs_provider_access.sql` is the live proof.
+- **A provider login is `role = 'hs_provider'`, `company_id = NULL`,
+  `hs_provider_id` set.** The NULL company means every existing client
+  policy already denies them. A CHECK (`profiles_hs_provider_shape`)
+  holds the shape. `hs_provider_id` is not on 093's self-service list,
+  so only staff (or the service role) can set it.
+- **Providers get NO policy on `companies`, `employee_records` or
+  `profiles`.** What they need comes from `hs_my_companies()` (named
+  columns only). A later phase that needs people adds a similar RPC,
+  never a row policy.
+- **Admin middleware is a role→path allow-list** (`lib/auth/rolePaths.ts`).
+  `hs_provider` may reach only `/hs` and `/api/hs/*`, anchored, on the
+  cached-cookie fast path too. A page bounces to `/hs`; an API gets 403.
+  `/api/files/sign` is deliberately NOT allowed: it signs with the service
+  role. Evidence links are signed under the user's own session instead.
+- **Nothing under `app/(hs)`, `app/api/hs`, `lib/hs` or `components/hs`
+  may use the service role** (`noServiceRoleInHs.test.ts`). The `(hs)`
+  layout does not render `AdminSidebar` or the `(admin)` layout's client
+  list, which read with the service role. Staff-only provider management
+  lives under `app/api/admin/hs` behind `requireStaff()`.
+- **Every H&S table writes to `hs_events`**, via AFTER triggers that are
+  SECURITY DEFINER. Sessions have no INSERT, UPDATE or DELETE on
+  `hs_events`, and no UPDATE or DELETE on completions, activities or
+  files. A correction is a new row. `hsSqlShape.test.ts` pins RLS on, a
+  staff policy, no open policy, provider writes via `hs_can_write`, the
+  revokes, and one `_hs_event` trigger per source table. Add each new H&S
+  migration to its FILES list.
+- **The register is `compliance_items`**, with a generated
+  `domain` column (`hs` for `hs_*` and the legacy `health_safety`). A
+  completion computes the next due date in SQL (`hs_next_due`). It rolls
+  the item forward only when it is the newest completion, so back-filling
+  an old certificate never moves the register backwards.
+  `lib/hs/recurrence.ts` mirrors it for the form preview, and its test
+  values came from the live function.
+- **Evidence keys are `<company>/<entity_type>/<entity_id>/<uuid>-<name>`**
+  in the private `hs-evidence` bucket, built only by
+  `lib/hs/evidence.ts`. Storage policies read the first folder as the
+  client and the second as the scope; `hs_files` has a CHECK tying its
+  row to the same parts.
+- **Provider set-password reuses the portal page.** The link is the same
+  hashed-token flow. For an `hs_provider` the API returns `next` (the
+  admin sign-in URL), and the portal middleware signs any provider out
+  locally and redirects them to `${NEXT_PUBLIC_ADMIN_URL}/hs`.
+- **Provider invites never convert an account.** `decideProviderInvite`
+  refuses any client or staff account, and refuses a live login of
+  another provider. Revoking unlinks first, because that cuts access
+  immediately even with a valid JWT. It then burns set-password links
+  and bans the auth user.
+- **Not yet:** `FILE_KINDS.hs_file` (not needed while links are
+  session-signed); the `compliance_items.category` CHECK, which lands
+  after every writer uses `HS_REGISTER_CATEGORIES`; the portal PROTECT
+  rebuild (1b). No email is logged to `email_log` for a provider invite,
+  because `email_log_target` has no provider value; the audit log
+  records it.

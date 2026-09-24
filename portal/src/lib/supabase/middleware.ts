@@ -4,6 +4,7 @@ import {
   PORTAL_SESSION_COOKIE, PORTAL_SESSION_TTL_SECONDS, signPortalSession, verifyPortalSession,
 } from '@/lib/auth/portalSession';
 import { disabledFlagFor, requiredFlagsFor } from '@/lib/moduleAccess';
+import { adminUrl } from '@/lib/adminUrl';
 
 const PUBLIC_ROUTES = [
   /^\/auth\//,
@@ -127,6 +128,21 @@ export async function updateSession(request: NextRequest) {
     const role = typeof rpcRole === 'string' ? rpcRole : '';
     const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
     const companyId = profile?.company_id ?? '';
+
+    // An external H&S provider has no company and no portal pages; they
+    // work in the admin app's /hs workspace. Sign them out HERE only
+    // (local scope: the two apps share Supabase auth, and a global
+    // sign-out would also end their admin session) and send them there.
+    // No portal session cookie is ever stamped for them.
+    if (role === 'hs_provider') {
+      await supabase.auth.signOut({ scope: 'local' });
+      const res = NextResponse.redirect(`${adminUrl()}/hs`);
+      res.cookies.set(PORTAL_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
+      for (const c of request.cookies.getAll()) {
+        if (c.name.startsWith('sb-')) res.cookies.set(c.name, '', { maxAge: 0, path: '/' });
+      }
+      return res;
+    }
 
     let featureFlags: Record<string, boolean> = {};
     if (companyId && role !== 'tps_admin') {

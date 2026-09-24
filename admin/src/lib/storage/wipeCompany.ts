@@ -25,6 +25,9 @@ const BUCKET_PREFIXES: Array<{ bucket: string; prefix: (companyId: string) => st
   { bucket: 'cvs',       prefix: (id) => `${id}` },
   // logos/company/<company_id>/...
   { bucket: 'logos',     prefix: (id) => `company/${id}` },
+  // hs-evidence/<company_id>/<entity_type>/<entity_id>/<file> — Health &
+  // Safety evidence (migration 095): certificates, reports, site photos.
+  { bucket: 'hs-evidence', prefix: (id) => `${id}` },
 ];
 
 const PAGE_SIZE = 1000;

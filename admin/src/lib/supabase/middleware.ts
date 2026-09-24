@@ -6,8 +6,7 @@ import {
   signAdminRole,
   verifyAdminRole,
 } from '@/lib/auth/adminRoleCookie';
-
-const ALLOWED_ROLES = ['tps_admin'];
+import { homeFor, isAdminAppRole, roleMayReach } from '@/lib/auth/rolePaths';
 
 // Routes with no browser session to check — server-to-server callers
 // that verify themselves (CRON_SECRET, stripe-signature), not a
@@ -115,9 +114,12 @@ export async function updateSession(request: NextRequest) {
   // any signed-in user could set by hand, skipped this check entirely.
   if (user && !isPublic) {
     const cached = await verifyAdminRole(request.cookies.get(ADMIN_ROLE_COOKIE)?.value, user.id);
+    let role: string | null = null;
 
-    if (cached && ALLOWED_ROLES.includes(cached.role)) {
-      // Valid signed role for this user: proceed
+    if (cached && isAdminAppRole(cached.role)) {
+      // Valid signed role for this user: no RPC needed. Where that role
+      // may go is still checked below, on this path too.
+      role = cached.role;
     } else {
       // Use SECURITY DEFINER function to bypass RLS circular dependency
       // (profiles RLS calls is_tps_staff() which queries profiles again)
@@ -136,8 +138,8 @@ export async function updateSession(request: NextRequest) {
         return signOutAndRedirect('role-check-failed', { keepSession: true });
       }
 
-      const role = typeof rpcRole === 'string' ? rpcRole : null;
-      if (typeof role !== 'string' || !ALLOWED_ROLES.includes(role)) {
+      role = typeof rpcRole === 'string' ? rpcRole : null;
+      if (!role || !isAdminAppRole(role)) {
         // Sign out HERE only: both apps share Supabase auth, so a global
         // sign-out would also end a client's portal sessions everywhere
         // just for opening the admin URL.
@@ -156,18 +158,33 @@ export async function updateSession(request: NextRequest) {
         });
       }
     }
+
+    // A provider may reach only its workspace (lib/auth/rolePaths.ts).
+    // Pages bounce to the role's home; an API answers 403, since a
+    // redirect to an HTML page is no answer to a fetch().
+    if (!roleMayReach(role, pathname)) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = homeFor(role);
+      url.search = '';
+      const res = NextResponse.redirect(url);
+      for (const c of supabaseResponse.cookies.getAll()) res.cookies.set(c);
+      return res;
+    }
   }
 
   // Authenticated on auth pages → redirect to dashboard ONLY if role is already confirmed
   if (user && isPublic && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/signout')) {
     const cached = await verifyAdminRole(request.cookies.get(ADMIN_ROLE_COOKIE)?.value, user.id);
-    if (cached && ALLOWED_ROLES.includes(cached.role)) {
-      // Role confirmed: safe to redirect to dashboard. Build a clean
+    if (cached && isAdminAppRole(cached.role)) {
+      // Role confirmed: safe to redirect to that role's home. Build a clean
       // URL — DON'T clone the auth page's URL, otherwise leftover
       // query params like ?reason=unauthorised end up pinned to
       // /dashboard and the user thinks something's still wrong.
       const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
+      url.pathname = homeFor(cached.role);
       url.search = '';
       return NextResponse.redirect(url);
     }
