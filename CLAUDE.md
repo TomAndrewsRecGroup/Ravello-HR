@@ -32,7 +32,14 @@ Both apps share a single **Supabase** project (same DB, same auth).
 - **Styling**: Tailwind CSS + CSS custom properties (no component library)
 - **TypeScript**: strict throughout
 - **Icons**: lucide-react
-- **Payments**: Stripe (not yet integrated: needed for e-learning Phase 22)
+- **Payments**: Stripe — fully integrated. E-learning checkout/webhook
+  (`portal/src/lib/stripe.ts`, `api/learning/checkout`, `api/learning/webhook`)
+  and client retainer/invoice billing (`admin/src/lib/stripe.ts`,
+  `api/stripe/webhook`, `api/admin/clients/[id]/retainer`,
+  `raise-invoice`). This line said "not yet integrated" long after
+  Phases 16-18 and the retainer billing work shipped — corrected
+  2026-09-25 during a documentation-accuracy pass; see "What Has Been
+  Built" for the phases that actually built it.
 - **Deployment**: Vercel Pro
 
 ---
