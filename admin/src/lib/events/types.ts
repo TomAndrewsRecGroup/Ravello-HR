@@ -86,7 +86,7 @@ export interface ReminderPayload {
 /** How far a dated row is from its due date on the day the reminders
  *  cron ran. One bucket per row per day; the dedupe key makes each
  *  bucket fire once per row, ever. */
-export type ReminderBucket = 'due_30' | 'due_7' | 'due_0' | 'overdue' | `overdue_w${number}`;
+export type ReminderBucket = 'due_30' | 'due_7' | 'due_0' | 'overdue' | `overdue_w${number}` | 'sla_breached';
 
 export interface PlatformEvent {
   id:           number;

@@ -8,6 +8,10 @@ import {
   HIRING_STAGES,
   HIRING_STAGE_LABELS,
   ROLE_LABELS,
+  SERVICE_REQUEST_STATUSES,
+  SERVICE_REQUEST_STATUS_LABELS,
+  SERVICE_REQUEST_TYPES,
+  SERVICE_REQUEST_TYPE_LABELS,
   USER_ROLES,
   labelFor,
 } from '../statusMaps';
@@ -93,5 +97,17 @@ describe('labelFor', () => {
   it('falls back rather than throwing on an unknown value', () => {
     expect(labelFor(CANDIDATE_CLIENT_STATUS_LABELS, 'nonsense', 'Unknown')).toBe('Unknown');
     expect(labelFor(CANDIDATE_CLIENT_STATUS_LABELS, null)).toBe('—');
+  });
+});
+
+describe('service request vocabulary', () => {
+  it('type and status labels cover exactly their tuples', () => {
+    expectExactKeys(SERVICE_REQUEST_TYPE_LABELS, SERVICE_REQUEST_TYPES, 'SERVICE_REQUEST_TYPE_LABELS');
+    expectExactKeys(SERVICE_REQUEST_STATUS_LABELS, SERVICE_REQUEST_STATUSES, 'SERVICE_REQUEST_STATUS_LABELS');
+  });
+  it('statuses are the 097 CHECK, not the ticket words the old map carried', () => {
+    expect(SERVICE_REQUEST_STATUSES).toEqual(['new', 'in_progress', 'complete']);
+    expect(SERVICE_REQUEST_STATUS_LABELS).not.toHaveProperty('open');
+    expect(SERVICE_REQUEST_STATUS_LABELS).not.toHaveProperty('resolved');
   });
 });

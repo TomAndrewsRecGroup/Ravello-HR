@@ -8,7 +8,7 @@ export default async function EnquiriesPage() {
   const supabase = createServerSupabaseClient();
   const { data } = await supabase
     .from('enquiries')
-    .select('id, full_name, email, phone, company_name, source, result, status, notes, created_at')
+    .select('id, full_name, email, phone, company_name, source, result, status, notes, created_at, bd_company_id, triage')
     .order('created_at', { ascending: false })
     .limit(500);
 

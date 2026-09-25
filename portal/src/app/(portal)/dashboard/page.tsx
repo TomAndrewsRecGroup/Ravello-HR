@@ -58,10 +58,10 @@ export default async function DashboardPage() {
       .order('review_due_at', { ascending: true })
       .limit(5),
     supabase
-      .from('tickets')
-      .select('id,subject,status,priority')
+      .from('service_requests')
+      .select('id,subject,status,urgency,sla_due_at')
       .eq('company_id', companyId ?? '')
-      .neq('status', 'closed')
+      .in('status', ['new', 'in_progress'])
       .order('created_at', { ascending: false })
       .limit(5),
     supabase
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
         <div className="mb-6 p-5 rounded-xl" style={{ background: 'var(--gradient-soft)' }}>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--ink)' }}>
             You have <strong style={{ color: 'var(--purple)' }}>{requisitions.length} active role{requisitions.length !== 1 ? 's' : ''}</strong>
-            {tickets.length > 0 && <>, <strong>{tickets.length} open ticket{tickets.length !== 1 ? 's' : ''}</strong></>}
+            {tickets.length > 0 && <>, <strong>{tickets.length} open request{tickets.length !== 1 ? 's' : ''}</strong></>}
             {actions.length > 0 && <>, and <strong style={{ color: 'var(--warning)' }}>{actions.length} action{actions.length !== 1 ? 's' : ''} needing attention</strong></>}
             .
             {attentionCount === 0 && <span style={{ color: 'var(--success)' }}> Everything looks good.</span>}
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           {[
             { label: 'Active Roles', val: requisitions.length,    href: '/hire/hiring',        color: 'var(--purple)',   feature: 'Hiring',     flag: flagsFromSession.hiring     !== false },
-            { label: 'Open Tickets', val: tickets.length,         href: '/support',            color: 'var(--warning)',  feature: 'Support',    flag: flagsFromSession.support    !== false },
+            { label: 'Open Requests', val: tickets.length,         href: '/support',            color: 'var(--warning)',  feature: 'Support',    flag: flagsFromSession.support    !== false },
             { label: 'Compliance',   val: complianceItems.length, href: '/protect/compliance', color: 'var(--danger)',   feature: 'Compliance', flag: flagsFromSession.compliance !== false && flagsFromSession.protect !== false },
             { label: 'Documents',    val: documents.length,       href: '/lead/documents',     color: 'var(--blue)',     feature: 'Documents',  flag: flagsFromSession.documents  !== false },
             { label: 'Actions',      val: actions.length,         href: '/protect/actions',    color: 'var(--ink-soft)', feature: 'Actions',    flag: flagsFromSession.protect    !== false },
@@ -312,15 +312,15 @@ export default async function DashboardPage() {
             </div>
             {tickets.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
+                <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No open requests</p>
                 <LockedLink href="/support/new" flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="text-xs font-medium mt-1 inline-block" style={{ color: 'var(--purple)' }}>Raise a query →</LockedLink>
               </div>
             ) : (
               <div className="space-y-1.5">
                 {tickets.slice(0, 5).map((t: any) => (
-                  <LockedLink key={t.id} href={`/support/${t.id}`} flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)] w-full text-left" style={{ background: 'var(--surface-soft)' }}>
+                  <LockedLink key={t.id} href="/support" flagEnabled={flagsFromSession.support !== false} featureLabel="Support" className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[var(--surface-soft)] w-full text-left" style={{ background: 'var(--surface-soft)' }}>
                     <span className="text-xs font-medium truncate" style={{ color: 'var(--ink)', maxWidth: 200 }}>{t.subject}</span>
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.priority === 'urgent' ? 'var(--danger)' : t.priority === 'high' ? 'var(--warning)' : 'var(--ink-faint)' }} />
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" title={t.status === 'in_progress' ? 'In progress' : 'New'} style={{ background: (t.urgency ?? '').toLowerCase() === 'urgent' ? 'var(--danger)' : (t.urgency ?? '').toLowerCase() === 'high' ? 'var(--warning)' : 'var(--ink-faint)' }} />
                   </LockedLink>
                 ))}
               </div>

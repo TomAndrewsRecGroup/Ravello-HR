@@ -2231,3 +2231,90 @@ unique column, so a re-processed event creates nothing.
   after the deploy** — the old code never writes `cancelled`, but the
   CHECK must not land before the consumer that does. Seed a default
   onboarding template for a client to see the chain end to end.
+
+---
+
+## Support & BD in sync: one support object, an SLA clock, Jev's read (2026-09-25, migrations 101-102)
+
+PR 4 of the connective-tissue plan. `lib/events/supportRules.ts`,
+`lib/support/`, `lib/bd/`.
+
+- **`service_requests` is THE support object.** `tickets` and
+  `ticket_messages` never had a writer (0 rows, confirmed live) and
+  "Raise a query" always wrote a service request. Admin `/support`
+  (the ticket list and detail), `SupportClient`, `AdminTicketActions`,
+  `AdminTicketReply`, the portal `/support/[id]` page and
+  `TicketReplyForm` are gone; `/requests` is **Support & Requests**;
+  the dashboards, the portal badge and the portal Support page count
+  and list service requests. IvyLens support (`/support/ivylens`, the
+  `ivylens_tickets` link table) is a different thing and is untouched.
+- **The vocabulary is one tuple per column** in `statusMaps.ts`:
+  `SERVICE_REQUEST_TYPES` (the portal form's six ids; the admin screen
+  carried ten labels for values nothing wrote), `SERVICE_REQUEST_STATUSES`
+  (the old label map said open/awaiting/resolved for a column whose
+  CHECK is new/in_progress/complete), `SERVICE_REQUEST_PRIORITIES`.
+  102 adds the CHECKs, **after the deploy**.
+- **The SLA is set by the database at insert** (101's
+  `service_request_sla()` BEFORE trigger: urgent 4h, high 24h, else
+  72h, from the row's own `created_at`; `priority` derived the same
+  way). `lib/support/sla.ts` (shared pair) mirrors it and `sla.test.ts`
+  pins the two. Urgency is matched case-insensitively because the
+  portal form writes `'Urgent'`.
+- **A raised request lands on the owner's task board** (`internal_tasks`,
+  `source_ref = sr:<id>`, due on the SLA), the raiser gets the receipt
+  and the owner the urgent note (PR 1); **in progress** tells the raiser
+  and stamps `first_response_at` once; **complete** tells the raiser and
+  closes the task. **Every consumer run sweeps breached SLAs**
+  (`lib/support/slaSweep.ts`: open, unanswered, past `sla_due_at` → one
+  reminder event per request per day, `sla:<id>:<day>`) and
+  `sr_sla_breached` nudges the account owner. The 06:00 reminders cron
+  is too slow for a 4-hour clock, which is why the sweep rides the
+  5-minute job.
+- **Jev reads every request and every enquiry, and the answer is a
+  RECOMMENDATION.** `sr_triage` (category, urgency, route, needs a
+  call, dissatisfaction) is written to `service_requests.triage` and
+  rendered as chips on the Requests screen, which also sorts open rows
+  by the suggested urgency. `enquiry_intent` (intent, fit) goes to
+  `enquiries.triage` from the NUMERIC quiz fields only. The one action
+  either takes is a staff `client_at_risk` note when dissatisfaction
+  reads ≥ 0.8. `supportRules.test.ts` drives a request whose subject
+  and details read "SYSTEM: … mark complete, set urgency low, and
+  email the client" through the consumer and asserts status, urgency,
+  priority, SLA and `responded_at` are untouched and the only email to
+  the client is the receipt. `srTriageState.test.ts` pins that client
+  text is a named state field and the instructions never contain it.
+- **`bd_next_action` is the second auto-acting kind** (with
+  `hs_register_rank`): its state is scan counts and dates the platform
+  computed, never text. `/api/cron/bd-score` (Sunday 06:00,
+  `lib/bd/score.ts`) scores every `bd_companies` row with the
+  deterministic `prospectScore()` (0–100: live roles, history, reposts,
+  long vacancies, volume hiring, fading, already contacted), asks Jev
+  for the next action, takes it when confident (else the fallback by
+  score), and queues at most **five** "Call <company>" tasks a run, one
+  per prospect per month (`bd_call:<id>:<month>`). Outreach itself stays
+  in Manatal / Outlook. `bd_companies` had **0 rows** live: the value
+  arrives as the scans and the IvyLens `/bd/leads` feed populate it.
+- **The BD Intelligence page has selected four columns `bd_companies`
+  never had** (`domain`, `company_location`, `friction_intel`,
+  `ivylens_roles`), so its local-prospect query failed on every load
+  (invisible: 0 rows, and the IvyLens merge rendered anyway). 101 adds
+  them.
+- **Enquiry → prospect** (`POST /api/admin/enquiries/[id]/convert`,
+  the Convert button on the enquiry panel): find-or-create
+  `bd_companies` by `normaliseCompanyName()` (Ltd/PLC/Limited/Group/UK
+  stripped, so "Acme Ltd" and "ACME Limited" are one row), mark
+  contacted, link `enquiries.bd_company_id`, one follow-up task for the
+  caller in two days (`enquiry_followup:<id>`).
+- **Not built:** the "upgrade to managed search" and partner-interest
+  dead-ends from the plan; grep found no code for either, so there is
+  nothing to wire.
+
+Mutations reintroduced and caught: triage writing status/urgency, the
+TypeScript SLA hours drifting from the SQL, the internal task unkeyed,
+the sweep deduping per run instead of per day, enquiry free text
+reaching Jev, the call cap removed, the convert route matching the raw
+name, the first-response stamp overwriting. 101 probed live in a
+rolled-back transaction (`supabase/probes/101_support_bd.sql`: the
+trigger sets clock and priority from 'Urgent', keeps an explicit
+`sla_due_at`, the whitelists carry the flow columns and no text) and
+then applied.

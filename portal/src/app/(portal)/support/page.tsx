@@ -3,27 +3,16 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
 import { LifeBuoy, Plus, Headphones } from 'lucide-react';
-import { TICKET_STATUS_BADGE as statusBadge } from '@/lib/ui/statusMaps';
+import { SERVICE_REQUEST_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { slaHoursLeft } from '@/lib/support/sla';
 
 export const metadata: Metadata = { title: 'Support' };
 export const revalidate = 30;
-
-const priorityBadge: Record<string,string> = { urgent:'badge-urgent', high:'badge-high', normal:'badge-normal', low:'badge-low' };
 
 const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
   new:         { background: 'rgba(11,120,150,0.12)', color: '#075E77' },
   in_progress: { background: 'rgba(59,111,255,0.12)', color: 'var(--blue)' },
   complete:    { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
-};
-
-// The six ids the new-request form writes (support/new/page.tsx).
-const TYPE_LABELS: Record<string, string> = {
-  policy_update:    'Policy Update',
-  salary_benchmark: 'Salary Benchmark',
-  manager_support:  'Manager Support',
-  strategic_review: 'Strategic Review',
-  hr_audit:         'HR Audit',
-  support_query:    'Support Query',
 };
 
 // `details` is the request-type-specific JSONB the form collected. The
@@ -37,40 +26,42 @@ function detailsText(details: unknown): string {
 }
 
 function humanType(type: string): string {
-  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-';
+  return labelFor(SERVICE_REQUEST_TYPE_LABELS, type, type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-');
+}
+
+/** "Response due in 3h" / "Response overdue": the SLA the platform set at insert. */
+function slaText(slaDue: string | null, firstResponse: string | null, status: string): string | null {
+  if (status === 'complete' || firstResponse) return null;
+  const h = slaHoursLeft(slaDue);
+  if (h == null) return null;
+  if (h < 0) return 'Response overdue';
+  return h < 1 ? 'Response due within the hour' : h < 48 ? `Response due in ${Math.round(h)}h` : `Response due in ${Math.round(h / 24)} days`;
 }
 
 export default async function SupportPage() {
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
-  const [{ data: tickets }, { data: serviceRequests }] = await Promise.all([
-    supabase
-      .from('tickets')
-      .select('id, subject, priority, status, created_at, resolved_at')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('service_requests')
-      .select('id, request_type, subject, details, urgency, status, response_notes, responded_at, created_at')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false }),
-  ]);
+  // service_requests is the one support object: `tickets` never had a
+  // writer, so the "Open Tickets" section this page used to render could
+  // only ever be empty.
+  const { data: serviceRequests } = await supabase
+    .from('service_requests')
+    .select('id,request_type,subject,details,urgency,status,response_notes,responded_at,created_at,first_response_at,sla_due_at')
+    .eq('company_id', companyId)
+    .order('created_at', { ascending: false });
 
-  const all     = tickets ?? [];
-  const open    = all.filter((t: any) => !['resolved','closed'].includes(t.status));
-  const closed  = all.filter((t: any) =>  ['resolved','closed'].includes(t.status));
   const srAll   = serviceRequests ?? [];
   const srOpen  = srAll.filter((r: any) => r.status !== 'complete');
   const srDone  = srAll.filter((r: any) => r.status === 'complete');
 
-  const hasAnything = all.length > 0 || srAll.length > 0;
+  const hasAnything = srAll.length > 0;
 
   return (
     <>
       <Topbar
         title="HR Support"
-        subtitle={`${open.length} open ticket${open.length !== 1 ? 's' : ''}${srOpen.length > 0 ? ` · ${srOpen.length} service request${srOpen.length !== 1 ? 's' : ''}` : ''}`}
+        subtitle={`${srOpen.length} open request${srOpen.length !== 1 ? 's' : ''}`}
         actions={
           <div className="flex items-center gap-2">
             <Link prefetch={false} href="/support/ivylens" className="btn-secondary btn-sm flex items-center gap-1.5">
@@ -87,7 +78,7 @@ export default async function SupportPage() {
           <div className="card p-12">
             <div className="empty-state">
               <LifeBuoy size={28} />
-              <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No support tickets</p>
+              <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No requests yet</p>
               <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
                 Raise a query and Core OS 360 will respond within one business day.
               </p>
@@ -96,61 +87,6 @@ export default async function SupportPage() {
           </div>
         ) : (
           <div className="space-y-8">
-
-            {/* ── Support Tickets ── */}
-            {all.length > 0 && (
-              <div className="space-y-6">
-                {open.length > 0 && (
-                  <section>
-                    <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--ink)' }}>
-                      Open Tickets <span className="font-normal" style={{ color: 'var(--ink-faint)' }}>({open.length})</span>
-                    </h2>
-                    <div className="table-wrapper">
-                      <table className="table">
-                        <thead>
-                          <tr><th>Subject</th><th>Priority</th><th>Status</th><th>Raised</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                          {open.map((t: any) => (
-                            <tr key={t.id}>
-                              <td><p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{t.subject}</p></td>
-                              <td><span className={`badge ${priorityBadge[t.priority]}`}>{t.priority}</span></td>
-                              <td><span className={`badge ${statusBadge[t.status]}`}>{t.status.replace('_',' ')}</span></td>
-                              <td style={{ color: 'var(--ink-faint)' }}>{new Date(t.created_at).toLocaleDateString('en-GB')}</td>
-                              <td><Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
-                )}
-                {closed.length > 0 && (
-                  <section>
-                    <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--ink-faint)' }}>
-                      Resolved Tickets <span className="font-normal">({closed.length})</span>
-                    </h2>
-                    <div className="table-wrapper">
-                      <table className="table">
-                        <thead>
-                          <tr><th>Subject</th><th>Status</th><th>Resolved</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                          {closed.map((t: any) => (
-                            <tr key={t.id}>
-                              <td style={{ color: 'var(--ink-soft)' }}>{t.subject}</td>
-                              <td><span className={`badge ${statusBadge[t.status]}`}>{t.status}</span></td>
-                              <td style={{ color: 'var(--ink-faint)' }}>{t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '-'}</td>
-                              <td><Link prefetch={false} href={`/support/${t.id}`} className="btn-ghost btn-sm">View →</Link></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
-                )}
-              </div>
-            )}
 
             {/* ── Service Requests ── */}
             {srAll.length > 0 && (
@@ -186,6 +122,11 @@ export default async function SupportPage() {
                                 <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
                                   {humanType(r.request_type)}
                                 </span>
+                                {slaText(r.sla_due_at, r.first_response_at, r.status) && (
+                                  <span className="text-xs" style={{ color: slaText(r.sla_due_at, r.first_response_at, r.status)!.includes('overdue') ? 'var(--red)' : 'var(--ink-faint)' }}>
+                                    · {slaText(r.sla_due_at, r.first_response_at, r.status)}
+                                  </span>
+                                )}
                               </div>
                               {r.subject && (
                                 <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{r.subject}</p>

@@ -43,6 +43,9 @@ export const DECISION_KINDS = [
   'absence_pattern',
   'onboarding_risk',
   'doc_type_suggest',
+  'sr_triage',
+  'enquiry_intent',
+  'bd_next_action',
 ] as const;
 export type DecisionKind = typeof DECISION_KINDS[number];
 
@@ -51,7 +54,7 @@ export type DecisionKind = typeof DECISION_KINDS[number];
  *  recommendation only — an authority claim in a ticket moved Jev's
  *  verdict 147 times in 200. Ordering a digest is the only auto-act
  *  today, and it changes no row. jevPolicy.test.ts pins this. */
-export const AUTO_ACT_KINDS: ReadonlySet<DecisionKind> = new Set<DecisionKind>(['hs_register_rank']);
+export const AUTO_ACT_KINDS: ReadonlySet<DecisionKind> = new Set<DecisionKind>(['hs_register_rank', 'bd_next_action']);
 
 export interface JevResult {
   decisionId: string | null;
