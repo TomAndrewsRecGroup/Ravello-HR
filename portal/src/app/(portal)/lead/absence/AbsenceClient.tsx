@@ -74,7 +74,7 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
       setRecords(prev => [data as AbsenceRecord, ...prev]);
       setShowForm(false);
       setForm({ employee_name: '', employee_email: '', department: '', absence_type: 'holiday', start_date: '', end_date: '', days: '', notes: '', approved_by: '' });
-      revalidatePortalPath('/protect/absence');
+      revalidatePortalPath('/lead/absence');
     }
     setSaving(false);
   }
@@ -98,7 +98,7 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
         const data = await res.json().catch(() => ({}));
         setActionError(data.error ?? 'Could not approve.');
       } else {
-        revalidatePortalPath('/protect/absence');
+        revalidatePortalPath('/lead/absence');
       }
     } finally {
       setActionId(null);
@@ -132,7 +132,7 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
       }
       setDenyTarget(null);
       setDenyNote('');
-      revalidatePortalPath('/protect/absence');
+      revalidatePortalPath('/lead/absence');
     } finally {
       setActionId(null);
     }

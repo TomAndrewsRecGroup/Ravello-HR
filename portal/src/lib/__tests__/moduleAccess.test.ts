@@ -50,7 +50,7 @@ describe('disabledFlagFor', () => {
   it('treats a missing flag as ON (only === false blocks)', () => {
     expect(disabledFlagFor('/lead/org-chart', {})).toBeNull();
     expect(disabledFlagFor('/lead/org-chart', null)).toBeNull();
-    expect(disabledFlagFor('/protect/absence', { protect: true })).toBeNull();
+    expect(disabledFlagFor('/lead/absence', { lead: true })).toBeNull();
   });
 });
 

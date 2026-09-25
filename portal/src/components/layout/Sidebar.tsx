@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Briefcase, BookOpen, Users,
+  LayoutDashboard, Briefcase, BookOpen, HardHat,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
   Eye, EyeOff, Pencil, Check,
   ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard, ClipboardList,
@@ -41,7 +41,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/dashboard',            label: 'Dashboard',            icon: LayoutDashboard, flag: null,                    fixed: true  },
   { href: '/hire',                 label: 'HIRE',                 icon: Briefcase,       flag: 'hiring',                fixed: false },
   { href: '/lead',                 label: 'LEAD',                 icon: BookOpen,        flag: 'lead',                  fixed: false },
-  { href: '/protect',              label: 'PROTECT',              icon: Users,           flag: 'protect',               fixed: false },
+  { href: '/protect',              label: 'PROTECT · H&S',        icon: HardHat,          flag: 'protect',               fixed: false },
   { href: '/athletes-to-industry', label: 'Athletes To Industry', icon: Trophy,          flag: 'athletes_to_industry',  fixed: false, showWhenDisabled: true, group: 'Programmes' },
   { href: '/dev-plans',            label: 'Development Plans',    icon: ClipboardList,   flag: null,                    fixed: false, group: 'Programmes' },
   { href: '/calendar',             label: 'Calendar',             icon: CalendarDays,    flag: 'calendar',              fixed: false },

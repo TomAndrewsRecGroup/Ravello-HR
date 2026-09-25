@@ -3,6 +3,8 @@ import GroupedTabs from '@/components/layout/GroupedTabs';
 import { isRouteEnabled } from '@/lib/moduleAccess';
 import { currentModuleFlags } from '@/lib/auth/moduleFlags';
 
+// Absence, employee documents, offboarding and the HR dashboard moved
+// here from PROTECT on 2026-09-24, when PROTECT became Health & Safety.
 const TAB_GROUPS = [
   {
     label: 'People',
@@ -10,12 +12,15 @@ const TAB_GROUPS = [
       { href: '/lead/employee-records', label: 'Employees' },
       { href: '/lead/org-chart',        label: 'Org Chart' },
       { href: '/lead/onboarding',       label: 'Onboarding' },
+      { href: '/lead/offboarding',      label: 'Offboarding' },
+      { href: '/lead/absence',          label: 'Absence' },
     ],
   },
   {
     label: 'Docs',
     tabs: [
-      { href: '/lead/documents',              label: 'Documents' },
+      { href: '/lead/documents',               label: 'Documents' },
+      { href: '/lead/employee-docs',           label: 'Employee Docs' },
       { href: '/lead/policy-acknowledgements', label: 'Sign-off' },
     ],
   },
@@ -23,11 +28,17 @@ const TAB_GROUPS = [
     label: 'Develop',
     tabs: [
       { href: '/lead/learning',   label: 'Learning' },
-      { href: '/lead/training',   label: 'Training' },
+      { href: '/lead/training',   label: 'Development needs' },
       { href: '/lead/reviews',    label: 'Reviews' },
       { href: '/lead/skills',     label: 'Skills' },
       { href: '/lead/roadmap',    label: 'Roadmap' },
-      { href: '/lead/hr-reports', label: 'Reports' },
+    ],
+  },
+  {
+    label: 'Insight',
+    tabs: [
+      { href: '/lead/hr-dashboard', label: 'HR Dashboard' },
+      { href: '/lead/hr-reports',   label: 'Reports' },
     ],
   },
 ];
@@ -41,7 +52,7 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
     .filter(g => g.tabs.length > 0);
   return (
     <>
-      <Topbar title="LEAD" subtitle="People, documents and development" />
+      <Topbar title="LEAD" subtitle="People, HR, documents and development" />
       <GroupedTabs groups={groups} />
       {children}
     </>

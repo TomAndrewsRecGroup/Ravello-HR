@@ -38,6 +38,10 @@ PAIRS=(
   "admin/src/components/brand/BrandIntro.tsx|portal/src/components/brand/BrandIntro.tsx"
   "admin/src/components/brand/BrandIntro.module.css|portal/src/components/brand/BrandIntro.module.css"
   "admin/src/lib/auth/existingInvitee.ts|portal/src/lib/auth/existingInvitee.ts"
+  "admin/src/lib/hs/vocab.ts|portal/src/lib/hs/vocab.ts"
+  "admin/src/lib/hs/recurrence.ts|portal/src/lib/hs/recurrence.ts"
+  "admin/src/lib/hs/types.ts|portal/src/lib/hs/types.ts"
+  "admin/src/lib/hs/evidence.ts|portal/src/lib/hs/evidence.ts"
   "admin/src/lib/storage/fileKinds.ts|portal/src/lib/storage/fileKinds.ts"
   "admin/src/lib/auth/accessTokens.ts|portal/src/lib/auth/accessTokens.ts"
 )

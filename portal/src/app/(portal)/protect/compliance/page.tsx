@@ -1,178 +1,192 @@
 import type { Metadata } from 'next';
+import { AlertTriangle, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { ShieldCheck, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import { readAllPages } from '@/lib/supabase/paged';
+import { describeRecurrence, daysUntil, ragFor, type Rag } from '@/lib/hs/recurrence';
+import { HS_COMPLETION_OUTCOME_LABELS, HS_REGISTER_CATEGORY_LABELS, domainOf } from '@/lib/hs/vocab';
+import type { HsCompletion, HsFile, HsRegisterItem } from '@/lib/hs/types';
+import EvidenceLinks from '@/components/hs/EvidenceLinks';
 
-export const metadata: Metadata = { title: 'Compliance' };
-export const revalidate = 30;
+export const metadata: Metadata = { title: 'H&S Register' };
+export const dynamic = 'force-dynamic';
 
-const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  pending:   { background: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
-  in_review: { background: 'rgba(245,158,11,0.12)',  color: '#92400E' },
-  complete:  { background: 'rgba(22,163,74,0.12)',   color: 'var(--emerald)' },
-  overdue:   { background: 'rgba(220,38,38,0.12)',   color: 'var(--rose)' },
+// The client's Health & Safety register: every statutory and recurring
+// item, when it was last done, when it is next due, the outcome and the
+// evidence. Recorded by Core OS 360 and the client's H&S providers
+// (a client cannot mark an item done: nothing here is self-certified).
+// HR compliance items, which are not part of the H&S register, are
+// listed separately underneath.
+
+const RAG: Record<Rag, { label: string; colour: string; icon: React.ElementType }> = {
+  red:      { label: 'Overdue',  colour: 'var(--danger)',    icon: AlertTriangle },
+  amber:    { label: 'Due soon', colour: 'var(--amber)',     icon: Clock },
+  green:    { label: 'On track', colour: 'var(--success)',   icon: ShieldCheck },
+  complete: { label: 'Complete', colour: 'var(--ink-faint)', icon: CheckCircle2 },
+  none:     { label: 'No date',  colour: 'var(--ink-faint)', icon: Clock },
 };
 
-const STATUS_ICON: Record<string, React.ReactNode> = {
-  pending:   <Clock size={13} style={{ color: '#94A3B8' }} />,
-  in_review: <AlertTriangle size={13} style={{ color: 'var(--amber)' }} />,
-  complete:  <CheckCircle2 size={13} style={{ color: 'var(--success)' }} />,
-  overdue:   <AlertTriangle size={13} style={{ color: 'var(--danger)' }} />,
-};
+const fmt = (d: string | null) =>
+  d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
 
-function fmtCategory(cat: string): string {
-  return cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+const categoryLabel = (c: string | null) =>
+  (c && (HS_REGISTER_CATEGORY_LABELS as Record<string, string>)[c])
+  || (c === 'health_safety' ? 'Health & safety' : (c ?? 'Other').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+
+function dueText(item: HsRegisterItem): string {
+  if (item.status === 'complete') return item.last_completed_on ? `Done ${fmt(item.last_completed_on)}` : 'Complete';
+  if (!item.due_date) return 'No due date';
+  const d = daysUntil(item.due_date);
+  if (d < 0) return `${-d} day${d === -1 ? '' : 's'} overdue`;
+  if (d === 0) return 'Due today';
+  if (d <= 7) return `Due in ${d} day${d === 1 ? '' : 's'}`;
+  return `Due ${fmt(item.due_date)}`;
 }
 
-function fmtDate(d: string): string {
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function isOverdue(item: any): boolean {
-  return item.status !== 'complete' && new Date(item.due_date) < new Date();
-}
-
-function daysUntil(due: string): number {
-  return Math.ceil((new Date(due).getTime() - Date.now()) / 86400000);
-}
-
-export default async function CompliancePage() {
+export default async function HsRegisterPage() {
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
-  const { data: items } = await supabase
-    .from('compliance_items')
-    .select('id,title,category,status,due_date,notes,created_at')
-    .eq('company_id', companyId)
-    .order('due_date', { ascending: true });
+  const [items, completions, files] = await Promise.all([
+    readAllPages<HsRegisterItem>((from, to) =>
+      supabase.from('compliance_items')
+        .select('id, company_id, title, description, category, status, due_date, recurrence_every, recurrence_unit, last_completed_on, legal_basis, source, site_id')
+        .eq('company_id', companyId)
+        .order('due_date', { ascending: true, nullsFirst: false }).order('id')
+        .range(from, to)),
+    readAllPages<HsCompletion>((from, to) =>
+      supabase.from('hs_register_completions')
+        .select('id, item_id, completed_on, outcome, notes, next_due_on, recorded_by_kind, created_at')
+        .eq('company_id', companyId)
+        .order('completed_on', { ascending: false }).order('id')
+        .range(from, to)),
+    readAllPages<HsFile>((from, to) =>
+      supabase.from('hs_files')
+        .select('id, entity_type, entity_id, storage_path, file_name, size_bytes, created_at')
+        .eq('company_id', companyId)
+        .in('entity_type', ['register_item', 'register_completion'])
+        .order('created_at', { ascending: false }).order('id')
+        .range(from, to)),
+  ]);
 
-  const all = (items ?? []).map((ci: any) => ({
-    ...ci,
-    _overdue: isOverdue(ci),
-  }));
+  const hs = items.rows.filter(i => domainOf(i.category) === 'hs');
+  const hr = items.rows.filter(i => domainOf(i.category) === 'hr');
+  const latestFor = new Map<string, HsCompletion>();
+  for (const c of completions.rows) if (!latestFor.has(c.item_id)) latestFor.set(c.item_id, c);
+  const filesFor = (item: HsRegisterItem) => {
+    const latest = latestFor.get(item.id);
+    return files.rows.filter(f =>
+      (f.entity_type === 'register_item' && f.entity_id === item.id)
+      || (latest && f.entity_type === 'register_completion' && f.entity_id === latest.id));
+  };
 
-  // Resolve effective status (auto-flag overdue)
-  const resolved = all.map((ci: any) => ({
-    ...ci,
-    _effectiveStatus: ci._overdue ? 'overdue' : ci.status,
-  }));
-
-  const pending   = resolved.filter(ci => ci._effectiveStatus === 'pending');
-  const inReview  = resolved.filter(ci => ci._effectiveStatus === 'in_review');
-  const overdue   = resolved.filter(ci => ci._effectiveStatus === 'overdue');
-  const complete  = resolved.filter(ci => ci._effectiveStatus === 'complete');
-
-  const outstanding = pending.length + inReview.length + overdue.length;
-
-  // Group by category for the full list
-  const categories = [...new Set(resolved.map(ci => ci.category))].sort();
+  const counts = { red: 0, amber: 0, green: 0 };
+  for (const i of hs) {
+    const r = ragFor(i.status, i.due_date);
+    if (r === 'red' || r === 'amber' || r === 'green') counts[r]++;
+  }
+  const categories = [...new Set(hs.map(i => i.category ?? 'hs_other'))]
+    .sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b)));
+  const loadError = items.error ?? completions.error ?? files.error;
 
   return (
-      <main className="portal-page flex-1">
+    <main className="portal-page flex-1 space-y-8">
+      {loadError && (
+        <p className="card p-3 text-sm" style={{ color: 'var(--danger)' }}>Part of your register could not be loaded. Refresh to try again.</p>
+      )}
 
-        {all.length === 0 ? (
-          <div className="card p-12">
-            <div className="empty-state">
-              <ShieldCheck size={28} style={{ color: 'var(--teal)' }} />
-              <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>
-                No compliance items
-              </p>
-              <p className="text-sm max-w-[300px]" style={{ color: 'var(--ink-faint)' }}>
-                Core OS 360 will add compliance obligations here as they arise.
-              </p>
-            </div>
+      {hs.length === 0 ? (
+        <div className="card p-12">
+          <div className="empty-state">
+            <ShieldCheck size={28} style={{ color: 'var(--teal)' }} />
+            <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>Your H&amp;S register is empty</p>
+            <p className="text-sm max-w-[340px]" style={{ color: 'var(--ink-faint)' }}>
+              Core OS 360 and your H&amp;S provider add your statutory checks and recurring inspections here.
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Summary stat row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-              {[
-                { label: 'Overdue',   value: overdue.length,  color: 'var(--danger)',  bg: 'rgba(220,38,38,0.06)' },
-                { label: 'Pending',   value: pending.length,  color: 'var(--amber)',  bg: 'rgba(245,158,11,0.06)' },
-                { label: 'In Review', value: inReview.length, color: 'var(--blue)', bg: 'rgba(59,130,246,0.06)' },
-                { label: 'Complete',  value: complete.length, color: 'var(--success)',  bg: 'rgba(22,163,74,0.06)' },
-              ].map(s => (
-                <div key={s.label} className="card p-4" style={{ background: s.bg, borderColor: `color-mix(in srgb, ${s.color} 20%, transparent)` }}>
-                  <p className="text-xs font-medium mb-1" style={{ color: s.color }}>{s.label}</p>
-                  <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{s.value}</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-4">
+            {(['red', 'amber', 'green'] as const).map(r => {
+              const Icon = RAG[r].icon;
+              return (
+                <div key={r} className="card p-4">
+                  <p className="text-xs font-medium mb-1 flex items-center gap-1.5" style={{ color: RAG[r].colour }}><Icon size={13} aria-hidden /> {RAG[r].label}</p>
+                  <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{counts[r]}</p>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            {outstanding > 0 && (
-              <p className="text-sm mb-6" style={{ color: 'var(--ink-soft)' }}>
-                {outstanding} outstanding item{outstanding !== 1 ? 's' : ''} requiring attention
-              </p>
-            )}
-
-            {/* Items by category */}
-            <div className="space-y-8">
-              {categories.map(cat => {
-                const catItems = resolved.filter(ci => ci.category === cat);
-                const catLabel = fmtCategory(cat);
-                return (
-                  <section key={cat}>
-                    <h2
-                      className="font-display font-semibold text-sm mb-3 flex items-center gap-2"
-                      style={{ color: 'var(--ink)' }}
-                    >
-                      <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'var(--purple)' }} />
-                      {catLabel}
-                      <span className="font-normal text-xs" style={{ color: 'var(--ink-faint)' }}>
-                        ({catItems.length})
-                      </span>
-                    </h2>
-                    <div className="space-y-3">
-                      {catItems.map((ci: any) => {
-                        const days = daysUntil(ci.due_date);
-                        const eff  = ci._effectiveStatus;
-                        return (
-                          <div
-                            key={ci.id}
-                            className="card p-5"
-                            style={eff === 'overdue' ? { borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(220,38,38,0.02)' } : undefined}
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-start gap-3 flex-1 min-w-0">
-                                <div className="mt-0.5 flex-shrink-0">
-                                  {STATUS_ICON[eff] ?? STATUS_ICON.pending}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{ci.title}</p>
-                                  {ci.description && (
-                                    <p className="text-sm mt-0.5 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-                                      {ci.description}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                    <span
-                                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                                      style={STATUS_STYLE[eff] ?? STATUS_STYLE.pending}
-                                    >
-                                      {eff.replace(/_/g, ' ')}
-                                    </span>
-                                    <span className="text-xs" style={{ color: eff === 'overdue' ? 'var(--rose)' : 'var(--ink-faint)', fontWeight: eff === 'overdue' ? 600 : undefined }}>
-                                      {eff === 'overdue'
-                                        ? `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`
-                                        : eff === 'complete'
-                                          ? `Due ${fmtDate(ci.due_date)}`
-                                          : days <= 7
-                                            ? `Due in ${days} day${days !== 1 ? 's' : ''}`
-                                            : `Due ${fmtDate(ci.due_date)}`}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+          {categories.map(cat => (
+            <section key={cat}>
+              <h2 className="font-display font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+                <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--purple)' }} aria-hidden />
+                {categoryLabel(cat)}
+              </h2>
+              <ul className="space-y-3">
+                {hs.filter(i => (i.category ?? 'hs_other') === cat).map(item => {
+                  const rag = ragFor(item.status, item.due_date);
+                  const R = RAG[rag];
+                  const latest = latestFor.get(item.id);
+                  return (
+                    <li key={item.id} className="card p-5" style={rag === 'red' ? { borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)' } : undefined}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <R.icon size={15} style={{ color: R.colour, marginTop: 2, flexShrink: 0 }} aria-hidden />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{item.title}</p>
+                            {item.description && <p className="text-sm mt-0.5" style={{ color: 'var(--ink-soft)' }}>{item.description}</p>}
+                            <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+                              {describeRecurrence(item.recurrence_every, item.recurrence_unit)}
+                              {item.legal_basis && ` · ${item.legal_basis}`}
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </main>
+                        </div>
+                        <div className="text-right text-sm">
+                          <p className="font-medium" style={{ color: R.colour }}>{R.label}</p>
+                          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{dueText(item)}</p>
+                        </div>
+                      </div>
+                      {latest && (
+                        <p className="text-xs mt-3 pl-7" style={{ color: 'var(--ink-soft)' }}>
+                          Last done {fmt(latest.completed_on)}: {HS_COMPLETION_OUTCOME_LABELS[latest.outcome]}
+                          {latest.notes && <span style={{ color: 'var(--ink-faint)' }}> · {latest.notes}</span>}
+                        </p>
+                      )}
+                      <div className="pl-7"><EvidenceLinks files={filesFor(item)} /></div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </>
+      )}
+
+      {hr.length > 0 && (
+        <section>
+          <h2 className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>HR compliance</h2>
+          <p className="text-xs mb-3" style={{ color: 'var(--ink-faint)' }}>Employment and HR obligations Core OS 360 tracks for you.</p>
+          <ul className="card divide-y" style={{ borderColor: 'var(--line)' }}>
+            {hr.map(item => {
+              const R = RAG[ragFor(item.status, item.due_date)];
+              return (
+                <li key={item.id} className="flex items-center justify-between gap-3 p-4 text-sm">
+                  <span className="min-w-0">
+                    <span className="block font-medium truncate" style={{ color: 'var(--ink)' }}>{item.title}</span>
+                    <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{categoryLabel(item.category)}</span>
+                  </span>
+                  <span className="text-right shrink-0">
+                    <span className="block text-xs font-medium" style={{ color: R.colour }}>{R.label}</span>
+                    <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{dueText(item)}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </main>
   );
 }

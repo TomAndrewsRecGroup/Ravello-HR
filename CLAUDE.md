@@ -646,7 +646,7 @@ one of these defects compiled, rendered and reported success.
 ### The four CI guards — run them before merging
 
 ```
-bash scripts/check-shared-dupes.sh         # 22 byte-identical pairs across the two apps
+bash scripts/check-shared-dupes.sh         # 26 byte-identical pairs across the two apps
 bash scripts/check-row-cap.sh              # no query asks for more than 1,000 rows
 bash scripts/check-route-validation.sh     # ratchet: 49 unvalidated routes, may only shrink
 bash scripts/check-admin-routes-linked.sh  # every admin page is reachable from the sidebar
@@ -1925,3 +1925,43 @@ Timeline (the portal side is Phase 1b).
   rebuild (1b). No email is logged to `email_log` for a provider invite,
   because `email_log_target` has no provider value; the audit log
   records it.
+
+---
+
+## Health & Safety Phase 1b: PROTECT is Health & Safety (2026-09-24)
+
+The portal's PROTECT section is now **PROTECT · Health & Safety**:
+Overview, Register (`/protect/compliance`, URL kept), Actions, Timeline
+and Reports. The HR pages that lived under it moved to LEAD.
+
+- **Moved:** `/protect/{absence,offboarding,hr-dashboard,employee-docs}`
+  → `/lead/...`. Permanent (308) redirects live in `portal/redirects.mjs`,
+  read by `next.config.mjs`. Bookmarks, emailed links and stored
+  notification links keep working. `redirects.test.ts` fails if a
+  source still has a page or a destination has none.
+- **Their flag KEYS are unchanged**, because they are stored per client in
+  `companies.feature_flags`. Only the master moved: those pages now need
+  `lead` + their own flag, not `protect`. At the time of the move, `arg`
+  had both masters on and `oarugby` had both off, so no client's access
+  changed. `FLAG_GROUPS` lists them under LEAD.
+- **The Register is read-only for clients** by design: nothing on it is
+  self-certified. It shows H&S items (`domain = 'hs'`) with recurrence,
+  last done, next due, the latest outcome and evidence. HR-domain items
+  are listed separately underneath, so nothing a client could see
+  before has vanished.
+- **The overview names every outside provider** who can see and record
+  the client's H&S data, with their scopes and end dates, from
+  `hs_provider_companies` (client read policy, 094).
+- **Evidence opens with a link signed under the client's own session.**
+  The `hs-evidence` storage policy limits a client to their own folder.
+  No service role is involved.
+- **`lib/hs/{vocab,recurrence,types,evidence}.ts` are shared-dupe pairs
+  now** (26 pairs).
+- **`SectionTabs` highlights ONE tab**, the longest match. `/protect`
+  (Overview) is a prefix of every other tab and used to light up
+  alongside them.
+- **Still to do:** the admin client-detail "PROTECT" tab becomes "HR"
+  plus a new "H&S" tab. Every admin compliance-category writer
+  (`ClientDetailTabs`, `AddComplianceItem`, `api/admin/compliance`, the BD
+  convert route) must move to `HS_REGISTER_CATEGORIES` before the
+  category CHECK migration.

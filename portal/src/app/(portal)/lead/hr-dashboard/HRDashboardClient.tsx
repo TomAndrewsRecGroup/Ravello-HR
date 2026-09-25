@@ -93,8 +93,8 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
   const latest = metrics[0];
 
   const quickLinks = [
-    { href: '/protect/employee-docs', icon: FileText,     label: 'Employee Docs',  stat: empDocCount,    alert: expiredDocs > 0,    alertText: `${expiredDocs} expired` },
-    { href: '/protect/absence',       icon: CheckCircle2, label: 'Absence',        stat: absencePending, alert: absencePending > 0, alertText: `${absencePending} pending` },
+    { href: '/lead/employee-docs', icon: FileText,     label: 'Employee Docs',  stat: empDocCount,    alert: expiredDocs > 0,    alertText: `${expiredDocs} expired` },
+    { href: '/lead/absence',       icon: CheckCircle2, label: 'Absence',        stat: absencePending, alert: absencePending > 0, alertText: `${absencePending} pending` },
     { href: '/lead/training',         icon: BookOpen,     label: 'Training Needs', stat: openTraining,   alert: openTraining > 0,   alertText: `${openTraining} open` },
     { href: '/lead/reviews',          icon: ClipboardList,label: 'Reviews',        stat: pendingReviews, alert: pendingReviews > 0, alertText: `${pendingReviews} pending` },
   ];

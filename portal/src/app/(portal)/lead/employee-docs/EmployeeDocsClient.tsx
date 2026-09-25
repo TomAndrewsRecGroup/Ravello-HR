@@ -84,7 +84,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
       setDocs(prev => [...prev, data as EmpDoc].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
       setShowForm(false);
       setForm({ employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
-      revalidatePortalPath('/protect/employee-docs');
+      revalidatePortalPath('/lead/employee-docs');
     }
     setSaving(false);
   }

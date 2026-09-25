@@ -103,7 +103,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
     setSaving(false);
     setShowTemplateForm(false);
     setTemplateName(''); setTemplateDesc(''); setTemplateTasks([]);
-    revalidatePortalPath('/protect/offboarding');
+    revalidatePortalPath('/lead/offboarding');
   }
 
   async function startOffboarding() {
@@ -147,7 +147,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
     setSaving(false);
     setShowStartForm(false);
     setSelectedEmployee(''); setSelectedTemplate(''); setLastWorkingDay(''); setReason('resignation');
-    revalidatePortalPath('/protect/offboarding');
+    revalidatePortalPath('/lead/offboarding');
   }
 
   async function toggleTask(taskId: string, currentStatus: string) {
@@ -157,14 +157,14 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
       completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
       completed_by: newStatus === 'completed' ? userId : null,
     }).eq('id', taskId);
-    if (!error) revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/lead/offboarding');
   }
 
   async function completeInstance(instanceId: string) {
     const { error } = await supabase.from('offboarding_instances').update({
       status: 'completed', completed_at: new Date().toISOString(),
     }).eq('id', instanceId);
-    if (!error) revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/lead/offboarding');
   }
 
   async function saveExitNotes(instanceId: string) {
@@ -173,7 +173,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
       exit_interview_notes: exitNotes,
     }).eq('id', instanceId);
     setSavingNotes(false);
-    if (!error) revalidatePortalPath('/protect/offboarding');
+    if (!error) revalidatePortalPath('/lead/offboarding');
   }
 
   function addTask() {

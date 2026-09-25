@@ -60,20 +60,23 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'org_chart',        label: 'Organisation Chart' },
       { key: 'documents',        label: 'Document Management' },
       { key: 'roadmap',          label: 'Roadmap' },
-    ],
-  },
-  {
-    label: 'PROTECT',
-    description: 'Compliance, absence and risk',
-    tier: 'paid',
-    flags: [
-      { key: 'protect',                label: 'PROTECT Module (master)' },
-      { key: 'compliance',             label: 'Compliance Tracking' },
+      // Moved from PROTECT on 2026-09-24, when PROTECT became Health &
+      // Safety. The KEYS are unchanged (they are stored per client in
+      // companies.feature_flags); only the page's master is now `lead`.
       { key: 'absence',                label: 'Absence Management' },
       { key: 'employee_docs',          label: 'Employee Documents' },
       { key: 'offboarding',            label: 'Offboarding Workflows' },
       { key: 'policy_acknowledgement', label: 'Policy Acknowledgements' },
       { key: 'protect_dashboard',      label: 'HR Dashboard' },
+    ],
+  },
+  {
+    label: 'PROTECT',
+    description: 'Health & Safety: register, providers and the Safety Timeline',
+    tier: 'paid',
+    flags: [
+      { key: 'protect',                label: 'PROTECT · Health & Safety (master)' },
+      { key: 'compliance',             label: 'H&S Register' },
       { key: 'protect_reports',        label: 'PROTECT Reports' },
     ],
   },
