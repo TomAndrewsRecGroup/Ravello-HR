@@ -2,14 +2,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Loader2, X, ShieldCheck } from 'lucide-react';
+import { COMPLIANCE_CATEGORIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUSES, COMPLIANCE_STATUS_LABELS } from '@/lib/ui/statusMaps';
 
 interface Company { id: string; name: string; }
 
 // 'health_safety' removed 2026-09-25: add an H&S item from the client's
 // Health & Safety register instead (/health-safety/<companyId>/register),
 // which has recurrence, evidence and the Safety Timeline this form lacks.
-const CATEGORIES = ['hmrc', 'data_protection', 'employment_law', 'right_to_work', 'training', 'other'];
-const STATUSES   = ['pending', 'in_progress', 'complete'];
+//
+// Categories and statuses come from statusMaps.ts, not a hand-typed list:
+// this form used to offer 'hmrc' / 'right_to_work' / 'employment_law',
+// none of which COMPLIANCE_CATEGORY_LABELS has a label for, and
+// 'in_progress' as a status, which is not a live compliance_status value
+// (the insert 22P02'd).
 
 export default function AddComplianceItem({ companies }: { companies: Company[] }) {
   const router = useRouter();
@@ -34,6 +39,7 @@ export default function AddComplianceItem({ companies }: { companies: Company[] 
     e.preventDefault();
     if (!form.company_id) { setError('Pick a client.'); return; }
     if (!form.title.trim()) { setError('Title is required.'); return; }
+    if (!form.due_date) { setError('Due date is required.'); return; }
     setLoading(true);
     setError('');
     try {
@@ -95,17 +101,17 @@ export default function AddComplianceItem({ companies }: { companies: Company[] 
         <div className="form-group">
           <label className="label">Category</label>
           <select className="input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {COMPLIANCE_CATEGORIES.map(c => <option key={c} value={c}>{COMPLIANCE_CATEGORY_LABELS[c]}</option>)}
           </select>
         </div>
         <div className="form-group">
-          <label className="label">Due date</label>
+          <label className="label">Due date *</label>
           <input type="date" className="input" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
         </div>
         <div className="form-group">
           <label className="label">Status</label>
           <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            {COMPLIANCE_STATUSES.map(s => <option key={s} value={s}>{COMPLIANCE_STATUS_LABELS[s]}</option>)}
           </select>
         </div>
         {error && (
