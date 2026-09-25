@@ -3591,3 +3591,65 @@ the list (title/date/score/finding count) and the write-only runner.
   `/health-safety` top level so needs no sidebar entry of its own),
   both production builds compile. Migration 113 applied live and
   verified (`hs_scope_for_entity('audit_response')` reads back `'audits'`).
+
+---
+
+## Equipment inspection evidence trail (2026-09-25, migration 114)
+
+Phase 5 (112) shipped `hs_equipment` register-shaped — a mutable
+`next_inspection_due` a session updates directly — and its own
+CLAUDE.md entry flagged the gap this closes: "there is no separate
+'was it inspected' evidence trail." Recording an inspection meant
+typing two dates into `window.prompt()`s with no history, no
+certificate, and no record of what a FAILED inspection actually found.
+
+- **`hs_equipment_inspections` mirrors `hs_register_completions`
+  exactly** — insert-only (a correction is a new row), `company_id`
+  filled from the parent equipment row and never trusted from the
+  caller (`hs_equipment_inspection_fill()`, the same discipline
+  `hs_completion_fill()`/`hs_audit_response_fill()` already use), and a
+  roll-forward trigger (`hs_equipment_inspection_roll()`) that only
+  advances `hs_equipment.last_inspected_on`/`next_inspection_due` on a
+  **pass**, and only when it is the newest inspection. A **fail** is
+  recorded and timelined but moves nothing — the exact X8 lesson
+  `hs_completion_roll()` already learned ("a failed H&S check marks the
+  item in_review and never rolls the register forward"), applied here
+  before it could be relearned the hard way.
+- **The Safety Timeline duty for "was this equipment inspected" moves
+  ENTIRELY to the new table's own trigger.** `hs_equipment`'s existing
+  `'inspected'` branch (112) is removed from `hs_event_equipment()`: a
+  pass no longer logs twice (once from the roll's column UPDATE, once
+  from the inspection row itself), and a fail — which deliberately
+  never changes `last_inspected_on` — now logs AT ALL, which it never
+  did under the old column-change-triggered branch. `'added'` and
+  `'status_<x>'` are unchanged.
+- **`hs_scope_for_entity()` gains `'equipment_inspection' → 'register'`**
+  for evidence uploads (a certificate or photo against a specific
+  inspection) — sharing the register's scope rather than inventing a
+  new `'equipment'` entry in `HS_SCOPES`, which would have disturbed
+  `vocab.test.ts`'s pin against 094's now-historical (pre-105,
+  provider-era) `scopes` CHECK for no real benefit. Scope stopped
+  gating anything RLS-wise the day 105 removed the provider grants that
+  were the only thing that ever read it; it is purely a CHECK-satisfying
+  label now.
+- **`EquipmentClient.tsx` gained the register's own accordion pattern**
+  (expand a row, see history, record a new entry) in place of the
+  original `window.prompt()` pair — a real form (date, pass/fail, next
+  due, notes, evidence upload) plus a per-equipment inspection history
+  list with evidence links, matching `RegisterClient.tsx`'s own shape.
+  Portal's read-only equipment page needed NO change: it already reads
+  `last_inspected_on`/`next_inspection_due` off `hs_equipment` directly,
+  and those columns are now correctly kept in sync by the roll trigger
+  exactly as before — the trail is additive underneath a page that
+  already displayed its result correctly.
+- Mutation-checked, live, in rolled-back transactions (not just unit
+  tests): a `fail` inspection leaves `last_inspected_on`/
+  `next_inspection_due` untouched; a `pass` immediately after rolls
+  both forward; both produce the correct `hs_events` row
+  (`inspection_failed` / `inspected`).
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (832 admin — 828 + 4 new vocab/shape assertions; 248 portal,
+  unchanged — this touched admin only), all five CI guards pass, both
+  production builds compile. Migration 114 applied live and verified
+  (RLS on, both policies present, all three triggers registered,
+  `hs_scope_for_entity('equipment_inspection')` reads back `'register'`).

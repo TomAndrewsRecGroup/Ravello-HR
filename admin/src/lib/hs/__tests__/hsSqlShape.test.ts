@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 // Add each new H&S migration to FILES.
 
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
-const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql', '112_hs_incidents_equipment_toolbox.sql'];
+const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql', '112_hs_incidents_equipment_toolbox.sql', '114_hs_equipment_inspections.sql'];
 const sql = FILES.map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 type Policy = { name: string; table: string; body: string };
@@ -94,6 +94,13 @@ describe('H&S RLS shape', () => {
     }
   });
 
+  it('hs_equipment_inspections IS insert-only, like the register\'s own completions', () => {
+    // Unlike the equipment row itself, an inspection is a finished
+    // record of a specific visit — a correction is a new row, same
+    // discipline as hs_register_completions.
+    expect(sql).toMatch(/REVOKE UPDATE, DELETE, TRUNCATE ON public\.hs_equipment_inspections\s+FROM PUBLIC, anon, authenticated/);
+  });
+
   it('the timeline and recorded evidence cannot be rewritten by a session', () => {
     expect(sql).toMatch(/REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public\.hs_events FROM PUBLIC, anon, authenticated/);
     for (const t of ['hs_register_completions', 'hs_activities', 'hs_files', 'hs_audits', 'hs_audit_responses']) {
@@ -128,7 +135,7 @@ describe('H&S RLS shape', () => {
 });
 
 describe('every surviving H&S source table writes to the Safety Timeline', () => {
-  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents', 'hs_audits', 'hs_incidents', 'hs_equipment'];
+  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents', 'hs_audits', 'hs_incidents', 'hs_equipment', 'hs_equipment_inspections'];
   // Sector packs (106) are staff reference data — typical register items
   // for a sector, applied TO a client's own register. They are never a
   // record of anything that happened to a specific client, so unlike
