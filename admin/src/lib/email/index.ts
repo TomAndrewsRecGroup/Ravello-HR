@@ -18,8 +18,6 @@ export type { ClientWelcomeInput }       from './templates/clientWelcome';
 export { userInvitedEmail }              from './templates/userInvited';
 export type { UserInvitedInput }         from './templates/userInvited';
 
-export { hsProviderInvitedEmail }        from './templates/hsProviderInvited';
-export type { HsProviderInvitedInput }   from './templates/hsProviderInvited';
 
 export { passwordResetEmail }            from './templates/passwordReset';
 export type { PasswordResetInput }       from './templates/passwordReset';
@@ -45,7 +43,7 @@ export type { ServiceRequestReceivedInput } from './templates/serviceRequestRece
 export { hsCheckFailedEmail }            from './templates/hsCheckFailed';
 export type { HsCheckFailedInput }       from './templates/hsCheckFailed';
 
-export { providerWeeklyDigestEmail, clientWeeklySummaryEmail } from './templates/hsWeekly';
+export { clientWeeklySummaryEmail } from './templates/hsWeekly';
 export type { WeeklyCompanySection, WeeklyItem, WeeklyAction, WeeklyActivity } from './templates/hsWeekly';
 
 export { leaveRequestedEmail, leaveDecisionEmail } from './templates/leave';

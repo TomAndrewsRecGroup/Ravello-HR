@@ -39,10 +39,6 @@ type AuditAction =
   // /api/admin/send-email (Dev Plan share, candidate share, custom
   // message). The email_log row carries the detail.
   | 'email.sent'
-  // H&S provider logins (migration 094): given and taken away by staff
-  // at /health-safety/providers.
-  | 'hs_provider.user_invited'
-  | 'hs_provider.user_revoked'
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'

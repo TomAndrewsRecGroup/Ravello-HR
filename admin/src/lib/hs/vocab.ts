@@ -3,6 +3,10 @@
 // side gains a value the other lacks (the statusMaps discipline: a
 // string the database refuses is checked by nothing until a 23514).
 
+// A named subject-area for a piece of evidence (hs_files.entity_type is
+// validated against hs_scope_for_entity(), which this mirrors for
+// display; it is no longer used to gate who may see what — 105 removed
+// the provider grants that were the only thing scopes gated).
 export const HS_SCOPES = ['register', 'documents', 'training', 'audits', 'incidents'] as const;
 export type HsScope = typeof HS_SCOPES[number];
 export const HS_SCOPE_LABELS: Record<HsScope, string> = {
@@ -11,30 +15,6 @@ export const HS_SCOPE_LABELS: Record<HsScope, string> = {
   training:  'Training',
   audits:    'Audits',
   incidents: 'Incidents',
-};
-
-export const HS_PROVIDER_TYPES = ['consultancy', 'training', 'inspection', 'other'] as const;
-export type HsProviderType = typeof HS_PROVIDER_TYPES[number];
-export const HS_PROVIDER_TYPE_LABELS: Record<HsProviderType, string> = {
-  consultancy: 'H&S consultancy',
-  training:    'Training provider',
-  inspection:  'Inspection body',
-  other:       'Other',
-};
-
-export const HS_ACCESS_LEVELS = ['read', 'write'] as const;
-export type HsAccessLevel = typeof HS_ACCESS_LEVELS[number];
-export const HS_ACCESS_LEVEL_LABELS: Record<HsAccessLevel, string> = {
-  read:  'View only',
-  write: 'View and record',
-};
-
-export const HS_ASSIGNMENT_STATUSES = ['active', 'suspended', 'ended'] as const;
-export type HsAssignmentStatus = typeof HS_ASSIGNMENT_STATUSES[number];
-export const HS_ASSIGNMENT_STATUS_LABELS: Record<HsAssignmentStatus, string> = {
-  active:    'Active',
-  suspended: 'Suspended',
-  ended:     'Ended',
 };
 
 export const HS_ACTIVITY_TYPES = [
@@ -106,5 +86,4 @@ export const HS_ENTITY_LABELS: Record<string, string> = {
   training:            'Training',
   audit:               'Audit',
   incident:            'Incident',
-  provider_access:     'Access',
 };

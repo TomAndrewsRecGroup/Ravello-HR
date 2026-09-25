@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { assertBodySize } from '@/lib/http/bodySize';
 import { normaliseAccessToken, redeemAccessToken } from '@/lib/auth/accessTokens';
-import { adminUrl } from '@/lib/adminUrl';
 
 export const runtime = 'nodejs';
 
@@ -94,18 +93,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       error: `Could not save password: ${updateErr.message}. Ask Core OS 360 for a fresh link.`,
     }, { status: 500 });
-  }
-
-  // An H&S provider works in the admin app, not here (the portal's
-  // middleware would only bounce them). Tell the form to send them
-  // there to sign in, rather than signing them in to a portal session
-  // they cannot use.
-  if ((claimed as { role?: string }).role === 'hs_provider') {
-    return NextResponse.json({
-      success: true,
-      email:   claimed.email,
-      next:    `${adminUrl()}/auth/login?reason=password-set`,
-    });
   }
 
   return NextResponse.json({ success: true, email: claimed.email });

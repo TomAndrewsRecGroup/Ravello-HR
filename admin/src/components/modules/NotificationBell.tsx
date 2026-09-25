@@ -50,7 +50,6 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   hs_item_added:              { icon: HardHat,       color: 'var(--blue)' },
   hs_action_done:             { icon: CheckCircle2,  color: 'var(--success)' },
   hs_followup_suggested:      { icon: Sparkles,      color: 'var(--purple)' },
-  provider_access_ending:     { icon: HardHat,       color: 'var(--amber)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
   onboarding_started:         { icon: Users,         color: 'var(--blue)' },

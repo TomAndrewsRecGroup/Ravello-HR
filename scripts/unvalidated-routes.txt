@@ -30,8 +30,6 @@ admin/src/app/api/admin/training-interests/[id]/route.ts
 admin/src/app/api/admin/training-interests/route.ts
 admin/src/app/api/admin/training-providers/[id]/route.ts
 admin/src/app/api/admin/training-providers/route.ts
-admin/src/app/api/bd-companies/[id]/convert/route.ts
-admin/src/app/api/bd-ivylens-dismiss/route.ts
 admin/src/app/api/brand-extract/route.ts
 admin/src/app/api/clients/[id]/route.ts
 admin/src/app/api/friction/analyze/route.ts

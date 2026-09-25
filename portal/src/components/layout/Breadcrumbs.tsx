@@ -24,8 +24,6 @@ const NOT_A_PAGE = new Set(['settings']);
 
 /** Route segments whose default title-casing reads wrong. */
 const LABELS: Record<string, string> = {
-  'bd-intelligence':     'BD Intelligence',
-  'bd-roles':            'BD Roles',
   'dev-plans':           'Development Plans',
   'athletes-to-industry':'Athletes To Industry',
   'value-reports':       'Value Reports',

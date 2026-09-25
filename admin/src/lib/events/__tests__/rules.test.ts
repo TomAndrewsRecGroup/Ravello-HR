@@ -29,9 +29,8 @@ const db = fakeSupabase({
   employee_notes: [], onboarding_instances: [], onboarding_templates: [],
   policy_acknowledgements: [{ id: 'row-1', company_id: 'co-1', document_id: 'doc-1', employee_id: 'emp-1', status: 'pending' }],
   documents: [{ id: 'doc-1', name: 'Handbook' }], policy_ack_tokens: [], email_log: [],
-  hs_providers: [{ id: 'p1', name: 'Lighthouse' }],
   hs_activities: [{ id: 'row-1', activity_type: 'site_visit', title: 'T', summary: 'S' }],
-  hs_register_completions: [{ id: 'comp-1', provider_id: 'p1' }],
+  hs_register_completions: [{ id: 'comp-1' }],
   companies: [{ id: 'co-1', feature_flags: {} }],
   candidates: [{ id: 'cand-1', full_name: 'Cand' }], requisitions: [{ id: 'r', title: 'Engineer' }],
   jev_decisions: [],
@@ -67,11 +66,11 @@ describe('rules registry', () => {
       ev({ entity_type: 'actions', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'complete', title: 'Do' }, old: { status: 'active' }, changed: ['status'] } }),
       ev({ entity_type: 'internal_tasks', event_type: 'created', payload: { new: { assigned_to: 'u2', title: 'Call' }, old: {}, changed: [] } }),
       ev({ entity_type: 'companies', event_type: 'updated', payload: { new: { subscription_status: 'past_due' }, old: { subscription_status: 'active' }, changed: ['subscription_status'] } }),
-      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'provider', payload: { new: { outcome: 'fail', item_id: 'row-1', completed_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
-      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'provider', payload: { new: { outcome: 'pass_with_actions', item_id: 'row-1', completed_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
-      ev({ entity_type: 'hs_activities', event_type: 'created', actor_kind: 'provider', payload: { new: { activity_type: 'site_visit', title: 'T', occurred_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
-      ev({ entity_type: 'hs_files', event_type: 'created', actor_kind: 'provider', payload: { new: { file_name: 'cert.pdf' }, old: {}, changed: [] } }),
-      ev({ entity_type: 'compliance_items', event_type: 'created', actor_kind: 'provider', payload: { new: { title: 'X', domain: 'hs', due_date: '2026-10-01' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'staff', payload: { new: { outcome: 'fail', item_id: 'row-1', completed_on: '2026-09-24' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'staff', payload: { new: { outcome: 'pass_with_actions', item_id: 'row-1', completed_on: '2026-09-24' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_activities', event_type: 'created', actor_kind: 'staff', payload: { new: { activity_type: 'site_visit', title: 'T', occurred_on: '2026-09-24' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_files', event_type: 'created', actor_kind: 'staff', payload: { new: { file_name: 'cert.pdf' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'compliance_items', event_type: 'created', actor_kind: 'staff', payload: { new: { title: 'X', domain: 'hs', due_date: '2026-10-01' }, old: {}, changed: [] } }),
       ev({ entity_type: 'actions', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'complete', title: 'Y', source_ref: 'hs_completion:comp-1' }, old: { status: 'active' }, changed: ['status'] } }),
       ev({ entity_type: 'absence_records', event_type: 'created', actor_kind: 'system', payload: { new: { status: 'pending', employee_name: 'Ada', absence_type: 'holiday', start_date: '2026-10-10' }, old: {}, changed: [] } }),
       ev({ entity_type: 'employee_records', event_type: 'created', actor_kind: 'client', payload: { new: { status: 'active', full_name: 'Ada', start_date: '2026-10-05', job_title: 'Engineer', source_candidate_id: 'cand-1' }, old: {}, changed: [] } }),
@@ -87,7 +86,7 @@ describe('rules registry', () => {
       ev({ entity_type: 'offers', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'declined', candidate_id: 'cand-1', requisition_id: 'r' }, old: { status: 'sent' }, changed: ['status'] } }),
       ev({ entity_type: 'offers', event_type: 'updated', actor_kind: 'staff', payload: { new: { status: 'written_accepted', candidate_id: 'cand-1', requisition_id: 'r' }, old: { status: 'sent' }, changed: ['status'] } }),
       ...REMINDER_ENTITIES.flatMap(e => (['due_30', 'due_7', 'due_0', 'overdue', 'overdue_w2'] as const).map(bucket =>
-        ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', provider_id: 'p1', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01', candidate_id: 'cand-1', requisition_id: 'r', status: 'sent' } } }))),
+        ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01', candidate_id: 'cand-1', requisition_id: 'r', status: 'sent' } } }))),
     ];
     let produced = 0;
     for (const e of samples) {
@@ -99,7 +98,7 @@ describe('rules registry', () => {
           expect(NOTIFICATION_TYPES as readonly string[], `${r.id} type`).toContain(c.input.type);
           expect(c.input.title.length, `${r.id} title`).toBeGreaterThan(3);
           expect(c.input.audiences.length, `${r.id} audience`).toBeGreaterThan(0);
-          const wantsAdmin  = c.input.audiences.some(a => a.kind === 'staff' || a.kind === 'account_owner' || a.kind === 'user' || a.kind === 'provider_users');
+          const wantsAdmin  = c.input.audiences.some(a => a.kind === 'staff' || a.kind === 'account_owner' || a.kind === 'user');
           const wantsPortal = c.input.audiences.some(a => a.kind === 'company_admins' || a.kind === 'company_editors');
           if (wantsAdmin)  expect(c.input.link?.admin, `${r.id} admin link`).toBeTruthy();
           if (wantsPortal) expect(c.input.link?.portal, `${r.id} portal link`).toBeTruthy();

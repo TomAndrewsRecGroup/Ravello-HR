@@ -71,7 +71,6 @@ export type DocCategory = typeof DOC_CATEGORIES[number];
 
 export const USER_ROLES = [
   'tps_admin', 'tps_client', 'client_admin', 'client_editor', 'client_user',
-  'hs_provider', // 090: an external Health & Safety provider's user
 ] as const;
 export type UserRole = typeof USER_ROLES[number];
 
@@ -323,7 +322,6 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   client_admin:  'Admin',
   client_editor: 'Editor',
   client_user:   'User',
-  hs_provider:   'H&S Provider',
 };
 
 /* ─── Athletes To Industry interest status ────────────────────── */

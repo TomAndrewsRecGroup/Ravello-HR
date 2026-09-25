@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { canWrite, myGrant } from '@/lib/hs/access';
 import { readAllPages } from '@/lib/supabase/paged';
 import type { HsCompletion, HsFile, HsRegisterItem } from '@/lib/hs/types';
 import RegisterClient from '@/components/hs/RegisterClient';
@@ -10,12 +8,9 @@ export const metadata: Metadata = { title: 'H&S register' };
 export const dynamic = 'force-dynamic';
 
 // The client's H&S register: statutory and recurring items, when each
-// was last done, when it is next due, and the evidence. Read with the
-// user's own session, so RLS returns this client's H&S rows only.
-export default async function HsRegisterPage({ params }: { params: { companyId: string } }) {
+// was last done, when it is next due, and the evidence.
+export default async function HealthSafetyRegisterPage({ params }: { params: { companyId: string } }) {
   const supabase = createServerSupabaseClient();
-  const grant = await myGrant(supabase, params.companyId);
-  if (!grant || !grant.scopes.includes('register')) notFound();
 
   // All three in parallel and all paged: a register, its completions and
   // its files all grow without bound over the years a client is with us.
@@ -45,7 +40,7 @@ export default async function HsRegisterPage({ params }: { params: { companyId: 
   return (
     <RegisterClient
       companyId={params.companyId}
-      canRecord={canWrite(grant, 'register')}
+      canRecord
       items={items.rows}
       completions={completions.rows}
       files={files.rows}

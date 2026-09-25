@@ -1,10 +1,7 @@
 import { wrapEmail, ctaButton, BRAND } from '../layout';
 
-// The two Monday emails for Health & Safety, filled from the register:
+// The Monday email for Health & Safety, filled from the register:
 //
-//   providerWeeklyDigestEmail — to each provider login, one section per
-//   client they are assigned to: overdue, due within 30 days, and the
-//   client's open failed-check actions.
 //   clientWeeklySummaryEmail  — to a client's admins, when their
 //   weekly_summary preference is on: the same register, from their side,
 //   plus what their providers logged this week.
@@ -57,22 +54,6 @@ ${itemRows(s.dueSoon)}
 ${s.openActions.length === 0 ? `<p style="margin:4px 0 12px 0;font-size:13px;color:${BRAND.inkFaint};">None.</p>`
     : `<ul style="margin:4px 0 12px 0;padding-left:18px;font-size:14px;color:${BRAND.ink};">${s.openActions.map(a => `<li style="margin:0 0 4px 0;">${esc(a.title)} <span style="color:${BRAND.inkFaint};">· ${esc(a.priority)}</span></li>`).join('')}</ul>`}
 `;
-}
-
-export function providerWeeklyDigestEmail(input: { providerName: string; weekLabel: string; sections: WeeklyCompanySection[]; workspaceUrl: string }) {
-  const totals = input.sections.reduce((t, s) => ({ overdue: t.overdue + s.overdue.length, soon: t.soon + s.dueSoon.length, actions: t.actions + s.openActions.length }), { overdue: 0, soon: 0, actions: 0 });
-  const body = `
-<p style="margin:0 0 8px 0;font-size:12px;color:${BRAND.inkFaint};text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Health &amp; Safety · week of ${esc(input.weekLabel)}</p>
-<h1 style="margin:0 0 8px 0;font-size:22px;font-weight:700;color:${BRAND.ink};">Your clients this week</h1>
-<p style="margin:0 0 4px 0;font-size:14px;color:${BRAND.inkSoft};">${totals.overdue} overdue · ${totals.soon} due within 30 days · ${totals.actions} open action${totals.actions === 1 ? '' : 's'} across ${input.sections.length} client${input.sections.length === 1 ? '' : 's'}.</p>
-${input.sections.map(s => section(s, s.companyName, true)).join('')}
-${ctaButton(input.workspaceUrl, 'Open the H&S workspace')}
-`.trim();
-  return {
-    subject: `H&S this week: ${totals.overdue} overdue, ${totals.soon} due soon`,
-    html: wrapEmail(body, `${totals.overdue} overdue and ${totals.soon} due within 30 days across your clients.`),
-    tag: 'hs-provider-weekly',
-  };
 }
 
 export function clientWeeklySummaryEmail(input: { section: WeeklyCompanySection; weekLabel: string; activities: WeeklyActivity[]; registerUrl: string }) {

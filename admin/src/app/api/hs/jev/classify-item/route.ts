@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireStaff } from '@/lib/auth/requireStaff';
 import { parseBody } from '@/lib/validation/parseBody';
 import { optionalLongText, shortText, uuid, z } from '@/lib/validation/primitives';
-import { myGrant } from '@/lib/hs/access';
 import { askJev } from '@/lib/jev/client';
 import { CLASSIFY_SUGGEST_GATE, classifyItemQuestions, classifyItemState, toClassifySuggestion } from '@/lib/hs/jevQuestions';
 import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
@@ -10,12 +10,12 @@ import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimi
 // POST /api/hs/jev/classify-item — suggest category, recurrence and
 // legal basis for a register item from its title and notes.
 //
-// Under app/api/hs, so: the user's OWN session (no service role — a
-// provider reaches this route), the company from hs_my_companies(),
-// and a suggestion only: this route never writes compliance_items.
-// The jev_decisions row is inserted under the actor policy (098).
-// Jev off → { suggestion: null }, and the form simply has no button
-// result — the IvyLens "not configured" precedent.
+// Staff only (2026-09-25 — Core OS 360 staff deliver H&S directly, and
+// this route never had a client caller). A suggestion only: this route
+// never writes compliance_items. The jev_decisions row is inserted
+// under the actor policy (098). Jev off → { suggestion: null }, and the
+// form simply has no button result — the IvyLens "not configured"
+// precedent.
 
 export const runtime = 'nodejs';
 
@@ -26,26 +26,20 @@ const Body = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireStaff();
+  if (!auth.ok) return auth.response;
 
-  const rl = limiters.vendor.check(getUserRateLimitKey(req, user.id));
+  const rl = limiters.vendor.check(getUserRateLimitKey(req, auth.userId));
   if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const parsed = await parseBody(req, Body);
   if (!parsed.ok) return parsed.response;
   const { company_id, title, description } = parsed.data;
 
-  const grant = await myGrant(supabase, company_id);
-  if (!grant || !grant.scopes.includes('register')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-  const { data: role } = await supabase.rpc('get_my_role');
-  const actorKind = role === 'tps_admin' ? 'staff' : role === 'hs_provider' ? 'provider' : 'client';
-
+  const supabase = createServerSupabaseClient();
   const result = await askJev(supabase, {
     kind: 'hs_item_classify', companyId: company_id, entityType: 'compliance_item', entityId: null,
-    actor: { id: user.id, kind: actorKind },
+    actor: { id: auth.userId, kind: 'staff' },
     state: classifyItemState(title, description ?? null),
     questions: classifyItemQuestions(),
     gate: CLASSIFY_SUGGEST_GATE,

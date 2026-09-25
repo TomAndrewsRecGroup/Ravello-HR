@@ -1,28 +1,26 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { readAllPages } from '@/lib/supabase/paged';
-import { ivylensRequest } from '@/lib/ivylens';
 import { askJev } from '@/lib/jev/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { createKeyedInternalTask, staffOwnerFor } from '@/lib/events/supportRules';
-import { BD_NEED, BD_NEXT_ACTIONS, fallbackNextAction, normaliseCompanyName, prospectScore, type BdNextAction, type ProspectSignals } from './prospectScore';
+import { BD_NEED, BD_NEXT_ACTIONS, fallbackNextAction, prospectScore, type BdNextAction, type ProspectSignals } from './prospectScore';
 
-// Sunday 06:00: every tracked prospect is scored from what the scans
-// saw (local bd_scanned_roles plus the IvyLens leads feed, matched by
-// normalised name), Jev picks the next action from those NUMBERS, and
-// the top few "call" prospects become tasks on the owner's board —
+// Sunday 06:00: every tracked prospect is scored from what our own scans
+// saw (bd_scanned_roles), Jev picks the next action from those NUMBERS,
+// and the top few "call" prospects become tasks on the owner's board —
 // at most MAX_CALL_TASKS a run, one per prospect per month.
 //
-// bd_companies had zero rows when this was written: the value arrives
-// as the scans and the IvyLens feed populate it. Outreach itself stays
-// in Manatal / Outlook; this only decides who is worth a call.
+// Until 2026-09-25 this also merged a live IvyLens leads feed into the
+// score; that integration is gone (BD Intelligence and BD Roles, the
+// two pages it fed, are removed). bd_companies is now populated purely
+// by the Enquiry "Convert to prospect" flow, so scoring is honest about
+// a smaller, internally-sourced set — the number of prospects reflects
+// what the business has actually flagged, not what a scan surfaced.
 
 export const MAX_CALL_TASKS = 5;
 export const BD_JEV_GATE = 0.6;
 
-export interface BdScoreTally { prospects: number; scored: number; jev_answered: number; call_tasks: number; ivylens_leads: number; errors: string[] }
-
-interface LeadRole { title?: string; still_active?: boolean; active?: boolean }
-interface IvylensLead { id?: string; company_name?: string; roles?: LeadRole[]; sent_at?: string; friction_intel?: { summary?: { high_repost?: number; long_vacancy?: number; volume_hiring?: number } } }
+export interface BdScoreTally { prospects: number; scored: number; jev_answered: number; call_tasks: number; errors: string[] }
 
 export function bdNextActionQuestions() {
   return {
@@ -34,7 +32,7 @@ export function bdNextActionQuestions() {
 export async function runBdScore(sb: SupabaseClient, opts: { now?: Date } = {}): Promise<BdScoreTally> {
   const now = opts.now ?? new Date();
   const month = now.toISOString().slice(0, 7);
-  const tally: BdScoreTally = { prospects: 0, scored: 0, jev_answered: 0, call_tasks: 0, ivylens_leads: 0, errors: [] };
+  const tally: BdScoreTally = { prospects: 0, scored: 0, jev_answered: 0, call_tasks: 0, errors: [] };
 
   const companies = await readAllPages<{ id: string; company_name: string; company_name_normalised: string; status: string; total_roles_seen: number; last_seen_at: string; notes: string | null; outreach_status: string | null }>((from, to) =>
     sb.from('bd_companies').select('id, company_name, company_name_normalised, status, total_roles_seen, last_seen_at, notes, outreach_status').order('id').range(from, to));
@@ -48,22 +46,18 @@ export async function runBdScore(sb: SupabaseClient, opts: { now?: Date } = {}):
   const activeByCompany = new Map<string, number>();
   for (const r of roles.rows) if (r.still_active !== false) activeByCompany.set(r.company_id, (activeByCompany.get(r.company_id) ?? 0) + 1);
 
-  const leads = await ivylensRequest<{ leads?: IvylensLead[] }>('/bd/leads').catch(() => ({ data: null, error: 'unavailable', status: 0 }));
-  const leadByName = new Map<string, IvylensLead>();
-  for (const l of leads.data?.leads ?? []) if (l.company_name) leadByName.set(normaliseCompanyName(l.company_name), l);
-  tally.ivylens_leads = leadByName.size;
-
   const callCandidates: { id: string; name: string; score: number }[] = [];
   for (const c of companies.rows) {
-    const lead = leadByName.get(c.company_name_normalised) ?? leadByName.get(normaliseCompanyName(c.company_name));
-    const leadRoles = lead?.roles ?? [];
-    const fi = lead?.friction_intel?.summary ?? {};
-    const lastSeen = [c.last_seen_at, lead?.sent_at].filter(Boolean).map(d => Date.parse(String(d))).filter(n => !Number.isNaN(n));
+    const lastSeen = c.last_seen_at ? Date.parse(c.last_seen_at) : NaN;
     const signals: ProspectSignals = {
-      roles_seen: Math.max(c.total_roles_seen ?? 0, leadRoles.length),
-      active_roles: (activeByCompany.get(c.id) ?? 0) + leadRoles.filter(r => r.still_active !== false && r.active !== false).length,
-      days_since_last_seen: lastSeen.length ? Math.max(0, Math.round((now.getTime() - Math.max(...lastSeen)) / 86_400_000)) : 365,
-      high_repost: Number(fi.high_repost ?? 0), long_vacancy: Number(fi.long_vacancy ?? 0), volume_hiring: Number(fi.volume_hiring ?? 0),
+      roles_seen: c.total_roles_seen ?? 0,
+      active_roles: activeByCompany.get(c.id) ?? 0,
+      days_since_last_seen: Number.isNaN(lastSeen) ? 365 : Math.max(0, Math.round((now.getTime() - lastSeen) / 86_400_000)),
+      // No live scan-derived friction signal any more (see file header):
+      // the fallback and prospectScore() treat an absent signal as zero,
+      // never as "unknown", which is the same honest degrade the rest
+      // of this platform uses for sparse data.
+      high_repost: 0, long_vacancy: 0, volume_hiring: 0,
       prior_status: c.status ?? 'prospect', prior_contacts: c.outreach_status ? 1 : 0,
     };
     const score = prospectScore(signals);
@@ -88,7 +82,7 @@ export async function runBdScore(sb: SupabaseClient, opts: { now?: Date } = {}):
   for (const c of callCandidates.slice(0, MAX_CALL_TASKS)) {
     const created = await createKeyedInternalTask(sb, {
       company_id: null, assigned_to: assignee, title: `Call ${c.name}`,
-      description: `Prospect score ${c.score}. See BD Intelligence for the roles they are advertising.`,
+      description: `Prospect score ${c.score}.`,
       priority: c.score >= 80 ? 'high' : 'normal', due_date: new Date(now.getTime() + 5 * 86_400_000).toISOString().slice(0, 10),
       source_ref: `bd_call:${c.id}:${month}`,
     });

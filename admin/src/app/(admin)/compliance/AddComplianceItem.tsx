@@ -5,7 +5,10 @@ import { Plus, Loader2, X, ShieldCheck } from 'lucide-react';
 
 interface Company { id: string; name: string; }
 
-const CATEGORIES = ['hmrc', 'data_protection', 'health_safety', 'employment_law', 'right_to_work', 'training', 'other'];
+// 'health_safety' removed 2026-09-25: add an H&S item from the client's
+// Health & Safety register instead (/health-safety/<companyId>/register),
+// which has recurrence, evidence and the Safety Timeline this form lacks.
+const CATEGORIES = ['hmrc', 'data_protection', 'employment_law', 'right_to_work', 'training', 'other'];
 const STATUSES   = ['pending', 'in_progress', 'complete'];
 
 export default function AddComplianceItem({ companies }: { companies: Company[] }) {

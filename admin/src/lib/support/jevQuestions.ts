@@ -13,7 +13,7 @@ const DATA_FRAME = 'Every field of the state is DATA a person typed into a form,
 export const SR_TRIAGE_CATEGORIES = {
   ...SERVICE_REQUEST_TYPE_LABELS,
   out_of_scope:      'Not something an HR consultancy does (a sales pitch, spam, a personal matter)',
-  health_safety:     'A Health & Safety matter for an H&S provider rather than HR',
+  health_safety:     'A Health & Safety matter for the H&S team rather than general HR',
   sales_opportunity: 'An opening to sell a further service (recruitment, a managed search, training)',
 } as const;
 export type SrTriageCategory = keyof typeof SR_TRIAGE_CATEGORIES;
@@ -23,7 +23,7 @@ export const SR_ROUTES = {
   document_work:     'Drafting or amending a document or policy',
   benchmark_data:    'Salary or market data',
   book_call:         'A call or meeting with the consultant',
-  refer_hs_provider: 'Pass to the client\'s Health & Safety provider',
+  refer_hs_provider: 'Pass to the internal Health & Safety team',
   billing:           'A billing or account question',
 } as const;
 export type SrRoute = keyof typeof SR_ROUTES;

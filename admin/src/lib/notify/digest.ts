@@ -40,7 +40,7 @@ export async function digestCandidates(sb: SupabaseClient): Promise<Recipient[]>
   const { data: profiles, error } = await sb.from('profiles').select('id, email, role').in('id', [...ids]);
   if (error) throw new Error(`digest profiles: ${error.message}`);
   return ((profiles ?? []) as { id: string; email: string | null; role: string }[])
-    .map(p => ({ id: p.id, email: p.email, role: p.role, app: p.role === STAFF_ROLE || p.role === 'hs_provider' ? 'admin' as const : 'portal' as const }));
+    .map(p => ({ id: p.id, email: p.email, role: p.role, app: p.role === STAFF_ROLE ? 'admin' as const : 'portal' as const }));
 }
 
 export async function runDigest(sb: SupabaseClient, opts: { now?: Date } = {}): Promise<DigestTally> {

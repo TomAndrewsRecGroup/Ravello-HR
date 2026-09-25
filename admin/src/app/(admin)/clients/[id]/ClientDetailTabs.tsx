@@ -338,7 +338,10 @@ const emptyMilestoneForm = () => ({
 const PRIORITIES = ACTION_PRIORITIES;
 const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
 
-const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'data_protection', 'employment_law', 'other'];
+// 'health_safety' removed 2026-09-25: H&S items now belong on the
+// dedicated /health-safety register (recurrence, evidence, the Safety
+// Timeline), not this generic HR compliance tab, which has none of that.
+const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'data_protection', 'employment_law', 'other'];
 const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
 
 const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {

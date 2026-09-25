@@ -24,7 +24,6 @@ beforeEach(() => {
       { id: 'ce',      email: 'ce@client.com',    role: 'client_editor', company_id: 'co-1' },
       { id: 'cu',      email: 'cu@client.com',    role: 'client_user',  company_id: 'co-1' },
       { id: 'other',   email: 'x@other.com',      role: 'client_admin', company_id: 'co-2' },
-      { id: 'prov',    email: 'p@provider.com',   role: 'hs_provider',  company_id: null, hs_provider_id: 'prov-1' },
     ],
     companies: [{ id: 'co-1', name: 'Sample Co', account_owner_id: 'staff-1' }, { id: 'co-3', name: 'Orphan', account_owner_id: 'demo' }],
     notification_preferences: [],
@@ -44,10 +43,6 @@ describe('audiences', () => {
     expect((await resolveRecipients(db.client, [{ kind: 'account_owner', companyId: 'co-1' }])).map(r => r.id)).toEqual(['staff-1']);
     expect((await resolveRecipients(db.client, [{ kind: 'account_owner', companyId: 'co-3' }])).map(r => r.id)).toEqual(['staff-1']);
     expect((await resolveRecipients(db.client, [{ kind: 'account_owner', companyId: 'nope' }])).map(r => r.id)).toEqual(['staff-1']);
-  });
-  it('provider users resolve by provider id and sign in to the admin app', async () => {
-    const r = await resolveRecipients(db.client, [{ kind: 'provider_users', providerId: 'prov-1' }]);
-    expect(r).toEqual([{ id: 'prov', email: 'p@provider.com', role: 'hs_provider', app: 'admin' }]);
   });
   it('deduplicates across audiences', async () => {
     const r = await resolveRecipients(db.client, [{ kind: 'staff' }, { kind: 'user', userId: 'staff-1' }]);
