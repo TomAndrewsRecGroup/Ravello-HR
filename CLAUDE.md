@@ -3327,3 +3327,93 @@ applied as a same-file follow-up call, and its starter-template seed)
 applied live and verified: RLS on and correctly scoped for all four new
 tables, and the atomic-insert/idempotency behaviour proven with a
 rolled-back live transaction before this shipped.
+
+---
+
+## LEAD Phase 4: training records, matrix and CSV import (2026-09-25, migration 111)
+
+`training_needs` (gaps to fill) and `skills_matrix` (skill LEVELS)
+already existed; neither is a record that a specific course was actually
+COMPLETED, with a date and — for anything like a fire warden or
+first-aid certificate — an expiry to re-certify against. `training_records`
+is that record: one row per completed course per employee, self-service
+client data with the same posture as those two existing tables.
+
+### The one thing done differently from its two siblings
+
+`training_needs`/`skills_matrix` store a free-text `employee_name` —
+exactly the "employee referenced by typed name" disconnected concept
+this file's automation-plan section already flagged. `training_records`
+links `employee_id` to `employee_records` from the start instead: a
+training MATRIX needs to pivot cleanly by employee, which a name string
+two different rows might spell two different ways cannot guarantee.
+
+### A real RLS gap found and NOT repeated
+
+`training_needs`/`skills_matrix`'s LIVE policies (read from
+`pg_policies`, not their migration history — this repo's standing rule
+that a `.sql` file on disk is a record of intent, not what the database
+contains) have a `FOR ALL` "client" policy **plus** a separate
+super-user-only DELETE policy. Since Postgres ORs permissive policies,
+the broader ALL policy already lets any signed-in company user delete a
+row — the narrower DELETE policy is dead, however deliberate its
+existence looks. `training_records` does not repeat this:
+SELECT/INSERT/UPDATE are one broad policy each, and DELETE is the ONLY
+policy that mentions `is_company_super_user()`, pinned by
+`trainingRecordsSql.test.ts` (no client policy is `FOR ALL` or `FOR
+DELETE` except the one restricted policy).
+
+### No platform_events outbox entry, but IS a reminder entity
+
+Like its two siblings, this is a client editing their own team's data —
+nobody else needs telling as it happens, so `training_records` is not in
+`TRIGGERED_ENTITIES`. It IS in `REMINDER_ENTITIES`: an expiring
+certificate is exactly what the reminders cron exists to catch
+(`due_30`/`due_7`/`overdue` on `expires_on`, new notification types
+`training_record_expiring`/`training_record_expired`). No status column
+to flip — unlike `employee_documents`, nothing else reads a stored
+"expired" status for this table, so the reminder only ever notifies.
+
+**The reminder payload cannot show WHO, without an extra lookup.**
+`slimRow()` (`lib/reminders/run.ts`) deliberately never lets a
+PostgREST embed into a reminder's payload — "never an embed and never a
+column PostgREST happened to return" is the actual comment already
+there, and it exists for the same reason the outbox's own column
+whitelist exists. So `employee_records(full_name)` in the reminder
+query's `select` was the wrong fix (built once, caught by
+`reminders.test.ts`'s existing column-validation test, then reverted):
+the consuming rule (`training_record_reminder`, `lib/events/rules.ts`)
+looks the employee's name up itself, by `employee_id`, the same way
+`hsRules.ts`'s `itemTitle()` resolves a register item's title from an id
+rather than trusting anything wider in the event payload.
+
+### Workforce CSV import
+
+`lib/lead/parseTrainingCsv.ts` (portal-only, pure, unit-tested): a
+minimal RFC4180-shaped line splitter (handles a quoted field containing
+a comma — what Excel/Sheets actually export), matching by
+`employee_email` in preference to `employee_name` (an email is a more
+reliable key than a name two people might share), accepting both ISO
+and UK `dd/mm/yyyy` dates. Every unmatched or malformed row is reported
+by LINE NUMBER with a reason rather than silently dropped, so an import
+of 200 rows with three typos still imports the other 197 and tells the
+client exactly which three to fix. The UI (`TrainingRecordsClient.tsx`)
+never inserts anything the parser didn't already validate — it shows the
+matched/unmatched counts and lets the client confirm before writing.
+
+### Training matrix
+
+A toggle on the same page pivots the same `training_records` array
+client-side (no second query, no second table) into employee × course,
+one cell per pair showing the latest completion date and a status
+badge — current / expiring soon (≤30 days) / expired / no expiry (some
+certifications never lapse). List and matrix are two views of identical
+data, never two sources that could disagree.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (809
+admin — 800 + 5 `trainingRecordsSql.test.ts` + 4
+`trainingRecordReminder.test.ts`; 244 portal — 234 + 8 `parseTrainingCsv
+.test.ts` + `portalPagesLinked.test.ts` picking up `/lead/training-records`
+automatically), all five CI guards pass, both production builds compile.
+Migration 111 applied live and verified (`pg_policies` read back:
+exactly one DELETE policy, restricted; no client policy is `FOR ALL`).

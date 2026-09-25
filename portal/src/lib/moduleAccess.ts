@@ -50,6 +50,7 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/lead/hr-reports':             ['lead', 'hr_reports'],
   '/lead/reviews':                ['lead', 'reviews'],
   '/lead/training':               ['lead', 'training'],
+  '/lead/training-records':       ['lead', 'training'],
   '/lead/skills':                 ['lead', 'skills_matrix'],
   '/lead/roadmap':                ['lead', 'roadmap'],
   '/lead/learning':               ['learning'],
