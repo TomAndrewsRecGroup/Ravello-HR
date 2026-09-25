@@ -159,6 +159,13 @@ describe('deadline', () => {
     // advances: with a mocked instant fetch and a 1ms base the whole
     // ladder finishes inside any sane deadline and the guard is never
     // reached. The point is that it gives up EARLY, not that it fails.
+    //
+    // Full jitter picks a delay in [0, 150]; a run of near-zero picks
+    // let all six instant attempts fit inside 260ms, which is what made
+    // this fail roughly one run in six. Pin the jitter to its maximum
+    // so the ladder's timing is fixed: attempt 1 at 0ms, sleep 150,
+    // attempt 2, then 150 + 60 no longer fits before the deadline.
+    vi.spyOn(Math, 'random').mockReturnValue(0.999);
     const m = mockFetch([bad(503)]);
     const r = await resilientFetch('https://x/y', { method: 'GET' },
       { vendor: 'v', timeoutMs: 60, baseDelayMs: 150, maxDelayMs: 150, retries: 5, deadline: Date.now() + 260 });
