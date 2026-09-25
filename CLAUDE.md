@@ -2839,3 +2839,103 @@ CVE-2025-29927 patch above.
   migration changed no behaviour the suite covers), all five CI guards
   pass, both production builds compile clean (no warnings beyond npm's
   own deprecation noise).
+
+---
+
+## Health & Safety Phase 2: document library + sector packs (2026-09-25, migration 106)
+
+The next unstarted phase of the H&S roadmap after the staff-delivered
+pivot (105): a document library for a client's H&S paperwork, and
+seeded sector packs so a new client's register does not start empty.
+
+- **`hs_documents` is METADATA only** (title, category, version, review
+  due date, status). The actual file rides the existing evidence
+  infrastructure — `hs_files` in the `hs-evidence` bucket, entity_type
+  `'document'`, which was already a valid `hs_scope_for_entity()` key
+  and already labelled `'Document'` in `HS_ENTITY_LABELS` (Phase 1a
+  anticipated this table; nothing wrote it until now). Reusing
+  `uploadEvidence()`/`evidenceUrl()` means no new bucket, no new
+  storage policy, no new path-shape CHECK to get wrong.
+- **A new version is a new row, not an edit.** Uploading a replacement
+  inserts a fresh `hs_documents` row (`version = old.version + 1`,
+  `supersedes_id = old.id`, status `active`) and flips the old row to
+  `status = 'superseded'` — the register's "a correction is a new row"
+  discipline, so nobody can silently overwrite what an earlier version
+  said. Same RLS shape as the register: staff `ALL`, client `SELECT`
+  own company only — nothing here is self-certified, matching the
+  posture the Phase 1b register and Phase 1a evidence already take.
+- **Sector packs are seeded reference data, not a runtime feature.**
+  `hs_sector_packs` + `hs_sector_pack_items` ship with five starter
+  packs (Office, Construction & Trades, Manufacturing & Warehousing,
+  Care & Health, Hospitality & Food), each with typical UK register
+  items (category, recurrence, legal basis) drawn from the same
+  `HS_LEGAL_BASIS_OPTIONS` vocabulary the Jev classify-item feature
+  already uses. Staff-only RLS (`hs_sector_packs_staff_all` /
+  `hs_sector_pack_items_staff_all`) — a pack is a drafting aid, never
+  client-visible on its own; its value only reaches a client once its
+  items land on their own register, which the register's own policies
+  already gate.
+- **"Apply sector pack" lives on the client's own register page**
+  (`ApplyPackPanel.tsx`), not as a separate flow: picking a pack shows
+  every item, greys out ones whose TITLE already matches something on
+  the register (`lib/hs/sectorPacks.ts`'s `itemsToApply()`, pure and
+  unit-tested), and inserts only the rest with `source: 'pack'`. This
+  is a best-effort de-dup for a staff-only bulk-add, not a database
+  guarantee — `compliance_items` has no unique constraint on title, so
+  a genuine race could still double up; acceptable for what a human
+  reviews before clicking Add.
+- **A freshly-applied item's first due date is computed, not left
+  null** (`due_date` is `NOT NULL` on `compliance_items`, checked live
+  before assuming otherwise — the RegisterClient add-item form's
+  `dueDate || null` never actually sends null because the field is
+  `required`). `firstDueDate()`: a recurring item is due one full cycle
+  from today (it has never been done, so "next due" is the first
+  occurrence); a one-off item is due today, since nothing else would
+  ever schedule it.
+- **Reminders reuse the exact `documents` entity shape** (`due_30`,
+  `due_7`, `overdue`, no status write — a document library never
+  self-flips to a different state the way `compliance_items` does).
+  Notification type `hs_document_review_due`, added to both bells'
+  `TYPE_CONFIG` and both apps' `NOTIFICATION_TYPES` tuple (shared-dupe
+  pair, kept byte-identical). The reminder rule
+  (`hs_document_review_reminder`) sits in the generic `rules.ts`
+  alongside `document_review_reminder`, not in `hsRules.ts` — the
+  `notifyC`/`dueSoon`/`overdue`/`whenText` helpers it needs are private
+  to that file, the same reason the LEAD/HR equivalent lives there too.
+- **Sector-pack tables are the one deliberate exception to "every
+  surviving `hs_` table writes to the Safety Timeline."** They are
+  staff reference data, never a record of anything that happened to a
+  specific client — "the Office pack's PAT item description was
+  edited" is not a Safety Timeline entry for anyone. Applying a pack
+  DOES appear on the timeline, as ordinary `compliance_items` inserts,
+  which already fire `compliance_items_hs_event`. `hsSqlShape.test.ts`
+  now separates `SOURCES` (has an `_hs_event` trigger) from
+  `NOT_SOURCES` (deliberately does not) rather than asserting every
+  `hs_` table is a source — the old blanket assertion would have forced
+  a fake trigger onto tables that have nothing client-facing to log.
+- **Two new SECURITY DEFINER functions, two new REVOKEs** —
+  `hs_document_stamp()` (author/`updated_at` stamping) and
+  `hs_document_event()` (Safety Timeline entry on add/replace) each
+  needed `REVOKE ALL ... FROM PUBLIC, anon, authenticated`, caught by
+  `platformEventsSql.test.ts`'s "every SECURITY DEFINER function is
+  revoked" assertion — the same discipline that test enforces on every
+  earlier H&S migration, now proven to actually catch a real omission
+  rather than just pass vacuously on migrations that already had it
+  right.
+- `DocumentsClient.tsx`'s "mark the old version superseded" UPDATE
+  uses `{ count: 'exact' }` + `judgeWrite()` from the start
+  (`check-blind-updates.sh`'s ratchet stayed at 103, not 104) — new
+  write paths get the counted-write discipline by default, not
+  retrofitted after the ratchet catches them.
+- Portal gets a read-only `/protect/documents` tab (register's own
+  posture: nothing here is self-certified), gated by `protect` alone
+  like Timeline, using the existing `EvidenceLinks` component to open
+  files under the client's own session.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (741 admin — 726 + 9 new `sectorPacks.test.ts` + coverage from the
+  updated `hsSqlShape`/`platformEventsSql` tests; 223 portal — 221 + 2
+  from `moduleAccess.test.ts` and `portalPagesLinked.test.ts` picking
+  up the new route automatically), all five CI guards pass, both
+  production builds compile. Migration 106 applied live and verified
+  (RLS on for all three new tables, sector pack item counts read back:
+  office 9, construction 9, manufacturing 10, care 9, hospitality 8).

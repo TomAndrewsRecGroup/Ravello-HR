@@ -23,6 +23,7 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   payment_failed:             { Icon: AlertTriangle,  color: 'var(--danger)' },
   compliance_due_soon:        { Icon: ShieldCheck,    color: 'var(--amber)' },
   compliance_overdue:         { Icon: ShieldCheck,    color: 'var(--danger)' },
+  hs_document_review_due:     { Icon: FileText,       color: 'var(--amber)' },
   document_review_due:        { Icon: FileText,       color: 'var(--amber)' },
   employee_document_expiring: { Icon: FileText,       color: 'var(--amber)' },
   employee_document_expired:  { Icon: FileText,       color: 'var(--danger)' },

@@ -35,6 +35,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   payment_failed:             { icon: AlertTriangle, color: 'var(--danger)' },
   compliance_due_soon:        { icon: ShieldCheck,   color: 'var(--amber)' },
   compliance_overdue:         { icon: ShieldCheck,   color: 'var(--danger)' },
+  hs_document_review_due:     { icon: FileText,      color: 'var(--amber)' },
   document_review_due:        { icon: FileText,      color: 'var(--amber)' },
   employee_document_expiring: { icon: FileText,      color: 'var(--amber)' },
   employee_document_expired:  { icon: FileText,      color: 'var(--danger)' },
