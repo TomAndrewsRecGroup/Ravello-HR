@@ -94,10 +94,19 @@ describe('runReminders', () => {
       ],
       employee_documents: [{ id: 'e', expiry_date: '2026-09-01', status: 'active' }, { id: 'f', expiry_date: '2026-09-01', status: 'archived' }],
       policy_acknowledgements: [{ id: 'p', status: 'pending', sent_at: '2026-09-01T00:00:00Z' }, { id: 'q', status: 'pending', sent_at: '2026-09-20T00:00:00Z' }],
+      // offboarding sets end_date and leaves the record active; the cron
+      // terminates it ON the last working day (<=), never before
+      employee_records: [
+        { id: 'r', end_date: '2026-09-25', status: 'active' },
+        { id: 's', end_date: '2026-09-26', status: 'active' },
+        { id: 't', end_date: '2026-09-01', status: 'terminated' },
+        { id: 'u', end_date: null, status: 'active' },
+      ],
       platform_events: [],
     });
     const t = await runReminders(db.client, { today, rules: [], statusWrites: STATUS_WRITES });
-    expect(t.status_writes).toEqual({ compliance_overdue: 2, employee_document_expired: 1, policy_ack_overdue: 1 });
+    expect(t.status_writes).toEqual({ employee_terminated: 1, compliance_overdue: 2, employee_document_expired: 1, policy_ack_overdue: 1 });
+    expect(db.tables.employee_records.map(r => r.status)).toEqual(['terminated', 'active', 'terminated', 'active']);
     expect(db.tables.compliance_items.map(r => r.status)).toEqual(['overdue', 'pending', 'complete', 'overdue']);
     expect(db.tables.employee_documents.map(r => r.status)).toEqual(['expired', 'archived']);
     expect(db.tables.policy_acknowledgements.map(r => [r.status, r.reminder_sent ?? false])).toEqual([['overdue', true], ['pending', false]]);

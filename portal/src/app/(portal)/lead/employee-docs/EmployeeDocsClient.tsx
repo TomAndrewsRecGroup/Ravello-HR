@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
-import { Plus, X, Loader2, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Plus, X, Loader2, FileText, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import FileLink from '@/components/modules/FileLink';
 
 interface EmpDoc {
@@ -64,6 +64,39 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
+  // Jev suggests the document type from the title (and the file name,
+  // if a link was pasted). A suggestion only: it pre-fills the select
+  // and says whether this kind of document usually expires. Nothing is
+  // saved until the person presses Save, and the decision id travels
+  // with the row so the choice can be scored against the suggestion.
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ doc_type: string; has_expiry: boolean; confidence: number } | null>(null);
+  const [suggestNote, setSuggestNote] = useState('');
+  async function suggestType() {
+    if (!form.title.trim()) return;
+    setSuggesting(true);
+    setSuggestNote('');
+    setSuggestion(null);
+    try {
+      const fileName = form.file_url ? form.file_url.split('?')[0].split('/').pop() ?? null : null;
+      const res = await fetch('/api/lead/jev/doc-type', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title.trim(), file_name: fileName || undefined }),
+      });
+      const data = await res.json().catch(() => ({})) as { suggestion?: { doc_type: string; has_expiry: boolean; confidence: number } | null; reason?: string | null };
+      if (!res.ok) { setSuggestNote('Suggestions are not available right now.'); return; }
+      if (!data.suggestion) {
+        setSuggestNote(data.reason === 'unsure' ? 'Not sure from that title. Pick the type yourself.' : 'Suggestions are not available right now.');
+        return;
+      }
+      if (!DOC_TYPES.includes(data.suggestion.doc_type)) { setSuggestNote('Not sure from that title. Pick the type yourself.'); return; }
+      setSuggestion(data.suggestion);
+      set('doc_type', data.suggestion.doc_type);
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
   async function save() {
     if (!form.employee_name.trim() || !form.title.trim()) return;
     setSaving(true);
@@ -84,6 +117,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
       setDocs(prev => [...prev, data as EmpDoc].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
       setShowForm(false);
       setForm({ employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
+      setSuggestion(null); setSuggestNote('');
       revalidatePortalPath('/lead/employee-docs');
     }
     setSaving(false);
@@ -182,10 +216,22 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
               <input className="input" placeholder="e.g. Sales" value={form.department} onChange={e => set('department', e.target.value)} />
             </div>
             <div>
-              <label className="label">Document Type</label>
-              <select className="input" value={form.doc_type} onChange={e => set('doc_type', e.target.value)}>
+              <div className="flex items-center justify-between gap-2">
+                <label className="label" htmlFor="empdoc-type">Document Type</label>
+                <button type="button" onClick={suggestType} disabled={suggesting || !form.title.trim()} className="btn-ghost btn-sm flex items-center gap-1" title="Suggest a type from the title">
+                  {suggesting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Suggest
+                </button>
+              </div>
+              <select id="empdoc-type" className="input" value={form.doc_type} onChange={e => { set('doc_type', e.target.value); setSuggestion(null); }}>
                 {DOC_TYPES.map(t => <option key={t} value={t}>{DOC_TYPE_LABELS[t]}</option>)}
               </select>
+              {suggestion && (
+                <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+                  Suggested {DOC_TYPE_LABELS[suggestion.doc_type]} ({Math.round(suggestion.confidence * 100)}% sure).
+                  {suggestion.has_expiry && !form.expiry_date ? ' This kind of document usually has an expiry date.' : ''}
+                </p>
+              )}
+              {suggestNote && <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>{suggestNote}</p>}
             </div>
             <div className="sm:col-span-2">
               <label className="label">Document Title *</label>

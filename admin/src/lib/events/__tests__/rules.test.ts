@@ -24,6 +24,9 @@ function ev(over: Partial<PlatformEvent> & { entity_type: string; event_type: st
 
 const db = fakeSupabase({
   compliance_items: [{ id: 'row-1', title: 'Fire alarm test' }],
+  absence_records: [{ id: 'row-1', employee_id: 'emp-1', employee_name: 'Ada', employee_email: 'ada@x.com', absence_type: 'holiday', start_date: '2026-10-10', end_date: null, days: 1, status: 'pending' }],
+  employee_records: [{ id: 'row-1', company_id: 'co-1', full_name: 'Ada', start_date: '2026-10-05', probation_end: '2027-01-05', status: 'active' }],
+  employee_notes: [], onboarding_instances: [], onboarding_templates: [], policy_acknowledgements: [],
   hs_providers: [{ id: 'p1', name: 'Lighthouse' }],
   hs_activities: [{ id: 'row-1', activity_type: 'site_visit', title: 'T', summary: 'S' }],
   hs_register_completions: [{ id: 'comp-1', provider_id: 'p1' }],
@@ -67,6 +70,13 @@ describe('rules registry', () => {
       ev({ entity_type: 'hs_files', event_type: 'created', actor_kind: 'provider', payload: { new: { file_name: 'cert.pdf' }, old: {}, changed: [] } }),
       ev({ entity_type: 'compliance_items', event_type: 'created', actor_kind: 'provider', payload: { new: { title: 'X', domain: 'hs', due_date: '2026-10-01' }, old: {}, changed: [] } }),
       ev({ entity_type: 'actions', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'complete', title: 'Y', source_ref: 'hs_completion:comp-1' }, old: { status: 'active' }, changed: ['status'] } }),
+      ev({ entity_type: 'absence_records', event_type: 'created', actor_kind: 'system', payload: { new: { status: 'pending', employee_name: 'Ada', absence_type: 'holiday', start_date: '2026-10-10' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'employee_records', event_type: 'created', actor_kind: 'client', payload: { new: { status: 'active', full_name: 'Ada', start_date: '2026-10-05', job_title: 'Engineer', source_candidate_id: 'cand-1' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'employee_records', event_type: 'updated', actor_kind: 'system', payload: { new: { status: 'terminated', end_date: '2026-10-15', full_name: 'Ada' }, old: { status: 'active' }, changed: ['status'] } }),
+      ev({ entity_type: 'offboarding_instances', event_type: 'created', actor_kind: 'client', payload: { new: { employee_id: 'row-1', last_working_day: '2026-10-15', reason: 'other' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'documents', event_type: 'created', actor_kind: 'client', payload: { new: { name: 'Handbook' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'documents', event_type: 'created', actor_kind: 'staff', payload: { new: { name: 'Handbook' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'documents', event_type: 'updated', actor_kind: 'staff', payload: { new: { name: 'Handbook', approved_at: '2026-09-25' }, old: { approved_at: null }, changed: ['approved_at'] } }),
       ...REMINDER_ENTITIES.flatMap(e => (['due_30', 'due_7', 'due_0', 'overdue', 'overdue_w2'] as const).map(bucket =>
         ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', provider_id: 'p1', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01' } } }))),
     ];

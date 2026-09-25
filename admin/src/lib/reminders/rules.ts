@@ -172,6 +172,14 @@ export interface StatusWrite {
 
 export const STATUS_WRITES: StatusWrite[] = [
   {
+    // Offboarding sets end_date and keeps the record active until the
+    // last working day; this is what turns it terminated on the day
+    // (and fires employee_records.updated → the employee_left rule).
+    id: 'employee_terminated', table: 'employee_records',
+    apply: (sb, today) => sb.from('employee_records').update({ status: 'terminated' }, { count: 'exact' })
+      .lte('end_date', today).neq('status', 'terminated'),
+  },
+  {
     id: 'compliance_overdue', table: 'compliance_items',
     apply: (sb, today) => sb.from('compliance_items').update({ status: 'overdue' }, { count: 'exact' })
       .lt('due_date', today).in('status', ['pending', 'in_review']),

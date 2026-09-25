@@ -9,6 +9,9 @@
 
 export interface HireForm {
   companyId:      string;
+  /** The candidate this record comes from (099). The consumer's
+   *  hired-to-employee rule keys on it and creates nothing when set. */
+  candidateId?:   string | null;
   fullName:       string;
   email:          string;
   jobTitle:       string;
@@ -30,6 +33,7 @@ export type EmployeeInsert = {
   salary:          number | null;
   line_manager:    string | null;
   status:          'active';
+  source_candidate_id: string | null;
 };
 
 // 015: full_time, part_time, contractor, intern. The form's own
@@ -55,5 +59,6 @@ export function buildEmployeeFromHire(f: HireForm): EmployeeInsert {
     salary,
     line_manager:    f.lineManager.trim() || null,
     status:          'active',
+    source_candidate_id: f.candidateId ?? null,
   };
 }

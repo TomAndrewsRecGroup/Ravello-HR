@@ -51,6 +51,7 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
       is(c: string, v: unknown) { filters.push(r => (v === null ? r[c] == null : r[c] === v)); return q; },
       in(c: string, vs: unknown[]) { filters.push(r => vs.includes(r[c])); return q; },
       gte(c: string, v: any) { filters.push(r => r[c] >= v); return q; },
+      gt(c: string, v: any) { filters.push(r => r[c] != null && r[c] > v); return q; },
       lt(c: string, v: any) { filters.push(r => r[c] != null && r[c] < v); return q; },
       lte(c: string, v: any) { filters.push(r => r[c] != null && r[c] <= v); return q; },
       not(c: string, _op: string, v: unknown) { filters.push(r => !(v === null ? r[c] == null : r[c] === v)); return q; },

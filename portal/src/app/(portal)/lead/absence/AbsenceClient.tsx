@@ -6,6 +6,7 @@ import { Plus, X, Loader2, Calendar, Check, AlertTriangle } from 'lucide-react';
 
 interface AbsenceRecord {
   id: string;
+  employee_id: string | null;
   employee_name: string;
   employee_email: string | null;
   department: string | null;
@@ -19,7 +20,8 @@ interface AbsenceRecord {
   created_at: string;
 }
 
-interface Props { companyId: string; initialRecords: AbsenceRecord[]; }
+export interface AbsenceEmployee { id: string; full_name: string; email: string | null; department: string | null; }
+interface Props { companyId: string; initialRecords: AbsenceRecord[]; employees: AbsenceEmployee[]; }
 
 const ABSENCE_TYPES = ['holiday', 'sick', 'maternity', 'paternity', 'shared_parental', 'compassionate', 'unpaid', 'other'];
 const ABSENCE_LABELS: Record<string, string> = {
@@ -39,29 +41,33 @@ function fmtDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function AbsenceClient({ companyId, initialRecords }: Props) {
+export default function AbsenceClient({ companyId, initialRecords, employees }: Props) {
   const supabase = createClient();
   const [records, setRecords] = useState<AbsenceRecord[]>(initialRecords);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [form, setForm] = useState({
-    employee_name: '', employee_email: '', department: '',
-    absence_type: 'holiday', start_date: '', end_date: '',
-    days: '', notes: '', approved_by: '',
-  });
+  // The employee is CHOSEN from employee_records, never typed: a row
+  // with no employee_id cannot be closed out when they leave, cannot be
+  // counted for absence patterns, and its receipt has nowhere to go.
+  const EMPTY_FORM = { employee_id: '', absence_type: 'holiday', start_date: '', end_date: '', days: '', notes: '', approved_by: '' };
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saveError, setSaveError] = useState('');
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   async function save() {
-    if (!form.employee_name.trim() || !form.start_date) return;
+    const emp = employees.find(e => e.id === form.employee_id);
+    if (!emp || !form.start_date) return;
     setSaving(true);
+    setSaveError('');
     const { data, error } = await supabase.from('absence_records').insert({
       company_id:     companyId,
-      employee_name:  form.employee_name,
-      employee_email: form.employee_email || null,
-      department:     form.department || null,
+      employee_id:    emp.id,
+      employee_name:  emp.full_name,
+      employee_email: emp.email,
+      department:     emp.department,
       absence_type:   form.absence_type,
       start_date:     form.start_date,
       end_date:       form.end_date || null,
@@ -73,8 +79,10 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
     if (!error && data) {
       setRecords(prev => [data as AbsenceRecord, ...prev]);
       setShowForm(false);
-      setForm({ employee_name: '', employee_email: '', department: '', absence_type: 'holiday', start_date: '', end_date: '', days: '', notes: '', approved_by: '' });
+      setForm(EMPTY_FORM);
       revalidatePortalPath('/lead/absence');
+    } else if (error) {
+      setSaveError(error.message);
     }
     setSaving(false);
   }
@@ -201,13 +209,15 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
         <div className="card p-5 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Log Absence</p>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Employee Name *</label>
-              <input className="input" placeholder="e.g. James Smith" value={form.employee_name} onChange={e => set('employee_name', e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Department</label>
-              <input className="input" placeholder="e.g. Sales" value={form.department} onChange={e => set('department', e.target.value)} />
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="absence-employee">Employee *</label>
+              <select id="absence-employee" className="input" value={form.employee_id} onChange={e => set('employee_id', e.target.value)}>
+                <option value="">Select an employee...</option>
+                {employees.map(e => <option key={e.id} value={e.id}>{e.full_name}{e.department ? ` · ${e.department}` : ''}</option>)}
+              </select>
+              {employees.length === 0 && (
+                <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>No active employees yet. Add them under Employee Records first.</p>
+              )}
             </div>
             <div>
               <label className="label">Absence Type</label>
@@ -237,7 +247,8 @@ export default function AbsenceClient({ companyId, initialRecords }: Props) {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={save} disabled={saving || !form.employee_name.trim() || !form.start_date} className="btn-cta btn-sm flex items-center gap-1.5">
+            {saveError && <p role="alert" className="text-xs w-full" style={{ color: 'var(--red)' }}>{saveError}</p>}
+            <button onClick={save} disabled={saving || !form.employee_id || !form.start_date} className="btn-cta btn-sm flex items-center gap-1.5">
               {saving && <Loader2 size={12} className="animate-spin" />} Save
             </button>
             <button onClick={() => setShowForm(false)} className="btn-ghost btn-sm flex items-center gap-1">

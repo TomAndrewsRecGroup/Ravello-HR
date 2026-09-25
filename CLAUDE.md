@@ -2149,3 +2149,85 @@ consequences, and Jev (TypeSafe AI) makes its first typed decisions.
 Mutations reintroduced and caught: the follow-up rule inserting an
 action, the classify route inserting the item, the keyed email sending
 before it claims, a category outside the vocabulary.
+
+---
+
+## LEAD in sync: hired → employee → onboarding → probation → leaving (2026-09-25, migrations 099-100)
+
+PR 3 of the connective-tissue plan. `lib/events/leadRules.ts` is the
+registry; every consequence keyed, every domain write idempotent by a
+unique column, so a re-processed event creates nothing.
+
+- **"Hired" is joined at `employee_records.source_candidate_id`** (099,
+  unique partial). A candidate marked `hired` or an offer
+  `written_accepted` runs `lib/lead/startEmployment.ts`: one employee
+  from the offer (start date, salary in pounds from pence, contract →
+  employment type) and the requisition (title, department), and the
+  role set `filled`. The portal's Mark-as-Hired form stamps the same
+  column, so whichever path runs first wins and the other finds the row.
+  A candidate with no offer starts TODAY with the role's title; the
+  client corrects the date on the employee page.
+- **A new employee starts onboarding from the DEFAULT template**
+  (`onboarding_templates.is_default`, a column nothing read before).
+  `lib/lead/checklistTasks.ts` (shared pair) dates each task
+  `anchor + due_day_offset` in UTC calendar days and copies the
+  template's `assigned_to` (099 adds the column to both progress tables;
+  it was captured on the template and reached no task anyone saw).
+- **One probation review per employee** (`performance_reviews.source_ref
+  = probation:<id>`, unique per company), due a week before
+  `probation_end`, created when onboarding completes OR the
+  `employee_records` due_30 reminder fires, whichever first.
+- **Offboarding no longer terminates on day one.** `POST
+  /api/portal/offboarding/start` creates the instance and tasks, sets
+  `end_date` and keeps the record ACTIVE; the reminders cron's
+  `employee_terminated` status write turns it `terminated` on the last
+  working day (`end_date <= today`), which fires `employee_left`:
+  pending leave AFTER the end date and open policy acknowledgements are
+  `cancelled` (100 adds the CHECK, apply AFTER deploy) and the admins
+  are told what was closed. The inline version marked people terminated
+  weeks early, so their leave link died and their leave stayed pending.
+- **Leave: the editors hear at once, the employee gets a receipt and the
+  decision by email** (`lib/email/templates/leave.ts`). A refusal carries
+  the manager's reason from `employee_notes` (`leave_denied`, newest),
+  which the deny route wrote and nothing read. The Absence form now
+  CHOOSES an employee from `employee_records` instead of typing a name:
+  a row with no `employee_id` cannot be closed out, scored or emailed.
+- **Documents:** a client upload tells staff; a staff upload and an
+  approval tell the client admins.
+
+### The Jev decisions here are made from numbers
+
+- **`absence_pattern`** (Monday, `lib/lead/weeklyPeople.ts`): for each
+  employee with ≥3 spells in 12 months, the state is `spells, days,
+  Bradford factor (S²×D), sick share, Mon/Fri share, one-day spells`
+  and nothing else — `leadJevState.test.ts` asserts every value is a
+  finite number, and the weekly test that the request carries no name,
+  note or id. The answer is an IN-APP suggestion to the client admins
+  (`notify({ inAppOnly: true })` claims `emailed_at` so neither the
+  immediate path nor the digest can send it), once per employee per
+  month, never written to the employee. With Jev off there is no flag:
+  the numbers alone never accuse anyone.
+- **`onboarding_risk`** (weekly): checklist counts and days since start;
+  in-app once per instance per ISO week; `fallbackOnboardingRisk` when
+  Jev is off or gated.
+- **`doc_type_suggest`** (portal employee-docs form, "Suggest"): the
+  title and file name go in as named state fields framed as data; the
+  option ids are pinned to the 005 CHECK list both ways; the route never
+  writes `employee_documents`, and the form only pre-fills the select.
+
+### Rules
+
+- **Mutation-checked** (10 reintroduced, all caught): hire not
+  idempotent, review without its `source_ref`, leaving cancelling leave
+  BEFORE the end date, `assigned_to` not copied, refusal reason not
+  read, a name in the Jev state, the absence flag emailed, offboarding
+  terminating at once, a doc type outside the CHECK, and the
+  employee-terminated write.
+- **`platformEventsSql.test.ts` checks the LATEST trigger definition per
+  table** (099 re-creates `employee_records_platform_event`); add any
+  later re-creation to its `LATER` list.
+- **Rollout:** 099 applied and verified live 2026-09-25 (probe in
+  `supabase/probes/099_lead_flow.sql`, rolled back, then applied). **100
+  after the deploy** — the old code never writes `cancelled`, but the
+  CHECK must not land before the consumer that does. Seed a default
+  onboarding template for a client to see the chain end to end.

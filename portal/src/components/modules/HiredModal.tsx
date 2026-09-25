@@ -47,7 +47,7 @@ export default function HiredModal({
 
     try {
       const employee = buildEmployeeFromHire({
-        companyId, fullName, email, jobTitle, department, startDate, employmentType,
+        companyId, candidateId, fullName, email, jobTitle, department, startDate, employmentType,
         salary: annualSalary, lineManager: reportingManager,
       });
 

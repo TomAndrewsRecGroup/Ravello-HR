@@ -13,7 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-BASELINE=109
+BASELINE=108
 
 COUNT=$(node scripts/lib/scan-blind-updates.mjs --count)
 
