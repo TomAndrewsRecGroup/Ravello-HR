@@ -17,8 +17,14 @@ export const NOTIFICATION_TYPES = [
   // Support
   'service_request_created',
   'service_request_overdue',
+  'service_request_updated',
+  'service_request_completed',
+  'sla_breached',
+  'client_at_risk',
   'ivylens_ticket_reply',
   'ivylens_ticket_resolved',
+  // BD
+  'enquiry_received',
   // Actions and internal tasks
   'action_completed',
   'task_assigned',
@@ -69,6 +75,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   candidate_feedback:         'Candidate feedback',
   service_request_created:    'Service request raised',
   service_request_overdue:    'Service request overdue',
+  service_request_updated:    'Service request in progress',
+  service_request_completed:  'Service request completed',
+  sla_breached:               'Response overdue (SLA)',
+  client_at_risk:             'Client may be unhappy',
+  enquiry_received:           'New enquiry',
   ivylens_ticket_reply:       'Support reply',
   ivylens_ticket_resolved:    'Support ticket resolved',
   action_completed:           'Action completed',

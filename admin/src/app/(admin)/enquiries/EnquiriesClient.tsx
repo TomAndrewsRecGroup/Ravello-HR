@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Mail, Phone, Building2, Search, ExternalLink } from 'lucide-react';
+import { Mail, Phone, Building2, Search, ExternalLink, Loader2, Target } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export interface Enquiry {
@@ -14,6 +14,23 @@ export interface Enquiry {
   status:       'new' | 'contacted' | 'booked' | 'closed';
   notes:        string | null;
   created_at:   string;
+  bd_company_id: string | null;
+  triage:       { intent: string | null; fit: string | null; confidence: number | null; gated: boolean } | null;
+}
+
+const INTENT_LABEL: Record<string, string> = { hire: 'Hiring', hr_support: 'HR support', hs: 'Health & Safety', unknown: 'Unclear' };
+const FIT_RANK: Record<string, number> = { strong: 3, good: 2, possible: 1, poor: 0 };
+
+/** Jev's read of the numeric quiz answers: a chip, never a status. */
+function TriageChip({ t }: { t: Enquiry['triage'] }) {
+  if (!t) return null;
+  if (t.gated || !t.intent) return <span className="badge" title="Jev was not confident" style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}>Unsure</span>;
+  return (
+    <span className="badge" title={`Jev: ${INTENT_LABEL[t.intent] ?? t.intent}${t.fit ? ` · ${t.fit} fit` : ''}${t.confidence != null ? ` (${Math.round(t.confidence * 100)}%)` : ''}`}
+      style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
+      {INTENT_LABEL[t.intent] ?? t.intent}{t.fit ? ` · ${t.fit}` : ''}
+    </span>
+  );
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -49,7 +66,7 @@ export default function EnquiriesClient({ initial }: { initial: Enquiry[] }) {
         if (!blob.includes(s)) return false;
       }
       return true;
-    });
+    }).sort((a, b) => (FIT_RANK[b.triage?.fit ?? ''] ?? -1) - (FIT_RANK[a.triage?.fit ?? ''] ?? -1) || b.created_at.localeCompare(a.created_at));
   }, [rows, q, source, status]);
 
   async function update(id: string, patch: Partial<Enquiry>) {
@@ -112,7 +129,7 @@ export default function EnquiriesClient({ initial }: { initial: Enquiry[] }) {
                         <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>{e.email}</div>
                       </td>
                       <td><span className="badge">{SOURCE_LABEL[e.source] ?? e.source}</span></td>
-                      <td className="text-sm">{e.company_name ?? <span style={{ color: 'var(--ink-faint)' }}>—</span>}</td>
+                      <td className="text-sm">{e.company_name ?? <span style={{ color: 'var(--ink-faint)' }}>—</span>} <TriageChip t={e.triage} /></td>
                       <td>
                         <span className="badge" style={{ background: tone.bg, color: tone.fg }}>{e.status}</span>
                       </td>
@@ -132,6 +149,7 @@ export default function EnquiriesClient({ initial }: { initial: Enquiry[] }) {
             enquiry={sel}
             onStatus={(s) => update(sel.id, { status: s })}
             onNotes={(n)  => update(sel.id, { notes: n })}
+            onConverted={(patch) => { setRows(prev => prev.map(r => r.id === sel.id ? { ...r, ...patch } : r)); setSel(s => s ? { ...s, ...patch } : s); }}
             onClose={() => setSel(null)}
           />
         ) : (
@@ -145,14 +163,38 @@ export default function EnquiriesClient({ initial }: { initial: Enquiry[] }) {
 }
 
 function DetailPanel({
-  enquiry, onStatus, onNotes, onClose,
+  enquiry, onStatus, onNotes, onConverted, onClose,
 }: {
   enquiry: Enquiry;
   onStatus: (s: Enquiry['status']) => void;
   onNotes:  (n: string) => void;
+  onConverted: (patch: Partial<Enquiry>) => void;
   onClose:  () => void;
 }) {
   const [notes, setNotes] = useState(enquiry.notes ?? '');
+  const [companyName, setCompanyName] = useState(enquiry.company_name ?? '');
+  const [converting, setConverting] = useState(false);
+  const [convertMsg, setConvertMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Convert: find-or-create the BD prospect by normalised name, link it,
+  // and put a follow-up on the caller's board (once per enquiry).
+  async function convert() {
+    setConverting(true); setConvertMsg(null);
+    try {
+      const res = await fetch(`/api/admin/enquiries/${enquiry.id}/convert`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_name: companyName.trim() || undefined }),
+      });
+      const data = await res.json().catch(() => ({})) as { error?: string; bd_company_id?: string; created?: boolean; task?: boolean; warning?: string };
+      if (!res.ok) { setConvertMsg({ ok: false, text: data.error ?? 'Could not convert.' }); return; }
+      onConverted({ bd_company_id: data.bd_company_id ?? null, status: enquiry.status === 'new' ? 'contacted' : enquiry.status });
+      setConvertMsg({ ok: !data.warning, text: data.warning ?? `${data.created ? 'Prospect created' : 'Linked to the existing prospect'}${data.task ? ' · follow-up task added for you' : ''}.` });
+    } catch {
+      setConvertMsg({ ok: false, text: 'Network error. Nothing was changed.' });
+    } finally {
+      setConverting(false);
+    }
+  }
 
   return (
     <div className="card p-5">
@@ -220,6 +262,22 @@ function DetailPanel({
           className="input w-full"
           placeholder="Notes for the team…"
         />
+      </div>
+
+      <div className="mb-4 p-3 rounded-md" style={{ background: 'var(--surface-soft)' }}>
+        <p className="label mb-2">BD prospect</p>
+        {enquiry.triage && <p className="text-xs mb-2" style={{ color: 'var(--ink-soft)' }}>Jev's read: <TriageChip t={enquiry.triage} /></p>}
+        {enquiry.bd_company_id ? (
+          <a href="/bd-intelligence" className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>Linked to a prospect · open BD Intelligence →</a>
+        ) : (
+          <div className="space-y-2">
+            <input className="input w-full" placeholder="Company name" value={companyName} onChange={e => setCompanyName(e.target.value)} />
+            <button type="button" onClick={convert} disabled={converting || !companyName.trim()} className="btn-secondary btn-sm flex items-center gap-1.5">
+              {converting ? <Loader2 size={12} className="animate-spin" /> : <Target size={12} />} Convert to prospect
+            </button>
+          </div>
+        )}
+        {convertMsg && <p role="status" className="text-xs mt-2" style={{ color: convertMsg.ok ? 'var(--teal)' : 'var(--red)' }}>{convertMsg.text}</p>}
       </div>
 
       <a

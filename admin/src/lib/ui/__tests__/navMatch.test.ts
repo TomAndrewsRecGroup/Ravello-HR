@@ -7,7 +7,7 @@ const HREFS = [
   '/clients', '/clients/onboard', '/users', '/engagement', '/feature-flags',
   '/hiring', '/hiring/templates', '/candidates', '/salary-benchmarks',
   '/bd-intelligence', '/bd-roles', '/health',
-  '/tasks', '/activity', '/enquiries', '/requests', '/support', '/broadcast', '/compliance',
+  '/tasks', '/activity', '/enquiries', '/requests', '/broadcast', '/compliance',
   '/athletes-to-industry', '/dev-plans', '/referrals',
   '/revenue', '/value-reports', '/reports', '/documents', '/latest-updates', '/learning', '/roadmap',
   '/settings/email',
@@ -55,7 +55,7 @@ describe('activeHref', () => {
   it('highlights the parent on a detail page beneath it', () => {
     expect(activeHref('/clients/a3f1e0c2-0000-4000-8000-000000000000', HREFS)).toBe('/clients');
     expect(activeHref('/hiring/42', HREFS)).toBe('/hiring');
-    expect(activeHref('/support/7', HREFS)).toBe('/support');
+    expect(activeHref('/enquiries/7', HREFS)).toBe('/enquiries');
   });
 
   it('does not depend on the order items are declared in', () => {

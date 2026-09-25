@@ -182,13 +182,31 @@ export const TICKET_PRIORITY_LABELS: Record<string, string> = {
 
 /* ─── Service requests ────────────────────────────────────────── */
 
-export const SERVICE_REQUEST_STATUS_LABELS: Record<string, string> = {
-  open:        'New',
-  in_progress: 'In progress',
-  awaiting:    'Awaiting your reply',
-  resolved:    'Resolved',
-  closed:      'Closed',
+// The one support object. `tickets` never had a writer; every "Raise a
+// query" is a service_requests row. Types are the portal form's six ids
+// (102 CHECK); statuses are 097's CHECK; priorities are set by 101's
+// trigger from the urgency the form wrote.
+export const SERVICE_REQUEST_TYPES = ['policy_update', 'salary_benchmark', 'manager_support', 'strategic_review', 'hr_audit', 'support_query'] as const;
+export type ServiceRequestType = typeof SERVICE_REQUEST_TYPES[number];
+export const SERVICE_REQUEST_TYPE_LABELS: Record<ServiceRequestType, string> = {
+  policy_update:    'Policy update',
+  salary_benchmark: 'Salary benchmark',
+  manager_support:  'Manager support',
+  strategic_review: 'Strategic review',
+  hr_audit:         'HR audit',
+  support_query:    'Support query',
 };
+
+export const SERVICE_REQUEST_STATUSES = ['new', 'in_progress', 'complete'] as const;
+export type ServiceRequestStatus = typeof SERVICE_REQUEST_STATUSES[number];
+export const SERVICE_REQUEST_STATUS_LABELS: Record<ServiceRequestStatus, string> = {
+  new:         'New',
+  in_progress: 'In progress',
+  complete:    'Complete',
+};
+
+export const SERVICE_REQUEST_PRIORITIES = ['low', 'normal', 'high', 'urgent'] as const;
+export type ServiceRequestPriority = typeof SERVICE_REQUEST_PRIORITIES[number];
 
 /* ─── Actions ─────────────────────────────────────────────────── */
 

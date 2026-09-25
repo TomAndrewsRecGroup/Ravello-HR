@@ -2,27 +2,59 @@
 import React, { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
-import { ChevronDown, ChevronRight, Loader2, Save } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, Save, Sparkles } from 'lucide-react';
+import { SERVICE_REQUEST_TYPES, SERVICE_REQUEST_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { SR_ROUTES, SR_TRIAGE_CATEGORIES, type SrTriage } from '@/lib/support/jevQuestions';
+import { slaHoursLeft } from '@/lib/support/sla';
 
 interface Props {
   requests: any[];
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  policy_update:       'Policy Update',
-  salary_benchmark:    'Salary Benchmark',
-  onboarding_support:  'Onboarding Support',
-  offboarding_support: 'Offboarding Support',
-  hr_advice:           'HR Advice',
-  contract_review:     'Contract Review',
-  compliance_check:    'Compliance Check',
-  training_request:    'Training Request',
-  recruitment_support: 'Recruitment Support',
-  general_enquiry:     'General Enquiry',
-};
-
 function humanType(type: string): string {
-  return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-';
+  return labelFor(SERVICE_REQUEST_TYPE_LABELS, type, type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-');
+}
+
+// Jev's read of the request: shown, sorted on, never acted on. The
+// consumer wrote `triage`; status, urgency and the SLA are untouched by
+// it (supportRules.test.ts pins that).
+const URGENCY_RANK: Record<string, number> = { urgent: 3, high: 2, normal: 1, low: 0 };
+function suggestedUrgency(r: any): string | null {
+  const t = r.triage as SrTriage | null;
+  return t && !t.gated && t.urgency ? t.urgency : null;
+}
+function effectiveUrgency(r: any): number {
+  return URGENCY_RANK[suggestedUrgency(r) ?? (r.priority ?? r.urgency ?? 'normal').toString().toLowerCase()] ?? 1;
+}
+
+function TriageChips({ r }: { r: any }) {
+  const t = r.triage as SrTriage | null;
+  if (!t) return null;
+  if (t.gated) return <span className="badge" title="Jev was not confident enough to suggest" style={{ background: 'var(--surface-alt)', color: 'var(--ink-faint)' }}><Sparkles size={10} /> Unsure</span>;
+  const parts: string[] = [];
+  if (t.urgency) parts.push(t.urgency);
+  if (t.category && t.category !== r.request_type) parts.push(labelFor(SR_TRIAGE_CATEGORIES as Record<string, string>, t.category, t.category).toLowerCase());
+  if (t.route) parts.push(labelFor(SR_ROUTES as Record<string, string>, t.route, t.route).toLowerCase());
+  if ((t.needs_call ?? 0) >= 0.8) parts.push('call');
+  const unhappy = (t.dissatisfaction ?? 0) >= 0.8;
+  return (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <span className="badge" title={`Jev suggests${t.confidence != null ? ` (${Math.round(t.confidence * 100)}% sure)` : ''}`} style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}>
+        <Sparkles size={10} /> {parts.join(' · ') || 'no change'}
+      </span>
+      {unhappy && <span className="badge" style={{ background: 'rgba(217,68,68,0.10)', color: 'var(--rose)' }}>may be unhappy</span>}
+    </span>
+  );
+}
+
+/** The SLA clock, set by the database at insert. */
+function SlaCell({ r, status }: { r: any; status: string }) {
+  if (status === 'complete' || r.first_response_at) return <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.first_response_at ? 'Responded' : '-'}</span>;
+  const h = slaHoursLeft(r.sla_due_at);
+  if (h == null) return <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>-</span>;
+  if (h < 0) return <span className="badge" style={{ background: 'rgba(217,68,68,0.10)', color: 'var(--rose)' }}>Overdue {Math.round(-h)}h</span>;
+  const soon = h <= 4;
+  return <span className="text-xs font-medium" style={{ color: soon ? 'var(--amber)' : 'var(--ink-soft)' }}>{h < 1 ? '<1h' : h < 48 ? `${Math.round(h)}h` : `${Math.round(h / 24)}d`} left</span>;
 }
 
 function urgencyBadge(urgency: string): React.CSSProperties {
@@ -62,6 +94,7 @@ const STATUS_FILTERS = ['All', 'New', 'In Progress', 'Complete'] as const;
 export default function RequestsClient({ requests }: Props) {
   const supabase = createClient();
   const [filter,        setFilter]        = useState<string>('All');
+  const [typeFilter,    setTypeFilter]    = useState<string>('all');
   const [expanded,      setExpanded]      = useState<string | null>(null);
   const [localStatus,   setLocalStatus]   = useState<Record<string, string>>({});
   const [updating,      setUpdating]      = useState<string | null>(null);
@@ -125,21 +158,31 @@ export default function RequestsClient({ requests }: Props) {
     }
   }
 
+  const typesPresent = useMemo(() => {
+    const seen = new Set<string>(requests.map(r => String(r.request_type ?? '')));
+    return [...SERVICE_REQUEST_TYPES.filter(t => seen.has(t)), ...[...seen].filter(t => t && !(SERVICE_REQUEST_TYPES as readonly string[]).includes(t))];
+  }, [requests]);
+
+  // Open requests sort by the urgency Jev suggests (else the stored
+  // priority), then by age; completed ones by date.
   const filtered = useMemo(() => {
-    return requests.filter(r => {
+    const rows = requests.filter(r => {
       const s = (localStatus[r.id] ?? r.status ?? '').toLowerCase();
+      if (typeFilter !== 'all' && r.request_type !== typeFilter) return false;
       if (filter === 'All')         return true;
       if (filter === 'New')         return s === 'new';
       if (filter === 'In Progress') return s === 'in_progress' || s === 'in progress';
       if (filter === 'Complete')    return s === 'complete' || s === 'completed';
       return true;
     });
-  }, [requests, filter, localStatus]);
+    const isOpen = (r: any) => !['complete', 'completed'].includes((localStatus[r.id] ?? r.status ?? '').toLowerCase());
+    return rows.sort((a, b) => (Number(isOpen(b)) - Number(isOpen(a))) || (effectiveUrgency(b) - effectiveUrgency(a)) || String(a.created_at).localeCompare(String(b.created_at)));
+  }, [requests, filter, typeFilter, localStatus]);
 
   return (
     <>
       {/* Filter bar */}
-      <div className="card p-4 mb-5 flex items-center gap-2">
+      <div className="card p-4 mb-5 flex items-center gap-2 flex-wrap">
         <span className="text-xs font-semibold" style={{ color: 'var(--ink-soft)' }}>Status:</span>
         {STATUS_FILTERS.map(f => (
           <button
@@ -150,6 +193,11 @@ export default function RequestsClient({ requests }: Props) {
             {f}
           </button>
         ))}
+        <span className="text-xs font-semibold ml-3" style={{ color: 'var(--ink-soft)' }}>Type:</span>
+        <select className="input text-xs py-1.5 w-auto" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} aria-label="Filter by request type">
+          <option value="all">All types</option>
+          {typesPresent.map(t => <option key={t} value={t}>{humanType(t)}</option>)}
+        </select>
       </div>
 
       {/* Table */}
@@ -165,6 +213,7 @@ export default function RequestsClient({ requests }: Props) {
                 <th>Type</th>
                 <th>Subject</th>
                 <th>Urgency</th>
+                <th>SLA</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
@@ -192,14 +241,16 @@ export default function RequestsClient({ requests }: Props) {
                       </td>
                       <td className="font-medium">{r.companies?.name ?? '-'}</td>
                       <td style={{ color: 'var(--ink-soft)' }}>{humanType(r.type ?? r.request_type)}</td>
-                      <td className="max-w-[220px]">
+                      <td className="max-w-[260px]">
                         <p className="truncate" style={{ color: 'var(--ink)' }}>{r.subject ?? '-'}</p>
+                        <TriageChips r={r} />
                       </td>
                       <td>
                         <span className="badge" style={urgencyBadge(r.urgency)}>
                           {r.urgency ? r.urgency.charAt(0).toUpperCase() + r.urgency.slice(1) : '-'}
                         </span>
                       </td>
+                      <td><SlaCell r={r} status={currentStatus} /></td>
                       <td>
                         <span className="badge" style={statusBadge(currentStatus)}>
                           {statusLabel(currentStatus)}
@@ -233,7 +284,7 @@ export default function RequestsClient({ requests }: Props) {
                     {/* Expanded detail row */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={8} style={{ background: 'var(--surface-soft)', padding: 0 }}>
+                        <td colSpan={9} style={{ background: 'var(--surface-soft)', padding: 0 }}>
                           <div className="px-6 py-4 space-y-5">
 
                             {/* Request details */}

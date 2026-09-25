@@ -50,6 +50,11 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   document_shared:            { Icon: FileText,       color: 'var(--blue)' },
   document_approved:          { Icon: FileText,       color: 'var(--success)' },
   absence_pattern_flag:       { Icon: Sparkles,       color: 'var(--purple)' },
+  service_request_updated:    { Icon: Headphones,     color: 'var(--blue)' },
+  service_request_completed:  { Icon: Check,          color: 'var(--success)' },
+  sla_breached:               { Icon: AlertTriangle,  color: 'var(--red)' },
+  client_at_risk:             { Icon: AlertTriangle,  color: 'var(--red)' },
+  enquiry_received:           { Icon: Users,          color: 'var(--purple)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_META);

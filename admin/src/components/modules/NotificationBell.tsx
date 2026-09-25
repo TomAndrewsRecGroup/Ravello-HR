@@ -62,6 +62,11 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   document_shared:            { icon: FileText,      color: 'var(--blue)' },
   document_approved:          { icon: FileText,      color: 'var(--success)' },
   absence_pattern_flag:       { icon: Sparkles,      color: 'var(--purple)' },
+  service_request_updated:    { icon: LifeBuoy,      color: 'var(--blue)' },
+  service_request_completed:  { icon: CheckCircle2,  color: 'var(--success)' },
+  sla_breached:               { icon: AlertTriangle, color: 'var(--red)' },
+  client_at_risk:             { icon: AlertTriangle, color: 'var(--red)' },
+  enquiry_received:           { icon: Users,         color: 'var(--purple)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

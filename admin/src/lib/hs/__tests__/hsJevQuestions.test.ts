@@ -61,7 +61,8 @@ describe('rank and follow-up', () => {
 
 describe('policy', () => {
   it('only the register ranking may act on its own; classify and follow-up are recommendations', () => {
-    expect([...AUTO_ACT_KINDS]).toEqual(['hs_register_rank']);
-    for (const k of DECISION_KINDS) if (k !== 'hs_register_rank') expect(AUTO_ACT_KINDS.has(k)).toBe(false);
+    // bd_next_action joins it in PR 4: its state is scan counts and dates the platform computed, never text.
+    expect([...AUTO_ACT_KINDS]).toEqual(['hs_register_rank', 'bd_next_action']);
+    for (const k of DECISION_KINDS) if (k !== 'hs_register_rank' && k !== 'bd_next_action') expect(AUTO_ACT_KINDS.has(k)).toBe(false);
   });
 });

@@ -34,9 +34,10 @@ export default async function AdminDashboardPage() {
       .select('id,title,stage,companies(name)')
       .neq('stage', 'filled').neq('stage', 'cancelled')
       .order('created_at', { ascending: false }).limit(10),
-    supabase.from('tickets')
-      .select('id,subject,status,priority,companies(name)')
-      .neq('status', 'closed')
+    // service_requests is the support object; tickets never had a writer.
+    supabase.from('service_requests')
+      .select('id,subject,status,priority,urgency,sla_due_at,first_response_at,companies(name)')
+      .in('status', ['new', 'in_progress'])
       .order('created_at', { ascending: false }).limit(10),
     supabase.from('compliance_items')
       .select('id,title,due_date,companies(name)')
@@ -70,9 +71,9 @@ export default async function AdminDashboardPage() {
     supabase.from('requisitions')
       .select('id', { count: 'exact', head: true })
       .neq('stage', 'filled').neq('stage', 'cancelled'),
-    supabase.from('tickets')
+    supabase.from('service_requests')
       .select('id', { count: 'exact', head: true })
-      .neq('status', 'closed'),
+      .in('status', ['new', 'in_progress']),
   ]);
 
   const reqs           = reqRes.data            ?? [];
@@ -116,7 +117,7 @@ export default async function AdminDashboardPage() {
               { icon: Building2,     label: 'Active Clients', val: active,         href: '/clients',  color: 'var(--purple)' },
               { icon: Users,         label: 'Client Users',   val: userCount,      href: '/users',    color: 'var(--blue)' },
               { icon: Briefcase,     label: 'Active Roles',   val: activeRoleCount,  href: '/hiring',   color: 'var(--teal)' },
-              { icon: LifeBuoy,      label: 'Open Tickets',   val: openTicketCount,  href: '/support',  color: 'var(--warning)' },
+              { icon: LifeBuoy,      label: 'Open Requests',  val: openTicketCount,  href: '/requests', color: 'var(--warning)' },
             ].map(s => (
               <Link key={s.label} prefetch={false} href={s.href} className="card-glass p-6 flex flex-col gap-1.5 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
@@ -200,22 +201,22 @@ export default async function AdminDashboardPage() {
           <section className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Support Tickets</h2>
+                <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--ink)' }}>Open Service Requests</h2>
                 <span className="accent-line mt-1.5" />
               </div>
-              <Link prefetch={false} href="/support" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
+              <Link prefetch={false} href="/requests" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>All →</Link>
             </div>
             {tickets.length === 0 ? (
-              <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No open tickets</p>
+              <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No open requests</p>
             ) : (
               <div className="space-y-2">
                 {tickets.slice(0, 8).map((t: any) => (
-                  <Link key={t.id} href={`/support/${t.id}`} className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
+                  <Link key={t.id} href="/requests" className="flex items-center justify-between px-3 py-2.5 rounded-[8px] hover:bg-[var(--surface-alt)] transition-colors">
                     <div>
                       <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--ink)' }}>{t.subject}</p>
                       <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{(t.companies as any)?.name}</p>
                     </div>
-                    <span className={`badge ${prioBadge[t.priority]}`}>{t.priority}</span>
+                    <span className={`badge ${prioBadge[t.priority ?? 'normal'] ?? 'badge-normal'}`}>{t.first_response_at ? (t.priority ?? 'normal') : (t.sla_due_at && new Date(t.sla_due_at) < new Date() ? 'overdue' : (t.priority ?? 'normal'))}</span>
                   </Link>
                 ))}
               </div>

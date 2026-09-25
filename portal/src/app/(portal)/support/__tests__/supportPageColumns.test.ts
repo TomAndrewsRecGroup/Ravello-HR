@@ -10,7 +10,11 @@ import { describe, expect, it } from 'vitest';
 const page = readFileSync(resolve(__dirname, '../page.tsx'), 'utf8');
 const sql = readFileSync(resolve(__dirname, '../../../../../../supabase/migrations/002_friction_score_and_new_tables.sql'), 'utf8');
 const table = sql.slice(sql.indexOf('CREATE TABLE IF NOT EXISTS service_requests'), sql.indexOf(');', sql.indexOf('CREATE TABLE IF NOT EXISTS service_requests')));
-const columns = new Set([...table.matchAll(/^\s+(\w+)\s+(UUID|TEXT|JSONB|TIMESTAMPTZ)\b/gm)].map(m => m[1]));
+const sql101 = readFileSync(resolve(__dirname, '../../../../../../supabase/migrations/101_support_bd.sql'), 'utf8');
+const columns = new Set([
+  ...[...table.matchAll(/^\s+(\w+)\s+(UUID|TEXT|JSONB|TIMESTAMPTZ)\b/gm)].map(m => m[1]),
+  ...[...sql101.matchAll(/ALTER TABLE public\.service_requests ADD COLUMN IF NOT EXISTS (\w+)/g)].map(m => m[1]),
+]);
 
 describe('portal support page', () => {
   it('selects only columns service_requests has', () => {

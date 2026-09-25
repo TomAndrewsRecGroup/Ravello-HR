@@ -53,6 +53,7 @@ PAIRS=(
   "admin/src/lib/jev/transport.ts|portal/src/lib/jev/transport.ts"
   "admin/src/lib/jev/client.ts|portal/src/lib/jev/client.ts"
   "admin/src/lib/lead/checklistTasks.ts|portal/src/lib/lead/checklistTasks.ts"
+  "admin/src/lib/support/sla.ts|portal/src/lib/support/sla.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
