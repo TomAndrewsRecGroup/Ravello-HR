@@ -106,48 +106,31 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
     revalidatePortalPath('/lead/offboarding');
   }
 
+  // Starting offboarding goes through POST /api/portal/offboarding/start:
+  // it creates the instance and its tasks, sets end_date to the last
+  // working day and keeps the record ACTIVE until then. The old inline
+  // version marked the employee terminated on the spot, weeks early.
+  const [startError, setStartError] = useState('');
   async function startOffboarding() {
     if (!selectedEmployee || !selectedTemplate || !lastWorkingDay) return;
     setSaving(true);
-    const template = templates.find(t => t.id === selectedTemplate);
-
-    const { data: inst } = await supabase
-      .from('offboarding_instances')
-      .insert({
-        company_id: companyId, employee_id: selectedEmployee,
-        template_id: selectedTemplate, last_working_day: lastWorkingDay,
-        reason,
-      })
-      .select().single();
-
-    if (inst && template) {
-      const lwd = new Date(lastWorkingDay);
-      await supabase.from('offboarding_task_progress').insert(
-        template.offboarding_template_tasks
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map((t, i) => {
-            const due = new Date(lwd);
-            due.setDate(due.getDate() + t.due_day_offset);
-            return {
-              instance_id: inst.id, task_title: t.title,
-              task_description: t.description ?? null,
-              category: t.category, due_date: due.toISOString().split('T')[0],
-              sort_order: i,
-            };
-          })
-      );
+    setStartError('');
+    try {
+      const res = await fetch('/api/portal/offboarding/start', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employee_id: selectedEmployee, template_id: selectedTemplate, last_working_day: lastWorkingDay, reason }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setStartError((data as { error?: string }).error ?? 'Could not start offboarding.');
+        return;
+      }
+      setShowStartForm(false);
+      setSelectedEmployee(''); setSelectedTemplate(''); setLastWorkingDay(''); setReason('resignation');
+      revalidatePortalPath('/lead/offboarding');
+    } finally {
+      setSaving(false);
     }
-
-    // Update employee status to terminated
-    await supabase
-      .from('employee_records')
-      .update({ status: 'terminated', end_date: lastWorkingDay })
-      .eq('id', selectedEmployee);
-
-    setSaving(false);
-    setShowStartForm(false);
-    setSelectedEmployee(''); setSelectedTemplate(''); setLastWorkingDay(''); setReason('resignation');
-    revalidatePortalPath('/lead/offboarding');
   }
 
   async function toggleTask(taskId: string, currentStatus: string) {
@@ -457,6 +440,7 @@ export default function OffboardingClient({ companyId, userId, isAdmin, template
                 </select>
               </div>
             </div>
+            {startError && <p role="alert" className="text-xs mt-4" style={{ color: 'var(--red)' }}>{startError}</p>}
             <div className="flex justify-end gap-2 mt-6">
               <button onClick={() => setShowStartForm(false)} className="btn-secondary btn-sm">Cancel</button>
               <button onClick={startOffboarding} disabled={saving || !selectedEmployee || !selectedTemplate || !lastWorkingDay} className="btn-cta btn-sm">

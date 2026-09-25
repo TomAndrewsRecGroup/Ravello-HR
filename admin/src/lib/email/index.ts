@@ -47,3 +47,6 @@ export type { HsCheckFailedInput }       from './templates/hsCheckFailed';
 
 export { providerWeeklyDigestEmail, clientWeeklySummaryEmail } from './templates/hsWeekly';
 export type { WeeklyCompanySection, WeeklyItem, WeeklyAction, WeeklyActivity } from './templates/hsWeekly';
+
+export { leaveRequestedEmail, leaveDecisionEmail } from './templates/leave';
+export type { LeaveRequestedInput, LeaveDecisionInput } from './templates/leave';

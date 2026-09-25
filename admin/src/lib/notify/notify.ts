@@ -50,6 +50,10 @@ export interface NotifyInput {
   dedupeKey:  string;
   /** Emails a `daily`-mode recipient at once instead of in the digest. */
   urgent?:    boolean;
+  /** Never email this one, whatever the preference: it is a suggestion
+   *  about a named person (an absence pattern) and belongs in the app,
+   *  where the context is. The digest skips it too. */
+  inAppOnly?: boolean;
   eventId?:   number | null;
   /** Optional richer email body; the default is the generic notification template. */
   emailHtml?: (r: Recipient, absoluteLink: string | null) => { subject: string; html: string; tag?: string };
@@ -174,6 +178,11 @@ export async function notify(sb: SupabaseClient, input: NotifyInput): Promise<No
   const created = (inserted ?? []) as { id: string; user_id: string }[];
   tally.notified = created.length;
   if (created.length === 0) return tally;
+  if (input.inAppOnly) {
+    // Claim the rows as "emailed" so the digest never carries them either.
+    await sb.from('notifications').update({ emailed_at: new Date().toISOString() }, COUNT_EXACT).in('id', created.map(n => n.id));
+    return tally;
+  }
 
   const byId = new Map(recipients.map(r => [r.id, r]));
   const prefs = await readPreferences(sb, created.map(n => n.user_id));

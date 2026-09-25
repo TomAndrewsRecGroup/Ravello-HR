@@ -39,6 +39,17 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_action_done:             { Icon: Check,          color: 'var(--success)' },
   hs_followup_suggested:      { Icon: Sparkles,       color: 'var(--purple)' },
   provider_access_ending:     { Icon: HardHat,        color: 'var(--amber)' },
+  leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
+  role_filled:                { Icon: Check,          color: 'var(--success)' },
+  onboarding_started:         { Icon: Users,          color: 'var(--blue)' },
+  onboarding_risk:            { Icon: AlertTriangle,  color: 'var(--amber)' },
+  probation_review_scheduled: { Icon: CalendarClock,  color: 'var(--blue)' },
+  offboarding_started:        { Icon: Users,          color: 'var(--amber)' },
+  employee_left:              { Icon: Users,          color: 'var(--ink-faint)' },
+  document_uploaded:          { Icon: FileText,       color: 'var(--blue)' },
+  document_shared:            { Icon: FileText,       color: 'var(--blue)' },
+  document_approved:          { Icon: FileText,       color: 'var(--success)' },
+  absence_pattern_flag:       { Icon: Sparkles,       color: 'var(--purple)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_META);

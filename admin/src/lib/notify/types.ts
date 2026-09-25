@@ -46,6 +46,18 @@ export const NOTIFICATION_TYPES = [
   'hs_action_done',
   'hs_followup_suggested',
   'provider_access_ending',
+  // LEAD / HR flow
+  'leave_requested',
+  'role_filled',
+  'onboarding_started',
+  'onboarding_risk',
+  'probation_review_scheduled',
+  'offboarding_started',
+  'employee_left',
+  'document_uploaded',
+  'document_shared',
+  'document_approved',
+  'absence_pattern_flag',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -81,6 +93,17 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   hs_action_done:             'H&S action completed',
   hs_followup_suggested:      'H&S follow-up suggested',
   provider_access_ending:     'Provider access ending',
+  leave_requested:            'Leave requested',
+  role_filled:                'Role filled',
+  onboarding_started:         'Onboarding started',
+  onboarding_risk:            'Onboarding slipping',
+  probation_review_scheduled: 'Probation review scheduled',
+  offboarding_started:        'Offboarding started',
+  employee_left:              'Employee left',
+  document_uploaded:          'Client uploaded a document',
+  document_shared:            'Document shared with you',
+  document_approved:          'Document approved',
+  absence_pattern_flag:       'Absence pattern to review',
 };
 
 export function isNotificationType(v: string): v is NotificationType {

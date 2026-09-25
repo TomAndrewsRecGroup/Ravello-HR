@@ -21,15 +21,23 @@ export default async function AbsencePage() {
     </main>
   );
 
-  const { data: records } = await supabase
-    .from('absence_records')
-    .select('id,employee_name,employee_email,department,absence_type,start_date,end_date,days,status,notes,approved_by,created_at')
-    .eq('company_id', companyId)
-    .order('start_date', { ascending: false });
+  const [{ data: records }, { data: employees }] = await Promise.all([
+    supabase
+      .from('absence_records')
+      .select('id,employee_id,employee_name,employee_email,department,absence_type,start_date,end_date,days,status,notes,approved_by,created_at')
+      .eq('company_id', companyId)
+      .order('start_date', { ascending: false }),
+    supabase
+      .from('employee_records')
+      .select('id,full_name,email,department')
+      .eq('company_id', companyId)
+      .eq('status', 'active')
+      .order('full_name', { ascending: true }),
+  ]);
 
   return (
       <main className="portal-page flex-1">
-        <AbsenceClient companyId={companyId} initialRecords={records ?? []} />
+        <AbsenceClient companyId={companyId} initialRecords={records ?? []} employees={employees ?? []} />
       </main>
   );
 }
