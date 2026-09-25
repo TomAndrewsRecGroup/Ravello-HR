@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 // Add each new H&S migration to FILES.
 
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
-const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql'];
+const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql', '112_hs_incidents_equipment_toolbox.sql'];
 const sql = FILES.map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 type Policy = { name: string; table: string; body: string };
@@ -82,6 +82,18 @@ describe('H&S RLS shape', () => {
     }
   });
 
+  it('hs_incidents and hs_equipment are MUTABLE, register-shaped — no insert-only revoke, unlike audits/completions', () => {
+    // A registered incident is investigated over time (status moves
+    // open -> investigating -> closed, riddor_reported_on gets filled
+    // in later) and equipment's next_inspection_due is updated in place
+    // — neither is a finished submission the way an audit or a
+    // completion is, so unlike those tables there is deliberately no
+    // REVOKE UPDATE here.
+    for (const t of ['hs_incidents', 'hs_equipment']) {
+      expect(sql, t).not.toMatch(new RegExp(`REVOKE UPDATE, DELETE, TRUNCATE ON public\\.${t}\\s+FROM PUBLIC, anon, authenticated`));
+    }
+  });
+
   it('the timeline and recorded evidence cannot be rewritten by a session', () => {
     expect(sql).toMatch(/REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public\.hs_events FROM PUBLIC, anon, authenticated/);
     for (const t of ['hs_register_completions', 'hs_activities', 'hs_files', 'hs_audits', 'hs_audit_responses']) {
@@ -116,7 +128,7 @@ describe('H&S RLS shape', () => {
 });
 
 describe('every surviving H&S source table writes to the Safety Timeline', () => {
-  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents', 'hs_audits'];
+  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents', 'hs_audits', 'hs_incidents', 'hs_equipment'];
   // Sector packs (106) are staff reference data — typical register items
   // for a sector, applied TO a client's own register. They are never a
   // record of anything that happened to a specific client, so unlike
@@ -130,7 +142,11 @@ describe('every surviving H&S source table writes to the Safety Timeline', () =>
   // would otherwise put 20 lines on the client's Timeline for one visit.
   // hs_audit_templates/_items are staff reference data, same posture as
   // sector packs.
-  const NOT_SOURCES = ['hs_sector_packs', 'hs_sector_pack_items', 'hs_audit_templates', 'hs_audit_template_items', 'hs_audit_responses'];
+  // hs_activity_attendees: an attendee row is not its own Timeline
+  // moment — the toolbox talk itself (its parent hs_activities row)
+  // already fires hs_activities_hs_event; a per-attendee entry would
+  // put N lines on the Timeline for one talk.
+  const NOT_SOURCES = ['hs_sector_packs', 'hs_sector_pack_items', 'hs_audit_templates', 'hs_audit_template_items', 'hs_audit_responses', 'hs_activity_attendees'];
   it.each(SOURCES)('%s has an AFTER _hs_event trigger', (t) => {
     expect(sql).toMatch(new RegExp(`CREATE TRIGGER ${t}_hs_event\\s+AFTER [A-Z ]+ ON public\\.${t}`));
   });

@@ -2,7 +2,8 @@
 // clients here are untyped, so these are what the pages agree on.
 
 import type {
-  HsActivityType, HsAuditRating, HsCompletionOutcome, HsRecurrenceUnit,
+  HsActivityType, HsAuditRating, HsCompletionOutcome, HsEquipmentStatus,
+  HsIncidentSeverity, HsIncidentStatus, HsIncidentType, HsRecurrenceUnit,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -136,5 +137,46 @@ export interface HsAuditResponse {
   rating: HsAuditRating;
   comment: string | null;
   sort_order: number;
+  created_at: string;
+}
+
+export interface HsIncident {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  incident_type: HsIncidentType;
+  occurred_on: string;
+  injured_person_name: string | null;
+  description: string;
+  severity: HsIncidentSeverity;
+  riddor_reportable: boolean;
+  riddor_reported_on: string | null;
+  immediate_action: string | null;
+  status: HsIncidentStatus;
+  recorded_by_kind: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HsEquipment {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  name: string;
+  category: string | null;
+  serial_number: string | null;
+  status: HsEquipmentStatus;
+  last_inspected_on: string | null;
+  next_inspection_due: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HsActivityAttendee {
+  id: string;
+  activity_id: string;
+  company_id: string;
+  employee_id: string;
   created_at: string;
 }

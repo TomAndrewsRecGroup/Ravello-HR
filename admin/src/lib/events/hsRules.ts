@@ -4,6 +4,7 @@ import { HS_ACTIVITY_TYPE_LABELS, type HsActivityType } from '@/lib/hs/vocab';
 import { hsCheckFailedEmail } from '@/lib/email/templates/hsCheckFailed';
 import { portalUrl } from '@/lib/portalUrl';
 import type { Audience } from '@/lib/notify/notify';
+import { createKeyedInternalTask, staffOwnerFor } from './supportRules';
 import type { Consequence, Rule } from './rules';
 import { changedTo, rowPayload, type PlatformEvent } from './types';
 
@@ -276,6 +277,59 @@ export const hsRules: Rule[] = [
     id: 'hs_audit_completed',
     on: 'hs_audits.created',
     then: auditSubmittedConsequences,
+  },
+  {
+    // Incidents (112) are the client's own legal RIDDOR record-keeping
+    // duty — Core OS 360 records it on their behalf, so unlike a failed
+    // check (which raises a CLIENT action) a RIDDOR-reportable incident
+    // raises a STAFF task: reporting to the HSE is Core OS 360's job,
+    // not something to hand the client. No specific day-count deadline
+    // is asserted here — RIDDOR's reporting window varies by category,
+    // and a wrong number would be worse than "without delay."
+    id: 'hs_incident_reported',
+    on: 'hs_incidents.created',
+    then: async (ctx) => {
+      const { event, companyName } = ctx;
+      const { new: n } = rowPayload(event);
+      if (!event.company_id) return [];
+      const typeLabel = s(n.incident_type).replace(/_/g, ' ');
+      const company = await companyName();
+      const riddor = n.riddor_reportable === true;
+      const out: Consequence[] = [
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_incident_reported',
+            title: `Incident recorded: ${typeLabel}`,
+            body:  s(n.description).slice(0, 200),
+            link:  { portal: '/protect/incidents' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'hs_incident_reported', urgent: riddor,
+            title: `${company || 'A client'}: ${typeLabel} incident recorded${riddor ? ' — RIDDOR reportable' : ''}`,
+            link:  { admin: `/health-safety/${event.company_id}/incidents` },
+          },
+        },
+      ];
+      if (riddor) {
+        out.push({
+          kind: 'run', label: `riddor report task ${event.entity_id}`,
+          fn: async (sb) => {
+            const owner = await staffOwnerFor(sb, event.company_id);
+            await createKeyedInternalTask(sb, {
+              company_id: event.company_id, assigned_to: owner, priority: 'urgent',
+              title: `RIDDOR: report incident to the HSE — ${company || 'client'}`,
+              description: `A ${typeLabel} incident on ${s(n.occurred_on)} is RIDDOR reportable. Report it via RIDDOR online without delay, then record the report date on the incident.`,
+              source_ref: `hs_incident_riddor:${event.entity_id}`,
+            });
+          },
+        });
+      }
+      return out;
+    },
   },
 ];
 

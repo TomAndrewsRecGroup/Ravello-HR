@@ -34,6 +34,7 @@ export const TRIGGERED_ENTITIES = [
   'hs_files',
   'hs_documents',
   'hs_audits',
+  'hs_incidents',
   'onboarding_instances',
   'onboarding_task_progress',
   'offboarding_instances',
@@ -64,6 +65,7 @@ export const REMINDER_ENTITIES = [
   'offers',
   'referral_applications',
   'training_records',
+  'hs_equipment',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

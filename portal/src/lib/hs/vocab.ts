@@ -18,7 +18,7 @@ export const HS_SCOPE_LABELS: Record<HsScope, string> = {
 };
 
 export const HS_ACTIVITY_TYPES = [
-  'site_visit', 'advice_call', 'fire_drill', 'ssip_submission', 'inspection', 'meeting', 'other',
+  'site_visit', 'advice_call', 'fire_drill', 'ssip_submission', 'inspection', 'meeting', 'toolbox_talk', 'other',
 ] as const;
 export type HsActivityType = typeof HS_ACTIVITY_TYPES[number];
 export const HS_ACTIVITY_TYPE_LABELS: Record<HsActivityType, string> = {
@@ -28,7 +28,52 @@ export const HS_ACTIVITY_TYPE_LABELS: Record<HsActivityType, string> = {
   ssip_submission: 'SSIP submission',
   inspection:      'Inspection',
   meeting:         'Meeting',
+  toolbox_talk:    'Toolbox talk',
   other:           'Other',
+};
+
+// Incidents (112) — RIDDOR record-keeping. The client can read these
+// (it is THEIR legal duty; Core OS 360 maintains it on their behalf).
+export const HS_INCIDENT_TYPES = [
+  'injury', 'near_miss', 'dangerous_occurrence', 'disease', 'property_damage', 'other',
+] as const;
+export type HsIncidentType = typeof HS_INCIDENT_TYPES[number];
+export const HS_INCIDENT_TYPE_LABELS: Record<HsIncidentType, string> = {
+  injury:               'Injury',
+  near_miss:            'Near miss',
+  dangerous_occurrence: 'Dangerous occurrence',
+  disease:              'Reportable disease',
+  property_damage:      'Property damage',
+  other:                'Other',
+};
+
+export const HS_INCIDENT_SEVERITIES = ['minor', 'significant', 'major', 'fatal'] as const;
+export type HsIncidentSeverity = typeof HS_INCIDENT_SEVERITIES[number];
+export const HS_INCIDENT_SEVERITY_LABELS: Record<HsIncidentSeverity, string> = {
+  minor:       'Minor',
+  significant: 'Significant',
+  major:       'Major',
+  fatal:       'Fatal',
+};
+
+export const HS_INCIDENT_STATUSES = ['open', 'investigating', 'closed'] as const;
+export type HsIncidentStatus = typeof HS_INCIDENT_STATUSES[number];
+export const HS_INCIDENT_STATUS_LABELS: Record<HsIncidentStatus, string> = {
+  open:          'Open',
+  investigating: 'Investigating',
+  closed:        'Closed',
+};
+
+// Equipment register (112) — register-shaped like compliance_items (a
+// mutable next_inspection_due a session updates directly), not
+// completion-shaped like hs_register_completions: there is no separate
+// "was it inspected" evidence trail here (MVP scope).
+export const HS_EQUIPMENT_STATUSES = ['in_service', 'out_of_service', 'decommissioned'] as const;
+export type HsEquipmentStatus = typeof HS_EQUIPMENT_STATUSES[number];
+export const HS_EQUIPMENT_STATUS_LABELS: Record<HsEquipmentStatus, string> = {
+  in_service:     'In service',
+  out_of_service: 'Out of service',
+  decommissioned: 'Decommissioned',
 };
 
 export const HS_RECURRENCE_UNITS = ['day', 'week', 'month', 'year'] as const;
@@ -98,4 +143,5 @@ export const HS_ENTITY_LABELS: Record<string, string> = {
   training:            'Training',
   audit:               'Audit',
   incident:            'Incident',
+  equipment:           'Equipment',
 };

@@ -55,6 +55,8 @@ export const NOTIFICATION_TYPES = [
   'hs_action_done',
   'hs_followup_suggested',
   'hs_audit_completed',
+  'hs_incident_reported',
+  'hs_equipment_inspection_due',
   // LEAD / HR flow
   'leave_requested',
   'role_filled',
@@ -123,6 +125,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   hs_action_done:             'H&S action completed',
   hs_followup_suggested:      'H&S follow-up suggested',
   hs_audit_completed:         'H&S audit completed',
+  hs_incident_reported:       'H&S incident recorded',
+  hs_equipment_inspection_due: 'Equipment inspection due',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',
