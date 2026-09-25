@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import type { Milestone } from '@/lib/supabase/types';
+import { MILESTONE_PILLAR_LABELS } from '@/lib/roadmap/milestones';
 
 // ── Quarter helpers ────────────────────────────────────────────────────────────
 
@@ -42,10 +43,13 @@ function statusBadge(status: Milestone['status']): React.ReactNode {
 
 // ── Pillar config ──────────────────────────────────────────────────────────────
 
+// Labels come from the shared MILESTONE_PILLAR_LABELS (lib/roadmap/milestones.ts,
+// a shared-dupe pair) rather than a local copy, so this can't drift from
+// the vocabulary the database CHECK (087) and the admin tab both use.
 const PILLARS: { key: Milestone['pillar']; label: string; color: string }[] = [
-  { key: 'hire',    label: 'HIRE',    color: 'var(--purple)' },
-  { key: 'lead',    label: 'LEAD',    color: 'var(--teal)' },
-  { key: 'protect', label: 'PROTECT', color: 'var(--blue)' },
+  { key: 'hire',    label: MILESTONE_PILLAR_LABELS.hire,    color: 'var(--purple)' },
+  { key: 'lead',    label: MILESTONE_PILLAR_LABELS.lead,    color: 'var(--teal)' },
+  { key: 'protect', label: MILESTONE_PILLAR_LABELS.protect, color: 'var(--blue)' },
 ];
 
 // ── Milestone card ─────────────────────────────────────────────────────────────

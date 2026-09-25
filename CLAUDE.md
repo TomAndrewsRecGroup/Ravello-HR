@@ -2683,3 +2683,96 @@ the app", and it is the one gap those PRs explicitly did not close.
 - **Left alone:** the "own PR" scoping this fix inherited also flagged
   Next 15 as a bigger, later job — that upgrade is unstarted and stays
   its own separate piece of work, not folded in here.
+
+---
+
+## A naming/flags/actions sweep, and admin finally gets a HIRE section (2026-09-26)
+
+Operator: *"keep going, include a fresh sweep of all feature flags, all
+names, all actions and lets make this more like Penninsula Wording with
+added HIRE Section."*
+
+Peninsula Business Services (the market Core OS 360 competes in — HR,
+Employment Law and Health & Safety delivered as a service, BrightHR as
+the software brand) doesn't have a fourth "recruitment" pillar the way
+we do; our own HIRE/LEAD/PROTECT three-word branding was already the
+right shape, it just wasn't applied consistently. An inventory pass
+(sidebar contents, `FLAG_GROUPS`, every `action_type` string written,
+the milestone pillar vocabulary) turned up the concrete gap the request
+named plus a few real bugs riding along with it.
+
+### Admin sidebar gets its HIRE (and LEAD, and PROTECT) headings
+
+Before this, staff and clients saw different words for the same three
+pillars: the portal sidebar says "HIRE" / "LEAD" / "PROTECT · H&S", but
+admin's sidebar said "Hiring" and "Health & Safety" as group headings,
+and had no "LEAD" heading anywhere — Learning (the one LEAD-flagged
+item in admin) sat flatly inside a generic "Business" group alongside
+Revenue, Roadmap and CSV Exports.
+
+`AdminSidebar.tsx`'s `NAV_GROUPS`: "Hiring" → **"HIRE"**, "Health &
+Safety" → **"PROTECT"** (its one item keeps the plain-English label
+"Health & Safety" — only the *group* name is the brand word, matching
+how "HIRE" contains "Roles"/"Templates"/"Candidates"), and a new
+**"LEAD"** group holding Learning (moved out of Business). Roadmap,
+Documents and Latest Updates stay in Business rather than being
+dragged into LEAD — they're genuinely cross-pillar (Roadmap tracks
+milestones across all three pillars; Documents is a generic client
+repository; Latest Updates is a news feed), and mislabelling them LEAD
+would have been the same category error the sweep was fixing.
+
+### Two real bugs the sweep found, not just naming
+
+- **Broadcast could never send an `urgent` action.** Its priority
+  dropdown was a hand-typed `['high', 'normal', 'low']` — silently
+  missing `urgent` from the shared `ACTION_PRIORITIES` tuple
+  (`low | normal | high | urgent`) it should have been drawing from.
+  `BroadcastClient.tsx` now imports `ACTION_PRIORITIES` directly, and
+  its `ACTION_TYPES` list (7 hand-typed strings) is now
+  `Object.keys(ACTION_TYPE_LABELS)` — one source instead of two that
+  happened to agree by coincidence.
+- **The portal's PROTECT Reports page checked the wrong flag.**
+  `moduleAccess.ts`'s `ROUTE_FLAGS['/protect/reports']` (what the
+  middleware actually gates the route on) is `['protect',
+  'protect_reports']`; the page's own in-body check read
+  `flags.reports` — a different, unrelated flag ("CSV Reports" in the
+  General `FLAG_GROUP`, which nothing else consumes). By the time the
+  page rendered the middleware had already confirmed
+  `protect_reports`, so this was dead-but-misleading rather than a live
+  hole, but the two checks could disagree the moment `reports` and
+  `protect_reports` were ever toggled independently for the same
+  client. Fixed to check `protect_reports`, matching the route's own
+  declared gate.
+
+### What the sweep found and deliberately left alone
+
+- **`protect_dashboard`** (LEAD's HR Dashboard flag) keeps its
+  provider-era key name despite living under LEAD since 2026-09-24 —
+  already documented in `featureFlags.ts` as intentional: the key is
+  stored per client in live `companies.feature_flags`, and this
+  codebase's standing rule (the same one that keeps `hs_provider`
+  inert in the role enum and keeps `approved`/`rejected` alongside
+  `clear`/`blocked` in the referral country gate) is that a live
+  stored key is a historical fact, not a label to chase every time the
+  page around it gets renamed.
+- **The Value Report PDF's three sections are HIRE / SUPPORT / PROTECT,
+  not HIRE / LEAD / PROTECT.** Read before touching: SUPPORT tracks
+  ticket and service-request handling, which is genuinely a different
+  thing from LEAD's people-management metrics (onboarding, training,
+  reviews, absence) — there has never been a LEAD section here, and
+  renaming SUPPORT to LEAD would have mislabelled its own content.
+  Adding a real LEAD metrics section is a new feature (new queries
+  against `performance_reviews`/`training_needs`/`absence_records`/
+  onboarding-instance tables), not a naming fix, and is left for its
+  own piece of work rather than invented here.
+- **`RoadmapView.tsx`'s pillar chips** now import
+  `MILESTONE_PILLAR_LABELS` from the shared `lib/roadmap/milestones.ts`
+  instead of a hand-typed `{hire:'HIRE', lead:'LEAD', protect:
+  'PROTECT'}` copy that happened to still agree with it — the same
+  "one vocabulary, not a copy that might drift" discipline the
+  `statusMaps.ts`/`ACTION_PRIORITIES` fixes above follow.
+
+Both apps: `tsc --noEmit` clean, full `vitest run` green (726 admin,
+221 portal — unchanged counts, confirming the sidebar/flag/vocabulary
+edits touched no behaviour the test suite already covers), all five CI
+guards pass, both production builds compile.

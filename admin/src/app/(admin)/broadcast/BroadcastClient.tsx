@@ -3,14 +3,15 @@ import { useEffect, useState } from 'react';
 import { CheckSquare, Square, Send, Loader2, CheckCircle2, X, AlertTriangle } from 'lucide-react';
 import type { CompanyRef } from '@/lib/supabase/types';
 
-import { ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { ACTION_PRIORITIES, ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 interface Props { companies: CompanyRef[] }
 
-const ACTION_TYPES = [
-  'compliance_update', 'policy_change', 'document_review', 'training_required',
-  'information_request', 'deadline_reminder', 'general',
-];
-const PRIORITIES = ['high', 'normal', 'low'];
+// Sourced from the shared vocabularies rather than a local copy — this
+// form used to hand-list both action types and priorities, and its
+// PRIORITIES list had silently drifted from ACTION_PRIORITIES (missing
+// 'urgent' entirely: no broadcast could ever be sent as urgent).
+const ACTION_TYPES = Object.keys(ACTION_TYPE_LABELS);
+const PRIORITIES = ACTION_PRIORITIES;
 
 export default function BroadcastClient({ companies }: Props) {
   const active = companies.filter(c => c.active);
