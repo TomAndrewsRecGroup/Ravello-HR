@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
+import { computeHrMetrics } from '@/lib/lead/hrMetricsFromRecords';
 import HRDashboardClient from './HRDashboardClient';
 
 export const metadata: Metadata = { title: 'HR Dashboard' };
@@ -28,6 +30,8 @@ export default async function HRDashboardPage() {
     { count: absencePending },
     { count: openTraining },
     { count: pendingReviews },
+    employeeRecords,
+    absenceRecords,
   ] = await Promise.all([
     supabase.from('hr_metrics').select('id,period,headcount,headcount_target,turnover_rate,absence_rate,gender_m_pct,gender_f_pct,gender_other_pct,avg_tenure_months,notes').eq('company_id', companyId).order('period', { ascending: false }).limit(4),
     supabase.from('employee_documents').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
@@ -35,7 +39,16 @@ export default async function HRDashboardPage() {
     supabase.from('absence_records').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),
     supabase.from('training_needs').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'open'),
     supabase.from('performance_reviews').select('id', { count: 'exact', head: true }).eq('company_id', companyId).in('status', ['pending', 'in_progress']),
+    // Read for the "Auto-calculate" button — derives headcount/
+    // turnover/absence/gender/tenure from real records instead of
+    // hand entry (the form itself is unchanged and still reviewable).
+    readAllPages<{ status: string; start_date: string; end_date: string | null; gender: string | null }>((from, to) =>
+      supabase.from('employee_records').select('status, start_date, end_date, gender').eq('company_id', companyId).order('id').range(from, to)),
+    readAllPages<{ status: string; start_date: string; days: number | null }>((from, to) =>
+      supabase.from('absence_records').select('status, start_date, days').eq('company_id', companyId).order('id').range(from, to)),
   ]);
+
+  const computedMetrics = computeHrMetrics(employeeRecords.rows, absenceRecords.rows, new Date());
 
   return (
       <main className="portal-page flex-1">
@@ -47,6 +60,7 @@ export default async function HRDashboardPage() {
           absencePending={absencePending ?? 0}
           openTraining={openTraining ?? 0}
           pendingReviews={pendingReviews ?? 0}
+          computedMetrics={computedMetrics}
         />
       </main>
   );

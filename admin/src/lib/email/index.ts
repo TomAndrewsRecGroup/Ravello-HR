@@ -51,3 +51,6 @@ export type { LeaveRequestedInput, LeaveDecisionInput } from './templates/leave'
 
 export { policyAckRequestEmail }         from './templates/policyAck';
 export type { PolicyAckRequestInput }    from './templates/policyAck';
+
+export { valueReportEmail }              from './templates/valueReport';
+export type { ValueReportEmailInput }    from './templates/valueReport';

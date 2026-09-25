@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database, Loader2, PlugZap } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, Zap, Clock, Gauge, Database, Loader2, PlugZap, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import type { ClientHealth, IvylensHealth } from './page';
 import { clientHref } from '@/lib/clientHref';
 
@@ -344,6 +344,7 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag, rl
                 <th>Open Tickets</th>
                 <th>Stalled Roles</th>
                 <th>Band</th>
+                <th>Trend</th>
                 <th></th>
               </tr>
             </thead>
@@ -375,6 +376,23 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag, rl
                       <span className="badge text-[10px] font-semibold" style={{ background: bandStyle.bg, color: bandStyle.color }}>
                         {c.band.toUpperCase()}
                       </span>
+                    </td>
+                    <td>
+                      {!c.trend ? (
+                        <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>—</span>
+                      ) : c.trend.atRisk ? (
+                        <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--red)' }} title={`${c.trend.decliningStreak} day(s) non-green${c.trend.scoreDelta7d !== null ? `, score ${c.trend.scoreDelta7d} vs 7d ago` : ''}`}>
+                          <TrendingDown size={13} /> At risk
+                        </span>
+                      ) : c.trend.scoreDelta7d !== null && c.trend.scoreDelta7d > 0 ? (
+                        <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--teal)' }} title={`Score +${c.trend.scoreDelta7d} vs 7d ago`}>
+                          <TrendingUp size={13} /> Improving
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
+                          <Minus size={13} /> Stable
+                        </span>
+                      )}
                     </td>
                     <td>
                       <Link href={clientHref(c)} prefetch={false} className="btn-ghost btn-sm">
