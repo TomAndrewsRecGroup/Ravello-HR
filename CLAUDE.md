@@ -3653,3 +3653,86 @@ certificate, and no record of what a FAILED inspection actually found.
   production builds compile. Migration 114 applied live and verified
   (RLS on, both policies present, all three triggers registered,
   `hs_scope_for_entity('equipment_inspection')` reads back `'register'`).
+
+---
+
+## Regulatory-change broadcast (2026-09-25, migration 115)
+
+The system-features-inventory review's remaining "innovation" idea
+(#5 in that list): Jev reads the public "Latest Updates" feed (036/038)
+and flags a genuine regulatory change to STAFF, who then decide whether
+and to whom to broadcast it, from the existing `/broadcast` page. This
+is a Tom decision from day one of the automation plan: **no text Jev
+classifies out of public content may ever act on its own** — the
+platform tells a human it thinks something is worth a look, and a human
+still writes the actual action.
+
+- **Three new nullable columns on `latest_updates`**
+  (`admin/src/lib/latestUpdates/regulatoryChange.ts` +
+  `lib/latestUpdates/classify.ts`): `regulatory_category`,
+  `regulatory_confidence`, `regulatory_classified_at`. The CHECK on
+  `regulatory_category` is the exact same union 109 already put on
+  `compliance_items.category` (`COMPLIANCE_CATEGORIES` +
+  `HS_REGISTER_CATEGORY` + legacy `health_safety`), plus one extra value
+  this table alone needs: `'none'` — a compliance item is never created
+  to record "not applicable"; this row is, so the cron never
+  reconsiders an already-classified article. Verified live before
+  writing it: `latest_updates` had 0 rows, so the CHECK applied directly
+  with no "after deploy" step.
+- **`regulatory_classified_at` is the "already processed" marker, not
+  the category.** Recording an irrelevant article as `category='none'`
+  the first time it is seen is what stops the daily cron reclassifying
+  it forever — reprocessing would be free but pointless, and `'none'`
+  is a real, honest answer, not a placeholder for "unknown".
+- **New `DecisionKind`: `'latest_update_regulatory_change'`**
+  (`jev/types.ts`, shared-dupe pair) — deliberately **not** added to
+  `AUTO_ACT_KINDS`. Two questions: `is_regulatory_change` (noul) and
+  `category` (choice, over the same union). The instructions frame the
+  article's title/description as data describing the article, never as
+  something to obey — the same discipline every other Jev caller in
+  this file already applies to client- or public-written text.
+- **The daily cron (`/api/cron/classify-updates`, 06:30 UTC, ahead of
+  the 06:00 reminders sweep and 07:00 digest) classifies up to 25
+  unclassified published rows a run** (`BATCH_CAP` in `classify.ts`) and
+  only ever WRITES `latest_updates` and inserts a `notifications` row
+  for `{ kind: 'staff' }` — never `compliance_items`, never an `action`,
+  never a client. It notifies only when Jev is confident (gate 0.75)
+  the article IS a regulatory change AND at least one client's own
+  register already holds an item in that category
+  (`readAllPages` over `compliance_items`, distinct `company_id` count —
+  an unbounded `.select` here would hit the exact 1,000-row PostgREST
+  cap this file already warns about elsewhere).
+- **The notification links to `/broadcast?update=<id>`.**
+  `BroadcastPage` reads that param, looks the row back up, and — only
+  when its `regulatory_category` is real (not `'none'`) — pre-fills the
+  compose form's title/description and pre-selects every client whose
+  register holds that category. `BroadcastClient.tsx` seeds its
+  `selected`/`form` state from this `prefill` prop via a `useState`
+  initializer (runs once, on mount), so a staff member can still edit
+  or clear anything before the existing confirm-and-send flow runs
+  unchanged — the prefill is a convenience, never a bypass of the
+  human step the confirm modal already enforces.
+- **New notification type `regulatory_change_detected`**
+  (`notify/types.ts`, shared-dupe pair) — both bells' icon maps gained
+  an entry (`Sparkles`/purple, the same styling every other Jev
+  suggestion in this file already uses:
+  `hs_followup_suggested`/`absence_pattern_flag`), even though the
+  portal bell can never actually receive one (this feature is
+  admin-only) — `notificationTypes.test.ts` pins both bells against the
+  full shared vocabulary regardless of which app ever writes a type.
+- Mutation-checked in `classify.test.ts` (a fake DB + a mocked Jev
+  transport, the same harness `weeklyPeople.test.ts` uses): a real
+  regulatory change with an affected client notifies staff once per
+  article; a non-regulatory article is recorded as `'none'` and nobody
+  is told; a real category with zero matching client register items is
+  recorded but never notified; a low-confidence answer is gated to
+  `'none'` rather than acted on; an already-classified or draft row is
+  never reconsidered; and — the property that matters most — nothing
+  here ever writes `compliance_items` or `actions`, or notifies anyone
+  outside `{ kind: 'staff' }`.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (850 admin — 832 + 18 new; 248 portal, unchanged — this touched admin
+  only besides the two shared-dupe vocabulary mirrors), all five CI
+  guards pass, both production builds compile. Migration 115 applied
+  live and verified (three nullable columns, the CHECK's exact 24-value
+  list read back via `pg_get_constraintdef`, the partial index present).
