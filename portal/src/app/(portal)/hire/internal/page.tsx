@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Internal Roles' };
 export const revalidate = 60;
 
 export default async function InternalHiringPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId, isTpsStaff, role } = await getSessionProfile();
   if (!user) redirect('/auth/login');
 

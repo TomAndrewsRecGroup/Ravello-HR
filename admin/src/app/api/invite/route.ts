@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   // than IP so one person's bulk run does not throttle the office.
   const rl = limiters.account.check(getUserRateLimitKey(request, auth.userId));
   if (!rl.allowed) return rateLimitResponse(rl.resetAt);
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const parsed = await parseBody(request, InviteSchema);
   if (!parsed.ok) return parsed.response;

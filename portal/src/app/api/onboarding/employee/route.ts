@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'That email does not look right.' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('employee_records')
     .insert({

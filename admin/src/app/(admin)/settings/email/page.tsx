@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Email Settings' };
 export const dynamic = 'force-dynamic';
 
 export default async function EmailSettingsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   // Layout already redirects unauthenticated TPS users; safe to skip here.
 

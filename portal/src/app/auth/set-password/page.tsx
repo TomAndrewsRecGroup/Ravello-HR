@@ -28,10 +28,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface Props {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }
 
-export default async function SetPasswordPage({ searchParams }: Props) {
+export default async function SetPasswordPage(props: Props) {
+  const searchParams = await props.searchParams;
   const token = searchParams.token?.trim();
   if (!token) redirect('/auth/login?error=invalid');
 

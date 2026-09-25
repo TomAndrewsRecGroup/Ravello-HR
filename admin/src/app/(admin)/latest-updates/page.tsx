@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Latest Updates' };
 export const revalidate = 60;
 
 export default async function LatestUpdatesAdminPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [updatesRes, sourcesRes] = await Promise.all([
     supabase

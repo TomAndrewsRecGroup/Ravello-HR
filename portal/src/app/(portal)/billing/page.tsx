@@ -61,7 +61,7 @@ export default async function BillingPage() {
     );
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: company } = await supabase
     .from('companies')
     .select('id, name, monthly_retainer_pence, subscription_status, stripe_customer_id, stripe_subscription_id, billing_currency, subscription_started_at')

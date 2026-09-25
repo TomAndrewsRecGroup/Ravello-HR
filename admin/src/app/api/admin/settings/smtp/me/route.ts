@@ -12,7 +12,7 @@ export async function GET() {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data } = await supabase
     .from('profiles')
     .select('smtp_host,smtp_port,smtp_user,smtp_pass_enc,smtp_from_email')

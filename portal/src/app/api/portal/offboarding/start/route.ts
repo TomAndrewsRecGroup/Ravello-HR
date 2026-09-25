@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const { employee_id, template_id, last_working_day, reason } = parsed.data;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const [{ data: emp }, { data: tmpl }] = await Promise.all([
     supabase.from('employee_records').select('id, status').eq('id', employee_id).eq('company_id', companyId).maybeSingle(),
     supabase.from('offboarding_templates').select('id, offboarding_template_tasks(title, description, category, due_day_offset, assigned_to, sort_order)').eq('id', template_id).eq('company_id', companyId).maybeSingle(),

@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic';
 
 // The client's H&S register: statutory and recurring items, when each
 // was last done, when it is next due, and the evidence.
-export default async function HealthSafetyRegisterPage({ params }: { params: { companyId: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function HealthSafetyRegisterPage(props: { params: Promise<{ companyId: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
 
   // All three in parallel and all paged: a register, its completions and
   // its files all grow without bound over the years a client is with us.

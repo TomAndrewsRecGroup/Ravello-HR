@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Add Health & Safety items from the client\'s H&S register instead.' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('compliance_items')
     .insert({

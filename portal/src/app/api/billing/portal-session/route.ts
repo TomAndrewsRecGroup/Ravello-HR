@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: company, error } = await supabase
     .from('companies')
     .select('stripe_customer_id')

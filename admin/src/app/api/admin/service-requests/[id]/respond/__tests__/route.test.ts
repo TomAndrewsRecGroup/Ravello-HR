@@ -66,7 +66,7 @@ function call(body: unknown, id = REQ_ID) {
   const req = new NextRequest(`https://admin.example.com/api/admin/service-requests/${id}/respond`, {
     method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' },
   });
-  return POST(req, { params: { id } });
+  return POST(req, { params: Promise.resolve({ id }) });
 }
 
 beforeEach(() => {

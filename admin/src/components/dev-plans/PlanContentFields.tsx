@@ -2,6 +2,7 @@
 
 import TiptapEditor from '@/components/modules/TiptapEditor';
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import type { JSX } from 'react';
 import type { DevPlanContent, DevPlanStrength, CareerFit } from '@/lib/devPlan';
 
 // ═══════════════════════════════════════════════════════════

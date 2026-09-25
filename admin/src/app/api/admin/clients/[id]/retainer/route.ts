@@ -15,7 +15,7 @@ import { sendEmail, billingSetupEmail } from '@/lib/email';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Ctx { params: { id: string } }
+interface Ctx { params: Promise<{ id: string }> }
 interface Body { monthly_retainer_pence?: number | null }
 
 // PATCH /api/admin/clients/{company_id}/retainer
@@ -38,7 +38,8 @@ interface Body { monthly_retainer_pence?: number | null }
 // null but the subscription keeps running on its current Price until
 // admin acts on it explicitly.
 
-export async function PATCH(request: NextRequest, { params }: Ctx) {
+export async function PATCH(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -54,7 +55,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       ? Math.round(body.monthly_retainer_pence)
       : null;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Pull the current row so we know whether to create or update.
   const { data: company, error: fetchErr } = await supabase

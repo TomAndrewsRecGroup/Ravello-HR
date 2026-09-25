@@ -20,7 +20,8 @@ interface Body {
 // else's action even if RLS were misconfigured. The actual write
 // still happens through the user's session client, so RLS is the
 // authoritative gate; this is belt-and-braces.
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
@@ -34,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: action, error: lookupErr } = await supabase
     .from('actions')

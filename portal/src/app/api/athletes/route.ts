@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: patch.error }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('athletes')
     .insert({

@@ -43,7 +43,7 @@ vi.mock('@/lib/rateLimit', () => ({ createRateLimiter: () => ({ check: () => ({ 
 const { GET, POST } = await import('../route');
 const TOKEN = '11111111-2222-4333-8444-555555555555';
 const req = (method: string, token: string, body?: unknown) => new NextRequest(`https://portal.example.com/api/policy/${token}`, { method, headers: { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
-const ctx = (token: string) => ({ params: { token } });
+const ctx = (token: string) => ({ params: Promise.resolve({ token }) });
 
 beforeEach(async () => {
   signed.length = 0;

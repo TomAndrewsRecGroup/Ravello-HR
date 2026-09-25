@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const roles = normaliseRoleOpportunities(body.role_opportunities, []);
   if (!roles.ok) return NextResponse.json({ error: roles.error }, { status: 400 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('partners')
     .insert({

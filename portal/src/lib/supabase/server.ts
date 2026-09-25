@@ -39,8 +39,8 @@ function fetchCompanyShellCached(companyId: string) {
   )();
 }
 
-export function createServerSupabaseClient() {
-  const cookieStore = cookies();
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -87,7 +87,7 @@ export function createServerSupabaseClient() {
  * multiple `getSessionProfile()` calls inside the same request.
  */
 export const getSessionProfile = cache(async () => {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const raw = cookieStore.get(PORTAL_SESSION_COOKIE)?.value;
 
   const empty = {

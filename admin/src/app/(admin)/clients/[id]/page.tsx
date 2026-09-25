@@ -14,7 +14,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // The route segment is still called [id] for backwards compat, but
 // the param is now expected to be a slug. We accept UUIDs too —
 // old links / bookmarks redirect to the canonical slug URL.
-export default async function ClientDetailPage({ params }: { params: { id: string } }) {
+export default async function ClientDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const detail = await getCachedClientDetail(params.id);
   if (!detail) notFound();
 
@@ -31,7 +32,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   // Current TPS staff user — needed as the author when posting a new note
   // from the timeline. Cheap getUser() since this page already isn't cached
   // beyond the per-client unstable_cache layer.
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user: staffUser } } = await supabase.auth.getUser();
 
   return (

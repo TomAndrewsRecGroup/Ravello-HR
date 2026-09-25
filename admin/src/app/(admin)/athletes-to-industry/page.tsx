@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 interface CompanyRow { id: string; name: string; slug: string | null }
 
 export default async function AthletesToIndustryAdminPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [
     partnersRes, providersRes, athletesRes, interestsRes, trainingInterestsRes, companiesRes, devPlansRes,

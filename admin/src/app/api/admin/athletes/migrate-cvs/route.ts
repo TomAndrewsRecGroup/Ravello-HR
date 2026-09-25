@@ -36,7 +36,7 @@ export async function POST() {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: rows, error: listErr } = await supabase
     .from('athletes')

@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     scrape_config = v.value;
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('feed_sources')
     .insert({

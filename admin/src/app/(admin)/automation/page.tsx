@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 // the retry button goes through a service-role route.
 
 export default async function AutomationPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const failedFilter = 'and(processed_at.is.null,or(attempts.gte.5,last_error.not.is.null))';
 
   const since = new Date(Date.now() - 30 * 86_400_000).toISOString();

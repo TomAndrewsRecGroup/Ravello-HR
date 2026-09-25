@@ -60,7 +60,7 @@ function SectionHeader({ icon: Icon, title, color = 'var(--purple)' }: {
 /* ── Page ─────────────────────────────────────────────────── */
 
 export default async function MetricsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId: cId, featureFlags } = await getSessionProfile();
   const companyId: string = cId ?? '';
 

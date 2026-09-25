@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Support & Requests' };
 export const revalidate = 30;
 
 export default async function ServiceRequestsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data } = await supabase
     .from('service_requests')

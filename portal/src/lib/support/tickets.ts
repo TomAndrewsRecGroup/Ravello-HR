@@ -24,7 +24,7 @@ export async function listCompanyTickets(): Promise<{
   if (!user) return { tickets: [], error: 'Unauthorized' };
   if (!companyId) return { tickets: [], error: null };
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const [{ data: companyTicketRows }, ivylensRes] = await Promise.all([
     supabase
       .from('ivylens_tickets')

@@ -20,7 +20,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // - Calls createManatalOrganization with external_id = company UUID.
 // - Stamps manatal_client_id with the returned org id.
 // - Audit-logs the operation.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Manatal is not configured on this environment.' }, { status: 503 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: company, error: loadErr } = await supabase
     .from('companies')
     .select('id, name, manatal_client_id')

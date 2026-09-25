@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'HR Reports' };
 export const revalidate = 60;
 
 export default async function HRReportsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

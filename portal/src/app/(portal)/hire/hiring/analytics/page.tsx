@@ -46,7 +46,7 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 }
 
 export default async function HiringAnalyticsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   if (!companyId) return (
     <main className="portal-page flex-1">

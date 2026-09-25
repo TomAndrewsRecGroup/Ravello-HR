@@ -3,9 +3,10 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Ctx { params: { id: string } }
+interface Ctx { params: Promise<{ id: string }> }
 
-export async function POST(_request: NextRequest, { params }: Ctx) {
+export async function POST(_request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const { user, role, companyId } = await getSessionProfile();
   if (!user) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function POST(_request: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: 'Invalid leave-request id' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('absence_records')
     .update({

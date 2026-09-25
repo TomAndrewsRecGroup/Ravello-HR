@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 const Body = z.object({ title: shortText(200), file_name: optionalShortText(300) });
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { companyId, featureFlags } = await getSessionProfile();

@@ -28,7 +28,8 @@ export const maxDuration = 300;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function POST(httpReq: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(httpReq: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 

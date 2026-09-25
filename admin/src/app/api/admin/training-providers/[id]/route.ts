@@ -17,7 +17,8 @@ interface PatchBody {
   active?: boolean;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (body.provider_name !== undefined) {
@@ -59,14 +60,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { error } = await supabase.from('training_providers').delete().eq('id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

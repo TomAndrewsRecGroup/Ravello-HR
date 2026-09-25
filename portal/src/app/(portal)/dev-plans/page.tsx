@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Development Plans' };
 export const dynamic = 'force-dynamic';
 
 export default async function DevPlansPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 

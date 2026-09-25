@@ -26,10 +26,8 @@ export const runtime = 'nodejs';
 // journey: writing a row would put a real candidate id's worth of
 // funnel state into the operator's own name, and the idempotency guard
 // would then treat the role as already processed for that "candidate".
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -37,7 +35,7 @@ export async function POST(
   const rl = limiters.email.check(getUserRateLimitKey(_req, auth.userId));
   if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   const to = user?.email;

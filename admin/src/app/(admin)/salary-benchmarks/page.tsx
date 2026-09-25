@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Salary Benchmarks' };
 export const revalidate = 60;
 
 export default async function SalaryBenchmarksPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const [{ data: { user } }, { data: benchmarks }] = await Promise.all([
     supabase.auth.getUser(),
     supabase

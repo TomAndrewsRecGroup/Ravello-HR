@@ -47,7 +47,8 @@ const ScanCandidateSchema = z.object({
   save:            z.boolean().optional().default(true),
 });
 
-export async function POST(httpReq: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(httpReq: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -63,7 +64,7 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: req, error: loadErr } = await supabase
     .from('requisitions')
     .select('id,company_id,title,department,seniority,location,working_model,salary_min,salary_max,must_haves,description,jd_text,ivylens_role_id')

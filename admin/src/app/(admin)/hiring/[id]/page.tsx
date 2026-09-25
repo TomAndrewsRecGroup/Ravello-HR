@@ -49,14 +49,15 @@ function daysBetween(from: string, to: string) {
 // the oldest half of the table.
 const CANDIDATES_PAGE_SIZE = 25;
 
-export default async function RequisitionDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { page?: string };
-}) {
-  const supabase = createServerSupabaseClient();
+export default async function RequisitionDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
 
   const candPage  = Math.max(1, Number(searchParams?.page ?? '1') || 1);
   const candFrom  = (candPage - 1) * CANDIDATES_PAGE_SIZE;

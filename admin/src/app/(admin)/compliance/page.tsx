@@ -30,7 +30,7 @@ const RAG_STYLE = {
 };
 
 export default async function AdminComplianceDashboard() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [
     { data: rawItems },

@@ -2776,3 +2776,66 @@ Both apps: `tsc --noEmit` clean, full `vitest run` green (726 admin,
 221 portal — unchanged counts, confirming the sidebar/flag/vocabulary
 edits touched no behaviour the test suite already covers), all five CI
 guards pass, both production builds compile.
+
+---
+
+## Next.js 15 + React 19 (2026-09-25)
+
+Both apps upgraded from Next 14.2.35 / React 18 to **Next 15.5.26 /
+React 19.3.0** — the major-version bump explicitly deferred out of the
+CVE-2025-29927 patch above.
+
+- **Every `params` and `searchParams` prop is now a Promise.** Ran
+  `npx @next/codemod next-async-request-api .` in each app (47 files
+  touched in admin, 31 in portal) — it rewrites every page/layout/route
+  signature from `{ params }: { params: { id: string } }` to
+  `props: { params: Promise<{ id: string }> }` plus `const params =
+  await props.params;`, and does the same for `searchParams`. Route
+  *tests* calling handlers directly needed the same treatment by hand
+  (`{ params: { id } }` → `{ params: Promise.resolve({ id }) }`) since
+  the codemod only rewrites the framework call sites, not test fixtures
+  that fabricate their own context object.
+- **`cookies()` and `headers()` are now async too.** The codemod's
+  fallback for a call site it can't prove is inside an async function —
+  both apps' `createServerSupabaseClient()` factories, called
+  synchronously from ~160 server components/routes — is the
+  `UnsafeUnwrappedCookies` escape hatch (a deprecated synchronous read
+  that still works but is explicitly meant to be migrated away from,
+  never left in place). Both factories are now `async function
+  createServerSupabaseClient()` with `await cookies()`, and all ~160
+  call sites (`const supabase = createServerSupabaseClient();`) became
+  `await createServerSupabaseClient();` — a single search-and-replace,
+  since 100% of call sites already sat inside an `async` function (data
+  fetching already required it). `getSessionProfile()` in portal's
+  `server.ts` already awaited `cookies()` correctly before this and
+  needed no change.
+- **`experimental.instrumentationHook` and
+  `experimental.serverComponentsExternalPackages` are stable in Next
+  15** — moved out of `experimental` (the latter renamed
+  `serverExternalPackages`, now top-level) in both `next.config.mjs`
+  files. Leaving them under `experimental` still built, but as
+  deprecated aliases; moved for the day they're removed outright.
+- **React 19's `useRef<T>()` with no argument is no longer valid** —
+  `GlobalSearch.tsx`'s debounce ref needed an explicit `| undefined`
+  default. **`JSX.Element` as a bare global type is gone** — React 19
+  moved the `JSX` namespace out of the global scope;
+  `PlanContentFields.tsx`'s `SectionDef.render` return type now imports
+  `type { JSX } from 'react'` explicitly. Both are one-line fixes, not
+  signs of a wider pattern — a repo-wide grep found no other bare `JSX.`
+  or argument-less generic `useRef` usage.
+- **No caching-default fallout.** Next 15's headline behaviour change —
+  `fetch()` and GET route handlers no longer cached by default — hit
+  nothing here: no route handler relied on implicit GET caching, and
+  every page that needs cached data already declares its own `export
+  const revalidate = N` rather than depending on the framework default.
+- **`npm install` resolves React 19.3.0 despite an ERESOLVE warning**
+  for `react-dom@18.3.1`'s peer requirement — that warning is npm
+  reporting a transitively-requested older peer range that npm's
+  resolver overrode; the installed tree (verified via
+  `require('react-dom/package.json').version`) is 19.3.0 in both apps,
+  not a silently-downgraded 18.
+- Verified: `tsc --noEmit` clean, full `vitest run` green (726 admin,
+  221 portal — same counts as before the upgrade, confirming the
+  migration changed no behaviour the suite covers), all five CI guards
+  pass, both production builds compile clean (no warnings beyond npm's
+  own deprecation noise).

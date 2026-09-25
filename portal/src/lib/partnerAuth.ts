@@ -28,7 +28,7 @@ export async function authenticatePartnerKey(
   const rawKey = authHeader.replace('Bearer ', '');
   const hash = hashKey(rawKey);
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: key, error } = await supabase
     .from('partner_api_keys')
     .select('id, permissions, is_active')

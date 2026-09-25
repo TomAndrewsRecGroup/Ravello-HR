@@ -39,7 +39,7 @@ function slaText(slaDue: string | null, firstResponse: string | null, status: st
 }
 
 export default async function SupportPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
   // service_requests is the one support object: `tickets` never had a

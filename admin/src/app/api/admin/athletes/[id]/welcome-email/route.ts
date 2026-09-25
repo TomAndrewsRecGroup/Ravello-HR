@@ -22,7 +22,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // UI can show 'Sent <when>' and prevent accidental double-sends.
 // Doesn't refuse on a previous send — admin can re-send if they
 // confirm; the timestamp updates each time.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Invalid athlete id' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: athlete, error: loadErr } = await supabase
     .from('athletes')
     .select('id, full_name, email')

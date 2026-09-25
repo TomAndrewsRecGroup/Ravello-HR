@@ -15,7 +15,8 @@ import { uuid } from '@/lib/validation/primitives';
 
 export const runtime = 'nodejs';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const session = await requireLiveSession();
   if (!session) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   if (session.role !== 'client_admin' && session.role !== 'tps_admin') return NextResponse.json({ error: 'You don\'t have permission to resend sign-off links.' }, { status: 403 });

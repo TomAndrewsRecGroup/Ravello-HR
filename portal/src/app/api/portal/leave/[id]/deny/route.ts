@@ -4,9 +4,10 @@ import { assertBodySize } from '@/lib/http/bodySize';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Ctx { params: { id: string } }
+interface Ctx { params: Promise<{ id: string }> }
 
-export async function POST(request: NextRequest, { params }: Ctx) {
+export async function POST(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const tooBig = assertBodySize(request, 64 * 1024);
   if (tooBig) return tooBig;
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: 'Reason is too long (max 1000 characters).' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Fetch the absence row first so we know which employee to attach
   // the note to. Belt-and-braces company scope check on top of RLS.

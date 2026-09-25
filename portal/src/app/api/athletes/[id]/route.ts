@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function loadCompanyAthlete(supabase: ReturnType<typeof createServerSupabaseClient>, athleteId: string) {
+async function loadCompanyAthlete(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, athleteId: string) {
   const { user, companyId } = await getSessionProfile();
   if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   if (!companyId) {
@@ -20,11 +20,12 @@ async function loadCompanyAthlete(supabase: ReturnType<typeof createServerSupaba
   return { user, athlete };
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const guard = await loadCompanyAthlete(supabase, params.id);
   if ('error' in guard) return guard.error;
 
@@ -46,11 +47,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ok: true, row });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const guard = await loadCompanyAthlete(supabase, params.id);
   if ('error' in guard) return guard.error;
   const { athlete } = guard;

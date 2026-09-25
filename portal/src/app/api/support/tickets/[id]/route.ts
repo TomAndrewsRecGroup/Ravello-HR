@@ -25,7 +25,7 @@ async function assertOwnsTicket(ticketId: string): Promise<NextResponse | null> 
   const { user, companyId, isTpsStaff } = await getSessionProfile();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   let query = supabase
     .from('ivylens_tickets')
     .select('ivylens_ticket_id, company_id')
@@ -43,7 +43,8 @@ async function assertOwnsTicket(ticketId: string): Promise<NextResponse | null> 
 }
 
 // GET /api/support/tickets/:id: get ticket with conversation
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const denied = await assertOwnsTicket(params.id);
   if (denied) return denied;
 
@@ -56,7 +57,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 // POST /api/support/tickets/:id: reply to a ticket
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const denied = await assertOwnsTicket(params.id);
   if (denied) return denied;
 

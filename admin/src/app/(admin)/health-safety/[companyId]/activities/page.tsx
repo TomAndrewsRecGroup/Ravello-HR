@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic';
 
 // Logged events: site visits, advice calls, fire drills, SSIP
 // submissions, inspections. Insert-only (095): a correction is a new entry.
-export default async function HealthSafetyActivitiesPage({ params }: { params: { companyId: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function HealthSafetyActivitiesPage(props: { params: Promise<{ companyId: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
 
   const [{ data: activities, error }, files] = await Promise.all([
     supabase.from('hs_activities')

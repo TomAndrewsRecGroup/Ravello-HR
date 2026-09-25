@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (!companyId) {
       return NextResponse.json({ error: 'No company associated' }, { status: 400 });
     }
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
     const body = await req.json();
     const parsed = AssessmentSchema.safeParse(body);

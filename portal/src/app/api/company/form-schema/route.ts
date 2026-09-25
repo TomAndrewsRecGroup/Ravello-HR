@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 // Public endpoint on IvyLens side (no auth required), but we proxy to keep URL private.
 
 export async function GET() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

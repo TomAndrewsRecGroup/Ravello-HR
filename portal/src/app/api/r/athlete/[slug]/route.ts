@@ -27,7 +27,8 @@ function str(v: FormDataEntryValue | null): string {
 
 // Public, unauthenticated. Any athlete can submit against a client's slug;
 // the row is created on that client's roster, flagged source = 'referral'.
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   if (!limiter.check(getRateLimitKey(req)).allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }

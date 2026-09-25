@@ -43,7 +43,7 @@ function dueText(item: HsRegisterItem): string {
 }
 
 export default async function HsRegisterPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
   const [items, completions, files] = await Promise.all([

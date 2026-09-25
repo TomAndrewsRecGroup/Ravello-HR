@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const { company_id, title, description } = parsed.data;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const result = await askJev(supabase, {
     kind: 'hs_item_classify', companyId: company_id, entityType: 'compliance_item', entityId: null,
     actor: { id: auth.userId, kind: 'staff' },

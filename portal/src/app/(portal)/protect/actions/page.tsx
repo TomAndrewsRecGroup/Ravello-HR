@@ -121,7 +121,7 @@ function PrioritySection({ title, actions, accent }: SectionProps) {
 }
 
 export default async function ActionsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
   const now = new Date().toISOString();

@@ -2,15 +2,15 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // instrumentationHook and serverComponentsExternalPackages are stable
+  // (default-on / top-level) as of Next 15 — no longer `experimental`.
   experimental: {
-    // Required on Next 14 for instrumentation.ts (Sentry boot).
-    instrumentationHook: true,
     optimizePackageImports: ['lucide-react'],
-    // node-redis pulls in net/tls/string_decoder/crypto. Without this,
-    // Next.js' server-action flight loader tries to bundle the package
-    // for the client and the build fails. Keep it Node-side.
-    serverComponentsExternalPackages: ['redis'],
   },
+  // node-redis pulls in net/tls/string_decoder/crypto. Without this,
+  // Next.js' server-action flight loader tries to bundle the package
+  // for the client and the build fails. Keep it Node-side.
+  serverExternalPackages: ['redis'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'haaqtnq6favvrbuh.public.blob.vercel-storage.com' },

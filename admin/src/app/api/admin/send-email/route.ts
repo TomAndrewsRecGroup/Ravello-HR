@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   }));
 
   // ── Resolve sender identity (decrypts SMTP password when needed) ──
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: me, error: meErr } = await supabase
     .from('profiles')
     .select('email,full_name,smtp_host,smtp_port,smtp_secure,smtp_user,smtp_pass_enc,smtp_from_name,smtp_from_email,smtp_reply_to,email_signature_html')

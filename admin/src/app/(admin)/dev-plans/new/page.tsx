@@ -4,10 +4,11 @@ import PlanEditor from '../[id]/PlanEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewDevPlanPage({
-  searchParams,
-}: { searchParams: { template?: string; company?: string; athlete?: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function NewDevPlanPage(
+  props: { searchParams: Promise<{ template?: string; company?: string; athlete?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerSupabaseClient();
   const [{ data: companies }, { data: athletes }, { data: templates }] = await Promise.all([
     supabase.from('companies').select('id, name').eq('active', true).order('name'),
     supabase.from('athletes').select('id, full_name, company_id').order('full_name'),

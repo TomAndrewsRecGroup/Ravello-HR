@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { searchParams } = request.nextUrl;
   const companyId = searchParams.get('companyId');

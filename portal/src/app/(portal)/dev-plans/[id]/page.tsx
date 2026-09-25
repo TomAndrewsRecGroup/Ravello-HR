@@ -10,8 +10,9 @@ import PrintButton from './PrintButton';
 export const metadata: Metadata = { title: 'Development Plan' };
 export const dynamic = 'force-dynamic';
 
-export default async function DevPlanDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function DevPlanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 

@@ -6,7 +6,7 @@ import VacancyCostClient from './VacancyCostClient';
 export const metadata: Metadata = { title: 'Vacancy Cost Calculator' };
 
 export default async function VacancyCostPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
 

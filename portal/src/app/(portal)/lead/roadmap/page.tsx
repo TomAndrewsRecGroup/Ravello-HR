@@ -13,7 +13,7 @@ function currentQuarter(): string {
 }
 
 export default async function RoadmapPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
   const { data: milestonesData } = await supabase

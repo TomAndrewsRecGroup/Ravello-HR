@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Performance Reviews' };
 export const revalidate = 60;
 
 export default async function PerformanceReviewsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

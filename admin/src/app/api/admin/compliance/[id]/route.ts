@@ -5,12 +5,13 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Ctx { params: { id: string } }
+interface Ctx { params: Promise<{ id: string }> }
 
 // PATCH /api/admin/compliance/[id]
 // Update a compliance item. Body can include any subset of:
 //   title, description, category, due_date, status, notes
-export async function PATCH(request: NextRequest, { params }: Ctx) {
+export async function PATCH(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
@@ -36,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('compliance_items')
     .update(patch)
@@ -55,14 +56,15 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/admin/compliance/[id]
-export async function DELETE(_request: NextRequest, { params }: Ctx) {
+export async function DELETE(_request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: existing } = await supabase
     .from('compliance_items')
     .select('company_id')

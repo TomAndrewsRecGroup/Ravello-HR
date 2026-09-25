@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Dev Plan Templates' };
 export const dynamic = 'force-dynamic';
 
 export default async function TemplatesPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data } = await supabase
     .from('dev_plan_templates')
     .select('id, name, description, milestones, updated_at')

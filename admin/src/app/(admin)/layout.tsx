@@ -40,8 +40,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // only for the user whose session this is (getUser verifies the JWT),
   // and anything else falls back to the RPC. It never trusts the raw
   // value, which any signed-in user could set by hand until 2026-09-24.
-  const cookieStore = cookies();
-  const supabase = createServerSupabaseClient();
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login?reason=no-session');
   const cached = await verifyAdminRole(cookieStore.get(ADMIN_ROLE_COOKIE)?.value, user.id);

@@ -12,7 +12,7 @@ export const revalidate = 30;
 const catBadge: Record<string,string> = { contract:'badge-submitted',policy:'badge-inprogress',letter:'badge-shortlist',report:'badge-offer',other:'badge-normal' };
 
 export default async function AdminDocumentsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: docs } = await readAllPages<any>((from, to) => supabase
     .from('documents')
     .select('id,name,category,version,review_due_at,file_path,file_url,file_size,created_at,companies(name)')

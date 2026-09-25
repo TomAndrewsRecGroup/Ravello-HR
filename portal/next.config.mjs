@@ -8,9 +8,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'haaqtnq6favvrbuh.public.blob.vercel-storage.com' },
     ],
   },
+  // instrumentationHook is stable (default-on) as of Next 15 — no
+  // longer `experimental`.
   experimental: {
-    // Required on Next 14 for instrumentation.ts (Sentry boot).
-    instrumentationHook: true,
     // Tree-shake lucide-react icons — only bundle icons actually imported
     optimizePackageImports: ['lucide-react'],
   },
