@@ -64,6 +64,8 @@ export const NOTIFICATION_TYPES = [
   'document_shared',
   'document_approved',
   'absence_pattern_flag',
+  'policy_ack_signed',
+  'policy_ack_needs_email',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -115,6 +117,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   document_shared:            'Document shared with you',
   document_approved:          'Document approved',
   absence_pattern_flag:       'Absence pattern to review',
+  policy_ack_signed:          'Policy acknowledged',
+  policy_ack_needs_email:     'Policy link could not be sent',
 };
 
 export function isNotificationType(v: string): v is NotificationType {

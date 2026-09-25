@@ -9,12 +9,13 @@ import {
 
 /* ─── Types ─────────────────────────────────────────── */
 interface Document { id: string; name: string; category: string; version: number; }
-interface Employee { id: string; full_name: string; job_title: string; }
+interface Employee { id: string; full_name: string; job_title: string; email: string | null; }
 interface Acknowledgement {
   id: string; document_id: string; employee_id: string; company_id: string;
   status: string; acknowledged_at: string | null; sent_at: string;
+  acknowledged_via: string | null; link_sent_at: string | null;
   documents: { name: string; category: string; version: number } | null;
-  employee_records: { full_name: string; job_title: string } | null;
+  employee_records: { full_name: string; job_title: string; email: string | null } | null;
 }
 
 interface Props {
@@ -37,6 +38,9 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [docFilter, setDocFilter] = useState<string>('all');
+  const [sentNote, setSentNote] = useState('');
+  const [resending, setResending] = useState<string | null>(null);
+  const [resendNote, setResendNote] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   // Stats
   const pending = acknowledgements.filter(a => a.status === 'pending').length;
@@ -78,13 +82,34 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
       sent_at: new Date().toISOString(),
     }));
 
+    // The row is the request. The platform's consumer emails each employee
+    // a personal link within a few minutes (lib/events/leadRules.ts);
+    // an employee with no email on file gets no link, and you are told.
     const { error } = await supabase.from('policy_acknowledgements').upsert(inserts, { onConflict: 'document_id,employee_id' });
 
     setSaving(false);
     if (!error) {
+      const withEmail = employees.filter(e => selectedEmployees.includes(e.id) && !!e.email?.trim()).length;
+      const without = selectedEmployees.length - withEmail;
+      setSentNote(`Requested for ${selectedEmployees.length} employee${selectedEmployees.length === 1 ? '' : 's'}. ${withEmail} will be emailed a personal link within a few minutes${without > 0 ? `; ${without} ${without === 1 ? 'has' : 'have'} no email address on their record and will not receive one` : ''}.`);
       setShowSendForm(false);
       setSelectedDoc(''); setSelectedEmployees([]);
       revalidatePortalPath('/lead/policy-acknowledgements');
+    }
+  }
+
+  /* ─── Resend the link (a fresh one is emailed by the platform) ── */
+  async function resendLink(ackId: string) {
+    setResending(ackId);
+    setResendNote(prev => { const n = { ...prev }; delete n[ackId]; return n; });
+    try {
+      const res = await fetch(`/api/portal/policy-acks/${ackId}/resend`, { method: 'POST' });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      setResendNote(prev => ({ ...prev, [ackId]: res.ok ? { ok: true, text: 'A fresh link will be emailed within a few minutes.' } : { ok: false, text: data.error ?? 'Could not resend.' } }));
+    } catch {
+      setResendNote(prev => ({ ...prev, [ackId]: { ok: false, text: 'Network error. Nothing was sent.' } }));
+    } finally {
+      setResending(null);
     }
   }
 
@@ -93,6 +118,7 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
     const { error } = await supabase.from('policy_acknowledgements').update({
       status: 'acknowledged',
       acknowledged_at: new Date().toISOString(),
+      acknowledged_via: 'admin',
     }).eq('id', ackId);
     if (!error) revalidatePortalPath('/lead/policy-acknowledgements');
   }
@@ -124,6 +150,8 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
           </button>
         )}
       </div>
+
+      {sentNote && <p role="status" className="text-xs mb-4 p-3 rounded-lg" style={{ background: 'rgba(20,184,166,0.08)', color: 'var(--ink-soft)' }}>{sentNote}</p>}
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -206,14 +234,32 @@ export default function PolicyAckClient({ companyId, isAdmin, documents, acknowl
                             </p>
                             <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
                               {(ack.employee_records as any)?.job_title}
-                              {ack.acknowledged_at ? ` · Signed ${new Date(ack.acknowledged_at).toLocaleDateString('en-GB')}` : ` · Sent ${new Date(ack.sent_at).toLocaleDateString('en-GB')}`}
+                              {ack.acknowledged_at
+                                ? ` · Signed ${new Date(ack.acknowledged_at).toLocaleDateString('en-GB')}${ack.acknowledged_via === 'admin' ? ' (on their behalf)' : ack.acknowledged_via === 'link' ? ' via their link' : ''}`
+                                : ack.link_sent_at
+                                  ? ` · Link emailed ${new Date(ack.link_sent_at).toLocaleDateString('en-GB')}`
+                                  : (ack.employee_records as any)?.email
+                                    ? ` · Requested ${new Date(ack.sent_at).toLocaleDateString('en-GB')} · link on its way`
+                                    : ` · Requested ${new Date(ack.sent_at).toLocaleDateString('en-GB')} · no email on record`}
                             </p>
+                            {resendNote[ack.id] && <p role="status" className="text-[10px] mt-0.5" style={{ color: resendNote[ack.id].ok ? 'var(--teal)' : 'var(--red)' }}>{resendNote[ack.id].text}</p>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: st.bg, color: st.color }}>
                             {st.label}
                           </span>
+                          {isAdmin && (ack.status === 'pending' || ack.status === 'overdue') && (
+                            <button
+                              onClick={() => resendLink(ack.id)}
+                              disabled={resending === ack.id || !(ack.employee_records as any)?.email}
+                              title={(ack.employee_records as any)?.email ? 'Email a fresh personal link' : 'Add an email address to their employee record first'}
+                              className="text-[10px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1"
+                              style={{ background: 'rgba(11,120,150,0.10)', color: 'var(--purple)' }}
+                            >
+                              {resending === ack.id ? <Loader2 size={10} className="animate-spin" /> : <Send size={10} />} Resend link
+                            </button>
+                          )}
                           {isAdmin && ack.status === 'pending' && (
                             <button
                               onClick={() => markAcknowledged(ack.id)}

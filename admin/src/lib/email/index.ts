@@ -50,3 +50,6 @@ export type { WeeklyCompanySection, WeeklyItem, WeeklyAction, WeeklyActivity } f
 
 export { leaveRequestedEmail, leaveDecisionEmail } from './templates/leave';
 export type { LeaveRequestedInput, LeaveDecisionInput } from './templates/leave';
+
+export { policyAckRequestEmail }         from './templates/policyAck';
+export type { PolicyAckRequestInput }    from './templates/policyAck';

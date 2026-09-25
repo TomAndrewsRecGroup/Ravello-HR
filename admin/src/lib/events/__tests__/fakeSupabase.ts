@@ -25,7 +25,7 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
 
   function builder(name: string) {
     const filters: Array<(r: Row) => boolean> = [];
-    let op: 'select' | 'insert' | 'upsert' | 'update' = 'select';
+    let op: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
     let payload: Row[] = [];
     let patch: Row = {};
     let wantCount = false;
@@ -46,6 +46,7 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
       insert(rows: Row | Row[]) { op = 'insert'; payload = Array.isArray(rows) ? rows : [rows]; return q; },
       upsert(rows: Row | Row[], o: typeof upsertOpts = {}) { op = 'upsert'; payload = Array.isArray(rows) ? rows : [rows]; upsertOpts = o; return q; },
       update(p: Row, o?: { count?: string }) { op = 'update'; patch = p; if (o?.count) wantCount = true; return q; },
+      delete(o?: { count?: string }) { op = 'delete'; if (o?.count) wantCount = true; return q; },
       eq(c: string, v: unknown) { filters.push(r => r[c] === v); return q; },
       neq(c: string, v: unknown) { filters.push(r => r[c] !== v); return q; },
       is(c: string, v: unknown) { filters.push(r => (v === null ? r[c] == null : r[c] === v)); return q; },
@@ -111,6 +112,11 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
           returned.push(row);
         }
         return selectAfterWrite ? finish(returned) : { data: null, error: null, count: null };
+      }
+      if (op === 'delete') {
+        const gone = matching();
+        tables[name] = table(name).filter(r => !gone.includes(r));
+        return selectAfterWrite ? { ...finish(gone), count: wantCount ? gone.length : null } : { data: null, error: null, count: wantCount ? gone.length : null };
       }
       // update
       const hit = matching();

@@ -67,6 +67,8 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   sla_breached:               { icon: AlertTriangle, color: 'var(--red)' },
   client_at_risk:             { icon: AlertTriangle, color: 'var(--red)' },
   enquiry_received:           { icon: Users,         color: 'var(--purple)' },
+  policy_ack_signed:          { icon: CheckCircle2,  color: 'var(--success)' },
+  policy_ack_needs_email:     { icon: AlertTriangle, color: 'var(--amber)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

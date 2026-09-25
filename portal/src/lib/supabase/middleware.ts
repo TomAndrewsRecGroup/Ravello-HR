@@ -23,6 +23,10 @@ const PUBLIC_ROUTES = [
   // the API must be public too.
   /^\/leave\//,
   /^\/api\/leave\//,
+  // Employee policy acknowledgement via the personal link the consumer
+  // emails (103). Same shape and the same reason as the leave link.
+  /^\/policy\//,
+  /^\/api\/policy\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

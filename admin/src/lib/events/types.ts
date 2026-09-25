@@ -60,7 +60,7 @@ export const REMINDER_ENTITIES = [
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 
-export const EMITTED_ENTITIES = ['manatal_match'] as const;
+export const EMITTED_ENTITIES = ['manatal_match', 'policy_ack_resend'] as const;
 export type EmittedEntity = typeof EMITTED_ENTITIES[number];
 
 export type RowEventType = 'created' | 'updated' | 'deleted';
