@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const parsed = parseBulkBody(raw);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const rows = parsed.value.items.map(it => ({
     athlete_id: parsed.value.athlete_id,
     provider_id: it.provider_id,

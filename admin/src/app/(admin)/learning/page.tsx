@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Learning Content' };
 export const revalidate = 60;
 
 export default async function LearningAdminPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: content } = await readAllPages<any>((from, to) => supabase
     .from('learning_content')

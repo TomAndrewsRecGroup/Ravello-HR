@@ -4,7 +4,8 @@ import PartnerReferralForm from './PartnerReferralForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PartnerReferralPage({ params }: { params: { slug: string } }) {
+export default async function PartnerReferralPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const supabase = getServiceClient();
   const company = supabase ? await findReferralCompany(supabase, params.slug) : null;
   if (!company) notFound();

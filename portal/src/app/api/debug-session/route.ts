@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   // Create Supabase client from request cookies
   const supabase = createServerClient(

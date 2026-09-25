@@ -6,7 +6,7 @@ import OnboardWizard from './OnboardWizard';
 export const metadata: Metadata = { title: 'Onboard New Client' };
 
 export default async function OnboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Get TPS staff for account owner dropdown
   const { data: staff } = await supabase

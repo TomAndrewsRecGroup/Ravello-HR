@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Tasks' };
 export const revalidate = 30;
 
 export default async function TasksPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const [tasksRes, staffRes, companiesRes] = await Promise.all([

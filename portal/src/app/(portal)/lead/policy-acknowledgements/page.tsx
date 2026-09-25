@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Policy Acknowledgements' };
 export const revalidate = 60;
 
 export default async function PolicyAcksPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId, role } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

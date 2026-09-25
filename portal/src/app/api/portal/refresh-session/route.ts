@@ -31,13 +31,13 @@ export async function POST() {
   // session and force re-authentication. (No cross-user effect
   // since the cookie is httpOnly + same-origin, but we still want
   // to gate it on a real session.)
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(PORTAL_SESSION_COOKIE, '', { maxAge: 0, path: '/' });
   return NextResponse.json({ ok: true });
 }

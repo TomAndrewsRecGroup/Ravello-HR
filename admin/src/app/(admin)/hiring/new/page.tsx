@@ -6,12 +6,13 @@ import AdminNewRoleForm from './AdminNewRoleForm';
 
 export const metadata: Metadata = { title: 'New Role' };
 
-export default async function AdminNewRolePage({
-  searchParams,
-}: {
-  searchParams?: { template?: string; company_id?: string };
-}) {
-  const supabase = createServerSupabaseClient();
+export default async function AdminNewRolePage(
+  props: {
+    searchParams?: Promise<{ template?: string; company_id?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerSupabaseClient();
 
   const templateId          = searchParams?.template   ?? null;
   const presetCompanyId     = searchParams?.company_id ?? null;

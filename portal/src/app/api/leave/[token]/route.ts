@@ -51,10 +51,11 @@ function adminClient() {
 }
 
 interface Ctx {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
-export async function GET(request: NextRequest, { params }: Ctx) {
+export async function GET(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   const ipKey = getRateLimitKey(request);
   if (!ipGetLimiter.check(ipKey).allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -92,7 +93,8 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function POST(request: NextRequest, { params }: Ctx) {
+export async function POST(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   // Per-IP limit defends against random token guessing; per-token
   // limit defends against replay/spam from a leaked or shared link.
   const ipKey = getRateLimitKey(request);

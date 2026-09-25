@@ -129,7 +129,7 @@ beforeEach(() => {
 
 describe('config is fetched as its own query, never embedded on referral_applications', () => {
   it('approve reads referral_role_config directly, keyed on requisition_id', async () => {
-    const res = await PATCH(patchReq({ action: 'approve' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'approve' }), { params: Promise.resolve({ id: APP_ID }) });
     expect(res.status).toBe(200);
 
     const appCall = fromCalls.find(c => c.table === 'referral_applications');
@@ -140,7 +140,7 @@ describe('config is fetched as its own query, never embedded on referral_applica
   });
 
   it('approve succeeds end to end and sends through sendReferralInvite', async () => {
-    const res = await PATCH(patchReq({ action: 'approve' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'approve' }), { params: Promise.resolve({ id: APP_ID }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -154,7 +154,7 @@ describe('config is fetched as its own query, never embedded on referral_applica
   });
 
   it('reject does not need the config at all, but still resolves the application', async () => {
-    const res = await PATCH(patchReq({ action: 'reject' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'reject' }), { params: Promise.resolve({ id: APP_ID }) });
     expect(res.status).toBe(200);
     const update = updates.find(u => u.table === 'referral_applications');
     expect(update?.patch.status).toBe('review_rejected');
@@ -164,7 +164,7 @@ describe('config is fetched as its own query, never embedded on referral_applica
 describe('apply overrules a rejection and sends, but never re-sends', () => {
   it('sends and marks email_sent from a rejected status', async () => {
     appRow!.status = 'rejected_criteria';
-    const res  = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const res  = await PATCH(patchReq({ action: 'apply' }), { params: Promise.resolve({ id: APP_ID }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -179,7 +179,7 @@ describe('apply overrules a rejection and sends, but never re-sends', () => {
 
   it('refuses to re-send once an invite has already gone out', async () => {
     appRow!.status = 'email_sent';
-    const res  = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const res  = await PATCH(patchReq({ action: 'apply' }), { params: Promise.resolve({ id: APP_ID }) });
     const json = await res.json();
 
     expect(res.status).toBe(409);
@@ -189,14 +189,14 @@ describe('apply overrules a rejection and sends, but never re-sends', () => {
 
   it('refuses to re-send once the row has moved downstream', async () => {
     appRow!.status = 'accepted';
-    const res = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'apply' }), { params: Promise.resolve({ id: APP_ID }) });
     expect(res.status).toBe(409);
     expect(sendCalls).toHaveLength(0);
   });
 
   it('a review_pending row (never rejected) can still be applied — same send path as approve', async () => {
     appRow!.status = 'review_pending';
-    const res = await PATCH(patchReq({ action: 'apply' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'apply' }), { params: Promise.resolve({ id: APP_ID }) });
     expect(res.status).toBe(200);
     expect(sendCalls).toHaveLength(1);
   });
@@ -205,7 +205,7 @@ describe('apply overrules a rejection and sends, but never re-sends', () => {
 describe('a real application with no saved config is reported distinctly', () => {
   it('404s with a config-specific message, not "application not found"', async () => {
     configRow = null;
-    const res = await PATCH(patchReq({ action: 'approve' }), { params: { id: APP_ID } });
+    const res = await PATCH(patchReq({ action: 'approve' }), { params: Promise.resolve({ id: APP_ID }) });
     const json = await res.json();
     expect(res.status).toBe(404);
     expect(json.error).not.toMatch(/application not found/i);

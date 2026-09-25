@@ -41,7 +41,7 @@ export async function GET() {
   const hasUrl   = apiUrl.length > 0;
   const hasKey   = (process.env.IVYLENS_API_KEY ?? '').length > 0;
   const apiHost  = hasUrl ? safeHost(apiUrl) : null;
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   if (!hasUrl) {
     return NextResponse.json<ProbeBase>({

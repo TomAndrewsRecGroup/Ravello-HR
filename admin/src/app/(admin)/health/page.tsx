@@ -37,7 +37,7 @@ function bandForClient(h: Omit<ClientHealth, 'band'>): ClientHealth['band'] {
 }
 
 export default async function HealthStatusPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const now = new Date();
   const fortnightAgo = new Date(now.getTime() - 14 * 86_400_000).toISOString();
 

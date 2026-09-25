@@ -25,7 +25,7 @@ const ipPostLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 10 });
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-interface Ctx { params: { token: string } }
+interface Ctx { params: Promise<{ token: string }> }
 
 async function loadAck(sb: ReturnType<typeof createServiceSupabaseClient>, ackId: string) {
   const { data: ackRow } = await sb.from('policy_acknowledgements').select('id, company_id, document_id, employee_id, status, acknowledged_at').eq('id', ackId).maybeSingle();
@@ -39,7 +39,8 @@ async function loadAck(sb: ReturnType<typeof createServiceSupabaseClient>, ackId
   return { ack, emp: emp as { full_name: string; status: string } | null, doc: doc as { name: string; category: string; version: number; file_path: string | null; file_url: string | null } | null, co: co as { name: string } | null };
 }
 
-export async function GET(request: NextRequest, { params }: Ctx) {
+export async function GET(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   if (!ipGetLimiter.check(getRateLimitKey(request)).allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   if (!normaliseAccessToken(params.token)) return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
 
@@ -65,7 +66,8 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function POST(request: NextRequest, { params }: Ctx) {
+export async function POST(request: NextRequest, props: Ctx) {
+  const params = await props.params;
   if (!ipPostLimiter.check(getRateLimitKey(request)).allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   if (!normaliseAccessToken(params.token)) return NextResponse.json({ error: 'Invalid link' }, { status: 404 });
 

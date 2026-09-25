@@ -104,7 +104,7 @@ function baseRow(extra: Record<string, any> = {}) {
 
 function post() {
   const req = new Request('https://admin.test/api', { method: 'POST' }) as any;
-  return POST(req, { params: { id: REQ_ID } });
+  return POST(req, { params: Promise.resolve({ id: REQ_ID }) });
 }
 
 beforeEach(() => {

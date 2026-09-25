@@ -16,7 +16,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!companyId) return NextResponse.json({ updated: 0 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   // ── Step 0: a company that has never raised an IvyLens ticket has
   // nothing to poll. The notification bell calls this on load, so this
   // one indexed read is what keeps every other page view from costing an

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Reports' };
 export const revalidate = 60;
 
 export default async function ReportsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId, featureFlags } = await getSessionProfile();
   const flags: Record<string, boolean> = featureFlags ?? {};
   // Was checking flags.reports — a different, unrelated flag ("CSV

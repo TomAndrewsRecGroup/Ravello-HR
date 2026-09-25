@@ -5,8 +5,9 @@ import PlanEditor from './PlanEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DevPlanDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function DevPlanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
   const [{ data: plan }, { data: milestones }, { data: companies }, { data: athletes }, { data: templates }] = await Promise.all([
     supabase.from('dev_plans').select('*').eq('id', params.id).single(),
     supabase.from('dev_plan_milestones').select('*').eq('plan_id', params.id).order('sort_order'),

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Client Value Reports' };
 export const revalidate = 60;
 
 export default async function ValueReportsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();

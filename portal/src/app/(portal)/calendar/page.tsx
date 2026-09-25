@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Company Calendar' };
 export const revalidate = 30;
 
 export default async function CalendarPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId, role } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

@@ -23,7 +23,8 @@ const REASON_MESSAGES: Record<string, { tone: 'info' | 'warn'; text: string }> =
   'set-password': { tone: 'info', text: 'Your password is set. Please sign in below.' },
 };
 
-export default function LoginPage({ searchParams }: { searchParams?: { reason?: string; error?: string } }) {
+export default async function LoginPage(props: { searchParams?: Promise<{ reason?: string; error?: string }> }) {
+  const searchParams = await props.searchParams;
   // Activate failures land here as ?error=config|invalid|expired|link.
   // Layout-driven redirects use ?reason=archived|no-session|...  We
   // accept either so neither flow shows a blank page.

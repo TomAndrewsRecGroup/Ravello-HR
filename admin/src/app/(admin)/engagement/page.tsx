@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Client Engagement' };
 export const revalidate = 60;
 
 export default async function EngagementPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Soft caps prevent the page from running out of memory once the
   // dataset crosses 100K rows. Engagement is a portfolio rollup so

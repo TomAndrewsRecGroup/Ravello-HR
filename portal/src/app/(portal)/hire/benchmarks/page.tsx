@@ -21,7 +21,7 @@ function positionLabel(salary: number, p25: number | null, p50: number | null, p
 }
 
 export default async function BenchmarksPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId: cId } = await getSessionProfile();
   const companyId: string = cId ?? '';
 

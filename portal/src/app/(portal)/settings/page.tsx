@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Settings' };
 export const revalidate = 60;
 
 export default async function SettingsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, profile, companyId, role } = await getSessionProfile();
 
   const [{ data: company }, { data: fullProfile }, { data: teamData }, { data: prefs }] = await Promise.all([

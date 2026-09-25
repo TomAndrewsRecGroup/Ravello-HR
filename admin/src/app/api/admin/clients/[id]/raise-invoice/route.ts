@@ -19,10 +19,8 @@ function adminSupabase() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // Its own staff check. This route was the one admin API with none, on
   // the strength of "gated by the admin app's auth layer" — which, until
   // 2026-09-24, trusted a role cookie any signed-in user could forge.

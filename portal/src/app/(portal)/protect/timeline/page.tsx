@@ -14,8 +14,9 @@ const PAGE = 50;
 // register items added and completed, visits, drills, evidence, and who
 // was given or lost access. Written only by database triggers (095), so
 // nobody, Core OS 360 included, can edit or remove an entry.
-export default async function SafetyTimelinePage({ searchParams }: { searchParams: { page?: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function SafetyTimelinePage(props: { searchParams: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   const page = Math.max(0, Math.min(1000, Number.parseInt(searchParams.page ?? '0', 10) || 0));
 

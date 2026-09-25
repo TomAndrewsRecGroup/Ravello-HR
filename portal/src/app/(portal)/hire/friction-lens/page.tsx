@@ -16,7 +16,7 @@ type CompanyInfo = {
 } | null;
 
 export default async function FrictionLensPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
 

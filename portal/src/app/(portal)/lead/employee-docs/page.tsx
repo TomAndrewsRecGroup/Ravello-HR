@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Employee Documents' };
 export const revalidate = 30;
 
 export default async function EmployeeDocsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

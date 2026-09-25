@@ -13,10 +13,11 @@ import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  searchParams: { token?: string; purpose?: string };
+  searchParams: Promise<{ token?: string; purpose?: string }>;
 }
 
-export default function ActivatePage({ searchParams }: Props) {
+export default async function ActivatePage(props: Props) {
+  const searchParams = await props.searchParams;
   const token = searchParams.token?.trim();
   if (!token) {
     redirect('/auth/login?error=invalid');

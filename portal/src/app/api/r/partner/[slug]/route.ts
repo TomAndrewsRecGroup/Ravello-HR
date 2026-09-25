@@ -19,7 +19,8 @@ const PartnerSchema = z.object({
 
 // Public, unauthenticated. Email-only — no database write. Notifies Tom and
 // records which client referred the partner (resolved from the slug).
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   if (!limiter.check(getRateLimitKey(req)).allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }

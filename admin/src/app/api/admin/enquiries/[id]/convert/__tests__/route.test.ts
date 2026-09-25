@@ -16,7 +16,7 @@ vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: () => db.c
 
 const { POST } = await import('../route');
 const ENQ = '11111111-1111-4111-8111-111111111111';
-const convert = (body: unknown = {}) => POST(new NextRequest(`https://admin.example.com/api/admin/enquiries/${ENQ}/convert`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }), { params: { id: ENQ } });
+const convert = (body: unknown = {}) => POST(new NextRequest(`https://admin.example.com/api/admin/enquiries/${ENQ}/convert`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }), { params: Promise.resolve({ id: ENQ }) });
 
 beforeEach(() => {
   db = fakeSupabase({
@@ -54,7 +54,7 @@ describe('POST /api/admin/enquiries/[id]/convert', () => {
   });
 
   it('refuses a bad id and an unknown enquiry', async () => {
-    expect((await POST(new NextRequest('https://a/x', { method: 'POST', body: '{}' }), { params: { id: 'nope' } })).status).toBe(400);
+    expect((await POST(new NextRequest('https://a/x', { method: 'POST', body: '{}' }), { params: Promise.resolve({ id: 'nope' }) })).status).toBe(400);
     db.tables.enquiries.length = 0;
     expect((await convert()).status).toBe(404);
   });

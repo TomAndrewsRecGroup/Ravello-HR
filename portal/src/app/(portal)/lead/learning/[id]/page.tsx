@@ -13,8 +13,9 @@ function tagScore(a: string[] | null, b: string[] | null): number {
   return a.filter(t => setB.has(t.toLowerCase())).length;
 }
 
-export default async function LearningDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function LearningDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
 

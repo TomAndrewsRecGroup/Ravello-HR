@@ -19,7 +19,7 @@ const fmt = (d: string) =>
 // the client's own session, so RLS (095) scopes every row to their
 // company.
 export default async function ProtectOverviewPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { companyId, accountManagerName, accountManagerEmail } = await getSessionProfile();
 
   const [register, { data: events, error: eventsErr }, { data: failedActions }] = await Promise.all([

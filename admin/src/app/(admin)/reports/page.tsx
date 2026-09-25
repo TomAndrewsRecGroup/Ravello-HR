@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Reports' };
 export const revalidate = 30;
 
 export default async function AdminReportsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // These are CSV EXPORTS, so "most of the rows" is the wrong answer.
   // The five-thousand-row limits these used to carry did nothing: PostgREST clamps

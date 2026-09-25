@@ -55,12 +55,13 @@ function WorkingModelPill({ model }: { model: string | null }) {
   );
 }
 
-export default async function HiringPage({
-  searchParams,
-}: {
-  searchParams?: { filter?: string };
-}) {
-  const supabase = createServerSupabaseClient();
+export default async function HiringPage(
+  props: {
+    searchParams?: Promise<{ filter?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
   // Parallel: company manatal_client_id + requisitions

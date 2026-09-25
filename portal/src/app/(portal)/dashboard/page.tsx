@@ -33,7 +33,7 @@ function priorityBadge(priority: string) {
 }
 
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, profile, companyId, companyName, companyLogoUrl, featureFlags: sessionFlags } = await getSessionProfile();
   const flagsFromSession: Record<string, boolean> = sessionFlags ?? {};
 

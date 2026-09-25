@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 // this reads exactly the way /hiring and /clients do: every active
 // company, a normal staff-session query, no grant/scope concept.
 export default async function HealthSafetyPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const horizon = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
 
   const [{ data: companies }, due] = await Promise.all([

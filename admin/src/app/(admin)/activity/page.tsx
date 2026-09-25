@@ -42,7 +42,7 @@ function timeAgo(date: string): string {
 }
 
 export default async function ActivityPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Build activity from multiple sources (last 7 days)
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();

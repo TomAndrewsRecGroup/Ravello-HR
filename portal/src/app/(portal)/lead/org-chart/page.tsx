@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Organisation Chart' };
 export const revalidate = 0;
 
 export default async function OrgChartPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId, role } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

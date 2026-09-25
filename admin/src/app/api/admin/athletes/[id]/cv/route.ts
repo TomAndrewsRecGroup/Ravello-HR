@@ -22,7 +22,8 @@ function extFromName(name: string): string {
   return m ? m[1] : '';
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: `unsupported extension: .${ext}` }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: athlete } = await supabase
     .from('athletes')
@@ -98,14 +99,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
 // GET — return a fresh short-lived signed URL for the athlete's CV.
 // Staff-only; the returned URL itself is time-limited.
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: athlete } = await supabase
     .from('athletes')
     .select('id, cv_storage_path, cv_filename')

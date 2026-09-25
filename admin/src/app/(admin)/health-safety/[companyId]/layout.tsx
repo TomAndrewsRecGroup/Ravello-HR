@@ -5,10 +5,16 @@ import HsCompanyTabs from '@/components/hs/HsCompanyTabs';
 
 // One client's H&S workspace, inside the normal admin shell — staff see
 // every client, so a bad id is a 404, not an empty page.
-export default async function HealthSafetyCompanyLayout({
-  children, params,
-}: { children: React.ReactNode; params: { companyId: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function HealthSafetyCompanyLayout(
+  props: { children: React.ReactNode; params: Promise<{ companyId: string }> }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
+  const supabase = await createServerSupabaseClient();
   const { data: company } = await supabase.from('companies').select('id, name').eq('id', params.companyId).maybeSingle();
   if (!company) notFound();
 

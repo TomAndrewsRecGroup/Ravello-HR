@@ -86,7 +86,7 @@ const EVENT_TONE: Record<string, 'good' | 'bad' | 'neutral'> = {
 };
 
 export default async function RevenuePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Single round trip: every signal we need for the page.
   const [companiesRes, eventsRes] = await Promise.all([

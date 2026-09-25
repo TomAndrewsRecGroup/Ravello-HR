@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     embedKind = 'linkedin';
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data, error } = await supabase
     .from('latest_updates')

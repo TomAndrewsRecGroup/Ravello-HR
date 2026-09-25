@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   let body: CreateClientBody = {};
   try { body = await request.json(); } catch { /* ignore */ }

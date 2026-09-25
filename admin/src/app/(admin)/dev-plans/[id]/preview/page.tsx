@@ -10,8 +10,9 @@ import PrintButton from './PrintButton';
 export const metadata: Metadata = { title: 'Dev Plan Preview' };
 export const dynamic = 'force-dynamic';
 
-export default async function DevPlanPreviewPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient();
+export default async function DevPlanPreviewPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
   const { data: plan } = await supabase
     .from('dev_plans')
     .select('id, title, summary, status, brand_profile_id, content, strengths, training_items, roles_items, athlete:athlete_id (full_name), company:company_id (name)')

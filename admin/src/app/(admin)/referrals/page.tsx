@@ -15,12 +15,13 @@ const PAGE_SIZE = 100;
 const SORT_KEYS = ['candidate', 'role', 'score', 'location', 'status'] as const;
 type SortKey = (typeof SORT_KEYS)[number];
 
-export default async function ReferralsPage({
-  searchParams,
-}: {
-  searchParams: { page?: string; sort?: string; dir?: string; status?: string; role?: string };
-}) {
-  const supabase = createServerSupabaseClient();
+export default async function ReferralsPage(
+  props: {
+    searchParams: Promise<{ page?: string; sort?: string; dir?: string; status?: string; role?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerSupabaseClient();
 
   const page    = Math.max(1, Number(searchParams?.page ?? '1') || 1);
   const sortKey = (SORT_KEYS as readonly string[]).includes(searchParams?.sort ?? '')

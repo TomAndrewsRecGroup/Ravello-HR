@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ rows: [], stages: [], state: 'not_configured' });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: row, error } = await supabase
     .from('requisitions')
     .select('id,manatal_job_id,companies(manatal_client_id)')

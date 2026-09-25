@@ -21,7 +21,7 @@ export interface AuthFail {
 }
 
 export async function requireStaff(): Promise<AuthOk | AuthFail> {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };

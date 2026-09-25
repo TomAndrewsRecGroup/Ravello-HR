@@ -69,7 +69,7 @@ function detectDisplayCategory(doc: any): string {
 }
 
 export default async function DocumentsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
 
   const { data: docs } = await supabase

@@ -15,7 +15,7 @@ vi.mock('@/lib/rateLimit', () => ({ limiters: { email: { check: () => ({ allowed
 
 const { POST } = await import('../route');
 const ID = '11111111-2222-4333-8444-555555555555';
-const call = (id = ID) => POST(new NextRequest(`https://portal.example.com/api/portal/policy-acks/${id}/resend`, { method: 'POST' }), { params: { id } });
+const call = (id = ID) => POST(new NextRequest(`https://portal.example.com/api/portal/policy-acks/${id}/resend`, { method: 'POST' }), { params: Promise.resolve({ id }) });
 
 beforeEach(() => {
   emitted.length = 0;

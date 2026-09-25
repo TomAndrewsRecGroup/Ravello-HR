@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'HR Dashboard' };
 export const revalidate = 30;
 
 export default async function HRDashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

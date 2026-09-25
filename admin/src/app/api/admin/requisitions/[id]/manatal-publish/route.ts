@@ -45,7 +45,8 @@ async function refuse(
 // boards). Writes manatal_job_id + manatal_published_at back on the
 // requisition. Idempotent re-publish is supported — if a job id
 // already exists the route just toggles publish on it again.
-export async function POST(httpReq: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(httpReq: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
 
@@ -71,7 +72,7 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
       auth.userId);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: req, error: loadErr } = await supabase
     .from('requisitions')
     // ONE string literal, deliberately. supabase-js infers the row type
@@ -242,7 +243,8 @@ export async function POST(httpReq: NextRequest, { params }: { params: { id: str
 // the browser, an empty log was indistinguishable from a button never
 // pressed, and a stale deploy looked identical to a bug. Each of those
 // is now one value in this response.
-export async function GET(httpReq: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(httpReq: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;   // a 401/403 here IS the answer
 
@@ -250,7 +252,7 @@ export async function GET(httpReq: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'Invalid id', route_version: ROUTE_VERSION }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: req, error: loadErr } = await supabase
     .from('requisitions')
     .select('id,title,manatal_job_id,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,companies(manatal_client_id)')

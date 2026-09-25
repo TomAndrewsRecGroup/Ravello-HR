@@ -15,7 +15,7 @@ export const revalidate = 30;
 const PAGE_CAP = 500;
 
 export default async function CandidatesPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [{ data: candidates }, { count: totalCandidates }, { data: companies }] = await Promise.all([
     supabase

@@ -20,7 +20,8 @@ function extFromName(name: string): string {
   return m ? m[1] : '';
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!companyId) {
     return NextResponse.json({ error: 'no company' }, { status: 403 });
   }
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: athlete } = await supabase
     .from('athletes').select('id, company_id').eq('id', params.id).single();
   if (!athlete || athlete.company_id !== companyId) {
@@ -93,7 +94,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
 // GET — return a fresh short-lived signed URL for the athlete's CV.
 // Caller must belong to the athlete's company.
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
@@ -101,7 +103,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!companyId) return NextResponse.json({ error: 'no company' }, { status: 403 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: athlete } = await supabase
     .from('athletes')
     .select('id, company_id, cv_storage_path, cv_filename')

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const offerings = normaliseTrainingOfferings(body.offerings, []);
   if (!offerings.ok) return NextResponse.json({ error: offerings.error }, { status: 400 });
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('training_providers')
     .insert({

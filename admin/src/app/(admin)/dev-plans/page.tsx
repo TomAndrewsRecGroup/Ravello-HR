@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Development Plans' };
 export const dynamic = 'force-dynamic';
 
 export default async function DevPlansPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const [{ data: plans }, { count: tplCount }, { data: companies }, { data: athletes }] = await Promise.all([
     supabase
       .from('dev_plans')

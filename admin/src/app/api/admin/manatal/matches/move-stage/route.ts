@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const { requisition_id: requisitionId, matchId, stageId } = parsed.data;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: row, error } = await supabase
     .from('requisitions')
     .select('id,manatal_job_id')

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Feature Flags' };
 export const revalidate = 60;
 
 export default async function FeatureFlagsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: companies } = await supabase
     .from('companies')
     .select('id,slug,name,active,feature_flags')

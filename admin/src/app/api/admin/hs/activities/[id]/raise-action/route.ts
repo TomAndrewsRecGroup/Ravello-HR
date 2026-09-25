@@ -19,14 +19,15 @@ const Body = z.object({
   decision_id: uuid.optional().nullable(),
 });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) return NextResponse.json({ error: 'Bad id' }, { status: 400 });
   const parsed = await parseBody(req, Body);
   if (!parsed.ok) return parsed.response;
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: activity, error: readErr } = await supabase.from('hs_activities').select('id, company_id, title').eq('id', params.id).maybeSingle();
   if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 });
   if (!activity) return NextResponse.json({ error: 'Activity not found' }, { status: 404 });

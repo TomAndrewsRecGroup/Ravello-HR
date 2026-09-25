@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message must be at least 20 characters' }, { status: 400 });
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   // full_name isn't in the session cookie — still need a profiles lookup for it.
   // company_id and user.email come from the cookie.
   const { data: profile } = await supabase

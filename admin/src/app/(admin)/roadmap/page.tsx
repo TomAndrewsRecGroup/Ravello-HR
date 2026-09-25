@@ -54,7 +54,7 @@ function fmtDate(d: string | null): string {
 
 
 export default async function AdminRoadmapPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [milestonesRes, companiesRes] = await Promise.all([
     readAllPages<any>((from, to) => supabase

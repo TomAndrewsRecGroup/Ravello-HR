@@ -12,7 +12,7 @@ import LeaveRequestForm from './LeaveRequestForm';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 interface PreflightOk {
@@ -33,7 +33,7 @@ async function preflight(token: string): Promise<Preflight> {
   // the minimal payload needed to render the form. Server-side fetch
   // here so we can render the form on first paint (no client-side
   // round-trip on load).
-  const h = headers();
+  const h = await headers();
   const host = h.get('host') ?? 'localhost:3001';
   const proto = h.get('x-forwarded-proto') ?? 'http';
   const url = `${proto}://${host}/api/leave/${encodeURIComponent(token)}`;
@@ -50,7 +50,8 @@ async function preflight(token: string): Promise<Preflight> {
   }
 }
 
-export default async function PublicLeavePage({ params }: Props) {
+export default async function PublicLeavePage(props: Props) {
+  const params = await props.params;
   // Token shape check happens in the API layer too, but bail early if
   // it's obviously wrong so we render a 404 page instead of fetching.
   if (!/^[a-f0-9]{32}$/.test(params.token)) {

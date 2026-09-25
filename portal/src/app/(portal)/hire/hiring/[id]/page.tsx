@@ -26,12 +26,13 @@ function stageLabel(s: string) {
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-export default async function RequisitionDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const supabase = createServerSupabaseClient();
+export default async function RequisitionDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
+  const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
   const { data: req } = await supabase
     .from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,working_model,description,must_haves,interview_stages,friction_score,friction_level,friction_recommendations,jd_text,created_at').eq('id', params.id).eq('company_id', companyId).single();

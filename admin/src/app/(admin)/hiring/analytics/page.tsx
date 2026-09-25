@@ -26,7 +26,7 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 }
 
 export default async function AdminHiringAnalyticsPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const [{ data: reqs }, { data: candidates }, { data: offers }, { data: companies }] = await Promise.all([
     supabase.from('requisitions').select('id,title,stage,friction_level,assigned_recruiter,created_at,companies(id,slug,name)').order('created_at', { ascending: false }),

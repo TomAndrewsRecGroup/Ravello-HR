@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: 'Athletes To Industry' };
 export const dynamic = 'force-dynamic';
 
 export default async function AthletesToIndustryPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId, companySlug, featureFlags } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (featureFlags?.athletes_to_industry === false) redirect('/dashboard');

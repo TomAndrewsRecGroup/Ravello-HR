@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Absence Records' };
 export const revalidate = 30;
 
 export default async function AbsencePage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (

@@ -48,7 +48,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   // Sidebar badge counts: pre-fetch SSR so badges paint with the layout
   // (was three browser-side queries firing on every cold mount).
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const now = new Date().toISOString();
   const counts: Record<string, number> = { actions: 0, tickets: 0, candidates: 0 };
   if (companyId) {
@@ -82,7 +82,7 @@ export default async function PortalLayout({ children }: { children: React.React
   // invoices). TPS staff always see it for support purposes.
   const showBilling = isTpsStaff || paidEnabled || hasStripeSub;
 
-  const playIntro = cookies().get(BRAND_INTRO_COOKIE)?.value === '1';
+  const playIntro = (await cookies()).get(BRAND_INTRO_COOKIE)?.value === '1';
 
   return (
     <>

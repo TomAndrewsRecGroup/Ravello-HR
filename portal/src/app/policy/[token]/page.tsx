@@ -9,7 +9,7 @@ import PolicyAckForm from './PolicyAckForm';
 
 export const dynamic = 'force-dynamic';
 
-interface Props { params: { token: string } }
+interface Props { params: Promise<{ token: string }> }
 
 interface PreflightOk {
   ok: true;
@@ -22,7 +22,7 @@ interface PreflightOk {
 interface PreflightError { ok: false; error: string; status: number }
 
 async function preflight(token: string): Promise<PreflightOk | PreflightError> {
-  const h = headers();
+  const h = await headers();
   const host = h.get('host') ?? 'localhost:3001';
   const proto = h.get('x-forwarded-proto') ?? 'http';
   try {
@@ -37,7 +37,8 @@ async function preflight(token: string): Promise<PreflightOk | PreflightError> {
   }
 }
 
-export default async function PublicPolicyPage({ params }: Props) {
+export default async function PublicPolicyPage(props: Props) {
+  const params = await props.params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.token)) notFound();
   const result = await preflight(params.token);
 

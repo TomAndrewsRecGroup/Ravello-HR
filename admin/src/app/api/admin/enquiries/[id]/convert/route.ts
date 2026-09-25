@@ -21,7 +21,8 @@ export const runtime = 'nodejs';
 
 const Body = z.object({ company_name: optionalShortText(200) });
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
   const rl = limiters.account.check(getUserRateLimitKey(req, auth.userId));
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const parsed = await parseBody(req, Body);
   if (!parsed.ok) return parsed.response;
 
-  const sb = createServerSupabaseClient();
+  const sb = await createServerSupabaseClient();
   const { data: enq } = await sb.from('enquiries').select('id, full_name, email, company_name, source, status, bd_company_id').eq('id', params.id).maybeSingle();
   const e = enq as { id: string; full_name: string; email: string; company_name: string | null; source: string; status: string; bd_company_id: string | null } | null;
   if (!e) return NextResponse.json({ error: 'Enquiry not found' }, { status: 404 });
