@@ -1960,11 +1960,20 @@ and Reports. The HR pages that lived under it moved to LEAD.
 - **`SectionTabs` highlights ONE tab**, the longest match. `/protect`
   (Overview) is a prefix of every other tab and used to light up
   alongside them.
-- **Still to do:** the admin client-detail "PROTECT" tab becomes "HR"
-  plus a new "H&S" tab. Every admin compliance-category writer
-  (`ClientDetailTabs`, `AddComplianceItem`, `api/admin/compliance`, the BD
-  convert route) must move to `HS_REGISTER_CATEGORIES` before the
-  category CHECK migration.
+- **Done (2026-09-25, folded into the H&S-staff-delivered PR below):**
+  the admin client-detail "PROTECT" tab — which only ever rendered
+  absence records and employee documents, pure HR content — is renamed
+  "HR" (`tabs/ProtectTab.tsx` → `tabs/HrTab.tsx`, `case 'PROTECT'` →
+  `case 'HR'` in `api/client-tab-data/route.ts`). It gets no companion
+  "H&S" tab: H&S has its own top-level `/health-safety` section by
+  then (see below), so client-detail links out to it instead
+  (`/health-safety/<companyId>` card in the Overview tab) rather than
+  duplicating the register inside a tab. The generic compliance
+  writers (`ClientDetailTabs`, `AddComplianceItem`, `api/admin/
+  compliance`) took the narrower fix of dropping `'health_safety'`
+  entirely rather than adopting `HS_REGISTER_CATEGORIES` — see below;
+  the BD convert route named here no longer exists (BD Intelligence
+  removed the same day).
 
 ---
 

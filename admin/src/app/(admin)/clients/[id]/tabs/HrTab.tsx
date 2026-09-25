@@ -13,7 +13,7 @@ interface Props {
   initialEmpDocs: any[];
 }
 
-export default function ProtectTab({ companyId, initialAbsenceRecords, initialEmpDocs }: Props) {
+export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs }: Props) {
   const supabase = createClient();
   const [absenceRecords, setAbsenceRecords] = useState<any[]>(initialAbsenceRecords);
   const [empDocs] = useState<any[]>(initialEmpDocs);
