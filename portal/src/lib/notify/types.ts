@@ -34,6 +34,7 @@ export const NOTIFICATION_TYPES = [
   // PROTECT / compliance
   'compliance_due_soon',
   'compliance_overdue',
+  'hs_document_review_due',
   // LEAD / HR reminders
   'document_review_due',
   'employee_document_expiring',
@@ -100,6 +101,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   payment_failed:             'Payment failed',
   compliance_due_soon:        'Compliance due soon',
   compliance_overdue:         'Compliance overdue',
+  hs_document_review_due:     'H&S document review due',
   document_review_due:        'Document review due',
   employee_document_expiring: 'Employee document expiring',
   employee_document_expired:  'Employee document expired',

@@ -62,3 +62,37 @@ export interface HsFile {
   size_bytes: number | null;
   created_at: string;
 }
+
+export interface HsDocument {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  category: string;
+  title: string;
+  description: string | null;
+  version: number;
+  review_due_at: string | null;
+  status: 'active' | 'superseded';
+  supersedes_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HsSectorPackItem {
+  id: string;
+  pack_id: string;
+  category: string;
+  title: string;
+  description: string | null;
+  recurrence_every: number | null;
+  recurrence_unit: HsRecurrenceUnit | null;
+  legal_basis: string | null;
+  sort_order: number;
+}
+
+export interface HsSectorPack {
+  id: string;
+  sector: string;
+  name: string;
+  description: string | null;
+}

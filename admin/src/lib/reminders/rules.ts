@@ -80,6 +80,14 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    id: 'hs_documents', entity: 'hs_documents',
+    select: 'id, company_id, title, category, review_due_at, status',
+    query: (sb, from, to) => sb.from('hs_documents').select('id, company_id, title, category, review_due_at, status')
+      .eq('status', 'active').not('review_due_at', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_due_at),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'policy_acknowledgements', entity: 'policy_acknowledgements',
     select: 'id, company_id, document_id, employee_id, sent_at, status',
     query: (sb, from, to) => sb.from('policy_acknowledgements').select('id, company_id, document_id, employee_id, sent_at, status')

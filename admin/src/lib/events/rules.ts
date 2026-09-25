@@ -268,6 +268,19 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    id: 'hs_document_review_reminder',
+    on: 'hs_documents.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'hs_document_review_due',
+        title: `Review of "${s(row.title, 'a document')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/documents`, portal: '/protect/documents' },
+      })];
+    },
+  },
+  {
     id: 'policy_ack_reminder',
     on: 'policy_acknowledgements.reminder',
     when: e => overdue(reminderPayload(e).bucket),

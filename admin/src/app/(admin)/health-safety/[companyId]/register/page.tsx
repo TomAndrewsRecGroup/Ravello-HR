@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import type { HsCompletion, HsFile, HsRegisterItem } from '@/lib/hs/types';
+import type { HsCompletion, HsFile, HsRegisterItem, HsSectorPack, HsSectorPackItem } from '@/lib/hs/types';
 import RegisterClient from '@/components/hs/RegisterClient';
 
 export const metadata: Metadata = { title: 'H&S register' };
@@ -13,9 +13,11 @@ export default async function HealthSafetyRegisterPage(props: { params: Promise<
   const params = await props.params;
   const supabase = await createServerSupabaseClient();
 
-  // All three in parallel and all paged: a register, its completions and
-  // its files all grow without bound over the years a client is with us.
-  const [items, completions, files] = await Promise.all([
+  // All in parallel and paged: a register, its completions and its
+  // files all grow without bound over the years a client is with us.
+  // Sector packs are small, staff-wide reference data (no readAllPages
+  // needed — a handful of packs and a few hundred items at most).
+  const [items, completions, files, { data: packRows }, { data: packItemRows }] = await Promise.all([
     readAllPages<HsRegisterItem>((from, to) =>
       supabase.from('compliance_items')
         .select('id, company_id, title, description, category, status, due_date, recurrence_every, recurrence_unit, last_completed_on, legal_basis, source, site_id')
@@ -36,7 +38,14 @@ export default async function HealthSafetyRegisterPage(props: { params: Promise<
         .in('entity_type', ['register_item', 'register_completion'])
         .order('created_at', { ascending: false }).order('id')
         .range(from, to)),
+    supabase.from('hs_sector_packs').select('id, sector, name, description').order('name'),
+    supabase.from('hs_sector_pack_items').select('id, pack_id, category, title, description, recurrence_every, recurrence_unit, legal_basis, sort_order').order('sort_order'),
   ]);
+
+  const packs: (HsSectorPack & { items: HsSectorPackItem[] })[] = (packRows ?? []).map((p: HsSectorPack) => ({
+    ...p,
+    items: (packItemRows ?? []).filter((i: HsSectorPackItem) => i.pack_id === p.id),
+  }));
 
   return (
     <RegisterClient
@@ -45,6 +54,7 @@ export default async function HealthSafetyRegisterPage(props: { params: Promise<
       items={items.rows}
       completions={completions.rows}
       files={files.rows}
+      packs={packs}
       loadError={items.error ?? completions.error ?? files.error ?? (items.truncated ? 'Showing the first part of a very long register.' : null)}
     />
   );

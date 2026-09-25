@@ -1,7 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Clock, FileText, Loader2, Paperclip, Plus, ShieldCheck, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Clock, FileText, Loader2, Package, Paperclip, Plus, ShieldCheck, Sparkles } from 'lucide-react';
+import ApplyPackPanel from './ApplyPackPanel';
 import { HS_RECURRENCE_OPTIONS, type ClassifySuggestion } from '@/lib/hs/jevQuestions';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/modules/Toast';
@@ -12,7 +13,7 @@ import {
 } from '@/lib/hs/vocab';
 import { describeRecurrence, nextDue, ragFor, type Rag } from '@/lib/hs/recurrence';
 import { HS_EVIDENCE_ACCEPT, evidenceUrl, uploadEvidence } from '@/lib/hs/evidence';
-import type { HsCompletion, HsFile, HsRegisterItem } from '@/lib/hs/types';
+import type { HsCompletion, HsFile, HsRegisterItem, HsSectorPack, HsSectorPackItem } from '@/lib/hs/types';
 
 interface Props {
   companyId:   string;
@@ -20,6 +21,7 @@ interface Props {
   items:       HsRegisterItem[];
   completions: HsCompletion[];
   files:       HsFile[];
+  packs:       (HsSectorPack & { items: HsSectorPackItem[] })[];
   loadError:   string | null;
 }
 
@@ -37,9 +39,10 @@ const fmt = (d: string | null) =>
 const categoryLabel = (c: string | null) =>
   (c && (HS_REGISTER_CATEGORY_LABELS as Record<string, string>)[c]) || (c === 'health_safety' ? 'Health & safety' : c ?? '');
 
-export default function RegisterClient({ companyId, canRecord, items, completions, files, loadError }: Props) {
+export default function RegisterClient({ companyId, canRecord, items, completions, files, packs, loadError }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [applyingPack, setApplyingPack] = useState(false);
 
   const byItem = useMemo(() => {
     const m = new Map<string, HsCompletion[]>();
@@ -71,12 +74,26 @@ export default function RegisterClient({ companyId, canRecord, items, completion
             </span>
           );
         })}
+        {canRecord && packs.length > 0 && (
+          <button className="btn-secondary btn-sm ml-auto" onClick={() => setApplyingPack(a => !a)}>
+            <Package size={14} /> Apply sector pack
+          </button>
+        )}
         {canRecord && (
-          <button className="btn-cta btn-sm ml-auto" onClick={() => setAdding(a => !a)}>
+          <button className={`btn-cta btn-sm ${packs.length > 0 ? '' : 'ml-auto'}`} onClick={() => setAdding(a => !a)}>
             <Plus size={14} /> Add register item
           </button>
         )}
       </div>
+
+      {applyingPack && (
+        <ApplyPackPanel
+          companyId={companyId}
+          packs={packs}
+          existingTitles={items.map(i => i.title)}
+          onDone={() => setApplyingPack(false)}
+        />
+      )}
 
       {adding && <AddItemForm companyId={companyId} onDone={() => setAdding(false)} />}
 

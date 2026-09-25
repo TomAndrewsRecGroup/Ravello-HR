@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 // Add each new H&S migration to FILES.
 
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
-const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql'];
+const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql'];
 const sql = FILES.map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 type Policy = { name: string; table: string; body: string };
@@ -116,12 +116,27 @@ describe('H&S RLS shape', () => {
 });
 
 describe('every surviving H&S source table writes to the Safety Timeline', () => {
-  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites'];
+  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents'];
+  // Sector packs (106) are staff reference data — typical register items
+  // for a sector, applied TO a client's own register. They are never a
+  // record of anything that happened to a specific client, so unlike
+  // every other hs_ table they deliberately have no _hs_event trigger:
+  // "the Office pack's PAT item description was edited" is not a Safety
+  // Timeline entry for anyone. Applying a pack DOES appear on the
+  // timeline — as ordinary compliance_items inserts, which already fire
+  // compliance_items_hs_event.
+  const NOT_SOURCES = ['hs_sector_packs', 'hs_sector_pack_items'];
   it.each(SOURCES)('%s has an AFTER _hs_event trigger', (t) => {
     expect(sql).toMatch(new RegExp(`CREATE TRIGGER ${t}_hs_event\\s+AFTER [A-Z ]+ ON public\\.${t}`));
   });
 
-  it('every surviving hs_ table except the timeline itself is a source', () => {
-    for (const t of tables.filter(t => t !== 'hs_events')) expect(SOURCES, t).toContain(t);
+  it.each(NOT_SOURCES)('%s is reference data, not a source — no _hs_event trigger', (t) => {
+    expect(sql).not.toMatch(new RegExp(`CREATE TRIGGER ${t}_hs_event`));
+  });
+
+  it('every surviving hs_ table is accounted for as a source, reference data, or the timeline itself', () => {
+    for (const t of tables.filter(t => t !== 'hs_events')) {
+      expect([...SOURCES, ...NOT_SOURCES], t).toContain(t);
+    }
   });
 });

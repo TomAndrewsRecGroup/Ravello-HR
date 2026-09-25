@@ -33,6 +33,7 @@ import {
   LogOut,
   Mail,
   Newspaper,
+  Package,
   PoundSterling,
   Radio,
   Rss,
@@ -99,7 +100,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'PROTECT',
     items: [
-      { href: '/health-safety', label: 'Health & Safety', icon: HardHat },
+      { href: '/health-safety',             label: 'Health & Safety', icon: HardHat },
+      { href: '/health-safety/sector-packs', label: 'Sector Packs',   icon: Package },
     ],
   },
   {
