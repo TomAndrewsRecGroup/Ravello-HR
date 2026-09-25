@@ -1965,3 +1965,111 @@ and Reports. The HR pages that lived under it moved to LEAD.
   (`ClientDetailTabs`, `AddComplianceItem`, `api/admin/compliance`, the BD
   convert route) must move to `HS_REGISTER_CATEGORIES` before the
   category CHECK migration.
+
+---
+
+## Everything that happens now has consequences: platform_events (2026-09-25, migrations 096a-097)
+
+Operator: *"how can we make it smarter, more in sync with each feature
+(automations and full flow from every action) and also innovative"*.
+Three read-only reviews found the gap was not intelligence but
+**connective tissue**: sixty-plus write sites ended in a cache refresh
+and nothing else. A client raising a role, approving a candidate or a
+service request; a provider recording a failed check; anything going
+overdue — nobody was told, and the two places that tried to tell staff
+could never work (X1 below).
+
+### The shape
+
+- **Capture at the database.** `platform_events` (096) is an outbox
+  written by ONE SECURITY DEFINER trigger function,
+  `platform_event_row()`, attached to 24 tables with a per-table
+  **column whitelist** in the trigger arguments. INSERT → `created`,
+  DELETE → `deleted`, UPDATE → `updated` only when a whitelisted column
+  changed (`payload.changed[]`, `payload.old{}`). Only whitelisted
+  columns travel; never salary, NI number, notes, details, bodies.
+  `platformEventsSql.test.ts` fails on a sensitive column in any
+  whitelist, on a table in `TRIGGERED_ENTITIES` with no trigger, and on
+  any session write path to the table.
+- **One consumer, service role, admin app.** `/api/cron/process-events`
+  every five minutes claims via `claim_platform_events()` (SKIP LOCKED,
+  10-minute lease, five attempts) and runs `lib/events/rules.ts` — THE
+  registry of what follows what. A rule listens for one
+  `${table}.${created|updated|deleted|reminder}` key and returns
+  consequences; `rules.test.ts` fails on a rule for a key nothing emits.
+- **`notify()` is the one way to tell a person anything.** Audience →
+  profiles (`staff` is tps_admin ONLY — `is_tps_staff()` is tps_admin
+  only, and notifying tps_client would email demo accounts) → one
+  `notifications` row each, deduped by key → preference → for those who
+  want email now, **claim `emailed_at` (conditional, counted) then
+  send**; a failed send releases the claim and is written to
+  `email_log` with the error. Staff default to a **daily digest**
+  (`/api/cron/digest`, 07:00); a rule may mark a consequence `urgent`,
+  which emails a daily-mode user at once. Clients default to immediate.
+  Preferences live in `notification_preferences` (the portal's old
+  panel wrote localStorage and nothing read it).
+- **Reminders** (`/api/cron/reminders`, 06:00): `lib/reminders/rules.ts`
+  walks every dated open row, puts it in a bucket (`due_30`, `due_7`,
+  `due_0`, `overdue`, `overdue_w<n>`), emits one reminder event per row
+  per bucket (deduped for ever by key), then performs the **status
+  writes** — `compliance_items → overdue`, `employee_documents →
+  expired`, `policy_acknowledgements → overdue`. Nothing had ever set
+  those values; the dashboards reading them were always empty.
+- **Every cron run is an `automation_runs` row**, refused runs
+  included, and `/automation` (admin, Operations) shows runs, the
+  queue, failed events and a retry. `AUTOMATION_DISABLED=1` is the kill
+  switch.
+- **An email consequence with no notification row** (a raiser's
+  receipt) claims by inserting its `email_log` row first under a
+  `dedupe_key`; a re-processed event finds the row and sends nothing.
+
+### The eight defects fixed alongside
+
+- **X1** The portal new-role form and the Manatal move-stage route
+  inserted staff notifications under the CLIENT'S session: the profiles
+  read returned nothing (RLS) and the INSERT policy refused it. Both
+  gone; the trigger and `emitEvent()` (service role, company from the
+  session) carry them.
+- **X2** "Mark as Hired" inserted `annual_salary` / `reporting_manager`
+  (columns that never existed) and a blank NOT NULL `start_date`, so
+  every hire failed. `lib/hiring/employeeFromHire.ts`, keys pinned
+  against 015.
+- **X3** Admin client-tab "Add action" omitted NOT NULL `action_type`
+  and closed the form regardless.
+- **X4** The service-request reply's `email_log` insert omitted NOT NULL
+  `sender_email`.
+- **X5** The portal Support page selected `service_requests.type` and
+  `message`, neither of which exists, so the client's list always
+  failed. The admin dashboard filtered `status = 'open'`; rows are
+  `new`.
+- **X6** `actions.priority` had a default of `medium`, the portal grouped
+  high/medium/low, and Broadcast wrote `normal` — every broadcast action
+  was invisible. One tuple, `ACTION_PRIORITIES`, both apps; 097 CHECK.
+- **X7** Client candidate/offer actions revalidated `/hiring`, a path
+  the portal does not have.
+- **X8** `hs_completion_roll` ignored `outcome`: a FAILED check set
+  `last_completed_on` and pushed `due_date` a year out, so the register
+  showed "on track" for the item that had just failed. A fail now marks
+  the item `in_review` and moves nothing.
+
+### Rules
+
+- **Add a table to the outbox in two places**: a trigger line in a
+  migration (with its whitelist) and `TRIGGERED_ENTITIES`. The test
+  pins the two together.
+- **Never put text a client wrote into a notification title** beyond
+  the row's own short fields (subject, name, title), and never a
+  `details`/`notes`/`body` column into a whitelist.
+- **A rule is written as if it might run twice.** Every consequence is
+  keyed `${rule}:${event}:${i}`; `process.test.ts` re-runs an event and
+  expects nothing new.
+- **Claim before send, always.** Three mutations reintroduced and
+  caught: dropping `ignoreDuplicates` (the fake now returns merged rows
+  like PostgREST does — the first version of the fake hid this), sending
+  before the claim, and widening `staff` to tps_client. Plus: `<=` in
+  the overdue filter, `salary` in a whitelist, the X8 revert.
+- **The migrations were applied 2026-09-25 before the code deployed.**
+  Events written between the apply and the deploy sit unprocessed; they
+  are stamped `processed_at` by hand at deploy time so the first
+  consumer run does not send days-old notifications. **097 is applied
+  AFTER the deploy** (the old admin client tab still wrote `medium`).

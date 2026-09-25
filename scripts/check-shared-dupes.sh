@@ -44,6 +44,10 @@ PAIRS=(
   "admin/src/lib/hs/evidence.ts|portal/src/lib/hs/evidence.ts"
   "admin/src/lib/storage/fileKinds.ts|portal/src/lib/storage/fileKinds.ts"
   "admin/src/lib/auth/accessTokens.ts|portal/src/lib/auth/accessTokens.ts"
+  "admin/src/lib/adminUrl.ts|portal/src/lib/adminUrl.ts"
+  "admin/src/lib/notify/types.ts|portal/src/lib/notify/types.ts"
+  "admin/src/lib/events/emit.ts|portal/src/lib/events/emit.ts"
+  "admin/src/components/modules/NotificationPrefsForm.tsx|portal/src/components/modules/NotificationPrefsForm.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

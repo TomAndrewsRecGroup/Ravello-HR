@@ -42,6 +42,7 @@ import {
   X,
   HardHat,
   ClipboardCheck,
+  Workflow,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
@@ -90,6 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/support',         label: 'Tickets',        icon: LifeBuoy },
       { href: '/broadcast',       label: 'Broadcast',      icon: Radio },
       { href: '/compliance',      label: 'Compliance',     icon: ShieldCheck },
+      { href: '/automation',      label: 'Automation',     icon: Workflow },
     ],
   },
   {

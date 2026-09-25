@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Bell, Briefcase, LifeBuoy, ShieldCheck, Users,
-  FileText, AlertTriangle, CheckCircle2, UserPlus, Radio,
+  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock,
 } from 'lucide-react';
+import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -17,22 +18,37 @@ interface Notification {
   created_at: string;
 }
 
-const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string }> = {
-  role_pending_approval: { icon: Briefcase,     color: 'var(--purple)' },
-  role_filled:           { icon: CheckCircle2,  color: 'var(--success)' },
-  ticket_created:        { icon: LifeBuoy,      color: 'var(--amber)' },
-  ticket_escalated:      { icon: AlertTriangle, color: 'var(--danger)' },
-  compliance_overdue:    { icon: ShieldCheck,    color: 'var(--danger)' },
-  compliance_due_soon:   { icon: ShieldCheck,    color: 'var(--amber)' },
-  document_uploaded:     { icon: FileText,       color: 'var(--blue)' },
-  user_invited:          { icon: UserPlus,       color: 'var(--teal)' },
-  candidate_submitted:   { icon: Users,          color: 'var(--purple)' },
-  broadcast:             { icon: Radio,          color: 'var(--blue)' },
-  general:               { icon: Bell,           color: 'var(--ink-faint)' },
+// Keyed by the one vocabulary; notificationTypes.test.ts pins the two
+// against each other in both directions.
+const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: string }> = {
+  general:                    { icon: Bell,          color: 'var(--ink-faint)' },
+  role_pending_approval:      { icon: Briefcase,     color: 'var(--purple)' },
+  candidate_stage_move:       { icon: Users,         color: 'var(--purple)' },
+  candidate_feedback:         { icon: Users,         color: 'var(--teal)' },
+  service_request_created:    { icon: LifeBuoy,      color: 'var(--amber)' },
+  service_request_overdue:    { icon: LifeBuoy,      color: 'var(--danger)' },
+  ivylens_ticket_reply:       { icon: LifeBuoy,      color: 'var(--purple)' },
+  ivylens_ticket_resolved:    { icon: CheckCircle2,  color: 'var(--success)' },
+  action_completed:           { icon: CheckCircle2,  color: 'var(--success)' },
+  task_assigned:              { icon: CheckSquare,   color: 'var(--blue)' },
+  task_due:                   { icon: CheckSquare,   color: 'var(--amber)' },
+  payment_failed:             { icon: AlertTriangle, color: 'var(--danger)' },
+  compliance_due_soon:        { icon: ShieldCheck,   color: 'var(--amber)' },
+  compliance_overdue:         { icon: ShieldCheck,   color: 'var(--danger)' },
+  document_review_due:        { icon: FileText,      color: 'var(--amber)' },
+  employee_document_expiring: { icon: FileText,      color: 'var(--amber)' },
+  employee_document_expired:  { icon: FileText,      color: 'var(--danger)' },
+  policy_ack_overdue:         { icon: FileText,      color: 'var(--danger)' },
+  review_due:                 { icon: CalendarClock, color: 'var(--amber)' },
+  checklist_task_due:         { icon: CheckSquare,   color: 'var(--amber)' },
+  probation_ending:           { icon: CalendarClock, color: 'var(--blue)' },
+  absence_pending:            { icon: CalendarClock, color: 'var(--amber)' },
 };
 
+export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);
+
 function getTypeConfig(type: string) {
-  return TYPE_CONFIG[type] ?? TYPE_CONFIG.general;
+  return isNotificationType(type) ? TYPE_CONFIG[type] : TYPE_CONFIG.general;
 }
 
 export default function NotificationBell() {

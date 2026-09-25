@@ -43,7 +43,7 @@ export default function CandidateFeedbackButton({
       const outcome = judgeWrite({ error: err, count }, 'Your feedback');
       if (!outcome.ok) throw new Error(outcome.message!);
       setDone(true);
-      revalidatePortalPath('/hiring');
+      revalidatePortalPath('/hire/hiring');
     } catch (err) {
       console.error('Failed to update candidate feedback:', err);
       setError('Failed to save feedback. Please try again.');

@@ -73,7 +73,7 @@ function OfferCard({ offer, onStatusChange }: { offer: Offer; onStatusChange: (i
     const { error } = await supabase.from('offers').update({ status: newStatus, ...extra }).eq('id', offer.id);
     if (!error) {
       onStatusChange(offer.id, newStatus);
-      revalidatePortalPath('/hiring');
+      revalidatePortalPath('/hire/hiring');
     }
     setUpdating(false);
   }
@@ -207,7 +207,7 @@ export default function OfferTab({ requisitionId, companyId, candidates, initial
       setOffers(prev => [data as Offer, ...prev]);
       setShowForm(false);
       setForm({ candidate_id: '', base_salary: '', bonus: '', benefits: '', start_date: '', notice_period: '', contract_type: 'permanent', working_model: 'hybrid', location: '', deadline: '', notes: '', status: 'draft' });
-      revalidatePortalPath('/hiring');
+      revalidatePortalPath('/hire/hiring');
     }
     setSaving(false);
   }

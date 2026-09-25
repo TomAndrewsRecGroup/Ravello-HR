@@ -144,28 +144,19 @@ export default function NewRequisitionPage() {
       // latter is not a hiring_stage value and Postgres rejected the
       // whole insert with a 22P02, so this form could never create a
       // requisition. "Awaiting approval" is already expressible as
-      // approved_at IS NULL, and the role_pending_approval notification
-      // below is what actually tells an admin to look.
+      // approved_at IS NULL, and the role_raised rule (admin
+      // lib/events/rules.ts) is what actually tells an admin to look.
       stage: 'submitted', submitted_by: user.id,
     }).select().single();
     if (err) { setError(err.message); setLoading(false); return; }
 
-    // Notify admin users about the new role awaiting approval
-    const companyId = (profile as any).company_id;
-    const { data: company } = await supabase.from('companies').select('name').eq('id', companyId).single();
-    const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'tps_admin');
-    if (admins?.length) {
-      const notifications = admins.map((admin: any) => ({
-        user_id: admin.id,
-        company_id: companyId,
-        type: 'role_pending_approval',
-        title: `New role awaiting approval: ${form.title}`,
-        body: `${company?.name ?? 'A client'} has submitted "${form.title}" for approval.`,
-        link: `/hiring/${(data as any).id}`,
-      }));
-      await supabase.from('notifications').insert(notifications);
-    }
-
+    // Staff are told by the platform, not by this form. The insert
+    // above fires the requisitions trigger (migration 096); the
+    // `role_raised` rule notifies staff when the actor is a client.
+    // This page used to insert the notifications itself under the
+    // client's session, which could never work: a client cannot read
+    // staff profiles, and the notifications INSERT policy refuses a
+    // client writing to a staff user — so no admin was ever told.
     router.push(`/hire/hiring/${(data as any).id}`);
   }
 

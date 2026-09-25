@@ -35,3 +35,9 @@ export type { ServiceRequestResponseInput } from './templates/serviceRequestResp
 
 export { athleteWelcomeEmail, nextBusinessSendAt } from './templates/athleteWelcome';
 export type { AthleteWelcomeInput } from './templates/athleteWelcome';
+
+export { notificationEmail, notificationDigestEmail } from './templates/notification';
+export type { NotificationEmailInput, DigestItem } from './templates/notification';
+
+export { serviceRequestReceivedEmail }   from './templates/serviceRequestReceived';
+export type { ServiceRequestReceivedInput } from './templates/serviceRequestReceived';
