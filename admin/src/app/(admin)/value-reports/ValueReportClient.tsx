@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3 } from 'lucide-react';
+import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap } from 'lucide-react';
+import { computeLeadMetrics } from '@/lib/valueReport/leadMetrics';
 
 interface Props {
   companies: any[];
@@ -13,6 +14,10 @@ interface Props {
   actions: any[];
   profiles: any[];
   services: any[];
+  trainingNeeds: any[];
+  performanceReviews: any[];
+  absenceRecords: any[];
+  onboardingInstances: any[];
 }
 
 function fmtMonth(date: Date): string {
@@ -25,7 +30,7 @@ function inMonth(dateStr: string, year: number, month: number): boolean {
   return d.getFullYear() === year && d.getMonth() === month;
 }
 
-export default function ValueReportClient({ companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services }: Props) {
+export default function ValueReportClient({ companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances }: Props) {
   const now = new Date();
   const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -79,15 +84,23 @@ export default function ValueReportClient({ companies, requisitions, candidates,
       avgResolution = Math.round(totalHours / resolved.length);
     }
 
+    // LEAD: people-management metrics — a genuinely different thing
+    // from SUPPORT's ticket/service-request handling above. Sourced
+    // from real tables (training_needs, performance_reviews,
+    // absence_records, onboarding_instances), not hand entry. Pure
+    // function so the month-boundary logic is unit-tested.
+    const lead = computeLeadMetrics(cid, y, m, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances);
+
     return {
       company,
       month: fmtMonth(new Date(y, m)),
       hire: { newRoles: monthReqs.length, filled: filledReqs.length, candidates: monthCandidates.length, activeRoles: totalActiveRoles, totalFilled },
       support: { ticketsRaised: monthTickets.length, ticketsResolved: resolvedTickets.length, avgResolutionHours: avgResolution, serviceRequests: monthServReqs.length, serviceRequestsResponded: respondedServReqs.length },
       protect: { complianceItems: monthCompliance.length, documentsUploaded: monthDocs.length, actionsCreated: monthActions.length, actionsCompleted: completedActions.length },
+      lead,
       usage: { portalUsers: totalUsers, activeServices, mrr },
     };
-  }, [selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services]);
+  }, [selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances]);
 
   async function downloadReport() {
     if (!report) return;
@@ -186,6 +199,18 @@ export default function ValueReportClient({ companies, requisitions, candidates,
       ['Actions completed',          r.protect.actionsCompleted],
     ]);
 
+    section('LEAD', [
+      ['Training needs flagged',     r.lead.trainingNeedsFlagged],
+      ['Training needs resolved',    r.lead.trainingNeedsResolved],
+      ['Training needs open (current)', r.lead.trainingNeedsOpen],
+      ['Reviews due',                r.lead.reviewsDue],
+      ['Reviews completed',          r.lead.reviewsCompleted],
+      ['Reviews overdue (current)',  r.lead.reviewsOverdue],
+      ['Absence days recorded',      r.lead.absenceDays],
+      ['Onboarding started',         r.lead.onboardingStarted],
+      ['Onboarding completed',       r.lead.onboardingCompleted],
+    ]);
+
     section('SYSTEM USAGE', [
       ['Portal users',     r.usage.portalUsers],
       ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],
@@ -248,7 +273,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: Core OS 360</p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
             {/* HIRE */}
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-4">
@@ -309,6 +334,31 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
                     <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--teal)' : 'var(--ink)' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* LEAD */}
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <GraduationCap size={15} style={{ color: 'var(--gold)' }} />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>LEAD</h3>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Training needs flagged', value: report.lead.trainingNeedsFlagged },
+                  { label: 'Training needs resolved', value: report.lead.trainingNeedsResolved, highlight: true },
+                  { label: 'Reviews due', value: report.lead.reviewsDue },
+                  { label: 'Reviews completed', value: report.lead.reviewsCompleted },
+                  { label: 'Reviews overdue (current)', value: report.lead.reviewsOverdue },
+                  { label: 'Absence days recorded', value: report.lead.absenceDays },
+                  { label: 'Onboarding started', value: report.lead.onboardingStarted },
+                  { label: 'Onboarding completed', value: report.lead.onboardingCompleted },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
+                    <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--gold)' : 'var(--ink)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
