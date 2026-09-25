@@ -1718,9 +1718,9 @@ in rolled-back transactions) found:
 - **Supabase Auth → "Allow new users to sign up" should be OFF.**
   `handle_new_user` gives every auth user a profile; invites use
   `auth.admin.createUser` and are unaffected.
-- **Still open (not this PR):** Next 14.2.4 predates the
-  CVE-2025-29927 middleware-bypass fix (14.2.25). Vercel's edge
-  mitigates it, so it bites only off Vercel; upgrade in its own PR.
+- **Fixed 2026-09-25, its own PR:** Next 14.2.4 predated the
+  CVE-2025-29927 middleware-bypass fix (14.2.25); both apps are on
+  14.2.35, the latest 14.2.x patch. See the section below.
 
 ---
 
@@ -2647,3 +2647,39 @@ Both apps: `tsc --noEmit` clean, full `vitest run` green (726 admin,
 taken off the ratchet file rather than left as phantom entries,
 `check-admin-routes-linked`, `check-blind-updates` — baseline lowered
 108→103 for the routes this removed), both production builds compile.
+
+---
+
+## Next.js upgraded 14.2.4 → 14.2.35, closing CVE-2025-29927 (2026-09-25)
+
+The security-hardening PR (088-093, 2026-09-24) flagged this and
+deliberately left it for its own PR: Next 14.2.4 predates 14.2.25, the
+release that fixed the middleware-authorization-bypass CVE (a crafted
+`x-middleware-subrequest` header could skip middleware entirely,
+including the auth checks in `admin/src/lib/supabase/middleware.ts` and
+`portal/src/lib/supabase/middleware.ts`). Vercel's edge network already
+mitigates the request shape that exploits it, so this was contained
+risk, not a live outage — but "mitigated at the edge" is not "fixed in
+the app", and it is the one gap those PRs explicitly did not close.
+
+- **`next` and `eslint-config-next` bumped to `14.2.35`** (the latest
+  14.2.x patch as of this fix, well past 14.2.25) in both `admin/` and
+  `portal/`. Staying on the 14.2 line rather than jumping to 15 — a
+  major version bump changes the App Router's caching defaults and
+  would need its own scoped verification pass, which is out of scope
+  for a security patch.
+- **No application code changed.** The CVE fix lives entirely inside
+  Next's own request-routing internals (how a subrequest header is
+  validated before middleware is skipped) — nothing this codebase's
+  `middleware.ts` files call or configure. `npm install` in each app,
+  confirmed both resolve to `next@14.2.35` via
+  `require('next/package.json').version`.
+- **Full verification, no shortcuts because "it's just a dependency
+  bump":** `tsc --noEmit` clean on both apps; full `vitest run` green
+  (726 admin, 221 portal — unchanged counts, confirming nothing broke);
+  all five CI guards pass; both production builds (`next build` with
+  stub Supabase env) compile clean, including the two apps'
+  `Middleware` bundles the CVE fix lives inside.
+- **Left alone:** the "own PR" scoping this fix inherited also flagged
+  Next 15 as a bigger, later job — that upgrade is unstarted and stays
+  its own separate piece of work, not folded in here.
