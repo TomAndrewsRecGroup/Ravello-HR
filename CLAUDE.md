@@ -2318,3 +2318,52 @@ rolled-back transaction (`supabase/probes/101_support_bd.sql`: the
 trigger sets clock and priority from 'Urgent', keeps an explicit
 `sla_due_at`, the whitelists carry the flow columns and no text) and
 then applied.
+
+---
+
+## Policy sign-off reaches the employee (2026-09-25, migration 103)
+
+PR 3b. "Request sign-off" on `/lead/policy-acknowledgements` wrote a
+`policy_acknowledgements` row and sent nothing: the employee has no
+portal login by design, so nothing could reach them, and "pending" only
+ever ended when an admin pressed Mark Signed on their behalf.
+
+- **The consumer emails a personal link.** `policy_acknowledgements
+  .created` (status pending), an existing row set back to pending, a
+  `policy_ack_resend` event (the portal's Resend button, emitted with
+  the service role from the LIVE session after the row's company is
+  checked), and the overdue reminder buckets all run
+  `lib/lead/policyAckLink.ts`: mint a token, claim `email_log` by the
+  EVENT-keyed dedupe key, send, stamp `link_sent_at`. A re-processed
+  event sends nothing; a resend or weekly nudge is a fresh link.
+- **The link is `/policy/<token>` on the portal**, public in the
+  middleware with `/api/policy/`, the same shape and the same reason as
+  the leave link. `lib/auth/policyAckTokens.ts` (shared pair) is the
+  same design as the set-password tokens: SHA-256 only, in
+  `policy_ack_tokens` (103), RLS on, **no policies**, service role only,
+  30-day expiry, `ON DELETE CASCADE` from the row. **Not single-use on
+  open**: the employee reads the document and comes back. Acknowledging
+  is a conditional counted UPDATE (`status IN (pending, overdue)`) that
+  sets `acknowledged_via = 'link'` and burns every link for the row.
+- **The burn order is the trap.** The first version burned all of a
+  row's links BEFORE minting the new one, so a re-processed event
+  (claim says already, nothing sent) killed the link sitting in the
+  employee's inbox. `policyAckRules.test.ts` re-processes the event and
+  asserts the emailed token's hash is still there. Now: mint, claim,
+  and only after a SENT email burn the others (`exceptTokenHash`); a
+  mint the claim refused is discarded on its own.
+- **The document opens with a signed URL** (`documents` bucket,
+  `file_path`, one hour, service role: the employee has no session to
+  sign under) or the row's external `file_url`. The GET returns the
+  employee's name, the company name, the document's name/category/
+  version and that URL, and nothing else: no email, salary or notes,
+  pinned by the route test.
+- **An employee with no email gets no link and the admins are told**
+  (`policy_ack_needs_email`, once per row); the Resend button is
+  disabled until an email is on the record. A link-signed row tells the
+  admins (`policy_ack_signed`, on `actor_kind = 'system'`, which is what
+  the service-role write looks like to the trigger); an admin's Mark
+  Signed (`acknowledged_via = 'admin'`, actor client) does not.
+- **Migration 103 is additive; apply before the deploy.** No CHECK to
+  follow: `acknowledged_via` is constrained in 103 itself because
+  nothing wrote the column before.

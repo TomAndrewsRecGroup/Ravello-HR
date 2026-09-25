@@ -2,9 +2,13 @@ import { leaveDecisionEmail, leaveRequestedEmail } from '@/lib/email';
 import { ABSENCE_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import { startEmployment } from '@/lib/lead/startEmployment';
 import { autoStartOnboarding, closeOutEmployee, scheduleProbationReview } from '@/lib/lead/onboarding';
+import { sendPolicyAckLink } from '@/lib/lead/policyAckLink';
+import { isOverdueWeekly } from './types';
 import type { Audience } from '@/lib/notify/notify';
 import type { Consequence, Rule } from './rules';
+import type { PlatformEvent } from './types';
 import { changedTo, reminderPayload, rowPayload } from './types';
+import { notify } from '@/lib/notify/notify';
 
 // LEAD / HR: what follows leave, hiring, onboarding, offboarding and
 // documents. Every consequence is keyed; the domain writes (an
@@ -220,7 +224,79 @@ export const leadRules: Rule[] = [
       },
     }] : [],
   },
+  {
+    // Request sign-off: the row is created pending (or re-requested:
+    // an existing row set back to pending) and the employee gets the link.
+    id: 'policy_ack_requested',
+    on: 'policy_acknowledgements.created',
+    when: e => rowPayload(e).new.status === 'pending',
+    then: ({ event }) => [policyAckLinkConsequence(event, `policy_ack_link:${s(event.entity_id)}:${event.id}`, false)],
+  },
+  {
+    id: 'policy_ack_rerequested',
+    on: 'policy_acknowledgements.updated',
+    when: e => changedTo(e, 'status', ['pending']),
+    then: ({ event }) => [policyAckLinkConsequence(event, `policy_ack_link:${s(event.entity_id)}:${event.id}`, false)],
+  },
+  {
+    // The portal's Resend button emits this (service role, company from
+    // the session); each press is a fresh link.
+    id: 'policy_ack_resend',
+    on: 'policy_ack_resend.created',
+    then: ({ event }) => [policyAckLinkConsequence(event, `policy_ack_link:${s(event.entity_id)}:${event.id}`, true)],
+  },
+  {
+    // Overdue: the admins already hear (policy_ack_reminder in rules.ts);
+    // the employee is nudged too, weekly.
+    id: 'policy_ack_employee_nudge',
+    on: 'policy_acknowledgements.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return b === 'overdue' || isOverdueWeekly(b); },
+    then: ({ event }) => [policyAckLinkConsequence(event, `policy_ack_link:${s(event.entity_id)}:${reminderPayload(event).bucket}`, true)],
+  },
+  {
+    id: 'policy_ack_signed',
+    on: 'policy_acknowledgements.updated',
+    when: e => changedTo(e, 'status', ['acknowledged']) && e.actor_kind === 'system',
+    then: async ({ event, sb }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const [{ data: emp }, { data: doc }] = await Promise.all([
+        sb.from('employee_records').select('full_name').eq('id', s(n.employee_id)).maybeSingle(),
+        sb.from('documents').select('name').eq('id', s(n.document_id)).maybeSingle(),
+      ]);
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'policy_ack_signed',
+          title: `${(emp as { full_name?: string } | null)?.full_name ?? 'An employee'} acknowledged ${(doc as { name?: string } | null)?.name ?? 'a policy'}`,
+          link:  { portal: '/lead/policy-acknowledgements' },
+        },
+      }];
+    },
+  },
 ];
+
+// A sign-off request reaches the employee as a personal link. One
+// consequence per trigger, keyed on the EVENT so a resend or a weekly
+// overdue reminder is a fresh email, and a re-processed event is not.
+function policyAckLinkConsequence(event: PlatformEvent, key: string, reminder: boolean): Consequence {
+  const ackId = s(event.entity_id);
+  return {
+    kind: 'run', label: `policy ack link ${ackId}`,
+    fn: async (sb) => {
+      const r = await sendPolicyAckLink(sb, ackId, key, { reminder });
+      if (r.outcome === 'no_email' && event.company_id) {
+        await notify(sb, {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'policy_ack_needs_email',
+          title: `${r.employeeName ?? 'An employee'} has no email address, so their policy link was not sent`,
+          body:  'Add an email on their employee record and press Resend link.',
+          link:  { portal: '/lead/employee-records' },
+          dedupeKey: `policy_ack_needs_email:${ackId}`,
+        });
+      }
+    },
+  };
+}
 
 function hireConsequence(candidateId: string): Consequence {
   return { kind: 'run', label: `start employment for ${candidateId}`, fn: async (sb) => { await startEmployment(sb, candidateId); } };

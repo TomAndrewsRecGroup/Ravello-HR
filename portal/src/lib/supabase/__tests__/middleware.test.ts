@@ -91,6 +91,16 @@ describe('employee leave link is reachable without a login', () => {
     expect(location(res)).toContain('/auth/login');
   });
 
+  it.each([`/policy/${'11111111-2222-4333-8444-555555555555'}`, `/api/policy/${'11111111-2222-4333-8444-555555555555'}`])('the policy acknowledgement link %s is not redirected either', async (p) => {
+    const res = await updateSession(req(p));
+    expect(location(res)).toBeNull();
+  });
+
+  it('the policy exemption is scoped too', async () => {
+    const res = await updateSession(req('/policy-admin'));
+    expect(location(res)).toContain('/auth/login');
+  });
+
   it('the exemption is scoped to the leave path, not a lookalike', async () => {
     const res = await updateSession(req('/leaves-admin'));
     expect(location(res)).toContain('/auth/login');

@@ -32,12 +32,12 @@ export default async function PolicyAcksPage() {
       .order('name'),
     supabase
       .from('policy_acknowledgements')
-      .select('id,company_id,document_id,employee_id,status,sent_at,acknowledged_at,documents(name, category, version),employee_records(full_name, job_title)')
+      .select('id,company_id,document_id,employee_id,status,sent_at,acknowledged_at,acknowledged_via,link_sent_at,documents(name, category, version),employee_records(full_name, job_title, email)')
       .eq('company_id', companyId)
       .order('sent_at', { ascending: false }),
     supabase
       .from('employee_records')
-      .select('id, full_name, job_title')
+      .select('id, full_name, job_title, email')
       .eq('company_id', companyId)
       .eq('status', 'active')
       .order('full_name'),
