@@ -32,7 +32,14 @@ Both apps share a single **Supabase** project (same DB, same auth).
 - **Styling**: Tailwind CSS + CSS custom properties (no component library)
 - **TypeScript**: strict throughout
 - **Icons**: lucide-react
-- **Payments**: Stripe (not yet integrated: needed for e-learning Phase 22)
+- **Payments**: Stripe — fully integrated. E-learning checkout/webhook
+  (`portal/src/lib/stripe.ts`, `api/learning/checkout`, `api/learning/webhook`)
+  and client retainer/invoice billing (`admin/src/lib/stripe.ts`,
+  `api/stripe/webhook`, `api/admin/clients/[id]/retainer`,
+  `raise-invoice`). This line said "not yet integrated" long after
+  Phases 16-18 and the retainer billing work shipped — corrected
+  2026-09-25 during a documentation-accuracy pass; see "What Has Been
+  Built" for the phases that actually built it.
 - **Deployment**: Vercel Pro
 
 ---
@@ -3531,3 +3538,56 @@ each one is shaped the way it is.
   `REVOKE UPDATE` on `hs_incidents`/`hs_equipment`; `pg_constraint`
   confirmed `hs_activities_activity_type_check` now includes
   `'toolbox_talk'`).
+
+---
+
+## Audit evidence photos, and a detail page to see them on (2026-09-25, migration 113)
+
+Phase 3 (110) shipped the on-site audit runner but explicitly left one
+gap: "Evidence photos are not wired into the runner UI." This closes
+it, plus a real gap it exposed: there was no page to actually SEE a
+completed audit's individual answers at all, evidence or not — only
+the list (title/date/score/finding count) and the write-only runner.
+
+- **`hs_audit_responses.id` is now CLIENT-GENERATED**, the same reason
+  the audit's own id already was: it lets the runner stage a photo
+  against a SPECIFIC answer while still offline, before that answer's
+  row exists anywhere in the database, and upload it under the right
+  `entity_id` the instant Submit succeeds. `hs_submit_audit()` (113)
+  now inserts the id it's given for each response instead of relying
+  on the column's `DEFAULT gen_random_uuid()`; a response with no id
+  (an old draft saved in a browser before this shipped) still gets one
+  from that same default, so nothing already mid-visit breaks.
+- **`hs_scope_for_entity()` gains `'audit_response' → 'audits'`** —
+  same scope as the audit itself, since it's the same permission
+  dimension at finer grain. `hs_files.entity_type`'s own CHECK
+  (`hs_scope_for_entity(entity_type) IS NOT NULL`) is what actually
+  enforces this is a real kind of evidence, not a typo; nothing needed
+  changing on the storage-policy side since those already key off
+  `hs_scope_for_entity()` rather than a hardcoded list.
+- **Photos are staged in memory, not localStorage**, unlike every other
+  field in the draft. A `File` object cannot be serialised to JSON, so
+  a photo picked mid-visit does not survive a closed tab the way an
+  answer does — a real, narrower limitation than the rest of the
+  runner's offline story, called out here rather than silently
+  assumed. They upload via the existing `uploadEvidence()` helper
+  (straight from the browser to storage under the user's own session)
+  only AFTER the audit submission itself has succeeded, keyed by the
+  same response id just sent to the server — so an upload failure is
+  reported but never loses the audit, which already saved.
+- **A new per-audit detail page**
+  (`/health-safety/<companyId>/audits/<auditId>`) shows every answer,
+  its comment, and any attached evidence, linked from the list page's
+  title (previously plain text, going nowhere). This is a genuine
+  before/after: there was no way to read back an audit's individual
+  findings anywhere in the product before this, only the aggregate row.
+- Mutation-checked: dropping the id-forwarding line in the submit route
+  (`id: r.id ?? ''` → `id: ''`) was reintroduced and watched fail
+  `route.test.ts`'s new case, then reverted.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (828 admin — 827 + 1 new response-id test; 248 portal, unchanged —
+  this touched admin only), all five CI guards pass (admin routes
+  53→53, the new `[auditId]` route is nested under the already-linked
+  `/health-safety` top level so needs no sidebar entry of its own),
+  both production builds compile. Migration 113 applied live and
+  verified (`hs_scope_for_entity('audit_response')` reads back `'audits'`).

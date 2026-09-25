@@ -142,6 +142,7 @@ export const HS_ENTITY_LABELS: Record<string, string> = {
   document:            'Document',
   training:            'Training',
   audit:               'Audit',
+  audit_response:      'Audit finding',
   incident:            'Incident',
   equipment:           'Equipment',
 };

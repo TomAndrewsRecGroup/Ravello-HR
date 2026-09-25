@@ -90,6 +90,16 @@ describe('POST /api/admin/health-safety/audits', () => {
     expect(args.p_score).toBe(50); // not 0 — the extra "score" field is simply not part of the schema
   });
 
+  it('forwards a client-generated response id to the RPC, letting an old draft omit it', async () => {
+    const RESP_ID = '33333333-3333-4333-8333-333333333333';
+    const body = validBody();
+    (body.responses[0] as { id?: string }).id = RESP_ID;
+    await call(body);
+    const responses = (rpcCalls[0].args as { p_responses: { id: string }[] }).p_responses;
+    expect(responses[0].id).toBe(RESP_ID);
+    expect(responses[1].id).toBe(''); // no id supplied -> RPC falls back to gen_random_uuid()
+  });
+
   it('surfaces an RPC failure as a 500 rather than swallowing it', async () => {
     rpcResult = { data: null, error: { message: 'constraint violation' } };
     const res = await call(validBody());

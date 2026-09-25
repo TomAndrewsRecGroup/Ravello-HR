@@ -1,8 +1,10 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, CloudOff, Loader2, Plus, Trash2, WifiOff, XCircle } from 'lucide-react';
+import { Camera, CheckCircle2, CloudOff, Loader2, Plus, Trash2, WifiOff, X, XCircle } from 'lucide-react';
 import { useToast } from '@/components/modules/Toast';
+import { createClient } from '@/lib/supabase/client';
+import { HS_EVIDENCE_ACCEPT, uploadEvidence } from '@/lib/hs/evidence';
 import { HS_REGISTER_CATEGORY_LABELS, type HsRegisterCategory } from '@/lib/hs/vocab';
 import type { HsAuditRating } from '@/lib/hs/vocab';
 import type { HsAuditTemplate, HsAuditTemplateItem } from '@/lib/hs/types';
@@ -32,7 +34,7 @@ interface Draft {
   title: string;
   conductedOn: string;
   notes: string;
-  responses: { templateItemId: string | null; prompt: string; category: string | null; rating: HsAuditRating | null; comment: string }[];
+  responses: { id: string; templateItemId: string | null; prompt: string; category: string | null; rating: HsAuditRating | null; comment: string }[];
   pendingSubmit: boolean;
 }
 
@@ -51,7 +53,11 @@ function loadDraft(companyId: string): Draft | null {
     const raw = localStorage.getItem(draftKey(companyId));
     if (!raw) return null;
     const d = JSON.parse(raw) as Draft;
-    return d.draftId ? d : null;
+    if (!d.draftId) return null;
+    // A draft saved before response ids existed (113) has none — backfill
+    // so evidence staged against it still has somewhere to attach to.
+    d.responses = d.responses.map(r => ({ ...r, id: r.id || crypto.randomUUID() }));
+    return d;
   } catch { return null; }
 }
 
@@ -79,6 +85,25 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
   const [submitting, setSubmitting] = useState(false);
   const retryArmed = useRef(false);
 
+  // Evidence photos staged per response, keyed by the response's own
+  // (client-generated) id. Kept in memory only, NOT persisted to
+  // localStorage — a File object cannot be serialised, and photos are
+  // the one part of a draft that does not survive a closed tab. That is
+  // a real, narrower limitation than the rest of the draft (which does
+  // survive), and is worth knowing rather than silently losing photos
+  // with no indication. Uploaded to hs-evidence only after Submit
+  // succeeds, against the now-durable response row.
+  const [photosByResponse, setPhotosByResponse] = useState<Record<string, File[]>>({});
+
+  function addPhotos(responseId: string, files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setPhotosByResponse(p => ({ ...p, [responseId]: [...(p[responseId] ?? []), ...Array.from(files)] }));
+  }
+
+  function removePhoto(responseId: string, index: number) {
+    setPhotosByResponse(p => ({ ...p, [responseId]: (p[responseId] ?? []).filter((_, i) => i !== index) }));
+  }
+
   useEffect(() => {
     setOnline(navigator.onLine);
     const on = () => setOnline(true);
@@ -101,16 +126,19 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
     setDraft(d => ({
       ...d, templateId,
       title: d.title || (t ? `${t.name} — ${today()}` : d.title),
-      responses: items.map(i => ({ templateItemId: i.id, prompt: i.prompt, category: i.category, rating: null, comment: '' })),
+      responses: items.map(i => ({ id: crypto.randomUUID(), templateItemId: i.id, prompt: i.prompt, category: i.category, rating: null, comment: '' })),
     }));
+    setPhotosByResponse({});
   }
 
   function addAdHocQuestion() {
-    setDraft(d => ({ ...d, responses: [...d.responses, { templateItemId: null, prompt: '', category: null, rating: null, comment: '' }] }));
+    setDraft(d => ({ ...d, responses: [...d.responses, { id: crypto.randomUUID(), templateItemId: null, prompt: '', category: null, rating: null, comment: '' }] }));
   }
 
   function removeQuestion(index: number) {
+    const removedId = draft.responses[index]?.id;
     setDraft(d => ({ ...d, responses: d.responses.filter((_, i) => i !== index) }));
+    if (removedId) setPhotosByResponse(p => { const { [removedId]: _drop, ...rest } = p; return rest; });
   }
 
   function setRating(index: number, rating: HsAuditRating) {
@@ -139,7 +167,7 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
           id: draft.draftId, company_id: companyId, site_id: draft.siteId, template_id: draft.templateId,
           title: draft.title.trim(), conducted_on: draft.conductedOn, notes: draft.notes.trim() || null,
           responses: draft.responses.map(r => ({
-            template_item_id: r.templateItemId, prompt: r.prompt.trim(), category: r.category, rating: r.rating, comment: r.comment.trim() || null,
+            id: r.id, template_item_id: r.templateItemId, prompt: r.prompt.trim(), category: r.category, rating: r.rating, comment: r.comment.trim() || null,
           })),
         }),
       });
@@ -148,8 +176,27 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
         throw new Error(json.error ?? `Could not submit (${res.status})`);
       }
       const json = await res.json();
+
+      // Upload any staged photos now that each response row is durable,
+      // keyed by the SAME id just sent above. A photo failing to upload
+      // does not lose the audit itself — it already saved — so this is
+      // reported, not thrown.
+      const uploadProblems: string[] = [];
+      const supabase = createClient();
+      for (const r of draft.responses) {
+        for (const file of photosByResponse[r.id] ?? []) {
+          const problem = await uploadEvidence(supabase, { companyId, entityType: 'audit_response', entityId: r.id, file });
+          if (problem) uploadProblems.push(problem);
+        }
+      }
+
       clearDraft(companyId);
-      toast(`Audit submitted — ${json.score == null ? 'no score' : `${json.score}%`}`, 'success');
+      setPhotosByResponse({});
+      if (uploadProblems.length > 0) {
+        toast(`Audit submitted (${json.score == null ? 'no score' : `${json.score}%`}), but some evidence did not upload: ${uploadProblems.join(' ')}`, 'error');
+      } else {
+        toast(`Audit submitted — ${json.score == null ? 'no score' : `${json.score}%`}`, 'success');
+      }
       router.push(`/health-safety/${companyId}/audits`);
     } catch (err) {
       // A network failure (offline, or the request never reached the
@@ -160,7 +207,7 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
     } finally {
       setSubmitting(false);
     }
-  }, [draft, companyId, router, toast]);
+  }, [draft, companyId, router, toast, photosByResponse]);
 
   useEffect(() => {
     if (online && draft.pendingSubmit && !retryArmed.current) {
@@ -258,6 +305,29 @@ export default function AuditRunner({ companyId, sites, templates, templateItems
                   value={r.comment}
                   onChange={e => setComment(i, e.target.value)}
                 />
+              )}
+              {r.rating === 'fail' && (
+                <div className="space-y-1.5">
+                  <label className="btn-secondary btn-sm inline-flex items-center gap-1.5 cursor-pointer w-fit">
+                    <Camera size={13} /> Add photo
+                    <input
+                      type="file" multiple accept={HS_EVIDENCE_ACCEPT.join(',')} className="hidden"
+                      onChange={e => { addPhotos(r.id, e.target.files); e.target.value = ''; }}
+                    />
+                  </label>
+                  {(photosByResponse[r.id] ?? []).length > 0 && (
+                    <ul className="flex flex-wrap gap-1.5">
+                      {(photosByResponse[r.id] ?? []).map((f, fi) => (
+                        <li key={`${f.name}-${fi}`} className="badge flex items-center gap-1">
+                          {f.name}
+                          <button type="button" onClick={() => removePhoto(r.id, fi)} aria-label={`Remove ${f.name}`}>
+                            <X size={11} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
             </div>
           );

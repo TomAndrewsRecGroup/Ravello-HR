@@ -25,6 +25,13 @@ import { computeAuditScore } from '@/lib/hs/auditScore';
 export const runtime = 'nodejs';
 
 const ResponseInput = z.object({
+  // Client-generated (113), the same reason the audit's own id is:
+  // it lets the runner stage a photo against a specific answer while
+  // still offline, before that answer's row exists anywhere, and
+  // upload it under the right entity_id the moment Submit succeeds.
+  // Optional so an old draft saved before this shipped still submits —
+  // hs_submit_audit() falls back to generating one itself.
+  id:                optionalUuid,
   template_item_id: optionalUuid,
   prompt:            shortText(500),
   category:          enumOf(HS_REGISTER_CATEGORIES).optional().nullable(),
@@ -64,6 +71,7 @@ export async function POST(req: NextRequest) {
     p_notes: body.notes,
     p_score: score,
     p_responses: body.responses.map((r, i) => ({
+      id: r.id ?? '',
       template_item_id: r.template_item_id ?? '',
       prompt: r.prompt,
       category: r.category ?? '',
