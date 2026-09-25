@@ -136,6 +136,22 @@ export const COMPLIANCE_STATUS_LABELS: Record<string, string> = {
   overdue:    'Overdue',
 };
 
+// The generic compliance form's writable categories. 'health_safety' is
+// deliberately excluded — it was retired from every writer 2026-09-25
+// (an H&S item belongs on the dedicated register instead) but stays in
+// COMPLIANCE_CATEGORY_LABELS below so historical rows still get a label.
+//
+// Two hand-typed, mutually-inconsistent category lists ('general' /
+// 'contracts' / 'employment_law' in ClientDetailTabs.tsx, 'hmrc' /
+// 'right_to_work' in AddComplianceItem.tsx) used to feed these two
+// forms' <select>s, neither matching this label map — a category chosen
+// from either dropdown rendered as its own raw string everywhere else.
+// Both forms now import this tuple instead of hand-typing one.
+export const COMPLIANCE_CATEGORIES = [
+  'contract', 'policy', 'handbook', 'training', 'data', 'hr', 'other',
+] as const;
+export type ComplianceCategory = typeof COMPLIANCE_CATEGORIES[number];
+
 export const COMPLIANCE_CATEGORY_LABELS: Record<string, string> = {
   contract:     'Contracts',
   policy:       'Policies',

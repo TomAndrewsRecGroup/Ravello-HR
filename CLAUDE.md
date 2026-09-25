@@ -3108,3 +3108,101 @@ for the server-side version of the same report.
   first real cron run is the first true end-to-end proof; the unit
   tests mock both libraries and verify the cron's control flow
   (upload → insert → email → dedupe), not the rendered PDF bytes.
+
+---
+
+## H&S Phase 1c: the generic compliance form had two more unwritten vocabularies (2026-09-25)
+
+The H&S roadmap's Phase 1c item — "admin client-detail HR/H&S tabs,
+every compliance-category writer → HS_REGISTER_CATEGORIES" — turned out
+to already be half done and half wrong. The HR/H&S tab split (renamed
+"HR" tab, `/health-safety/<companyId>` link-out card, no duplicate
+register tab) was finished 2026-09-25 in the H&S-staff-delivered PR.
+Routing the generic writers onto `HS_REGISTER_CATEGORIES` was already
+explicitly REJECTED the same day (see "Fold-in: 'health_safety' retired
+from the generic compliance form" above) — that vocabulary describes
+the 15-value H&S register, a genuinely different thing from an ordinary
+HR compliance item, and forcing one onto the other would have broken
+ordinary item creation.
+
+What was actually still broken: the two generic writers
+(`AddComplianceItem.tsx` on the cross-client `/compliance` page,
+`ClientDetailTabs.tsx`'s compliance tab) each hand-typed their OWN
+category list, and neither matched the other or `COMPLIANCE_CATEGORY_LABELS`
+in `statusMaps.ts`:
+
+| | categories | status |
+|---|---|---|
+| AddComplianceItem.tsx | hmrc, data_protection, employment_law, right_to_work, training, other | pending, **in_progress**, complete |
+| ClientDetailTabs.tsx | general, contracts, policies, data_protection, employment_law, other | pending, in_review, complete, overdue |
+| COMPLIANCE_CATEGORY_LABELS | contract, policy, handbook, training, health_safety, data, hr, other | — |
+
+Three real, live bugs, not just inconsistent labels:
+
+- **`AddComplianceItem.tsx`'s "In Progress" status failed on submit.**
+  `in_progress` is not a live `compliance_status` value (the enum is
+  `pending | in_review | complete | overdue`); the insert 22P02'd. The
+  error did surface to the form's error box, so this wasn't silent, but
+  it was a guaranteed failure for anyone who picked it.
+- **The due date field on that same form had no `required` attribute
+  and no client-side check**, while `compliance_items.due_date` is
+  `NOT NULL`. Leaving it blank sent `due_date: null` and the insert
+  failed on the NOT NULL constraint — a second guaranteed failure,
+  this time from a field that looked optional.
+- **Every category from either hand-typed list except `other` rendered
+  as its own raw string** everywhere `labelFor(COMPLIANCE_CATEGORY_LABELS,
+  …)` is called (the client-detail table, `/compliance`'s list) — none
+  of `general`/`contracts`/`policies`/`hmrc`/`right_to_work`/
+  `employment_law` has an entry in the label map.
+
+### The fix
+
+- **`COMPLIANCE_CATEGORIES`** (shared-dupe pair, `statusMaps.ts`):
+  `contract | policy | handbook | training | data | hr | other` — the
+  writable subset of `COMPLIANCE_CATEGORY_LABELS`'s keys.
+  `health_safety` stays OUT of the tuple (an H&S item still belongs on
+  the dedicated register) but stays IN the label map, same asymmetry
+  `COMPLIANCE_STATUS_LABELS` already has for `in_progress`/`completed`
+  — a value nothing may write again but old rows still need to display.
+- Both forms now import `COMPLIANCE_CATEGORIES`/`COMPLIANCE_STATUSES`
+  from `statusMaps.ts` instead of hand-typing a list, and render their
+  `<option>` labels from `COMPLIANCE_CATEGORY_LABELS`/
+  `COMPLIANCE_STATUS_LABELS` instead of a regex title-case. There is no
+  longer a hand-typed array for either form to drift out of step with.
+- `AddComplianceItem.tsx`'s due date is now required client-side, same
+  as `ClientDetailTabs.tsx`'s compliance form already had it.
+- **Both `/api/admin/compliance` routes gained real validation**
+  (`parseBody` + zod, `lib/validation/primitives.ts`), taken off
+  `scripts/unvalidated-routes.txt`'s ratchet (47 → 45). The POST route's
+  category enum excludes `'health_safety'` entirely — the schema itself
+  is now what refuses it, not a separate `if` check after the parse
+  (which would have been unreachable dead code once the enum excluded
+  it, and did fail `tsc` for exactly that reason). The PATCH route's
+  category enum is `[...COMPLIANCE_CATEGORIES, 'health_safety']` instead,
+  since it's also how a client-detail page might display (never write
+  fresh) an old row.
+- `statusMaps.test.ts` pins the new tuple against the label map in one
+  direction only (every writable category/status has a label; the
+  label map may still hold extra legacy entries), and separately pins
+  that `health_safety`/`in_progress` are deliberately absent from the
+  writable tuples while still resolving to a label.
+- **Migration 109 adds the CHECK the plan asked for**, but on the
+  UNION of `COMPLIANCE_CATEGORIES` and `HS_REGISTER_CATEGORIES` (plus
+  legacy `health_safety`) rather than routing the generic form onto the
+  H&S tuple alone — the column is genuinely shared by both writers.
+  `compliance_items` had 0 live rows when this was written (checked
+  before writing a line of SQL), so the CHECK applied directly rather
+  than needing a separate "after deploy" step. `statusMaps.test.ts`
+  extracts the CHECK's value list from the migration file with a regex
+  and pins it against both source tuples — which is why the CHECK's own
+  SQL comments avoid parentheses inside the value list itself: a
+  comment's own closing paren stops a naive "first ')' ends the list"
+  regex before the real end.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (780
+admin — 775 + 5 new `statusMaps.test.ts` cases; 232 portal, unchanged —
+this touched admin only, `statusMaps.ts` mirrored byte-identical), all
+five CI guards pass (`check-route-validation` ratchet shrank 47→45),
+both production builds compile. Migration 109 applied live and
+verified (`pg_get_constraintdef` read back and compared against the
+two source tuples).

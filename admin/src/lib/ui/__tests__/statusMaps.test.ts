@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import {
   CANDIDATE_CLIENT_STATUSES,
   CANDIDATE_CLIENT_STATUS_LABELS,
   CLIENT_STATUS_STYLE,
+  COMPLIANCE_CATEGORIES,
+  COMPLIANCE_CATEGORY_LABELS,
+  COMPLIANCE_STATUSES,
+  COMPLIANCE_STATUS_LABELS,
   DOC_CATEGORIES,
   DOC_CATEGORY_LABELS,
   HIRING_STAGES,
@@ -15,6 +21,7 @@ import {
   USER_ROLES,
   labelFor,
 } from '../statusMaps';
+import { HS_REGISTER_CATEGORIES } from '../../hs/vocab';
 
 // These tuples mirror pg_enum on the live project. The maps below are
 // what the UI renders from. A drift in either direction is a bug:
@@ -97,6 +104,52 @@ describe('labelFor', () => {
   it('falls back rather than throwing on an unknown value', () => {
     expect(labelFor(CANDIDATE_CLIENT_STATUS_LABELS, 'nonsense', 'Unknown')).toBe('Unknown');
     expect(labelFor(CANDIDATE_CLIENT_STATUS_LABELS, null)).toBe('—');
+  });
+});
+
+describe('compliance vocabulary', () => {
+  // COMPLIANCE_CATEGORY_LABELS deliberately carries one extra key,
+  // 'health_safety', for historical rows written before it was retired
+  // from every writer (2026-09-25) — so this is a one-direction subset
+  // check, not expectExactKeys. COMPLIANCE_STATUS_LABELS carries two
+  // extras ('in_progress', 'completed') for the same reason.
+  it('every writable category has a label', () => {
+    const missing = COMPLIANCE_CATEGORIES.filter(c => !(c in COMPLIANCE_CATEGORY_LABELS));
+    expect(missing, `COMPLIANCE_CATEGORY_LABELS is missing labels for: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it("'health_safety' is not writable, but still has a label for old rows", () => {
+    expect(COMPLIANCE_CATEGORIES as readonly string[]).not.toContain('health_safety');
+    expect(COMPLIANCE_CATEGORY_LABELS.health_safety).toBe('Health & Safety');
+  });
+
+  it('every writable status has a label', () => {
+    const missing = COMPLIANCE_STATUSES.filter(s => !(s in COMPLIANCE_STATUS_LABELS));
+    expect(missing, `COMPLIANCE_STATUS_LABELS is missing labels for: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it("'in_progress' is not a live compliance_status, but still has a display label", () => {
+    // AddComplianceItem.tsx used to offer this as a writable status;
+    // the insert 22P02'd because the enum has no such value.
+    expect(COMPLIANCE_STATUSES as readonly string[]).not.toContain('in_progress');
+    expect(COMPLIANCE_STATUS_LABELS.in_progress).toBe('In progress');
+  });
+
+  it('matches the database CHECK (migration 109)', () => {
+    // compliance_items.category is one column shared by the generic
+    // HR form (COMPLIANCE_CATEGORIES) and the H&S register
+    // (HS_REGISTER_CATEGORIES) — the CHECK allows the union of both,
+    // plus the legacy-only 'health_safety'.
+    const sql = readFileSync(
+      path.resolve(__dirname, '../../../../../supabase/migrations/109_compliance_category_check.sql'),
+      'utf8',
+    );
+    const m = /compliance_items_category_check\s+CHECK \(category IN \(([^)]*)\)\)/.exec(sql);
+    if (!m) throw new Error('compliance_items_category_check not found in migration 109');
+    const allowed = m[1].split(',').map(s => s.trim().replace(/'/g, ''));
+
+    const expected = [...COMPLIANCE_CATEGORIES, 'health_safety', ...HS_REGISTER_CATEGORIES];
+    expect([...allowed].sort()).toEqual([...expected].sort());
   });
 });
 

@@ -16,7 +16,7 @@ import HrTab from './tabs/HrTab';
 import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
 
-import { ACTION_PRIORITIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { ACTION_PRIORITIES, COMPLIANCE_CATEGORIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUSES, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import FileLink from '@/components/modules/FileLink';
 import {
   MILESTONE_PILLARS, MILESTONE_PILLAR_LABELS, MILESTONE_STATUSES, MILESTONE_STATUS_LABELS,
@@ -341,8 +341,13 @@ const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
 // 'health_safety' removed 2026-09-25: H&S items now belong on the
 // dedicated /health-safety register (recurrence, evidence, the Safety
 // Timeline), not this generic HR compliance tab, which has none of that.
-const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'data_protection', 'employment_law', 'other'];
-const COMP_STATUSES   = ['pending', 'in_review', 'complete', 'overdue'] as const;
+//
+// Categories/statuses come from statusMaps.ts, not a hand-typed list —
+// this used to be its own list ('general' / 'contracts' / 'employment_law'),
+// disagreeing with both COMPLIANCE_CATEGORY_LABELS and the equivalent
+// list on the cross-client /compliance page's AddComplianceItem.tsx.
+const COMP_CATEGORIES = COMPLIANCE_CATEGORIES;
+const COMP_STATUSES   = COMPLIANCE_STATUSES;
 
 const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
   pending:   { background: 'rgba(148,163,184,0.12)', color: 'var(--slate)' },
@@ -444,7 +449,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   /* ── Compliance state ── */
   const [compliance,    setCompliance]   = useState<any[]>([]);
   const [showCompForm,  setShowCompForm] = useState(false);
-  const [compForm,      setCompForm]     = useState({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+  const [compForm,      setCompForm]     = useState({ title: '', description: '', category: 'other', due_date: '', status: 'pending' });
   const [savingComp,    setSavingComp]   = useState(false);
 
   async function saveCompliance() {
@@ -461,7 +466,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
     }
     setSavingComp(false);
     setShowCompForm(false);
-    setCompForm({ title: '', description: '', category: 'general', due_date: '', status: 'pending' });
+    setCompForm({ title: '', description: '', category: 'other', due_date: '', status: 'pending' });
   }
 
   async function updateComplianceStatus(id: string, status: string) {
@@ -1118,7 +1123,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 <div>
                   <label className="label">Category</label>
                   <select className="input" value={compForm.category} onChange={e => setCompForm(f => ({ ...f, category: e.target.value }))}>
-                    {COMP_CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                    {COMP_CATEGORIES.map(c => <option key={c} value={c}>{COMPLIANCE_CATEGORY_LABELS[c]}</option>)}
                   </select>
                 </div>
                 <div>
@@ -1128,7 +1133,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                 <div>
                   <label className="label">Initial Status</label>
                   <select className="input" value={compForm.status} onChange={e => setCompForm(f => ({ ...f, status: e.target.value }))}>
-                    {COMP_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                    {COMP_STATUSES.map(s => <option key={s} value={s}>{COMPLIANCE_STATUS_LABELS[s]}</option>)}
                   </select>
                 </div>
               </div>

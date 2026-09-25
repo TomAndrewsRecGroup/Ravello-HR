@@ -9,8 +9,6 @@ admin/src/app/api/admin/clients/[id]/feature-flags/route.ts
 admin/src/app/api/admin/clients/[id]/raise-invoice/route.ts
 admin/src/app/api/admin/clients/[id]/retainer/route.ts
 admin/src/app/api/admin/clients/route.ts
-admin/src/app/api/admin/compliance/[id]/route.ts
-admin/src/app/api/admin/compliance/route.ts
 admin/src/app/api/admin/employee-documents/route.ts
 admin/src/app/api/admin/feed-sources/[id]/route.ts
 admin/src/app/api/admin/feed-sources/probe/route.ts
