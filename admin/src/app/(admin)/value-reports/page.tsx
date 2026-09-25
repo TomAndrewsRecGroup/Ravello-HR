@@ -19,7 +19,10 @@ export default async function ValueReportsPage() {
   // table at 5K rows so the page can't OOM once the dataset crosses
   // 100K. Value-reports is a portfolio overview; a date filter would
   // be cleaner long-term but this caps the scaling cliff today.
-  const [compRes, reqRes, candRes, ticketRes, docRes, complianceRes, servReqRes, actionsRes, loginRes, servicesRes] = await Promise.all([
+  const [
+    compRes, reqRes, candRes, ticketRes, docRes, complianceRes, servReqRes, actionsRes, loginRes, servicesRes,
+    trainingRes, reviewsRes, absenceRes, onboardingRes,
+  ] = await Promise.all([
     supabase.from('companies').select('id, name, active, contact_email').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('candidates').select('id, company_id, full_name, client_status, created_at').order('id').range(from, to)),
@@ -30,6 +33,13 @@ export default async function ValueReportsPage() {
     readAllPages<any>((from, to) => supabase.from('actions').select('id, company_id, title, status, created_at, completed_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('profiles').select('id, company_id, role').neq('role', 'tps_admin').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active').order('id').range(from, to)),
+    // LEAD: people-management metrics, distinct from SUPPORT's
+    // ticket/service-request handling — see CLAUDE.md, the naming/
+    // flags sweep flagged this as the real gap, not just a label fix.
+    readAllPages<any>((from, to) => supabase.from('training_needs').select('id, company_id, status, created_at, updated_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('performance_reviews').select('id, company_id, status, due_date, completed_at, created_at').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('absence_records').select('id, company_id, status, start_date, days, created_at').eq('status', 'approved').order('id').range(from, to)),
+    readAllPages<any>((from, to) => supabase.from('onboarding_instances').select('id, company_id, status, started_at, completed_at').order('id').range(from, to)),
   ]);
 
   return (
@@ -47,6 +57,10 @@ export default async function ValueReportsPage() {
           actions={actionsRes.data ?? []}
           profiles={loginRes.data ?? []}
           services={servicesRes.data ?? []}
+          trainingNeeds={trainingRes.data ?? []}
+          performanceReviews={reviewsRes.data ?? []}
+          absenceRecords={absenceRes.data ?? []}
+          onboardingInstances={onboardingRes.data ?? []}
         />
       </main>
     </>

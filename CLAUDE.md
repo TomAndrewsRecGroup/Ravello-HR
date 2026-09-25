@@ -2939,3 +2939,52 @@ seeded sector packs so a new client's register does not start empty.
   production builds compile. Migration 106 applied live and verified
   (RLS on for all three new tables, sector pack item counts read back:
   office 9, construction 9, manufacturing 10, care 9, hospitality 8).
+
+---
+
+## A real LEAD section on the Value Report (2026-09-25)
+
+The naming/flags sweep (above) found the Value Report PDF only ever
+had HIRE / SUPPORT / PROTECT sections — there has never been a LEAD
+section, and SUPPORT's ticket/service-request content is genuinely
+different from LEAD's people-management metrics, so renaming SUPPORT
+would have mislabelled its own content. This adds the real thing.
+
+- **Four new sources, read the same way every other cross-tenant table
+  on this page already is** — `readAllPages`, no per-company filter
+  (the page computes one company's report client-side from the full
+  dataset): `training_needs`, `performance_reviews`, `absence_records`
+  (filtered to `status = 'approved'` at the query, same as the portal's
+  leave pages), `onboarding_instances`.
+- **The month-boundary and "overdue" logic is a pure function**
+  (`lib/valueReport/leadMetrics.ts`, `computeLeadMetrics()`), pulled out
+  of `ValueReportClient`'s `useMemo` specifically so it is unit-tested
+  — the rest of that component's report computation predates this
+  change and was never covered; this doesn't retrofit that, only the
+  new code gets the discipline.
+- **"Overdue" is relative to the REPORT month, not today.** A review
+  due 10 August and still open is overdue on the September report but
+  NOT on the August report — `reviewsOverdue` compares `due_date`
+  against the start of the selected month, not `new Date()`. Run this
+  for a past month and it shows what was actually true then, not
+  today's state. `leadMetrics.test.ts` pins both directions: the same
+  data reported for September finds the review overdue; reported for
+  August (before the review's own due date), it does not.
+- **A null `days` on an absence record contributes zero, not NaN** —
+  `Number(a.days) || 0`, one of the four fields this page reads that
+  can be null on a real row (an absence still in progress with no end
+  date recorded has no `days` yet).
+- **Onboarding "active" is NOT month-scoped** — `status = 'in_progress'`
+  regardless of when it started, same as `trainingNeedsOpen`
+  (`status IN ('open','in_progress')` regardless of when flagged): both
+  are "what's true right now", not "what happened this month",
+  deliberately different from the flagged/started/completed counts
+  next to them.
+- On-screen grid changed `lg:grid-cols-3` → `md:grid-cols-2
+  xl:grid-cols-4` to fit the fourth card without cramming; the PDF gets
+  a fourth `section('LEAD', [...])` block between PROTECT and SYSTEM
+  USAGE, same `autoTable` pattern as the other three.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (748 admin — 741 + 7 new `leadMetrics.test.ts`; 223 portal,
+  unchanged — this touched admin only), all five CI guards pass, both
+  production builds compile.
