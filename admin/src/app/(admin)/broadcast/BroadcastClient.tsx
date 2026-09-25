@@ -4,7 +4,9 @@ import { CheckSquare, Square, Send, Loader2, CheckCircle2, X, AlertTriangle } fr
 import type { CompanyRef } from '@/lib/supabase/types';
 
 import { ACTION_PRIORITIES, ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
-interface Props { companies: CompanyRef[] }
+
+export interface BroadcastPrefill { title: string; description: string; companyIds: string[] }
+interface Props { companies: CompanyRef[]; prefill?: BroadcastPrefill | null }
 
 // Sourced from the shared vocabularies rather than a local copy — this
 // form used to hand-list both action types and priorities, and its
@@ -13,12 +15,16 @@ interface Props { companies: CompanyRef[] }
 const ACTION_TYPES = Object.keys(ACTION_TYPE_LABELS);
 const PRIORITIES = ACTION_PRIORITIES;
 
-export default function BroadcastClient({ companies }: Props) {
+export default function BroadcastClient({ companies, prefill }: Props) {
   const active = companies.filter(c => c.active);
 
-  const [selected,  setSelected]  = useState<Set<string>>(new Set());
+  // A regulatory-change suggestion (?update=<id> on this page) pre-fills
+  // the compose form and pre-selects the affected clients once, on
+  // mount — a staff member can still change or clear any of it before
+  // sending, same as a hand-typed broadcast.
+  const [selected,  setSelected]  = useState<Set<string>>(() => new Set(prefill?.companyIds ?? []));
   const [form, setForm] = useState({
-    title: '', description: '', action_type: 'compliance_update',
+    title: prefill?.title ?? '', description: prefill?.description ?? '', action_type: 'compliance_update',
     priority: 'normal', due_date: '',
   });
   const [sending,  setSending]  = useState(false);

@@ -25,6 +25,8 @@ export const NOTIFICATION_TYPES = [
   'ivylens_ticket_resolved',
   // BD
   'enquiry_received',
+  // News / regulatory
+  'regulatory_change_detected',
   // Actions and internal tasks
   'action_completed',
   'task_assigned',
@@ -98,6 +100,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   sla_breached:               'Response overdue (SLA)',
   client_at_risk:             'Client may be unhappy',
   enquiry_received:           'New enquiry',
+  regulatory_change_detected: 'Possible regulatory change',
   ivylens_ticket_reply:       'Support reply',
   ivylens_ticket_resolved:    'Support ticket resolved',
   action_completed:           'Action completed',
