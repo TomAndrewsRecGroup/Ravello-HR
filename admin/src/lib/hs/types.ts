@@ -2,7 +2,7 @@
 // clients here are untyped, so these are what the pages agree on.
 
 import type {
-  HsActivityType, HsCompletionOutcome, HsRecurrenceUnit,
+  HsActivityType, HsAuditRating, HsCompletionOutcome, HsRecurrenceUnit,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -95,4 +95,46 @@ export interface HsSectorPack {
   sector: string;
   name: string;
   description: string | null;
+}
+
+export interface HsAuditTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+}
+
+export interface HsAuditTemplateItem {
+  id: string;
+  template_id: string;
+  category: string | null;
+  prompt: string;
+  guidance: string | null;
+  sort_order: number;
+}
+
+export interface HsAudit {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  template_id: string | null;
+  title: string;
+  conducted_on: string;
+  score: number | null;
+  notes: string | null;
+  recorded_by_kind: string;
+  created_at: string;
+}
+
+export interface HsAuditResponse {
+  id: string;
+  audit_id: string;
+  company_id: string;
+  template_item_id: string | null;
+  prompt: string;
+  category: string | null;
+  rating: HsAuditRating;
+  comment: string | null;
+  sort_order: number;
+  created_at: string;
 }

@@ -34,6 +34,18 @@ export const HS_ACTIVITY_TYPE_LABELS: Record<HsActivityType, string> = {
 export const HS_RECURRENCE_UNITS = ['day', 'week', 'month', 'year'] as const;
 export type HsRecurrenceUnit = typeof HS_RECURRENCE_UNITS[number];
 
+// A single audit checklist answer (110). Unlike HS_COMPLETION_OUTCOMES
+// (a register item's own periodic check), an audit answer has no
+// "pass with actions raised" middle state — 'fail' IS the finding, and
+// raising the action is what the fail causes, not a third rating.
+export const HS_AUDIT_RATINGS = ['pass', 'fail', 'na'] as const;
+export type HsAuditRating = typeof HS_AUDIT_RATINGS[number];
+export const HS_AUDIT_RATING_LABELS: Record<HsAuditRating, string> = {
+  pass: 'Pass',
+  fail: 'Fail',
+  na:   'N/A',
+};
+
 export const HS_COMPLETION_OUTCOMES = ['pass', 'pass_with_actions', 'fail'] as const;
 export type HsCompletionOutcome = typeof HS_COMPLETION_OUTCOMES[number];
 export const HS_COMPLETION_OUTCOME_LABELS: Record<HsCompletionOutcome, string> = {
@@ -44,8 +56,8 @@ export const HS_COMPLETION_OUTCOME_LABELS: Record<HsCompletionOutcome, string> =
 
 // Register categories. Anything starting hs_ is H&S (the generated
 // compliance_items.domain column says so); the legacy 'health_safety'
-// is also H&S. Not a CHECK yet — the category CHECK lands after the
-// deploy, once every writer uses these.
+// is also H&S. CHECK'd live since migration 109, on the union of this
+// tuple and the generic HR form's COMPLIANCE_CATEGORIES.
 export const HS_REGISTER_CATEGORIES = [
   'hs_policy_governance', 'hs_risk_assessment', 'hs_fire', 'hs_electrical', 'hs_gas',
   'hs_lifting', 'hs_work_equipment', 'hs_hazardous_substances', 'hs_water', 'hs_asbestos',

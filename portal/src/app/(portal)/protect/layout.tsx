@@ -10,6 +10,7 @@ const TABS = [
   { href: '/protect',            label: 'Overview' },
   { href: '/protect/compliance', label: 'Register' },
   { href: '/protect/documents',  label: 'Documents' },
+  { href: '/protect/audits',     label: 'Audits' },
   { href: '/protect/actions',    label: 'Actions' },
   { href: '/protect/timeline',   label: 'Timeline' },
   { href: '/protect/reports',    label: 'Reports' },

@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 // Add each new H&S migration to FILES.
 
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
-const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql'];
+const FILES = ['094_hs_providers_access.sql', '095_hs_core.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql'];
 const sql = FILES.map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 type Policy = { name: string; table: string; body: string };
@@ -84,7 +84,7 @@ describe('H&S RLS shape', () => {
 
   it('the timeline and recorded evidence cannot be rewritten by a session', () => {
     expect(sql).toMatch(/REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public\.hs_events FROM PUBLIC, anon, authenticated/);
-    for (const t of ['hs_register_completions', 'hs_activities', 'hs_files']) {
+    for (const t of ['hs_register_completions', 'hs_activities', 'hs_files', 'hs_audits', 'hs_audit_responses']) {
       expect(sql).toMatch(new RegExp(`REVOKE UPDATE, DELETE, TRUNCATE ON public\\.${t}\\s+FROM PUBLIC, anon, authenticated`));
     }
     expect(policies.filter(p => p.table === 'hs_events' && !/FOR SELECT/.test(p.body))).toEqual([]);
@@ -116,7 +116,7 @@ describe('H&S RLS shape', () => {
 });
 
 describe('every surviving H&S source table writes to the Safety Timeline', () => {
-  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents'];
+  const SOURCES = ['compliance_items', 'hs_register_completions', 'hs_activities', 'hs_files', 'hs_sites', 'hs_documents', 'hs_audits'];
   // Sector packs (106) are staff reference data — typical register items
   // for a sector, applied TO a client's own register. They are never a
   // record of anything that happened to a specific client, so unlike
@@ -125,7 +125,12 @@ describe('every surviving H&S source table writes to the Safety Timeline', () =>
   // Timeline entry for anyone. Applying a pack DOES appear on the
   // timeline — as ordinary compliance_items inserts, which already fire
   // compliance_items_hs_event.
-  const NOT_SOURCES = ['hs_sector_packs', 'hs_sector_pack_items'];
+  // hs_audit_responses: each response is part of ONE audit's own
+  // Timeline entry (the audit row itself, above) — a 20-question audit
+  // would otherwise put 20 lines on the client's Timeline for one visit.
+  // hs_audit_templates/_items are staff reference data, same posture as
+  // sector packs.
+  const NOT_SOURCES = ['hs_sector_packs', 'hs_sector_pack_items', 'hs_audit_templates', 'hs_audit_template_items', 'hs_audit_responses'];
   it.each(SOURCES)('%s has an AFTER _hs_event trigger', (t) => {
     expect(sql).toMatch(new RegExp(`CREATE TRIGGER ${t}_hs_event\\s+AFTER [A-Z ]+ ON public\\.${t}`));
   });
