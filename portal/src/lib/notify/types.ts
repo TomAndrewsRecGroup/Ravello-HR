@@ -37,6 +37,15 @@ export const NOTIFICATION_TYPES = [
   'checklist_task_due',
   'probation_ending',
   'absence_pending',
+  // PROTECT / Health & Safety
+  'hs_check_failed',
+  'hs_actions_raised',
+  'hs_activity_logged',
+  'hs_evidence_added',
+  'hs_item_added',
+  'hs_action_done',
+  'hs_followup_suggested',
+  'provider_access_ending',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -64,6 +73,14 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   checklist_task_due:         'Onboarding / offboarding task due',
   probation_ending:           'Probation ending',
   absence_pending:            'Leave request awaiting decision',
+  hs_check_failed:            'H&S check failed',
+  hs_actions_raised:          'H&S check passed with actions',
+  hs_activity_logged:         'H&S activity logged',
+  hs_evidence_added:          'H&S evidence added',
+  hs_item_added:              'H&S register item added',
+  hs_action_done:             'H&S action completed',
+  hs_followup_suggested:      'H&S follow-up suggested',
+  provider_access_ending:     'Provider access ending',
 };
 
 export function isNotificationType(v: string): v is NotificationType {

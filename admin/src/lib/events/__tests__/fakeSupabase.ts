@@ -47,6 +47,7 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
       upsert(rows: Row | Row[], o: typeof upsertOpts = {}) { op = 'upsert'; payload = Array.isArray(rows) ? rows : [rows]; upsertOpts = o; return q; },
       update(p: Row, o?: { count?: string }) { op = 'update'; patch = p; if (o?.count) wantCount = true; return q; },
       eq(c: string, v: unknown) { filters.push(r => r[c] === v); return q; },
+      neq(c: string, v: unknown) { filters.push(r => r[c] !== v); return q; },
       is(c: string, v: unknown) { filters.push(r => (v === null ? r[c] == null : r[c] === v)); return q; },
       in(c: string, vs: unknown[]) { filters.push(r => vs.includes(r[c])); return q; },
       gte(c: string, v: any) { filters.push(r => r[c] >= v); return q; },
@@ -79,16 +80,19 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
     function run() {
       if (op === 'select') return finish(matching());
       if (op === 'insert') {
-        const inserted: Row[] = payload.map(r => ({ id: r.id ?? `${name}-${db.nextId++}`, ...r }));
+        const inserted: Row[] = payload.map(r => ({ id: r.id ?? `${name}-${db.nextId++}`, created_at: db.now().toISOString(), ...r }));
         const key = uniqueKeys[name];
         if (key && inserted.some(r => r[key] != null && table(name).some(e => e[key] === r[key]))) {
           return { data: null, error: { message: `duplicate key value violates unique constraint (${name}.${key})` }, count: null };
         }
         table(name).push(...inserted);
-        return { data: selectAfterWrite ? inserted : null, error: null, count: null };
+        return selectAfterWrite ? finish(inserted) : { data: null, error: null, count: null };
       }
       if (op === 'upsert') {
-        const key = upsertOpts.onConflict ?? uniqueKeys[name];
+        // onConflict may be composite ('company_id,source_ref'); a row
+        // conflicts when every named column matches and none is null.
+        const keyCols = (upsertOpts.onConflict ?? uniqueKeys[name] ?? '').split(',').map(k => k.trim()).filter(Boolean);
+        const conflicts = (a: Row, b: Row) => keyCols.length > 0 && keyCols.every(k => a[k] != null && a[k] === b[k]);
         // PostgREST returns every upserted row with merge-duplicates
         // (the default), and ONLY the inserted ones with ignoreDuplicates.
         // A caller that forgets ignoreDuplicates therefore sees a
@@ -96,21 +100,21 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
         // process tests need to be able to catch.
         const returned: Row[] = [];
         for (const r of payload) {
-          const existing = key ? table(name).find(e => r[key] != null && e[key] === r[key]) : undefined;
+          const existing = table(name).find(e => conflicts(r, e));
           if (existing) {
             if (!upsertOpts.ignoreDuplicates) { Object.assign(existing, r); returned.push(existing); }
             continue;
           }
-          const row = { id: r.id ?? `${name}-${db.nextId++}`, ...r };
+          const row = { id: r.id ?? `${name}-${db.nextId++}`, created_at: db.now().toISOString(), ...r };
           table(name).push(row);
           returned.push(row);
         }
-        return { data: selectAfterWrite ? returned : null, error: null, count: null };
+        return selectAfterWrite ? finish(returned) : { data: null, error: null, count: null };
       }
       // update
       const hit = matching();
       hit.forEach(r => Object.assign(r, patch));
-      return { data: selectAfterWrite ? hit : null, error: null, count: wantCount ? hit.length : null };
+      return selectAfterWrite ? { ...finish(hit), count: wantCount ? hit.length : null } : { data: null, error: null, count: wantCount ? hit.length : null };
     }
     return q;
   }

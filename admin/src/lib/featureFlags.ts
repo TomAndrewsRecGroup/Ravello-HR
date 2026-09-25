@@ -89,6 +89,9 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'metrics',  label: 'Metrics Dashboard' },
       { key: 'reports',  label: 'CSV Reports' },
       { key: 'calendar', label: 'Company Calendar' },
+      // Jev (TypeSafe AI) suggestions: register classification, follow-up
+      // flags, digest ranking. Off = no Jev call is made for this client.
+      { key: 'ai_assist', label: 'AI assist (Jev suggestions)' },
     ],
   },
   {

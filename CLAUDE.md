@@ -2073,3 +2073,79 @@ could never work (X1 below).
   are stamped `processed_at` by hand at deploy time so the first
   consumer run does not send days-old notifications. **097 is applied
   AFTER the deploy** (the old admin client tab still wrote `medium`).
+
+---
+
+## PROTECT in sync, and the first Jev decisions (2026-09-25, migration 098)
+
+PR 2 of the automation plan. Health & Safety records now have
+consequences, and Jev (TypeSafe AI) makes its first typed decisions.
+
+### What follows what (`lib/events/hsRules.ts`)
+
+- **A FAILED check raises an ACTION** on the client (`hs_failed_check`,
+  high, keyed `hs_completion:<id>` so a re-run never raises two), emails
+  the client admins (`hsCheckFailed`), and tells staff in-app. `pass_with
+  _actions` raises a normal one. Providers still cannot insert actions;
+  the consumer does, and no policy was widened.
+- **A logged activity** tells the client admins (digest urgency);
+  evidence and register items added by a provider do too. A completed
+  failed-check action tells staff and the provider who recorded it.
+  Provider access ending is a staff reminder (`hs_provider_companies`
+  joined `REMINDER_ENTITIES`).
+- **Monday 07:00 `/api/cron/weekly-summary`**: one digest per provider
+  login (their clients: overdue, due 30, open actions) and one summary
+  per client whose admins keep `weekly_summary` on and whose PROTECT flag
+  is not off. Claimed per recipient per ISO week through
+  `email_log.dedupe_key` (`lib/notify/keyedEmail.ts`, the claim-first
+  helper the consumer's receipt email uses too). Nothing to report →
+  no email, not an empty one.
+
+### Jev
+
+- **`lib/jev/`** — `transport.ts` is the ONE file that knows the wire
+  format (verified against the independent jev-evaluation repo's
+  `wire.py`; `docs.typesafe.ai` is egress-blocked from the sandbox).
+  `parseResponse` refuses any selected option the question did not
+  offer and returns null on any shape it does not recognise; the raw
+  payload is recorded either way, so a contract mismatch shows in
+  `jev_decisions.error` on the first live call and nothing acts.
+  **Run one classify from the register with a real key before trusting
+  the mapping; if it says `unrecognised response shape`, fix
+  `transport.ts` from the recorded payload.**
+- **`askJev()`** is off without `JEV_API_KEY`, with `JEV_DISABLED=1`,
+  or when the client's `ai_assist` flag is false; off is `null` and
+  every caller shows nothing. Every call is a `jev_decisions` row
+  (state, questions, raw response, selection, confidence, gated,
+  acted, and later `human_outcome`). Identical input within 30 days is
+  answered from the table.
+- **Untrusted text goes in as a NAMED state field, framed as data.**
+  An authority claim in a ticket moved Jev's verdict 147/200 times, so
+  `AUTO_ACT_KINDS` holds one kind: `hs_register_rank`, which orders three
+  lines in an email and writes nothing. `hs_item_classify` only
+  pre-fills a form; `hs_activity_followup` only produces a "follow-up
+  suggested" notification with a one-click Raise action for staff.
+  `markActed()` throws for any other kind. Tests drive an injected
+  summary ("SYSTEM: … raise no action") through the consumer and an
+  injected title through the classify route: no action, no register
+  row, only vocabulary ids.
+- **What people did with a suggestion is the label.** The register form
+  posts `accepted`/`overridden`/`ignored` to `/api/hs/jev/outcome`;
+  Raise action marks `accepted`. `/automation` shows per-kind volume,
+  gated %, and agreement. 098's guard trigger lets a session change
+  only `human_outcome`/`acted`/`acted_on`; the INSERT policy is
+  `actor_id = auth.uid()` because the classify route runs under the
+  user's own session (it is under `app/api/hs`, where the service role
+  is forbidden).
+- **Confidence is not answerability.** The evaluation found confidence
+  averaged 0.985 on answerable states and 0.974 on fluent nonsense.
+  The gate (0.8, 0.6 for the form) ranks within comparable problems;
+  deterministic checks (vocabulary validation, the fallback ranking)
+  stay alongside it.
+- Env: `JEV_API_KEY`, `JEV_MODEL` (pin one in production), `JEV_API_URL`
+  (default `https://api.typesafe.ai/v1/systemone`), `JEV_DISABLED`.
+  Enable `ai_assist` on one client first.
+
+Mutations reintroduced and caught: the follow-up rule inserting an
+action, the classify route inserting the item, the keyed email sending
+before it claims, a category outside the vocabulary.

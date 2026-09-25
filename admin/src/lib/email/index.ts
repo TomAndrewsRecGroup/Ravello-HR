@@ -41,3 +41,9 @@ export type { NotificationEmailInput, DigestItem } from './templates/notificatio
 
 export { serviceRequestReceivedEmail }   from './templates/serviceRequestReceived';
 export type { ServiceRequestReceivedInput } from './templates/serviceRequestReceived';
+
+export { hsCheckFailedEmail }            from './templates/hsCheckFailed';
+export type { HsCheckFailedInput }       from './templates/hsCheckFailed';
+
+export { providerWeeklyDigestEmail, clientWeeklySummaryEmail } from './templates/hsWeekly';
+export type { WeeklyCompanySection, WeeklyItem, WeeklyAction, WeeklyActivity } from './templates/hsWeekly';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock } from 'lucide-react';
+import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 
@@ -31,6 +31,14 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   checklist_task_due:         { Icon: CheckSquare,    color: 'var(--amber)' },
   probation_ending:           { Icon: CalendarClock,  color: 'var(--blue)' },
   absence_pending:            { Icon: CalendarClock,  color: 'var(--amber)' },
+  hs_check_failed:            { Icon: HardHat,        color: 'var(--danger)' },
+  hs_actions_raised:          { Icon: HardHat,        color: 'var(--amber)' },
+  hs_activity_logged:         { Icon: HardHat,        color: 'var(--blue)' },
+  hs_evidence_added:          { Icon: FileText,       color: 'var(--blue)' },
+  hs_item_added:              { Icon: HardHat,        color: 'var(--blue)' },
+  hs_action_done:             { Icon: Check,          color: 'var(--success)' },
+  hs_followup_suggested:      { Icon: Sparkles,       color: 'var(--purple)' },
+  provider_access_ending:     { Icon: HardHat,        color: 'var(--amber)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_META);

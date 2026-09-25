@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Bell, Briefcase, LifeBuoy, ShieldCheck, Users,
-  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock,
+  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock, HardHat, Sparkles,
 } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
@@ -43,6 +43,14 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   checklist_task_due:         { icon: CheckSquare,   color: 'var(--amber)' },
   probation_ending:           { icon: CalendarClock, color: 'var(--blue)' },
   absence_pending:            { icon: CalendarClock, color: 'var(--amber)' },
+  hs_check_failed:            { icon: HardHat,       color: 'var(--danger)' },
+  hs_actions_raised:          { icon: HardHat,       color: 'var(--amber)' },
+  hs_activity_logged:         { icon: HardHat,       color: 'var(--blue)' },
+  hs_evidence_added:          { icon: FileText,      color: 'var(--blue)' },
+  hs_item_added:              { icon: HardHat,       color: 'var(--blue)' },
+  hs_action_done:             { icon: CheckCircle2,  color: 'var(--success)' },
+  hs_followup_suggested:      { icon: Sparkles,      color: 'var(--purple)' },
+  provider_access_ending:     { icon: HardHat,       color: 'var(--amber)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

@@ -1,7 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Clock, FileText, Loader2, Paperclip, Plus, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Clock, FileText, Loader2, Paperclip, Plus, ShieldCheck, Sparkles } from 'lucide-react';
+import { HS_RECURRENCE_OPTIONS, type ClassifySuggestion } from '@/lib/hs/jevQuestions';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/modules/Toast';
 import {
@@ -183,6 +184,43 @@ function AddItemForm({ companyId, onDone }: { companyId: string; onDone: () => v
   const [legal, setLegal] = useState('');
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<ClassifySuggestion | null>(null);
+  const [decisionId, setDecisionId] = useState<string | null>(null);
+  const [suggestNote, setSuggestNote] = useState<string | null>(null);
+
+  // Jev: a suggestion for category, recurrence and legal basis from the
+  // title. It only pre-fills the three fields; the person still saves.
+  // What they saved versus what was suggested is written back as the
+  // decision's outcome, which is how the suggestions get measured.
+  async function suggest() {
+    setSuggesting(true); setSuggestNote(null);
+    try {
+      const res = await fetch('/api/hs/jev/classify-item', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ company_id: companyId, title: title.trim(), description: description.trim() || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? `Suggestion failed (${res.status})`);
+      setDecisionId(json.decision_id ?? null);
+      if (!json.suggestion) {
+        setSuggestion(null);
+        setSuggestNote(json.reason === 'unsure' ? 'Not sure enough to suggest — choose by hand.' : json.reason === 'unavailable' ? 'Suggestions are not switched on.' : 'No suggestion.');
+        return;
+      }
+      const sg = json.suggestion as ClassifySuggestion;
+      setSuggestion(sg);
+      setCategory(sg.category);
+      const rec = HS_RECURRENCE_OPTIONS[sg.recurrence];
+      if (rec.unit === null) { setUnit(''); } else { setUnit(rec.unit); setEvery(String(rec.every)); }
+      setLegal(sg.legal_basis_text ?? '');
+      setSuggestNote(`Suggested from the title (${Math.round(sg.confidence * 100)}% sure). Change anything that is wrong.`);
+    } catch (err) {
+      setSuggestNote((err as Error).message);
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -195,6 +233,13 @@ function AddItemForm({ companyId, onDone }: { companyId: string; onDone: () => v
     }).select('id').single();
     setBusy(false);
     if (error) { toast(error.message, 'error'); return; }
+    if (decisionId) {
+      const rec = suggestion ? HS_RECURRENCE_OPTIONS[suggestion.recurrence] : null;
+      const kept = !!suggestion && suggestion.category === category
+        && (rec?.unit === null ? unit === '' : (unit === rec?.unit && Number(every) === rec?.every))
+        && (suggestion.legal_basis_text ?? '') === legal.trim();
+      fetch('/api/hs/jev/outcome', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ decision_id: decisionId, outcome: suggestion ? (kept ? 'accepted' : 'overridden') : 'ignored' }) }).catch(() => {});
+    }
     toast('Register item added', 'success');
     onDone();
     router.refresh();
@@ -204,7 +249,13 @@ function AddItemForm({ companyId, onDone }: { companyId: string; onDone: () => v
     <form onSubmit={submit} className="card p-4 grid gap-3 md:grid-cols-2">
       <label className="block md:col-span-2">
         <span className="label">What needs doing</span>
-        <input className="input" value={title} onChange={e => setTitle(e.target.value)} maxLength={200} required placeholder="Fire risk assessment review" />
+        <span className="flex gap-2">
+          <input className="input flex-1" value={title} onChange={e => setTitle(e.target.value)} maxLength={200} required placeholder="Fire risk assessment review" />
+          <button type="button" className="btn-secondary btn-sm shrink-0" onClick={suggest} disabled={suggesting || title.trim().length < 4} title="Suggest category, recurrence and legal basis from the title">
+            {suggesting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} Suggest
+          </button>
+        </span>
+        {suggestNote && <span className="block text-xs mt-1" style={{ color: suggestion ? 'var(--purple)' : 'var(--ink-faint)' }}>{suggestNote}</span>}
       </label>
       <label className="block">
         <span className="label">Category</span>
