@@ -57,6 +57,16 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   enquiry_received:           { Icon: Users,          color: 'var(--purple)' },
   policy_ack_signed:          { Icon: Check,          color: 'var(--success)' },
   policy_ack_needs_email:     { Icon: AlertTriangle,  color: 'var(--amber)' },
+  role_stage_changed:         { Icon: BarChart2,      color: 'var(--purple)' },
+  candidate_shared:           { Icon: Users,          color: 'var(--purple)' },
+  interview_scheduled:        { Icon: CalendarClock,  color: 'var(--blue)' },
+  interview_cancelled:        { Icon: CalendarClock,  color: 'var(--ink-faint)' },
+  offer_sent:                 { Icon: BarChart2,      color: 'var(--teal)' },
+  offer_decided:              { Icon: BarChart2,      color: 'var(--teal)' },
+  role_stale:                 { Icon: BarChart2,      color: 'var(--amber)' },
+  offer_deadline:             { Icon: CalendarClock,  color: 'var(--amber)' },
+  referral_review_pending:    { Icon: Users,          color: 'var(--amber)' },
+  referral_scan_failed:       { Icon: AlertTriangle,  color: 'var(--red)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_META);

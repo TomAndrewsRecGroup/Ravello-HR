@@ -55,6 +55,8 @@ const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }>
   closed_day:    { bg: 'rgba(217,68,68,0.10)',  border: '#D94444', text: 'var(--rose)' },
   bank_holiday:  { bg: 'rgba(11,120,150,0.10)', border: 'var(--purple)', text: '#075E77' },
   company_event: { bg: 'rgba(59,111,255,0.10)', border: 'var(--blue)', text: 'var(--blue)' },
+  // Written by the platform when your consultant books an interview (104).
+  interview:     { bg: 'rgba(20,184,166,0.12)', border: 'var(--teal)', text: '#0F766E' },
   other:         { bg: 'rgba(148,163,184,0.10)', border: '#94A3B8', text: 'var(--slate)' },
 };
 
@@ -291,6 +293,9 @@ export default function CalendarClient({ companyId, isAdmin, initialEvents, init
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#075E77' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.bank_holiday.bg, border: `1px solid ${EVENT_COLORS.bank_holiday.border}` }} /> Bank Holiday
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#0F766E' }}>
+          <span className="w-2.5 h-2.5 rounded" style={{ background: EVENT_COLORS.interview.bg, border: `1px solid ${EVENT_COLORS.interview.border}` }} /> Interview
         </span>
         <span className="flex items-center gap-1.5 text-[11px] font-medium" style={{ color: 'var(--emerald)' }}>
           <span className="w-2.5 h-2.5 rounded" style={{ background: LEAVE_COLORS.holiday.bg }} /> Annual Leave

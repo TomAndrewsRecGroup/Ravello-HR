@@ -46,6 +46,7 @@ export const DECISION_KINDS = [
   'sr_triage',
   'enquiry_intent',
   'bd_next_action',
+  'candidate_feedback_reason',
 ] as const;
 export type DecisionKind = typeof DECISION_KINDS[number];
 

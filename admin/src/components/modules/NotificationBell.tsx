@@ -69,6 +69,16 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   enquiry_received:           { icon: Users,         color: 'var(--purple)' },
   policy_ack_signed:          { icon: CheckCircle2,  color: 'var(--success)' },
   policy_ack_needs_email:     { icon: AlertTriangle, color: 'var(--amber)' },
+  role_stage_changed:         { icon: Briefcase,     color: 'var(--purple)' },
+  candidate_shared:           { icon: Users,         color: 'var(--purple)' },
+  interview_scheduled:        { icon: CalendarClock, color: 'var(--blue)' },
+  interview_cancelled:        { icon: CalendarClock, color: 'var(--ink-faint)' },
+  offer_sent:                 { icon: Briefcase,     color: 'var(--teal)' },
+  offer_decided:              { icon: Briefcase,     color: 'var(--teal)' },
+  role_stale:                 { icon: Briefcase,     color: 'var(--amber)' },
+  offer_deadline:             { icon: CalendarClock, color: 'var(--amber)' },
+  referral_review_pending:    { icon: Users,         color: 'var(--amber)' },
+  referral_scan_failed:       { icon: AlertTriangle, color: 'var(--red)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

@@ -41,6 +41,8 @@ export const TRIGGERED_ENTITIES = [
   'companies',
   'enquiries',
   'bd_companies',
+  'interview_schedules',
+  'referral_scan_runs',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -57,6 +59,9 @@ export const REMINDER_ENTITIES = [
   'service_requests',
   'internal_tasks',
   'hs_provider_companies',
+  'requisitions',
+  'offers',
+  'referral_applications',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

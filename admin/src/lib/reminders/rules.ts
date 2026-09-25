@@ -156,6 +156,39 @@ REMINDERS.push({
   buckets: ['due_30', 'due_7'],
 });
 
+// ── HIRE ──────────────────────────────────────────────────────
+// A role with no stage change for two weeks (stage_changed_at, 104);
+// an offer against its deadline; a referral left in the review queue.
+const OPEN_STAGES = ['submitted', 'in_progress', 'shortlist_ready', 'interview', 'offer'];
+export const STALE_ROLE_AFTER_DAYS = 14;
+export const REFERRAL_REVIEW_AFTER_DAYS = 2;
+REMINDERS.push(
+  {
+    id: 'requisitions', entity: 'requisitions',
+    select: 'id, company_id, title, stage_changed_at, assigned_recruiter',
+    query: (sb, from, to) => sb.from('requisitions').select('id, company_id, title, stage_changed_at, assigned_recruiter')
+      .in('stage', OPEN_STAGES).not('stage_changed_at', 'is', null).order('id').range(from, to),
+    dueDateOf: r => (r.stage_changed_at ? addDays(String(r.stage_changed_at), STALE_ROLE_AFTER_DAYS) : null),
+    buckets: ['overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'offers', entity: 'offers',
+    select: 'id, company_id, requisition_id, candidate_id, status, deadline',
+    query: (sb, from, to) => sb.from('offers').select('id, company_id, requisition_id, candidate_id, status, deadline')
+      .in('status', ['sent', 'verbal_accepted']).not('deadline', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.deadline),
+    buckets: ['due_7', 'due_0', 'overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'referral_applications', entity: 'referral_applications',
+    select: 'id, company_id, requisition_id, candidate_id, status, created_at',
+    query: (sb, from, to) => sb.from('referral_applications').select('id, company_id, requisition_id, candidate_id, status, created_at')
+      .eq('status', 'review_pending').order('id').range(from, to),
+    dueDateOf: r => (r.created_at ? addDays(String(r.created_at), REFERRAL_REVIEW_AFTER_DAYS) : null),
+    buckets: ['overdue', 'overdue_weekly'],
+  },
+);
+
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;
   const one = Array.isArray(inst) ? inst[0] : inst;

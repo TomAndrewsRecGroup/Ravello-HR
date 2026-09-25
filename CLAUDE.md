@@ -2367,3 +2367,60 @@ ever ended when an admin pressed Mark Signed on their behalf.
 - **Migration 103 is additive; apply before the deploy.** No CHECK to
   follow: `acknowledged_via` is constrained in 103 itself because
   nothing wrote the column before.
+
+---
+
+## HIRE in sync: the client hears what staff do, and dates are watched (2026-09-25, migrations 104a-104)
+
+PR 5 of the connective-tissue plan. `lib/events/hireRules.ts` is the
+registry. Everything a client is told here follows a STAFF write; a
+client's own writes already reach staff through `candidate_decided`
+and, now, `offer_decided`.
+
+- **Staff write → client admins**, in-app and emailed at once (clients
+  default immediate): a stage move (`role_stage_changed`, with the
+  funnel label and a one-line meaning; a move back to `submitted` and
+  a client's own write are ignored), the "Send to client" toggle
+  (`candidate_shared`, also a row created already shared), an
+  interview booked / moved / cancelled, an offer sent (with deadline
+  and proposed start). An offer decision tells the side that did not
+  make it: a client's decision → staff, a staff-recorded one → the
+  client. Written acceptance still starts employment (PR 3).
+- **An interview is ONE row on the client calendar.**
+  `lib/hiring/interviewCalendar.ts` upserts `company_calendar_events`
+  keyed `source_ref = interview:<id>` (unique per company, 104;
+  `event_type = 'interview'`, 104a), in **Europe/London** time — a
+  9am summer interview stored as 08:00Z is shown at 09:00. A reschedule
+  updates the same row, a cancellation deletes it, a re-processed event
+  adds nothing. Hand-added events have no `source_ref` and are
+  unconstrained.
+- **`requisitions.stage_changed_at` / `filled_at`** are stamped by a
+  BEFORE trigger (`requisition_stage_stamp`), so every writer agrees:
+  `filled_at` is set once and never overwritten by a second fill.
+  Backfilled from `updated_at`. The role page shows "Time to Hire".
+- **Reminders** (`REMINDER_ENTITIES` +3): a role with no stage change
+  for 14 days nags staff, then weekly (`role_stale`); an offer against
+  its `deadline` warns staff and the client at 7 days and on the day,
+  and past it only staff, urgently (`offer_deadline`) — it is NOT
+  auto-lapsed, a verbal acceptance may simply be unrecorded; a
+  `review_pending` referral older than 2 days produces **one note per
+  role per ISO week carrying the live count** (`referral_review_pending`),
+  however many rows the cron emits, and none once the queue drains.
+- **A failed referral scan** (`referral_scan_runs.ok = false`; the
+  table is now in the outbox with company NULL and counts only, never
+  the tally or notes) tells staff **once per day**, not once per hour.
+- **Jev `candidate_feedback_reason`**: on a client rejection with
+  `client_feedback`, the text goes in as one named, clipped state field
+  and the answer (reason from `FEEDBACK_REASONS`, actionable) is written
+  to `candidates.feedback_triage` and shown as a "Jev: …" line under the
+  status on the admin role page. It writes nothing else; an option the
+  question never offered is refused by the transport and recorded as an
+  error. `client_feedback` stays out of every whitelist
+  (`platformEventsSql.test.ts` FORBIDDEN).
+
+Mutations reintroduced and caught (7): a client's stage write telling
+the client, the calendar upsert without its key, the scan alert keyed
+per run, Jev writing a status, the backlog note per row, calendar times
+in UTC, `client_feedback` in the interview whitelist. 104a then 104
+applied live 2026-09-25 after the rolled-back probe
+(`supabase/probes/104_hire_flow.sql`); no CHECK to apply after deploy.

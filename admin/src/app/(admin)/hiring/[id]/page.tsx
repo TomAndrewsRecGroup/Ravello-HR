@@ -10,6 +10,7 @@ import { User, ExternalLink } from 'lucide-react';
 
 import { CANDIDATE_CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLE, HIRING_STAGE_LABELS, labelFor, valueFor } from '@/lib/ui/statusMaps';
 import { statusColour, statusLabel } from '@/lib/referral/statusMeta';
+import { feedbackReasonLabel } from '@/lib/hiring/jevQuestions';
 export const metadata: Metadata = { title: 'Requisition Detail' };
 // Removed 'edge' runtime: Vercel serverless (Node) runs in dub1, same
 // AWS region as Supabase eu-west-1 — drops Supabase RTT from ~120ms
@@ -36,6 +37,10 @@ const FRICTION_STYLE: Record<string, React.CSSProperties> = {
 
 function daysOpen(createdAt: string) {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+}
+/** Time to hire: created → filled_at (104), whole days. */
+function daysBetween(from: string, to: string) {
+  return Math.max(0, Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 86400000));
 }
 
 // Recent-first, 25 at a time. A role scanned by the referral pipeline for
@@ -64,12 +69,12 @@ export default async function RequisitionDetailPage({
       // editor from this row, so an unselected column reads as undefined,
       // the editor shows its default, and pressing Save writes that
       // default over a real stored value — GBP over USD, silently.
-      .select('id,company_id,title,department,seniority,stage,salary_range,salary_min,salary_max,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,location,employment_type,working_model,description,must_haves,nice_to_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,companies(id,slug,name,manatal_client_id)')
+      .select('id,company_id,title,department,seniority,stage,salary_range,salary_min,salary_max,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,location,employment_type,working_model,description,must_haves,nice_to_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,filled_at,companies(id,slug,name,manatal_client_id)')
       .eq('id', params.id)
       .single(),
     supabase
       .from('candidates')
-      .select('id,full_name,email,cv_url,summary,approved_for_client,client_status,client_feedback,screening_score,source,created_at', { count: 'exact' })
+      .select('id,full_name,email,cv_url,summary,approved_for_client,client_status,client_feedback,feedback_triage,screening_score,source,created_at', { count: 'exact' })
       .eq('requisition_id', params.id)
       .order('created_at', { ascending: false })
       .range(candFrom, candTo),
@@ -131,6 +136,7 @@ export default async function RequisitionDetailPage({
     { label: 'Employment Type',  value: r.employment_type },
     { label: 'Salary Range',     value: r.salary_range },
     { label: 'Days Open',        value: `${days}d` },
+    { label: 'Time to Hire',     value: r.filled_at ? `${daysBetween(r.created_at, r.filled_at)}d (filled ${String(r.filled_at).slice(0, 10)})` : null },
     { label: 'Assigned Recruiter', value: r.assigned_recruiter },
   ];
 
@@ -277,9 +283,16 @@ export default async function RequisitionDetailPage({
                                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>via referral pipeline</p>
                                 </>
                               ) : (
-                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
-                                  {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
-                                </span>
+                                <>
+                                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
+                                    {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
+                                  </span>
+                                  {feedbackReasonLabel(c.feedback_triage) && (
+                                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-faint)' }} title={c.client_feedback ?? ''}>
+                                      Jev: {feedbackReasonLabel(c.feedback_triage)}
+                                    </p>
+                                  )}
+                                </>
                               )}
                             </td>
                             <td className="py-3">

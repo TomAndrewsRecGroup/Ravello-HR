@@ -33,6 +33,7 @@ const db = fakeSupabase({
   hs_activities: [{ id: 'row-1', activity_type: 'site_visit', title: 'T', summary: 'S' }],
   hs_register_completions: [{ id: 'comp-1', provider_id: 'p1' }],
   companies: [{ id: 'co-1', feature_flags: {} }],
+  candidates: [{ id: 'cand-1', full_name: 'Cand' }], requisitions: [{ id: 'r', title: 'Engineer' }],
   jev_decisions: [],
 });
 const ctx = (event: PlatformEvent) => ({
@@ -80,8 +81,13 @@ describe('rules registry', () => {
       ev({ entity_type: 'documents', event_type: 'created', actor_kind: 'staff', payload: { new: { name: 'Handbook' }, old: {}, changed: [] } }),
       ev({ entity_type: 'documents', event_type: 'updated', actor_kind: 'staff', payload: { new: { name: 'Handbook', approved_at: '2026-09-25' }, old: { approved_at: null }, changed: ['approved_at'] } }),
       ev({ entity_type: 'policy_acknowledgements', event_type: 'updated', actor_kind: 'system', payload: { new: { status: 'acknowledged', document_id: 'doc-1', employee_id: 'row-1' }, old: { status: 'pending' }, changed: ['status'] } }),
+      ev({ entity_type: 'requisitions', event_type: 'updated', actor_kind: 'staff', payload: { new: { stage: 'interview', title: 'Engineer' }, old: { stage: 'in_progress' }, changed: ['stage'] } }),
+      ev({ entity_type: 'candidates', event_type: 'updated', actor_kind: 'staff', payload: { new: { approved_for_client: true, full_name: 'A', requisition_id: 'r' }, old: { approved_for_client: false }, changed: ['approved_for_client'] } }),
+      ev({ entity_type: 'offers', event_type: 'updated', actor_kind: 'staff', payload: { new: { status: 'sent', candidate_id: 'cand-1', requisition_id: 'r', deadline: '2026-10-10' }, old: { status: 'draft' }, changed: ['status'] } }),
+      ev({ entity_type: 'offers', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'declined', candidate_id: 'cand-1', requisition_id: 'r' }, old: { status: 'sent' }, changed: ['status'] } }),
+      ev({ entity_type: 'offers', event_type: 'updated', actor_kind: 'staff', payload: { new: { status: 'written_accepted', candidate_id: 'cand-1', requisition_id: 'r' }, old: { status: 'sent' }, changed: ['status'] } }),
       ...REMINDER_ENTITIES.flatMap(e => (['due_30', 'due_7', 'due_0', 'overdue', 'overdue_w2'] as const).map(bucket =>
-        ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', provider_id: 'p1', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01' } } }))),
+        ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', provider_id: 'p1', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01', candidate_id: 'cand-1', requisition_id: 'r', status: 'sent' } } }))),
     ];
     let produced = 0;
     for (const e of samples) {
