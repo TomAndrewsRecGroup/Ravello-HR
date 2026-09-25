@@ -50,6 +50,12 @@ beforeEach(() => {
     compliance_items: [{ id: 'item-1', company_id: 'co-1', title: 'Fire alarm test', domain: 'hs' }],
     hs_register_completions: [{ id: 'comp-1', item_id: 'item-1', company_id: 'co-1' }],
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
+    hs_audits: [{ id: 'audit-1', company_id: 'co-1', title: 'Fire safety walk-round', conducted_on: '2026-09-24', score: 67 }],
+    hs_audit_responses: [
+      { id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Fire exits clear?', rating: 'fail', comment: 'Boxes stacked against the rear exit.' },
+      { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
+      { id: 'resp-3', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Alarm tested this quarter?', rating: 'na', comment: null },
+    ],
     notification_preferences: [{ user_id: 'staff-1', email_mode: 'immediate', muted_types: [], weekly_summary: true }],
     platform_events: [], notifications: [], email_log: [], actions: [], jev_decisions: [],
   });
@@ -178,5 +184,45 @@ describe('hs rules', () => {
     }));
     await processEvents(db.client, { rules: RULES });
     expect(db.tables.notifications.some(n => n.type === 'hs_evidence_added')).toBe(false);
+  });
+
+  const audit = () => eventRow({
+    id: 16, entity_type: 'hs_audits', event_type: 'created', actor_kind: 'staff', entity_id: 'audit-1',
+    payload: { new: { title: 'Fire safety walk-round', site_id: null, template_id: null, conducted_on: '2026-09-24', score: 67 }, old: {}, changed: [] },
+  });
+
+  it('a submitted audit raises one action per FAILED answer, keyed to that answer, and one summary notification each side', async () => {
+    db.tables.platform_events.push(audit());
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    // one finding (resp-1); the pass and the na raise nothing
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_audit_finding', priority: 'high',
+      source_ref: 'hs_audit_response:resp-1', related_entity_type: 'hs_audit', related_entity_id: 'audit-1',
+      title: 'Audit finding: Fire exits clear?', description: 'Boxes stacked against the rear exit.',
+    });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_audit_completed', link: '/protect/actions' });
+    expect(client.title).toBe('Audit completed: Fire safety walk-round — 67%');
+    expect(client.body).toContain('1 finding');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'hs_audit_completed', link: '/health-safety/co-1/audits' });
+    expect(staff.title).toContain('Sample Co');
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+  });
+
+  it('a clean audit (no failed answers) raises no action, and the client link points at the timeline', async () => {
+    db.tables.hs_audit_responses = db.tables.hs_audit_responses.map(r => r.rating === 'fail' ? { ...r, rating: 'pass' } : r);
+    db.tables.platform_events.push(audit());
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ link: '/protect/timeline' });
+    expect(client.body).toBe('No findings.');
   });
 });

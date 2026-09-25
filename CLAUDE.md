@@ -3206,3 +3206,124 @@ five CI guards pass (`check-route-validation` ratchet shrank 47→45),
 both production builds compile. Migration 109 applied live and
 verified (`pg_get_constraintdef` read back and compared against the
 two source tuples).
+
+---
+
+## H&S Phase 3: on-site audits (2026-09-25, migration 110)
+
+An audit is one visit's checklist run: a set of questions each answered
+pass/fail/N-A, scored, and — for every failed answer — a client action
+raised automatically. The schema for this was anticipated as far back as
+094/095: `hs_scope_for_entity('audit')` already returned `'audits'` and
+`HS_ENTITY_LABELS` already had an `audit` entry, so evidence uploads
+against an audit (`entity_type: 'audit'`) needed no vocabulary change at
+all — this phase only had to build the tables, the runner and the rule.
+
+### Insert-only, like completions/activities/files — no draft status
+
+`hs_audits`/`hs_audit_responses` follow the same "a correction is a new
+row" discipline as the register's other evidence tables: `REVOKE UPDATE,
+DELETE, TRUNCATE` from every session. There is deliberately **no draft
+status stored server-side** — the offline-capable runner keeps every
+in-progress answer in the browser's own `localStorage` (auto-saved on
+every keystroke, keyed per company so a page reload resumes the same
+draft) until the auditor presses Submit, which is the only network call
+the whole visit makes. **What "offline-capable" means here, precisely**:
+the admin service worker (`public/sw.js`) deliberately never caches
+`/api/`, so this is not a full background-sync queue — it is a runner
+that never touches the network while working, and retries its one
+submit call automatically on the browser's `online` event if that call
+fails. That covers the actual failure mode a site visit has (patchy
+signal *while working*), not every conceivable offline scenario; a
+submit made from a device that never regains connectivity stays a local
+draft until it does.
+
+### The idempotency problem an insert-only table creates, and the fix
+
+`id` is **client-generated** (`crypto.randomUUID()` when the runner
+starts), so a retried submit after a dropped connection — the runner
+cannot know whether the first attempt actually landed — must not create
+a second audit or re-raise its findings and notifications a second
+time. Naively, that only needs "insert if this id doesn't exist yet".
+But an audit and its N responses are two separate inserts, and
+`hs_audits` has no UPDATE/DELETE grant to fix up an orphan: if the
+audit insert succeeded and the responses insert then failed (or the
+connection dropped between the two calls), the result is a **permanently
+un-correctable audit row with zero responses** — which the automation
+rule reads as "zero findings", reporting a clean audit that was never
+actually checked, forever.
+
+The fix is `hs_submit_audit()`, one `SECURITY INVOKER` (not DEFINER —
+this exists for the TRANSACTION, not to escalate privilege; RLS applies
+exactly as if the caller ran the inserts directly) plpgsql function that
+inserts the audit row and every response in one statement/transaction:
+either both succeed or neither does. Called once, with the same `id`
+twice, it returns the existing audit unchanged the second time. Proven
+live in a rolled-back transaction before shipping: calling it twice with
+the same id produced exactly one audit row, with the FIRST call's title
+and responses, not the second's.
+
+### Score and findings
+
+`lib/hs/auditScore.ts` (`computeAuditScore`, pure, unit-tested):
+pass ÷ (pass + fail) as a percentage; an `na` answer is excluded from
+BOTH sides of the ratio, not counted as either — one pass, one fail and
+two N/A is 50%, not 25% (N/A counted as fail) or 75% (N/A dropped from
+the denominator only). Null when nothing is applicable (every answer
+N/A, or no answers). **Computed server-side, in the submit route, never
+trusted from the client** — the same function the runner also calls for
+its live "X% so far" preview, so the two can never disagree, but only
+the route's own computation is what gets stored.
+
+### The rule: one platform_event per AUDIT, not per answer
+
+`hs_audits` is in `TRIGGERED_ENTITIES`; `hs_audit_responses` is
+deliberately NOT — a 20-question audit would otherwise raise 20 outbox
+events for one visit. The `hs_audit_completed` rule
+(`lib/events/hsRules.ts`) reads the audit's own event once and queries
+`hs_audit_responses` directly for the failed ones: one `ActionConsequence`
+per failed answer (`action_type: 'hs_audit_finding'`, priority `high`,
+`source_ref: hs_audit_response:<id>`), plus one summary notification to
+the client admins and one to staff — never one notification per finding,
+which would spam an admin the moment a real audit finds five things
+wrong on one visit. Same reasoning drives the Safety Timeline side:
+`hs_audits` alone is a Timeline SOURCE (`hs_event_audit()`, one line per
+audit — "Fire safety walk-round — 24 Sep 2026 (67%)"); `hs_audit_responses`
+is reference data on the timeline test's own terms, not a source, for
+the identical "one line per visit, not one per answer" reason.
+
+### Templates are staff reference data, same posture as sector packs
+
+`hs_audit_templates`/`hs_audit_template_items`: staff-only RLS, never a
+Timeline entry on their own — editing a template's wording is not a
+record of anything that happened to a specific client. One starter
+template ships seeded in the migration itself (eight common findings
+across fire, electrical, first aid, COSHH, work equipment, policy and
+housekeeping), the same reasoning 106's five sector packs were seeded:
+so the runner has something to pick on day one. `AuditTemplatesClient.tsx`
+(`/health-safety/audit-templates`) is a light CRUD — add a template, add
+questions, deactivate — using direct client-side Supabase inserts under
+staff RLS, the same pattern `DocumentsClient.tsx`/`ActivitiesClient.tsx`
+already use, not a bespoke API route (there is nothing here a session
+insert under RLS doesn't already handle correctly).
+
+### What this does NOT do yet
+
+Evidence photos are not wired into the runner UI — `hs_files` already
+accepts `entity_type: 'audit'` with no schema change needed (095/105's
+existing infrastructure), but attaching a photo to a specific failed
+answer during the visit is a real next step, not built here. The runner
+also has no "resume on a different device" story: the draft lives in
+ONE browser's `localStorage`, keyed per company, so starting the same
+audit on a second device starts a second, independent draft.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (800
+admin — 780 + 4 `auditScore.test.ts` + 6 route tests + 2 `hsRules.test.ts`
++ existing suites picking up the new tuples/tests; 234 portal — 232 + 2,
+`portalPagesLinked.test.ts` picking up `/protect/audits` automatically),
+all five CI guards pass (admin routes 46→49 pages), both production
+builds compile. Migration 110 (plus its `hs_submit_audit()` function,
+applied as a same-file follow-up call, and its starter-template seed)
+applied live and verified: RLS on and correctly scoped for all four new
+tables, and the atomic-insert/idempotency behaviour proven with a
+rolled-back live transaction before this shipped.

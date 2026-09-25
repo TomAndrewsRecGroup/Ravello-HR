@@ -25,11 +25,67 @@ const admins = (companyId: string): Audience[] => [{ kind: 'company_admins', com
 
 export const HS_FAILED_CHECK_ACTION_TYPE = 'hs_failed_check';
 export const HS_ACTIONS_RAISED_ACTION_TYPE = 'hs_actions_raised';
+export const HS_AUDIT_FINDING_ACTION_TYPE = 'hs_audit_finding';
 export const FOLLOWUP_GATE = 0.8;
 
 async function itemTitle(ctx: { sb: { from: (t: string) => any } }, itemId: string): Promise<string> {
   const { data } = await ctx.sb.from('compliance_items').select('title').eq('id', itemId).maybeSingle();
   return (data as { title?: string } | null)?.title ?? 'Register item';
+}
+
+// On-site audit (110): one platform_event per audit (not per answer —
+// a 20-question checklist would otherwise raise 20 events for one
+// visit). The responses are read directly from the row the event
+// points at, one query, here.
+async function auditSubmittedConsequences(ctx: {
+  sb: { from: (t: string) => any };
+  event: PlatformEvent;
+  companyName: () => Promise<string>;
+}): Promise<Consequence[]> {
+  const { event, sb, companyName } = ctx;
+  if (!event.company_id || !event.entity_id) return [];
+  const { new: n } = rowPayload(event);
+  const { data } = await sb.from('hs_audit_responses')
+    .select('id, prompt, comment')
+    .eq('audit_id', event.entity_id)
+    .eq('rating', 'fail');
+  const findings = (data ?? []) as { id: string; prompt: string; comment: string | null }[];
+  const title = s(n.title, 'Audit');
+  const scoreText = n.score == null ? '' : ` — ${Math.round(Number(n.score))}%`;
+  const findingText = findings.length === 1 ? '1 finding' : `${findings.length} findings`;
+  const company = await companyName();
+
+  const out: Consequence[] = findings.map(f => ({
+    kind: 'action',
+    companyId: event.company_id!,
+    sourceRef: `hs_audit_response:${f.id}`,
+    row: {
+      action_type: HS_AUDIT_FINDING_ACTION_TYPE, priority: 'high',
+      title: `Audit finding: ${f.prompt}`.slice(0, 200),
+      description: f.comment,
+      related_entity_type: 'hs_audit', related_entity_id: event.entity_id,
+      created_by_admin: true,
+    },
+  }));
+  out.push({
+    kind: 'notify',
+    input: {
+      audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_audit_completed', urgent: findings.length > 0,
+      title: `Audit completed: ${title}${scoreText}`,
+      body:  findings.length > 0 ? `${findingText} — actions have been added to your PROTECT actions.` : 'No findings.',
+      link:  { portal: findings.length > 0 ? '/protect/actions' : '/protect/timeline' },
+    },
+  });
+  out.push({
+    kind: 'notify',
+    input: {
+      audiences: staffOnly, companyId: event.company_id, type: 'hs_audit_completed',
+      title: `${company || 'A client'}: audit completed — ${title}${scoreText}`,
+      body:  findingText,
+      link:  { admin: `/health-safety/${event.company_id}/audits` },
+    },
+  });
+  return out;
 }
 
 export const hsRules: Rule[] = [
@@ -213,6 +269,13 @@ export const hsRules: Rule[] = [
         },
       }];
     },
+  },
+  {
+    // hs_audits is INSERT-only (110) — every row is already a finished
+    // submission, so `created` is the only event this ever needs.
+    id: 'hs_audit_completed',
+    on: 'hs_audits.created',
+    then: auditSubmittedConsequences,
   },
 ];
 

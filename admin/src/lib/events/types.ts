@@ -33,6 +33,7 @@ export const TRIGGERED_ENTITIES = [
   'hs_activities',
   'hs_files',
   'hs_documents',
+  'hs_audits',
   'onboarding_instances',
   'onboarding_task_progress',
   'offboarding_instances',

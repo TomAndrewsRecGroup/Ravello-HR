@@ -6,6 +6,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'register',   label: 'Register' },
   { seg: 'documents',  label: 'Documents' },
   { seg: 'activities', label: 'Activities' },
+  { seg: 'audits',     label: 'Audits' },
   { seg: 'timeline',   label: 'Timeline' },
 ];
 
