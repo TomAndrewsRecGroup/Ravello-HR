@@ -76,6 +76,17 @@ export const HS_EQUIPMENT_STATUS_LABELS: Record<HsEquipmentStatus, string> = {
   decommissioned: 'Decommissioned',
 };
 
+// Equipment inspection outcomes (114) — insert-only evidence trail, the
+// same "a correction is a new row" shape as hs_register_completions.
+// Unlike HS_COMPLETION_OUTCOMES there is no 'pass_with_actions' middle
+// state: an inspection is a straightforward safe/unsafe call.
+export const HS_EQUIPMENT_INSPECTION_OUTCOMES = ['pass', 'fail'] as const;
+export type HsEquipmentInspectionOutcome = typeof HS_EQUIPMENT_INSPECTION_OUTCOMES[number];
+export const HS_EQUIPMENT_INSPECTION_OUTCOME_LABELS: Record<HsEquipmentInspectionOutcome, string> = {
+  pass: 'Pass',
+  fail: 'Fail',
+};
+
 export const HS_RECURRENCE_UNITS = ['day', 'week', 'month', 'year'] as const;
 export type HsRecurrenceUnit = typeof HS_RECURRENCE_UNITS[number];
 
@@ -145,4 +156,5 @@ export const HS_ENTITY_LABELS: Record<string, string> = {
   audit_response:      'Audit finding',
   incident:            'Incident',
   equipment:           'Equipment',
+  equipment_inspection: 'Equipment inspection',
 };

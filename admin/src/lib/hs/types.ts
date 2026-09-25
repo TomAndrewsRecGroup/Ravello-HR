@@ -2,7 +2,7 @@
 // clients here are untyped, so these are what the pages agree on.
 
 import type {
-  HsActivityType, HsAuditRating, HsCompletionOutcome, HsEquipmentStatus,
+  HsActivityType, HsAuditRating, HsCompletionOutcome, HsEquipmentInspectionOutcome, HsEquipmentStatus,
   HsIncidentSeverity, HsIncidentStatus, HsIncidentType, HsRecurrenceUnit,
 } from './vocab';
 
@@ -178,5 +178,17 @@ export interface HsActivityAttendee {
   activity_id: string;
   company_id: string;
   employee_id: string;
+  created_at: string;
+}
+
+export interface HsEquipmentInspection {
+  id: string;
+  equipment_id: string;
+  company_id: string;
+  inspected_on: string;
+  outcome: HsEquipmentInspectionOutcome;
+  next_due_on: string | null;
+  notes: string | null;
+  recorded_by_kind: string;
   created_at: string;
 }
