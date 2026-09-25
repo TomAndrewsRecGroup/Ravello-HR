@@ -63,6 +63,7 @@ export const REMINDER_ENTITIES = [
   'requisitions',
   'offers',
   'referral_applications',
+  'training_records',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

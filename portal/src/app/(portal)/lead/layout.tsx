@@ -29,6 +29,7 @@ const TAB_GROUPS = [
     tabs: [
       { href: '/lead/learning',   label: 'Learning' },
       { href: '/lead/training',   label: 'Development needs' },
+      { href: '/lead/training-records', label: 'Training Records' },
       { href: '/lead/reviews',    label: 'Reviews' },
       { href: '/lead/skills',     label: 'Skills' },
       { href: '/lead/roadmap',    label: 'Roadmap' },

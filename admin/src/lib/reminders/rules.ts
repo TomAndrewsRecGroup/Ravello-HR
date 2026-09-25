@@ -64,6 +64,19 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue', 'overdue_weekly'],
   },
   {
+    // training_records links employee_id rather than storing a
+    // free-text employee_name (unlike employee_documents) — the
+    // consuming rule (lib/events/rules.ts) looks the name up itself,
+    // the same way hsRules.ts's itemTitle() does, rather than an embed
+    // here: slimRow() never lets an embed into the reminder payload.
+    id: 'training_records', entity: 'training_records',
+    select: 'id, company_id, employee_id, course_name, expires_on',
+    query: (sb, from, to) => sb.from('training_records').select('id, company_id, employee_id, course_name, expires_on')
+      .not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'employee_documents', entity: 'employee_documents',
     select: 'id, company_id, title, doc_type, employee_name, expiry_date, status',
     query: (sb, from, to) => sb.from('employee_documents').select('id, company_id, title, doc_type, employee_name, expiry_date, status')

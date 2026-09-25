@@ -255,6 +255,32 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // The reminder payload never carries an embed (slimRow() in
+    // lib/reminders/run.ts strips it), so the employee's name — needed
+    // for a readable title since training_records links employee_id
+    // rather than storing a free-text name — is looked up here, the
+    // same way hsRules.ts's itemTitle() resolves a title by id.
+    id: 'training_record_reminder',
+    on: 'training_records.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const expired = bucket === 'overdue';
+      const employeeId = s(row.employee_id);
+      let employeeName = 'an employee';
+      if (employeeId) {
+        const { data } = await sb.from('employee_records').select('full_name').eq('id', employeeId).maybeSingle();
+        employeeName = (data as { full_name?: string } | null)?.full_name ?? employeeName;
+      }
+      return [notifyC({
+        audiences: admins(event.company_id ?? ''), companyId: event.company_id,
+        type: expired ? 'training_record_expired' : 'training_record_expiring',
+        title: `${s(row.course_name, 'Training')} for ${employeeName} ${expired ? `expired on ${due_date}` : `expires ${due_date}`}`,
+        link:  { portal: '/lead/training-records' },
+      })];
+    },
+  },
+  {
     id: 'document_review_reminder',
     on: 'documents.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
