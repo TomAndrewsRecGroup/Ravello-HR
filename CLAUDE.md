@@ -3417,3 +3417,117 @@ admin — 800 + 5 `trainingRecordsSql.test.ts` + 4
 automatically), all five CI guards pass, both production builds compile.
 Migration 111 applied live and verified (`pg_policies` read back:
 exactly one DELETE policy, restricted; no client policy is `FOR ALL`).
+
+---
+
+## H&S Phase 5: incidents/RIDDOR, toolbox talks, equipment, KPIs (2026-09-25, migration 112)
+
+The last item in the H&S roadmap's Phase 5. One migration, four things,
+because three are small extensions of existing infrastructure rather
+than new subsystems — see the migration's own header comment for why
+each one is shaped the way it is.
+
+- **`hs_incidents` is MUTABLE, register-shaped — deliberately NOT
+  insert-only** like `hs_audits`/`hs_register_completions`. An
+  investigation is updated over time (status moves
+  `open → investigating → closed`, `riddor_reported_on` gets filled in
+  later), so unlike those tables there is no
+  `REVOKE UPDATE, DELETE, TRUNCATE`. `hsSqlShape.test.ts` pins the
+  absence of that revoke as explicitly as it pins the presence of one
+  elsewhere.
+- **This is the client's own legal RIDDOR record-keeping duty.** Core
+  OS 360 records it on their behalf, so — unlike a failed register
+  check, which raises a CLIENT action — a RIDDOR-reportable incident
+  raises a STAFF-assigned internal task (`createKeyedInternalTask`,
+  reused from `supportRules.ts`, keyed `hs_incident_riddor:<id>`,
+  assigned to the account owner via `staffOwnerFor`). Reporting to the
+  HSE is Core OS 360's job, not something to hand the client. The
+  client reads the incident (`hs_incidents_client_read`) but nothing
+  here asks them to act.
+- **No specific day-count RIDDOR deadline is asserted anywhere in code
+  or copy.** RIDDOR's reporting window varies by incident category
+  (immediately by phone for a death or specified injury, ten days for
+  others, and so on) — a wrong number baked into a notification would
+  be worse than the generic "report without delay" framing actually
+  used.
+- **Toolbox talks are `'toolbox_talk'` joining `hs_activities
+  .activity_type`, not a new table.** A toolbox talk is close enough
+  in shape to the existing activity types (095 already had `'meeting'`)
+  that a second near-identical table would just be the same Timeline
+  logic copied. What it needs that other activities never did is an
+  attendee list — `hs_activity_attendees`, the one genuinely new table
+  for this — company_id filled from the parent activity by a trigger
+  (`hs_activity_attendee_fill`), never trusted from the caller, the
+  same discipline `hs_audit_response_fill()` (110) already uses.
+  `hs_activity_attendees` has no `_hs_event` Timeline trigger of its
+  own: the toolbox talk's own `hs_activities` row already fires the
+  Timeline entry, and a per-attendee line would put N entries on the
+  Timeline for one talk.
+- **Equipment register (`hs_equipment`) is register-shaped like
+  `compliance_items`**, not completion-shaped like
+  `hs_register_completions` — a mutable `next_inspection_due` a session
+  updates directly, with no separate "was it inspected" evidence trail.
+  This is MVP scope: a real gap if evidence-per-inspection is ever
+  needed, noted here rather than quietly assumed away.
+- **KPIs are not a table.** `lib/hs/kpis.ts`'s `computeHsKpis()` is a
+  pure function computed at READ TIME from existing rows (incidents,
+  activities, audits, equipment) — the same posture
+  `lib/health/scoring.ts` already takes for a client's health score:
+  no stored aggregate that can drift out of sync with the rows it
+  summarises. "Last 12 months" is a rolling window from `today`
+  (injected, never `Date.now()` inside the pure function, so it is
+  testable), not a calendar year.
+- **The RIDDOR task and the failed-check action are NOT the same
+  consequence shape, on purpose.** `hs_check_failed` (Phase 2) raises a
+  row in `actions` — the CLIENT'S table, shown on `/protect/actions`.
+  `hs_incident_reported`'s RIDDOR branch raises a row in
+  `internal_tasks` — STAFF'S table, shown on admin `/tasks`. Getting
+  this backwards (a client action for a staff-owned legal duty) was the
+  first draft of this rule; caught by re-reading `hsRules.ts`'s own
+  header comment about who does what, not by a test — the test that
+  now pins it (`hsRules.test.ts`) was written after.
+- **Equipment reminders reuse the existing reminders/rules.ts + rules.ts
+  split**, same shape as every other dated entity: `hs_equipment` in
+  `REMINDER_ENTITIES` (not `TRIGGERED_ENTITIES` — no outbox trigger on
+  `hs_equipment` itself, only a reminder), a `ReminderRule` reading
+  `next_inspection_due` for `in_service` equipment, and a
+  `hs_equipment_reminder` consequence in the generic `rules.ts` (not
+  `hsRules.ts` — same file `hs_document_review_reminder` already lives
+  in, because a reminder consequence is generic machinery regardless of
+  which domain the entity belongs to). Its own notification type,
+  `hs_equipment_inspection_due`, was split out from
+  `hs_document_review_due` after noticing the two would otherwise
+  conflate an equipment inspection with a document review on the bell
+  and in any future per-type dashboard.
+- **`hs_incidents` IS in `TRIGGERED_ENTITIES`** (its own outbox trigger,
+  whitelist `incident_type, severity, riddor_reportable,
+  riddor_reported_on, status, site_id` — never `description`,
+  `injured_person_name` or `immediate_action`). `hs_equipment` is
+  NOT — it has no consequence that needs firing off a create/update, so
+  no outbox trigger for it, only the reminders cron the same way
+  `training_records` (Phase 4) has a reminder entity with no outbox
+  entry either.
+- Admin gets three new tabs on the per-client H&S workspace
+  (`HsCompanyTabs.tsx`): Incidents, Equipment, KPIs — direct
+  client-side Supabase writes under staff RLS
+  (`IncidentsClient.tsx`, `EquipmentClient.tsx`), the same pattern
+  `DocumentsClient.tsx`/`AuditTemplatesClient.tsx` already use, with
+  `COUNT_EXACT`/`judgeWrite` on every UPDATE. `ActivitiesClient.tsx`
+  gained an attendee picker shown only for `activity_type ===
+  'toolbox_talk'`. Portal gets read-only Incidents and Equipment tabs
+  under PROTECT, same posture as Register/Audits: nothing here is
+  self-certified.
+- Mutation-checked: disabling the RIDDOR branch (`if (riddor)` →
+  `if (false)`) was reintroduced and watched fail the new
+  `hsRules.test.ts` case before being reverted.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (827 admin, including the new `kpis.test.ts` and the `hsRules.test.ts`/
+  `vocab.test.ts` additions; 248 portal — this touched admin primarily,
+  portal's read-only pages added no new test files but
+  `moduleAccess.test.ts`/`portalPagesLinked.test.ts` picked the two new
+  routes up automatically), all five CI guards pass, both production
+  builds compile. Migration 112 applied live and verified (`pg_policies`
+  read back: RLS on, 6 policies across the three new tables, no
+  `REVOKE UPDATE` on `hs_incidents`/`hs_equipment`; `pg_constraint`
+  confirmed `hs_activities_activity_type_check` now includes
+  `'toolbox_talk'`).

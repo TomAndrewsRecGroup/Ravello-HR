@@ -19,7 +19,7 @@ const sql097 = readFileSync(`${MIG}/097_vocab_checks.sql`, 'utf8');
 // becomes staff-delivered, 2026-09-25) — its trigger goes with the
 // table, even though 096's CREATE TRIGGER text for it still exists on
 // disk from before that table was dropped.
-const LATER = ['099_lead_flow.sql', '101_support_bd.sql', '104_hire_flow.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql'];
+const LATER = ['099_lead_flow.sql', '101_support_bd.sql', '104_hire_flow.sql', '105_hs_staff_delivered.sql', '106_hs_documents_sector_packs.sql', '110_hs_audits.sql', '112_hs_incidents_equipment_toolbox.sql'];
 const parseTriggers = (text: string) => [...text.matchAll(/CREATE TRIGGER (\w+)_platform_event AFTER ([A-Z OR]+) ON public\.(\w+)\s+FOR EACH ROW EXECUTE FUNCTION public\.platform_event_row\(([^)]*)\)/g)]
   .map(m => ({ name: m[1], ops: m[2].trim(), table: m[3], cols: m[4].split(',').map(c => c.trim().replace(/^'|'$/g, '')) }));
 const byTable = new Map(parseTriggers(sql).map(t => [t.table, t]));

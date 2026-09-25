@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/modules/Toast';
 import { HS_ACTIVITY_TYPE_LABELS, HS_ACTIVITY_TYPES, type HsActivityType } from '@/lib/hs/vocab';
 import { HS_EVIDENCE_ACCEPT, evidenceUrl, uploadEvidence } from '@/lib/hs/evidence';
-import type { HsActivity, HsFile } from '@/lib/hs/types';
+import type { HsActivity, HsActivityAttendee, HsFile } from '@/lib/hs/types';
 
 /** A Jev "follow-up suggested" decision for an activity (staff only see these). */
 export interface FollowupSuggestion { decision_id: string; probability: number; severity: string; outcome: string | null }
+
+interface Employee { id: string; full_name: string }
 
 interface Props {
   companyId:  string;
@@ -20,13 +22,16 @@ interface Props {
   /** Staff only: suggestions keyed by activity id, and the right to raise an action. */
   followups?: Record<string, FollowupSuggestion>;
   canRaise?:  boolean;
+  /** For toolbox talks: who to pick as attendees, and who already attended. */
+  employees?: Employee[];
+  attendees?: HsActivityAttendee[];
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
-export default function ActivitiesClient({ companyId, canRecord, activities, files, loadError, followups = {}, canRaise = false }: Props) {
+export default function ActivitiesClient({ companyId, canRecord, activities, files, loadError, followups = {}, canRaise = false, employees = [], attendees = [] }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -35,7 +40,14 @@ export default function ActivitiesClient({ companyId, canRecord, activities, fil
   const [on, setOn] = useState(today());
   const [summary, setSummary] = useState('');
   const [fileList, setFileList] = useState<File[]>([]);
+  const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+
+  const attendeesByActivity = new Map<string, string[]>();
+  for (const a of attendees) {
+    attendeesByActivity.set(a.activity_id, [...(attendeesByActivity.get(a.activity_id) ?? []), a.employee_id]);
+  }
+  const nameFor = (id: string) => employees.find(e => e.id === id)?.full_name ?? 'Unknown';
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,11 +62,21 @@ export default function ActivitiesClient({ companyId, canRecord, activities, fil
       const p = await uploadEvidence(supabase, { companyId, entityType: 'activity', entityId: data.id, file });
       if (p) problems.push(p);
     }
+    if (type === 'toolbox_talk' && selectedAttendees.length > 0) {
+      const { error: attErr } = await supabase.from('hs_activity_attendees').insert(
+        selectedAttendees.map(employee_id => ({ activity_id: data.id, employee_id })),
+      );
+      if (attErr) problems.push(`attendees: ${attErr.message}`);
+    }
     setBusy(false);
     if (problems.length) toast(`Logged, but: ${problems.join(' ')}`, 'error');
     else toast('Logged', 'success');
-    setTitle(''); setSummary(''); setFileList([]); setOpen(false);
+    setTitle(''); setSummary(''); setFileList([]); setSelectedAttendees([]); setOpen(false);
     router.refresh();
+  }
+
+  function toggleAttendee(id: string) {
+    setSelectedAttendees(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
   const [raising, setRaising] = useState<string | null>(null);
@@ -116,6 +138,19 @@ export default function ActivitiesClient({ companyId, canRecord, activities, fil
             <span className="label">What happened (the client will see this)</span>
             <textarea className="input" rows={4} value={summary} onChange={e => setSummary(e.target.value)} maxLength={8000} />
           </label>
+          {type === 'toolbox_talk' && employees.length > 0 && (
+            <div className="block md:col-span-2">
+              <span className="label">Attendees</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {employees.map(emp => (
+                  <label key={emp.id} className="badge flex items-center gap-1.5 cursor-pointer" style={{ background: selectedAttendees.includes(emp.id) ? 'rgba(11,120,150,0.12)' : 'var(--surface-soft)' }}>
+                    <input type="checkbox" checked={selectedAttendees.includes(emp.id)} onChange={() => toggleAttendee(emp.id)} />
+                    {emp.full_name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="block md:col-span-2">
             <span className="label flex items-center gap-1.5"><Paperclip size={13} /> Files (visit report, photos)</span>
             <input type="file" multiple accept={HS_EVIDENCE_ACCEPT.join(',')} onChange={e => setFileList(Array.from(e.target.files ?? []))} className="text-sm" />
@@ -144,6 +179,11 @@ export default function ActivitiesClient({ companyId, canRecord, activities, fil
                   <span className="text-sm ml-auto" style={{ color: 'var(--ink-faint)' }}>{fmt(a.occurred_on)} · {a.recorded_by_kind}</span>
                 </div>
                 {a.summary && <p className="mt-2 text-sm whitespace-pre-wrap" style={{ color: 'var(--ink-soft)' }}>{a.summary}</p>}
+                {a.activity_type === 'toolbox_talk' && (attendeesByActivity.get(a.id) ?? []).length > 0 && (
+                  <p className="mt-2 text-xs" style={{ color: 'var(--ink-faint)' }}>
+                    Attendees: {(attendeesByActivity.get(a.id) ?? []).map(nameFor).join(', ')}
+                  </p>
+                )}
                 {(followups[a.id] || canRaise) && (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {followups[a.id] && (

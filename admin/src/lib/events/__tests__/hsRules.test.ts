@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeSupabase, eventRow, type FakeDb } from './fakeSupabase';
+import { fakeSupabase, eventRow, type FakeDb, type Row } from './fakeSupabase';
 
 // Health & Safety consequences, driven through the real consumer with
 // the real hsRules against the stateful fake. H&S is staff-delivered
@@ -214,6 +214,41 @@ describe('hs rules', () => {
     db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
     await processEvents(db.client, { rules: RULES });
     expect(db.tables.actions).toHaveLength(1);
+  });
+
+  const incident = (over: Row = {}) => eventRow({
+    id: 17, entity_type: 'hs_incidents', event_type: 'created', actor_kind: 'staff', entity_id: 'inc-1',
+    payload: { new: { incident_type: 'near_miss', severity: 'minor', occurred_on: '2026-09-24', description: 'A pallet fell from a shelf, nobody hurt.', riddor_reportable: false, status: 'open', ...over }, old: {}, changed: [] },
+  });
+
+  it('a recorded incident tells the client and staff', async () => {
+    db.tables.platform_events.push(incident());
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_incident_reported', link: '/protect/incidents' });
+    expect(client.title).toBe('Incident recorded: near miss');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'hs_incident_reported', link: '/health-safety/co-1/incidents' });
+    expect(db.tables.internal_tasks ?? []).toHaveLength(0);
+  });
+
+  it('a RIDDOR-reportable incident also raises an URGENT staff task to report it — never a client action', async () => {
+    db.tables.platform_events.push(incident({ incident_type: 'injury', severity: 'major', riddor_reportable: true }));
+    await processEvents(db.client, { rules: RULES });
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff.title).toContain('RIDDOR reportable');
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.internal_tasks).toHaveLength(1);
+    expect(db.tables.internal_tasks[0]).toMatchObject({
+      company_id: 'co-1', assigned_to: 'staff-1', priority: 'urgent', source_ref: 'hs_incident_riddor:inc-1', status: 'todo',
+    });
+    expect(db.tables.internal_tasks[0].title).toContain('RIDDOR');
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.internal_tasks).toHaveLength(1);
   });
 
   it('a clean audit (no failed answers) raises no action, and the client link points at the timeline', async () => {

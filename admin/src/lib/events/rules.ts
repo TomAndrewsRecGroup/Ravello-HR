@@ -307,6 +307,19 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    id: 'hs_equipment_reminder',
+    on: 'hs_equipment.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'hs_equipment_inspection_due',
+        title: `Inspection of "${s(row.name, 'equipment')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/equipment`, portal: '/protect/equipment' },
+      })];
+    },
+  },
+  {
     id: 'policy_ack_reminder',
     on: 'policy_acknowledgements.reminder',
     when: e => overdue(reminderPayload(e).bucket),

@@ -159,6 +159,16 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['overdue', 'overdue_weekly'],
   },
   {
+    // Equipment (112) is register-shaped, not embedded — the row
+    // already carries its own name, no lookup needed.
+    id: 'hs_equipment', entity: 'hs_equipment',
+    select: 'id, company_id, name, category, next_inspection_due, status',
+    query: (sb, from, to) => sb.from('hs_equipment').select('id, company_id, name, category, next_inspection_due, status')
+      .eq('status', 'in_service').not('next_inspection_due', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_inspection_due),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

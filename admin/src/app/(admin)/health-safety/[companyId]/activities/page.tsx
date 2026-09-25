@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import type { HsActivity, HsFile } from '@/lib/hs/types';
+import type { HsActivity, HsActivityAttendee, HsFile } from '@/lib/hs/types';
 import ActivitiesClient, { type FollowupSuggestion } from '@/components/hs/ActivitiesClient';
 
 export const metadata: Metadata = { title: 'H&S activities' };
@@ -13,7 +13,7 @@ export default async function HealthSafetyActivitiesPage(props: { params: Promis
   const params = await props.params;
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: activities, error }, files] = await Promise.all([
+  const [{ data: activities, error }, files, { data: employees }, { data: attendeeRows }] = await Promise.all([
     supabase.from('hs_activities')
       .select('id, company_id, activity_type, title, occurred_on, summary, recorded_by_kind, created_at')
       .eq('company_id', params.companyId)
@@ -27,6 +27,8 @@ export default async function HealthSafetyActivitiesPage(props: { params: Promis
         .eq('entity_type', 'activity')
         .order('created_at', { ascending: false }).order('id')
         .range(from, to)),
+    supabase.from('employee_records').select('id, full_name').eq('company_id', params.companyId).eq('status', 'active').order('full_name'),
+    supabase.from('hs_activity_attendees').select('id, activity_id, company_id, employee_id, created_at').eq('company_id', params.companyId),
   ]);
 
   const followups: Record<string, FollowupSuggestion> = {};
@@ -53,6 +55,8 @@ export default async function HealthSafetyActivitiesPage(props: { params: Promis
       loadError={error?.message ?? files.error ?? null}
       followups={followups}
       canRaise
+      employees={(employees ?? []) as { id: string; full_name: string }[]}
+      attendees={(attendeeRows ?? []) as HsActivityAttendee[]}
     />
   );
 }
