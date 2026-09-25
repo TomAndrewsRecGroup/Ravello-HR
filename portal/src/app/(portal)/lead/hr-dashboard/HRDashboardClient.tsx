@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, X, Loader2, Users, TrendingDown, AlertTriangle, CheckCircle2, FileText, BookOpen, ClipboardList } from 'lucide-react';
+import { Plus, X, Loader2, Users, TrendingDown, AlertTriangle, CheckCircle2, FileText, BookOpen, ClipboardList, Wand2 } from 'lucide-react';
 import Link from 'next/link';
+import type { HrMetricsSnapshot } from '@/lib/lead/hrMetricsFromRecords';
 
 interface HRMetric {
   id: string;
@@ -26,6 +27,7 @@ interface Props {
   absencePending: number;
   openTraining: number;
   pendingReviews: number;
+  computedMetrics: HrMetricsSnapshot;
 }
 
 function RAGBadge({ value, thresholds, label, suffix = '' }: { value: number | null; thresholds: [number, number]; label: string; suffix?: string }) {
@@ -48,7 +50,7 @@ function Bar({ pct, color }: { pct: number; color: string }) {
   );
 }
 
-export default function HRDashboardClient({ companyId, initialMetrics, empDocCount, expiredDocs, absencePending, openTraining, pendingReviews }: Props) {
+export default function HRDashboardClient({ companyId, initialMetrics, empDocCount, expiredDocs, absencePending, openTraining, pendingReviews, computedMetrics }: Props) {
   const supabase = createClient();
   const [metrics, setMetrics] = useState<HRMetric[]>(initialMetrics);
   const [showForm, setShowForm] = useState(false);
@@ -200,7 +202,26 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
       {/* Add/update form */}
       {showForm && (
         <div className="card p-5 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Add / Update Period Data</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Add / Update Period Data</p>
+            <button
+              type="button"
+              className="btn-secondary btn-sm flex items-center gap-1.5"
+              onClick={() => setForm(f => ({
+                ...f,
+                headcount:         String(computedMetrics.headcount),
+                turnover_rate:     computedMetrics.turnoverRate !== null ? String(computedMetrics.turnoverRate) : f.turnover_rate,
+                absence_rate:      computedMetrics.absenceRate !== null ? String(computedMetrics.absenceRate) : f.absence_rate,
+                gender_m_pct:      computedMetrics.genderMPct !== null ? String(computedMetrics.genderMPct) : f.gender_m_pct,
+                gender_f_pct:      computedMetrics.genderFPct !== null ? String(computedMetrics.genderFPct) : f.gender_f_pct,
+                gender_other_pct:  computedMetrics.genderOtherPct !== null ? String(computedMetrics.genderOtherPct) : f.gender_other_pct,
+                avg_tenure_months: computedMetrics.avgTenureMonths !== null ? String(computedMetrics.avgTenureMonths) : f.avg_tenure_months,
+              }))}
+              title="Fill headcount, turnover, absence, gender split and tenure from your employee and absence records"
+            >
+              <Wand2 size={13} /> Auto-calculate from records
+            </button>
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Period * (e.g. 2026-Q1)</label>

@@ -2988,3 +2988,123 @@ would have mislabelled its own content. This adds the real thing.
   (748 admin — 741 + 7 new `leadMetrics.test.ts`; 223 portal,
   unchanged — this touched admin only), all five CI guards pass, both
   production builds compile.
+
+---
+
+## HIRE's remaining "later" items (2026-09-25, migrations 107-108)
+
+The last three items from the connective-tissue automation plan's
+"Later — HIRE, insights" section: client health trend/churn early
+warning, `hr_metrics` derived from real records instead of hand entry,
+and monthly value-report auto-generation/emailing.
+
+### Client health snapshots + churn early-warning (107)
+
+`/health` and `/engagement` have always computed a live band/score
+from CURRENT state only — there was nowhere to see whether a client
+was getting better or worse.
+
+- **`client_health_snapshots`** (107): one row per company per day,
+  written by a new daily cron (`/api/cron/health-snapshot`, 06:45 UTC —
+  after reminders at 06:00, before digest at 07:00). Staff-only SELECT;
+  no INSERT/UPDATE policy for `authenticated` AT ALL — the cron writes
+  with the service role, which bypasses RLS, so nobody in a browser
+  session should ever be able to write a snapshot by hand.
+- **The band and score formulas moved to `lib/health/scoring.ts`**,
+  pure functions the cron, `/health` and `/engagement` all now call —
+  one calculation, not three that could drift apart. Extracting the
+  engagement score formula surfaced a REAL BUG in the original inline
+  version: `else if (daysSinceLogin > 30) score -= 20; else if
+  (daysSinceLogin > 60) score -= 35;` — the `>60` branch was
+  unreachable dead code, because anything past 60 already matched
+  `>30` first. No client had ever received the harsher 60+-day-dormant
+  penalty, only ever the milder one. Fixed by checking `>60` before
+  `>30`; `scoring.test.ts` pins the corrected behaviour.
+- **`computeChurnSignal()`** (also in `scoring.ts`) reads up to 14 days
+  of snapshots and flags a client "at risk" on either signal: 3+
+  consecutive non-green days, or a 7-day-old score compared to today's
+  showing a drop of 15+ points. Both signals are independent — a
+  steady green client with a sudden score drop is flagged even with no
+  red/amber days yet, and a client stuck amber for a week is flagged
+  even if its score hasn't moved. `/health`'s table gained a Trend
+  column (at risk / improving / stable) computed from `/health`'s own
+  page-render read of the last 14 days, never persisted — the flag is
+  always fresh, never stale from whenever it happened to be computed.
+
+### `hr_metrics`: "Auto-calculate from records" (portal)
+
+The HR Dashboard's `hr_metrics` upsert form was 100% hand-typed
+(headcount, turnover, absence rate, gender split, average tenure).
+`period` is free text ("2026-Q1", "Annual 2025") with no parseable
+date range, so a precise per-period recompute isn't possible from the
+column alone — "auto-calculate" fills in the CURRENT trailing-12-month
+picture from real `employee_records`/`absence_records`, and the client
+still reviews and saves it, same as before.
+
+- **`lib/lead/hrMetricsFromRecords.ts`** (`computeHrMetrics`, pure,
+  unit-tested): headcount = active as of today (`start_date <= today
+  AND (end_date IS NULL OR end_date > today)`); turnover = leavers in
+  the trailing year ÷ average of today's and a-year-ago's headcount;
+  absence rate = approved absence days in the trailing year ÷ (average
+  headcount × 260 working days); gender split from the free-text
+  `gender` column, bucketed case-insensitively, anything unrecognised
+  counted as `other` rather than dropped; average tenure in whole
+  months for currently-active employees only.
+- **The "Auto-calculate from records" button fills the form fields, it
+  does not save them** — the manual upsert path is completely
+  unchanged; this is a one-click convenience, not a replacement of the
+  review step.
+
+### Monthly value-report auto-generation + emailing (108)
+
+`/value-reports` was always a manual, on-demand, browser-only PDF
+download — the plan's "auto-generate monthly, store, email" item asks
+for the server-side version of the same report.
+
+- **`computeValueReport()`** (`lib/valueReport/computeReport.ts`) is
+  the FULL report computation (hire/support/protect/lead/usage),
+  extracted from `ValueReportClient`'s `useMemo` — the client page and
+  the monthly cron now call the identical function, so a report a
+  staff member downloads by hand and the one the cron emails for the
+  same company/month are byte-for-byte the same numbers.
+- **`buildReportPdf()`** (`lib/valueReport/buildReportPdf.ts`) takes
+  the jsPDF constructor and the `autoTable` function as PARAMETERS
+  rather than importing them itself, so one builder serves both:
+  the browser download button lazy `import()`s them to keep the page
+  bundle small, the cron (Node, no bundle concern) imports them
+  normally at the top of the route file. jsPDF and jspdf-autotable
+  have no Canvas/DOM dependency for text and table rendering, which is
+  what makes the exact same builder usable in a serverless Node
+  function.
+- **`reports.generated_by` is now nullable** (108) — a system-generated
+  report has no honest value for a column that was `NOT NULL
+  REFERENCES auth.users(id)`; there is no service-role "user" row to
+  point it at. The manual upload path (`ReportUploadForm.tsx`) is
+  unaffected — it still stamps the uploader's own `auth.uid()`.
+- **The cron only emails companies with a `contact_email`** (filtered
+  at the query, `.not('contact_email', 'is', null)`), never guesses
+  one. The email links to the portal's own `/protect/reports` page
+  (where the newly-inserted `reports` row appears immediately) rather
+  than a signed URL, which would go stale sitting in an inbox.
+- **Send is claimed via `sendKeyedEmail`** (the same claim-before-send
+  helper the H&S weekly digest and policy-ack resend already use),
+  dedupe key `value-report:<company_id>:<year>-<month>` — re-running
+  the cron for a month it already emailed generates nothing a second
+  time and sends no second email; the `reports` row and the PDF upload
+  from the first run stand.
+- Schedule: 08:00 UTC on the 1st of the month, computing the month
+  that just ended — after reminders, digest and weekly-summary, so it
+  never races the other daily/weekly crons.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (775 admin — 748 + 14 `scoring.test.ts` + 4 `health-snapshot`
+  route test + 5 `computeReport.test.ts` + 4 `monthly-value-reports`
+  route test; 232 portal — 223 + 9 `hrMetricsFromRecords.test.ts`),
+  all five CI guards pass, both production builds compile. Migrations
+  107 and 108 applied live and verified (RLS on for
+  `client_health_snapshots`; `reports.generated_by` nullable).
+  **Caveat**: jsPDF + jspdf-autotable's server-side (Node) PDF
+  rendering is a well-established combination but was not smoke-tested
+  against a live Vercel serverless invocation in this session — the
+  first real cron run is the first true end-to-end proof; the unit
+  tests mock both libraries and verify the cron's control flow
+  (upload → insert → email → dedupe), not the rendered PDF bytes.

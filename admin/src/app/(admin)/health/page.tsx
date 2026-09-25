@@ -8,6 +8,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import HealthClient from './HealthClient';
 import { Activity } from 'lucide-react';
 import { computeIvylensHealth, type IvylensHealth } from '@/lib/ivylens/health';
+import { computeBand, computeChurnSignal, type HealthBand } from '@/lib/health/scoring';
 
 export type { IvylensHealth };
 
@@ -26,20 +27,18 @@ export interface ClientHealth {
   open_tickets:   number;
   stalled_reqs:   number;
   recent_activity: string | null;
-  band:           'green' | 'amber' | 'red';
-}
-
-function bandForClient(h: Omit<ClientHealth, 'band'>): ClientHealth['band'] {
-  if (!h.active) return 'red';
-  if (h.overdue_comp >= 3 || h.open_tickets >= 3 || h.stalled_reqs >= 2) return 'red';
-  if (h.overdue_comp > 0 || h.open_tickets > 0 || h.stalled_reqs > 0) return 'amber';
-  return 'green';
+  band:           HealthBand;
+  /** Trend from client_health_snapshots (107) — null until the daily
+   *  cron has built up enough history to say anything. */
+  trend:          { decliningStreak: number; scoreDelta7d: number | null; atRisk: boolean } | null;
 }
 
 export default async function HealthStatusPage() {
   const supabase = await createServerSupabaseClient();
   const now = new Date();
   const fortnightAgo = new Date(now.getTime() - 14 * 86_400_000).toISOString();
+
+  const twoWeeksAgoDate = new Date(now.getTime() - 14 * 86_400_000).toISOString().slice(0, 10);
 
   const [
     companiesRes,
@@ -48,6 +47,7 @@ export default async function HealthStatusPage() {
     stalledReqsRes,
     ivylens,
     rlsAuditRes,
+    snapshotsRes,
   ] = await Promise.all([
     supabase.from('companies').select('id,slug,name,active').order('name'),
     supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'complete'),
@@ -61,6 +61,13 @@ export default async function HealthStatusPage() {
     // one deciding. This surfaces the next instance on the day it
     // appears instead of in an audit months later.
     supabase.rpc('rls_policy_audit'),
+    // Two weeks of daily snapshots (107) is enough for both signals
+    // computeChurnSignal looks at: a 3-day non-green streak and a
+    // 7-day-old score to diff against.
+    supabase.from('client_health_snapshots')
+      .select('company_id, snapshot_date, band, engagement_score')
+      .gte('snapshot_date', twoWeeksAgoDate)
+      .order('snapshot_date', { ascending: false }),
   ]);
 
   const rlsFindings   = (rlsAuditRes.data ?? []) as { severity: string; table_name: string; detail: string }[];
@@ -68,6 +75,13 @@ export default async function HealthStatusPage() {
   const overdueComp   = complianceRes.data ?? [];
   const openTickets   = ticketsRes.data ?? [];
   const stalledReqs   = stalledReqsRes.data ?? [];
+
+  const snapshotsByCompany = new Map<string, { snapshot_date: string; band: HealthBand; engagement_score: number }[]>();
+  for (const s of (snapshotsRes.data ?? []) as { company_id: string; snapshot_date: string; band: HealthBand; engagement_score: number }[]) {
+    const arr = snapshotsByCompany.get(s.company_id) ?? [];
+    arr.push(s);
+    snapshotsByCompany.set(s.company_id, arr);
+  }
 
   // Per-company rollup
   const compByCompany: Record<string, number>    = {};
@@ -88,7 +102,12 @@ export default async function HealthStatusPage() {
       stalled_reqs:    stalledByCompany[c.id] ?? 0,
       recent_activity: null as string | null,
     };
-    return { ...base, band: bandForClient(base) };
+    const snaps = snapshotsByCompany.get(c.id) ?? [];
+    return {
+      ...base,
+      band: computeBand(base),
+      trend: snaps.length > 0 ? computeChurnSignal(snaps) : null,
+    };
   });
 
   const rag = {

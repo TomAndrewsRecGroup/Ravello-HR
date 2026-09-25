@@ -1,7 +1,8 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap } from 'lucide-react';
-import { computeLeadMetrics } from '@/lib/valueReport/leadMetrics';
+import { computeValueReport } from '@/lib/valueReport/computeReport';
+import { buildReportPdf } from '@/lib/valueReport/buildReportPdf';
 
 interface Props {
   companies: any[];
@@ -22,12 +23,6 @@ interface Props {
 
 function fmtMonth(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-}
-
-function inMonth(dateStr: string, year: number, month: number): boolean {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d.getFullYear() === year && d.getMonth() === month;
 }
 
 export default function ValueReportClient({ companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances }: Props) {
@@ -54,52 +49,12 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     const m = selectedMonth;
     const company = companies.find(c => c.id === cid);
 
-    // Filter data by company + month
-    const monthReqs = requisitions.filter((r: any) => r.company_id === cid && inMonth(r.created_at, y, m));
-    const filledReqs = requisitions.filter((r: any) => r.company_id === cid && r.stage === 'filled' && inMonth(r.updated_at, y, m));
-    const monthCandidates = candidates.filter((c: any) => c.company_id === cid && inMonth(c.created_at, y, m));
-    const monthTickets = tickets.filter((t: any) => t.company_id === cid && inMonth(t.created_at, y, m));
-    const resolvedTickets = tickets.filter((t: any) => t.company_id === cid && inMonth(t.resolved_at, y, m));
-    const monthDocs = documents.filter((d: any) => d.company_id === cid && inMonth(d.created_at, y, m));
-    const monthCompliance = complianceItems.filter((c: any) => c.company_id === cid && inMonth(c.created_at, y, m));
-    const monthServReqs = serviceRequests.filter((s: any) => s.company_id === cid && inMonth(s.created_at, y, m));
-    const respondedServReqs = serviceRequests.filter((s: any) => s.company_id === cid && inMonth(s.responded_at, y, m));
-    const monthActions = actions.filter((a: any) => a.company_id === cid && inMonth(a.created_at, y, m));
-    const completedActions = actions.filter((a: any) => a.company_id === cid && inMonth(a.completed_at, y, m));
+    const data = computeValueReport(cid, y, m, {
+      requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
+      trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
+    });
 
-    // All-time stats
-    const totalActiveRoles = requisitions.filter((r: any) => r.company_id === cid && !['filled', 'cancelled'].includes(r.stage)).length;
-    const totalFilled = requisitions.filter((r: any) => r.company_id === cid && r.stage === 'filled').length;
-    const totalUsers = profiles.filter((p: any) => p.company_id === cid).length;
-    const activeServices = services.filter((s: any) => s.company_id === cid);
-    const mrr = activeServices.reduce((sum: number, s: any) => sum + (s.monthly_fee ?? 0), 0);
-
-    // Avg ticket resolution time
-    const resolved = tickets.filter((t: any) => t.company_id === cid && t.resolved_at && inMonth(t.resolved_at, y, m));
-    let avgResolution = 0;
-    if (resolved.length > 0) {
-      const totalHours = resolved.reduce((sum: number, t: any) => {
-        return sum + (new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime()) / 3600000;
-      }, 0);
-      avgResolution = Math.round(totalHours / resolved.length);
-    }
-
-    // LEAD: people-management metrics — a genuinely different thing
-    // from SUPPORT's ticket/service-request handling above. Sourced
-    // from real tables (training_needs, performance_reviews,
-    // absence_records, onboarding_instances), not hand entry. Pure
-    // function so the month-boundary logic is unit-tested.
-    const lead = computeLeadMetrics(cid, y, m, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances);
-
-    return {
-      company,
-      month: fmtMonth(new Date(y, m)),
-      hire: { newRoles: monthReqs.length, filled: filledReqs.length, candidates: monthCandidates.length, activeRoles: totalActiveRoles, totalFilled },
-      support: { ticketsRaised: monthTickets.length, ticketsResolved: resolvedTickets.length, avgResolutionHours: avgResolution, serviceRequests: monthServReqs.length, serviceRequestsResponded: respondedServReqs.length },
-      protect: { complianceItems: monthCompliance.length, documentsUploaded: monthDocs.length, actionsCreated: monthActions.length, actionsCompleted: completedActions.length },
-      lead,
-      usage: { portalUsers: totalUsers, activeServices, mrr },
-    };
+    return { company, month: fmtMonth(new Date(y, m)), ...data };
   }, [selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances]);
 
   async function downloadReport() {
@@ -113,124 +68,16 @@ export default function ValueReportClient({ companies, requisitions, candidates,
       import('jspdf-autotable'),
     ]);
     const autoTable = (autoTableMod as any).default ?? (autoTableMod as any);
-    const r = report;
 
-    // Brand tokens — kept inline so the PDF doesn't pull in the
-    // application's CSS variables.
-    const PURPLE   = [11, 120, 150] as [number, number, number]; // Core OS 360 accent (#0B7896)
-    const INK      = [7, 11, 29]    as [number, number, number];
-    const INK_SOFT = [56, 67, 106]  as [number, number, number];
-    const SURFACE  = [244, 245, 251] as [number, number, number];
+    const doc = buildReportPdf(jsPDF as any, autoTable, {
+      companyName: report.company?.name ?? '—',
+      month: report.month,
+      generatedAt: new Date(),
+      data: report,
+    });
 
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const W = doc.internal.pageSize.getWidth();
-    let y = 56;
-
-    // Header band
-    doc.setFillColor(...PURPLE);
-    doc.rect(0, 0, W, 12, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(...INK);
-    doc.text('Core OS 360', 40, y);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...INK_SOFT);
-    doc.text('Client Value Report', 40, y + 16);
-    y += 40;
-
-    // Company + period card
-    doc.setFillColor(...SURFACE);
-    doc.roundedRect(40, y, W - 80, 64, 6, 6, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(...INK);
-    doc.text(r.company?.name ?? '—', 56, y + 22);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...INK_SOFT);
-    doc.text(`Period: ${r.month}`, 56, y + 40);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, 56, y + 56);
-    y += 90;
-
-    function section(title: string, rows: [string, string | number][]) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(...PURPLE);
-      doc.text(title, 40, y);
-      y += 6;
-      autoTable(doc, {
-        startY:       y + 4,
-        head:         [['Metric', 'Value']],
-        body:         rows.map(([k, v]) => [k, String(v)]),
-        theme:        'plain',
-        styles:       { fontSize: 10, textColor: INK as any, cellPadding: 6 },
-        headStyles:   { fillColor: SURFACE as any, textColor: INK_SOFT as any, fontStyle: 'bold', fontSize: 9 },
-        alternateRowStyles: { fillColor: [255, 255, 255] as any },
-        columnStyles: { 0: { cellWidth: 280 }, 1: { cellWidth: 'auto', halign: 'right', fontStyle: 'bold' } },
-        margin:       { left: 40, right: 40 },
-      });
-      // After autoTable, finalY is on the doc's lastAutoTable property.
-      y = (doc as any).lastAutoTable.finalY + 18;
-    }
-
-    section('HIRE', [
-      ['New roles raised',           r.hire.newRoles],
-      ['Roles filled this month',    r.hire.filled],
-      ['Candidates submitted',       r.hire.candidates],
-      ['Active roles (current)',     r.hire.activeRoles],
-      ['Total roles filled all-time', r.hire.totalFilled],
-    ]);
-
-    section('SUPPORT', [
-      ['Tickets raised',             r.support.ticketsRaised],
-      ['Tickets resolved',           r.support.ticketsResolved],
-      ['Avg resolution time (hours)', r.support.avgResolutionHours],
-      ['Service requests',           r.support.serviceRequests],
-      ['Service requests responded', r.support.serviceRequestsResponded],
-    ]);
-
-    section('PROTECT', [
-      ['Compliance items addressed', r.protect.complianceItems],
-      ['Documents uploaded',         r.protect.documentsUploaded],
-      ['Actions created',            r.protect.actionsCreated],
-      ['Actions completed',          r.protect.actionsCompleted],
-    ]);
-
-    section('LEAD', [
-      ['Training needs flagged',     r.lead.trainingNeedsFlagged],
-      ['Training needs resolved',    r.lead.trainingNeedsResolved],
-      ['Training needs open (current)', r.lead.trainingNeedsOpen],
-      ['Reviews due',                r.lead.reviewsDue],
-      ['Reviews completed',          r.lead.reviewsCompleted],
-      ['Reviews overdue (current)',  r.lead.reviewsOverdue],
-      ['Absence days recorded',      r.lead.absenceDays],
-      ['Onboarding started',         r.lead.onboardingStarted],
-      ['Onboarding completed',       r.lead.onboardingCompleted],
-    ]);
-
-    section('SYSTEM USAGE', [
-      ['Portal users',     r.usage.portalUsers],
-      ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],
-      ['Monthly fee',      `£${r.usage.mrr}`],
-    ]);
-
-    // Footer
-    const pageCount = (doc as any).getNumberOfPages?.() ?? 1;
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      const H = doc.internal.pageSize.getHeight();
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...INK_SOFT);
-      doc.text('thepeoplesystem.co.uk', 40, H - 24);
-      doc.text(`Page ${i} of ${pageCount}`, W - 40, H - 24, { align: 'right' });
-    }
-
-    const safeName = (r.company?.name ?? 'client').replace(/\s+/g, '-');
-    doc.save(`value-report-${safeName}-${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}.pdf`);
+    const safeName = (report.company?.name ?? 'client').replace(/\s+/g, '-');
+    (doc as any).save(`value-report-${safeName}-${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}.pdf`);
   }
 
   return (

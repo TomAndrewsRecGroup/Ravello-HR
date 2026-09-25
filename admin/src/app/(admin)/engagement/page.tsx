@@ -5,6 +5,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { AlertTriangle, TrendingUp, LogIn, Eye, EyeOff } from 'lucide-react';
 import { clientHref } from '@/lib/clientHref';
+import { computeEngagementScore } from '@/lib/health/scoring';
 
 export const metadata: Metadata = { title: 'Client Engagement' };
 export const revalidate = 60;
@@ -68,17 +69,10 @@ export default async function EngagementPage() {
     const noteDate = latestNoteMap.get(c.id);
     const lastNote = noteDate ? Math.floor((now - new Date(noteDate).getTime()) / 86400000) : 999;
 
-    let score = 50;
-    if (daysSinceLogin <= 7) score += 20;
-    else if (daysSinceLogin <= 14) score += 10;
-    else if (daysSinceLogin > 30) score -= 20;
-    else if (daysSinceLogin > 60) score -= 35;
-    if (activeRoles > 0) score += 10;
-    if (recentReqs > 0) score += 5;
-    if (recentTickets > 0) score += 5;
-    if ((docCountMap.get(c.id) ?? 0) > 0) score += 5;
-    if (c.login_count_30d > 5) score += 5;
-    score = Math.max(0, Math.min(100, score));
+    const score = computeEngagementScore({
+      daysSinceLogin, activeRoles, recentReqs, recentTickets,
+      docCount: docCountMap.get(c.id) ?? 0, loginCount30d: c.login_count_30d ?? 0,
+    });
 
     const status = score >= 70 ? 'healthy' : score >= 40 ? 'at_risk' : 'disengaged';
 
