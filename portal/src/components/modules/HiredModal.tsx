@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidatePortalPath } from '@/app/actions';
+import { buildEmployeeFromHire } from '@/lib/hiring/employeeFromHire';
 import { Loader2, X } from 'lucide-react';
 
 interface Props {
@@ -45,23 +46,15 @@ export default function HiredModal({
     setSaving(true);
 
     try {
-      const salary = annualSalary ? parseFloat(annualSalary) : null;
+      const employee = buildEmployeeFromHire({
+        companyId, fullName, email, jobTitle, department, startDate, employmentType,
+        salary: annualSalary, lineManager: reportingManager,
+      });
 
       // Insert employee record
       const { error: insertErr } = await supabase
         .from('employee_records')
-        .insert({
-          company_id: companyId,
-          full_name: fullName,
-          email,
-          job_title: jobTitle,
-          department,
-          start_date: startDate || null,
-          employment_type: employmentType,
-          annual_salary: salary,
-          reporting_manager: reportingManager || null,
-          status: 'active',
-        });
+        .insert(employee);
 
       if (insertErr) throw insertErr;
 
@@ -83,7 +76,7 @@ export default function HiredModal({
 
       onSaved();
       onClose();
-      revalidatePortalPath('/hiring');
+      revalidatePortalPath('/hire/hiring');
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Failed to save employee record';
@@ -181,6 +174,7 @@ export default function HiredModal({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              required
             />
           </div>
 

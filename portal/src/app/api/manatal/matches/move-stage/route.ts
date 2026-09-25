@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getManatalMatches, getManatalStages, updateMatchStage, isManatalConfigured } from '@/lib/manatal';
+import { createServiceSupabaseClient } from '@/lib/supabase/service';
+import { emitEvent } from '@/lib/events/emit';
 
 // POST /api/manatal/matches/move-stage
-// Moves a candidate to a new pipeline stage in Manatal and notifies admin.
+// Moves a candidate to a new pipeline stage in Manatal and emits a
+// platform event so staff are notified (admin lib/events/rules.ts).
 //
 // Body: { matchId: number, stageId: number, stageName: string, candidateName: string, jobName: string }
 
@@ -60,25 +63,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to update stage in Manatal' }, { status: 502 });
   }
 
-  // Notify all admin/recruiter users
-  const { data: adminProfiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('role', 'tps_admin');
-
-  if (adminProfiles?.length) {
-    const notifications = adminProfiles.map((p: any) => ({
-      user_id:    p.id,
-      company_id: companyId,
-      type:       'candidate_stage_move',
-      title:      `${candidateName ?? 'Candidate'} moved to ${stageName ?? 'new stage'}`,
-      body:       `${userName} at ${companyName} moved ${candidateName ?? 'a candidate'} to "${stageName}" for ${jobName ?? 'a role'}.`,
-      link:       '/hiring',
-      read:       false,
-    }));
-
-    await supabase.from('notifications').insert(notifications);
-  }
+  // Tell staff through the platform outbox. This route used to insert
+  // `notifications` rows for every tps_admin under the CLIENT'S session:
+  // the profiles read returned nothing (RLS: a client sees only their
+  // own row) and the INSERT policy refuses a client writing to a staff
+  // user, so no recruiter was ever told. The emit uses the service
+  // role; the company and user come from the verified session above,
+  // never from the body.
+  const { error: emitErr } = await emitEvent(createServiceSupabaseClient(), {
+    companyId:  companyId || null,
+    entityType: 'manatal_match',
+    eventType:  'updated',
+    actorId:    user.id,
+    actorKind:  'client',
+    payload: {
+      match_id: matchId, stage_id: stageId,
+      stage_name: typeof stageName === 'string' ? stageName : null,
+      candidate_name: typeof candidateName === 'string' ? candidateName : null,
+      job_name: typeof jobName === 'string' ? jobName : null,
+      user_name: userName, company_name: companyName,
+    },
+  });
+  if (emitErr) console.error('[move-stage] staff were not notified', emitErr);
 
   // Not the raw Manatal object: the client already has the match, and
   // echoing the upstream record back is how this route leaked data.

@@ -16,7 +16,7 @@ import ProtectTab from './tabs/ProtectTab';
 import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
 
-import { COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { ACTION_PRIORITIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import FileLink from '@/components/modules/FileLink';
 import {
   MILESTONE_PILLARS, MILESTONE_PILLAR_LABELS, MILESTONE_STATUSES, MILESTONE_STATUS_LABELS,
@@ -335,7 +335,7 @@ const emptyMilestoneForm = () => ({
   quarter: quarterOf(new Date()), status: 'not_started' as string,
 });
 
-const PRIORITIES = ['high', 'medium', 'low'] as const;
+const PRIORITIES = ACTION_PRIORITIES;
 const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
 
 const COMP_CATEGORIES = ['general', 'contracts', 'policies', 'health_safety', 'data_protection', 'employment_law', 'other'];
@@ -349,8 +349,9 @@ const COMP_STATUS_STYLE: Record<string, React.CSSProperties> = {
 };
 
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
+  urgent: { background: 'rgba(220,38,38,0.16)',  color: 'var(--rose)' },
   high:   { background: 'rgba(220,38,38,0.1)',   color: 'var(--rose)' },
-  medium: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
+  normal: { background: 'rgba(217,119,6,0.1)',   color: 'var(--amber)' },
   low:    { background: 'rgba(148,163,184,0.1)', color: 'var(--slate)' },
 };
 
@@ -401,24 +402,30 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   /* ── Actions state ── */
   const [actions,      setActions]      = useState<any[]>([]);
   const [showActForm,  setShowActForm]  = useState(false);
-  const [actForm,      setActForm]      = useState({ title: '', description: '', priority: 'medium', due_date: '' });
+  const [actForm,      setActForm]      = useState({ title: '', description: '', priority: 'normal', due_date: '' });
   const [savingAct,    setSavingAct]    = useState(false);
+  const [actError,     setActError]     = useState<string | null>(null);
 
   async function saveAction() {
     if (!actForm.title) return;
     setSavingAct(true);
+    setActError(null);
+    // action_type is NOT NULL; the insert used to omit it, fail, and
+    // the form closed anyway as if it had saved.
     const { data, error } = await supabase
       .from('actions')
-      .insert({ ...actForm, company_id: company.id, status: 'active', due_date: actForm.due_date || null })
+      .insert({ ...actForm, action_type: 'manual', company_id: company.id, status: 'active', due_date: actForm.due_date || null })
       .select()
       .single();
-    if (!error && data) {
-      setActions(prev => [data, ...prev]);
-      revalidateAdminPath('/clients');
-    }
     setSavingAct(false);
+    if (error || !data) {
+      setActError(error?.message ?? 'The action was not saved.');
+      return;
+    }
+    setActions(prev => [data, ...prev]);
+    revalidateAdminPath('/clients');
     setShowActForm(false);
-    setActForm({ title: '', description: '', priority: 'medium', due_date: '' });
+    setActForm({ title: '', description: '', priority: 'normal', due_date: '' });
   }
 
   async function completeAction(id: string) {
@@ -1009,6 +1016,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                   <input type="date" className="input" value={actForm.due_date} onChange={e => setActForm(f => ({ ...f, due_date: e.target.value }))} />
                 </div>
               </div>
+              {actError && <p className="text-xs" style={{ color: 'var(--danger)' }}>{actError}</p>}
               <div className="flex gap-2">
                 <button onClick={saveAction} disabled={savingAct || !actForm.title} className="btn-cta btn-sm flex items-center gap-1.5">
                   {savingAct ? <Loader2 size={12} className="animate-spin" /> : null} Save Action

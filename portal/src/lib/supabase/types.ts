@@ -288,7 +288,7 @@ export interface Action {
   description:         string | null;
   related_entity_id:   string | null;
   related_entity_type: string | null;
-  priority:            'high' | 'medium' | 'low';
+  priority:            'low' | 'normal' | 'high' | 'urgent';
   status:              'active' | 'dismissed' | 'complete';
   dismissed_at:        string | null;
   completed_at:        string | null;

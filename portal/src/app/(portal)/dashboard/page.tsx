@@ -26,8 +26,9 @@ function daysOpen(createdAt: string): number {
 }
 
 function priorityBadge(priority: string) {
+  if (priority === 'urgent') return { bg: 'rgba(220,38,38,0.16)',  text: 'var(--rose)', label: 'Urgent' };
   if (priority === 'high')   return { bg: 'rgba(220,38,38,0.1)',   text: 'var(--rose)', label: 'High' };
-  if (priority === 'medium') return { bg: 'rgba(217,119,6,0.1)',   text: '#92400E', label: 'Medium' };
+  if (priority === 'normal') return { bg: 'rgba(217,119,6,0.1)',   text: '#92400E', label: 'Normal' };
   return                            { bg: 'rgba(148,163,184,0.1)', text: 'var(--slate)', label: 'Low' };
 }
 
@@ -241,7 +242,7 @@ export default async function DashboardPage() {
                 <LockedLink key={a.id} href="/protect/actions"
                       flagEnabled={flagsFromSession.protect !== false} featureLabel="Actions"
                       className="card p-4 flex-shrink-0 w-[260px] hover:shadow-md transition-shadow text-left"
-                      style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' ? 'var(--danger)' : a.priority === 'medium' ? 'var(--warning)' : 'var(--line)'}` }}>
+                      style={{ scrollSnapAlign: 'start', borderLeft: `3px solid ${a.priority === 'high' || a.priority === 'urgent' ? 'var(--danger)' : a.priority === 'normal' ? 'var(--warning)' : 'var(--line)'}` }}>
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--ink)' }}>{a.title}</p>
                   {a.description && <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{a.description}</p>}
                   <p className="text-[11px] mt-2 font-medium" style={{ color: 'var(--purple)' }}>Open →</p>

@@ -16,18 +16,25 @@ const SR_STATUS_STYLE: Record<string, React.CSSProperties> = {
   complete:    { background: 'rgba(52,211,153,0.14)', color: 'var(--emerald)' },
 };
 
+// The six ids the new-request form writes (support/new/page.tsx).
 const TYPE_LABELS: Record<string, string> = {
-  policy_update:       'Policy Update',
-  salary_benchmark:    'Salary Benchmark',
-  onboarding_support:  'Onboarding Support',
-  offboarding_support: 'Offboarding Support',
-  hr_advice:           'HR Advice',
-  contract_review:     'Contract Review',
-  compliance_check:    'Compliance Check',
-  training_request:    'Training Request',
-  recruitment_support: 'Recruitment Support',
-  general_enquiry:     'General Enquiry',
+  policy_update:    'Policy Update',
+  salary_benchmark: 'Salary Benchmark',
+  manager_support:  'Manager Support',
+  strategic_review: 'Strategic Review',
+  hr_audit:         'HR Audit',
+  support_query:    'Support Query',
 };
+
+// `details` is the request-type-specific JSONB the form collected. The
+// old page selected `type` and `message`, two columns service_requests
+// never had, so the whole query failed and a client saw no requests.
+function detailsText(details: unknown): string {
+  if (!details || typeof details !== 'object') return '';
+  const d = details as Record<string, unknown>;
+  const first = d.message ?? d.details ?? d.description ?? d.notes ?? Object.values(d).find(v => typeof v === 'string' && v.length > 0);
+  return typeof first === 'string' ? first : '';
+}
 
 function humanType(type: string): string {
   return TYPE_LABELS[type] ?? type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '-';
@@ -45,7 +52,7 @@ export default async function SupportPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('service_requests')
-      .select('id, request_type, type, subject, message, status, response_notes, responded_at, created_at')
+      .select('id, request_type, subject, details, urgency, status, response_notes, responded_at, created_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
   ]);
@@ -177,14 +184,14 @@ export default async function SupportPage() {
                                   {r.status === 'in_progress' ? 'In Progress' : r.status?.charAt(0).toUpperCase() + r.status?.slice(1)}
                                 </span>
                                 <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-                                  {humanType(r.type ?? r.request_type)}
+                                  {humanType(r.request_type)}
                                 </span>
                               </div>
                               {r.subject && (
                                 <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{r.subject}</p>
                               )}
-                              {r.message && (
-                                <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--ink-soft)' }}>{r.message}</p>
+                              {detailsText(r.details) && (
+                                <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--ink-soft)' }}>{detailsText(r.details)}</p>
                               )}
                             </div>
                             <p className="text-xs shrink-0 mt-0.5" style={{ color: 'var(--ink-faint)' }}>
@@ -222,7 +229,7 @@ export default async function SupportPage() {
                         <tbody>
                           {srDone.map((r: any) => (
                             <tr key={r.id}>
-                              <td style={{ color: 'var(--ink-soft)' }}>{humanType(r.type ?? r.request_type)}</td>
+                              <td style={{ color: 'var(--ink-soft)' }}>{humanType(r.request_type)}</td>
                               <td style={{ color: 'var(--ink-soft)' }}>{r.subject ?? '-'}</td>
                               <td className="max-w-[280px]">
                                 {r.response_notes

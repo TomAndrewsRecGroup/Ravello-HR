@@ -2,19 +2,42 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, X, BarChart2, Building2, Target, MessageSquare, AlertTriangle, Headphones } from 'lucide-react';
+import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock } from 'lucide-react';
+import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 
-const TYPE_META: Record<string, { Icon: any; color: string }> = {
-  role_pending_approval:    { Icon: BarChart2,       color: '#a855f7' },
-  ivylens_ticket_reply:     { Icon: Headphones,      color: '#a855f7' },
-  ivylens_ticket_resolved:  { Icon: Check,           color: 'var(--success)' },
-  friction_complete:        { Icon: BarChart2,        color: '#a855f7' },
-  assessment_complete:      { Icon: Building2,        color: '#06b6d4' },
-  bd_leads_new:             { Icon: Target,           color: 'var(--success)' },
-  high_friction_alert:      { Icon: AlertTriangle,    color: 'var(--danger)' },
-  default:                  { Icon: MessageSquare,    color: 'var(--ink-faint)' },
+// Keyed by the one vocabulary; notificationTypes.test.ts pins the two
+// against each other in both directions.
+const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: string }> = {
+  general:                    { Icon: MessageSquare,  color: 'var(--ink-faint)' },
+  role_pending_approval:      { Icon: BarChart2,      color: 'var(--purple)' },
+  candidate_stage_move:       { Icon: Users,          color: 'var(--purple)' },
+  candidate_feedback:         { Icon: Users,          color: 'var(--teal)' },
+  service_request_created:    { Icon: Headphones,     color: 'var(--amber)' },
+  service_request_overdue:    { Icon: Headphones,     color: 'var(--danger)' },
+  ivylens_ticket_reply:       { Icon: Headphones,     color: 'var(--purple)' },
+  ivylens_ticket_resolved:    { Icon: Check,          color: 'var(--success)' },
+  action_completed:           { Icon: Check,          color: 'var(--success)' },
+  task_assigned:              { Icon: CheckSquare,    color: 'var(--blue)' },
+  task_due:                   { Icon: CheckSquare,    color: 'var(--amber)' },
+  payment_failed:             { Icon: AlertTriangle,  color: 'var(--danger)' },
+  compliance_due_soon:        { Icon: ShieldCheck,    color: 'var(--amber)' },
+  compliance_overdue:         { Icon: ShieldCheck,    color: 'var(--danger)' },
+  document_review_due:        { Icon: FileText,       color: 'var(--amber)' },
+  employee_document_expiring: { Icon: FileText,       color: 'var(--amber)' },
+  employee_document_expired:  { Icon: FileText,       color: 'var(--danger)' },
+  policy_ack_overdue:         { Icon: FileText,       color: 'var(--danger)' },
+  review_due:                 { Icon: CalendarClock,  color: 'var(--amber)' },
+  checklist_task_due:         { Icon: CheckSquare,    color: 'var(--amber)' },
+  probation_ending:           { Icon: CalendarClock,  color: 'var(--blue)' },
+  absence_pending:            { Icon: CalendarClock,  color: 'var(--amber)' },
 };
+
+export const BELL_TYPE_KEYS = Object.keys(TYPE_META);
+
+function metaFor(type: string) {
+  return isNotificationType(type) ? TYPE_META[type] : TYPE_META.general;
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -172,7 +195,7 @@ export default function NotificationBell() {
               </div>
             ) : (
               notifications.map(n => {
-                const meta = TYPE_META[n.type] ?? TYPE_META.default;
+                const meta = metaFor(n.type);
                 const NIcon = meta.Icon;
                 return (
                   <button

@@ -197,8 +197,8 @@ export default async function MetricsPage() {
   const expiredEmpDocs  = empDocs.filter((d: any) => d.expiry_date && new Date(d.expiry_date) < today).length;
   const expiringEmpDocs = empDocs.filter((d: any) => d.expiry_date && new Date(d.expiry_date) >= today && new Date(d.expiry_date) <= in30).length;
 
-  const highActions   = activeActions.filter(a => a.priority === 'high').length;
-  const mediumActions = activeActions.filter(a => a.priority === 'medium').length;
+  const highActions   = activeActions.filter(a => a.priority === 'high' || a.priority === 'urgent').length;
+  const mediumActions = activeActions.filter(a => a.priority === 'normal').length;
   const lowActions    = activeActions.filter(a => a.priority === 'low').length;
 
   return (
@@ -419,7 +419,7 @@ export default async function MetricsPage() {
                     <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-faint)' }}>Active by Priority</p>
                     {[
                       { label: 'High',   value: highActions,   color: 'var(--danger)' },
-                      { label: 'Medium', value: mediumActions, color: 'var(--amber)' },
+                      { label: 'Normal', value: mediumActions, color: 'var(--amber)' },
                       { label: 'Low',    value: lowActions,    color: '#94A3B8' },
                     ].filter(p => p.value > 0).map(p => (
                       <BarRow key={p.label} label={p.label} value={p.value} max={activeActions.length} color={p.color} />

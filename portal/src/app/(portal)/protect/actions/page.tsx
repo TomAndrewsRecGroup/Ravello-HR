@@ -3,33 +3,42 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import ActionButtons from '@/components/modules/ActionButtons';
 import { CheckCircle2, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import type { Action } from '@/lib/supabase/types';
+import { groupActionsByPriority } from '@/lib/actions/priority';
 
 export const metadata: Metadata = { title: 'Actions' };
 export const revalidate = 30;
 
 const ENTITY_LABELS: Record<string, string> = {
-  requisition: 'View role',
-  document:    'View document',
-  ticket:      'View ticket',
-  candidate:   'View candidate',
+  requisition:     'View role',
+  document:        'View document',
+  ticket:          'View ticket',
+  candidate:       'View candidate',
+  compliance_item: 'View register',
+  absence:         'View leave',
+  employee:        'View employee',
 };
 
-const ENTITY_PATHS: Record<string, string> = {
-  requisition: '/hire/hiring',
-  document:    '/lead/documents',
-  ticket:      '/support',
-  candidate:   '/hire/hiring',
+// Paths that take an id: the entity id is appended. Paths that do
+// not (lists) are used as they are.
+const ENTITY_PATHS: Record<string, { base: string; withId: boolean }> = {
+  requisition:     { base: '/hire/hiring',        withId: true },
+  document:        { base: '/lead/documents',     withId: true },
+  ticket:          { base: '/support',            withId: true },
+  candidate:       { base: '/hire/hiring',        withId: true },
+  compliance_item: { base: '/protect/compliance', withId: false },
+  absence:         { base: '/lead/absence',       withId: false },
+  employee:        { base: '/lead/employee-records', withId: false },
 };
 
 function priorityIcon(priority: Action['priority']) {
-  if (priority === 'high')   return <AlertTriangle size={14} className="flex-shrink-0" style={{ color: 'var(--danger)' }} />;
-  if (priority === 'medium') return <Info          size={14} className="flex-shrink-0" style={{ color: 'var(--warning)' }} />;
-  return                            <Info          size={14} className="flex-shrink-0" style={{ color: 'var(--blue)' }} />;
+  if (priority === 'urgent' || priority === 'high') return <AlertTriangle size={14} className="flex-shrink-0" style={{ color: 'var(--danger)' }} />;
+  if (priority === 'normal') return <Info size={14} className="flex-shrink-0" style={{ color: 'var(--warning)' }} />;
+  return                            <Info size={14} className="flex-shrink-0" style={{ color: 'var(--blue)' }} />;
 }
 
 function priorityBadgeClass(priority: Action['priority']): string {
-  if (priority === 'high')   return 'badge-urgent';
-  if (priority === 'medium') return 'badge-pending';
+  if (priority === 'urgent' || priority === 'high') return 'badge-urgent';
+  if (priority === 'normal') return 'badge-pending';
   return 'badge-normal';
 }
 
@@ -38,8 +47,9 @@ interface ActionCardProps {
 }
 
 function ActionCard({ action }: ActionCardProps) {
-  const entityPath = action.related_entity_type
-    ? `${ENTITY_PATHS[action.related_entity_type] ?? ''}${action.related_entity_id ? `/${action.related_entity_id}` : ''}`
+  const target = action.related_entity_type ? ENTITY_PATHS[action.related_entity_type] : undefined;
+  const entityPath = target
+    ? `${target.base}${target.withId && action.related_entity_id ? `/${action.related_entity_id}` : ''}`
     : null;
 
   const entityLabel = action.related_entity_type
@@ -128,9 +138,7 @@ export default async function ActionsPage() {
   // If table missing or any error, treat as empty
   const actions: Action[] = error ? [] : ((actionsData ?? []) as Action[]);
 
-  const high   = actions.filter(a => a.priority === 'high');
-  const medium = actions.filter(a => a.priority === 'medium');
-  const low    = actions.filter(a => a.priority === 'low');
+  const groups = groupActionsByPriority(actions);
 
   return (
       <main className="portal-page flex-1">
@@ -153,9 +161,9 @@ export default async function ActionsPage() {
               {actions.length} outstanding action{actions.length !== 1 ? 's' : ''}
             </p>
             <div className="space-y-8">
-              <PrioritySection title="High Priority"   actions={high}   accent="#EF4444" />
-              <PrioritySection title="Medium Priority" actions={medium} accent="#F59E0B" />
-              <PrioritySection title="Low Priority"    actions={low}    accent="var(--blue)" />
+              {groups.map(g => (
+                <PrioritySection key={g.priority} title={g.title} actions={g.actions} accent={g.accent} />
+              ))}
             </div>
           </>
         )}

@@ -5,9 +5,9 @@ import {
   CompanyProfileForm,
   YourProfileForm,
   TeamMembers,
-  NotificationPrefs,
   QuickActionsSettings,
 } from '@/components/modules/SettingsForm';
+import NotificationPrefsForm from '@/components/modules/NotificationPrefsForm';
 
 export const metadata: Metadata = { title: 'Settings' };
 export const revalidate = 60;
@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   const supabase = createServerSupabaseClient();
   const { user, profile, companyId, role } = await getSessionProfile();
 
-  const [{ data: company }, { data: fullProfile }, { data: teamData }] = await Promise.all([
+  const [{ data: company }, { data: fullProfile }, { data: teamData }, { data: prefs }] = await Promise.all([
     supabase
       .from('companies')
       .select('id, name, sector, size_band, contact_email, open_days, open_hours, timezone, currency')
@@ -33,6 +33,11 @@ export default async function SettingsPage() {
       .eq('company_id', companyId)
       .order('role')
       .order('full_name'),
+    supabase
+      .from('notification_preferences')
+      .select('email_mode, muted_types, weekly_summary')
+      .eq('user_id', user?.id ?? '')
+      .maybeSingle(),
   ]);
 
   const p = fullProfile as any;
@@ -79,7 +84,14 @@ export default async function SettingsPage() {
         {/* Notification Preferences */}
         <div className="card p-7">
           <p className="eyebrow mb-5">Notification Preferences</p>
-          <NotificationPrefs />
+          <NotificationPrefsForm
+            userId={user?.id ?? ''}
+            initial={{
+              email_mode:     (prefs as any)?.email_mode ?? 'immediate',
+              muted_types:    (prefs as any)?.muted_types ?? [],
+              weekly_summary: (prefs as any)?.weekly_summary ?? true,
+            }}
+          />
         </div>
 
         {/* Team Members */}

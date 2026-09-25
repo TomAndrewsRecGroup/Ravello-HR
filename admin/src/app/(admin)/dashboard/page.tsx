@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
       .limit(8),
     supabase.from('service_requests')
       .select('id,subject,urgency,status,companies(name)')
-      .in('status', ['open', 'in_progress'])
+      .in('status', ['new', 'in_progress'])
       .order('created_at', { ascending: false })
       .limit(6),
     supabase.from('companies')

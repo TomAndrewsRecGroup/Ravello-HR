@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { brandFromAddress } from '@/lib/brand';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       subject:       message.subject,
       body_html:     message.html,
       sender_kind:   'resend',
+      sender_email:  brandFromAddress(process.env.EMAIL_FROM),
       sent_by:       auth.userId,
       provider_id:   result?.delivered ? result.id : null,
       error_message: errorMessage,

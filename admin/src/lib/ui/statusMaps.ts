@@ -199,12 +199,24 @@ export const ACTION_STATUS_LABELS: Record<string, string> = {
   dismissed:   'Snoozed',
 };
 
-export const ACTION_PRIORITY_LABELS: Record<string, string> = {
+/** actions.priority. The column default was 'medium' and the portal
+ *  grouped high/medium/low only, while Broadcast and the BD convert
+ *  route wrote 'normal' — so every broadcast action was invisible to
+ *  the client. Migration 097 adds the CHECK; actionsPriority.test.ts
+ *  pins it and the portal grouping against this tuple. */
+export const ACTION_PRIORITIES = ['low', 'normal', 'high', 'urgent'] as const;
+export type ActionPriority = typeof ACTION_PRIORITIES[number];
+
+export const ACTION_PRIORITY_LABELS: Record<ActionPriority, string> = {
   low:    'Low',
   normal: 'Normal',
   high:   'High',
   urgent: 'Urgent',
 };
+
+/** actions.status (097 CHECK). */
+export const ACTION_STATUSES = ['active', 'dismissed', 'complete'] as const;
+export type ActionStatus = typeof ACTION_STATUSES[number];
 
 /** Broadcast / action type — used in the admin broadcast composer. */
 export const ACTION_TYPE_LABELS: Record<string, string> = {

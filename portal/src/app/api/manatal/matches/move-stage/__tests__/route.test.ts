@@ -35,6 +35,18 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
+// The emit goes through the service role; the event row is what tells
+// staff (admin lib/events/rules.ts). Assert the emit, not a notification.
+const emitted: any[] = [];
+vi.mock('@/lib/supabase/service', () => ({
+  createServiceSupabaseClient: () => ({
+    from: (table: string) => ({
+      insert: (row: any) => { emitted.push({ table, row }); return Promise.resolve({ error: null }); },
+      upsert: (row: any) => { emitted.push({ table, row }); return Promise.resolve({ error: null }); },
+    }),
+  }),
+}));
+
 import { POST } from '../route';
 
 function move(body: unknown) {
@@ -43,7 +55,7 @@ function move(body: unknown) {
   }) as any);
 }
 
-beforeEach(() => { patched.length = 0; });
+beforeEach(() => { patched.length = 0; emitted.length = 0; });
 
 describe('moving a Manatal match', () => {
   it("refuses a match that is not in the caller's own organisation", async () => {
@@ -63,5 +75,20 @@ describe('moving a Manatal match', () => {
     expect(res.status).toBe(200);
     expect(patched).toEqual([{ matchId: 101, stageId: 2 }]);
     expect(JSON.stringify(await res.json())).not.toContain('someone@example.com');
+  });
+
+  it('emits a platform event for staff, with the company and actor from the session, not the body', async () => {
+    await move({ matchId: 101, stageId: 2, stageName: 'Interview', candidateName: 'Cand', jobName: 'Role', companyId: 'co-evil' });
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0].table).toBe('platform_events');
+    expect(emitted[0].row).toMatchObject({
+      company_id: 'co-own', entity_type: 'manatal_match', event_type: 'updated', actor_id: 'u-1', actor_kind: 'client',
+      payload: { match_id: 101, stage_name: 'Interview', candidate_name: 'Cand', job_name: 'Role', company_name: 'Own' },
+    });
+  });
+
+  it('a refused move emits nothing', async () => {
+    await move({ matchId: 999, stageId: 2 });
+    expect(emitted).toEqual([]);
   });
 });
