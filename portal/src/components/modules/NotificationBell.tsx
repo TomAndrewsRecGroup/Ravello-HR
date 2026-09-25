@@ -38,7 +38,6 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_item_added:              { Icon: HardHat,        color: 'var(--blue)' },
   hs_action_done:             { Icon: Check,          color: 'var(--success)' },
   hs_followup_suggested:      { Icon: Sparkles,       color: 'var(--purple)' },
-  provider_access_ending:     { Icon: HardHat,        color: 'var(--amber)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

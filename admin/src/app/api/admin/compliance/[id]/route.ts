@@ -20,6 +20,10 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   let body: any = {};
   try { body = await request.json(); } catch { /* ignore */ }
 
+  if (body.category === 'health_safety') {
+    return NextResponse.json({ error: 'Move this to the client\'s H&S register instead of the generic category.' }, { status: 400 });
+  }
+
   const patch: Record<string, unknown> = {};
   if ('title'       in body) patch.title       = String(body.title ?? '').trim() || null;
   if ('description' in body) patch.description = body.description ? String(body.description).trim() : null;

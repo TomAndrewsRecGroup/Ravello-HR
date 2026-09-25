@@ -20,9 +20,6 @@ function listAfter(anchor: RegExp): string[] {
 describe('H&S vocabularies match the SQL CHECKs', () => {
   it.each([
     ['scopes',          V.HS_SCOPES,              /scopes <@ ARRAY\[/],
-    ['provider types',  V.HS_PROVIDER_TYPES,      /provider_type IN \(/],
-    ['access levels',   V.HS_ACCESS_LEVELS,       /access_level IN \(/],
-    ['statuses',        V.HS_ASSIGNMENT_STATUSES, /status IN \(/],
     ['activity types',  V.HS_ACTIVITY_TYPES,      /activity_type IN \(/],
     ['recurrence',      V.HS_RECURRENCE_UNITS,    /recurrence_unit IN \(/],
     ['outcomes',        V.HS_COMPLETION_OUTCOMES, /outcome IN \(/],
@@ -33,14 +30,17 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
   it('every label map covers its tuple exactly', () => {
     const pairs: [readonly string[], Record<string, string>][] = [
       [V.HS_SCOPES, V.HS_SCOPE_LABELS],
-      [V.HS_PROVIDER_TYPES, V.HS_PROVIDER_TYPE_LABELS],
-      [V.HS_ACCESS_LEVELS, V.HS_ACCESS_LEVEL_LABELS],
-      [V.HS_ASSIGNMENT_STATUSES, V.HS_ASSIGNMENT_STATUS_LABELS],
       [V.HS_ACTIVITY_TYPES, V.HS_ACTIVITY_TYPE_LABELS],
       [V.HS_COMPLETION_OUTCOMES, V.HS_COMPLETION_OUTCOME_LABELS],
       [V.HS_REGISTER_CATEGORIES, V.HS_REGISTER_CATEGORY_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
+  });
+
+  it('the provider-only vocabularies (types, access levels, assignment statuses) are gone', () => {
+    expect((V as Record<string, unknown>).HS_PROVIDER_TYPES).toBeUndefined();
+    expect((V as Record<string, unknown>).HS_ACCESS_LEVELS).toBeUndefined();
+    expect((V as Record<string, unknown>).HS_ASSIGNMENT_STATUSES).toBeUndefined();
   });
 
   it('every register category is H&S by the database rule', () => {

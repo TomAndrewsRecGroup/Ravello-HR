@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
   if (!body.company_id || !body.title?.trim()) {
     return NextResponse.json({ error: 'company_id and title are required' }, { status: 400 });
   }
+  // H&S items belong on the dedicated register (recurrence, evidence,
+  // the Safety Timeline), which this generic form has none of.
+  if (body.category === 'health_safety') {
+    return NextResponse.json({ error: 'Add Health & Safety items from the client\'s H&S register instead.' }, { status: 400 });
+  }
 
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase

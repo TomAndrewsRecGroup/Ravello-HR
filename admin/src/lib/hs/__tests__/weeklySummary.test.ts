@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeSupabase, type FakeDb } from '@/lib/events/__tests__/fakeSupabase';
 
-// The Monday emails: one per provider login, one per opted-in client
-// admin, claimed per ISO week before the send; the register ranked by
-// Jev when it answers, by the deterministic fallback when it does not.
+// The Monday email: one per opted-in client admin, claimed per ISO week
+// before the send; the register ranked by Jev when it answers, by the
+// deterministic fallback when it does not. H&S is staff-delivered
+// (2026-09-25, migration 105) — there is no provider digest any more.
 
 const sent: { to: string; subject: string; html: string }[] = [];
 vi.mock('@/lib/email', async () => {
@@ -25,9 +26,7 @@ beforeEach(() => {
   sent.length = 0; jevCalls = 0; jevReply = null;
   delete process.env.JEV_API_KEY;
   db = fakeSupabase({
-    hs_provider_companies: [{ id: 'asg', provider_id: 'prov-1', company_id: 'co-1', status: 'active', ends_on: null, companies: { name: 'Sample Co' }, hs_providers: { name: 'Lighthouse' } }],
     profiles: [
-      { id: 'prov-u', email: 'p@provider.com', role: 'hs_provider', hs_provider_id: 'prov-1' },
       { id: 'ca', email: 'ca@client.com', role: 'client_admin', company_id: 'co-1' },
       { id: 'cb', email: 'cb@client.com', role: 'client_admin', company_id: 'co-1' },
     ],
@@ -40,30 +39,28 @@ beforeEach(() => {
     ],
     hs_register_completions: [{ id: 'c1', item_id: 'i1', company_id: 'co-1', outcome: 'fail', completed_on: '2026-09-24' }],
     hs_files: [], actions: [{ id: 'a1', company_id: 'co-1', status: 'active', action_type: 'hs_failed_check', title: 'Failed check: Fire alarm test', priority: 'high', created_at: '2026-09-24' }],
-    hs_activities: [{ id: 'act', company_id: 'co-1', title: 'Visit', activity_type: 'site_visit', occurred_on: '2026-09-25', hs_providers: { name: 'Lighthouse' } }],
+    hs_activities: [{ id: 'act', company_id: 'co-1', title: 'Visit', activity_type: 'site_visit', occurred_on: '2026-09-25' }],
     email_log: [], jev_decisions: [],
   }, { now: () => now });
 });
 afterEach(() => { delete process.env.JEV_API_KEY; });
 
 describe('runWeeklySummary', () => {
-  it('emails the provider and the opted-in admin once, with the failed fire check first, and claims per week', async () => {
+  it('emails the opted-in admin once, with the failed fire check first, and claims per week', async () => {
     const t = await runWeeklySummary(db.client, { now });
-    expect(t).toMatchObject({ providers: 1, clients: 1, emailed: 2, email_failures: 0, jev_ranked: 0 });
-    expect(sent.map(s => s.to).sort()).toEqual(['ca@client.com', 'p@provider.com']);
-    const prov = sent.find(s => s.to === 'p@provider.com')!;
-    expect(prov.subject).toBe('H&S this week: 1 overdue, 1 due soon');
-    expect(prov.html).toContain('Sample Co');
-    expect(prov.html.indexOf('Fire alarm test')).toBeLessThan(prov.html.indexOf('Legionella review'));
-    expect(prov.html).toContain('critical');
-    expect(prov.html).toContain('Failed check: Fire alarm test');
+    expect(t).toMatchObject({ clients: 1, emailed: 1, email_failures: 0, jev_ranked: 0 });
+    expect(sent.map(s => s.to).sort()).toEqual(['ca@client.com']);
     const client = sent.find(s => s.to === 'ca@client.com')!;
-    expect(client.html).toContain('Lighthouse · Site visit · 2026-09-25');
-    expect(db.tables.email_log.map(e => e.dedupe_key).sort()).toEqual([`digest:client:ca:${isoWeek(now)}`, `digest:provider:prov-u:${isoWeek(now)}`]);
+    expect(client.subject).toBe('Your H&S summary: 1 overdue, 1 due soon');
+    expect(client.html.indexOf('Fire alarm test')).toBeLessThan(client.html.indexOf('Legionella review'));
+    expect(client.html).toContain('critical');
+    expect(client.html).toContain('Failed check: Fire alarm test');
+    expect(client.html).toContain('Core OS 360 · Site visit · 2026-09-25');
+    expect(db.tables.email_log.map(e => e.dedupe_key).sort()).toEqual([`digest:client:ca:${isoWeek(now)}`]);
 
     const again = await runWeeklySummary(db.client, { now });
-    expect(again).toMatchObject({ emailed: 0, skipped_already: 2 });
-    expect(sent).toHaveLength(2);
+    expect(again).toMatchObject({ emailed: 0, skipped_already: 1 });
+    expect(sent).toHaveLength(1);
   });
 
   it('uses Jev for the attention order when it answers, records the decision as acted, and falls back otherwise', async () => {
@@ -75,8 +72,8 @@ describe('runWeeklySummary', () => {
     const t = await runWeeklySummary(db.client, { now });
     expect(t.jev_ranked).toBe(1);
     expect(jevCalls).toBe(1);
-    const prov = sent.find(s => s.to === 'p@provider.com')!;
-    expect(prov.html.indexOf('Legionella review')).toBeLessThan(prov.html.indexOf('Fire alarm test'));
+    const client = sent.find(s => s.to === 'ca@client.com')!;
+    expect(client.html.indexOf('Legionella review')).toBeLessThan(client.html.indexOf('Fire alarm test'));
     expect(db.tables.jev_decisions[0]).toMatchObject({ kind: 'hs_register_rank', acted: true, acted_on: 'weekly digest order' });
   });
 
@@ -84,7 +81,7 @@ describe('runWeeklySummary', () => {
     db.tables.companies[0].feature_flags = { protect: false };
     const t = await runWeeklySummary(db.client, { now });
     expect(t.clients).toBe(0);
-    expect(sent.map(s => s.to)).toEqual(['p@provider.com']);
+    expect(sent.map(s => s.to)).toEqual([]);
   });
 
   it('isoWeek is stable across a year boundary', () => {

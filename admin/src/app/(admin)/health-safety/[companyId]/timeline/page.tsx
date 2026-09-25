@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { History } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { myGrant } from '@/lib/hs/access';
 import { HS_ENTITY_LABELS } from '@/lib/hs/vocab';
 import type { HsEvent } from '@/lib/hs/types';
 
@@ -14,14 +12,11 @@ const PAGE = 50;
 
 // The Safety Timeline: every H&S event for this client, newest first.
 // Written only by database triggers (095) and never editable, so it is
-// the same record the client sees. A provider sees only the events for
-// the scopes they hold (hs_events_provider_read).
-export default async function HsTimelinePage({
+// the same record the client sees.
+export default async function HealthSafetyTimelinePage({
   params, searchParams,
 }: { params: { companyId: string }; searchParams: { page?: string } }) {
   const supabase = createServerSupabaseClient();
-  const grant = await myGrant(supabase, params.companyId);
-  if (!grant) notFound();
 
   const page = Math.max(0, Math.min(1000, Number.parseInt(searchParams.page ?? '0', 10) || 0));
   const { data, error, count } = await supabase
@@ -34,7 +29,7 @@ export default async function HsTimelinePage({
 
   const events = (data ?? []) as HsEvent[];
   const total = count ?? 0;
-  const base = `/hs/c/${params.companyId}/timeline`;
+  const base = `/health-safety/${params.companyId}/timeline`;
 
   return (
     <div className="space-y-4">

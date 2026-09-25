@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { canWrite, myGrant } from '@/lib/hs/access';
 import { readAllPages } from '@/lib/supabase/paged';
 import type { HsActivity, HsFile } from '@/lib/hs/types';
 import ActivitiesClient, { type FollowupSuggestion } from '@/components/hs/ActivitiesClient';
@@ -11,12 +9,10 @@ export const dynamic = 'force-dynamic';
 
 // Logged events: site visits, advice calls, fire drills, SSIP
 // submissions, inspections. Insert-only (095): a correction is a new entry.
-export default async function HsActivitiesPage({ params }: { params: { companyId: string } }) {
+export default async function HealthSafetyActivitiesPage({ params }: { params: { companyId: string } }) {
   const supabase = createServerSupabaseClient();
-  const grant = await myGrant(supabase, params.companyId);
-  if (!grant || !grant.scopes.includes('register')) notFound();
 
-  const [{ data: activities, error }, files, { data: role }] = await Promise.all([
+  const [{ data: activities, error }, files] = await Promise.all([
     supabase.from('hs_activities')
       .select('id, company_id, activity_type, title, occurred_on, summary, recorded_by_kind, created_at')
       .eq('company_id', params.companyId)
@@ -30,15 +26,10 @@ export default async function HsActivitiesPage({ params }: { params: { companyId
         .eq('entity_type', 'activity')
         .order('created_at', { ascending: false }).order('id')
         .range(from, to)),
-    supabase.rpc('get_my_role'),
   ]);
 
-  // Jev follow-up suggestions are staff-only (jev_decisions is staff-read);
-  // a provider's page simply has none. Read under the session, never the
-  // service role — this is app/(hs).
-  const isStaff = role === 'tps_admin';
   const followups: Record<string, FollowupSuggestion> = {};
-  if (isStaff && (activities ?? []).length > 0) {
+  if ((activities ?? []).length > 0) {
     const { data: decisions } = await supabase.from('jev_decisions')
       .select('id, entity_id, selected, human_outcome, gated')
       .eq('kind', 'hs_activity_followup').eq('company_id', params.companyId)
@@ -55,12 +46,12 @@ export default async function HsActivitiesPage({ params }: { params: { companyId
   return (
     <ActivitiesClient
       companyId={params.companyId}
-      canRecord={canWrite(grant, 'register')}
+      canRecord
       activities={(activities ?? []) as HsActivity[]}
       files={files.rows}
       loadError={error?.message ?? files.error ?? null}
       followups={followups}
-      canRaise={isStaff}
+      canRaise
     />
   );
 }

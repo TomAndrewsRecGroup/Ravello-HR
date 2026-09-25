@@ -57,8 +57,8 @@ const str = (v: unknown): string | null => (v == null ? null : String(v).slice(0
 export const REMINDERS: ReminderRule[] = [
   {
     id: 'compliance_items', entity: 'compliance_items',
-    select: 'id, company_id, title, domain, category, due_date, status, provider_id',
-    query: (sb, from, to) => sb.from('compliance_items').select('id, company_id, title, domain, category, due_date, status, provider_id')
+    select: 'id, company_id, title, domain, category, due_date, status',
+    query: (sb, from, to) => sb.from('compliance_items').select('id, company_id, title, domain, category, due_date, status')
       .in('status', ['pending', 'in_review', 'overdue']).not('due_date', 'is', null).order('id').range(from, to),
     dueDateOf: r => str(r.due_date),
     buckets: ['due_30', 'due_7', 'overdue', 'overdue_weekly'],
@@ -146,15 +146,6 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_0', 'overdue'],
   },
 ];
-
-REMINDERS.push({
-  id: 'hs_provider_companies', entity: 'hs_provider_companies',
-  select: 'id, company_id, provider_id, status, ends_on, scopes',
-  query: (sb, from, to) => sb.from('hs_provider_companies').select('id, company_id, provider_id, status, ends_on, scopes')
-    .eq('status', 'active').not('ends_on', 'is', null).order('id').range(from, to),
-  dueDateOf: r => str(r.ends_on),
-  buckets: ['due_30', 'due_7'],
-});
 
 // ── HIRE ──────────────────────────────────────────────────────
 // A role with no stage change for two weeks (stage_changed_at, 104);

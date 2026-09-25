@@ -167,28 +167,3 @@ describe('static app files bypass the auth middleware', async () => {
     expect(matcher.test(p)).toBe(true);
   });
 });
-
-// An external H&S provider (hs_provider, 094) has no company and no
-// portal pages. They must be sent to the admin app's workspace, never
-// stamped a portal session (which would carry companyId '' and render
-// pages with nothing to scope them).
-describe('an H&S provider is sent to the admin app', () => {
-  beforeEach(() => {
-    currentUser = { id: 'prov-1', email: 'p@lighthouse.example' };
-    role = 'hs_provider'; companyId = null; signOuts.length = 0;
-  });
-
-  it.each(['/dashboard', '/protect/compliance', '/settings'])('from %s', async (path) => {
-    const res = await updateSession(req(path));
-    expect(res.headers.get('location')).toBe('https://admin.thepeoplesystem.co.uk/hs');
-    expect(res.cookies.get(PORTAL_SESSION_COOKIE)?.value ?? '').toBe('');
-    expect(signOuts).toEqual([{ scope: 'local' }]);
-  });
-
-  it('a client user is not', async () => {
-    role = 'client_admin'; companyId = 'co-1';
-    const res = await updateSession(req('/dashboard'));
-    expect(res.headers.get('location')).toBeNull();
-    expect(signOuts).toEqual([]);
-  });
-});

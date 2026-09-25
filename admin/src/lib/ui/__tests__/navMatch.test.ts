@@ -6,7 +6,7 @@ import { activeHref, isUnder } from '../navMatch';
 const HREFS = [
   '/clients', '/clients/onboard', '/users', '/engagement', '/feature-flags',
   '/hiring', '/hiring/templates', '/candidates', '/salary-benchmarks',
-  '/bd-intelligence', '/bd-roles', '/health',
+  '/health-safety', '/health',
   '/tasks', '/activity', '/enquiries', '/requests', '/broadcast', '/compliance',
   '/athletes-to-industry', '/dev-plans', '/referrals',
   '/revenue', '/value-reports', '/reports', '/documents', '/latest-updates', '/learning', '/roadmap',

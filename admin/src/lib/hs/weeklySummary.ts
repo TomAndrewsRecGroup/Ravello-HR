@@ -7,15 +7,13 @@ import { HS_FAILED_CHECK_ACTION_TYPE, HS_ACTIONS_RAISED_ACTION_TYPE } from '@/li
 import { askJev, markActed } from '@/lib/jev/client';
 import { readPreferences } from '@/lib/notify/notify';
 import { sendKeyedEmail } from '@/lib/notify/keyedEmail';
-import { clientWeeklySummaryEmail, providerWeeklyDigestEmail, type WeeklyActivity, type WeeklyCompanySection, type WeeklyItem } from '@/lib/email/templates/hsWeekly';
-import { adminUrl } from '@/lib/adminUrl';
+import { clientWeeklySummaryEmail, type WeeklyActivity, type WeeklyCompanySection, type WeeklyItem } from '@/lib/email/templates/hsWeekly';
 import { portalUrl } from '@/lib/portalUrl';
 
-// Monday 07:00: one digest per provider login (their clients), one
-// summary per client (their own register) for admins whose
-// weekly_summary preference is on and whose PROTECT flag is not off.
-// Claimed per recipient per ISO week through email_log's dedupe key,
-// so a re-run of the cron sends nothing twice.
+// Monday 07:00: one summary per client (their own register) for admins
+// whose weekly_summary preference is on and whose PROTECT flag is not
+// off. Claimed per recipient per ISO week through email_log's dedupe
+// key, so a re-run of the cron sends nothing twice.
 //
 // Ordering "needs attention first" is the one place Jev may act on
 // its own: it changes the order of three lines in an email and writes
@@ -23,7 +21,7 @@ import { portalUrl } from '@/lib/portalUrl';
 // them, and both are recorded so their agreement can be measured.
 
 export interface WeeklyTally {
-  providers: number; clients: number; emailed: number; skipped_already: number; email_failures: number; jev_ranked: number; errors: string[];
+  clients: number; emailed: number; skipped_already: number; email_failures: number; jev_ranked: number; errors: string[];
 }
 
 export function isoWeek(d: Date): string {
@@ -96,7 +94,7 @@ export async function runWeeklySummary(sb: SupabaseClient, opts: { now?: Date } 
   const today = now.toISOString().slice(0, 10);
   const week = isoWeek(now);
   const weekLabel = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const tally: WeeklyTally = { providers: 0, clients: 0, emailed: 0, skipped_already: 0, email_failures: 0, jev_ranked: 0, errors: [] };
+  const tally: WeeklyTally = { clients: 0, emailed: 0, skipped_already: 0, email_failures: 0, jev_ranked: 0, errors: [] };
   const sections = new Map<string, WeeklyCompanySection & { rankedByJev: boolean }>();
   const sectionFor = async (companyId: string, name: string) => {
     if (!sections.has(companyId)) {
@@ -111,31 +109,6 @@ export async function runWeeklySummary(sb: SupabaseClient, opts: { now?: Date } 
     else if (r.outcome === 'already') tally.skipped_already++;
     else { tally.email_failures++; tally.errors.push(`${who}: ${r.error}`); }
   };
-
-  // ── providers ──
-  const { data: assignments, error: aErr } = await sb.from('hs_provider_companies')
-    .select('provider_id, company_id, status, ends_on, companies(name), hs_providers(name)').eq('status', 'active');
-  if (aErr) tally.errors.push(`assignments: ${aErr.message}`);
-  const byProvider = new Map<string, { name: string; companies: { id: string; name: string }[] }>();
-  for (const a of (assignments ?? []) as unknown as { provider_id: string; company_id: string; ends_on: string | null; companies: { name: string } | null; hs_providers: { name: string } | null }[]) {
-    if (a.ends_on && a.ends_on < today) continue;
-    const p = byProvider.get(a.provider_id) ?? { name: a.hs_providers?.name ?? 'Provider', companies: [] };
-    p.companies.push({ id: a.company_id, name: a.companies?.name ?? 'Client' });
-    byProvider.set(a.provider_id, p);
-  }
-  if (byProvider.size > 0) {
-    const { data: logins } = await sb.from('profiles').select('id, email, hs_provider_id').eq('role', 'hs_provider').in('hs_provider_id', [...byProvider.keys()]);
-    for (const login of (logins ?? []) as { id: string; email: string | null; hs_provider_id: string }[]) {
-      if (!login.email) continue;
-      const p = byProvider.get(login.hs_provider_id)!;
-      tally.providers++;
-      const secs = [];
-      for (const c of p.companies) secs.push(await sectionFor(c.id, c.name));
-      const message = providerWeeklyDigestEmail({ providerName: p.name, weekLabel, sections: secs, workspaceUrl: `${adminUrl()}/hs` });
-      const r = await sendKeyedEmail(sb, { dedupeKey: `digest:provider:${login.id}:${week}`, to: login.email, subject: message.subject, html: message.html, tag: message.tag, target: { type: 'provider', id: login.id, profileId: login.id }, companyId: null });
-      record(r, `provider ${login.id}`);
-    }
-  }
 
   // ── clients ──
   const { data: companies, error: cErr } = await sb.from('companies').select('id, name, feature_flags').eq('active', true);
@@ -152,9 +125,9 @@ export async function runWeeklySummary(sb: SupabaseClient, opts: { now?: Date } 
     const section = await sectionFor(co.id, co.name);
     // Nothing on the register and nothing logged: no email, not an empty one.
     const since = new Date(now.getTime() - 7 * 86_400_000).toISOString().slice(0, 10);
-    const { data: acts } = await sb.from('hs_activities').select('title, activity_type, occurred_on, hs_providers(name)').eq('company_id', co.id).gte('occurred_on', since).order('occurred_on', { ascending: false }).limit(20);
-    const activities: WeeklyActivity[] = ((acts ?? []) as unknown as { title: string; activity_type: string; occurred_on: string; hs_providers: { name: string } | null }[])
-      .map(a => ({ title: a.title, type_label: HS_ACTIVITY_TYPE_LABELS[a.activity_type as HsActivityType] ?? a.activity_type, occurred_on: a.occurred_on, provider: a.hs_providers?.name ?? 'Core OS 360' }));
+    const { data: acts } = await sb.from('hs_activities').select('title, activity_type, occurred_on').eq('company_id', co.id).gte('occurred_on', since).order('occurred_on', { ascending: false }).limit(20);
+    const activities: WeeklyActivity[] = ((acts ?? []) as { title: string; activity_type: string; occurred_on: string }[])
+      .map(a => ({ title: a.title, type_label: HS_ACTIVITY_TYPE_LABELS[a.activity_type as HsActivityType] ?? a.activity_type, occurred_on: a.occurred_on, provider: 'Core OS 360' }));
     if (section.overdue.length + section.dueSoon.length + section.openActions.length + activities.length === 0) continue;
     tally.clients++;
     const message = clientWeeklySummaryEmail({ section, weekLabel, activities, registerUrl: `${portalUrl()}/protect/compliance` });

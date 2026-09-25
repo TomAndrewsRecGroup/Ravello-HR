@@ -231,7 +231,6 @@ const reminderRules: Rule[] = [
       const { bucket, due_date, row } = reminderPayload(event);
       const isOver = overdue(bucket);
       const audiences: Audience[] = event.company_id ? [...admins(event.company_id), ...staffOnly] : staffOnly;
-      if (row.provider_id) audiences.push({ kind: 'provider_users', providerId: s(row.provider_id) });
       return [notifyC({
         audiences, companyId: event.company_id, type: isOver ? 'compliance_overdue' : 'compliance_due_soon',
         urgent: isOver,

@@ -12,14 +12,20 @@ const MIG = resolve(__dirname, '../../../../../supabase/migrations');
 const sql = readFileSync(`${MIG}/096_platform_events.sql`, 'utf8');
 const sql097 = readFileSync(`${MIG}/097_vocab_checks.sql`, 'utf8');
 
-// A later migration may re-create a trigger with a wider whitelist
-// (099 adds source_candidate_id to employee_records). The LATEST
-// definition per table is the live one, so it is the one checked.
-const LATER = ['099_lead_flow.sql', '101_support_bd.sql', '104_hire_flow.sql'];
+// A later migration may re-create a trigger with a wider (or, 105,
+// narrower — the provider_id column it whitelisted is dropped) column
+// list. The LATEST definition per table is the live one, so it is the
+// one checked. 105 also DROPs hs_provider_companies entirely (H&S
+// becomes staff-delivered, 2026-09-25) — its trigger goes with the
+// table, even though 096's CREATE TRIGGER text for it still exists on
+// disk from before that table was dropped.
+const LATER = ['099_lead_flow.sql', '101_support_bd.sql', '104_hire_flow.sql', '105_hs_staff_delivered.sql'];
 const parseTriggers = (text: string) => [...text.matchAll(/CREATE TRIGGER (\w+)_platform_event AFTER ([A-Z OR]+) ON public\.(\w+)\s+FOR EACH ROW EXECUTE FUNCTION public\.platform_event_row\(([^)]*)\)/g)]
   .map(m => ({ name: m[1], ops: m[2].trim(), table: m[3], cols: m[4].split(',').map(c => c.trim().replace(/^'|'$/g, '')) }));
 const byTable = new Map(parseTriggers(sql).map(t => [t.table, t]));
 for (const f of LATER) for (const t of parseTriggers(readFileSync(`${MIG}/${f}`, 'utf8'))) byTable.set(t.table, t);
+const sql105 = readFileSync(`${MIG}/105_hs_staff_delivered.sql`, 'utf8');
+for (const m of sql105.matchAll(/DROP TABLE IF EXISTS public\.(\w+)/g)) byTable.delete(m[1]);
 const triggers = [...byTable.values()];
 
 const FORBIDDEN = /^(salary|ni_number|tax_code|date_of_birth|leave_token|details|body|notes|description|email|phone|address|summary|exit_interview_notes|client_feedback|recruiter_notes|response_notes|invite_token|smtp_\w+)$/;

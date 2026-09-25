@@ -1,7 +1,7 @@
 'use client';
-// Sidebar v2026-04-21: Intelligence group (BD Intelligence, BD Roles, Health Status).
-// Header comment forces a fresh webpack chunk hash when clients were serving
-// a stale cached bundle from before the Intelligence group landed.
+// Sidebar v2026-09-25: BD Intelligence/BD Roles removed (no longer sourced
+// from IvyLens); Health & Safety is one staff-facing section, not a
+// provider console plus a separate workspace.
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -26,13 +26,11 @@ import {
   Mail,
   Newspaper,
   PoundSterling,
-  Radar,
   Radio,
   Rss,
   Send,
   ShieldCheck,
   Map,
-  Target,
   ToggleLeft,
   TrendingUp,
   Trophy,
@@ -41,7 +39,6 @@ import {
   UserSearch,
   X,
   HardHat,
-  ClipboardCheck,
   Workflow,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
@@ -76,8 +73,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Intelligence',
     items: [
-      { href: '/bd-intelligence', label: 'BD Intelligence', icon: Target },
-      { href: '/bd-roles',        label: 'BD Roles',        icon: Radar },
       { href: '/health',          label: 'Health Status',   icon: Activity },
     ],
   },
@@ -96,8 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Health & Safety',
     items: [
-      { href: '/health-safety/providers', label: 'Providers',  icon: HardHat },
-      { href: '/hs',                      label: 'Workspace',  icon: ClipboardCheck },
+      { href: '/health-safety', label: 'Health & Safety', icon: HardHat },
     ],
   },
   {

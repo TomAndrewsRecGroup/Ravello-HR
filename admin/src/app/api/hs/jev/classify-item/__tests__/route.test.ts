@@ -5,15 +5,15 @@ import { fakeSupabase, type FakeDb } from '@/lib/events/__tests__/fakeSupabase';
 // The classify route is a suggestion and nothing else: it never writes
 // compliance_items, it only ever returns ids from the vocabulary, an
 // unsure answer is null, and an injected title cannot change either.
+// Staff only (2026-09-25 — Core OS 360 staff deliver H&S directly).
 
 let db: FakeDb;
-let grant: unknown;
-let role = 'hs_provider';
+let role = 'tps_admin';
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: () => ({
     ...db.client,
-    auth: { getUser: async () => ({ data: { user: { id: 'prov-u' } } }) },
-    rpc: async (fn: string) => fn === 'hs_my_companies' ? { data: grant ? [grant] : [], error: null } : fn === 'get_my_role' ? { data: role, error: null } : db.client.rpc(fn, {}),
+    auth: { getUser: async () => ({ data: { user: { id: 'staff-1' } } }) },
+    rpc: async (fn: string) => fn === 'get_my_role' ? { data: role, error: null } : db.client.rpc(fn, {}),
   }),
 }));
 vi.mock('@/lib/rateLimit', () => ({
@@ -36,8 +36,7 @@ function call(body: unknown) {
 beforeEach(() => {
   process.env.JEV_API_KEY = 'k'; delete process.env.JEV_DISABLED;
   db = fakeSupabase({ companies: [{ id: CO, feature_flags: {} }], compliance_items: [], jev_decisions: [] });
-  grant = { company_id: CO, scopes: ['register'], access_level: 'write' };
-  role = 'hs_provider';
+  role = 'tps_admin';
   jevReply = { answers: {
     category:    { type: 'choice', choice: 'hs_fire', confidence: 0.91, probabilities: { hs_fire: 0.91 } },
     recurrence:  { type: 'choice', choice: 'annual', confidence: 0.84, probabilities: { annual: 0.84 } },
@@ -54,7 +53,7 @@ describe('POST /api/hs/jev/classify-item', () => {
     expect(json.suggestion).toMatchObject({ category: 'hs_fire', recurrence: 'annual', legal_basis: 'rrfso_2005', legal_basis_text: 'Regulatory Reform (Fire Safety) Order 2005' });
     expect(json.decision_id).toBeTruthy();
     expect(db.tables.compliance_items).toEqual([]);
-    expect(db.tables.jev_decisions[0]).toMatchObject({ kind: 'hs_item_classify', actor_id: 'prov-u', actor_kind: 'provider', company_id: CO });
+    expect(db.tables.jev_decisions[0]).toMatchObject({ kind: 'hs_item_classify', actor_id: 'staff-1', actor_kind: 'staff', company_id: CO });
   });
 
   it('an injected title changes nothing: only vocabulary ids come back, and nothing is written', async () => {
@@ -82,10 +81,10 @@ describe('POST /api/hs/jev/classify-item', () => {
     expect(db.tables.jev_decisions[0].gated).toBe(true);
   });
 
-  it('refuses a company the caller is not assigned to, and a bad body', async () => {
-    grant = null;
+  it('refuses a non-staff caller, and a bad body', async () => {
+    role = 'client_admin';
     expect((await call({ company_id: CO, title: 'Fire' })).status).toBe(403);
-    grant = { company_id: CO, scopes: ['register'], access_level: 'write' };
+    role = 'tps_admin';
     expect((await call({ company_id: 'nope', title: '' })).status).toBe(400);
   });
 

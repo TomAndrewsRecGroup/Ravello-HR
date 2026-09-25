@@ -268,7 +268,7 @@ function DetailPanel({
         <p className="label mb-2">BD prospect</p>
         {enquiry.triage && <p className="text-xs mb-2" style={{ color: 'var(--ink-soft)' }}>Jev's read: <TriageChip t={enquiry.triage} /></p>}
         {enquiry.bd_company_id ? (
-          <a href="/bd-intelligence" className="text-sm font-medium hover:underline" style={{ color: 'var(--purple)' }}>Linked to a prospect · open BD Intelligence →</a>
+          <p className="text-sm font-medium" style={{ color: 'var(--ink-soft)' }}>Linked to a BD prospect.</p>
         ) : (
           <div className="space-y-2">
             <input className="input w-full" placeholder="Company name" value={companyName} onChange={e => setCompanyName(e.target.value)} />

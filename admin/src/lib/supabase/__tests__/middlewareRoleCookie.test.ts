@@ -109,58 +109,13 @@ describe('what a refused or failed role check does to the session', () => {
   });
 });
 
-// An external H&S provider (hs_provider, migration 094) signs in to this
-// app but may reach ONLY its workspace. Everything else here is staff
-// territory and much of it reads with the service role, so the path
-// check must hold on the cached-cookie fast path as well as the RPC one.
-describe('an H&S provider is confined to /hs', () => {
-  const PROVIDER_ID = '0f0a3c55-5d1e-4a57-9d6b-1c0f2b7f9a11';
-  beforeEach(() => { currentUserId = PROVIDER_ID; rpcRole = 'hs_provider'; });
-
-  const location = (res: Response) => new URL(res.headers.get('location') ?? 'http://x/').pathname;
-
-  it.each(['/hs', '/hs/c/23526e83-afc1-4c6e-85d6-ab7d42dc0709/register', '/api/hs/anything'])(
-    'may reach %s', async (path) => {
-      const res = await updateSession(request(path));
-      expect(res.status).toBe(200);
-    });
-
-  it.each(['/dashboard', '/clients/abc', '/', '/hsx', '/hs-admin', '/health-safety/providers'])(
-    'is sent home from %s, not to a staff page', async (path) => {
-      const res = await updateSession(request(path));
-      expect(res.status).toBeGreaterThanOrEqual(300);
-      expect(location(res)).toBe('/hs');
-    });
-
-  it.each(['/api/files/sign', '/api/admin/clients/abc/raise-invoice', '/api/invite', '/api/hsx/y'])(
-    'gets a 403 from %s', async (path) => {
-      const res = await updateSession(request(path));
-      expect(res.status).toBe(403);
-    });
-
-  it('the fast path checks the path too: a valid provider cookie still cannot open /dashboard', async () => {
-    const signed = await signAdminRole({ userId: PROVIDER_ID, role: 'hs_provider' });
-    const res = await updateSession(request('/dashboard', signed!));
-    expect(rpcCalls).toBe(0);
-    expect(location(res)).toBe('/hs');
-  });
-
-  it('is not signed out: a provider is a legitimate user of this app', async () => {
-    await updateSession(request('/dashboard'));
-    expect(signOuts).toEqual([]);
-  });
-
-  it('lands on /hs, not /dashboard, from the sign-in page', async () => {
-    const signed = await signAdminRole({ userId: PROVIDER_ID, role: 'hs_provider' });
-    const res = await updateSession(request('/auth/login', signed!));
-    expect(location(res)).toBe('/hs');
-  });
-
-  it('staff still reach /hs as well as everything else', async () => {
+// H&S is staff-delivered (2026-09-25, migration 105): there is no
+// external provider login any more, and rolePaths.ts was reduced to
+// staff-only. Staff reach every admin route, including /health-safety.
+describe('staff reach every admin route, health-safety included', () => {
+  it.each(['/health-safety', '/dashboard', '/api/files/sign'])('%s', async (path) => {
     currentUserId = STAFF_ID; rpcRole = 'tps_admin';
-    for (const path of ['/hs', '/dashboard', '/api/files/sign']) {
-      const res = await updateSession(request(path));
-      expect(res.status, path).toBe(200);
-    }
+    const res = await updateSession(request(path));
+    expect(res.status, path).toBe(200);
   });
 });

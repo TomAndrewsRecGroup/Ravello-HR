@@ -2424,3 +2424,217 @@ per run, Jev writing a status, the backlog note per row, calendar times
 in UTC, `client_feedback` in the interview whitelist. 104a then 104
 applied live 2026-09-25 after the rolled-back probe
 (`supabase/probes/104_hire_flow.sql`); no CHECK to apply after deploy.
+
+---
+
+## Health & Safety becomes staff-delivered, and BD Intelligence/BD Roles
+## are removed (2026-09-25, migration 105)
+
+Operator: *"The health & safety element to the platform is not about
+adding Health & Safety Providers, it is about US (Core-OS 360) offering
+our clients a Health & Safety Solution like we do with HR and
+Recruitment… think more along the lines of the offerings of Peninsula
+and their platform, but keeping it as Core-OS 360 and the rest of our
+offerings. Admin app can have the BD Intelligence and BD Roles removed
+as they are no longer coming from IvyLens."*
+
+Phase 1a (2026-09-24) built H&S as a **third-party marketplace**:
+external provider logins, a `/hs` workspace scoped by assignment, a
+provider console for inviting them. That model was wrong from the
+start — Core OS 360 is the provider, the same as it already is for HR
+and Recruitment, and H&S should be one more staff-delivered service on
+a client's account, not infrastructure for outside firms nobody had
+signed up yet (`hs_providers` held 0 rows live, same for
+`hs_provider_companies` and every `provider_id`/`hs_provider_id`
+column — the whole layer was reachable by no one).
+
+### What stayed, what went
+
+The **data model survives untouched**: `compliance_items` (with its
+generated `domain` column), `hs_register_completions`,
+`hs_activities`, `hs_files`, `hs_events` (the append-only Safety
+Timeline, `hs_log()`, the per-source `_hs_event` triggers),
+`hs_next_due()`/`lib/hs/recurrence.ts`. None of that was ever
+provider-specific — it is what makes a register a register, regardless
+of who is doing the work.
+
+What went was the **access-control layer built to let an outside firm
+see only its own slice**: `hs_providers`, `hs_provider_companies`,
+`my_hs_provider_id()`, `hs_can_access()`, `hs_can_write()`,
+`hs_path_company()`, `hs_my_companies()`, `profiles.hs_provider_id` +
+its shape CHECK, `provider_id` on every H&S table, the
+`/hs` route group and its per-company `HsCompanyTabs`, the provider
+console (`/health-safety/providers`, invite/revoke routes), the
+provider weekly digest email, and the `provider_access_ending`
+notification. Staff reach one flat `/health-safety` section — a
+company list, then Register/Activities/Timeline tabs, no scopes to
+filter by because staff see everything.
+
+- **`hs_provider` as a role stays in the enum, inert.** Postgres cannot
+  drop an enum value without rebuilding the type; nothing can be
+  granted that role any more (088's guard trigger already refuses any
+  non-staff role change, and no staff UI offers it). Historical
+  `actor_kind = 'provider'` rows on `hs_events` and
+  `platform_events.actor_kind` keep their own word for the same reason
+  105 elsewhere in this file keeps `approved`/`rejected` alongside
+  `clear`/`blocked` — relabelling asserts something about old rows
+  that was never true of the new model.
+- **Applied live only because every affected table/column held zero
+  rows** (verified before writing a line of the migration:
+  `hs_providers` 0, `hs_provider_companies` 0, `profiles` with
+  `role = 'hs_provider'` 0, every `provider_id` column 0 non-null).
+  Ordering matters: drop the FK-holding columns before the table they
+  reference (`compliance_items.provider_id` etc. before
+  `hs_providers`), and drop a trigger's owning table before the
+  function it calls (`hs_provider_companies` before
+  `hs_event_assignment()`).
+- **`hs_log()` and `hs_events` had their own hidden dependency on the
+  provider layer** the first probe caught: `hs_log()` called
+  `my_hs_provider_id()` for every timeline row, and `hs_events` carried
+  its own `provider_id` column neither the plan nor the first draft of
+  105 accounted for. A rolled-back `BEGIN;...ROLLBACK;` probe through
+  `execute_sql` failed on `function public.my_hs_provider_id() does not
+  exist` before the real apply — exactly the discipline this repo
+  already uses for every migration.
+- **`hs_actor_kind()` loses its provider branch, not the function.**
+  `staff | client | system` — used by `hs_log()`, the register/
+  activity/file "who recorded this" columns, and `hs_evidence_added`'s
+  rule gate (now `actor_kind !== 'client'`, catching any non-client
+  write instead of specifically a provider one).
+
+### Consequence rules, notify, weekly digest
+
+`lib/events/hsRules.ts`: `hs_item_added_by_provider` renamed to
+`hs_item_added` (same gate shape, `actor_kind !== 'client'`);
+`hs_action_done` no longer merges a provider audience, just staff;
+`hs_check_failed`/`hs_actions_raised`/`hs_activity_logged` links moved
+from `/hs/c/<id>/...` to `/health-safety/<id>/...`. The
+`provider_access_ending` rule is deleted outright — its trigger entity
+(`hs_provider_companies.reminder`) no longer exists, and
+`lib/reminders/rules.ts` drops the matching `REMINDERS` entry.
+`Audience`'s `provider_users` kind is gone from `lib/notify/notify.ts`;
+`lib/hs/weeklySummary.ts` loses its entire per-provider-login digest
+section (`providerWeeklyDigestEmail` deleted from
+`lib/email/templates/hsWeekly.ts`) — Monday mornings now produce one
+client summary per opted-in admin, nothing else. The client email's
+"who recorded this" line reads `'Core OS 360'` unconditionally instead
+of joining `hs_providers.name`.
+
+### Jev
+
+`lib/hs/jevQuestions.ts`'s `followupQuestions()` frame changed from "an
+activity record a Health & Safety provider typed" to "…a Core OS 360
+staff member typed" — the state shape and the gate (0.8, never
+auto-acting on the untrusted text) are unaffected, since the rule was
+never about who typed it, only that a human's free text needs framing
+as data, not instructions.
+
+### Admin routing
+
+`lib/auth/rolePaths.ts` was a two-role path-allowlist
+(`STAFF_ROLE`/`PROVIDER_ROLE`, `roleMayReach()` branching on which);
+it is now trivially staff-only — `ADMIN_APP_ROLES = [STAFF_ROLE]`,
+`roleMayReach()` is `role === STAFF_ROLE`, `homeFor()` is always
+`/dashboard`. `AdminSidebar`'s Health & Safety group collapses from two
+links (Providers, Workspace) to one (`/health-safety`).
+
+### BD Intelligence / BD Roles removed
+
+Both pages merged a **live IvyLens `/bd/leads` API call** into local
+`bd_companies`/`bd_scanned_roles` data at render time — that feed is
+gone, so the pages are deleted (`app/(admin)/bd-intelligence/`,
+`app/(admin)/bd-roles/`, `BDCompanyModal.tsx`, the
+`/api/bd-companies/[id]/convert` and `/api/bd-ivylens-dismiss` routes).
+**What is NOT touched**: `bd_companies`/`bd_scanned_roles` themselves,
+the internal `prospect_score`/`next_action`/`outreach_status` pipeline
+(101), and the Enquiry "Convert to prospect" flow
+(`api/admin/enquiries/[id]/convert`) — none of those three ever
+depended on the removed IvyLens feed; they are populated by the Sunday
+`bd-score` cron and the conversion route, both purely internal.
+
+- **`lib/bd/score.ts` (the Sunday cron) DID depend on IvyLens** and is
+  rewritten to score from `bd_companies`/`bd_scanned_roles` alone —
+  `high_repost`/`long_vacancy`/`volume_hiring` are now hardcoded to 0
+  (an honest degrade: the signal genuinely isn't available any more,
+  not a guessed default).
+- **The score ceiling drops below the fallback's own 'call' threshold.**
+  `prospectScore()`'s maximum from local signals alone is 55 (40 from
+  `active_roles` capped at 5, +15 from `roles_seen − active_roles`
+  capped at 5) — below the 60 `fallbackNextAction()` needs to say
+  'call'. This is an accepted, documented consequence of losing the
+  friction signals, not a bug to paper over with invented weights:
+  Jev's own judgement now fills the gap the deterministic fallback
+  cannot reach alone.
+- 101's four IvyLens-only `bd_companies` columns (`domain`,
+  `company_location`, `friction_intel`, `ivylens_roles`) are dropped —
+  they were populated only by the removed pages' in-memory merge, never
+  by any writer, dead the moment the pages go. The six internally-
+  sourced columns from the same migration (`prospect_score`,
+  `next_action`, `scored_at`, `score_inputs`, `source`,
+  `outreach_status`) are kept. `bd_ivylens_dismissed` (070, dismissal
+  state for IvyLens-synthesized rows) is dropped with them.
+- `AdminSidebar`'s Intelligence group loses the BD Intelligence/BD
+  Roles links, keeping only Health Status; the enquiry panel's dead
+  `/bd-intelligence` link becomes plain text ("Linked to a BD
+  prospect.") — the Convert-to-prospect button and flow are untouched.
+
+### Fold-in: `'health_safety'` retired from the generic compliance form
+
+`ClientDetailTabs.tsx`'s Compliance tab and `AddComplianceItem.tsx`
+serve BOTH HR and legacy-H&S categories with their own vocabulary,
+separate from `HS_REGISTER_CATEGORIES` — forcing them onto the
+register's 15-value list would have broken ordinary HR item creation,
+so the narrower fix was taken instead: drop `'health_safety'` from
+both category lists (with an explanatory comment pointing at the
+dedicated register) and refuse it server-side in both
+`api/admin/compliance/route.ts` and `.../[id]/route.ts`. An H&S item
+now belongs exclusively on `/health-safety/<companyId>/register`,
+which has recurrence, evidence and the Safety Timeline this generic
+form never had.
+
+### Tests
+
+`hsSqlShape.test.ts` rewritten around a `resolvePolicies()` helper that
+walks `DROP POLICY IF EXISTS`/`CREATE POLICY` tokens across 094, 095
+and 105 IN FILE ORDER to compute the FINAL live policy set — the same
+"latest definition wins" principle `platformEventsSql.test.ts` already
+used for triggers, extended here to policies. It asserts: the provider
+tables are gone; no surviving policy names a provider, `hs_can_access`,
+`hs_can_write` or `my_hs_provider_id()`; every `provider_id` column and
+`profiles.hs_provider_id`/its CHECK are dropped; the six provider-only
+functions have `DROP FUNCTION IF EXISTS` lines and `hs_actor_kind()`'s
+latest definition has no `'provider'` string.
+`platformEventsSql.test.ts` gained 105 to its `LATER` file list (which
+already existed for exactly this "a later migration re-creates a
+trigger with a different whitelist" shape) plus a small addition: any
+table 105 `DROP TABLE`s is removed from the resolved trigger map before
+comparing against `TRIGGERED_ENTITIES`, because 096's on-disk
+`CREATE TRIGGER hs_provider_companies_platform_event` text is still
+there from before the table existed to drop.
+
+Test files whose entire premise depended on the provider role were
+retired rather than patched around a fiction: `noServiceRoleInHs.test.ts`
+(the risk it guarded — a provider holding a direct JWT reaching a
+service-role read — no longer exists, since nobody outside staff can
+reach these routes at all); the "an H&S provider is confined to /hs"
+describe block in admin's `middlewareRoleCookie.test.ts`; the "an H&S
+provider is sent to the admin app" describe block in portal's
+`middleware.test.ts`; the "an H&S provider is handed on to the admin
+app" describe block in portal's `set-password` route test. Others were
+adapted in place rather than deleted, since their surrounding
+assertions still hold: `hsRules.test.ts`'s fixtures and events swap
+`actor_kind: 'provider'` for `'staff'` and drop the `hs_providers`
+table and `provider_id` columns from the fake DB; `rules.test.ts` and
+`notify.test.ts` do the same and drop `provider_users` from the
+audience checks; `weeklySummary.test.ts` drops the whole provider-digest
+half of its assertions; `vocab.test.ts` drops the three provider-only
+vocabulary rows and asserts those exports no longer exist; the
+classify-item route test swaps its `hs_my_companies()`/scope-grant mock
+for a plain `requireStaff()`/`get_my_role` one.
+
+Both apps: `tsc --noEmit` clean, full `vitest run` green (726 admin,
+221 portal), all five CI guards pass (`check-shared-dupes`,
+`check-row-cap`, `check-route-validation` — the two removed BD routes
+taken off the ratchet file rather than left as phantom entries,
+`check-admin-routes-linked`, `check-blind-updates` — baseline lowered
+108→103 for the routes this removed), both production builds compile.

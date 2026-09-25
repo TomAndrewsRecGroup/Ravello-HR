@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeSupabase, eventRow, type FakeDb } from './fakeSupabase';
 
 // Health & Safety consequences, driven through the real consumer with
-// the real hsRules against the stateful fake:
+// the real hsRules against the stateful fake. H&S is staff-delivered
+// (2026-09-25, migration 105) — there is no external provider any more:
 //   a failed check → ONE action (idempotent) + client email + staff in-app;
 //   pass with actions → a normal action;
 //   an activity → client in-app, and — when Jev says so — a staff
 //   "follow-up suggested" notification and NEVER an action;
-//   an authority claim inside the provider's summary changes nothing
-//   about what may be acted on.
+//   an authority claim inside the staff member's own summary changes
+//   nothing about what may be acted on.
 
 const sent: { to: string; subject: string; html: string }[] = [];
 vi.mock('@/lib/email', async () => {
@@ -44,12 +45,10 @@ beforeEach(() => {
     profiles: [
       { id: 'staff-1', email: 'tom@example.com', role: 'tps_admin' },
       { id: 'ca', email: 'ca@client.com', role: 'client_admin', company_id: 'co-1' },
-      { id: 'prov-u', email: 'p@provider.com', role: 'hs_provider', hs_provider_id: 'prov-1' },
     ],
     companies: [{ id: 'co-1', name: 'Sample Co', account_owner_id: null, feature_flags: {} }],
     compliance_items: [{ id: 'item-1', company_id: 'co-1', title: 'Fire alarm test', domain: 'hs' }],
-    hs_providers: [{ id: 'prov-1', name: 'Lighthouse Safety' }],
-    hs_register_completions: [{ id: 'comp-1', item_id: 'item-1', company_id: 'co-1', provider_id: 'prov-1' }],
+    hs_register_completions: [{ id: 'comp-1', item_id: 'item-1', company_id: 'co-1' }],
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
     notification_preferences: [{ user_id: 'staff-1', email_mode: 'immediate', muted_types: [], weekly_summary: true }],
     platform_events: [], notifications: [], email_log: [], actions: [], jev_decisions: [],
@@ -58,8 +57,8 @@ beforeEach(() => {
 afterEach(() => { delete process.env.JEV_API_KEY; });
 
 const completion = (outcome: string) => eventRow({
-  id: 11, entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'provider', entity_id: 'comp-1',
-  payload: { new: { outcome, item_id: 'item-1', completed_on: '2026-09-24', provider_id: 'prov-1' }, old: {}, changed: [] },
+  id: 11, entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'staff', entity_id: 'comp-1',
+  payload: { new: { outcome, item_id: 'item-1', completed_on: '2026-09-24' }, old: {}, changed: [] },
 });
 
 describe('hs rules', () => {
@@ -75,7 +74,7 @@ describe('hs rules', () => {
     expect(client.html).toContain('Sample Co');
     expect(client.html).toMatch(/\/protect\/actions/);
     const staffNote = db.tables.notifications.find(n => n.user_id === 'staff-1');
-    expect(staffNote).toMatchObject({ type: 'hs_check_failed', link: '/hs/c/co-1/register' });
+    expect(staffNote).toMatchObject({ type: 'hs_check_failed', link: '/health-safety/co-1/register' });
 
     // re-processing raises nothing twice
     db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
@@ -100,8 +99,8 @@ describe('hs rules', () => {
   });
 
   const activity = () => eventRow({
-    id: 12, entity_type: 'hs_activities', event_type: 'created', actor_kind: 'provider', entity_id: 'act-1',
-    payload: { new: { activity_type: 'site_visit', title: 'Quarterly visit', occurred_on: '2026-09-24', provider_id: 'prov-1' }, old: {}, changed: [] },
+    id: 12, entity_type: 'hs_activities', event_type: 'created', actor_kind: 'staff', entity_id: 'act-1',
+    payload: { new: { activity_type: 'site_visit', title: 'Quarterly visit', occurred_on: '2026-09-24' }, old: {}, changed: [] },
   });
   const followupYes = { answers: { needs_followup: { type: 'noul', noul: 0.93 }, severity: { type: 'choice', choice: 'significant', confidence: 0.88, probabilities: { none: 0.02, minor: 0.1, significant: 0.88, serious: 0 } } }, model: 'jev-x', usage: { input_tokens: 120 } };
 
@@ -111,15 +110,15 @@ describe('hs rules', () => {
     const t = await processEvents(db.client, { rules: RULES });
     expect(t.failed).toBe(0);
     expect(jevCalls).toHaveLength(1);
-    // the provider text went in as named state fields, not instructions
+    // the staff member's own text went in as named state fields, not instructions
     const body = jevCalls[0] as { state: Record<string, unknown>; questions: Record<string, { instructions: string }> };
     expect(body.state).toEqual({ activity_type: 'site_visit', title: 'Quarterly visit', summary: expect.stringContaining('blocked fire exit') });
     for (const q of Object.values(body.questions)) expect(q.instructions).not.toContain('blocked fire exit');
 
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
-    expect(client).toMatchObject({ type: 'hs_activity_logged', title: 'Lighthouse Safety · Site visit · 2026-09-24', link: '/protect/timeline' });
+    expect(client).toMatchObject({ type: 'hs_activity_logged', title: 'Core OS 360 · Site visit · 2026-09-24', link: '/protect/timeline' });
     const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
-    expect(staff).toMatchObject({ type: 'hs_followup_suggested', link: '/hs/c/co-1/activities' });
+    expect(staff).toMatchObject({ type: 'hs_followup_suggested', link: '/health-safety/co-1/activities' });
     expect(staff.title).toContain('significant');
     expect(db.tables.actions).toHaveLength(0);
     expect(db.tables.jev_decisions[0]).toMatchObject({ kind: 'hs_activity_followup', acted: false, selected: { needs_followup: 0.93, severity: 'significant' } });
@@ -152,24 +151,32 @@ describe('hs rules', () => {
     expect(db.tables.notifications.some(n => n.type === 'hs_activity_logged')).toBe(true);
   });
 
-  it('a completed failed-check action tells staff and the provider who recorded the check', async () => {
+  it('a completed failed-check action tells staff', async () => {
     db.tables.platform_events.push(eventRow({
       id: 13, entity_type: 'actions', event_type: 'updated', actor_kind: 'client', entity_id: 'a-1',
       payload: { new: { status: 'complete', title: 'Failed check: Fire alarm test', source_ref: 'hs_completion:comp-1' }, old: { status: 'active' }, changed: ['status'] },
     }));
     await processEvents(db.client, { rules: RULES });
     const who = db.tables.notifications.filter(n => n.type === 'hs_action_done').map(n => n.user_id).sort();
-    expect(who).toEqual(['prov-u', 'staff-1']);
+    expect(who).toEqual(['staff-1']);
   });
 
-  it('provider access ending is a staff reminder', async () => {
+  it('a staff-uploaded file is new to the client the moment it lands', async () => {
     db.tables.platform_events.push(eventRow({
-      id: 14, entity_type: 'hs_provider_companies', event_type: 'reminder', entity_id: 'asg-1',
-      payload: { bucket: 'due_7', due_date: '2026-10-02', row: { provider_id: 'prov-1', scopes: ['register'] } },
+      id: 14, entity_type: 'hs_files', event_type: 'created', actor_kind: 'staff', entity_id: 'f-1',
+      payload: { new: { entity_type: 'compliance_item', entity_id: 'item-1', file_name: 'certificate.pdf' }, old: {}, changed: [] },
     }));
     await processEvents(db.client, { rules: RULES });
-    const n = db.tables.notifications.find(n => n.type === 'provider_access_ending')!;
-    expect(n.title).toBe("Lighthouse Safety's access to Sample Co ends 2026-10-02");
-    expect(n.body).toContain('Register');
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_evidence_added', link: '/protect/compliance' });
+  });
+
+  it('a client-uploaded file does not notify the client about their own upload', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 15, entity_type: 'hs_files', event_type: 'created', actor_kind: 'client', entity_id: 'f-2',
+      payload: { new: { entity_type: 'compliance_item', entity_id: 'item-1', file_name: 'own-cert.pdf' }, old: {}, changed: [] },
+    }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.type === 'hs_evidence_added')).toBe(false);
   });
 });

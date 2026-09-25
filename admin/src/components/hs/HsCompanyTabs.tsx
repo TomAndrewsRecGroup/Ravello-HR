@@ -1,21 +1,19 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { HsScope } from '@/lib/hs/vocab';
 
-const TABS: { seg: string; label: string; scope: HsScope | null }[] = [
-  { seg: 'register',   label: 'Register',   scope: 'register' },
-  { seg: 'activities', label: 'Activities', scope: 'register' },
-  { seg: 'timeline',   label: 'Timeline',   scope: null },
+const TABS: { seg: string; label: string }[] = [
+  { seg: 'register',   label: 'Register' },
+  { seg: 'activities', label: 'Activities' },
+  { seg: 'timeline',   label: 'Timeline' },
 ];
 
-export default function HsCompanyTabs({ companyId, scopes }: { companyId: string; scopes: HsScope[] }) {
+export default function HsCompanyTabs({ companyId }: { companyId: string }) {
   const pathname = usePathname();
-  const tabs = TABS.filter(t => !t.scope || scopes.includes(t.scope));
   return (
     <nav className="flex gap-1 overflow-x-auto" style={{ borderBottom: '1px solid var(--line)' }} aria-label="Client sections">
-      {tabs.map(t => {
-        const href = `/hs/c/${companyId}/${t.seg}`;
+      {TABS.map(t => {
+        const href = `/health-safety/${companyId}/${t.seg}`;
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

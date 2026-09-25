@@ -28,8 +28,7 @@ export type Audience =
   | { kind: 'account_owner'; companyId: string }
   | { kind: 'company_admins'; companyId: string }
   | { kind: 'company_editors'; companyId: string }
-  | { kind: 'user'; userId: string }
-  | { kind: 'provider_users'; providerId: string };
+  | { kind: 'user'; userId: string };
 
 export interface Recipient {
   id:    string;
@@ -67,10 +66,9 @@ export interface NotifyTally {
 }
 
 export const STAFF_ROLE = 'tps_admin';
-const ADMIN_APP_ROLES = new Set(['tps_admin', 'hs_provider']);
 
 function toRecipient(p: { id: string; email: string | null; role: string }): Recipient {
-  return { id: p.id, email: p.email, role: p.role, app: ADMIN_APP_ROLES.has(p.role) ? 'admin' : 'portal' };
+  return { id: p.id, email: p.email, role: p.role, app: p.role === STAFF_ROLE ? 'admin' : 'portal' };
 }
 
 const PROFILE_COLS = 'id, email, role';
@@ -105,11 +103,6 @@ export async function resolveAudience(sb: SupabaseClient, a: Audience): Promise<
       const { data, error } = await sb.from('profiles').select(PROFILE_COLS).eq('id', a.userId).maybeSingle();
       if (error) throw new Error(`resolve user: ${error.message}`);
       return data ? [toRecipient(data as { id: string; email: string | null; role: string })] : [];
-    }
-    case 'provider_users': {
-      const { data, error } = await sb.from('profiles').select(PROFILE_COLS).eq('hs_provider_id', a.providerId).eq('role', 'hs_provider');
-      if (error) throw new Error(`resolve provider_users: ${error.message}`);
-      return (data ?? []).map(toRecipient);
     }
   }
 }
