@@ -76,7 +76,7 @@ export default async function HealthSafetyAuditsPage(props: { params: Promise<{ 
             <tbody>
               {rows.map(a => (
                 <tr key={a.id}>
-                  <td>{a.title}</td>
+                  <td><Link href={`/health-safety/${params.companyId}/audits/${a.id}`} style={{ color: 'var(--purple)' }}>{a.title}</Link></td>
                   <td>{fmt(a.conducted_on)}</td>
                   <td style={{ color: scoreColour(a.score), fontWeight: 600 }}>{a.score == null ? '—' : `${Math.round(a.score)}%`}</td>
                   <td>{findings.get(a.id) ?? 0}</td>
