@@ -12,7 +12,7 @@ import LogoUpload from '@/components/modules/LogoUpload';
 import EmailLogList from '@/components/modules/EmailLogList';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
-import ProtectTab from './tabs/ProtectTab';
+import HrTab from './tabs/HrTab';
 import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
 
@@ -325,7 +325,7 @@ function BillingPanel({
 
 // Services tab removed — retainer + module access live together on the
 // Overview tab now (retainer modal opens on Save in FeatureFlagToggles).
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'PROTECT', 'Friction', 'Invoices'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'HR', 'Friction', 'Invoices'] as const;
 type Tab = typeof TABS[number];
 
 // Milestone vocabulary is shared with the portal (lib/roadmap/milestones.ts):
@@ -479,10 +479,10 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   const [savingMS,    setSavingMS]    = useState(false);
 
 
-  // LEAD + PROTECT state lives inside their respective tab components now.
+  // LEAD + HR state lives inside their respective tab components now.
 
   // Sync lazy-loaded tab data into component state
-  // (Candidates / LEAD / PROTECT data is consumed directly by their tab
+  // (Candidates / LEAD / HR data is consumed directly by their tab
   //  components via tabData[...] in render; no parent setState bridge needed.)
   useEffect(() => {
     if (tabData['Documents']?.documents) setDocuments(tabData['Documents'].documents);
@@ -496,7 +496,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   useEffect(() => {
     if (tabData['Compliance']?.compliance) setCompliance(tabData['Compliance'].compliance);
   }, [tabData['Compliance']]);
-  // LEAD + PROTECT data is consumed directly by the extracted tab components
+  // LEAD + HR data is consumed directly by the extracted tab components
   // via tabData[...] in render — no parent-level setState bridge needed.
 
   /* ── Doc approve ── */
@@ -686,6 +686,17 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
 
           {/* Right column: Module access + Notes timeline */}
           <div className="space-y-6">
+            {/* Health & Safety now lives in its own top-level section
+                (2026-09-25) — staff-delivered, not a client-detail tab. */}
+            <a
+              href={`/health-safety/${company.id}`}
+              className="card p-5 flex items-center justify-between hover:opacity-90 transition-opacity"
+              style={{ color: 'var(--ink)' }}
+            >
+              <span className="text-sm font-semibold">Health &amp; Safety</span>
+              <ExternalLink size={13} style={{ color: 'var(--ink-faint)' }} />
+            </a>
+
             <div className="card p-5">
               <FeatureFlagToggles
                 companyId={company.id}
@@ -1193,12 +1204,12 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
         />
       )}
 
-      {/* ─── PROTECT ───────────────────────────────────── */}
-      {tab === 'PROTECT' && tabData['PROTECT'] && (
-        <ProtectTab
+      {/* ─── HR ───────────────────────────────────────── */}
+      {tab === 'HR' && tabData['HR'] && (
+        <HrTab
           companyId={company.id}
-          initialAbsenceRecords={tabData['PROTECT'].absenceRecords ?? []}
-          initialEmpDocs={tabData['PROTECT'].empDocs ?? []}
+          initialAbsenceRecords={tabData['HR'].absenceRecords ?? []}
+          initialEmpDocs={tabData['HR'].empDocs ?? []}
         />
       )}
 
