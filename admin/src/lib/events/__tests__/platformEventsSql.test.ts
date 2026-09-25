@@ -15,7 +15,7 @@ const sql097 = readFileSync(`${MIG}/097_vocab_checks.sql`, 'utf8');
 // A later migration may re-create a trigger with a wider whitelist
 // (099 adds source_candidate_id to employee_records). The LATEST
 // definition per table is the live one, so it is the one checked.
-const LATER = ['099_lead_flow.sql', '101_support_bd.sql'];
+const LATER = ['099_lead_flow.sql', '101_support_bd.sql', '104_hire_flow.sql'];
 const parseTriggers = (text: string) => [...text.matchAll(/CREATE TRIGGER (\w+)_platform_event AFTER ([A-Z OR]+) ON public\.(\w+)\s+FOR EACH ROW EXECUTE FUNCTION public\.platform_event_row\(([^)]*)\)/g)]
   .map(m => ({ name: m[1], ops: m[2].trim(), table: m[3], cols: m[4].split(',').map(c => c.trim().replace(/^'|'$/g, '')) }));
 const byTable = new Map(parseTriggers(sql).map(t => [t.table, t]));

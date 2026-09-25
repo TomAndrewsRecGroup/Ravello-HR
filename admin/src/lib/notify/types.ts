@@ -66,6 +66,17 @@ export const NOTIFICATION_TYPES = [
   'absence_pattern_flag',
   'policy_ack_signed',
   'policy_ack_needs_email',
+  // HIRE flow
+  'role_stage_changed',
+  'candidate_shared',
+  'interview_scheduled',
+  'interview_cancelled',
+  'offer_sent',
+  'offer_decided',
+  'role_stale',
+  'offer_deadline',
+  'referral_review_pending',
+  'referral_scan_failed',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -119,6 +130,16 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   absence_pattern_flag:       'Absence pattern to review',
   policy_ack_signed:          'Policy acknowledged',
   policy_ack_needs_email:     'Policy link could not be sent',
+  role_stage_changed:         'Role moved stage',
+  candidate_shared:           'Candidate shared with you',
+  interview_scheduled:        'Interview booked',
+  interview_cancelled:        'Interview cancelled',
+  offer_sent:                 'Offer sent',
+  offer_decided:              'Offer decision',
+  role_stale:                 'Role has stalled',
+  offer_deadline:             'Offer deadline',
+  referral_review_pending:    'Referrals awaiting review',
+  referral_scan_failed:       'Referral scan failed',
 };
 
 export function isNotificationType(v: string): v is NotificationType {
