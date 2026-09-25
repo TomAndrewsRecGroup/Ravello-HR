@@ -11,7 +11,11 @@ export default async function ReportsPage() {
   const supabase = createServerSupabaseClient();
   const { companyId, featureFlags } = await getSessionProfile();
   const flags: Record<string, boolean> = featureFlags ?? {};
-  const enabled = flags.reports !== false;
+  // Was checking flags.reports — a different, unrelated flag ("CSV
+  // Reports" in the General FLAG_GROUP). This page's own middleware
+  // gate (moduleAccess.ts ROUTE_FLAGS['/protect/reports']) is
+  // protect_reports; the in-page check must agree with it.
+  const enabled = flags.protect_reports !== false;
 
   const [
     { data: company },

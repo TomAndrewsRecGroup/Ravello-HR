@@ -2,6 +2,14 @@
 // Sidebar v2026-09-25: BD Intelligence/BD Roles removed (no longer sourced
 // from IvyLens); Health & Safety is one staff-facing section, not a
 // provider console plus a separate workspace.
+//
+// Sidebar v2026-09-26: group headings for the three commercial pillars
+// (HIRE, LEAD, PROTECT) now match the portal's own sidebar labels and
+// the marketing site's naming — staff used to see "Hiring" and "Health
+// & Safety" here while clients saw "HIRE" and "PROTECT · H&S" for the
+// same thing. Item labels underneath a pillar heading stay plain English
+// ("Roles", "Health & Safety", "Learning") — only the group name is the
+// brand word.
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -62,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Hiring',
+    label: 'HIRE',
     items: [
       { href: '/hiring',          label: 'Roles',          icon: Briefcase },
       { href: '/hiring/templates', label: 'Templates',     icon: FileText },
@@ -89,9 +97,15 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Health & Safety',
+    label: 'PROTECT',
     items: [
       { href: '/health-safety', label: 'Health & Safety', icon: HardHat },
+    ],
+  },
+  {
+    label: 'LEAD',
+    items: [
+      { href: '/learning',        label: 'Learning',       icon: BookOpen },
     ],
   },
   {
@@ -111,7 +125,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/reports',         label: 'CSV Exports',    icon: FolderOpen },
       { href: '/documents',       label: 'Documents',      icon: FileText },
       { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
-      { href: '/learning',        label: 'Learning',       icon: BookOpen },
     ],
   },
   {
