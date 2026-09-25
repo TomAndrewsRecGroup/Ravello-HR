@@ -3,6 +3,7 @@ import { RULES } from '../rules';
 import { EMITTED_ENTITIES, REMINDER_ENTITIES, TRIGGERED_ENTITIES, type PlatformEvent } from '../types';
 import { REMINDERS } from '@/lib/reminders/rules';
 import { NOTIFICATION_TYPES } from '@/lib/notify/types';
+import { fakeSupabase } from './fakeSupabase';
 
 // A rule that listens for something nothing emits is a feature that
 // never fires and never fails. These make that a test failure.
@@ -21,8 +22,16 @@ function ev(over: Partial<PlatformEvent> & { entity_type: string; event_type: st
   };
 }
 
+const db = fakeSupabase({
+  compliance_items: [{ id: 'row-1', title: 'Fire alarm test' }],
+  hs_providers: [{ id: 'p1', name: 'Lighthouse' }],
+  hs_activities: [{ id: 'row-1', activity_type: 'site_visit', title: 'T', summary: 'S' }],
+  hs_register_completions: [{ id: 'comp-1', provider_id: 'p1' }],
+  companies: [{ id: 'co-1', feature_flags: {} }],
+  jev_decisions: [],
+});
 const ctx = (event: PlatformEvent) => ({
-  sb: {} as never, event,
+  sb: db.client, event,
   companyName: async () => 'Sample Co',
   profile: async () => ({ email: 'raiser@example.com', full_name: 'Ray' }),
 });
@@ -52,6 +61,12 @@ describe('rules registry', () => {
       ev({ entity_type: 'actions', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'complete', title: 'Do' }, old: { status: 'active' }, changed: ['status'] } }),
       ev({ entity_type: 'internal_tasks', event_type: 'created', payload: { new: { assigned_to: 'u2', title: 'Call' }, old: {}, changed: [] } }),
       ev({ entity_type: 'companies', event_type: 'updated', payload: { new: { subscription_status: 'past_due' }, old: { subscription_status: 'active' }, changed: ['subscription_status'] } }),
+      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'provider', payload: { new: { outcome: 'fail', item_id: 'row-1', completed_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_register_completions', event_type: 'created', actor_kind: 'provider', payload: { new: { outcome: 'pass_with_actions', item_id: 'row-1', completed_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_activities', event_type: 'created', actor_kind: 'provider', payload: { new: { activity_type: 'site_visit', title: 'T', occurred_on: '2026-09-24', provider_id: 'p1' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'hs_files', event_type: 'created', actor_kind: 'provider', payload: { new: { file_name: 'cert.pdf' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'compliance_items', event_type: 'created', actor_kind: 'provider', payload: { new: { title: 'X', domain: 'hs', due_date: '2026-10-01' }, old: {}, changed: [] } }),
+      ev({ entity_type: 'actions', event_type: 'updated', actor_kind: 'client', payload: { new: { status: 'complete', title: 'Y', source_ref: 'hs_completion:comp-1' }, old: { status: 'active' }, changed: ['status'] } }),
       ...REMINDER_ENTITIES.flatMap(e => (['due_30', 'due_7', 'due_0', 'overdue', 'overdue_w2'] as const).map(bucket =>
         ev({ entity_type: e, event_type: 'reminder', payload: { bucket, due_date: '2026-10-01', row: { title: 'T', task_title: 'T', assigned_to: 'u3', provider_id: 'p1', employee_name: 'E', full_name: 'E', name: 'Doc', subject: 'S', sent_at: '2026-09-01' } } }))),
     ];

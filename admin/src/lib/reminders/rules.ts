@@ -147,6 +147,15 @@ export const REMINDERS: ReminderRule[] = [
   },
 ];
 
+REMINDERS.push({
+  id: 'hs_provider_companies', entity: 'hs_provider_companies',
+  select: 'id, company_id, provider_id, status, ends_on, scopes',
+  query: (sb, from, to) => sb.from('hs_provider_companies').select('id, company_id, provider_id, status, ends_on, scopes')
+    .eq('status', 'active').not('ends_on', 'is', null).order('id').range(from, to),
+  dueDateOf: r => str(r.ends_on),
+  buckets: ['due_30', 'due_7'],
+});
+
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;
   const one = Array.isArray(inst) ? inst[0] : inst;

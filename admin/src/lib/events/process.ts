@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { sendEmail, lastEmailError } from '@/lib/email';
-import { brandFromAddress } from '@/lib/brand';
 import { notify, type NotifyTally } from '@/lib/notify/notify';
+import { sendKeyedEmail } from '@/lib/notify/keyedEmail';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { RULES, rulesFor, type Consequence, type Rule, type RuleContext } from './rules';
 import { eventKey, type PlatformEvent } from './types';
@@ -126,40 +125,30 @@ export async function runConsequence(sb: SupabaseClient, event: PlatformEvent, c
   switch (c.kind) {
     case 'notify':
       return notify(sb, { ...c.input, dedupeKey: key, eventId: event.id });
-    case 'email':
-      return sendKeyedEmail(sb, event, c, key);
+    case 'email': {
+      const r = await sendKeyedEmail(sb, {
+        dedupeKey: key, to: c.to, subject: c.message.subject, html: c.message.html, tag: c.message.tag,
+        target: c.target, companyId: event.company_id,
+      });
+      return { recipients: 1, notified: 0, emailed: r.outcome === 'sent' ? 1 : 0, email_failures: r.outcome === 'failed' ? 1 : 0 };
+    }
     case 'run':
       await c.fn(sb);
+      return null;
+    case 'action':
+      await createKeyedAction(sb, c);
       return null;
   }
 }
 
-/** Claim by inserting the email_log row first (unique dedupe_key);
- *  a second attempt finds the row and sends nothing. */
-async function sendKeyedEmail(sb: SupabaseClient, event: PlatformEvent, c: Extract<Consequence, { kind: 'email' }>, key: string): Promise<NotifyTally> {
-  const t: NotifyTally = { recipients: 1, notified: 0, emailed: 0, email_failures: 0 };
-  const { data: claimed, error } = await sb.from('email_log').upsert({
-    dedupe_key:    key,
-    target_type:   c.target.type,
-    target_id:     c.target.id,
-    company_id:    event.company_id,
-    profile_id:    c.target.profileId ?? null,
-    to_email:      c.to,
-    subject:       c.message.subject,
-    body_html:     c.message.html,
-    sender_kind:   'resend',
-    sender_email:  brandFromAddress(process.env.EMAIL_FROM),
-    sent_by:       null,
-    provider_id:   null,
-    error_message: 'claimed',
-  }, { onConflict: 'dedupe_key', ignoreDuplicates: true }).select('id');
-  if (error) throw new Error(`email_log claim: ${error.message}`);
-  const row = (claimed ?? [])[0] as { id: string } | undefined;
-  if (!row) return t; // already sent (or being sent) by an earlier attempt
-
-  const result = await sendEmail({ to: c.to, subject: c.message.subject, html: c.message.html, tag: c.message.tag });
-  const errorMessage = result?.delivered ? null : (lastEmailError()?.message ?? 'Email send failed.');
-  if (errorMessage) t.email_failures++; else t.emailed++;
-  await sb.from('email_log').update({ provider_id: result?.delivered ? result.id : null, error_message: errorMessage }, COUNT_EXACT).eq('id', row.id);
-  return t;
+/** Insert an action once per (company, source_ref); a re-run finds the
+ *  unique index and creates nothing. */
+async function createKeyedAction(sb: SupabaseClient, c: Extract<Consequence, { kind: 'action' }>): Promise<void> {
+  const { error } = await sb.from('actions').upsert({
+    company_id: c.companyId, source_ref: c.sourceRef, status: 'active',
+    action_type: c.row.action_type, title: c.row.title.slice(0, 200), description: c.row.description ?? null,
+    priority: c.row.priority, related_entity_type: c.row.related_entity_type ?? null, related_entity_id: c.row.related_entity_id ?? null,
+    due_date: c.row.due_date ?? null, created_by_admin: c.row.created_by_admin ?? true,
+  }, { onConflict: 'company_id,source_ref', ignoreDuplicates: true });
+  if (error) throw new Error(`action upsert: ${error.message}`);
 }

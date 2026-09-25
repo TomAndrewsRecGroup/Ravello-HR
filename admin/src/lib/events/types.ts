@@ -56,6 +56,7 @@ export const REMINDER_ENTITIES = [
   'absence_records',
   'service_requests',
   'internal_tasks',
+  'hs_provider_companies',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

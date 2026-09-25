@@ -7,6 +7,7 @@ import {
   changedTo, isOverdueWeekly, reminderPayload, rowPayload,
   type EventKey, type PlatformEvent, type ReminderBucket,
 } from './types';
+import { hsRules } from './hsRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -30,7 +31,17 @@ export type EmailConsequence = {
   target: { type: 'user' | 'employee' | 'company' | 'candidate'; id: string; profileId?: string | null };
 };
 export type RunConsequence = { kind: 'run'; label: string; fn: (sb: SupabaseClient) => Promise<void> };
-export type Consequence = NotifyConsequence | EmailConsequence | RunConsequence;
+/** A client action item, created once per sourceRef (unique index, 096). */
+export type ActionConsequence = {
+  kind: 'action';
+  companyId: string;
+  sourceRef: string;
+  row: {
+    action_type: string; title: string; description?: string | null; priority: 'low' | 'normal' | 'high' | 'urgent';
+    related_entity_type?: string | null; related_entity_id?: string | null; due_date?: string | null; created_by_admin?: boolean;
+  };
+};
+export type Consequence = NotifyConsequence | EmailConsequence | RunConsequence | ActionConsequence;
 
 export interface RuleContext {
   sb: SupabaseClient;
@@ -358,7 +369,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);

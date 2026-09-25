@@ -8,11 +8,14 @@ interface Run { id: number; job: string; started_at: string; finished_at: string
 interface FailedEvent { id: number; occurred_at: string; company_id: string | null; entity_type: string; entity_id: string | null; event_type: string; attempts: number; last_error: string | null; actor_kind: string }
 interface RecentEvent { id: number; occurred_at: string; entity_type: string; event_type: string; actor_kind: string; processed_at: string | null; company_id: string | null }
 
+interface JevKindStat { kind: string; calls: number; errors: number; gated: number; acted: number; accepted: number; overridden: number; ignored: number; tokens: number; ms: number }
+
 interface Props {
   runs: Run[];
   pendingCount: number;
   failed: FailedEvent[];
   recent: RecentEvent[];
+  jev: JevKindStat[];
   loadError: string | null;
 }
 
@@ -36,10 +39,11 @@ function summarise(job: string, tally: Record<string, unknown>): string {
     return `${r.rows_read ?? 0} rows · ${r.events_new ?? 0} new reminders · ${p.notified ?? 0} notified${sw ? ` · ${sw}` : ''}`;
   }
   if (job === 'digest') return `${t.users ?? 0} users · ${t.emailed ?? 0} emailed · ${t.items ?? 0} items${(t.email_failures as number) ? ` · ${t.email_failures} failures` : ''}`;
+  if (job === 'weekly-summary') return `${t.providers ?? 0} providers · ${t.clients ?? 0} clients · ${t.emailed ?? 0} emailed · ${t.skipped_already ?? 0} already sent · ${t.jev_ranked ?? 0} ranked by Jev${(t.email_failures as number) ? ` · ${t.email_failures} failures` : ''}`;
   return JSON.stringify(tally).slice(0, 160);
 }
 
-export default function AutomationClient({ runs, pendingCount, failed, recent, loadError }: Props) {
+export default function AutomationClient({ runs, pendingCount, failed, recent, jev, loadError }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,12 +72,12 @@ export default function AutomationClient({ runs, pendingCount, failed, recent, l
       {loadError && <p className="card p-3 text-sm" style={{ color: 'var(--danger)' }}>Part of this page could not be loaded: {loadError}</p>}
       {error && <p className="card p-3 text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
 
-      <div className="grid sm:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-5 gap-4">
         <div className="card p-4">
           <p className="text-xs font-medium mb-1" style={{ color: 'var(--ink-faint)' }}>Waiting to process</p>
           <p className="font-display font-bold text-2xl" style={{ color: pendingCount > 0 ? 'var(--ink)' : 'var(--ink-faint)' }}>{pendingCount}</p>
         </div>
-        {['process-events', 'reminders', 'digest'].map(job => {
+        {['process-events', 'reminders', 'digest', 'weekly-summary'].map(job => {
           const r = lastByJob.get(job);
           const O = OUTCOME[r?.outcome ?? 'disabled'] ?? OUTCOME.disabled;
           return (
@@ -116,6 +120,37 @@ export default function AutomationClient({ runs, pendingCount, failed, recent, l
             </table>
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>Jev decisions, last 30 days</h2>
+        <p className="text-xs mb-3" style={{ color: 'var(--ink-faint)' }}>
+          Agreement is people accepting a suggestion as given. Gated means Jev was not confident enough to suggest anything. Only the register ranking ever acts on its own.
+        </p>
+        <div className="table-wrapper">
+          <table className="table">
+            <thead><tr><th>Kind</th><th>Calls</th><th>Errors</th><th>Gated</th><th>Auto-acted</th><th>Accepted / overridden / ignored</th><th>Agreement</th><th>Avg ms</th><th>Tokens</th></tr></thead>
+            <tbody>
+              {jev.length === 0 && <tr><td colSpan={9} style={{ color: 'var(--ink-faint)' }}>No Jev calls yet. Set JEV_API_KEY and switch on the client's AI assist flag.</td></tr>}
+              {jev.map(k => {
+                const judged = k.accepted + k.overridden;
+                return (
+                  <tr key={k.kind}>
+                    <td className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{k.kind}</td>
+                    <td>{k.calls}</td>
+                    <td style={{ color: k.errors ? 'var(--danger)' : undefined }}>{k.errors}</td>
+                    <td>{k.gated} <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>({k.calls ? Math.round((k.gated / k.calls) * 100) : 0}%)</span></td>
+                    <td>{k.acted}</td>
+                    <td className="text-xs">{k.accepted} / {k.overridden} / {k.ignored}</td>
+                    <td>{judged ? `${Math.round((k.accepted / judged) * 100)}%` : <span style={{ color: 'var(--ink-faint)' }}>—</span>}</td>
+                    <td className="text-xs">{k.calls ? Math.round(k.ms / k.calls) : 0}</td>
+                    <td className="text-xs">{k.tokens.toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>

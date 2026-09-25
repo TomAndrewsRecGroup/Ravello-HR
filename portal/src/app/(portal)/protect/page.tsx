@@ -31,7 +31,7 @@ export default async function ProtectOverviewPage() {
   const supabase = createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
-  const [register, { data: events, error: eventsErr }, { data: access }] = await Promise.all([
+  const [register, { data: events, error: eventsErr }, { data: access }, { data: failedActions }] = await Promise.all([
     readAllPages<{ id: string; title: string; status: string; due_date: string | null }>((from, to) =>
       supabase.from('compliance_items')
         .select('id, title, status, due_date')
@@ -49,7 +49,17 @@ export default async function ProtectOverviewPage() {
       .eq('company_id', companyId)
       .eq('status', 'active')
       .order('created_at'),
+    // Actions the platform raised from a failed or actions-raised check
+    // (lib/events/hsRules.ts). Still active = still waiting on the client.
+    supabase.from('actions')
+      .select('id, title, priority, action_type, created_at')
+      .eq('company_id', companyId)
+      .eq('status', 'active')
+      .in('action_type', ['hs_failed_check', 'hs_actions_raised', 'hs_followup'])
+      .order('created_at', { ascending: false })
+      .limit(10),
   ]);
+  const awaiting = (failedActions ?? []) as { id: string; title: string; priority: string; action_type: string; created_at: string }[];
 
   const items = register.rows;
   const counts = { red: 0, amber: 0, green: 0, complete: 0 };
@@ -86,6 +96,27 @@ export default async function ProtectOverviewPage() {
           </Link>
         ))}
       </section>
+
+      {awaiting.length > 0 && (
+        <section className="card p-5" style={{ borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)' }} aria-label="Checks awaiting action">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display font-semibold flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+              <AlertTriangle size={16} style={{ color: 'var(--danger)' }} /> Checks awaiting your action ({awaiting.length})
+            </h2>
+            <Link href="/protect/actions" className="text-xs font-medium" style={{ color: 'var(--purple)' }}>Open actions →</Link>
+          </div>
+          <ul className="divide-y" style={{ borderColor: 'var(--line)' }}>
+            {awaiting.map(a => (
+              <li key={a.id} className="py-2 flex items-center justify-between gap-3 text-sm">
+                <span style={{ color: 'var(--ink)' }}>{a.title}</span>
+                <span className="text-xs shrink-0" style={{ color: a.priority === 'high' || a.priority === 'urgent' ? 'var(--danger)' : 'var(--ink-faint)' }}>
+                  {a.action_type === 'hs_failed_check' ? 'Failed check' : a.action_type === 'hs_followup' ? 'Follow-up' : 'Actions raised'} · {fmt(a.created_at.slice(0, 10))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <section className="card p-5">
