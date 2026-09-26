@@ -26,6 +26,12 @@ const PUBLIC_ROUTES = [
   // emails (103). Same shape and the same reason as the leave link.
   /^\/policy\//,
   /^\/api\/policy\//,
+  // No-login test-taking link (H&S Tests, 116). Same shape and the
+  // same reason as the leave/policy links: the employee has no portal
+  // seat, and the page's own server-side preflight calls the API with
+  // no cookie, so both the page and the API must be public.
+  /^\/test\//,
+  /^\/api\/test\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

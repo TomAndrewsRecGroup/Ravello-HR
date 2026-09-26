@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles } from 'lucide-react';
+import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles, GraduationCap } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 
@@ -43,6 +43,9 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_followup_suggested:      { Icon: Sparkles,       color: 'var(--purple)' },
   hs_audit_completed:         { Icon: HardHat,        color: 'var(--blue)' },
   hs_incident_reported:       { Icon: AlertTriangle,  color: 'var(--red)' },
+  hs_incident_status_changed: { Icon: AlertTriangle,  color: 'var(--blue)' },
+  hs_document_added:          { Icon: FileText,       color: 'var(--blue)' },
+  hs_test_result:             { Icon: GraduationCap,  color: 'var(--purple)' },
   hs_equipment_inspection_due: { Icon: HardHat,       color: 'var(--gold)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },

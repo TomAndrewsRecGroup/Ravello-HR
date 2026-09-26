@@ -260,4 +260,62 @@ describe('hs rules', () => {
     expect(client).toMatchObject({ link: '/protect/timeline' });
     expect(client.body).toBe('No findings.');
   });
+
+  it('closing an incident investigation tells the client — the creation rule alone only fires once', async () => {
+    const closed = eventRow({
+      id: 18, entity_type: 'hs_incidents', event_type: 'updated', actor_kind: 'staff', entity_id: 'inc-1',
+      payload: { new: { incident_type: 'near_miss', status: 'closed' }, old: { status: 'investigating' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(closed);
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_incident_status_changed', link: '/protect/incidents' });
+    expect(client.title).toBe('Investigation closed: near miss incident');
+  });
+
+  it('moving an incident to investigating (not closed) raises nothing', async () => {
+    const moved = eventRow({
+      id: 19, entity_type: 'hs_incidents', event_type: 'updated', actor_kind: 'staff', entity_id: 'inc-1',
+      payload: { new: { incident_type: 'near_miss', status: 'investigating' }, old: { status: 'open' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(moved);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('a new H&S document tells the client admins', async () => {
+    const doc = eventRow({
+      id: 20, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-1',
+      payload: { new: { title: 'Fire Risk Assessment 2026', status: 'active', category: 'hs_fire' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_document_added', link: '/protect/documents' });
+    expect(client.title).toContain('Fire Risk Assessment 2026');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
+
+  it('a document write that only marks the OLD version superseded raises nothing (the new row\'s own .created already covers it)', async () => {
+    const superseded = eventRow({
+      id: 21, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-old',
+      payload: { new: { status: 'superseded' }, old: { status: 'active' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(superseded);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('a self-marked test submission (emitted by the public token route) tells the client admins, using the same type and link the admin log route uses', async () => {
+    const submitted = eventRow({
+      id: 22, entity_type: 'hs_test_submission', event_type: 'created', actor_kind: 'client', entity_id: 'assignment-1',
+      payload: { employee_name: 'Jordan Lee', test_title: 'Fire Warden Refresher', passed: true, score: 92 },
+    });
+    db.tables.platform_events.push(submitted);
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'hs_test_result', link: '/protect/tests' });
+    expect(client.title).toBe('Jordan Lee: Fire Warden Refresher — Passed');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
 });

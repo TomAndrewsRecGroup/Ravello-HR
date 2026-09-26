@@ -158,3 +158,18 @@ export const HS_ENTITY_LABELS: Record<string, string> = {
   equipment:           'Equipment',
   equipment_inspection: 'Equipment inspection',
 };
+
+// Tests (migration 116). Mirrors the CHECK on hs_tests.source_type /
+// hs_test_submissions.source; hsTestsSql.test.ts pins it against 116's
+// SQL, the same discipline as the other tuples above — kept in its own
+// test file rather than vocab.test.ts's, since that one's FILES list
+// scans a fixed set of earlier migrations for a "latest definition
+// wins" resolution this simple, never-redefined CHECK doesn't need.
+export const HS_TEST_SOURCE_TYPES = ['built_in', 'link', 'ms_forms', 'manual'] as const;
+export type HsTestSourceType = typeof HS_TEST_SOURCE_TYPES[number];
+export const HS_TEST_SOURCE_TYPE_LABELS: Record<HsTestSourceType, string> = {
+  built_in: 'Built-in quiz (auto-marked)',
+  link:     'External link',
+  ms_forms: 'Microsoft Forms',
+  manual:   'Manual / in-person',
+};

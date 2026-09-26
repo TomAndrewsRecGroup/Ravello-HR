@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Bell, Briefcase, LifeBuoy, ShieldCheck, Users,
-  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock, HardHat, Sparkles,
+  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock, HardHat, Sparkles, GraduationCap,
 } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
@@ -55,6 +55,9 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   hs_followup_suggested:      { icon: Sparkles,      color: 'var(--purple)' },
   hs_audit_completed:         { icon: HardHat,       color: 'var(--blue)' },
   hs_incident_reported:       { icon: AlertTriangle, color: 'var(--danger)' },
+  hs_incident_status_changed: { icon: AlertTriangle, color: 'var(--blue)' },
+  hs_document_added:          { icon: FileText,      color: 'var(--blue)' },
+  hs_test_result:             { icon: GraduationCap, color: 'var(--purple)' },
   hs_equipment_inspection_due: { icon: HardHat,      color: 'var(--amber)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
