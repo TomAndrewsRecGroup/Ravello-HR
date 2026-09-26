@@ -29,6 +29,7 @@ const m117 = readFileSync(`${MIG}/117_core_tenancy.sql`, 'utf8');
 const m118 = readFileSync(`${MIG}/118_sites_departments_people.sql`, 'utf8');
 const m119 = readFileSync(`${MIG}/119_actions_documents_search.sql`, 'utf8');
 const m120 = readFileSync(`${MIG}/120_actions_capability_insert.sql`, 'utf8');
+const m122 = readFileSync(`${MIG}/122_safety_foundation.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -36,12 +37,23 @@ function fn(src: string, name: string): string {
   return src.slice(start, src.indexOf('$$;', start));
 }
 
-describe('capability catalogue: TypeScript ↔ SQL seed (117)', () => {
+describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122)', () => {
+  // 117 seeds role → ARRAY[capabilities]; 122 adds capability → ARRAY[roles].
   const seed = new Map<string, string[]>();
   for (const m of m117.matchAll(/\('([a-z_]+)',\s+ARRAY\[([^\]]*)\]\)/g)) {
-    seed.set(m[1], [...m[2].matchAll(/'([a-z_.]+)'/g)].map(x => x[1]).sort());
+    seed.set(m[1], [...m[2].matchAll(/'([a-z_.]+)'/g)].map(x => x[1]));
   }
-  const sqlCaps = [...m117.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
+  const added = [...m122.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added.length).toBe(7);
+  for (const [, cap, roles] of added) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `122 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
+  for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
+  const both = m117 + '\n' + m122;
+  const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {
     expect(sqlCaps).toEqual([...CAPABILITIES].sort());
@@ -55,7 +67,7 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117)', () => {
   });
 
   it('marks the same capabilities sensitive', () => {
-    const sensitive = [...m117.matchAll(/\('([a-z_.]+)',\s+'[^']*(?:''[^']*)*',\s+true\)/g)].map(x => x[1]).sort();
+    const sensitive = [...both.matchAll(/\('([a-z_.]+)',\s+'[^']*(?:''[^']*)*',\s+true\)/g)].map(x => x[1]).sort();
     expect(sensitive).toEqual([...SENSITIVE_CAPABILITIES].sort());
   });
 
@@ -239,5 +251,41 @@ describe('actions, documents, search (119, 120)', () => {
 
   it('a client action insert is capability-gated and scoped to the active organisation', () => {
     expect(m120).toMatch(/company_id = \(SELECT public\.my_company_id\(\)\)\s+AND public\.has_capability\(company_id, 'actions\.assign'\)/);
+  });
+});
+
+describe('Phase 2 foundation (122)', () => {
+  it('staff get ONE active organisation only while they are tps_admin; clients still need a live grant', () => {
+    expect(fn(m122, 'my_company_id')).toMatch(/JOIN profiles p ON p\.id = a\.user_id AND p\.role = 'tps_admin'/);
+    const sw = fn(m122, 'set_active_organisation');
+    expect(sw).toMatch(/IF public\.is_tps_staff\(\) THEN[\s\S]*archived_at IS NULL[\s\S]*ELSIF NOT EXISTS \([\s\S]*g\.active_status = 'active'/);
+  });
+
+  it('record numbers and the capability audience resolver have no session path', () => {
+    expect(m122).toMatch(/REVOKE ALL ON FUNCTION public\.next_record_number\(uuid, text, boolean\) FROM PUBLIC, anon, authenticated/);
+    expect(m122).toMatch(/REVOKE ALL ON public\.record_sequences FROM PUBLIC, anon, authenticated/);
+    expect(m122).toMatch(/REVOKE ALL ON FUNCTION public\.org_user_ids_with_capability\(uuid, text\) FROM PUBLIC, anon, authenticated/);
+  });
+
+  it('a link joins two records of the SAME organisation, and company_id is derived, never trusted', () => {
+    const chk = fn(m122, 'hs_links_check');
+    expect(chk).toMatch(/IF a <> b THEN/);
+    expect(chk).toMatch(/NEW\.company_id := a/);
+  });
+
+  it('an hs-evidence object is readable only through a readable hs_files row', () => {
+    expect(m122).toMatch(/CREATE POLICY hs_evidence_client_read ON storage\.objects FOR SELECT TO authenticated\s+USING \(bucket_id = 'hs-evidence'\s+AND EXISTS \(SELECT 1 FROM public\.hs_files f WHERE f\.storage_path = objects\.name\)\)/);
+    const read = fn(m122, 'hs_evidence_readable');
+    expect(read).toMatch(/p_evidence_type NOT IN \('witness_statement','medical'\) OR public\.has_capability\(p_company, 'incident\.sensitive\.read'\)/);
+    // the register, audits and documents stay staff-delivered
+    expect(fn(m122, 'hs_evidence_writable')).toMatch(/ELSE false/);
+  });
+
+  it('new client-writable tables carry the read-only write guard', () => {
+    for (const t of ['hs_links', 'hs_templates']) expect(m122).toMatch(new RegExp(`apply_write_guard\\('public\\.${t}'\\)`));
+  });
+
+  it('only staff may publish a platform template', () => {
+    expect(m122).toMatch(/hs_templates_owner_write[\s\S]*WITH CHECK \(visibility <> 'platform'/);
   });
 });

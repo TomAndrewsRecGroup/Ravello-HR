@@ -1,11 +1,11 @@
 // Core-OS 360 capability model — the TypeScript mirror of migration 117's
-// catalogue (access_roles / access_capabilities / access_role_capabilities
+// catalogue, extended by 122 (access_roles / access_capabilities / access_role_capabilities
 // / legacy_role_map). Shared-dupe pair: admin and portal hold identical
 // copies (scripts/check-shared-dupes.sh).
 //
 // The DATABASE is the authority: RLS calls has_capability(), and a UI
 // check here is only ever a courtesy (hide a button the server would
-// refuse anyway). capabilities.test.ts parses 117's SQL and fails if this
+// refuse anyway). tenancySql.test.ts parses 117 + 122's SQL and fails if this
 // file and the seed disagree in either direction, so the two cannot
 // drift.
 //
@@ -28,12 +28,18 @@ export const CAPABILITIES = [
   'consultancy.client_access', 'consultancy.manage_access',
   'broadcast.send',
   'audit.read',
+  // Phase 2 (migration 122): operational H&S.
+  'hazard.report', 'hazard.manage',
+  'incident.read', 'incident.sensitive.read', 'incident.approve',
+  'riddor.review',
+  'templates.manage',
 ] as const;
 export type Capability = typeof CAPABILITIES[number];
 
 /** Capabilities that expose or change sensitive data. */
 export const SENSITIVE_CAPABILITIES: readonly Capability[] = [
   'hr.sensitive.read', 'hr.sensitive.write', 'billing.manage', 'consultancy.manage_access', 'audit.read',
+  'incident.sensitive.read', 'riddor.review',
 ];
 
 export const ACCESS_ROLES = [
@@ -81,6 +87,14 @@ const ORG_ADMIN: Capability[] = [
   'recruitment.manage', 'billing.read', 'audit.read',
 ];
 
+/** Every Phase 2 H&S capability — the roles that lead safety hold all of them. */
+const HS_ALL: Capability[] = [
+  'hazard.report', 'hazard.manage', 'incident.read', 'incident.sensitive.read', 'incident.approve',
+  'riddor.review', 'templates.manage',
+];
+/** Line managers: report, triage hazards, see incidents — no medical detail, no sign-off. */
+const HS_LINE: Capability[] = ['hazard.report', 'hazard.manage', 'incident.read'];
+
 export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
   platform_super_admin: CAPABILITIES,
   platform_staff:       CAPABILITIES.filter(c => c !== 'billing.manage'),
@@ -88,40 +102,42 @@ export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
     'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
     'risk.read', 'risk.create', 'risk.approve', 'incident.create', 'incident.investigate', 'actions.assign',
     'contractors.manage', 'documents.manage', 'training.manage', 'billing.read', 'consultancy.client_access',
-    'consultancy.manage_access', 'broadcast.send', 'audit.read',
+    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL,
   ],
   consultant: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', 'consultancy.client_access',
+    'training.manage', 'consultancy.client_access', ...HS_ALL,
   ],
-  organisation_owner: [...ORG_ADMIN, 'billing.manage'],
-  organisation_admin: ORG_ADMIN,
+  organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL],
+  organisation_admin: [...ORG_ADMIN, ...HS_ALL],
   organisation_editor: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'risk.read', 'risk.create',
     'incident.create', 'actions.assign', 'documents.manage', 'training.manage', 'recruitment.manage',
+    ...HS_LINE,
   ],
   hse_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage',
+    'training.manage', ...HS_ALL,
   ],
   hse_advisor: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'incident.create',
-    'incident.investigate', 'actions.assign', 'documents.manage',
+    'incident.investigate', 'actions.assign', 'documents.manage', ...HS_LINE,
   ],
   site_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create',
-    'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage',
+    'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', ...HS_LINE,
   ],
-  department_manager: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.create', 'actions.assign'],
+  department_manager: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.create', 'actions.assign', ...HS_LINE],
   hr_manager: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'hr.sensitive.read', 'hr.sensitive.write',
     'documents.manage', 'training.manage', 'actions.assign', 'audit.read',
+    'hazard.report', 'incident.read', 'incident.sensitive.read',
   ],
-  recruiter: ['organisation.read', 'people.read', 'recruitment.manage'],
-  employee:  ['organisation.read', 'site.read', 'incident.create'],
-  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read'],
+  recruiter: ['organisation.read', 'people.read', 'recruitment.manage', 'hazard.report'],
+  employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report'],
+  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read'],
 };
 
 /** The legacy user_role a person holds at HOME → catalogue role.
