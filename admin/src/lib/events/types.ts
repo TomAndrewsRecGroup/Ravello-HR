@@ -48,6 +48,9 @@ export const TRIGGERED_ENTITIES = [
   // Core-OS 360 Phase 2 (123+): the operational H&S core.
   'hazards',
   'risk_assessments',
+  'method_statements',
+  'coshh_assessments',
+  'substances',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
