@@ -97,7 +97,9 @@ export async function POST(req: NextRequest) {
   auditLog({
     action: 'broadcast.sent',
     actor_id: auth.userId,
-    metadata: { title, action_type, company_count: company_ids.length, created: data?.length ?? 0 },
+    // The exact recipient organisations, so the trail can prove who was
+    // (and was not) sent this broadcast.
+    metadata: { title, action_type, company_count: company_ids.length, company_ids, created: data?.length ?? 0 },
   });
 
   // Notify each company's client_admin users by email. We email Admins

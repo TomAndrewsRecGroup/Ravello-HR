@@ -58,6 +58,7 @@ PAIRS=(
   "admin/src/lib/lead/checklistTasks.ts|portal/src/lib/lead/checklistTasks.ts"
   "admin/src/lib/support/sla.ts|portal/src/lib/support/sla.ts"
   "admin/src/lib/auth/policyAckTokens.ts|portal/src/lib/auth/policyAckTokens.ts"
+  "admin/src/lib/auth/capabilities.ts|portal/src/lib/auth/capabilities.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

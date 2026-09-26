@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Topbar from '@/components/layout/Topbar';
 import { createClient } from '@/lib/supabase/client';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 import {
   FileText, BarChart2, Users, Calendar, ClipboardList, LifeBuoy,
   CheckCircle2, Loader2, ArrowLeft,
@@ -258,13 +259,9 @@ export default function NewServiceRequestPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError('Not authenticated.'); setLoading(false); return; }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    const companyId = (profile as any)?.company_id;
+    // The ACTIVE organisation, not profiles.company_id — see activeOrganisation.ts.
+    const companyId = await effectiveCompanyId(supabase);
+    if (!companyId) { setError('Could not work out which organisation you are in. Please refresh.'); setLoading(false); return; }
     const subject   = subjectFromType(selected, fields);
     const urgency   = fields.urgency ?? null;
 

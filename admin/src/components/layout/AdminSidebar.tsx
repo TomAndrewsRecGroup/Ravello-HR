@@ -50,6 +50,7 @@ import {
   X,
   HardHat,
   Workflow,
+  Network,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
@@ -69,6 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/users',           label: 'Users',          icon: Users },
       { href: '/engagement',      label: 'Engagement',     icon: Gauge },
       { href: '/feature-flags',   label: 'Feature Flags',  icon: ToggleLeft },
+      { href: '/organisations',   label: 'Organisations & Access', icon: Network },
     ],
   },
   {

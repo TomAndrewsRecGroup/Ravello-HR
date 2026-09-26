@@ -5,6 +5,8 @@ import { MobileMenuProvider } from './MobileMenuContext';
 import { UserPreferencesProvider } from './UserPreferences';
 import { LockedFeatureProvider } from './LockedFeature';
 import { ToastProvider } from '@/components/modules/Toast';
+import OrganisationBar from './OrganisationBar';
+import type { OrganisationOption } from '@/lib/auth/activeOrganisation';
 
 interface Props {
   flags: Record<string, boolean>;
@@ -16,12 +18,15 @@ interface Props {
   uiPreferences: Record<string, any>;
   accountManagerName:  string | null;
   accountManagerEmail: string | null;
+  /** Home + live grants (Core-OS 360 consultancy mode). */
+  organisations?: OrganisationOption[];
+  activeCompanyName?: string | null;
   children: React.ReactNode;
 }
 
 export default function PortalShell({
   flags, counts, userId, companyId, role, showBilling, uiPreferences,
-  accountManagerName, accountManagerEmail, children,
+  accountManagerName, accountManagerEmail, organisations = [], activeCompanyName = null, children,
 }: Props) {
   return (
     <MobileMenuProvider>
@@ -34,6 +39,7 @@ export default function PortalShell({
                 className="main-content flex-1 flex flex-col min-h-screen"
                 style={{ marginLeft: 'var(--sidebar-w)' }}
               >
+                <OrganisationBar organisations={organisations} activeCompanyName={activeCompanyName} />
                 {children}
               </div>
             </div>

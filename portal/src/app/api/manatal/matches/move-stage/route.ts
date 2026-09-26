@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getManatalMatches, getManatalStages, updateMatchStage, isManatalConfigured } from '@/lib/manatal';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { emitEvent } from '@/lib/events/emit';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 
 // POST /api/manatal/matches/move-stage
 // Moves a candidate to a new pipeline stage in Manatal and emits a
@@ -19,15 +20,18 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id, full_name, companies(manatal_client_id, name)')
-    .eq('id', user.id)
-    .single();
+  // The ACTIVE organisation, not the home one — see activeOrganisation.ts.
+  const [activeCompanyId, { data: profile }] = await Promise.all([
+    effectiveCompanyId(supabase),
+    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+  ]);
+  const { data: company } = activeCompanyId
+    ? await supabase.from('companies').select('manatal_client_id, name').eq('id', activeCompanyId).single()
+    : { data: null };
 
-  const companyId: string = (profile as any)?.company_id ?? '';
-  const companyName: string = (profile as any)?.companies?.name ?? 'A client';
-  const manatalId: string = (profile as any)?.companies?.manatal_client_id ?? '';
+  const companyId: string = activeCompanyId ?? '';
+  const companyName: string = (company as any)?.name ?? 'A client';
+  const manatalId: string = (company as any)?.manatal_client_id ?? '';
   const userName: string = (profile as any)?.full_name ?? user.email ?? 'A user';
 
   if (!manatalId) {

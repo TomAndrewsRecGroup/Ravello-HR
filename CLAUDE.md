@@ -457,6 +457,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 41 | **Referral pipeline** (migration 077): hourly cron reads job-board applicants from Manatal per referral-enabled role, gates them (country → IvyLens scan → mandatory-criteria veto → score) and emails qualifiers a partner referral link via Resend. Admin `/referrals` funnel + review queue; config panel on the requisition page. See the section below. |
 | 42 | **Enum alignment** (migration 078): fixed three live sites writing/reading enum values the database refuses (`'shared'`, `'pending_approval'`, `'handbook'`). `statusMaps.ts` becomes the single vocabulary source with `as const` tuples + derived unions; `CLIENT_STATUS_STYLE` de-duplicated from four copies; portal badge/metrics/offer queries made `shared`-aware. |
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
+| C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 
 ---
 
@@ -3954,3 +3955,65 @@ per-response API to poll for most vendors). If Microsoft Graph access
 to a specific tenant's Forms responses is ever available, that would
 replace the `ms_forms` manual-logging path with a poller, not change
 this schema.
+
+---
+
+## Core-OS 360 Phase 1: tenancy, consultancy access, people, audit (2026-09-26, migrations 117-121)
+
+Plan: `docs/CORE_OS_360_PHASE1_PLAN.md`. Handover + QA: `docs/CORE_OS_360_PHASE1_HANDOVER.md`.
+Live probes: `supabase/probes/117_119_phase1_tenancy.sql`, `119_document_versions.sql`,
+`117_121_protected_regression.sql`.
+
+### Rules
+
+- **`companies` is still the table; `organisations` and `sites` are
+  `security_invoker` views** (over `companies` / `hs_sites`).
+  `organisation_id` ≡ `company_id`. New code may read the views; FKs still
+  point at the tables. Do not rename the tables piecemeal.
+- **A consultant works in ONE organisation at a time.** Grants live in
+  `user_organisation_access`; the active one in `user_active_organisation`,
+  written ONLY by `set_active_organisation()`. `my_company_id()` returns the
+  active organisation while its grant is live, else home. That is why no
+  policy was widened: every existing policy became consultant-aware as-is.
+  **Never write a policy as `company_id IN (all orgs I can reach)`** — it
+  shows several tenants at once and lets a record land on the wrong one.
+- **App code asks the database which organisation is active**:
+  `effectiveCompanyId()` / `readEffectiveCompany()` in
+  `portal/src/lib/auth/activeOrganisation.ts`. Reading `profiles.company_id`
+  gives the HOME company and is wrong for a consultant (onboarding is the
+  one deliberate exception). The portal layout re-checks the cookie against
+  the database every render and drops a stale one; switching is a POST then
+  a FULL navigation, never `router.push`.
+- **Capabilities, not role strings.** `has_capability(org, cap)` in SQL;
+  `lib/auth/capabilities.ts` (shared pair) in TS, pinned to 117's seed both
+  ways by `tenancySql.test.ts`. Adding a role or capability means editing
+  BOTH, in a new migration. `role === …` UI checks that remain are debt, not
+  a pattern to copy.
+- **Read-only is enforced by RESTRICTIVE policies** (`write_guard_ins/upd/
+  del`, `session_can_write()`). **Every new client-writable table must call
+  `SELECT public.apply_write_guard('public.<table>')`** in its migration, or
+  a read-only grant can write to it.
+- **`audit_events` is append-only for everyone, service role included.**
+  Row triggers use `audit_row(entity, org_col, <whitelisted cols…>)` — never
+  whitelist salary, NI, notes, free text (the test's FORBIDDEN list).
+  App-level events go through `auditLog()` (admin), which now persists via
+  the service-role `audit_log()` RPC.
+- **People RLS is derivative.** You see a person if you can see a linked
+  employee/candidate/athlete row, or they are your own workforce and you hold
+  `people.read`. Sensitive HR fields stay on `employee_records`.
+  `person_link_row` must NEVER raise — the referral cron inserts candidates.
+- **Same-organisation links are enforced by trigger** (`assert_same_org`):
+  site, department, manager, assignee, primary contact.
+- **Document files are never overwritten**: `document_versions` is written
+  only by trigger; changing `documents.file_path/file_url` bumps the version.
+- **`search_records()` is SECURITY INVOKER** — it can never return a row the
+  caller could not already read. Keep it that way.
+- **Tavily** is the external search provider for later phases; internal
+  search stays in Postgres.
+
+### Not done in Phase 1 (see handover §H)
+
+`access_scope` not enforced; no portal UI for consultancy owners to grant
+(RPC ready); people not synced back from source rows; broadcast has no
+idempotency key; no optimistic locking; UI still uses legacy role checks.
+

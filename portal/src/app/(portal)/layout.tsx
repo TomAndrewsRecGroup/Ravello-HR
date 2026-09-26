@@ -5,16 +5,31 @@ import PortalShell from '@/components/layout/PortalShell';
 import { hasPaidFlag } from '@/lib/featureFlags';
 import BrandIntro from '@/components/brand/BrandIntro';
 import { BRAND_INTRO_COOKIE } from '@/lib/brand';
+import { readEffectiveCompany, myOrganisations, sessionIsStale } from '@/lib/auth/activeOrganisation';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const {
-    user, profile, companyId, role, isTpsStaff, featureFlags,
+    user, profile, companyId, companyName, role, isTpsStaff, featureFlags,
     stripeSubscriptionId, archivedAt,
     accountManagerName, accountManagerEmail,
   } = await getSessionProfile();
 
   if (!user) redirect('/auth/login');
   if (!profile && !isTpsStaff) redirect('/auth/login?reason=no-profile');
+
+  // Which organisation is this user acting in — asked of the DATABASE on
+  // every render. The session cookie caches it for 15 minutes; if it
+  // names a different tenant (switched in another tab, grant revoked or
+  // expired) the cookie is dropped and re-minted before anything from
+  // the old organisation is rendered. Core-OS 360 Phase 1.
+  const supabase = await createServerSupabaseClient();
+  const [liveCompany, organisations] = await Promise.all([
+    readEffectiveCompany(supabase),
+    myOrganisations(supabase),
+  ]);
+  if (!isTpsStaff && sessionIsStale(companyId, liveCompany)) {
+    redirect('/api/organisation/refresh');
+  }
 
   // Archived clients: portal access blocked. Stays in Supabase, but
   // user is bounced to login with a friendly reason. Staff (TPS) keep
@@ -48,7 +63,6 @@ export default async function PortalLayout({ children }: { children: React.React
 
   // Sidebar badge counts: pre-fetch SSR so badges paint with the layout
   // (was three browser-side queries firing on every cold mount).
-  const supabase = await createServerSupabaseClient();
   const now = new Date().toISOString();
   const counts: Record<string, number> = { actions: 0, tickets: 0, candidates: 0 };
   if (companyId) {
@@ -97,6 +111,8 @@ export default async function PortalLayout({ children }: { children: React.React
       uiPreferences={uiPreferences}
       accountManagerName={accountManagerName}
       accountManagerEmail={accountManagerEmail}
+      organisations={organisations}
+      activeCompanyName={companyName}
     >
       {children}
     </PortalShell>

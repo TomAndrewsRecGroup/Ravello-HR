@@ -76,7 +76,10 @@ export async function POST(request: NextRequest, props: Ctx) {
   if (parsed.data.confirmed !== true) return NextResponse.json({ error: 'Please tick the box to confirm you have read the document.' }, { status: 400 });
 
   const sb = createServiceSupabaseClient();
-  const r = await redeemPolicyAckToken(sb, params.token);
+  const r = await redeemPolicyAckToken(sb, params.token, Date.now(), {
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    userAgent: request.headers.get('user-agent'),
+  });
   if (r === null) return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 });
   if (r === 'expired') return NextResponse.json({ error: 'This link has expired. Ask your employer to send a new one.' }, { status: 410 });
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: 500 });

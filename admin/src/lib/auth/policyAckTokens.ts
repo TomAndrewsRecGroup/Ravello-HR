@@ -66,11 +66,21 @@ export async function redeemPolicyAckToken(
   service: SupabaseClient,
   raw: string | null | undefined,
   now: number = Date.now(),
+  evidence: { ip?: string | null; userAgent?: string | null } = {},
 ): Promise<{ acknowledgementId: string; already: boolean } | 'expired' | { error: string } | null> {
   const peek = await peekPolicyAckToken(service, raw, now);
   if (peek === null || peek === 'expired') return peek;
+  // Evidence of HOW it was signed (Core-OS 360 Phase 1, migration 119):
+  // the request's IP and user agent, bounded to the column CHECKs, and
+  // the method. The document VERSION signed is stamped by the database
+  // (policy_ack_fill), never taken from here.
   const { error, count } = await service.from('policy_acknowledgements')
-    .update({ status: 'acknowledged', acknowledged_at: new Date(now).toISOString(), acknowledged_via: 'link' }, { count: 'exact' })
+    .update({
+      status: 'acknowledged', acknowledged_at: new Date(now).toISOString(), acknowledged_via: 'link',
+      ip_address: evidence.ip ? evidence.ip.slice(0, 64) : null,
+      user_agent: evidence.userAgent ? evidence.userAgent.slice(0, 500) : null,
+      auth_evidence: { method: 'emailed_single_person_link' },
+    }, { count: 'exact' })
     .eq('id', peek.acknowledgementId).in('status', ['pending', 'overdue']);
   if (error) return { error: error.message };
   await burnPolicyAckTokens(service, peek.acknowledgementId);
