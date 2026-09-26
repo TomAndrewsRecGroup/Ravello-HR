@@ -27,6 +27,7 @@ import {
   FileText,
   FolderOpen,
   Gauge,
+  GraduationCap,
   Inbox,
   LayoutDashboard,
   LifeBuoy,
@@ -103,6 +104,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/health-safety',                 label: 'Health & Safety', icon: HardHat },
       { href: '/health-safety/sector-packs',     label: 'Sector Packs',   icon: Package },
       { href: '/health-safety/audit-templates',  label: 'Audit Templates', icon: ClipboardList },
+      { href: '/health-safety/tests',            label: 'Tests',          icon: GraduationCap },
     ],
   },
   {

@@ -331,6 +331,76 @@ export const hsRules: Rule[] = [
       return out;
     },
   },
+  {
+    // The creation rule above only ever fires once, at report time — a
+    // closed investigation (status open -> investigating -> closed,
+    // written directly from IncidentsClient.tsx) previously reached
+    // nobody. The client would otherwise only learn an investigation
+    // had concluded by re-checking their read-only Incidents tab.
+    id: 'hs_incident_status_changed',
+    on: 'hs_incidents.updated',
+    when: e => changedTo(e, 'status', ['closed']),
+    then: async (ctx) => {
+      const { event } = ctx;
+      const { new: n } = rowPayload(event);
+      if (!event.company_id) return [];
+      const typeLabel = s(n.incident_type).replace(/_/g, ' ');
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_incident_status_changed',
+          title: `Investigation closed: ${typeLabel} incident`,
+          link:  { portal: '/protect/incidents' },
+        },
+      }];
+    },
+  },
+  {
+    // Every hs_documents row is a finished, already-current version —
+    // a replacement is a NEW row (the old one flips to 'superseded' via
+    // its own .updated, which needs no separate notification since this
+    // .created already covers it). Only staff write this table (client
+    // RLS is read-only), so unlike documents.created (leadRules.ts) there
+    // is no client-vs-staff actor branch to make.
+    id: 'hs_document_added',
+    on: 'hs_documents.created',
+    then: ({ event }) => {
+      const { new: n } = rowPayload(event);
+      if (!event.company_id || n.status !== 'active') return [];
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_document_added',
+          title: `New H&S document from Core OS 360: ${s(n.title, 'a document')}`,
+          link:  { portal: '/protect/documents' },
+        },
+      }];
+    },
+  },
+  {
+    // A built_in test self-marks and completes the instant the employee
+    // submits (116's own trigger) — with no row-level trigger on
+    // hs_test_submissions (deliberately: see 116's header comment), the
+    // public token route emits this itself, the same shape as the
+    // manatal move-stage fix (X1 site 2) uses for a route with no local
+    // row of its own to trigger from. Same notification type and link
+    // the admin "log a result" route already uses, so the two paths
+    // never disagree about what the client sees.
+    id: 'hs_test_submission_recorded',
+    on: 'hs_test_submission.created',
+    then: ({ event }) => {
+      const p = event.payload;
+      if (!event.company_id) return [];
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_test_result',
+          title: `${s(p.employee_name, 'An employee')}: ${s(p.test_title, 'test')} — ${p.passed ? 'Passed' : 'Failed'}`,
+          link:  { portal: '/protect/tests' },
+        },
+      }];
+    },
+  },
 ];
 
 export type { PlatformEvent };

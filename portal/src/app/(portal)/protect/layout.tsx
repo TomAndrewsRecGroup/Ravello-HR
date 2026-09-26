@@ -13,6 +13,7 @@ const TABS = [
   { href: '/protect/audits',     label: 'Audits' },
   { href: '/protect/incidents',  label: 'Incidents' },
   { href: '/protect/equipment',  label: 'Equipment' },
+  { href: '/protect/tests',      label: 'Tests' },
   { href: '/protect/actions',    label: 'Actions' },
   { href: '/protect/timeline',   label: 'Timeline' },
   { href: '/protect/reports',    label: 'Reports' },

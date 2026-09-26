@@ -3736,3 +3736,221 @@ still writes the actual action.
   guards pass, both production builds compile. Migration 115 applied
   live and verified (three nullable columns, the CHECK's exact 24-value
   list read back via `pg_get_constraintdef`, the partial index present).
+
+---
+
+## Sanity-check sweep, and H&S Tests (2026-09-26, migration 116)
+
+Operator: *"run a sanity check on the system, make sure every action
+creates a reaction into anything its linked to"*, plus a request to
+test many employees across many clients on the same day, delivered by
+link, Microsoft Forms, or entered by staff, auto-marked where the
+platform can mark it, held under the employee's record.
+
+### Sanity-check: two reactions that were missing
+
+Auditing every `TRIGGERED_ENTITIES` table against its rules in
+`lib/events/rules.ts`/`hsRules.ts`/`leadRules.ts`/`hireRules.ts`/
+`supportRules.ts` found the connective-tissue work (096-115) already
+covers the platform end to end — writes on every triggered table have
+a consequence — except two H&S tables that had a trigger but no rule
+consuming one of their transitions:
+
+- **`hs_incidents.updated` → `status: 'closed'` told nobody.** The
+  creation rule (`hs_incident_reported`) only ever fires once, at
+  report time; a client reading their read-only Incidents tab was the
+  only way to learn an investigation had concluded. New rule
+  `hs_incident_status_changed` tells the client admins.
+- **`hs_documents.created` told nobody.** A new H&S document (Phase 2)
+  landed in the library with no signal to the client beyond noticing
+  it themselves. New rule `hs_document_added` tells the client admins,
+  gated on `status = 'active'` — a superseded row's own `.updated`
+  needs no separate notice, since the replacement's `.created` already
+  covers it.
+
+Both are ordinary consequence rules, no new tables, following the
+existing `admins(companyId)` / `notifyC` shapes already used throughout
+`hsRules.ts`. `hsRules.test.ts` gained four cases (18 → after this
+section, 19 with the Tests rule below).
+
+**Everything else audited clean**: every other triggered table (leave,
+actions, documents, compliance, reviews, requisitions, candidates,
+offers, onboarding/offboarding, employee_records, enquiries,
+bd_companies, interview_schedules, referral_scan_runs) already has a
+rule; every reminder entity already has a bucket; every emitted entity
+(`manatal_match`, `policy_ack_resend`) already has a consumer.
+
+### Product fit: the H&S consultancy's service line
+
+Checked against Peninsula's own offering (training, site visits,
+audits, accident reporting, investigations) rather than assumed: three
+of the five were already fully built before this session —
+`hs_activities` (site visits, advice calls, fire drills, meetings,
+toolbox talks — the day-to-day delivery record), `hs_audits` (on-site
+audits with an offline runner, scoring, evidence photos, findings →
+client actions), `hs_incidents` (accident reporting with the RIDDOR
+workflow and an investigation status the fix above now surfaces to the
+client on close). The one clear gap was **safety training as a formal,
+markable assessment** — a fire warden refresher, a manual handling
+test, a toolbox-talk comprehension check — as opposed to `hs_activities`
+recording that a session happened. Tests (below) is that piece.
+
+### Tests (migration 116)
+
+Four confirmed decisions before building (Tom, 2026-09-26 — asked
+because the request's own wording ("automatically marked" + "provided
+by link, Microsoft Forms or manually") pulls in two directions that
+cannot both be literally true for every source):
+
+1. **Marking**: only a test the platform itself hosts (`built_in`) can
+   mark itself. Neither Microsoft Forms nor most external quiz tools
+   expose individual response data through an API this platform could
+   poll, so "auto-fetch the result" for those would be built against
+   an integration that mostly doesn't exist. `link`/`ms_forms`/`manual`
+   assignments get a first-class record; their score is entered by
+   whoever administered the test, once the result is known.
+2. **Access**: a unique, no-login link per person — the exact
+   `policy_ack_tokens` (103) shape, not a shared session link.
+3. **Bulk**: yes, test SESSIONS — one session, a cohort of employees
+   spanning any number of client companies, assigned and emailed in
+   one call. This is the actual "multiple people from numerous clients
+   on the same day" requirement.
+4. **Training records**: yes — a passed test flagged
+   `certifies_training` writes into the existing `training_records`
+   (Phase 4) rather than inventing a second "is this person's training
+   current" source, with its own expiry from `recert_months`.
+
+**Tables** (`hs_tests`, `hs_test_sessions`, `hs_test_assignments`,
+`hs_test_submissions`, `hs_test_tokens`): `hs_test_assignments.status`
+is `pending | completed` — one assignment, one submission
+(`UNIQUE (assignment_id)`), a genuine retake is a fresh assignment,
+never a second row against the same one. `hs_test_submissions` is
+insert-only (`REVOKE UPDATE, DELETE, TRUNCATE`), the register's own "a
+correction is a new row" discipline.
+
+- **`hs_test_submission_fill()` (BEFORE INSERT, DEFINER) is what makes
+  the marking split trustworthy, not the calling route.**
+  `company_id`/`employee_id`/`test_id`/`source`/`recorded_by_kind` are
+  all derived from the assignment and its test, never from the caller,
+  and for a `built_in` test `passed` is RECOMPUTED from
+  `score >= pass_mark` regardless of what was sent — belt and braces
+  against a marking bug in the application layer. `recorded_by_kind`
+  is derived from the TEST's `source_type`, not from `auth.uid()` or
+  `hs_actor_kind()`: both the public token route (self-submission) and
+  the admin "log a result" route insert through code this repo
+  controls, sometimes under the service role, and only a `built_in`
+  test is ever self-submitted — the test's own source is the one fact
+  that actually distinguishes the two paths.
+- **`hs_test_submission_after()` (AFTER INSERT, DEFINER)** flips the
+  assignment to `completed` and, only on a pass of a `certifies_training`
+  test, inserts the `training_records` row.
+- **No `platform_events` outbox entry on `hs_test_submissions`,
+  deliberately.** Unlike the H&S register, a submission has exactly two
+  controlled entry points this codebase owns end to end (the public
+  token route, the admin log route), both already holding a
+  service-role or staff-session client when the write happens — routing
+  through an async outbox + a five-minute-later consumer would only
+  delay the notification. Instead: the admin log route calls `notify()`
+  directly, synchronously (the same pattern `lib/bd/score.ts` and
+  `lib/lead/weeklyPeople.ts` already use outside the event-rule system);
+  the portal's public route — which has no admin-side `notify()` to
+  call and no row of its own to trigger from — `emitEvent()`s a
+  `hs_test_submission.created` row (a new `EMITTED_ENTITIES` entry,
+  the same shape the Manatal move-stage fix (X1 site 2) already uses
+  for exactly this "a route with no local row" case), consumed by a new
+  `hs_test_submission_recorded` rule in `hsRules.ts` — so both paths
+  end at the identical `hs_test_result` notification/link, and neither
+  can drift from the other.
+- **`hs_test_tokens`: SHA-256 only, RLS on, NO policies at all**
+  (service role only) — the exact `policy_ack_tokens` shape. One token
+  link works for every source type: what it SHOWS differs (a quiz to
+  answer vs. "your result will be logged for you"), but the employee
+  never needs to know which kind it is. 60-day TTL (a session may be
+  booked well ahead). Burned on a successful submission; a resend burns
+  every other link for the assignment.
+- **Never send the answer key to the browser.** The public GET route
+  strips `correct_option_id` before returning questions — pinned by a
+  route test asserting the response body never contains that string.
+
+### Admin: test bank, sessions, logging
+
+`admin/src/lib/hs/testTokens.ts` / `testMarking.ts` / `testTypes.ts`
+(shared-dupe pairs) + `admin/src/lib/hs/testInvite.ts` (`sendTestInvite`,
+the ONE place a test invite is ever sent — the bulk session route and
+the single resend route both call it, so the email and the
+claim-before-send discipline (`sendKeyedEmail`) can never drift between
+the two call sites). `/health-safety/tests` (bank + built-in question
+builder), `/health-safety/tests/[id]` (sessions, a company-grouped
+employee cohort picker, assignments table, resend, log-a-result modal).
+`POST .../tests/[id]/sessions` is the actual "cohort across companies,
+one call" action: each cohort entry names its own `company_id` (not
+derived from the employee) so a malformed pairing 404s per row rather
+than silently filing someone under the wrong client.
+
+**Every Supabase read here is a separate query by id, never an
+embedded/joined `.select()`.** The first draft used
+`.select('id, hs_tests(source_type, title), employee_records(full_name)')`
+in the log route and `sendTestInvite`; both compiled, both worked
+against a live PostgREST (real FKs exist), and both **could not be unit
+tested** — the `fakeSupabase` harness resolves a select's column string
+as an opaque list, never a joined relation, so the embedded fields came
+back `undefined` and every fallback string ("An employee", "test")
+silently won. Rewritten as `Promise.all` of separate by-id lookups —
+the same lesson this file already recorded for the referral PATCH
+route's PGRST200 (both tables pointing at a third table is not a join
+path PostgREST will walk) and the Applicants-table removal (fetch by id
+list, not a chained embed) — and the same three routes' tests now
+assert the REAL recipient name and test title, not a fallback string
+that happened to pass.
+
+### Portal: the no-login link, and read-only results
+
+`portal/src/app/api/test/[token]/route.ts` — GET (who, what test, the
+built_in questions with no answer key, or the external link / "logged
+for you" copy for the other three sources) and POST (only ever
+completes a `built_in` test; every other source 400s with "your result
+will be logged for you"). Added to `PUBLIC_ROUTES` in
+`portal/src/lib/supabase/middleware.ts` — both `/test/` (the page) and
+`/api/test/` (its own server-side preflight calls the API with no
+cookie), the identical reasoning the leave and policy links already
+established.
+
+`portal/src/lib/hs/testSubmission.ts` (portal-only — admin never
+self-submits) — `submitBuiltInTest()`: marks with `markBuiltInTest()`,
+inserts, burns the token, emits the event above. The DB trigger, not
+this function, is what a hostile client answer set actually has to get
+past.
+
+**"Under the employee record" is a `/protect/tests` list page, not a
+panel bolted onto `EmployeeDrawer.tsx`.** That drawer is an edit-only
+form with no read-only "related records" tabs of any kind (no reviews,
+no absence, no documents panel either) — adding one panel just for
+Tests would have been a new UI pattern invented for one feature rather
+than following how every other related-record list already works in
+this app (its own page, filterable). `/protect/tests` groups by
+employee, most recently tested first within each group; gated by
+`protect` alone (a new `moduleAccess.ts` entry, same posture as
+Register/Documents/Audits/Incidents/Equipment — nothing here is
+self-certified) and added to the PROTECT `SectionTabs`.
+
+### Verified
+
+`tsc --noEmit` clean both apps; full `vitest run` green (885 admin —
+850 + 35 new: `testMarking.test.ts`, `hsTestsSql.test.ts`, the tests
+bank/sessions/resend/log route tests, the two extra `hsRules.test.ts`
+cases; 267 portal — 248 + 19 new: the public token route test, `testSubmission.test.ts`,
+the middleware exemption cases, `moduleAccess.test.ts`/
+`portalPagesLinked.test.ts` picking up `/protect/tests` and
+`/test/[token]` automatically); all five CI guards pass; both
+production builds compile, including `/health-safety/tests`,
+`/health-safety/tests/[id]`, `/protect/tests` and `/test/[token]`.
+Migration 116 applied live and verified (RLS on all five tables, the
+fill/after triggers and their REVOKEs, the submissions table's
+insert-only REVOKE).
+
+**Not built**: an API integration that auto-fetches a Microsoft Forms
+or external quiz result — see decision 1 above for why (no reliable
+per-response API to poll for most vendors). If Microsoft Graph access
+to a specific tenant's Forms responses is ever available, that would
+replace the `ms_forms` manual-logging path with a poller, not change
+this schema.

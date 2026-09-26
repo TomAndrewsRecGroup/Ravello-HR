@@ -105,6 +105,16 @@ describe('employee leave link is reachable without a login', () => {
     const res = await updateSession(req('/leaves-admin'));
     expect(location(res)).toContain('/auth/login');
   });
+
+  it.each([`/test/${'11111111-2222-4333-8444-555555555555'}`, `/api/test/${'11111111-2222-4333-8444-555555555555'}`])('the H&S test link %s is not redirected either', async (p) => {
+    const res = await updateSession(req(p));
+    expect(location(res)).toBeNull();
+  });
+
+  it('the test-link exemption is scoped to the test path, not a lookalike', async () => {
+    const res = await updateSession(req('/testing-admin'));
+    expect(location(res)).toContain('/auth/login');
+  });
 });
 
 describe('module flags are enforced on the page, not just the menu', () => {
