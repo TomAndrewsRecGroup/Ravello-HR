@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
 const m136 = readFileSync(`${MIG}/136_safe_to_deploy.sql`, 'utf8');
 const m137 = readFileSync(`${MIG}/137_workforce_integration.sql`, 'utf8');
+const m139 = readFileSync(`${MIG}/139_safety_critical_verification.sql`, 'utf8');
 
 function fn(sql: string, name: string): { header: string; body: string } {
   const start = sql.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
@@ -124,5 +125,22 @@ describe('137: integration', () => {
     expect(s.body).not.toMatch(/description ILIKE|notes ILIKE|summary ILIKE|injured|incident_person_sensitive|rationale ILIKE/);
     expect(s.body).toMatch(/'job_role'/);
     expect(s.body).toMatch(/'training_course'/);
+  });
+});
+
+describe('139: verification and the engine agree on what is safety-critical', () => {
+  it('a mandatory item of a safety-critical role needs the designated verifier (QA 10, HIGH)', () => {
+    const b = fn(m139, 'workforce_item_safety_critical').body;
+    expect(b).toMatch(/JOIN job_roles jr ON jr\.id = r\.role_id/);
+    expect(b).toMatch(/\(r\.safety_critical OR \(jr\.safety_critical AND r\.mandatory\)\)/);
+    // the engine's rule, for comparison: the two must say the same thing
+    expect(fn(m136, '_wf_requirements').body).toMatch(/\(r\.safety_critical OR \(jr\.safety_critical AND r\.mandatory\)\)/);
+    for (const cat of ['training_courses', 'competencies', 'authorisation_types', 'occupational_health_requirements']) {
+      expect(b, cat).toMatch(new RegExp(`FROM ${cat} WHERE id = p_ref AND safety_critical`));
+    }
+  });
+  it('stays callable only from workforce_verify', () => {
+    expect(m139).toMatch(/REVOKE ALL ON FUNCTION public\.workforce_item_safety_critical\(uuid, text, uuid\) FROM PUBLIC, anon, authenticated;/);
+    expect(m139).not.toMatch(/GRANT EXECUTE ON FUNCTION public\.workforce_item_safety_critical/);
   });
 });
