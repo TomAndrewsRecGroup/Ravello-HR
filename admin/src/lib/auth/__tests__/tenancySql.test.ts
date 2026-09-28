@@ -30,6 +30,7 @@ const m118 = readFileSync(`${MIG}/118_sites_departments_people.sql`, 'utf8');
 const m119 = readFileSync(`${MIG}/119_actions_documents_search.sql`, 'utf8');
 const m120 = readFileSync(`${MIG}/120_actions_capability_insert.sql`, 'utf8');
 const m122 = readFileSync(`${MIG}/122_safety_foundation.sql`, 'utf8');
+const m132 = readFileSync(`${MIG}/132_workforce_foundation.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -37,7 +38,7 @@ function fn(src: string, name: string): string {
   return src.slice(start, src.indexOf('$$;', start));
 }
 
-describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122)', () => {
+describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132)', () => {
   // 117 seeds role → ARRAY[capabilities]; 122 adds capability → ARRAY[roles].
   const seed = new Map<string, string[]>();
   for (const m of m117.matchAll(/\('([a-z_]+)',\s+ARRAY\[([^\]]*)\]\)/g)) {
@@ -51,8 +52,20 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122)', () => {
       seed.get(r)!.push(cap);
     }
   }
+  // 132 adds one role (its baseline granted by unnest) and ten capabilities.
+  seed.set('occupational_health_advisor', [
+    ...m132.match(/SELECT 'occupational_health_advisor', c\s+FROM unnest\(ARRAY\[([^\]]*)\]\)/)![1].matchAll(/'([a-z_.]+)'/g),
+  ].map(x => x[1]));
+  const added132 = [...m132.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added132.length).toBe(10);
+  for (const [, cap, roles] of added132) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `132 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
   for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
-  const both = m117 + '\n' + m122;
+  const both = m117 + '\n' + m122 + '\n' + m132;
   const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {
@@ -72,7 +85,7 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122)', () => {
   });
 
   it('agrees on read-only and consultancy-grantable roles', () => {
-    const rows = [...m117.matchAll(/\('([a-z_]+)',\s+'[^']+',\s+'(platform|organisation)',\s*(NULL|'[a-z_]+'),\s*(true|false),\s*(true|false)\)/g)];
+    const rows = [...(m117 + '\n' + m132).matchAll(/\('([a-z_]+)',\s+'[^']+',\s+'(platform|organisation)',\s*(NULL|'[a-z_]+'),\s*(true|false),\s*(true|false)\)/g)];
     expect(rows.filter(r => r[4] === 'true').map(r => r[1]).sort()).toEqual([...READ_ONLY_ROLES].sort());
     expect(rows.filter(r => r[5] === 'true').map(r => r[1]).sort()).toEqual([...CONSULTANCY_GRANTABLE_ROLES].sort());
   });
@@ -85,6 +98,15 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122)', () => {
     }
     // a non-consultancy org falls back to the 'any' row
     expect(homeRoleKey('client_admin', 'direct_client')).toBe('organisation_admin');
+  });
+
+  it('clinical occupational health is held by the advisor role alone — not staff, not admins', () => {
+    for (const role of ACCESS_ROLES) {
+      expect(roleHasCapability(role, 'occupational_health.clinical.read'), role).toBe(role === 'occupational_health_advisor');
+    }
+    expect(m132).toMatch(/\('occupational_health\.clinical\.read', ARRAY\['occupational_health_advisor'\]\)/);
+    // has_capability() says yes to all staff; clinical access must use the explicit form.
+    expect(fn(m132, 'has_explicit_capability')).not.toMatch(/is_tps_staff/);
   });
 
   it('keeps the privilege lines the model depends on', () => {

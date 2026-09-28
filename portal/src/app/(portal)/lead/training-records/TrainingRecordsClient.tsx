@@ -21,6 +21,9 @@ interface Props {
   companyId: string;
   initialRecords: TrainingRecord[];
   employees: Employee[];
+  /** training.manage (134): record and import training for others. Without
+   *  it the database refuses the write, so the buttons are not offered. */
+  canManage: boolean;
 }
 
 type Status = 'current' | 'expiring' | 'expired' | 'no_expiry';
@@ -46,7 +49,7 @@ function statusOf(r: { expires_on: string | null }, today: string): Status {
 
 const EMPTY_FORM = { employee_id: '', course_name: '', provider: '', completed_on: '', expires_on: '', notes: '' };
 
-export default function TrainingRecordsClient({ companyId, initialRecords, employees }: Props) {
+export default function TrainingRecordsClient({ companyId, initialRecords, employees, canManage }: Props) {
   const supabase = createClient();
   const today = new Date().toISOString().slice(0, 10);
   const [records, setRecords] = useState<TrainingRecord[]>(initialRecords);
@@ -135,14 +138,14 @@ export default function TrainingRecordsClient({ companyId, initialRecords, emplo
           <button onClick={() => setView('list')} className="px-3 py-1 rounded-[6px] text-xs font-semibold" style={view === 'list' ? { background: 'var(--surface)', color: 'var(--ink)' } : { color: 'var(--ink-faint)' }}>List</button>
           <button onClick={() => setView('matrix')} className="px-3 py-1 rounded-[6px] text-xs font-semibold" style={view === 'matrix' ? { background: 'var(--surface)', color: 'var(--ink)' } : { color: 'var(--ink-faint)' }}>Matrix</button>
         </div>
-        <div className="flex gap-2">
+        {canManage && <div className="flex gap-2">
           <button onClick={() => setImportOpen(v => !v)} className="btn-secondary btn-sm flex items-center gap-1.5">
             <Upload size={13} /> Import CSV
           </button>
           <button onClick={() => setShowForm(v => !v)} className="btn-cta btn-sm flex items-center gap-1.5">
             <Plus size={13} /> Add record
           </button>
-        </div>
+        </div>}
       </div>
 
       {importOpen && (
@@ -236,9 +239,9 @@ export default function TrainingRecordsClient({ companyId, initialRecords, emplo
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => remove(r.id)} className="btn-icon btn-sm" style={{ color: 'var(--ink-faint)' }} aria-label="Delete">
+                      {canManage && <button onClick={() => remove(r.id)} className="btn-icon btn-sm" style={{ color: 'var(--ink-faint)' }} aria-label="Delete">
                         <Trash2 size={13} />
-                      </button>
+                      </button>}
                     </td>
                   </tr>
                 );

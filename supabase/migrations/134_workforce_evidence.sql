@@ -400,6 +400,11 @@ BEGIN
       IF to_jsonb(OLD) ->> 'verification_status' = 'verified' THEN
         RAISE EXCEPTION 'Verified evidence is never deleted' USING ERRCODE = '42501';
       END IF;
+      -- Deleting unverified evidence stays what it was before 134: the
+      -- organisation's admin (or staff), not everyone who may record it.
+      IF NOT (public.is_tps_staff() OR public.is_company_super_user()) THEN
+        RAISE EXCEPTION 'Only an administrator deletes evidence' USING ERRCODE = '42501';
+      END IF;
     END IF;
     RETURN OLD;
   END IF;
