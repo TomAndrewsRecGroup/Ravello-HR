@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { getSafetyContext, orgDirectory, orgSitesAndDepartments, nameOf, fmtDate, fmtDateTime, todayIso } from '@/lib/hs/safetyContext';
 import {
-  DOC_EDITABLE_STATUSES, DOC_STATUS_LABELS, RAMS_ACK_METHOD_LABELS, RAMS_SECTION_KEYS, RAMS_SECTION_LABELS, docPath, incidentPath,
+  DOC_EDITABLE_STATUSES, DOC_STATUS_LABELS, RAMS_ACK_METHOD_LABELS, RAMS_SECTION_KEYS, RAMS_SECTION_LABELS, docPath, hazardPath, incidentPath,
   type DocStatus, type RamsSectionKey,
 } from '@/lib/hs/safetyVocab';
 import { ACTION_STATUS_LABELS } from '@/lib/ui/statusMaps';
@@ -21,7 +21,9 @@ import RamsAcknowledge from './RamsAcknowledge';
 export const metadata: Metadata = { title: 'RAMS' };
 export const dynamic = 'force-dynamic';
 
-const LINK_TYPES: Record<string, string> = { risk_assessment: 'Risk assessment', coshh_assessment: 'COSHH assessment' };
+const LINK_TYPES: Record<string, string> = {
+  risk_assessment: 'Risk assessment', coshh_assessment: 'COSHH assessment', hazard: 'Hazard', equipment: 'Equipment',
+};
 const empty = { data: [] as Record<string, unknown>[] };
 
 export default async function RamsDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -38,7 +40,7 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const editable = (DOC_EDITABLE_STATUSES as readonly string[]).includes(status) && ctx.can('risk.create');
   const ackOpen = status === 'approved' || status === 'active';
 
-  const [dir, { sites, departments }, steps, versions, links, acks, files, actions, raOpts, coshhOpts, people, tplUpdate, copiedFrom] = await Promise.all([
+  const [dir, { sites, departments }, steps, versions, links, acks, files, actions, raOpts, coshhOpts, hazardOpts, equipmentOpts, people, tplUpdate, copiedFrom] = await Promise.all([
     orgDirectory(supabase),
     orgSitesAndDepartments(supabase, companyId),
     supabase.from('method_statement_steps').select('id, sequence_number, title, description, hazards, controls, responsible_role').eq('method_statement_id', id).order('sequence_number').limit(500),
@@ -49,6 +51,8 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
     supabase.from('actions').select('id, title, status, due_date, assigned_to').eq('source_type', 'method_statement').eq('source_id', id).order('created_at').limit(200),
     editable ? supabase.from('risk_assessments').select('id, reference, version, title, status').eq('company_id', companyId).not('status', 'in', '(superseded,archived)').order('reference').limit(500) : Promise.resolve(empty),
     editable ? supabase.from('coshh_assessments').select('id, reference, version, title, status').eq('company_id', companyId).not('status', 'in', '(superseded,archived)').order('reference').limit(500) : Promise.resolve(empty),
+    editable ? supabase.from('hazards').select('id, reference, title, status').eq('company_id', companyId).not('status', 'in', '(closed,archived)').order('reference').limit(500) : Promise.resolve(empty),
+    editable ? supabase.from('hs_equipment').select('id, name, serial_number').eq('company_id', companyId).order('name').limit(500) : Promise.resolve(empty),
     ackOpen && ctx.can('risk.create')
       ? supabase.from('people').select('id, full_name').eq('company_id', companyId).eq('active_status', 'active').order('full_name').limit(500)
       : Promise.resolve(empty),
@@ -66,9 +70,11 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const stepIds = stepRows.map(s => s.id);
   const ackPersonIds = [...new Set(ackRows.map(a => a.person_id))];
 
-  const [ras, coshhs, incs, stepFiles, ackPeople] = await Promise.all([
+  const [ras, coshhs, hzs, eqs, incs, stepFiles, ackPeople] = await Promise.all([
     idsOf('risk_assessment').length ? supabase.from('risk_assessments').select('id, reference, version, title, status').in('id', idsOf('risk_assessment')).limit(500) : Promise.resolve(empty),
     idsOf('coshh_assessment').length ? supabase.from('coshh_assessments').select('id, reference, version, title, status').in('id', idsOf('coshh_assessment')).limit(500) : Promise.resolve(empty),
+    idsOf('hazard').length ? supabase.from('hazards').select('id, reference, title, status').in('id', idsOf('hazard')).limit(500) : Promise.resolve(empty),
+    idsOf('equipment').length ? supabase.from('hs_equipment').select('id, name, serial_number').in('id', idsOf('equipment')).limit(500) : Promise.resolve(empty),
     idsOf('incident').length ? supabase.from('hs_incidents').select('id, incident_number, incident_type, status').in('id', idsOf('incident')).limit(500) : Promise.resolve(empty),
     stepIds.length ? supabase.from('hs_files').select('id, entity_id, storage_path, file_name, evidence_type, description').eq('entity_type', 'method_statement_step').in('entity_id', stepIds).order('created_at').limit(500) : Promise.resolve(empty),
     ackPersonIds.length ? supabase.from('people').select('id, full_name').in('id', ackPersonIds).limit(500) : Promise.resolve(empty),
@@ -77,7 +83,18 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const docLabel = (r: Record<string, unknown>) => `${r.reference as string} v${r.version as number} — ${r.title as string}`;
   const byId = (rows: Record<string, unknown>[]) => new Map(rows.map(r => [r.id as string, r]));
   const raMap = byId(ras.data ?? []); const coshhMap = byId(coshhs.data ?? []); const incMap = byId(incs.data ?? []);
-  const docLinks: LinkedRecord[] = other.filter(o => o.type === 'risk_assessment' || o.type === 'coshh_assessment').map(o => {
+  const hzMap = byId(hzs.data ?? []); const eqMap = byId(eqs.data ?? []);
+  const hazardLabel = (r: Record<string, unknown>) => `${r.reference as string} — ${r.title as string}`;
+  const equipmentLabel = (r: Record<string, unknown>) => `${r.name as string}${r.serial_number ? ` (${r.serial_number as string})` : ''}`;
+  const docLinks: LinkedRecord[] = other.filter(o => o.type in LINK_TYPES).map(o => {
+    if (o.type === 'hazard') {
+      const r = hzMap.get(o.id);
+      return { linkId: o.linkId, type: o.type, id: o.id, label: r ? hazardLabel(r) : 'A record you cannot see', href: r ? hazardPath(o.id) : null };
+    }
+    if (o.type === 'equipment') {
+      const r = eqMap.get(o.id);
+      return { linkId: o.linkId, type: o.type, id: o.id, label: r ? equipmentLabel(r) : 'A record you cannot see', href: r ? '/protect/equipment' : null };
+    }
     const r = (o.type === 'risk_assessment' ? raMap : coshhMap).get(o.id);
     return { linkId: o.linkId, type: o.type, id: o.id,
       label: r ? docLabel(r) : 'A record you cannot see', href: r ? docPath(o.type as 'risk_assessment' | 'coshh_assessment', o.id) : null,
@@ -87,6 +104,8 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const options: LinkOption[] = [
     ...(raOpts.data ?? []).map(r => ({ type: 'risk_assessment', id: r.id as string, label: docLabel(r) })),
     ...(coshhOpts.data ?? []).map(r => ({ type: 'coshh_assessment', id: r.id as string, label: docLabel(r) })),
+    ...(hazardOpts.data ?? []).map(r => ({ type: 'hazard', id: r.id as string, label: hazardLabel(r) })),
+    ...(equipmentOpts.data ?? []).map(r => ({ type: 'equipment', id: r.id as string, label: equipmentLabel(r) })),
   ];
   const filesByStep: Record<string, EvidenceFile[]> = {};
   for (const f of (stepFiles.data ?? []) as (EvidenceFile & { entity_id: string })[]) (filesByStep[f.entity_id] ??= []).push(f);
@@ -166,7 +185,7 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
       <section className="card p-5 space-y-3">
         <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Linked assessments</h2>
         <RamsCoshhLinks fromType="method_statement" fromId={id} linked={docLinks} options={options} typeLabels={LINK_TYPES}
-          canEdit={editable} emptyText="No risk assessments or COSHH assessments linked yet." />
+          canEdit={editable} emptyText="No risk assessments, COSHH assessments, hazards or equipment linked yet." />
         {incidentLinks.length > 0 && (
           <>
             <h3 className="text-sm font-semibold pt-2" style={{ color: 'var(--ink-soft)' }}>Linked incidents</h3>

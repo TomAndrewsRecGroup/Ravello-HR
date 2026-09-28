@@ -112,3 +112,8 @@ BEGIN
   r := r || CASE WHEN n = 1 THEN 'PASS' ELSE 'FAIL' END || ' billing: invoice creation audited; ';
   RAISE EXCEPTION 'REGRESSION PROBE (rolled back): %', r;
 END $$;
+
+-- Re-run 2026-09-28 after Phase 2 (migrations 122-129 applied): 26/26 PASS,
+-- unchanged. Live afterwards: 0 fixture companies/users persisted; referral
+-- cron 24 runs in 24h, all `ok`; candidates without a person 0 of 2,657;
+-- referral_applications 1,941; athletes 18; dev_plans 11.

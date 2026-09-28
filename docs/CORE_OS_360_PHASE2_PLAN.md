@@ -85,8 +85,12 @@ Row counts were read live on 2026-09-26. **Every operational H&S table holds 0 r
 | 122 | Foundation: capabilities, staff active organisation, record numbering, `hs_links`, evidence extension + storage policy, templates, attribution |
 | 123 | Hazards, risk matrices, assessment types, risk assessments / items / controls, workflow, versioning, clone/template RPCs |
 | 124 | RAMS (method statements, steps, acknowledgements), COSHH (substances, SDS versions, assessments) |
-| 125 | Incidents extension, people / sensitive, investigations, timeline, causes, 5 Whys, RIDDOR reviews, escalation rules, closure guard |
-| 126 | Action verification and effectiveness, search extension, reminders |
+| 125 | Incidents extension, people / sensitive, investigations, timeline, causes, 5 Whys, RIDDOR reviews, escalation rules, closure guard, **action verification and effectiveness** (moved here from 126 during build) |
+| 126 | Action party guard (who may change which action columns), safety search extension |
+| 126a | Full unique indexes for keyed upserts (fixes a pre-existing platform defect, see handover I) |
+| 127–129 | UI helpers (`my_capabilities`, `org_directory`), overview/analysis RPCs, trigram search indexes |
+
+As built: see `docs/CORE_OS_360_PHASE2_HANDOVER.md`.
 
 ## Test strategy
 

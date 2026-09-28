@@ -458,6 +458,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 42 | **Enum alignment** (migration 078): fixed three live sites writing/reading enum values the database refuses (`'shared'`, `'pending_approval'`, `'handbook'`). `statusMaps.ts` becomes the single vocabulary source with `as const` tuples + derived unions; `CLIENT_STATUS_STYLE` de-duplicated from four copies; portal badge/metrics/offer queries made `shared`-aware. |
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
+| C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 
 ---
 
@@ -4016,4 +4017,54 @@ Live probes: `supabase/probes/117_119_phase1_tenancy.sql`, `119_document_version
 `access_scope` not enforced; no portal UI for consultancy owners to grant
 (RPC ready); people not synced back from source rows; broadcast has no
 idempotency key; no optimistic locking; UI still uses legacy role checks.
+
+---
+
+## Core-OS 360 Phase 2: the operational H&S core (2026-09-28, migrations 122-129)
+
+Plan: `docs/CORE_OS_360_PHASE2_PLAN.md`. Handover + QA (gate: PASS WITH
+MINOR ISSUES): `docs/CORE_OS_360_PHASE2_HANDOVER.md`. Live probes:
+`supabase/probes/123_*` to `128_*`, all rolled back.
+
+### Rules
+
+- **Workflow lives in BEFORE triggers, never only in the UI.** `hs_doc_guard`
+  (RA / RAMS / COSHH), the incident, investigation and RIDDOR guards and
+  `actions_party_guard` decide every status move, who may make it and what
+  may change. A page only asks. Approved content is immutable; a change is
+  `hs_new_version()`, which drops `review_date` on purpose (set it again
+  before submitting).
+- **Nobody approves their own work** (creator, submitter or assessor), staff
+  excepted. Probes that forget this fail on the guard, correctly.
+- **RIDDOR is decision support.** Flags only prompt (`potentially_reportable`);
+  a decision needs `riddor.review` and a rationale. Never auto-decide, never
+  submit to the HSE.
+- **Injury, contact and medical detail live only in
+  `incident_person_sensitive`** (`incident.sensitive.read`). A reporter may
+  write it and never read it back, so never `.select()` after that insert.
+  No description, rationale, notes or injury text in any outbox whitelist,
+  timeline summary, audit value or notification — tests pin it.
+- **Corrective actions are `actions` rows** (`source_type`/`source_id`). Never
+  build a second action table.
+- **Links are `hs_links`**, same-organisation by trigger, copied forward on
+  a new version. A new link type needs `hs_entity_table()` to know it.
+- **Evidence is `hs_files` in the private `hs-evidence` bucket**, keys built
+  only by `evidenceKey()`; storage reads inherit the row's RLS; signed under
+  the user's session. No service role in safety code.
+- **Keyed upserts need a FULL unique index** (126a). PostgREST cannot infer a
+  partial one — that silently broke every keyed notification from 096 until
+  126a. `upsertConflictTargets.test.ts` checks every `onConflict`.
+- **A form that files a record must survive a lost reply.** The incident form
+  fixes its id on open (`lib/hs/reportIncident.ts`); a retry meets 23505 and
+  reads its own row back. Copy this for any new "report" form.
+- **Client components must not import server-only modules** (`next/headers`
+  via `safetyContext`). Use `safetyFormat.ts`; `clientServerBoundary.test.ts`
+  fails the build-breaking import that tsc cannot see.
+
+### After deploy
+
+Watch `automation_runs` for the reminders cron (it can now write keyed rows
+it never could) and see one real notification of each safety kind; check
+the report forms on a phone. Open: incident→training link (needs an
+employee↔person link). **Phase 3 has not been started.**
 

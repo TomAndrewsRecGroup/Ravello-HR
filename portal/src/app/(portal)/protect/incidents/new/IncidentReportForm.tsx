@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Camera, CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { uploadEvidence } from '@/lib/hs/evidence';
+import { insertIncidentOnce } from '@/lib/hs/reportIncident';
 import { HS_INCIDENT_TYPES, HS_INCIDENT_TYPE_LABELS, type HsIncidentType } from '@/lib/hs/vocab';
 import {
   BODY_PARTS, HOSPITAL_ATTENDANCE, HOSPITAL_ATTENDANCE_LABELS, INCIDENT_IMMEDIATE_ACTIONS, INCIDENT_IMMEDIATE_ACTION_LABELS,
@@ -50,6 +51,9 @@ export default function IncidentReportForm({ companyId, sites, people, initialTy
   const [immediateNote, setImmediateNote] = useState('');
   const [persons, setPersons] = useState<PersonDraft[]>([]);
   const [photos, setPhotos] = useState<File[]>([]);
+  // Fixed for the life of the form, so a retry after a lost reply finds
+  // the report it already saved instead of filing a second one.
+  const [reportId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ id: string; number: string; problems: string[] } | null>(null);
@@ -70,12 +74,12 @@ export default function IncidentReportForm({ companyId, sites, people, initialTy
     if (!ready) return;
     setBusy(true); setError(null);
     const sb = createClient();
-    const { data, error: err } = await sb.from('hs_incidents').insert({
+    const { data, error: err } = await insertIncidentOnce(sb, reportId, {
       company_id: companyId, incident_type: type, title: title.trim(), description: what.trim(),
       occurred_on: date, incident_time: time || null, site_id: siteId || null, exact_location: location.trim() || null,
       activity_underway: activity.trim() || null, immediate_actions: immediate, immediate_action: immediateNote.trim() || null,
-    }).select('id, incident_number').single();
-    if (err || !data) { setBusy(false); setError(err?.message ?? 'The report was not saved. Please try again.'); return; }
+    });
+    if (err || !data) { setBusy(false); setError(err ?? 'The report was not saved. Please try again.'); return; }
 
     // The report exists from here on. Anything below that fails is
     // listed on the confirmation, never allowed to lose the report.

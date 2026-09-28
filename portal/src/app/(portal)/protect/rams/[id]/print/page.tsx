@@ -32,9 +32,10 @@ export default async function RamsPrintPage(props: { params: Promise<{ id: strin
   ]);
   const linked = (links.data ?? []).map(l => (l.from_type === 'method_statement' && l.from_id === id ? { type: l.to_type as string, id: l.to_id as string } : { type: l.from_type as string, id: l.from_id as string }));
   const ids = (t: string) => linked.filter(l => l.type === t).map(l => l.id);
-  const [coshh, ras] = await Promise.all([
+  const [coshh, ras, equipment] = await Promise.all([
     ids('coshh_assessment').length ? supabase.from('coshh_assessments').select('id, reference, version, title, status, substance_id').in('id', ids('coshh_assessment')).limit(500) : Promise.resolve(empty),
     ids('risk_assessment').length ? supabase.from('risk_assessments').select('id, reference, version, title, status').in('id', ids('risk_assessment')).limit(500) : Promise.resolve(empty),
+    ids('equipment').length ? supabase.from('hs_equipment').select('id, name, serial_number').in('id', ids('equipment')).limit(500) : Promise.resolve(empty),
   ]);
   const subIds = [...new Set((coshh.data ?? []).map(c => c.substance_id as string))];
   const subs = subIds.length ? await supabase.from('substances').select('id, product_name').in('id', subIds).limit(500) : empty;
@@ -89,7 +90,12 @@ export default async function RamsPrintPage(props: { params: Promise<{ id: strin
       </PrintSection>
 
       <PrintSection title="PPE">{text(s.ppe)}</PrintSection>
-      <PrintSection title="Plant and equipment">{text(s.plant_equipment)}</PrintSection>
+      <PrintSection title="Plant and equipment">
+        {text(s.plant_equipment)}
+        {(equipment.data ?? []).length > 0 && (
+          <p className="text-sm">Equipment register: {(equipment.data ?? []).map(e => `${e.name as string}${e.serial_number ? ` (${e.serial_number as string})` : ''}`).join('; ')}</p>
+        )}
+      </PrintSection>
 
       <PrintSection title="COSHH assessments">
         {(coshh.data ?? []).length === 0 ? text(null) : (
