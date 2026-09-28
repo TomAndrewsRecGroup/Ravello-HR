@@ -79,6 +79,10 @@ export const NOTIFICATION_TYPES = [
   // Core-OS 360 Phase 4 (154): emergency planning.
   'emergency_plan_review_due',
   'emergency_drill_recorded',
+  'emergency_plan_added',
+  // Core-OS 360 Phase 4 Group 12 wiring sweep: PUWER had a trigger
+  // but no consuming rule beyond its review-cycle reminder.
+  'puwer_assessment_recorded',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -203,6 +207,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   isolation_applied:          'Isolation applied',
   emergency_plan_review_due: 'Emergency plan review due',
   emergency_drill_recorded:  'Emergency drill recorded',
+  emergency_plan_added:      'Emergency plan added',
+  puwer_assessment_recorded: 'PUWER assessment recorded',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

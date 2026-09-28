@@ -76,6 +76,8 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   isolation_applied:           { Icon: ShieldCheck,   color: 'var(--amber)' },
   emergency_plan_review_due:  { Icon: CalendarClock, color: 'var(--amber)' },
   emergency_drill_recorded:   { Icon: ShieldCheck,   color: 'var(--amber)' },
+  emergency_plan_added:       { Icon: ShieldCheck,   color: 'var(--amber)' },
+  puwer_assessment_recorded:  { Icon: ShieldCheck,   color: 'var(--amber)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

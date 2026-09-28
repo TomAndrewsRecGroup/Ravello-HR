@@ -367,6 +367,58 @@ export const hsRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (148): a PUWER assessment recorded a
+    // non-compliant or compliant-with-actions outcome — found by the
+    // Group 12 wiring sweep as a table with a trigger but no consuming
+    // rule (the only consequence was a reminder on the review cycle).
+    // Neutral wording throughout: this reports a RECORDED ASSESSMENT
+    // OUTCOME, never a legal compliance judgement (Phase 4's own
+    // standing rule) — the same discipline PUWER_ASSESSMENT_OUTCOME_LABELS
+    // already applies. Exactly ONE action per assessment, the same
+    // `hs_check_failed` shape.
+    id: 'puwer_non_compliant',
+    on: 'puwer_assessments.created',
+    when: e => rowPayload(e).new.outcome !== 'compliant',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      const nonCompliant = n.outcome === 'non_compliant';
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `puwer_assessment:${event.entity_id}`,
+          row: {
+            action_type: 'hs_puwer_finding', priority: nonCompliant ? 'high' : 'normal',
+            title: `PUWER assessment: ${asset}`,
+            description: `Recorded assessment outcome on ${s(n.assessed_on)}: ${nonCompliant ? 'non-compliant' : 'compliant, with actions'}. Review and address before the next assessment.`,
+            related_entity_type: 'hs_equipment', related_entity_id: s(n.asset_id) || null,
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'puwer_assessment_recorded',
+            title: `PUWER assessment recorded: ${asset}`,
+            body:  `Recorded ${s(n.assessed_on)} as ${nonCompliant ? 'non-compliant' : 'compliant, with actions'}. An action has been added to your PROTECT actions.`,
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'puwer_assessment_recorded',
+            title: `${company || 'A client'}: PUWER assessment recorded — ${asset}`,
+            link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
     // Core-OS 360 Phase 4 (149): a LOLER thorough examination recorded
     // 'immediate danger' (LOLER reg 8). The asset is ALREADY quarantined
     // — synchronously, inside hs_equipment_inspection_roll(), before
@@ -500,6 +552,34 @@ export const hsRules: Rule[] = [
             audiences: staffOnly, companyId: event.company_id, type: 'isolation_applied',
             title: `${company || 'A client'}: ${asset} is out of service (isolation applied)`,
             link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (154): a new emergency plan added — found by
+    // the Group 12 wiring sweep as a table with a trigger but no
+    // consuming rule (only a review-cycle reminder existed). A
+    // supersede (a new version replacing an old one) raises nothing
+    // separately: the new version's own .created already covers it,
+    // the same reasoning hs_document_added (106) already established
+    // for the identical versioning shape. STAFF-ONLY for now, the same
+    // reasoning as every other Phase 4 site-safety table with no
+    // portal page yet (Group 13 builds it).
+    id: 'emergency_plan_added',
+    on: 'emergency_plans.created',
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'emergency_plan_added',
+            title: `${company || 'A client'}: new emergency plan — ${s(n.title, 'Untitled plan')}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
           },
         },
       ];

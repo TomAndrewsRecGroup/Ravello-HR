@@ -5014,11 +5014,65 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 unchanged — this group touched only the shared-dupe vocab/notify
 files), all five CI guards pass, both production builds compile.
 
-**Remaining Phase 4 groups** (tracked, not yet started):
-notifications/audit/platform_events wiring for all of the above; admin
-+ portal UI (including the contractor, permit, isolation AND emergency
-planning pages several groups' notifications are waiting on); and a
-final regression/security-review/handover/gate/PR pass. **Phase 5 is
-not to begin** until Phase 4's own gate passes, per the operator's
-instruction.
+### Group 12: notifications / audit / platform_events wiring sweep
+
+A completeness pass across Groups 2-11, the same discipline as the
+2026-09-26 "sanity-check sweep" — auditing every `TRIGGERED_ENTITIES`
+table against `hsRules.ts`/`rules.ts` for a consuming rule, and every
+new `SECURITY DEFINER` function for its `REVOKE ALL` grant.
+
+**Two real gaps found and fixed** (a table had a trigger, but the only
+consequence was a reminder — no rule reacted to the row itself being
+created):
+
+- **`puwer_assessments.created` told nobody.** A non-compliant or
+  compliant-with-actions outcome sat silently until the NEXT scheduled
+  review reminder, sometimes months later. New rule
+  `puwer_non_compliant` raises exactly ONE action (`hs_puwer_finding`,
+  the identical `hs_check_failed` shape) and notifies the client via
+  the portal actions link (which already exists) plus staff. Neutral
+  wording throughout — "recorded assessment outcome", never a
+  compliance judgement, the same discipline `PUWER_ASSESSMENT_OUTCOME_LABELS`
+  already applies. A `'compliant'` outcome still raises nothing.
+- **`emergency_plans.created` told nobody.** A new plan (or a
+  superseding version) landed with no signal beyond the Safety Timeline
+  entry and the eventual review-due reminder. New rule
+  `emergency_plan_added` tells staff (no portal page yet, same
+  reasoning as every other Phase 4 Group 7+ table) — a supersede
+  raises nothing separately, since the new version's own `.created`
+  already covers it (the identical reasoning `hs_document_added`
+  already established for the same versioning shape).
+
+**Everything else audited clean**: every other Phase 4 `TRIGGERED_ENTITIES`
+table (`inspections`, `hs_equipment_inspections`, `contractors`,
+`permits`, `isolations`, `emergency_drills`) already had a consuming
+rule from its own group. Every new `SECURITY DEFINER` function across
+migrations 144-154 was checked live via `has_function_privilege()`
+against `anon`/`authenticated` — every trigger-only guard function
+correctly has NO execute grant to either role; the three functions
+meant to be called directly by a session (`contractor_is_current`,
+`contractor_worker_access`, `hs_quarantine_asset`, plus 152's
+`person_holds_authorisation`/`permit_is_currently_valid` verified in
+Group 9) correctly grant `authenticated` only, never `anon`.
+`contractor_insurances`/`permit_people`/`permit_templates`/
+`emergency_plan_roles`/`emergency_plan_equipment` deliberately have NO
+generic `audit_row` trigger of their own — confirmed against 150's own
+header comment: the audit trail lives on the PARENT record
+(`contractors`, `permits`, `emergency_plans`), the same "one Safety
+Timeline / audit line per meaningful record, not per sub-row" rule
+`hs_audit_responses` and `permit_checklist_responses` already
+established.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1137 admin — 1133 + 4 new `hsRules.test.ts` cases covering both new
+rules and their non-firing paths; 600 portal, unchanged — this sweep
+touched only the shared-dupe notify files), all five CI guards pass,
+both production builds compile.
+
+**Remaining Phase 4 groups** (tracked, not yet started): admin +
+portal UI (Group 13 — including the contractor, permit, isolation AND
+emergency planning pages several groups' notifications have been
+waiting on); and a final regression/security-review/handover/gate/PR
+pass (Group 14). **Phase 5 is not to begin** until Phase 4's own gate
+passes, per the operator's instruction.
 

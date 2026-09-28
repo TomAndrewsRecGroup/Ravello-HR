@@ -470,4 +470,64 @@ describe('hs rules', () => {
     expect(db.tables.actions).toHaveLength(0);
     expect(db.tables.notifications).toHaveLength(0);
   });
+
+  // Group 12 wiring sweep: puwer_assessments and emergency_plans each
+  // had a trigger but no consuming rule beyond a review-cycle reminder.
+
+  it('a non-compliant PUWER assessment raises ONE high-priority action and tells the client via the portal actions link', async () => {
+    const created = eventRow({
+      id: 31, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-1',
+      payload: { new: { asset_id: 'asset-1', outcome: 'non_compliant', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_puwer_finding', priority: 'high',
+      source_ref: 'puwer_assessment:puwer-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+    });
+    expect(db.tables.actions[0].title).toBe('PUWER assessment: Forklift 3');
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'puwer_assessment_recorded', link: '/protect/actions' });
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'puwer_assessment_recorded', link: '/health-safety/co-1/equipment' });
+  });
+
+  it('a compliant-with-actions PUWER assessment raises a normal-priority action', async () => {
+    const created = eventRow({
+      id: 32, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-2',
+      payload: { new: { asset_id: 'asset-1', outcome: 'compliant_with_actions', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'normal' });
+  });
+
+  it('a compliant PUWER assessment raises nothing', async () => {
+    const created = eventRow({
+      id: 33, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-3',
+      payload: { new: { asset_id: 'asset-1', outcome: 'compliant', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('a new emergency plan tells staff only, naming the client company (no portal page yet)', async () => {
+    const created = eventRow({
+      id: 34, entity_type: 'emergency_plans', event_type: 'created', actor_kind: 'staff', entity_id: 'plan-1',
+      payload: { new: { title: 'Fire Evacuation Plan' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'emergency_plan_added', link: '/health-safety/co-1' });
+    expect(staff.title).toContain('Sample Co');
+    expect(staff.title).toContain('Fire Evacuation Plan');
+  });
 });
