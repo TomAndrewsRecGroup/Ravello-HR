@@ -459,6 +459,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
+| C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-141): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
 
 ---
 
@@ -4116,3 +4117,72 @@ emergency contacts (proven live, rolled back). 0 live rows were exposed.
   `supabase/probes/131_employee_records_sensitive.sql` (24/24, rolled back).
   **Applied 2026-09-28 13:54 UTC after PR #229 deployed; re-probed live
   24/24.**
+
+---
+
+## Core-OS 360 Phase 3: workforce and Safe to Deploy (2026-09-28, migrations 131-141)
+
+Plan: `docs/CORE_OS_360_PHASE3_PLAN.md`. Handover + QA: `docs/CORE_OS_360_PHASE3_HANDOVER.md`.
+Probes: `supabase/probes/13[1-9]_*`, `140_*`, `phase3_qa.sql`, `phase3_qa2.sql`, `phase3_perf.sql`.
+Portal pages: `/lead/workforce/*` (flags `lead` + `workforce`).
+
+### Rules
+
+- **Safe to Deploy is decided only by the database** (136 `_wf_deployment`).
+  TypeScript displays `status`, `reasons[]` and `requirements[]`; it never
+  computes or overrides a status. Read it with `person_deployment_status`,
+  `workforce_readiness` or `workforce_matrix` — all go through
+  `_wf_deployment_safe`, which turns ANY error into REVIEW_REQUIRED. Never
+  call the raw engine from a public read (workforceSql.test pins it).
+- **Never a stale READY.** The cache (`person_deployment_status`) is used
+  only when clean, in date and calculated today. Every table the engine
+  reads has a `workforce_mark_dirty` trigger; **a new input table needs one
+  too**, or a change to it will not invalidate the cache.
+- **One definition of safety-critical**: the rule's flag, the catalogue's
+  flag, or mandatory for a safety-critical role. The engine
+  (`_wf_requirements`) and verification (`workforce_item_safety_critical`,
+  139) must agree — they did not until 139 (QA 10, HIGH).
+- **Competence is never inferred from training or text.** The engine's
+  competency branch does not read `training_records`. No AI, no scores,
+  no prediction anywhere in the workforce model.
+- **Occupational health**: `person_health_outcomes` (category, dates,
+  restriction summary) for `occupational_health.summary.read` or the
+  person; `occupational_health_clinical` + bucket `oh-clinical` ONLY for an
+  EXPLICIT `occupational_health.clinical.read` grant (`has_explicit_capability`,
+  no staff shortcut). Add any new explicit-only capability to
+  `EXPLICIT_ONLY_CAPABILITIES` AND to 140's `my_capabilities` list — the
+  test fails otherwise. Restriction text and clinical content never go
+  into an audit whitelist, outbox payload, notification, CSV or the engine.
+- **Guards keyed on `current_user` are SECURITY INVOKER** (134a:
+  the DEFINER version skipped every session rule). Lookups they need are
+  small DEFINER helpers. `invokerGuards.test.ts` fails on a DEFINER one.
+  A DEFINER RPC that writes must check `session_can_write()` itself.
+- **Rules in force are immutable**: supersede → edit the draft → activate.
+  No rule starts in the past or ends retroactively (`requirement_rule_guard`).
+- **Evidence** is insert-mostly: self-submissions are always unverified;
+  verification only through `workforce_verify` (nobody verifies their
+  own; safety-critical needs `workforce.verify_safety_critical` and a
+  different verifier). Upload the file FIRST
+  (`portal/src/lib/workforce/evidence.ts`), then write the record naming
+  it — storage reads are granted by the record.
+- **Hire / leave** are database triggers on `employee_records` (137): a
+  requisition's `job_role_id` gives the hire one primary assignment and
+  the role's pre-employment checks; termination ends assignments and
+  revokes exceptions and authorisations, deleting nothing. Hiring never
+  makes anyone READY.
+- **Workforce lists include only** worker_type employee / contractor /
+  consultant / temporary_worker. `person_link_row` (141) promotes a hired
+  candidate OR athlete to employee — anything that creates employees by
+  another path must do the same.
+- **Tuples in `portal/src/lib/workforce/vocab.ts` mirror the CHECKs**;
+  `workforceVocab.test.ts` pins them both ways.
+
+### Operations
+
+- Hourly `/api/cron/workforce-refresh`: `workforce_daily_tick()` then
+  `workforce_refresh_due(5000)`. Nothing reads its output to decide
+  anything; a missed run makes pages slower, never wrong.
+- Measured (2,000 workers): warm lists ~0.4 s, a profile 10 ms, a cold
+  calculation ~6 ms a person. A rule change that dirties thousands of
+  people makes the lists calculate them live until the next refresh.
+
