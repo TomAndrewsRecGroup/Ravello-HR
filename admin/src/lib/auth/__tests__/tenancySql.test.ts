@@ -32,6 +32,7 @@ const m120 = readFileSync(`${MIG}/120_actions_capability_insert.sql`, 'utf8');
 const m122 = readFileSync(`${MIG}/122_safety_foundation.sql`, 'utf8');
 const m132 = readFileSync(`${MIG}/132_workforce_foundation.sql`, 'utf8');
 const m144 = readFileSync(`${MIG}/144_asset_register.sql`, 'utf8');
+const m147 = readFileSync(`${MIG}/147_inspection_perform_capability.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -39,7 +40,7 @@ function fn(src: string, name: string): string {
   return src.slice(start, src.indexOf('$$;', start));
 }
 
-describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144)', () => {
+describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144 + 147)', () => {
   // 117 seeds role → ARRAY[capabilities]; 122 adds capability → ARRAY[roles].
   const seed = new Map<string, string[]>();
   for (const m of m117.matchAll(/\('([a-z_]+)',\s+ARRAY\[([^\]]*)\]\)/g)) {
@@ -75,8 +76,19 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144)'
       seed.get(r)!.push(cap);
     }
   }
+  // 147 (Group 4 fix: employee can record an inspection without full
+  // asset.manage) adds one capability, granted to every asset.manage
+  // role plus 'employee' — the one role Group 2's list left out.
+  const added147 = [...m147.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added147.length).toBe(1);
+  for (const [, cap, roles] of added147) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `147 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
   for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
-  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144;
+  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144 + '\n' + m147;
   const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {

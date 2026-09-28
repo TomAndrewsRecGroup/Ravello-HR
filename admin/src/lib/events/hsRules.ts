@@ -285,12 +285,17 @@ export const hsRules: Rule[] = [
   },
   {
     // inspections is INSERT-only (145, Phase 4 Group 3) — every row is
-    // already a finished submission. This is a NOTIFY-ONLY rule: it
-    // deliberately raises no action and touches no asset status. Group
-    // 4 (defects/return-to-service) extends this same rule to also
-    // raise a defect and, on a critical failure, quarantine the asset —
-    // reading the has_critical_failure/overall_outcome this migration
-    // already computes server-side, never trusting the client.
+    // already a finished submission. Phase 4 Group 4 extends this rule:
+    // every FAILED response raises one keyed defect action (the same
+    // "one action per finding" shape auditSubmittedConsequences already
+    // uses) — never a second table (this file's own standing rule).
+    // A CRITICAL item's action gets severity='critical' and
+    // verification_required=true, which is what the database's own
+    // return-to-service guard (146) reads to decide whether the asset
+    // may leave 'quarantined' — the asset's own status is set
+    // server-side at submission time (hs_submit_inspection/
+    // hs_quarantine_asset, 146), never from here: this rule only
+    // reports what already happened, it never decides it.
     id: 'inspection_completed',
     on: 'inspections.created',
     then: async ({ event, sb, companyName }) => {
@@ -300,6 +305,33 @@ export const hsRules: Rule[] = [
       const asset = await assetName(sb, s(n.asset_id));
       const company = await companyName();
       const out: Consequence[] = [];
+
+      if (failed) {
+        const { data } = await sb.from('inspection_responses')
+          .select('id, prompt, comment, critical')
+          .eq('inspection_id', event.entity_id)
+          .eq('rating', 'fail');
+        const findings = (data ?? []) as { id: string; prompt: string; comment: string | null; critical: boolean }[];
+        for (const f of findings) {
+          out.push({
+            kind: 'action',
+            companyId: event.company_id,
+            sourceRef: `inspection_response:${f.id}`,
+            row: {
+              action_type: 'hs_inspection_defect',
+              priority: f.critical ? 'urgent' : 'normal',
+              severity: f.critical ? 'critical' : 'low',
+              verification_required: f.critical,
+              title: `Defect: ${f.prompt}`.slice(0, 200),
+              description: f.comment,
+              source_type: 'inspection', source_id: f.id,
+              related_entity_type: 'hs_equipment', related_entity_id: s(n.asset_id),
+              created_by_admin: true,
+            },
+          });
+        }
+      }
+
       out.push({
         kind: 'notify',
         input: {
@@ -307,10 +339,10 @@ export const hsRules: Rule[] = [
           title: failed ? `Inspection failed: ${asset}` : `Inspection completed: ${asset}`,
           body:  failed
             ? n.has_critical_failure
-              ? 'A critical item failed. This asset needs attention before further use.'
-              : 'One or more items failed.'
+              ? 'A critical item failed. This asset has been quarantined and needs attention before further use.'
+              : 'One or more items failed. A defect has been added to your PROTECT actions.'
             : 'All items passed.',
-          link:  { portal: '/protect/timeline' },
+          link:  { portal: failed ? '/protect/actions' : '/protect/timeline' },
         },
       });
       if (failed) {
@@ -319,7 +351,7 @@ export const hsRules: Rule[] = [
           input: {
             audiences: staffOnly, companyId: event.company_id, type: 'inspection_completed',
             title: `${company || 'A client'}: inspection failed — ${asset}`,
-            body:  n.has_critical_failure ? 'Critical item failed.' : 'Non-critical failure(s).',
+            body:  n.has_critical_failure ? 'Critical item failed — asset quarantined.' : 'Non-critical failure(s).',
             link:  { admin: `/health-safety/${event.company_id}` },
           },
         });

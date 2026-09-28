@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2, `hs_equipment` extended with hierarchy/type/operational area/owner/PUWER-LOLER flags/safety-critical/evidence) and the checklist inspection engine (Group 3, `inspections`/`inspection_responses`, copying `hs_audits`' atomic-submit shape). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3, copying `hs_audits`' atomic-submit shape), and defects + a database-enforced return-to-service gate (Group 4, `hs_equipment_return_to_service_guard()`, the `inspection.perform` capability). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4422,9 +4422,114 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1111 admin, 600 portal), all five CI guards pass, admin production
 build compiles.
 
-**Remaining Phase 4 groups** (tracked, not yet started): defects +
-return-to-service (the `quarantined` status seeded in Group 2, the
-`inspection_completed` rule extended to raise a defect); PUWER
+### Group 4: defects + return-to-service (migrations 146-147a)
+
+**"Never build a second action table"** (this file's own standing
+rule, already applied to H&S findings, incidents and corrective
+actions) — a defect is an `actions` row, not a new table.
+`actions.source_type` already allowed `'inspection'` (119/125's
+CHECK), so no CHECK change was needed at all: a defect raised from a
+failed inspection response is `source_type = 'inspection'`,
+`source_id = <inspection_response.id>`, `related_entity_type =
+'hs_equipment'`, `related_entity_id = <asset>`, keyed
+`inspection_response:<id>` (the same "one action per finding, keyed by
+sourceRef" shape `hs_audit_finding` already established).
+
+- **A CRITICAL item's failure** (the item was marked `critical` on the
+  template, Group 3) gets `severity = 'critical'`, `priority =
+  'urgent'`, `verification_required = true` — the exact mechanism
+  125's incident-severity escalation already uses for major/critical/
+  fatal incidents. A non-critical failure gets `severity = 'low'`,
+  `priority = 'normal'`, no verification requirement.
+- **"This defect is properly resolved" is exactly `status =
+  'complete'` — no separate flag needed.** Reaching `complete` on a
+  verification-required action is only possible via `'awaiting_
+  verification'` first (`actions_lifecycle()`, 125), which always
+  stamps `verified_at`, and nobody may verify their own submitted work
+  (`actions_party_guard()`, 126).
+- **Return-to-service is a DATABASE GUARD, not a UI convention**
+  (`hs_equipment_return_to_service_guard()`, a BEFORE UPDATE trigger on
+  `hs_equipment`): an asset may not leave `'quarantined'` while an open
+  critical defect (`source_type = 'inspection'`, `severity =
+  'critical'`, `status NOT IN ('complete','dismissed','cancelled')`)
+  still points at it. The guard applies to every session, staff
+  included — the same posture 125's own document/incident workflow
+  guards take ("workflow lives in BEFORE triggers, never only in the
+  UI"). A non-critical open defect never blocks return-to-service.
+- **Quarantining happens AT SUBMISSION**, inside `hs_submit_inspection`
+  (extended, not duplicated) — a critical failure needs the asset off
+  the floor the moment it is recorded, not on the next automation
+  cron tick five minutes later. Never touches a `'decommissioned'`
+  asset (a stronger, terminal state); never re-quarantines one already
+  quarantined.
+- **`hs_quarantine_asset()` is SECURITY DEFINER, and the reason is a
+  real gap found live while probing this group**: `hs_equipment` has
+  only a staff-`ALL` policy and a client-`SELECT` policy — 112 never
+  gave a client an UPDATE policy, and Group 2 did not widen that. But
+  recording a routine pre-use inspection is exactly a CLIENT action (an
+  operator's own forklift check), so a plain session UPDATE from inside
+  `hs_submit_inspection` (SECURITY INVOKER) would have been silently
+  no-op'd by RLS for anyone but staff — the asset would stay
+  `'in_service'` after a critical failure. The DEFINER helper re-derives
+  the caller's own organisation from `my_company_id()` (never trusts an
+  argument), so it can only ever quarantine an asset already known to
+  belong to the caller's own company.
+- **A second real gap found live, same probing session**: gating
+  `inspections`/`inspection_responses` INSERT on `asset.manage` (Group
+  3's own choice) locked out the actual front-line user this feature
+  exists for — a plain `client_user` maps (117's `legacy_role_map`) to
+  the catalogue role `employee`, which never held `asset.manage`.
+  Migration 147 adds a narrower `inspection.perform` capability
+  (granted to every `asset.manage` role plus `employee` — the one role
+  Group 2 deliberately left out), moves the INSERT/SELECT policies on
+  `inspections`/`inspection_responses` and the template-catalogue read
+  policies onto it, and moves the `hs_evidence_writable`/`readable`
+  branch for `'inspection'`/`'inspection_response'` onto it too — a
+  photo attached to an inspection's own answer is recording the
+  inspection, not managing the asset register, which stays
+  `asset.manage`-gated for the asset row and its own evidence.
+- **147a is the same "TS↔SQL parity regex can't parse a dynamic grant"
+  trap 144a already hit**: 147's first capability-grant INSERT used a
+  `SELECT role_key, 'inspection.perform' FROM (VALUES (role),...)`
+  shape; `tenancySql.test.ts` only recognises 117/122/132/144's
+  `('capability', ARRAY[roles])` literal shape. Rewritten in place (and
+  147a applied live, `ON CONFLICT DO NOTHING`, byte-identical resulting
+  grants) to match it.
+
+**Live probes**: `146_defects_return_to_service.sql` (rolled back, 6
+checks, run under a SIMULATED CLIENT SESSION via `set_config('request.
+jwt.claims',...)` + `SET LOCAL ROLE authenticated` — the same technique
+142's probe established — since `hs_quarantine_asset()`/
+`is_tps_staff()`/`my_company_id()` all key on a real session and a
+bare service-role probe has none): a client-submitted critical fail
+quarantines the asset; a non-critical fail does not; a decommissioned
+asset is never touched; return-to-service is refused while a critical
+defect is open; allowed once it reaches `complete`; a non-critical open
+defect never blocks it. All 6 passed, confirmed the client-vs-staff gap
+BEFORE 147 existed (first run failed check 1), then confirmed fixed.
+
+`hsRules.ts`'s `inspection_completed` rule now raises the defect
+action(s) (reading `inspection_responses` directly from the one event
+`inspections.created` fires, the same "read once from the row the
+event points at" shape `auditSubmittedConsequences` uses) and updates
+its client-facing copy ("quarantined... needs attention", link to
+`/protect/actions` instead of `/protect/timeline` on a failure). It
+never decides the asset's status itself — that already happened,
+synchronously, inside `hs_submit_inspection`/`hs_quarantine_asset` at
+submission time; the rule only reports what already happened.
+`ActionConsequence`'s `row` type and `createKeyedAction()`
+(`rules.ts`/`process.ts`) gained optional `severity`/`source_type`/
+`source_id`/`verification_required` fields — additive, every existing
+caller unaffected. `hsRules.test.ts`'s inspection cases rewritten for
+the new behaviour (one keyed defect action per critical/non-critical
+fail, correct severity/priority/verification_required, idempotent
+re-processing).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1111 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+**Remaining Phase 4 groups** (tracked, not yet started): PUWER
 assessments; LOLER examinations + immediate danger (extending
 `hs_equipment_inspections`, not a new table); contractor companies +
 insurance + prequalification; contractor workers + Safe-to-Deploy +

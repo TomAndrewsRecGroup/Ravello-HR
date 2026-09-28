@@ -39,7 +39,7 @@ export const CAPABILITIES = [
   'occupational_health.summary.read', 'occupational_health.clinical.read', 'occupational_health.manage',
   'deployment.exception.approve',
   // Phase 4 (migration 144): the asset register.
-  'asset.read', 'asset.manage',
+  'asset.read', 'asset.manage', 'inspection.perform',
 ] as const;
 export type Capability = typeof CAPABILITIES[number];
 
@@ -98,7 +98,7 @@ const ORG_ADMIN: Capability[] = [
   'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
   'hr.sensitive.read', 'hr.sensitive.write', 'risk.read', 'risk.create', 'risk.approve', 'incident.create',
   'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage', 'training.manage',
-  'recruitment.manage', 'billing.read', 'audit.read', 'asset.read', 'asset.manage',
+  'recruitment.manage', 'billing.read', 'audit.read', 'asset.read', 'asset.manage', 'inspection.perform',
 ];
 
 /** Every Phase 2 H&S capability — the roles that lead safety hold all of them. */
@@ -117,8 +117,11 @@ const WF_LEAD: Capability[] = [
 ];
 /** Occupational health outcomes (no clinical detail) and recording them. */
 const OH_SUMMARY: Capability[] = ['occupational_health.summary.read', 'occupational_health.manage'];
-/** Phase 4 (migration 144): the asset register, same split as risk.read/risk.create. */
-const ASSET_ALL: Capability[] = ['asset.read', 'asset.manage'];
+/** Phase 4 (migration 144): the asset register, same split as risk.read/risk.create.
+ *  'inspection.perform' (147) rides along on every role that already
+ *  holds asset.manage; 'employee' (147's other grantee) gets it on its
+ *  own below, since it holds neither asset.read nor asset.manage. */
+const ASSET_ALL: Capability[] = ['asset.read', 'asset.manage', 'inspection.perform'];
 const PLATFORM_ALL: Capability[] = CAPABILITIES.filter(c => !EXPLICIT_ONLY_CAPABILITIES.includes(c));
 
 export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
@@ -166,7 +169,7 @@ export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
     'workforce.read', 'workforce.manage', 'training.verify', 'occupational_health.summary.read',
   ],
   recruiter: ['organisation.read', 'people.read', 'recruitment.manage', 'hazard.report'],
-  employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report'],
+  employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report', 'inspection.perform'],
   read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read', 'workforce.read', 'asset.read'],
   occupational_health_advisor: [
     'organisation.read', 'site.read', 'people.read', 'hazard.report', 'workforce.read',

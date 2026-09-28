@@ -52,6 +52,10 @@ beforeEach(() => {
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
     hs_audits: [{ id: 'audit-1', company_id: 'co-1', title: 'Fire safety walk-round', conducted_on: '2026-09-24', score: 67 }],
     hs_equipment: [{ id: 'asset-1', company_id: 'co-1', name: 'Forklift 3', asset_type: 'vehicle' }],
+    inspection_responses: [
+      { id: 'iresp-1', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Forks free of cracks?', critical: true, rating: 'fail', comment: 'Visible crack' },
+      { id: 'iresp-2', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Tyres OK?', critical: false, rating: 'pass', comment: null },
+    ],
     hs_audit_responses: [
       { id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Fire exits clear?', rating: 'fail', comment: 'Boxes stacked against the rear exit.' },
       { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
@@ -238,25 +242,40 @@ describe('hs rules', () => {
     },
   });
 
-  it('a FAILED inspection with a critical failure tells the client (urgent) and staff — and raises NO action (Group 4 job)', async () => {
+  it('a FAILED inspection with a critical failure raises one CRITICAL, verification-required defect action, and tells the client (link to actions) and staff', async () => {
     db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: true }));
     const t = await processEvents(db.client, { rules: RULES });
     expect(t.failed).toBe(0);
-    expect(db.tables.actions).toHaveLength(0);
+    // one finding (iresp-1); the pass raises nothing
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_inspection_defect', priority: 'urgent', severity: 'critical',
+      verification_required: true, source_type: 'inspection', source_id: 'iresp-1',
+      source_ref: 'inspection_response:iresp-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+      title: 'Defect: Forks free of cracks?', description: 'Visible crack',
+    });
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
-    expect(client).toMatchObject({ type: 'inspection_completed', link: '/protect/timeline' });
+    expect(client).toMatchObject({ type: 'inspection_completed', link: '/protect/actions' });
     expect(client.title).toBe('Inspection failed: Forklift 3');
-    expect(client.body).toContain('critical item failed');
+    expect(client.body).toContain('quarantined');
     const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
     expect(staff).toMatchObject({ type: 'inspection_completed', link: '/health-safety/co-1' });
     expect(staff.title).toContain('Sample Co');
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
   });
 
-  it('a non-critical failure still tells both sides, without the critical wording', async () => {
+  it('a non-critical failure raises a LOW-severity, non-verification defect and still tells both sides', async () => {
+    db.tables.inspection_responses = db.tables.inspection_responses.map(r => r.id === 'iresp-1' ? { ...r, critical: false } : r);
     db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: false }));
     await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'normal', severity: 'low', verification_required: false });
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
-    expect(client.body).toBe('One or more items failed.');
+    expect(client.body).toBe('One or more items failed. A defect has been added to your PROTECT actions.');
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(true);
   });
 

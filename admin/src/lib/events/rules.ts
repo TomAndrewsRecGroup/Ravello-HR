@@ -44,6 +44,12 @@ export type ActionConsequence = {
   row: {
     action_type: string; title: string; description?: string | null; priority: 'low' | 'normal' | 'high' | 'urgent';
     related_entity_type?: string | null; related_entity_id?: string | null; due_date?: string | null; created_by_admin?: boolean;
+    /** Phase 4 Group 4: a defect needs its severity + verification gate set at
+     *  creation — 125's actions_lifecycle() refuses starting an action
+     *  already 'awaiting_verification'/'complete', so this is the only
+     *  point verification_required can be turned on for a fresh row. */
+    severity?: 'low' | 'medium' | 'high' | 'critical'; source_type?: string; source_id?: string;
+    verification_required?: boolean;
   };
 };
 export type Consequence = NotifyConsequence | EmailConsequence | RunConsequence | ActionConsequence;
