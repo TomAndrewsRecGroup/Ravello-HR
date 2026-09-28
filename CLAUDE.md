@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), and emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows), and admin + portal UI for contractors/permits/isolations/emergency planning (Group 13, every write attempting the database guard directly and surfacing its own refusal message, read-only emergency plans in the portal). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -5069,10 +5069,119 @@ rules and their non-firing paths; 600 portal, unchanged — this sweep
 touched only the shared-dupe notify files), all five CI guards pass,
 both production builds compile.
 
-**Remaining Phase 4 groups** (tracked, not yet started): admin +
-portal UI (Group 13 — including the contractor, permit, isolation AND
-emergency planning pages several groups' notifications have been
-waiting on); and a final regression/security-review/handover/gate/PR
-pass (Group 14). **Phase 5 is not to begin** until Phase 4's own gate
-passes, per the operator's instruction.
+### Group 13: admin + portal UI (2026-09-28)
+
+The last built-out piece before Group 14's own regression/QA/handover
+pass: screens for the four Phase 4 groups that had shipped with a
+schema, RLS and consequence rules but no way for a person to actually
+use them — contractors (Group 7), permits to work (Group 9),
+isolation/LOTO (Group 10) and emergency planning (Group 11). Group 7's
+own migration comment had named the gap explicitly ("staff-only for
+now, no portal page yet") — this closes it for the one table that
+genuinely has a client-read policy.
+
+- **Every write attempts the UPDATE and shows whatever the trigger
+  refuses, never a client-side pre-check.** Permits' issue/suspend/
+  revalidate/close/revoke and isolations' verify/remove buttons call
+  the exact database guards documented under Groups 9 and 10
+  (`permits_lifecycle_guard`, `isolations_lifecycle_guard`,
+  `isolation_locks_guard`) with no UI-side validation duplicating
+  them — "the authorising person does not hold the required
+  authorisation" or "every personal lock must be removed by its own
+  owner" are the trigger's own Postgres error messages, surfaced as a
+  toast verbatim. This is the same posture every H&S workflow guard in
+  this file already takes: the database is the boundary, the page only
+  asks.
+- **Every status-changing UPDATE uses `COUNT_EXACT` + `judgeWrite()`
+  from the start** (contractor approval/risk, permit lifecycle,
+  isolation verify/remove, isolation-lock removal, emergency plan
+  supersession) — `check-blind-updates.sh`'s ratchet did not move
+  (102, unchanged) because every new write path was built counted, not
+  retrofitted after the guard caught it, the same discipline the
+  Documents-versioning UPDATE (Phase 2/H&S Phase 2) already established.
+- **Insurance renewal is an `upsert` on `(contractor_id,
+  insurance_type)`, not a `select`-then-`update`/`insert` branch** — the
+  UNIQUE constraint from Group 7's own migration is the thing that makes
+  "record or renew" a single form with no separate renewal flow to get
+  out of sync with the create flow.
+- **A new emergency plan version is two writes, in the documented
+  order**: insert the new row first (with `supersedes_id` pointing at
+  the old one), then update the old row to `superseded` — never the
+  reverse, which would leave a client's Register momentarily showing no
+  active plan of that type if the insert then failed. Mirrors
+  `hs_documents`' own versioning discipline exactly, as Group 11's
+  migration comment says to.
+- **Isolation locks and permit people are scoped by the parent's own
+  lifecycle, not by a separate check on the page.** People can only be
+  added to a permit while it is `draft` (the UI hides the add-person
+  form once issued, but the real refusal is `permit_people_guard`'s own
+  "still a draft" check); a lock's owner-vs-override distinction is
+  read straight off whether the picked "removed by" person differs from
+  the lock's own `person_id` — no separate "is this an override" toggle
+  to get out of sync with what the trigger will actually accept.
+- **Permit checklist responses (`permit_checklist_responses`) were
+  deliberately left out**, per the task's own scope note — the core
+  lifecycle (draft → issued → suspended → closed/revoked, people,
+  authorisation and asset-quarantine checks) is what the notifications
+  from Groups 9-11 needed a page to link to; a checklist sub-feature
+  with no consumer yet would have been scope invented to look complete,
+  the same trap Group 7's own migration comment warns against for a
+  numeric contractor "prequalification score."
+- **Contractors, permits and isolations stay admin-only.** None of the
+  three has a plain client-read RLS policy — only `contractors.manage`-
+  capability-gated management, which is a staff/consultancy act, not a
+  client one — so a portal page for any of them would either need a
+  capability-aware page (out of scope here) or would silently render
+  empty for every client without that capability. Emergency plans DO
+  have a genuine `..._client_read` policy on all four of its tables (Group
+  11's own design: "nothing about emergency planning is self-certified,"
+  read-only for the client by construction), so that one page is real,
+  reachable from `/protect`'s `SectionTabs`, and gated by `protect`
+  alone — the same posture Register/Documents/Audits/Equipment already
+  have.
+- **`admin/src/lib/hs/types.ts` picked up eleven new row-shape
+  interfaces** (`Contractor`, `ContractorInsurance`, `PermitTemplate`,
+  `Permit`, `PermitPerson`, `Isolation`, `IsolationLock`,
+  `EmergencyPlan`, `EmergencyPlanRole`, `EmergencyPlanEquipment`,
+  `EmergencyDrill`), mirrored byte-identical to the portal copy
+  immediately (`types.ts` is one of the shared-dupe pairs,
+  `scripts/check-shared-dupes.sh`) — `vocab.ts` needed no edit at all,
+  since every vocabulary tuple this group's forms use (`PERMIT_TYPES`,
+  `ISOLATION_TYPES`, `EMERGENCY_PLAN_TYPES`, `EMERGENCY_DRILL_OUTCOMES`,
+  `CONTRACTOR_APPROVAL_STATUSES`, …) had already been seeded by their
+  own migrations' groups.
+- **No new sidebar entry needed.** All four new admin routes nest under
+  the already-linked `/health-safety` top-level sidebar entry
+  (`check-admin-routes-linked.sh` matches on path prefix), the identical
+  precedent the `audits/[auditId]` detail page set in an earlier group —
+  they only needed a `HsCompanyTabs.tsx` tab each.
+- **A row-cap violation was caught and fixed by the guard doing its
+  job, not by review**: the first draft of the portal emergency-plans
+  page used `.limit(1000)` on two tables, which `check-row-cap.sh`
+  correctly flags as indistinguishable from an unbounded read at the
+  PostgREST cap boundary — lowered to 500, matching the page's other
+  reads. The admin equivalent read `emergency_plan_roles`/
+  `emergency_plan_equipment` with `readAllPages()` but with NO scoping
+  filter at all in the first draft — functionally safe only because
+  every other read on the page happened to filter by `plan_id` client-
+  side afterward, but wasteful and not the pattern this codebase uses
+  elsewhere; fixed to fetch plan ids first, then `.in('plan_id',
+  planIds)` for both, the same "fetch by id list, never blind" shape
+  the referral PATCH route and the H&S test-logging routes already
+  established.
+
+Verified: `tsc --noEmit` clean on both apps, full `vitest run` green
+(1138 admin, 111 test files; 602 portal, 39 test files — this group
+added no new test files, since it is pure UI over triggers/RLS already
+covered by each migration's own live probe), all five CI guards pass
+(`check-admin-routes-linked.sh`: 60 admin pages, all reachable;
+`check-blind-updates.sh`: 102 blind UPDATE chains, unchanged), both
+production builds compile, including all four new admin routes
+(`/health-safety/<companyId>/{contractors,permits,isolations,
+emergency-plans}`) and the new portal route (`/protect/emergency-plans`).
+
+**Remaining Phase 4 groups** (tracked, not yet started): a final
+regression/security-review/handover/gate/PR pass (Group 14). **Phase 5
+is not to begin** until Phase 4's own gate passes, per the operator's
+instruction.
 
