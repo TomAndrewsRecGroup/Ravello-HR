@@ -24,19 +24,25 @@ export default async function ProtectEmergencyPlansPage() {
   const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
+  const { data: plans, error: plansError } = await supabase.from('emergency_plans')
+    .select('id, company_id, site_id, plan_type, title, description, version, review_due_at, status, supersedes_id, created_by, created_at, updated_at')
+    .eq('company_id', companyId).eq('status', 'active').order('title').limit(500);
+  const rows = (plans ?? []) as EmergencyPlan[];
+  const planIds = rows.map(p => p.id);
+
   const [
-    { data: plans, error: plansError },
     { data: roles, error: rolesError },
     { data: planEquipment, error: equipError },
     { data: drills, error: drillsError },
     { data: authTypes },
     { data: equipment },
   ] = await Promise.all([
-    supabase.from('emergency_plans')
-      .select('id, company_id, site_id, plan_type, title, description, version, review_due_at, status, supersedes_id, created_by, created_at, updated_at')
-      .eq('company_id', companyId).eq('status', 'active').order('title').limit(500),
-    supabase.from('emergency_plan_roles').select('id, plan_id, authorisation_type_id, min_count, notes').limit(500),
-    supabase.from('emergency_plan_equipment').select('id, plan_id, asset_id, notes').limit(500),
+    planIds.length > 0
+      ? supabase.from('emergency_plan_roles').select('id, plan_id, authorisation_type_id, min_count, notes').in('plan_id', planIds).limit(500)
+      : Promise.resolve({ data: [] as EmergencyPlanRole[], error: null }),
+    planIds.length > 0
+      ? supabase.from('emergency_plan_equipment').select('id, plan_id, asset_id, notes').in('plan_id', planIds).limit(500)
+      : Promise.resolve({ data: [] as EmergencyPlanEquipment[], error: null }),
     supabase.from('emergency_drills')
       .select('id, company_id, plan_id, site_id, drill_date, conducted_by, evacuation_time_seconds, outcome, findings, created_by, created_at')
       .eq('company_id', companyId).order('drill_date', { ascending: false }).limit(500),
@@ -45,7 +51,6 @@ export default async function ProtectEmergencyPlansPage() {
   ]);
 
   const error = plansError ?? rolesError ?? equipError ?? drillsError ?? null;
-  const rows = (plans ?? []) as EmergencyPlan[];
   const roleRows = (roles ?? []) as EmergencyPlanRole[];
   const equipRows = (planEquipment ?? []) as EmergencyPlanEquipment[];
   const drillRows = (drills ?? []) as EmergencyDrill[];

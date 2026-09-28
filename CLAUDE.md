@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows), and admin + portal UI for contractors/permits/isolations/emergency planning (Group 13, every write attempting the database guard directly and surfacing its own refusal message, read-only emergency plans in the portal). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, isolation/LOTO, emergency planning** (complete, migrations 144-155): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows), the notifications/audit wiring sweep (Group 12), admin + portal UI for contractors/permits/isolations/emergency planning (Group 13), and a final regression/adversarial-security-review/handover pass (Group 14, gate: PASS WITH MINOR ISSUES — one Medium self-authorisation gap on permits found and fixed, migration 155). Delivered in 14 logical, independently-gated groups. See the section at the end and `docs/CORE_OS_360_PHASE4_HANDOVER.md`. |
 
 ---
 
@@ -5180,8 +5180,65 @@ production builds compile, including all four new admin routes
 (`/health-safety/<companyId>/{contractors,permits,isolations,
 emergency-plans}`) and the new portal route (`/protect/emergency-plans`).
 
-**Remaining Phase 4 groups** (tracked, not yet started): a final
-regression/security-review/handover/gate/PR pass (Group 14). **Phase 5
-is not to begin** until Phase 4's own gate passes, per the operator's
-instruction.
+### Group 14: final regression, security review, handover, gate (2026-09-28, migration 155)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE4_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+An independent adversarial security review (the same brief shape as
+Phase 3's QA 42) was run across every table and function created in
+migrations 144-154, plus the Group 13 UI, with every candidate finding
+required to be reproduced LIVE before being reported. It found one
+Medium and one Low:
+
+- **[Medium, fixed] A permit could be issued naming the ISSUING PERSON
+  as its own `authorised_person_id`.** `isolations_lifecycle_guard()`/
+  `isolation_locks_guard()` (153) both enforce "nobody approves their
+  own work"; `permits_lifecycle_guard()` (152) checked only that the
+  authorising person HELD the required authorisation, never that they
+  were not the acting session itself. Reproduced live: a permit
+  template with no required authorisation, `authorised_person_id` set
+  to a `people` row whose `user_id` matched the acting session, issued
+  cleanly with no exception. **Fixed by migration 155**: the issue/
+  revalidate branch now refuses when `authorised_person_id` resolves
+  (via `people.user_id`) to `auth.uid()` — fires only when the acting
+  session is itself linked to a `people` row, so staff administering
+  the record on a contractor's behalf are never blocked. Re-proved
+  refused live (`supabase/probes/155_*.sql`, 2/2): the self-authorised
+  case is refused with the exact message; a genuinely different
+  authorising person still issues normally.
+- **[Low, fixed same day] The portal's `/protect/emergency-plans` page
+  read `emergency_plan_roles`/`emergency_plan_equipment` with no
+  `company_id`/`plan_id` filter, relying entirely on RLS** — confirmed
+  live that RLS already scoped both correctly (no cross-tenant leak
+  existed), but every sibling query on the same page carries an
+  explicit filter and these two didn't. Fixed by fetching the
+  company's own `emergency_plans` first, then filtering both queries
+  with `.in('plan_id', planIds)` — the same "fetch an id list first"
+  shape `equipment/page.tsx` already uses for its inspection-evidence
+  join.
+
+**Everything else the review checked came back clean** (full list in
+the handover doc): RLS enabled and `authenticated`-only on every new
+table; the Group 4 `inspection.perform` capability fix confirmed live,
+not just on disk; `contractors.manage`'s reuse across contractors/
+permits/isolations reasoned through and judged a reasonable design
+choice given the trusted role population that actually holds it; every
+cross-organisation FK guarded, with a cross-org `isolations.applied_by`
+insert reproduced refused; no Phase 4 `SECURITY DEFINER` function
+executable by `anon`; the isolation self-verification checks correctly
+scoped; `emergency_drills`/`inspections`/`inspection_responses`
+insert-only enforcement confirmed live via `information_schema.
+table_privileges`, not just the migration's `REVOKE` text; every
+Group 13 `.update(` pairs `COUNT_EXACT` with `judgeWrite`.
+
+Verified after both fixes: `tsc --noEmit` clean both apps, full
+`vitest run` green (1138 admin, 602 portal — unchanged from Group 13,
+since the fixes touched a DB function and a portal page's query shape,
+not tested TypeScript logic), all five CI guards pass, both production
+builds compile. Migration 155 applied and verified live (function
+re-created, `REVOKE ALL` confirmed via `has_function_privilege`).
+
+**Phase 4 is complete. Phase 5 is not to begin** until this branch is
+merged and deployed, per the operator's instruction.
 
