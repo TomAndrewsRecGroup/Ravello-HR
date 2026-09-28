@@ -21,7 +21,9 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-const BATCH = 2000;
+// Measured 2026-09-28 (probes/phase3_perf.sql): ~3.3 ms a person, so 5,000
+// (the function's own cap) is ~17 s — inside maxDuration with room.
+const BATCH = 5000;
 
 async function run(req: NextRequest) {
   return runCronJob(req, 'workforce-refresh', async (sb) => {
