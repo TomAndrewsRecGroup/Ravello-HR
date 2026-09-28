@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2, `hs_equipment` extended with hierarchy/type/operational area/owner/PUWER-LOLER flags/safety-critical/evidence). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2, `hs_equipment` extended with hierarchy/type/operational area/owner/PUWER-LOLER flags/safety-critical/evidence) and the checklist inspection engine (Group 3, `inspections`/`inspection_responses`, copying `hs_audits`' atomic-submit shape). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4337,12 +4337,98 @@ vars in this container, not in Vercel — is unrelated to this change and
 touches no page this migration affects, same caveat recorded earlier in
 this file).
 
-**Remaining Phase 4 groups** (tracked, not yet started): inspection
-engine (new tables, copying `hs_audits`' proven mechanisms rather than
-renaming it); defects + return-to-service (the `quarantined` status
-seeded above); PUWER assessments; LOLER examinations + immediate
-danger; contractor companies + insurance + prequalification; contractor
-workers + Safe-to-Deploy + access gate; permit to work (numbering,
+### Group 3: the inspection engine (migration 145)
+
+A routine/pre-use **inspection** is a checklist run against ONE ASSET
+(a forklift's daily pre-use check, a machine guard check) — distinct
+from `hs_audits` (110, a facility-wide WALK-ROUND across many topics)
+and from `hs_equipment_inspections` (114, a single dated pass/fail
+statutory-examination record with NO checklist — that table is kept
+as-is; LOLER's thorough examinations in a later group extend it,
+since a thorough examination genuinely is a single dated event, not a
+checklist). New tables: `inspection_templates` / `inspection_template_
+items` (staff reference data, an `asset_type` filter, a `critical` flag
+per item — the one thing Group 4 reads to decide whether a failure
+quarantines the asset outright vs. raising a lower-priority defect) and
+`inspections` / `inspection_responses`.
+
+Copies `hs_audits`'/`hs_submit_audit()`'s proven shape verbatim, per
+the existing-operations audit's own recommendation, adapted from "one
+visit" to "one asset":
+
+- **Insert-only** — a correction is a new inspection, never an edit.
+- **Client-generated ids on BOTH the inspection and its responses from
+  day one** — 110 learned the response-id lesson the hard way in 113
+  (evidence photos need to be staged against a specific response
+  before the parent row exists); this table starts with it.
+- **One atomic `hs_submit_inspection()`** (SECURITY INVOKER — this
+  exists for the transaction, never to escalate privilege), insert-or-
+  return-existing on the client-supplied id, so a retried request after
+  a dropped connection cannot create a second inspection or double-
+  notify.
+- **The overall outcome is computed SERVER-SIDE from the responses**,
+  never trusted from the client — any response rated `fail` makes the
+  inspection `fail`; any `fail` on a `critical` item sets
+  `has_critical_failure`.
+- **Same-organisation + same-site guard** (`inspections_same_org()`):
+  the asset must be in the caller's own company, and if both the
+  inspection and the asset name a site, they must match.
+- **Evidence**: `hs_scope_for_entity`/`hs_entity_table`/
+  `hs_evidence_readable`/`hs_evidence_writable`/`hs_files_entity_check`
+  all gain an `'inspection'` branch, reusing the register scope and the
+  `asset.read`/`asset.manage` capabilities from Group 2 — no new
+  capability invented.
+- **Timeline**: one `hs_events` entry per inspection (never per
+  response), verb `completed` on a pass or `failed` on a fail.
+- **Outbox**: `inspections` added to `TRIGGERED_ENTITIES`, whitelist
+  `asset_id, site_id, template_id, conducted_on, overall_outcome,
+  has_critical_failure` — never a response's own comment text.
+- **Write guard**: `apply_write_guard()` applied to all four new
+  tables, insert-only or not — a read-only consultancy grant must not
+  be able to insert here either.
+- **RLS**: staff full access; any signed-in user with `asset.read` may
+  browse the template catalogue and see their own company's
+  inspections; anyone with `asset.manage` may record one.
+- **Consequence rule `inspection_completed`** (`hsRules.ts`) is
+  deliberately **notify-only** in this group — it tells the client
+  admins (urgent on a fail) and, on any fail, staff. It raises **no
+  action** and touches **no asset status**. Group 4 (defects +
+  return-to-service) extends this exact rule to also raise the defect
+  and, on a critical failure, quarantine the asset — reading the
+  `has_critical_failure`/`overall_outcome` this migration already
+  computes, never re-deriving them.
+- One starter template seeded (`Forklift pre-use check`, 8 items),
+  mirroring 106's sector packs / 110's starter audit template
+  reasoning: something to pick on day one.
+
+**Live probe** (`supabase/probes/145_inspection_engine.sql`, rolled
+back): 20 checks — submit computes fail/critical correctly, a retry
+with the same id is idempotent (no second row, no second responses,
+first submission's data wins), an all-pass submission is clean,
+cross-company asset refused, mismatched site refused, evidence vocab
+resolves, evidence accepted same-company/refused cross-company,
+immutability grants absent, Timeline verb distinguishes pass/fail, the
+outbox payload carries `overall_outcome`. All 20 passed.
+
+`platformEventsSql.test.ts` gained 145 to its `LATER` list and
+`'inspections'` to `TRIGGERED_ENTITIES`. A new notification type,
+`inspection_completed`, added to `notify/types.ts` (shared-dupe pair)
+and both bells' icon maps. `hsRules.test.ts` gained three cases for the
+new rule (critical fail tells both sides and raises nothing; a
+non-critical fail still tells both sides; an all-pass tells the client
+only).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1111 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+**Remaining Phase 4 groups** (tracked, not yet started): defects +
+return-to-service (the `quarantined` status seeded in Group 2, the
+`inspection_completed` rule extended to raise a defect); PUWER
+assessments; LOLER examinations + immediate danger (extending
+`hs_equipment_inspections`, not a new table); contractor companies +
+insurance + prequalification; contractor workers + Safe-to-Deploy +
+access gate; permit to work (numbering via `next_record_number()`,
 live compliance re-check at issue, suspension/revalidation/closeout);
 isolation/LOTO; emergency planning (drill findings → the universal
 `actions` table, never a second table); notifications/audit/

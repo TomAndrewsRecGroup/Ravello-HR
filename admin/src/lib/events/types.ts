@@ -54,6 +54,8 @@ export const TRIGGERED_ENTITIES = [
   'incident_investigations',
   // Core-OS 360 Phase 3 (137): a Safe to Deploy status change.
   'deployment_status_log',
+  // Core-OS 360 Phase 4 (145): a checklist inspection against an asset.
+  'inspections',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

@@ -51,6 +51,7 @@ beforeEach(() => {
     hs_register_completions: [{ id: 'comp-1', item_id: 'item-1', company_id: 'co-1' }],
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
     hs_audits: [{ id: 'audit-1', company_id: 'co-1', title: 'Fire safety walk-round', conducted_on: '2026-09-24', score: 67 }],
+    hs_equipment: [{ id: 'asset-1', company_id: 'co-1', name: 'Forklift 3', asset_type: 'vehicle' }],
     hs_audit_responses: [
       { id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Fire exits clear?', rating: 'fail', comment: 'Boxes stacked against the rear exit.' },
       { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
@@ -227,6 +228,45 @@ describe('hs rules', () => {
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
     expect(client).toMatchObject({ link: '/protect/timeline' });
     expect(client.body).toBe('No findings.');
+  });
+
+  const inspection = (overrides: Record<string, unknown> = {}) => eventRow({
+    id: 17, entity_type: 'inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'insp-1',
+    payload: {
+      new: { asset_id: 'asset-1', site_id: null, template_id: null, conducted_on: '2026-09-28', overall_outcome: 'pass', has_critical_failure: false, ...overrides },
+      old: {}, changed: [],
+    },
+  });
+
+  it('a FAILED inspection with a critical failure tells the client (urgent) and staff — and raises NO action (Group 4 job)', async () => {
+    db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: true }));
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(0);
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'inspection_completed', link: '/protect/timeline' });
+    expect(client.title).toBe('Inspection failed: Forklift 3');
+    expect(client.body).toContain('critical item failed');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'inspection_completed', link: '/health-safety/co-1' });
+    expect(staff.title).toContain('Sample Co');
+  });
+
+  it('a non-critical failure still tells both sides, without the critical wording', async () => {
+    db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: false }));
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client.body).toBe('One or more items failed.');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(true);
+  });
+
+  it('an all-pass inspection tells the client only, not urgent, no staff notification', async () => {
+    db.tables.platform_events.push(inspection({ overall_outcome: 'pass', has_critical_failure: false }));
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'inspection_completed' });
+    expect(client.body).toBe('All items passed.');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
   });
 
   it('a new H&S document tells the client admins', async () => {

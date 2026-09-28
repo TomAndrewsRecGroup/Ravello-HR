@@ -29,6 +29,11 @@ export const HS_ACTIONS_RAISED_ACTION_TYPE = 'hs_actions_raised';
 export const HS_AUDIT_FINDING_ACTION_TYPE = 'hs_audit_finding';
 export const FOLLOWUP_GATE = 0.8;
 
+async function assetName(sb: { from: (t: string) => any }, assetId: string): Promise<string> {
+  const { data } = await sb.from('hs_equipment').select('name').eq('id', assetId).maybeSingle();
+  return (data as { name?: string } | null)?.name ?? 'an asset';
+}
+
 async function itemTitle(ctx: { sb: { from: (t: string) => any } }, itemId: string): Promise<string> {
   const { data } = await ctx.sb.from('compliance_items').select('title').eq('id', itemId).maybeSingle();
   return (data as { title?: string } | null)?.title ?? 'Register item';
@@ -277,6 +282,50 @@ export const hsRules: Rule[] = [
     id: 'hs_audit_completed',
     on: 'hs_audits.created',
     then: auditSubmittedConsequences,
+  },
+  {
+    // inspections is INSERT-only (145, Phase 4 Group 3) — every row is
+    // already a finished submission. This is a NOTIFY-ONLY rule: it
+    // deliberately raises no action and touches no asset status. Group
+    // 4 (defects/return-to-service) extends this same rule to also
+    // raise a defect and, on a critical failure, quarantine the asset —
+    // reading the has_critical_failure/overall_outcome this migration
+    // already computes server-side, never trusting the client.
+    id: 'inspection_completed',
+    on: 'inspections.created',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id || !event.entity_id) return [];
+      const { new: n } = rowPayload(event);
+      const failed = n.overall_outcome === 'fail';
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      const out: Consequence[] = [];
+      out.push({
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'inspection_completed', urgent: failed,
+          title: failed ? `Inspection failed: ${asset}` : `Inspection completed: ${asset}`,
+          body:  failed
+            ? n.has_critical_failure
+              ? 'A critical item failed. This asset needs attention before further use.'
+              : 'One or more items failed.'
+            : 'All items passed.',
+          link:  { portal: '/protect/timeline' },
+        },
+      });
+      if (failed) {
+        out.push({
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'inspection_completed',
+            title: `${company || 'A client'}: inspection failed — ${asset}`,
+            body:  n.has_critical_failure ? 'Critical item failed.' : 'Non-critical failure(s).',
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        });
+      }
+      return out;
+    },
   },
   // Incident rules moved to safetyRules.ts (125): severity is
   // confirmed by a person later, RIDDOR is decided on the RIDDOR review,
