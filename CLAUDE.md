@@ -4114,3 +4114,5 @@ emergency contacts (proven live, rolled back). 0 live rows were exposed.
   `select('*', head)` count would fail and its `count ?? 0` self-seed
   would add a "Founder" row on every admin visit. Probe:
   `supabase/probes/131_employee_records_sensitive.sql` (24/24, rolled back).
+  **Applied 2026-09-28 13:54 UTC after PR #229 deployed; re-probed live
+  24/24.**

@@ -13,6 +13,11 @@
 -- UPDATE policy needs client_admin — so no such writer exists today. The
 -- probe now asserts that fact, and exercises the guard by removing
 -- hr.sensitive.write from organisation_admin inside the transaction.
+--
+-- APPLIED 2026-09-28 13:54 UTC, after PR #229 deployed. Both function
+-- bodies md5-matched to the migration file; authenticated has no
+-- table-level SELECT and no salary column SELECT. The DO block re-run
+-- alone against the applied database: 24/24 PASS.
 
 DO $$
 DECLARE r text := ''; n int; s text; v numeric; rec record;
