@@ -71,6 +71,9 @@ export const NOTIFICATION_TYPES = [
   // Core-OS 360 Phase 4 (150): contractors.
   'contractor_status_changed',
   'contractor_insurance_expiring',
+  // Core-OS 360 Phase 4 (152): permit to work.
+  'permit_status_changed',
+  'permit_expiring',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -190,6 +193,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   loler_immediate_danger:     'LOLER immediate danger recorded',
   contractor_status_changed:    'Contractor status changed',
   contractor_insurance_expiring: 'Contractor insurance expiring',
+  permit_status_changed:      'Permit status changed',
+  permit_expiring:            'Permit expiring',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

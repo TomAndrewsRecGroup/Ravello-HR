@@ -446,6 +446,33 @@ export const hsRules: Rule[] = [
   // confirmed by a person later, RIDDOR is decided on the RIDDOR review,
   // and the outbox no longer carries the description at all.
   {
+    // Core-OS 360 Phase 4 (152): a permit to work's status changed.
+    // Only the statuses that need a human's attention are worth a
+    // nudge — issue/revalidation and closure are the normal, expected
+    // path and are not raised here. STAFF-ONLY for now, the same
+    // reasoning as contractor_status_changed above: permits have no
+    // portal page yet (Group 13 builds admin+portal UI) — widen to
+    // admins() once that page exists, rather than inventing a link.
+    id: 'permit_status_changed',
+    on: 'permits.updated',
+    when: e => changedTo(e, 'status', ['suspended', 'revoked']),
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'permit_status_changed',
+            title: `${company || 'A client'}: permit ${s(n.permit_number, '')} is now ${s(n.status)}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
+  {
     // Every hs_documents row is a finished, already-current version —
     // a replacement is a NEW row (the old one flips to 'superseded' via
     // its own .updated, which needs no separate notification since this

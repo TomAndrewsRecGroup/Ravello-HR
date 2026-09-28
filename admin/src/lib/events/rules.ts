@@ -386,6 +386,23 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (152): an issued permit approaching its own
+    // expiry. STAFF-ONLY for now, the same reasoning as
+    // contractor_insurance_reminder above — permits have no portal page
+    // yet (Group 13 builds it).
+    id: 'permit_reminder',
+    on: 'permits.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return b === 'due_0' || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'permit_expiring',
+        title: `Permit ${s(row.permit_number, '')} is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
+      })];
+    },
+  },
+  {
     id: 'policy_ack_reminder',
     on: 'policy_acknowledgements.reminder',
     when: e => overdue(reminderPayload(e).bucket),

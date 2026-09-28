@@ -239,6 +239,20 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 4 (152): an ISSUED permit approaching its own
+    // valid_until. Only 'issued' permits are read — a draft has no
+    // valid_until yet, and a suspended/closed/revoked one is no longer
+    // live, so reminding on it would be noise about something already
+    // handled. One row per permit (mutable, not insert-only), so
+    // reading it directly is already correct.
+    id: 'permits', entity: 'permits',
+    select: 'id, company_id, permit_number, valid_until, status',
+    query: (sb, from, to) => sb.from('permits').select('id, company_id, permit_number, valid_until, status')
+      .eq('status', 'issued').not('valid_until', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.valid_until),
+    buckets: ['due_0', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

@@ -388,4 +388,28 @@ describe('hs rules', () => {
     await processEvents(db.client, { rules: RULES });
     expect(db.tables.notifications.some(n => n.type === 'contractor_status_changed')).toBe(false);
   });
+
+  it('a permit suspended tells staff only (no portal page yet) with the permit number and company name', async () => {
+    const updated = eventRow({
+      id: 25, entity_type: 'permits', event_type: 'updated', actor_kind: 'staff', entity_id: 'permit-1',
+      payload: { new: { permit_number: 'PTW-2026-000001', status: 'suspended' }, old: { status: 'issued' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(updated);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'permit_status_changed', link: '/health-safety/co-1' });
+    expect(staff.title).toBe('Sample Co: permit PTW-2026-000001 is now suspended');
+  });
+
+  it('a permit moving to issued raises nothing from this rule (the normal, expected path)', async () => {
+    const updated = eventRow({
+      id: 26, entity_type: 'permits', event_type: 'updated', actor_kind: 'staff', entity_id: 'permit-1',
+      payload: { new: { permit_number: 'PTW-2026-000001', status: 'issued' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.type === 'permit_status_changed')).toBe(false);
+  });
 });

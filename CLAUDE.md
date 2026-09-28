@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), and contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), and permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4790,14 +4790,104 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1120 admin, 600 portal, unchanged — this migration touched no TS),
 all five CI guards pass, admin production build compiles.
 
-**Remaining Phase 4 groups** (tracked, not yet started): permit to
-work (numbering via `next_record_number()`, live compliance re-check
-at issue reading `contractor_worker_access()` from this group,
-suspension/revalidation/closeout); isolation/LOTO; emergency planning
-(drill findings → the universal `actions` table, never a second
-table); notifications/audit/platform_events wiring for all of the
-above; admin + portal UI (including the contractor pages Group 7's
-notifications are waiting on); and a final regression/security-review/
-handover/gate/PR pass. **Phase 5 is not to begin** until Phase 4's own
-gate passes, per the operator's instruction.
+### Group 9: permit to work (migration 152)
+
+A permit is issued for a scope of work at a SITE, optionally against a
+specific ASSET, covering one or more PEOPLE. `permit_templates` are
+**per-company**, unlike `inspection_templates`/`hs_audit_templates`
+(global staff reference data) — a template names a required
+`authorisation_type_id`, and `authorisation_types` (133) is itself
+per-organisation with no global seed, so a global permit template
+could never name a real authorisation type to check against.
+
+- **`person_holds_authorisation(person, type, site, as_of)` is a
+  genuinely new helper** — the Phase 3 handover's own "not yet done"
+  list named this exact gap. It checks `scope_site_id` only:
+  `authorisation_types` has no `scope_asset_id` column despite
+  `scope_kind` allowing `'plant'`/`'equipment'` — a real Phase 3 schema
+  gap, called out in the migration's own header rather than silently
+  assumed away, not fixed here.
+- **Numbering is `PTW-YYYY-NNNNNN`** via `next_record_number()` (122) —
+  six digits, matching every other numbered record in this codebase
+  (asset refs, Group 2), not the plan's own five-digit prose example.
+- **The live compliance re-check runs at ISSUE and again at
+  REVALIDATION, never skipped just because a suspension is being
+  lifted.** `permits_lifecycle_guard()` (BEFORE UPDATE) checks: the
+  asset (if any) is not quarantined; every person already added to the
+  permit (`permit_people`, editable only while `draft`) is Safe to
+  Deploy via `person_deployment_status()` (136) — never
+  re-implemented; the authorising person holds the template's required
+  authorisation at the permit's site, if one is named. A suspension may
+  have existed for exactly the reason this check would catch, so
+  revalidation runs the identical checks as a first issue, never a
+  bare flag flip — proven live: quarantining the asset blocks
+  revalidation exactly as it blocks a first issue.
+- **Validity is SERVER TIME throughout.** `valid_from`/`valid_until`
+  are `timestamptz`; `permit_is_currently_valid()` compares against
+  `now()`, never a client-supplied "still valid" flag.
+- **The lifecycle is a strict state machine, not a free status field**:
+  `draft → issued` (stamps `issued_by/at`, defaults `valid_until` from
+  the template's `default_validity_hours`, or 8h); `issued ⇄ suspended`
+  (requires a reason); `suspended → issued` (revalidation, re-runs the
+  full check, clears suspension fields); `issued/suspended → closed`
+  (requires closeout notes); any non-terminal status `→ revoked`
+  (requires a reason). Every other transition is refused. `permit_people`
+  can only be added while `draft` — once issued, who is covered is
+  frozen.
+- **RLS reuses `contractors.manage`** for all management access on
+  templates/permits/people/checklist responses, rather than inventing
+  `permits.manage` for one more variant of "may manage site safety
+  records" — a permit is issued FOR a contractor/employee's work, the
+  same management act as approving the contractor itself.
+- **Outbox + audit + notifications follow the Group 7 precedent
+  exactly**: `permits` joins `TRIGGERED_ENTITIES` (whitelist:
+  `permit_number, template_id, site_id, asset_id, status, valid_from,
+  valid_until` — never `scope_of_work`, `closeout_notes` or any reason
+  field) and `REMINDER_ENTITIES` (an issued permit approaching its own
+  `valid_until`, `due_0`/`overdue` only — a permit's whole point is a
+  short, bounded window, so a 30/7-day warning would be noise for most
+  permit types). Both new rules (`permit_status_changed` on
+  suspend/revoke, `permit_reminder` on expiry) are **STAFF-ONLY for
+  now**, the identical reasoning `contractor_status_changed`/
+  `contractor_insurance_reminder` already carry: permits have no portal
+  page yet (Group 13 builds it) — widen to `admins()` once that page
+  exists, rather than inventing a link to nowhere.
+
+**Live probe** (`152_permit_to_work.sql`, rolled back, the ENTIRE
+exercised sequence under one simulated staff session — not just around
+bare function calls: the lifecycle guard's `person_deployment_status()`/
+`person_visible()` calls need a real `auth.uid()` whenever the trigger
+fires from an ordinary UPDATE, which the first draft of this probe
+missed and caught as `42501 You cannot see this person` on a bare
+service-role UPDATE with no session). 22 checks: template numbering +
+same-org authorisation-type guard; permit number format; cross-org
+site refused; `permit_people` insertable while draft;
+`person_holds_authorisation` false with none on file, true once
+granted; issue refused without the authorising person's authorisation;
+issue refused with a non-`READY` person on the permit (a person with no
+role at all); issue succeeds once both blockers clear, stamping
+`valid_from`/`valid_until`; `permit_is_currently_valid` true right
+after issue; `permit_people` refused once issued; suspend refused
+without a reason, succeeds with one; `permit_is_currently_valid` false
+while suspended; revalidation refused with a quarantined asset (proving
+the SAME check runs, not a bare flag flip), succeeds once cleared and
+clears suspension fields; close refused without notes, succeeds with
+them; revoke refused from a closed (terminal) permit; revoke refused
+without a reason from draft, succeeds with one. All 22 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1124 admin — 1120 + 4 new: 2 `hsRules.test.ts` cases and 2
+`vocab.test.ts` cases pinning `PERMIT_TYPES`/`PERMIT_STATUSES`, plus the
+generic reminder/rule coverage tests picking up `permits` automatically
+with no new test count; 600 portal, unchanged — this group touched
+only the shared-dupe vocab/notify files, byte-identical to admin's),
+all five CI guards pass, both production builds compile.
+
+**Remaining Phase 4 groups** (tracked, not yet started): isolation/LOTO;
+emergency planning (drill findings → the universal `actions` table,
+never a second table); notifications/audit/platform_events wiring for
+all of the above; admin + portal UI (including the contractor AND
+permit pages Groups 7-9's notifications are waiting on); and a final
+regression/security-review/handover/gate/PR pass. **Phase 5 is not to
+begin** until Phase 4's own gate passes, per the operator's instruction.
 

@@ -71,6 +71,8 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   loler_immediate_danger:     { Icon: AlertTriangle,  color: 'var(--danger)' },
   contractor_status_changed:    { Icon: ShieldCheck,   color: 'var(--amber)' },
   contractor_insurance_expiring: { Icon: CalendarClock, color: 'var(--amber)' },
+  permit_status_changed:       { Icon: ShieldCheck,   color: 'var(--amber)' },
+  permit_expiring:             { Icon: CalendarClock, color: 'var(--amber)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

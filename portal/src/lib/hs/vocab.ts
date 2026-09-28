@@ -168,6 +168,31 @@ export const CONTRACTOR_INSURANCE_TYPE_LABELS: Record<ContractorInsuranceType, s
   other:                   'Other',
 };
 
+// Permit to work (152). permit_type names the hazard category a
+// template covers; status is the lifecycle
+// draft -> issued -> suspended -> closed/revoked, enforced by the
+// permits_lifecycle_guard() trigger, never by the UI alone.
+export const PERMIT_TYPES = ['hot_work', 'confined_space', 'working_at_height', 'electrical_isolation', 'excavation', 'other'] as const;
+export type PermitType = typeof PERMIT_TYPES[number];
+export const PERMIT_TYPE_LABELS: Record<PermitType, string> = {
+  hot_work:              'Hot work',
+  confined_space:        'Confined space',
+  working_at_height:     'Working at height',
+  electrical_isolation:  'Electrical isolation',
+  excavation:            'Excavation',
+  other:                 'Other',
+};
+
+export const PERMIT_STATUSES = ['draft', 'issued', 'suspended', 'closed', 'revoked'] as const;
+export type PermitStatus = typeof PERMIT_STATUSES[number];
+export const PERMIT_STATUS_LABELS: Record<PermitStatus, string> = {
+  draft:     'Draft',
+  issued:    'Issued',
+  suspended: 'Suspended',
+  closed:    'Closed',
+  revoked:   'Revoked',
+};
+
 // LOLER thorough examination type (149) — a single value today, framed
 // as a vocabulary because a generic "thorough examination" framework is
 // meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means

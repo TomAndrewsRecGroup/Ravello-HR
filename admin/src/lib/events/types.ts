@@ -63,6 +63,8 @@ export const TRIGGERED_ENTITIES = [
   'hs_equipment_inspections',
   // Core-OS 360 Phase 4 (150): a contractor's approval status change.
   'contractors',
+  // Core-OS 360 Phase 4 (152): a permit to work status change.
+  'permits',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -101,6 +103,8 @@ export const REMINDER_ENTITIES = [
   'puwer_assessments',
   // Core-OS 360 Phase 4 (150): contractor insurance expiry.
   'contractor_insurances',
+  // Core-OS 360 Phase 4 (152): an issued permit's own expiry.
+  'permits',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 
