@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), and contractor companies/insurance/prequalification (Group 7, finally enforcing the long-dormant `contractors.manage` capability). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), and contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4734,15 +4734,70 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1120 admin, 600 portal), all five CI guards pass, admin production
 build compiles.
 
-**Remaining Phase 4 groups** (tracked, not yet started): contractor
-workers + Safe-to-Deploy + access gate (reading `contractor_is_
-current()` from this group); permit to work (numbering via
-`next_record_number()`, live compliance re-check at issue, suspension/
-revalidation/closeout); isolation/LOTO; emergency planning (drill
-findings → the universal `actions` table, never a second table);
-notifications/audit/platform_events wiring for all of the above; admin
-+ portal UI (including the contractor pages this group's notifications
-are waiting on); and a final regression/security-review/handover/gate/
-PR pass. **Phase 5 is not to begin** until Phase 4's own gate passes,
-per the operator's instruction.
+### Group 8: contractor workers + Safe-to-Deploy + access gate (migration 151)
+
+A contractor WORKER is a `people` row (Phase 3) with `worker_type =
+'contractor'` — that value has existed since 118, and
+`workforce_readiness()`/`workforce_matrix` already include it (Phase
+3's own rule: "Workforce lists include only worker_type employee /
+contractor / consultant / temporary_worker"). What was missing was the
+link to WHICH contractor company (Group 7) a worker belongs to, and one
+access-gate check combining that company's status with the worker's own
+Safe to Deploy status.
+
+- **`people.contractor_id`** is the one new column, guarded so it may
+  only be set when `worker_type = 'contractor'` AND the contractor
+  belongs to the SAME organisation.
+- **The access gate (`contractor_worker_access()`) never re-implements
+  Safe to Deploy or contractor currency** — it calls
+  `person_deployment_status()` (136, the ONE public read of the
+  cache-or-live engine — Phase 3's standing rule: "Never call the raw
+  engine from a public read") and `contractor_is_current()` (150) and
+  combines the two. It computes no new deterministic fact of its own
+  beyond "both of these are true" — no AI, no scoring.
+- **Induction and RAMS are deliberately NOT separate checks here.** An
+  induction requirement is modelled as an ordinary Phase 3
+  `role_requirement` (`requirement_type = 'induction'`), so it is
+  ALREADY inside the Safe to Deploy calculation for anyone it applies
+  to — a second check here would either duplicate it or silently
+  disagree. RAMS/permit-specific gating is Group 9's job (a permit's
+  own compliance re-check AT ISSUE) — this gate answers "may this
+  worker be on site at all", not "may they do this specific task".
+- **Refuses (never merely omits) a person the caller may not see** —
+  `person_visible()` is checked FIRST, before anything about the
+  person is touched, matching `person_deployment_status()`'s own
+  defensive order exactly.
+- **`people`'s `audit_row` whitelist was last redefined by 132, not
+  118** — checked, not assumed, per this codebase's own "latest
+  definition wins" rule for every re-created trigger. Re-emitted with
+  132's exact list plus `contractor_id`.
+
+**Live probe** (`151_contractor_workers_access_gate.sql`, rolled back,
+under a simulated staff session since `person_visible()` needs one): 7
+checks — a contractor worker may link to a same-org contractor;
+non-contractor `worker_type` with a `contractor_id` refused;
+cross-company contractor link refused; a contractor worker with no
+link is refused with a clear reason; an ordinary employee is refused
+via this contractor-specific gate; a linked worker whose contractor is
+current AND whose Safe to Deploy status is genuinely `READY` (an
+active role with zero requirements, added after the first run showed a
+person with NO role at all reads `REVIEW_REQUIRED` — the engine's own
+safe default, not a Group 8 fact) gets access GRANTED; suspending the
+contractor flips it back to refused, re-checked live rather than
+cached. All 7 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1120 admin, 600 portal, unchanged — this migration touched no TS),
+all five CI guards pass, admin production build compiles.
+
+**Remaining Phase 4 groups** (tracked, not yet started): permit to
+work (numbering via `next_record_number()`, live compliance re-check
+at issue reading `contractor_worker_access()` from this group,
+suspension/revalidation/closeout); isolation/LOTO; emergency planning
+(drill findings → the universal `actions` table, never a second
+table); notifications/audit/platform_events wiring for all of the
+above; admin + portal UI (including the contractor pages Group 7's
+notifications are waiting on); and a final regression/security-review/
+handover/gate/PR pass. **Phase 5 is not to begin** until Phase 4's own
+gate passes, per the operator's instruction.
 
