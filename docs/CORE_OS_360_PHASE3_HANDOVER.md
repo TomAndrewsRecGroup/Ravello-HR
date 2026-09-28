@@ -193,8 +193,18 @@ No live workforce data was migrated or put at risk.
   - `131` re-run: **24/24**;
   - the live referral cron ran 24 times in the last 24 hours, all `ok`;
   - 0 unlinked candidates.
+- **Re-run after 142, all live and rolled back:**
+  - 136: 37/37
+  - 137: 16/16
+  - `phase3_qa`: 10/10
+  - `phase3_qa2`: 6/6
+  - 140: PASS
+  - `117_121_protected_regression`: 26/26
+  - 131: 24/24
+
+  The referral cron's candidate insert still links one person per applicant, so the new same-organisation guard does not block the service-role path.
 - **App:**
-  - admin 1,092 tests (111 files), portal 600 tests (39 files), full suites green;
+  - admin 1,102 tests after 142 (111 files; 1,092 before), portal 600 tests (39 files), full suites green;
   - tsc clean in both apps;
   - all five CI guards pass;
   - both production builds compile (portal: 12 new workforce routes; admin: the workforce-refresh cron).
@@ -249,7 +259,9 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | `phase3_qa` | 10/10 (run 1 found QA 10: High, fixed by 139) |
 | `phase3_qa2` | 6/6 after 141 (run 1 found QA 2: High) |
 | `phase3_perf` | recorded |
-| `117_121_protected_regression` | 26/26 |
+| `117_121_protected_regression` | 26/26 (re-run after 142: 26/26) |
+| `142_workforce_org_isolation` | 9/9: every QA 42 attack is now refused, and the intended paths still work |
+| Re-run after 142 | 136 37/37, 137 16/16, `phase3_qa` 10/10, `phase3_qa2` 6/6, 140 PASS, 131 24/24 |
 
 ## QA 1 — Requirements traceability (Definition of Done, 44)
 
@@ -399,3 +411,23 @@ Defects found during Phase 3 QA, all closed:
 | Workforce notification links pointed at `/workforce/people` (a 404) | Code review | Low | App fix | `workforceRules.test` |
 
 Open, not defects (decisions or known limits): L11 documents are not linked to people by the UI (fails closed); L12 self-submitted evidence on non-safety-critical items (product decision); L13 lookup helpers (Low, accepted).
+
+## QA 44 — Gate
+
+**PASS WITH MINOR ISSUES.**
+
+- **Critical and High:** every Critical and High found in Phase 3 is fixed:
+  - one Critical in 134, fixed by 134a;
+  - three Criticals and one High from the security review, fixed by 142;
+  - the QA 10 and QA 2 Highs, fixed by 139 and 141.
+
+  Each fix was re-proved refused against the live database, and pinned by tests that fail when the defect is put back (six mutations for 142). No Critical or High is open.
+- **Regression:** after 142, every earlier probe was re-run and still passes, the full suites are green, tsc is clean, and all five CI guards pass.
+- **Minor issues, recorded in section L:**
+  - performance under a mass change (L1);
+  - documents are not linked to people by the UI; this fails closed (L11);
+  - self-submitted evidence counts for non-safety-critical mandatory items, which is a product decision (L12);
+  - lookup helpers reveal ids for a known UUID, accepted as Low (L13);
+  - no real-browser verification of layout, print or emails (L10).
+
+**Phase 4 is not started.** It stays blocked until this branch is merged and deployed, and until the product decision in L12 is made.
