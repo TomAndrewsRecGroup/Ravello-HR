@@ -7,16 +7,24 @@ import { currentModuleFlags } from '@/lib/auth/moduleFlags';
 // live here (absence, employee documents, offboarding, the HR
 // dashboard) are under LEAD now; their old addresses redirect.
 const TABS = [
-  { href: '/protect',            label: 'Overview' },
-  { href: '/protect/compliance', label: 'Register' },
-  { href: '/protect/documents',  label: 'Documents' },
-  { href: '/protect/audits',     label: 'Audits' },
-  { href: '/protect/incidents',  label: 'Incidents' },
-  { href: '/protect/equipment',  label: 'Equipment' },
-  { href: '/protect/tests',      label: 'Tests' },
-  { href: '/protect/actions',    label: 'Actions' },
-  { href: '/protect/timeline',   label: 'Timeline' },
-  { href: '/protect/reports',    label: 'Reports' },
+  // The operational safety core (Phase 2), in the order work flows.
+  { href: '/protect',                  label: 'Overview' },
+  { href: '/protect/hazards',          label: 'Hazards' },
+  { href: '/protect/risk-assessments', label: 'Risk Assessments' },
+  { href: '/protect/rams',             label: 'RAMS' },
+  { href: '/protect/coshh',            label: 'COSHH' },
+  { href: '/protect/incidents',        label: 'Incidents' },
+  { href: '/protect/investigations',   label: 'Investigations' },
+  { href: '/protect/actions',          label: 'Actions' },
+  // The register and records Core OS 360 keeps on the client's behalf.
+  { href: '/protect/compliance',       label: 'Register' },
+  { href: '/protect/audits',           label: 'Audits' },
+  { href: '/protect/equipment',        label: 'Equipment' },
+  { href: '/protect/documents',        label: 'Documents' },
+  { href: '/protect/tests',            label: 'Tests' },
+  { href: '/protect/timeline',         label: 'Timeline' },
+  { href: '/protect/analysis',         label: 'Analysis' },
+  { href: '/protect/reports',          label: 'Reports' },
 ];
 
 export default async function ProtectLayout({ children }: { children: React.ReactNode }) {

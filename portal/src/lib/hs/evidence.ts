@@ -48,7 +48,12 @@ export function evidenceProblem(file: File): string | null {
  */
 export async function uploadEvidence(
   supabase: SupabaseClient,
-  a: { companyId: string; entityType: string; entityId: string; file: File },
+  a: {
+    companyId: string; entityType: string; entityId: string; file: File;
+    /** 122's hs_files.evidence_type. witness_statement and medical are
+     *  readable only with incident.sensitive.read (hs_evidence_readable). */
+    evidenceType?: string; description?: string | null;
+  },
 ): Promise<string | null> {
   const problem = evidenceProblem(a.file);
   if (problem) return problem;
@@ -59,6 +64,8 @@ export async function uploadEvidence(
   const { error: rowErr } = await supabase.from('hs_files').insert({
     company_id: a.companyId, entity_type: a.entityType, entity_id: a.entityId,
     storage_path: key, file_name: a.file.name.slice(0, 255), mime_type: a.file.type, size_bytes: a.file.size,
+    ...(a.evidenceType ? { evidence_type: a.evidenceType } : {}),
+    ...(a.description ? { description: a.description.slice(0, 1000) } : {}),
   });
   if (rowErr) return `${a.file.name} uploaded but could not be recorded: ${rowErr.message}`;
   return null;
