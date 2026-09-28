@@ -217,6 +217,36 @@ export const ISOLATION_STATUS_LABELS: Record<IsolationStatus, string> = {
   removed:  'Removed',
 };
 
+// Emergency planning (154). emergency_plans reuses hs_documents' own
+// versioning discipline (a new version is a new row); emergency_drills
+// is insert-only, the register's own "a correction is a new row" rule.
+export const EMERGENCY_PLAN_TYPES = ['fire', 'evacuation', 'medical', 'chemical_spill', 'severe_weather', 'security', 'other'] as const;
+export type EmergencyPlanType = typeof EMERGENCY_PLAN_TYPES[number];
+export const EMERGENCY_PLAN_TYPE_LABELS: Record<EmergencyPlanType, string> = {
+  fire:            'Fire',
+  evacuation:      'Evacuation',
+  medical:         'Medical',
+  chemical_spill:  'Chemical spill',
+  severe_weather:  'Severe weather',
+  security:        'Security',
+  other:           'Other',
+};
+
+export const EMERGENCY_PLAN_STATUSES = ['active', 'superseded'] as const;
+export type EmergencyPlanStatus = typeof EMERGENCY_PLAN_STATUSES[number];
+export const EMERGENCY_PLAN_STATUS_LABELS: Record<EmergencyPlanStatus, string> = {
+  active:     'Active',
+  superseded: 'Superseded',
+};
+
+export const EMERGENCY_DRILL_OUTCOMES = ['successful', 'issues_found', 'failed'] as const;
+export type EmergencyDrillOutcome = typeof EMERGENCY_DRILL_OUTCOMES[number];
+export const EMERGENCY_DRILL_OUTCOME_LABELS: Record<EmergencyDrillOutcome, string> = {
+  successful:   'Successful',
+  issues_found: 'Issues found',
+  failed:       'Failed',
+};
+
 // LOLER thorough examination type (149) — a single value today, framed
 // as a vocabulary because a generic "thorough examination" framework is
 // meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means

@@ -67,6 +67,10 @@ export const TRIGGERED_ENTITIES = [
   'permits',
   // Core-OS 360 Phase 4 (153): an isolation / LOTO status change.
   'isolations',
+  // Core-OS 360 Phase 4 (154): an emergency plan added/superseded, and
+  // a drill recorded.
+  'emergency_plans',
+  'emergency_drills',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -107,6 +111,8 @@ export const REMINDER_ENTITIES = [
   'contractor_insurances',
   // Core-OS 360 Phase 4 (152): an issued permit's own expiry.
   'permits',
+  // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
+  'emergency_plans',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

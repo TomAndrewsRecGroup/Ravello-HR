@@ -239,6 +239,16 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle
+    // — the exact hs_documents shape, since it reuses that discipline.
+    id: 'emergency_plans', entity: 'emergency_plans',
+    select: 'id, company_id, title, plan_type, review_due_at, status',
+    query: (sb, from, to) => sb.from('emergency_plans').select('id, company_id, title, plan_type, review_due_at, status')
+      .eq('status', 'active').not('review_due_at', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_due_at),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     // Core-OS 360 Phase 4 (152): an ISSUED permit approaching its own
     // valid_until. Only 'issued' permits are read — a draft has no
     // valid_until yet, and a suspended/closed/revoked one is no longer

@@ -27,11 +27,17 @@ const admins = (companyId: string): Audience[] => [{ kind: 'company_admins', com
 export const HS_FAILED_CHECK_ACTION_TYPE = 'hs_failed_check';
 export const HS_ACTIONS_RAISED_ACTION_TYPE = 'hs_actions_raised';
 export const HS_AUDIT_FINDING_ACTION_TYPE = 'hs_audit_finding';
+export const EMERGENCY_DRILL_FINDING_ACTION_TYPE = 'hs_emergency_drill_finding';
 export const FOLLOWUP_GATE = 0.8;
 
 async function assetName(sb: { from: (t: string) => any }, assetId: string): Promise<string> {
   const { data } = await sb.from('hs_equipment').select('name').eq('id', assetId).maybeSingle();
   return (data as { name?: string } | null)?.name ?? 'an asset';
+}
+
+async function planTitle(sb: { from: (t: string) => any }, planId: string): Promise<string> {
+  const { data } = await sb.from('emergency_plans').select('title').eq('id', planId).maybeSingle();
+  return (data as { title?: string } | null)?.title ?? 'Emergency plan';
 }
 
 
@@ -494,6 +500,58 @@ export const hsRules: Rule[] = [
             audiences: staffOnly, companyId: event.company_id, type: 'isolation_applied',
             title: `${company || 'A client'}: ${asset} is out of service (isolation applied)`,
             link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (154): a drill recorded against an emergency
+    // plan. DRILL FINDINGS ARE NEVER A SECOND TABLE — an outcome of
+    // 'issues_found'/'failed' raises exactly ONE row on the existing
+    // `actions` table (the same shape hs_check_failed already uses),
+    // never one per individual finding: the register's own
+    // "one platform_event per visit, not per answer" discipline (110).
+    // A 'successful' drill raises nothing — that is the normal,
+    // expected outcome, not something to nudge anyone about.
+    id: 'emergency_drill_recorded',
+    on: 'emergency_drills.created',
+    when: e => rowPayload(e).new.outcome !== 'successful',
+    then: async (ctx) => {
+      const { event, sb, companyName } = ctx;
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const plan = await planTitle(sb, s(n.plan_id));
+      const company = await companyName();
+      const failed = n.outcome === 'failed';
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `emergency_drill:${event.entity_id}`,
+          row: {
+            action_type: EMERGENCY_DRILL_FINDING_ACTION_TYPE, priority: failed ? 'high' : 'normal',
+            title: `Drill finding: ${plan}`,
+            description: `${failed ? 'Failed' : 'Issues found'} on ${s(n.drill_date)}. Review and address before the next drill.`,
+            related_entity_type: 'emergency_plan', related_entity_id: s(n.plan_id) || null,
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'emergency_drill_recorded',
+            title: `${failed ? 'Failed' : 'Issues found in'} drill: ${plan}`,
+            body:  `Recorded ${s(n.drill_date)}. An action has been added to your PROTECT actions.`,
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'emergency_drill_recorded',
+            title: `${company || 'A client'}: drill ${n.outcome === 'failed' ? 'failed' : 'found issues'} — ${plan}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
           },
         },
       ];

@@ -52,6 +52,7 @@ beforeEach(() => {
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
     hs_audits: [{ id: 'audit-1', company_id: 'co-1', title: 'Fire safety walk-round', conducted_on: '2026-09-24', score: 67 }],
     hs_equipment: [{ id: 'asset-1', company_id: 'co-1', name: 'Forklift 3', asset_type: 'vehicle' }],
+    emergency_plans: [{ id: 'plan-1', company_id: 'co-1', title: 'Fire Evacuation Plan', plan_type: 'fire' }],
     inspection_responses: [
       { id: 'iresp-1', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Forks free of cracks?', critical: true, rating: 'fail', comment: 'Visible crack' },
       { id: 'iresp-2', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Tyres OK?', critical: false, rating: 'pass', comment: null },
@@ -426,5 +427,47 @@ describe('hs rules', () => {
     expect(staff).toMatchObject({ type: 'isolation_applied', link: '/health-safety/co-1/equipment' });
     expect(staff.title).toContain('Sample Co');
     expect(staff.title).toContain('Forklift 3');
+  });
+
+  it('a drill with issues raises ONE action, tells the client admins with a portal actions link, and tells staff', async () => {
+    const created = eventRow({
+      id: 28, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-1',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'issues_found' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_emergency_drill_finding', priority: 'normal',
+      source_ref: 'emergency_drill:drill-1', related_entity_type: 'emergency_plan', related_entity_id: 'plan-1',
+    });
+    expect(db.tables.actions[0].title).toBe('Drill finding: Fire Evacuation Plan');
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'emergency_drill_recorded', link: '/protect/actions' });
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'emergency_drill_recorded', link: '/health-safety/co-1' });
+  });
+
+  it('a failed drill raises a high-priority action', async () => {
+    const created = eventRow({
+      id: 29, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-2',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'failed' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'high' });
+  });
+
+  it('a successful drill raises nothing (the normal, expected outcome)', async () => {
+    const created = eventRow({
+      id: 30, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-3',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'successful' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications).toHaveLength(0);
   });
 });

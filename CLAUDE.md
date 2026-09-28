@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), and isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), and emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4954,11 +4954,70 @@ cases pinning `ISOLATION_TYPES`/`ISOLATION_STATUSES`; 600 portal,
 unchanged — this group touched only the shared-dupe vocab/notify
 files), all five CI guards pass, both production builds compile.
 
-**Remaining Phase 4 groups** (tracked, not yet started): emergency
-planning (drill findings → the universal `actions` table, never a
-second table); notifications/audit/platform_events wiring for all of
-the above; admin + portal UI (including the contractor, permit AND
-isolation pages Groups 7-10's notifications are waiting on); and a
+### Group 11: emergency planning (migration 154)
+
+`emergency_plans` reuses `hs_documents`' own versioning DISCIPLINE
+(106), not the table itself: a plan needs structure `hs_documents` was
+never built for — required roles and linked equipment — so bolting
+those onto the generic document library would have widened its purpose
+past "metadata for a file". The discipline is copied verbatim: a new
+version is a new ROW (`emergency_plans_stamp`), never an edit; the old
+row flips to `'superseded'` via its own UPDATE, firing the Safety
+Timeline entry (`emergency_plans_event`, mirroring `hs_document_event`
+exactly).
+
+- **`emergency_plan_roles` links to the Phase 3 authorisation
+  catalogue** (e.g. "Fire Warden", "First Aider") with a minimum
+  headcount — never a duplicate competency system. Who currently holds
+  that authorisation is read LIVE from `person_authorisations` (the
+  same table Group 9's `person_holds_authorisation()` already reads),
+  never stored here.
+- **`emergency_plan_equipment` is a plain linking table** to
+  `hs_equipment` (fire extinguishers, muster-point kit,
+  defibrillators) — no new equipment concept.
+- **`emergency_drills` is insert-only**, the register's own "a
+  correction is a new row" discipline (`hs_register_completions`/
+  `hs_audits`). **Drill findings are NEVER a second table**: an
+  `outcome` of `'issues_found'` or `'failed'` raises exactly ONE row on
+  the EXISTING `actions` table (`hsRules.ts`'s `emergency_drill_recorded`
+  rule, the identical shape `hs_check_failed` already uses) — never one
+  action per individual finding, the same notification-storm avoidance
+  the on-site-audit engine (110) already established. A `'successful'`
+  drill raises nothing.
+- **RLS on every new table is staff-write / client-read-only** — the
+  exact `hs_activities`/`hs_register_completions` shape. Nothing about
+  emergency planning is self-certified by a client, matching the
+  standing H&S posture since Phase 1b.
+- **`emergency_drill_recorded` notifies the client via the PORTAL,
+  unlike Groups 7-10's staff-only notifications** — because unlike
+  contractors/permits/isolations, its consequence lands on `actions`,
+  and `/protect/actions` already exists as a real portal page. This is
+  the one Phase 4 Group 7+ rule that could safely use `admins()` from
+  day one.
+
+**Live probe** (`154_emergency_planning.sql`, rolled back, simulated
+staff session): 14 checks — plan v1 created at version 1; cross-org
+site refused; a required role links to the authorisation catalogue,
+cross-org authorisation type refused; linked equipment added, cross-org
+asset refused; a new version (v2) created referencing v1 via
+`supersedes_id`; flipping v1 to `'superseded'` succeeds and both
+`plan_added`/`plan_superseded` Safety Timeline entries exist; a drill
+recorded against the plan; the drill cannot be UPDATEd or DELETEd
+(insert-only); a drill against a DIFFERENT company's plan refused; and
+exactly ONE Safety Timeline entry for the drill (never one per
+finding). All 14 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1133 admin — 1127 + 6 new: 3 `hsRules.test.ts` cases and 3
+`vocab.test.ts` cases pinning `EMERGENCY_PLAN_TYPES`/
+`EMERGENCY_PLAN_STATUSES`/`EMERGENCY_DRILL_OUTCOMES`; 600 portal,
+unchanged — this group touched only the shared-dupe vocab/notify
+files), all five CI guards pass, both production builds compile.
+
+**Remaining Phase 4 groups** (tracked, not yet started):
+notifications/audit/platform_events wiring for all of the above; admin
++ portal UI (including the contractor, permit, isolation AND emergency
+planning pages several groups' notifications are waiting on); and a
 final regression/security-review/handover/gate/PR pass. **Phase 5 is
 not to begin** until Phase 4's own gate passes, per the operator's
 instruction.

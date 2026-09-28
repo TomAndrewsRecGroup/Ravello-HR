@@ -315,6 +315,23 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
+    // STAFF-ONLY for now, the same reasoning as every other Phase 4
+    // site-safety reminder without a portal page yet (Group 13 builds
+    // it) — widen to admins() once that page exists.
+    id: 'emergency_plan_review_reminder',
+    on: 'emergency_plans.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'emergency_plan_review_due',
+        title: `Review of "${s(row.title, 'an emergency plan')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
+      })];
+    },
+  },
+  {
     id: 'hs_document_review_reminder',
     on: 'hs_documents.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },

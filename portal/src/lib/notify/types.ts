@@ -76,6 +76,9 @@ export const NOTIFICATION_TYPES = [
   'permit_expiring',
   // Core-OS 360 Phase 4 (153): isolation / LOTO.
   'isolation_applied',
+  // Core-OS 360 Phase 4 (154): emergency planning.
+  'emergency_plan_review_due',
+  'emergency_drill_recorded',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -198,6 +201,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   permit_status_changed:      'Permit status changed',
   permit_expiring:            'Permit expiring',
   isolation_applied:          'Isolation applied',
+  emergency_plan_review_due: 'Emergency plan review due',
+  emergency_drill_recorded:  'Emergency drill recorded',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

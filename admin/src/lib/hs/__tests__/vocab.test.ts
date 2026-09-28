@@ -29,7 +29,9 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 152 adds the permit type / status vocabularies.
   + readFileSync(`${MIG}/152_permit_to_work.sql`, 'utf8')
   // 153 adds the isolation type / status vocabularies.
-  + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8');
+  + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8')
+  // 154 adds the emergency plan type / status and drill outcome vocabularies.
+  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -76,6 +78,19 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['permit statuses', V.PERMIT_STATUSES, /status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
     ['isolation types', V.ISOLATION_TYPES, /isolation_type\s+text NOT NULL CHECK \(isolation_type IN \(/],
     ['isolation statuses', V.ISOLATION_STATUSES, /status\s+text NOT NULL DEFAULT 'applied' CHECK \(status IN \(/],
+    ['emergency plan types', V.EMERGENCY_PLAN_TYPES, /plan_type\s+text NOT NULL CHECK \(plan_type IN \(/],
+    // hs_documents (106) has an IDENTICAL "status text NOT NULL DEFAULT
+    // 'active' CHECK (status IN (" phrase — anchored from the table's
+    // own plan_type column (unique to emergency_plans) through to its
+    // status column, the same "distinguish via preceding context" rule
+    // 114/148's outcome anchors already established.
+    ['emergency plan statuses', V.EMERGENCY_PLAN_STATUSES,
+      /plan_type\s+text NOT NULL CHECK \(plan_type IN \([\s\S]*?status\s+text NOT NULL DEFAULT 'active' CHECK \(status IN \(/],
+    // 114/148 both have a textually-identical "outcome text NOT NULL
+    // CHECK (outcome IN (" phrase; anchored on evacuation_time_seconds,
+    // unique to emergency_drills.
+    ['emergency drill outcomes', V.EMERGENCY_DRILL_OUTCOMES,
+      /evacuation_time_seconds\s+integer CHECK \(evacuation_time_seconds IS NULL OR evacuation_time_seconds >= 0\),\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -101,6 +116,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.PERMIT_STATUSES, V.PERMIT_STATUS_LABELS],
       [V.ISOLATION_TYPES, V.ISOLATION_TYPE_LABELS],
       [V.ISOLATION_STATUSES, V.ISOLATION_STATUS_LABELS],
+      [V.EMERGENCY_PLAN_TYPES, V.EMERGENCY_PLAN_TYPE_LABELS],
+      [V.EMERGENCY_PLAN_STATUSES, V.EMERGENCY_PLAN_STATUS_LABELS],
+      [V.EMERGENCY_DRILL_OUTCOMES, V.EMERGENCY_DRILL_OUTCOME_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });
