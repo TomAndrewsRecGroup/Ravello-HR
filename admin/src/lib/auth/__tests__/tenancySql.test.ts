@@ -31,6 +31,7 @@ const m119 = readFileSync(`${MIG}/119_actions_documents_search.sql`, 'utf8');
 const m120 = readFileSync(`${MIG}/120_actions_capability_insert.sql`, 'utf8');
 const m122 = readFileSync(`${MIG}/122_safety_foundation.sql`, 'utf8');
 const m132 = readFileSync(`${MIG}/132_workforce_foundation.sql`, 'utf8');
+const m144 = readFileSync(`${MIG}/144_asset_register.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -38,7 +39,7 @@ function fn(src: string, name: string): string {
   return src.slice(start, src.indexOf('$$;', start));
 }
 
-describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132)', () => {
+describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144)', () => {
   // 117 seeds role → ARRAY[capabilities]; 122 adds capability → ARRAY[roles].
   const seed = new Map<string, string[]>();
   for (const m of m117.matchAll(/\('([a-z_]+)',\s+ARRAY\[([^\]]*)\]\)/g)) {
@@ -64,8 +65,18 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132)', () =
       seed.get(r)!.push(cap);
     }
   }
+  // 144 (Phase 4, Group 2: the asset register) adds two capabilities,
+  // copying 117's own risk.read/risk.create role lists verbatim.
+  const added144 = [...m144.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added144.length).toBe(2);
+  for (const [, cap, roles] of added144) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `144 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
   for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
-  const both = m117 + '\n' + m122 + '\n' + m132;
+  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144;
   const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {

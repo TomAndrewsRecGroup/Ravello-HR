@@ -460,6 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2, `hs_equipment` extended with hierarchy/type/operational area/owner/PUWER-LOLER flags/safety-critical/evidence). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4213,4 +4214,140 @@ Portal pages: `/lead/workforce/*` (flags `lead` + `workforce`).
 - Measured (2,000 workers): warm lists ~0.4 s, a profile 10 ms, a cold
   calculation ~6 ms a person. A rule change that dirties thousands of
   people makes the lists calculate them live until the next refresh.
+
+---
+
+## Core-OS 360 Phase 4: assets, plant, equipment, inspections, PUWER,
+## LOLER, contractors, permits, emergency planning (in progress, from
+## 2026-09-28, migration 144 onward)
+
+Scope: `docs/CORE_OS_360_PHASE4_PLAN.md` (the operator's full spec).
+Delivered in **logical, independently-verified groups** — migration, live
+rolled-back probe, tests, all five CI guards, doc update, THEN the next
+group — specifically so a defect in one group cannot compound into the
+next, the same discipline the QA 42 security review (Phase 3) showed was
+missing when things moved too fast. **Explicitly forbidden anywhere in
+this phase**: predictive/AI safety scoring (machine failure prediction,
+accident probability, unsafe-worker prediction) and false certification
+language ("this machine is legally compliant" — say what was recorded,
+never assert legal compliance).
+
+### Pre-work: the existing-operations audit
+
+Before any Phase 4 code, a full audit of existing equipment/contractor/
+inspection/test/permit-adjacent functionality (task #20) produced the
+group boundaries below. Its central conclusions, each binding on later
+groups: `hs_equipment` (112) already IS the asset register and must be
+EXTENDED, never forked into a parallel `assets` table; `hs_audits` (110)
+is a genuinely different concept from routine/pre-use inspections and
+keeps its own name, but its proven mechanisms (client-generated ids,
+one atomic idempotent submit RPC, server-side scoring, offline
+localStorage runner, one platform_event per run) are the template new
+inspection tables should copy; contractor/permit/isolation/emergency
+functionality is entirely unbuilt (only the unenforced
+`contractors.manage` capability exists as a placeholder) and needs new
+tables built on the existing `people`/`person_authorisations`/`actions`/
+`hs_files` primitives, never second copies of them.
+
+### Group 2: the asset register (migration 144)
+
+`hs_equipment` extended in place (see the audit's own conclusion above),
+not replaced:
+
+- **`asset_ref`** (`AST-000123`, minted once via `next_record_number()`
+  on first insert, never re-minted on update — the same numbering
+  function permits will use in Group 9).
+- **`asset_type`** — a CHECKed vocabulary (`plant | machinery | vehicle |
+  tool | lifting_equipment | fixed_installation | ppe_equipment |
+  other`), not free text, mirrored as `HS_ASSET_TYPES` in
+  `lib/hs/vocab.ts` (shared-dupe pair).
+- **`parent_asset_id`** — sub-assembly hierarchy, self-referencing with a
+  bounded cycle guard (`hs_equipment_same_org_and_no_cycle()`, a 50-deep
+  walk, not a recursive CTE — a runaway recursive query is a worse
+  failure mode than an early exit on a hierarchy that is never actually
+  deep). A CHECK refuses a literal self-parent; the trigger refuses a
+  longer cycle and any cross-organisation parent/owner/area, reusing
+  118's `assert_same_org()` rather than a bespoke re-implementation.
+- **`operational_area_id`** → `departments(id)` — must be on the SAME
+  SITE as the asset, checked in the same trigger (an area on a different
+  site is refused, not silently accepted).
+- **`owner_person_id`** → `people(id)`, **`puwer_applicable`** /
+  **`loler_applicable`** (booleans, not a free-text "regime" tag — Groups
+  5/6 branch on these and a boolean can't be misspelled the way a tag
+  could), **`safety_critical`** (the ONE definition of safety-critical
+  an asset gets in this system, read by Groups 4/9/10 to decide whether
+  a failure quarantines the asset outright), **`archived_at`** (soft
+  retire — evidence, inspections and incidents already reference the
+  row).
+- **`status` gains `'quarantined'`** now, ahead of Group 4 (defects) —
+  rewriting a CHECK a second time to insert one more lifecycle value is
+  exactly the avoidable second pass "logical groups, no errors" exists
+  to prevent.
+- **Evidence**: `hs_scope_for_entity()`/`hs_entity_table()` never mapped
+  `'equipment'` despite `hs_equipment` already existing — a real gap the
+  audit flagged. Both latest-definition functions, plus
+  `hs_evidence_readable()`/`hs_evidence_writable()`/
+  `hs_files_entity_check()`, are re-created here (124's bodies, with only
+  an `'equipment'` branch added) gated on two new capabilities,
+  `asset.read`/`asset.manage`, seeded in 117's own 3-column shape and
+  granted to exactly the same roles as `risk.read`/`risk.create` — an
+  asset register usable immediately by the people who can already work
+  with risk assessments, not invisible until a manual grant.
+- **Audit trail**: `audit_row('asset', 'company_id', ...)`, a column
+  whitelist of identifying/classifying fields only — never `notes`.
+- **`assets`** is an optional `security_invoker` read view over
+  `hs_equipment`, the same alias pattern `organisations`/`sites` already
+  use — `hs_equipment` is still the table; FKs still point at it.
+
+**Live probe** (`supabase/probes/144_asset_register.sql`, rolled back):
+18 checks — asset_ref minting and uniqueness, cross-site operational
+area refused, cross-company owner/parent refused, a 2-node cycle
+refused, self-parent refused, `quarantined` accepted, evidence accepted
+same-company / refused cross-company, `hs_scope_for_entity`/
+`hs_entity_table`/`hs_entity_company` all resolve `'equipment'`
+correctly, both capabilities seeded and granted, the `assets` view reads
+through, the audit trail fires. All 18 passed.
+
+**A trap caught and fixed same-day**: the first version of the
+capability grant used a dynamic `SELECT role_key, 'asset.read' FROM
+access_role_capabilities WHERE capability_key = 'risk.read'` — correct
+data, but unparseable by `tenancySql.test.ts`'s regex-driven TS↔SQL
+parity check, which only recognises 117/122/132's `('capability',
+ARRAY[roles])` literal shape. Rewritten (migration `144a`, applied
+same day, `ON CONFLICT DO NOTHING` against identical rows already
+present) to match that shape exactly, with the role lists copied
+verbatim from `risk.read`/`risk.create` rather than computed — verified
+live afterward that the resulting grants are byte-identical to
+`risk.read`/`risk.create`'s own role sets.
+
+`tenancySql.test.ts` gained migration 144 to its capability-parity
+check (35 tests, was 34); `vocab.test.ts` gained an `asset types` case
+and a corrected `equipment statuses` anchor (the status CHECK moved
+from an inline `CREATE TABLE` clause to a named `ADD CONSTRAINT`, so the
+anchor now matches the constraint NAME rather than the old `DEFAULT
+'in_service' CHECK (` text — 13 tests, was 11). `capabilities.ts` and
+`hs/vocab.ts` (both shared-dupe pairs) updated in both apps in the same
+pass, byte-identical.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1108 admin, 600 portal), all five CI guards pass, both production
+builds compile (portal's pre-existing sandbox-only `/auth/reset-
+password` prerender failure — missing `NEXT_PUBLIC_SUPABASE_*` env
+vars in this container, not in Vercel — is unrelated to this change and
+touches no page this migration affects, same caveat recorded earlier in
+this file).
+
+**Remaining Phase 4 groups** (tracked, not yet started): inspection
+engine (new tables, copying `hs_audits`' proven mechanisms rather than
+renaming it); defects + return-to-service (the `quarantined` status
+seeded above); PUWER assessments; LOLER examinations + immediate
+danger; contractor companies + insurance + prequalification; contractor
+workers + Safe-to-Deploy + access gate; permit to work (numbering,
+live compliance re-check at issue, suspension/revalidation/closeout);
+isolation/LOTO; emergency planning (drill findings → the universal
+`actions` table, never a second table); notifications/audit/
+platform_events wiring for all of the above; admin + portal UI; and a
+final regression/security-review/handover/gate/PR pass. **Phase 5 is
+not to begin** until Phase 4's own gate passes, per the operator's
+instruction.
 

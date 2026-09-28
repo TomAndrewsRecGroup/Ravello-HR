@@ -96,12 +96,34 @@ export function incidentNextStatuses(from: HsIncidentStatus): HsIncidentStatus[]
 // mutable next_inspection_due a session updates directly), not
 // completion-shaped like hs_register_completions: there is no separate
 // "was it inspected" evidence trail here (MVP scope).
-export const HS_EQUIPMENT_STATUSES = ['in_service', 'out_of_service', 'decommissioned'] as const;
+// 'quarantined' added by 144 (Phase 4, Group 2: the asset register) —
+// ahead of Group 4 (defects), the status a safety-critical asset moves to
+// on a failed inspection/defect, before any hierarchy/permit/isolation
+// logic reads it.
+export const HS_EQUIPMENT_STATUSES = ['in_service', 'out_of_service', 'decommissioned', 'quarantined'] as const;
 export type HsEquipmentStatus = typeof HS_EQUIPMENT_STATUSES[number];
 export const HS_EQUIPMENT_STATUS_LABELS: Record<HsEquipmentStatus, string> = {
   in_service:     'In service',
   out_of_service: 'Out of service',
   decommissioned: 'Decommissioned',
+  quarantined:    'Quarantined',
+};
+
+// Asset type (144) — what kind of thing an asset is, for filtering and
+// reporting. A CHECKed vocabulary, not free text.
+export const HS_ASSET_TYPES = [
+  'plant', 'machinery', 'vehicle', 'tool', 'lifting_equipment', 'fixed_installation', 'ppe_equipment', 'other',
+] as const;
+export type HsAssetType = typeof HS_ASSET_TYPES[number];
+export const HS_ASSET_TYPE_LABELS: Record<HsAssetType, string> = {
+  plant:               'Plant',
+  machinery:           'Machinery',
+  vehicle:             'Vehicle',
+  tool:                'Tool',
+  lifting_equipment:   'Lifting equipment',
+  fixed_installation:  'Fixed installation',
+  ppe_equipment:       'PPE equipment',
+  other:               'Other',
 };
 
 // Equipment inspection outcomes (114) — insert-only evidence trail, the

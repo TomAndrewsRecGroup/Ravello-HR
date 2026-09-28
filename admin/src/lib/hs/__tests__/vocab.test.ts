@@ -15,7 +15,11 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   + readFileSync(`${MIG}/112_hs_incidents_equipment_toolbox.sql`, 'utf8')
   + readFileSync(`${MIG}/114_hs_equipment_inspections.sql`, 'utf8')
   // 125 replaces the incident type / severity / status vocabulary.
-  + readFileSync(`${MIG}/125_incidents_investigations_riddor.sql`, 'utf8');
+  + readFileSync(`${MIG}/125_incidents_investigations_riddor.sql`, 'utf8')
+  // 144 replaces hs_equipment's status CHECK to add 'quarantined' (DROP
+  // CONSTRAINT + ADD CONSTRAINT, same name — confirmed live as the ONE
+  // surviving constraint) and adds asset_type.
+  + readFileSync(`${MIG}/144_asset_register.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -37,8 +41,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['incident types',    V.HS_INCIDENT_TYPES,       /hs_incidents_incident_type_check CHECK \(incident_type IN \(/],
     ['incident severities', V.HS_INCIDENT_SEVERITIES, /hs_incidents_severity_check CHECK \(severity IS NULL OR severity IN \(/],
     ['incident statuses', V.HS_INCIDENT_STATUSES,    /hs_incidents_status_check CHECK \(status IN \(/],
-    ['equipment statuses', V.HS_EQUIPMENT_STATUSES,  /DEFAULT 'in_service' CHECK \(status IN \(/],
+    ['equipment statuses', V.HS_EQUIPMENT_STATUSES,  /hs_equipment_status_check\s*CHECK \(status IN \(/],
     ['equipment inspection outcomes', V.HS_EQUIPMENT_INSPECTION_OUTCOMES, /outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['asset types', V.HS_ASSET_TYPES, /asset_type\s+text\s*CHECK \(asset_type IS NULL OR asset_type IN\s*\(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -54,6 +59,7 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.HS_INCIDENT_STATUSES, V.HS_INCIDENT_STATUS_LABELS],
       [V.HS_EQUIPMENT_STATUSES, V.HS_EQUIPMENT_STATUS_LABELS],
       [V.HS_EQUIPMENT_INSPECTION_OUTCOMES, V.HS_EQUIPMENT_INSPECTION_OUTCOME_LABELS],
+      [V.HS_ASSET_TYPES, V.HS_ASSET_TYPE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });
