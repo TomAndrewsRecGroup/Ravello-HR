@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { calculateLeaveBalance } from '@/lib/leaveCalculations';
 import type { LeaveYearConfig } from '@/lib/leaveCalculations';
+import { EMPLOYEE_SAFE_COLUMNS, readEmployeePrivate, withPrivate, withoutHrFields } from '@/lib/lead/employeePrivate';
 
 // Drawer is the single biggest part of this page (~280 lines, ~30 form
 // fields). Lazy-loading defers parsing/hydration of all that until the
@@ -51,6 +52,11 @@ interface Props {
   isAdmin: boolean;
   /** Admin OR Editor — both can share + regenerate leave links. */
   canManageLeave: boolean;
+  /** hr.sensitive.read: salary, NI, DOB, diversity, address, emergency
+   *  contacts and notes are shown. Without it they are never loaded (131). */
+  canReadHr: boolean;
+  /** hr.sensitive.write: those fields are editable and sent on save. */
+  canWriteHr: boolean;
   initialEmployees: Employee[];
   leaveRecords: LeaveRecord[];
 }
@@ -76,7 +82,7 @@ function fmtDate(d: string | null): string {
 }
 
 /* ─── Component ─────────────────────────────────────── */
-export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canManageLeave, initialEmployees, leaveRecords }: Props) {
+export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canManageLeave, canReadHr, canWriteHr, initialEmployees, leaveRecords }: Props) {
   const supabase = createClient();
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [search, setSearch] = useState('');
@@ -307,26 +313,37 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
       address: form.address || null,
     };
 
+    // HR fields go only with hr.sensitive.write AND hr.sensitive.read: the
+    // database refuses the whole write otherwise (131), and a form that
+    // never loaded the stored values would overwrite them with blanks.
+    const body = canWriteHr && canReadHr ? payload : withoutHrFields(payload);
+    // Name the returned columns: `*` includes ones a session cannot read.
+    const reread = async (id: string) =>
+      withPrivate([{ id }], await readEmployeePrivate(supabase, companyId, [id]))[0];
+
     if (editingId) {
       const { data, error } = await supabase
         .from('employee_records')
-        .update(payload)
+        .update(body)
         .eq('id', editingId)
-        .select()
+        .select(EMPLOYEE_SAFE_COLUMNS)
         .single();
       if (!error && data) {
-        setEmployees(prev => prev.map(e => e.id === editingId ? data as Employee : e));
+        const row = { ...(data as unknown as Employee), ...(await reread(editingId)) } as Employee;
+        setEmployees(prev => prev.map(e => e.id === editingId ? row : e));
         setShowForm(false);
         revalidatePortalPath('/lead/employee-records');
       }
     } else {
       const { data, error } = await supabase
         .from('employee_records')
-        .insert(payload)
-        .select()
+        .insert(body)
+        .select(EMPLOYEE_SAFE_COLUMNS)
         .single();
       if (!error && data) {
-        setEmployees(prev => [...prev, data as Employee]);
+        const created = data as unknown as Employee;
+        const row = { ...created, ...(await reread(created.id)) } as Employee;
+        setEmployees(prev => [...prev, row]);
         setShowForm(false);
         revalidatePortalPath('/lead/employee-records');
       }
@@ -517,6 +534,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
           setField={(k, v) => setField(k as string, v)}
           onClose={() => setShowForm(false)}
           onSave={handleSave}
+          showHr={canReadHr && canWriteHr}
         />
       )}
 

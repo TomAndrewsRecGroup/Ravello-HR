@@ -80,7 +80,7 @@ export default async function DashboardPage() {
       .from('actions')
       .select('id,title,description,priority,status,due_date,created_at')
       .eq('company_id', companyId ?? '')
-      .eq('status', 'active')
+      .in('status', ['active', 'in_progress', 'awaiting_verification'])
       .order('created_at', { ascending: false }),
     // Company friction assessment
     supabase.from('company_assessments').select('overall_band,top_signals,confidence,created_at').eq('company_id', companyId ?? '').order('created_at', { ascending: false }).limit(1).maybeSingle(),

@@ -32,7 +32,6 @@ admin/src/app/api/brand-extract/route.ts
 admin/src/app/api/clients/[id]/route.ts
 admin/src/app/api/friction/analyze/route.ts
 admin/src/app/api/stripe/webhook/route.ts
-portal/src/app/api/actions/[id]/route.ts
 portal/src/app/api/athletes/[id]/cv/route.ts
 portal/src/app/api/athletes/[id]/route.ts
 portal/src/app/api/athletes/route.ts

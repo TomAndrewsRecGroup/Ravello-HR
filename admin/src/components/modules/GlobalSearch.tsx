@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import {
   Search, X, Building2, Briefcase, Users, LifeBuoy,
-  FileText, ShieldCheck, Loader2,
+  FileText, ShieldCheck, Loader2, UserRound, Trophy, MapPin, Network,
+  CheckSquare, AlertTriangle, ClipboardCheck, Wrench,
 } from 'lucide-react';
 
 interface SearchResult {
-  type: 'client' | 'role' | 'candidate' | 'ticket' | 'document' | 'compliance';
+  type: string;
   id: string;
   title: string;
   subtitle: string;
@@ -16,13 +17,42 @@ interface SearchResult {
 }
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  client:     { icon: Building2,   color: 'var(--purple)', label: 'Client' },
-  role:       { icon: Briefcase,   color: 'var(--blue)',   label: 'Role' },
-  candidate:  { icon: Users,       color: 'var(--teal)',    label: 'Candidate' },
-  ticket:     { icon: LifeBuoy,    color: 'var(--amber)',   label: 'Ticket' },
-  document:   { icon: FileText,    color: '#EA3DC4',       label: 'Document' },
-  compliance: { icon: ShieldCheck, color: 'var(--danger)',  label: 'Compliance' },
+  organisation:    { icon: Building2,   color: 'var(--purple)', label: 'Organisation' },
+  person:          { icon: UserRound,   color: 'var(--teal)',   label: 'Person' },
+  employee:        { icon: UserRound,   color: 'var(--teal)',   label: 'Employee' },
+  candidate:       { icon: Users,       color: 'var(--teal)',   label: 'Candidate' },
+  athlete:         { icon: Trophy,      color: 'var(--gold)',   label: 'Athlete' },
+  role:            { icon: Briefcase,   color: 'var(--blue)',   label: 'Role' },
+  site:            { icon: MapPin,      color: 'var(--blue)',   label: 'Site' },
+  department:      { icon: Network,     color: 'var(--blue)',   label: 'Department' },
+  document:        { icon: FileText,    color: 'var(--purple)', label: 'Document' },
+  hs_document:     { icon: FileText,    color: 'var(--purple)', label: 'H&S document' },
+  action:          { icon: CheckSquare, color: 'var(--gold)',   label: 'Action' },
+  incident:        { icon: AlertTriangle, color: 'var(--red)',  label: 'Incident' },
+  audit:           { icon: ClipboardCheck, color: 'var(--teal)', label: 'Audit' },
+  equipment:       { icon: Wrench,      color: 'var(--ink-soft)', label: 'Equipment' },
+  service_request: { icon: LifeBuoy,    color: 'var(--gold)',   label: 'Request' },
+  compliance:      { icon: ShieldCheck, color: 'var(--red)',    label: 'Compliance' },
 };
+
+// Where each kind of record lives in the admin app. Anything without a
+// page of its own opens its organisation.
+export function hrefFor(type: string, id: string, org: string | null): string {
+  switch (type) {
+    case 'organisation':    return `/clients/${id}`;
+    case 'role':            return `/hiring/${id}`;
+    case 'candidate':       return '/candidates';
+    case 'athlete':         return '/athletes-to-industry';
+    case 'document':        return '/documents';
+    case 'service_request': return '/requests';
+    case 'site':            return org ? `/health-safety/${org}` : '/health-safety';
+    case 'hs_document':     return org ? `/health-safety/${org}/documents` : '/health-safety';
+    case 'incident':        return org ? `/health-safety/${org}/incidents` : '/health-safety';
+    case 'audit':           return org ? `/health-safety/${org}/audits/${id}` : '/health-safety';
+    case 'equipment':       return org ? `/health-safety/${org}/equipment` : '/health-safety';
+    default:                return org ? `/clients/${org}` : '/clients';
+  }
+}
 
 export default function GlobalSearch() {
   const supabase = createClient();
@@ -62,41 +92,27 @@ export default function GlobalSearch() {
   const search = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
     setLoading(true);
-    const pattern = `%${q}%`;
+    const pattern = `%${q.replace(/[\\%_]/g, c => `\\${c}`)}%`;
 
-    const [compRes, reqRes, candRes, tickRes, docRes, compRes2] = await Promise.all([
-      supabase.from('companies').select('id, name, sector').ilike('name', pattern).limit(5),
-      supabase.from('requisitions').select('id, title, companies(name)').ilike('title', pattern).limit(5),
-      supabase.from('candidates').select('id, full_name, email, requisitions(title)').or(`full_name.ilike.${pattern},email.ilike.${pattern}`).limit(5),
-      supabase.from('tickets').select('id, subject, companies(name)').ilike('subject', pattern).limit(5),
-      supabase.from('documents').select('id, name, companies(name)').ilike('name', pattern).limit(5),
-      supabase.from('compliance_items').select('id, title, companies(name)').ilike('title', pattern).limit(5),
+    // search_records() is SECURITY INVOKER: it runs under this user's own
+    // RLS, so it returns only rows they could already read table by
+    // table (migration 119). Compliance items are not in it yet.
+    const [recRes, compRes] = await Promise.all([
+      supabase.rpc('search_records', { p_query: q, p_limit: 40 }),
+      supabase.from('compliance_items').select('id, title, company_id').ilike('title', pattern).limit(5),
     ]);
+    if (recRes.error) console.error('[search] search_records failed:', recRes.error.message);
 
     const all: SearchResult[] = [
+      ...((recRes.data ?? []) as Array<{ entity_type: string; entity_id: string; organisation_id: string | null; title: string; subtitle: string | null }>)
+        .map(r => ({
+          type: r.entity_type, id: r.entity_id, title: r.title,
+          subtitle: r.subtitle ?? TYPE_CONFIG[r.entity_type]?.label ?? '',
+          href: hrefFor(r.entity_type, r.entity_id, r.organisation_id),
+        })),
       ...(compRes.data ?? []).map((c: any) => ({
-        type: 'client' as const, id: c.id, title: c.name,
-        subtitle: c.sector ?? 'Client', href: `/clients/${c.id}`,
-      })),
-      ...(reqRes.data ?? []).map((r: any) => ({
-        type: 'role' as const, id: r.id, title: r.title,
-        subtitle: (r.companies as any)?.name ?? 'Role', href: `/hiring/${r.id}`,
-      })),
-      ...(candRes.data ?? []).map((c: any) => ({
-        type: 'candidate' as const, id: c.id, title: c.full_name,
-        subtitle: (c.requisitions as any)?.title ?? c.email ?? 'Candidate', href: `/candidates`,
-      })),
-      ...(tickRes.data ?? []).map((t: any) => ({
-        type: 'ticket' as const, id: t.id, title: t.subject,
-        subtitle: (t.companies as any)?.name ?? 'Ticket', href: `/support/${t.id}`,
-      })),
-      ...(docRes.data ?? []).map((d: any) => ({
-        type: 'document' as const, id: d.id, title: d.name,
-        subtitle: (d.companies as any)?.name ?? 'Document', href: `/documents`,
-      })),
-      ...(compRes2.data ?? []).map((c: any) => ({
-        type: 'compliance' as const, id: c.id, title: c.title,
-        subtitle: (c.companies as any)?.name ?? 'Compliance', href: `/compliance`,
+        type: 'compliance', id: c.id, title: c.title,
+        subtitle: 'Compliance', href: '/compliance',
       })),
     ];
 
@@ -165,7 +181,7 @@ export default function GlobalSearch() {
             <p className="text-sm text-center py-8" style={{ color: 'var(--ink-faint)' }}>No results for "{query}"</p>
           )}
           {results.map((r, i) => {
-            const tc = TYPE_CONFIG[r.type];
+            const tc = TYPE_CONFIG[r.type] ?? TYPE_CONFIG.organisation;
             const Icon = tc.icon;
             return (
               <div

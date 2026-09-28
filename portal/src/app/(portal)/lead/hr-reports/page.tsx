@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import HRReportsClient from './HRReportsClient';
 import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
+import { readEmployeePrivate } from '@/lib/lead/employeePrivate';
 
 export const metadata: Metadata = { title: 'HR Reports' };
 export const revalidate = 60;
@@ -22,10 +23,10 @@ export default async function HRReportsPage() {
     </main>
   );
 
-  const [empRes, leaveRes] = await Promise.all([
+  const [empRes, leaveRes, priv] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('id, full_name, job_title, department, employment_type, status, start_date, end_date, gender, ethnicity, disability_status, annual_leave_allowance, sick_day_allowance, leave_year_type, leave_year_start_month, leave_year_start_day')
+      .select('id, full_name, job_title, department, employment_type, status, start_date, end_date, annual_leave_allowance, sick_day_allowance, leave_year_type, leave_year_start_month, leave_year_start_day')
       .eq('company_id', companyId)
       .order('start_date'),
     supabase
@@ -33,12 +34,19 @@ export default async function HRReportsPage() {
       .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status,employee_records(full_name, department)')
       .eq('company_id', companyId)
       .order('start_date'),
+    // Diversity fields are HR-sensitive (131): null unless hr.sensitive.read.
+    readEmployeePrivate(supabase, companyId),
   ]);
+  const employees = (empRes.data ?? []).map(e => {
+    const p = priv.get(e.id);
+    return { ...e, gender: p?.gender ?? null, ethnicity: p?.ethnicity ?? null, disability_status: p?.disability_status ?? null };
+  });
 
   return (
     <main className="portal-page flex-1">
       <HRReportsClient
-        employees={empRes.data ?? []}
+        employees={employees}
+        diversityVisible={[...priv.values()].some(p => p.hr_visible)}
         leaveRecords={normaliseAbsenceRows(leaveRes.data as any) as any}
       />
     </main>

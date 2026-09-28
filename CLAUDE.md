@@ -457,6 +457,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 41 | **Referral pipeline** (migration 077): hourly cron reads job-board applicants from Manatal per referral-enabled role, gates them (country → IvyLens scan → mandatory-criteria veto → score) and emails qualifiers a partner referral link via Resend. Admin `/referrals` funnel + review queue; config panel on the requisition page. See the section below. |
 | 42 | **Enum alignment** (migration 078): fixed three live sites writing/reading enum values the database refuses (`'shared'`, `'pending_approval'`, `'handbook'`). `statusMaps.ts` becomes the single vocabulary source with `as const` tuples + derived unions; `CLIENT_STATUS_STYLE` de-duplicated from four copies; portal badge/metrics/offer queries made `shared`-aware. |
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
+| C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
+| C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 
 ---
 
@@ -3954,3 +3956,161 @@ per-response API to poll for most vendors). If Microsoft Graph access
 to a specific tenant's Forms responses is ever available, that would
 replace the `ms_forms` manual-logging path with a poller, not change
 this schema.
+
+---
+
+## Core-OS 360 Phase 1: tenancy, consultancy access, people, audit (2026-09-26, migrations 117-121)
+
+Plan: `docs/CORE_OS_360_PHASE1_PLAN.md`. Handover + QA: `docs/CORE_OS_360_PHASE1_HANDOVER.md`.
+Live probes: `supabase/probes/117_119_phase1_tenancy.sql`, `119_document_versions.sql`,
+`117_121_protected_regression.sql`.
+
+### Rules
+
+- **`companies` is still the table; `organisations` and `sites` are
+  `security_invoker` views** (over `companies` / `hs_sites`).
+  `organisation_id` ≡ `company_id`. New code may read the views; FKs still
+  point at the tables. Do not rename the tables piecemeal.
+- **A consultant works in ONE organisation at a time.** Grants live in
+  `user_organisation_access`; the active one in `user_active_organisation`,
+  written ONLY by `set_active_organisation()`. `my_company_id()` returns the
+  active organisation while its grant is live, else home. That is why no
+  policy was widened: every existing policy became consultant-aware as-is.
+  **Never write a policy as `company_id IN (all orgs I can reach)`** — it
+  shows several tenants at once and lets a record land on the wrong one.
+- **App code asks the database which organisation is active**:
+  `effectiveCompanyId()` / `readEffectiveCompany()` in
+  `portal/src/lib/auth/activeOrganisation.ts`. Reading `profiles.company_id`
+  gives the HOME company and is wrong for a consultant (onboarding is the
+  one deliberate exception). The portal layout re-checks the cookie against
+  the database every render and drops a stale one; switching is a POST then
+  a FULL navigation, never `router.push`.
+- **Capabilities, not role strings.** `has_capability(org, cap)` in SQL;
+  `lib/auth/capabilities.ts` (shared pair) in TS, pinned to 117's seed both
+  ways by `tenancySql.test.ts`. Adding a role or capability means editing
+  BOTH, in a new migration. `role === …` UI checks that remain are debt, not
+  a pattern to copy.
+- **Read-only is enforced by RESTRICTIVE policies** (`write_guard_ins/upd/
+  del`, `session_can_write()`). **Every new client-writable table must call
+  `SELECT public.apply_write_guard('public.<table>')`** in its migration, or
+  a read-only grant can write to it.
+- **`audit_events` is append-only for everyone, service role included.**
+  Row triggers use `audit_row(entity, org_col, <whitelisted cols…>)` — never
+  whitelist salary, NI, notes, free text (the test's FORBIDDEN list).
+  App-level events go through `auditLog()` (admin), which now persists via
+  the service-role `audit_log()` RPC.
+- **People RLS is derivative.** You see a person if you can see a linked
+  employee/candidate/athlete row, or they are your own workforce and you hold
+  `people.read`. Sensitive HR fields stay on `employee_records`.
+  `person_link_row` must NEVER raise — the referral cron inserts candidates.
+- **Same-organisation links are enforced by trigger** (`assert_same_org`):
+  site, department, manager, assignee, primary contact.
+- **Document files are never overwritten**: `document_versions` is written
+  only by trigger; changing `documents.file_path/file_url` bumps the version.
+- **`search_records()` is SECURITY INVOKER** — it can never return a row the
+  caller could not already read. Keep it that way.
+- **Tavily** is the external search provider for later phases; internal
+  search stays in Postgres.
+
+### Not done in Phase 1 (see handover §H)
+
+`access_scope` not enforced; no portal UI for consultancy owners to grant
+(RPC ready); people not synced back from source rows; broadcast has no
+idempotency key; no optimistic locking; UI still uses legacy role checks.
+
+---
+
+## Core-OS 360 Phase 2: the operational H&S core (2026-09-28, migrations 122-129)
+
+Plan: `docs/CORE_OS_360_PHASE2_PLAN.md`. Handover + QA (gate: PASS WITH
+MINOR ISSUES): `docs/CORE_OS_360_PHASE2_HANDOVER.md`. Live probes:
+`supabase/probes/123_*` to `128_*`, all rolled back.
+
+### Rules
+
+- **Workflow lives in BEFORE triggers, never only in the UI.** `hs_doc_guard`
+  (RA / RAMS / COSHH), the incident, investigation and RIDDOR guards and
+  `actions_party_guard` decide every status move, who may make it and what
+  may change. A page only asks. Approved content is immutable; a change is
+  `hs_new_version()`, which drops `review_date` on purpose (set it again
+  before submitting).
+- **Nobody approves their own work** (creator, submitter or assessor), staff
+  excepted. Probes that forget this fail on the guard, correctly.
+- **RIDDOR is decision support.** Flags only prompt (`potentially_reportable`);
+  a decision needs `riddor.review` and a rationale. Never auto-decide, never
+  submit to the HSE.
+- **Injury, contact and medical detail live only in
+  `incident_person_sensitive`** (`incident.sensitive.read`). A reporter may
+  write it and never read it back, so never `.select()` after that insert.
+  No description, rationale, notes or injury text in any outbox whitelist,
+  timeline summary, audit value or notification — tests pin it.
+- **Corrective actions are `actions` rows** (`source_type`/`source_id`). Never
+  build a second action table.
+- **Links are `hs_links`**, same-organisation by trigger, copied forward on
+  a new version. A new link type needs `hs_entity_table()` to know it.
+- **Evidence is `hs_files` in the private `hs-evidence` bucket**, keys built
+  only by `evidenceKey()`; storage reads inherit the row's RLS; signed under
+  the user's session. No service role in safety code.
+- **Keyed upserts need a FULL unique index** (126a). PostgREST cannot infer a
+  partial one — that silently broke every keyed notification from 096 until
+  126a. `upsertConflictTargets.test.ts` checks every `onConflict`.
+- **A form that files a record must survive a lost reply.** The incident form
+  fixes its id on open (`lib/hs/reportIncident.ts`); a retry meets 23505 and
+  reads its own row back. Copy this for any new "report" form.
+- **Client components must not import server-only modules** (`next/headers`
+  via `safetyContext`). Use `safetyFormat.ts`; `clientServerBoundary.test.ts`
+  fails the build-breaking import that tsc cannot see.
+
+### After deploy
+
+Watch `automation_runs` for the reminders cron (it can now write keyed rows
+it never could) and see one real notification of each safety kind; check
+the report forms on a phone. **Phase 3 has not been started.**
+
+### Incident → training (migration 130)
+
+- **Evidence, never a verdict.** `incident_training_evidence()` shows an
+  investigator each person's training status ON THE INCIDENT DATE
+  (`hs_training_status_at()`, one rule). Nothing writes a cause: that
+  stays a confirmed `incident_causes` row.
+- **The recorded finding is a snapshot** (`incident_training_checks`),
+  written only by `record_/withdraw_incident_training_check()` through
+  `hs_training_check_gate()`. A DEFINER writer must check
+  `session_can_write()` itself: it bypasses the restrictive write guard.
+- **Joined by `employee_records.person_id`** (118). An externally named
+  person has no record and is refused, not shown as "not recorded".
+
+
+---
+
+## employee_records sensitive columns (hotfix, 2026-09-28, migration 131)
+
+Found by the Phase 3 pre-flight gate (High). `employee_records_select` is
+row-level only and `authenticated` held table-level SELECT, so any
+signed-in user of a client, the `employee` role included, could read every
+colleague's salary, NI number, tax code, DOB, diversity data, address and
+emergency contacts (proven live, rolled back). 0 live rows were exposed.
+
+- **Only the columns in `EMPLOYEE_SAFE_COLUMNS` are readable by a session**
+  (`portal/src/lib/lead/employeePrivate.ts`, pinned to 131's GRANT both
+  ways). Naming any other column, `*`, or a bare `.select()` after an
+  insert/update is a permission error. `employeePrivate.test.ts` scans
+  every portal `.from('employee_records')` and embed for that.
+- **The sensitive fields come from `employee_private_fields(company, ids)`**
+  (DEFINER): the organisation you are acting in (or staff) only; HR fields
+  blank without `hr.sensitive.read`; the leave token needs `people.write`
+  or HR. Use `readEmployeePrivate()` + `withPrivate()`.
+- **A write that touches a sensitive column needs `hr.sensitive.write`**
+  (trigger, keyed on `current_user`; the service role is unaffected).
+  Today only client_admin can write the table, and it holds that, so the
+  guard refuses nothing that works. It exists for the day the write
+  policy widens.
+- **The employee form sends HR fields only when the viewer may read AND
+  write them** (`withoutHrFields`). It used to load ~10 columns it never
+  selected (employee number, probation end, DOB, NI, emergency contacts…)
+  as blanks and save them back, wiping them on every edit.
+- **Apply 131 AFTER this code deploys.** The deployed code selects the
+  revoked columns: Add Employee would fail, and the org chart's
+  `select('*', head)` count would fail and its `count ?? 0` self-seed
+  would add a "Founder" row on every admin visit. Probe:
+  `supabase/probes/131_employee_records_sensitive.sql` (24/24, rolled back).

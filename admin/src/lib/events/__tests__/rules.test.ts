@@ -99,7 +99,8 @@ describe('rules registry', () => {
           expect(c.input.title.length, `${r.id} title`).toBeGreaterThan(3);
           expect(c.input.audiences.length, `${r.id} audience`).toBeGreaterThan(0);
           const wantsAdmin  = c.input.audiences.some(a => a.kind === 'staff' || a.kind === 'account_owner' || a.kind === 'user');
-          const wantsPortal = c.input.audiences.some(a => a.kind === 'company_admins' || a.kind === 'company_editors');
+          const wantsPortal = c.input.audiences.some(a => a.kind === 'company_admins' || a.kind === 'company_editors'
+            || a.kind === 'capability' || a.kind === 'roles');
           if (wantsAdmin)  expect(c.input.link?.admin, `${r.id} admin link`).toBeTruthy();
           if (wantsPortal) expect(c.input.link?.portal, `${r.id} portal link`).toBeTruthy();
         }

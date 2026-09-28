@@ -129,6 +129,16 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
   db.client = {
     from: (name: string) => builder(name),
     rpc: async (fn: string, args: Row) => {
+      // Audience RPCs (122/125): seed `org_access` rows of
+      // { company_id, user_id, role_key, capabilities: string[] }.
+      if (fn === 'org_user_ids_with_capability') {
+        const ids = table('org_access').filter(g => g.company_id === args.p_org && (g.capabilities ?? []).includes(args.p_cap)).map(g => g.user_id);
+        return { data: [...new Set(ids)], error: null };
+      }
+      if (fn === 'org_user_ids_with_role') {
+        const ids = table('org_access').filter(g => g.company_id === args.p_org && (args.p_roles as string[]).includes(g.role_key)).map(g => g.user_id);
+        return { data: [...new Set(ids)], error: null };
+      }
       if (fn !== 'claim_platform_events') return { data: null, error: { message: `unknown rpc ${fn}` } };
       const nowMs = db.now().getTime();
       const leaseSec = Number(String(args.p_lease).split(' ')[0]);

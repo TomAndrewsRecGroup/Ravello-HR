@@ -226,10 +226,15 @@ export type ServiceRequestPriority = typeof SERVICE_REQUEST_PRIORITIES[number];
 /* ─── Actions ─────────────────────────────────────────────────── */
 
 export const ACTION_STATUS_LABELS: Record<string, string> = {
-  pending:     'To do',
-  in_progress: 'In progress',
-  done:        'Done',
-  dismissed:   'Snoozed',
+  active:                'Open',
+  in_progress:           'In progress',
+  awaiting_verification: 'Awaiting verification',
+  complete:              'Complete',
+  dismissed:             'Snoozed',
+  cancelled:             'Cancelled',
+  // Legacy keys some older screens still pass through.
+  pending:               'To do',
+  done:                  'Done',
 };
 
 /** actions.priority. The column default was 'medium' and the portal
@@ -247,9 +252,13 @@ export const ACTION_PRIORITY_LABELS: Record<ActionPriority, string> = {
   urgent: 'Urgent',
 };
 
-/** actions.status (097 CHECK). */
-export const ACTION_STATUSES = ['active', 'dismissed', 'complete'] as const;
+/** actions.status — the LATEST CHECK (125: the verification workflow
+ *  adds in_progress and awaiting_verification; 119 added cancelled).
+ *  "Open" means active, in_progress or awaiting_verification: count all
+ *  three wherever a screen means "still to do" (ACTION_OPEN_STATUSES). */
+export const ACTION_STATUSES = ['active', 'in_progress', 'awaiting_verification', 'complete', 'dismissed', 'cancelled'] as const;
 export type ActionStatus = typeof ACTION_STATUSES[number];
+export const ACTION_OPEN_STATUSES = ['active', 'in_progress', 'awaiting_verification'] as const;
 
 /** Broadcast / action type — used in the admin broadcast composer. */
 export const ACTION_TYPE_LABELS: Record<string, string> = {

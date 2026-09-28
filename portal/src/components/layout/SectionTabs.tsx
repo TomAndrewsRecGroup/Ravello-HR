@@ -18,7 +18,7 @@ export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
 
   return (
     <div
-      className="flex items-center gap-1 px-6 -mb-px"
+      className="no-print flex items-center gap-1 px-6 -mb-px overflow-x-auto whitespace-nowrap"
       style={{ borderBottom: '1px solid var(--line)' }}
     >
       {tabs.map(tab => {

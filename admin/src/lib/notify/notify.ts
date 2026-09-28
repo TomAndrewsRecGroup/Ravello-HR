@@ -28,7 +28,14 @@ export type Audience =
   | { kind: 'account_owner'; companyId: string }
   | { kind: 'company_admins'; companyId: string }
   | { kind: 'company_editors'; companyId: string }
-  | { kind: 'user'; userId: string };
+  | { kind: 'user'; userId: string }
+  /** Everyone who holds a capability in the organisation — home members
+   *  by role and consultants by live grant (org_user_ids_with_capability,
+   *  122). Never staff: add { kind: 'staff' } where staff should hear. */
+  | { kind: 'capability'; companyId: string; capability: string }
+  /** Everyone holding one of these access roles in the organisation
+   *  (org_user_ids_with_role, 125) — the incident escalation rules. */
+  | { kind: 'roles'; companyId: string; roles: string[] };
 
 export interface Recipient {
   id:    string;
@@ -103,6 +110,22 @@ export async function resolveAudience(sb: SupabaseClient, a: Audience): Promise<
       const { data, error } = await sb.from('profiles').select(PROFILE_COLS).eq('id', a.userId).maybeSingle();
       if (error) throw new Error(`resolve user: ${error.message}`);
       return data ? [toRecipient(data as { id: string; email: string | null; role: string })] : [];
+    }
+    case 'capability':
+    case 'roles': {
+      if (a.kind === 'roles' && a.roles.length === 0) return [];
+      const { data: ids, error } = a.kind === 'capability'
+        ? await sb.rpc('org_user_ids_with_capability', { p_org: a.companyId, p_cap: a.capability })
+        : await sb.rpc('org_user_ids_with_role', { p_org: a.companyId, p_roles: a.roles });
+      if (error) throw new Error(`resolve ${a.kind}: ${error.message}`);
+      const list = ((ids ?? []) as unknown[]).map(x => (typeof x === 'string' ? x : Object.values(x as object)[0] as string)).filter(Boolean);
+      const out: Recipient[] = [];
+      for (let i = 0; i < list.length; i += 200) {
+        const { data, error: pErr } = await sb.from('profiles').select(PROFILE_COLS).in('id', list.slice(i, i + 200));
+        if (pErr) throw new Error(`resolve ${a.kind} profiles: ${pErr.message}`);
+        out.push(...(data ?? []).map(p => toRecipient(p as { id: string; email: string | null; role: string })));
+      }
+      return out;
     }
   }
 }

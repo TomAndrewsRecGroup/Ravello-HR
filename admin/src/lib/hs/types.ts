@@ -143,17 +143,34 @@ export interface HsAuditResponse {
 export interface HsIncident {
   id: string;
   company_id: string;
+  incident_number: string;
+  title: string | null;
   site_id: string | null;
+  department_id: string | null;
+  exact_location: string | null;
   incident_type: HsIncidentType;
   occurred_on: string;
-  injured_person_name: string | null;
+  incident_time: string | null;
+  /** Can hold medical detail: never put it in a notification, timeline or log. */
   description: string;
-  severity: HsIncidentSeverity;
+  activity_underway: string | null;
+  immediate_actions: string[];
+  severity: HsIncidentSeverity | null;
+  severity_confirmed_by: string | null;
+  severity_confirmed_at: string | null;
+  investigation_required: boolean;
+  riddor_review_status: string;
   riddor_reportable: boolean;
   riddor_reported_on: string | null;
-  immediate_action: string | null;
   status: HsIncidentStatus;
-  recorded_by_kind: string;
+  reported_by: string | null;
+  reported_at: string;
+  closed_at: string | null;
+  close_override_reason: string | null;
+  linked_risk_assessment_id: string | null;
+  no_assessment_existed: boolean;
+  linked_asset_id: string | null;
+  row_version: number;
   created_at: string;
   updated_at: string;
 }

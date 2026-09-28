@@ -13,7 +13,9 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // anchor is the live one, same "latest definition wins" rule
   // hsSqlShape.test.ts and platformEventsSql.test.ts already use.
   + readFileSync(`${MIG}/112_hs_incidents_equipment_toolbox.sql`, 'utf8')
-  + readFileSync(`${MIG}/114_hs_equipment_inspections.sql`, 'utf8');
+  + readFileSync(`${MIG}/114_hs_equipment_inspections.sql`, 'utf8')
+  // 125 replaces the incident type / severity / status vocabulary.
+  + readFileSync(`${MIG}/125_incidents_investigations_riddor.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -32,9 +34,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['activity types',    V.HS_ACTIVITY_TYPES,       /activity_type IN \(/],
     ['recurrence',        V.HS_RECURRENCE_UNITS,     /recurrence_unit IN \(/],
     ['outcomes',          V.HS_COMPLETION_OUTCOMES,  /DEFAULT 'pass' CHECK \(outcome IN \(/],
-    ['incident types',    V.HS_INCIDENT_TYPES,       /CHECK \(incident_type IN \(/],
-    ['incident severities', V.HS_INCIDENT_SEVERITIES, /severity IN \(/],
-    ['incident statuses', V.HS_INCIDENT_STATUSES,    /DEFAULT 'open' CHECK \(status IN \(/],
+    ['incident types',    V.HS_INCIDENT_TYPES,       /hs_incidents_incident_type_check CHECK \(incident_type IN \(/],
+    ['incident severities', V.HS_INCIDENT_SEVERITIES, /hs_incidents_severity_check CHECK \(severity IS NULL OR severity IN \(/],
+    ['incident statuses', V.HS_INCIDENT_STATUSES,    /hs_incidents_status_check CHECK \(status IN \(/],
     ['equipment statuses', V.HS_EQUIPMENT_STATUSES,  /DEFAULT 'in_service' CHECK \(status IN \(/],
     ['equipment inspection outcomes', V.HS_EQUIPMENT_INSPECTION_OUTCOMES, /outcome\s+text NOT NULL CHECK \(outcome IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {

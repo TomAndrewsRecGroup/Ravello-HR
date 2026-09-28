@@ -28,7 +28,7 @@ export default async function OrgChartPage() {
   if (role === 'client_admin') {
     const { count } = await supabase
       .from('employee_records')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('company_id', companyId);
 
     if ((count ?? 0) === 0) {

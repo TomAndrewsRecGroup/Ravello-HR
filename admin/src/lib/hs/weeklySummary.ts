@@ -46,7 +46,7 @@ export async function buildCompanySection(sb: SupabaseClient, companyId: string,
     readAllPages<CompletionRow>((from, to) => sb.from('hs_register_completions').select('item_id, outcome, completed_on')
       .eq('company_id', companyId).order('completed_on', { ascending: false }).order('id').range(from, to)),
     readAllPages<ActionRow>((from, to) => sb.from('actions').select('company_id, title, priority, created_at, action_type')
-      .eq('company_id', companyId).eq('status', 'active').in('action_type', [HS_FAILED_CHECK_ACTION_TYPE, HS_ACTIONS_RAISED_ACTION_TYPE, 'hs_followup']).order('id').range(from, to)),
+      .eq('company_id', companyId).in('status', ['active', 'in_progress', 'awaiting_verification']).in('action_type', [HS_FAILED_CHECK_ACTION_TYPE, HS_ACTIONS_RAISED_ACTION_TYPE, 'hs_followup']).order('id').range(from, to)),
     readAllPages<{ entity_id: string }>((from, to) => sb.from('hs_files').select('entity_id').eq('company_id', companyId).eq('entity_type', 'register_item').order('id').range(from, to)),
   ]);
   const latest = new Map<string, CompletionRow>();

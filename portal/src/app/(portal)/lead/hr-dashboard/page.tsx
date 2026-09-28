@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import { computeHrMetrics } from '@/lib/lead/hrMetricsFromRecords';
+import { readEmployeePrivate } from '@/lib/lead/employeePrivate';
 import HRDashboardClient from './HRDashboardClient';
 
 export const metadata: Metadata = { title: 'HR Dashboard' };
@@ -42,13 +43,22 @@ export default async function HRDashboardPage() {
     // Read for the "Auto-calculate" button — derives headcount/
     // turnover/absence/gender/tenure from real records instead of
     // hand entry (the form itself is unchanged and still reviewable).
-    readAllPages<{ status: string; start_date: string; end_date: string | null; gender: string | null }>((from, to) =>
-      supabase.from('employee_records').select('status, start_date, end_date, gender').eq('company_id', companyId).order('id').range(from, to)),
+    // gender is HR-sensitive (131): read through employee_private_fields,
+    // which blanks it for anyone without hr.sensitive.read.
+    readAllPages<{ id: string; status: string; start_date: string; end_date: string | null }>((from, to) =>
+      supabase.from('employee_records').select('id, status, start_date, end_date').eq('company_id', companyId).order('id').range(from, to)),
     readAllPages<{ status: string; start_date: string; days: number | null }>((from, to) =>
       supabase.from('absence_records').select('status, start_date, days').eq('company_id', companyId).order('id').range(from, to)),
   ]);
 
-  const computedMetrics = computeHrMetrics(employeeRecords.rows, absenceRecords.rows, new Date());
+  const priv = await readEmployeePrivate(supabase, companyId);
+  const genderVisible = [...priv.values()].some(p => p.hr_visible);
+  const computed = computeHrMetrics(
+    employeeRecords.rows.map(e => ({ ...e, gender: priv.get(e.id)?.gender ?? null })), absenceRecords.rows, new Date());
+  // Without hr.sensitive.read every gender reads null, which would report
+  // a 100% "other" split. Show no split instead.
+  const computedMetrics = genderVisible ? computed
+    : { ...computed, genderMPct: null, genderFPct: null, genderOtherPct: null };
 
   return (
       <main className="portal-page flex-1">

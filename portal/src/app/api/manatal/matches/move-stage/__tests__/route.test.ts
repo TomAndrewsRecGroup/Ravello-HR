@@ -20,18 +20,25 @@ vi.mock('@/lib/manatal', () => ({
   },
 }));
 
+// The company comes from the DATABASE's view of the active organisation
+// (my_company_id(), Core-OS 360 Phase 1) — not profiles.company_id, which
+// is the HOME company and would be wrong for a consultant.
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: () => ({
     auth: { getUser: () => Promise.resolve({ data: { user: { id: 'u-1', email: 'u@own.example' } } }) },
-    from: (table: string) => table === 'profiles'
-      ? {
-          select: () => ({
-            eq: (_c: string, _v: string) => ({
-              single: () => Promise.resolve({ data: { company_id: 'co-own', full_name: 'U', companies: { manatal_client_id: OWN_ORG, name: 'Own' } } }),
-            }),
-          }),
-        }
-      : { insert: () => Promise.resolve({ error: null }) },
+    rpc: (fn: string) => Promise.resolve(fn === 'my_company_id' ? { data: 'co-own', error: null } : { data: null, error: { message: 'unexpected rpc' } }),
+    from: (table: string) => ({
+      select: () => ({
+        eq: (_c: string, v: string) => ({
+          single: () => Promise.resolve(
+            table === 'profiles'  ? { data: { full_name: 'U' } }
+            : table === 'companies' && v === 'co-own' ? { data: { manatal_client_id: OWN_ORG, name: 'Own' } }
+            : { data: null },
+          ),
+        }),
+      }),
+      insert: () => Promise.resolve({ error: null }),
+    }),
   }),
 }));
 

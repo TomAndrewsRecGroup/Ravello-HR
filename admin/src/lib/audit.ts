@@ -49,6 +49,8 @@ interface AuditEntry {
   actor_id?: string;
   target_id?: string;
   target_type?: string;
+  /** The organisation the event concerns, when there is exactly one. */
+  organisation_id?: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -61,4 +63,31 @@ export function auditLog(entry: AuditEntry): void {
 
   // Structured JSON log: picked up by Vercel log drain
   console.log(JSON.stringify(log));
+
+  // …and the durable record (Core-OS 360 Phase 1, migration 117):
+  // audit_events is append-only — no session, and not even the service
+  // role, can edit or delete a row. Written through the audit_log() RPC
+  // (service role only). Fire-and-forget: an audit write must never
+  // fail the action it records, but a failure is logged, not swallowed.
+  void persistAudit(entry);
+}
+
+async function persistAudit(entry: AuditEntry): Promise<void> {
+  // Unit tests and local builds have no service key; production always
+  // does (every admin API needs it), so this skips nothing live.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+  try {
+    const { serviceClient } = await import('@/lib/automation/runs');
+    const { error } = await serviceClient().rpc('audit_log', {
+      p_action:          entry.action,
+      p_entity_type:     entry.target_type ?? entry.action.split('.')[0],
+      p_entity_id:       entry.target_id ?? null,
+      p_organisation_id: entry.organisation_id ?? null,
+      p_metadata:        entry.metadata ?? {},
+      p_user_id:         entry.actor_id ?? null,
+    });
+    if (error) console.error('[audit] audit_events write failed:', error.message);
+  } catch (err) {
+    console.error('[audit] audit_events write failed:', err instanceof Error ? err.message : err);
+  }
 }

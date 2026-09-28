@@ -3,6 +3,7 @@ import { parseBody } from '@/lib/validation/parseBody';
 import { uuid, z } from '@/lib/validation/primitives';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createRateLimiter, getRateLimitKey } from '@/lib/rateLimit';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 }); // 10 checkouts per minute
 
@@ -34,18 +35,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.company_id) {
+    // The ACTIVE organisation, not the home one — see activeOrganisation.ts.
+    const activeCompanyId = await effectiveCompanyId(supabase);
+    if (!activeCompanyId) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 403 });
     }
 
     const userId = user.id;
-    const companyId = profile.company_id;
+    const companyId = activeCompanyId;
 
     // Verify content exists and is published
     const { data: content } = await supabase

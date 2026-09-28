@@ -24,10 +24,10 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
 
   const [completing, setCompleting] = useState(false);
   const [dismissing, setDismissing] = useState(false);
-  const [done, setDone] = useState<'complete' | 'dismissed' | null>(null);
+  const [done, setDone] = useState<'complete' | 'awaiting_verification' | 'dismissed' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function patch(op: 'complete' | 'dismiss_7d'): Promise<boolean> {
+  async function patch(op: 'complete' | 'dismiss_7d'): Promise<string | false> {
     const res = await fetch(`/api/actions/${actionId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -38,7 +38,8 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
       setError(j.error ?? 'Update failed. Please try again.');
       return false;
     }
-    return true;
+    const j = await res.json().catch(() => ({}));
+    return typeof j.status === 'string' ? j.status : 'complete';
   }
 
   async function handleComplete() {
@@ -47,7 +48,7 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
     const ok = await patch('complete');
     setCompleting(false);
     if (!ok) return;
-    setDone('complete');
+    setDone(ok === 'awaiting_verification' ? 'awaiting_verification' : 'complete');
     onMutated?.();
     revalidatePortalPath('/protect/actions');
     revalidatePortalPath('/dashboard');
@@ -65,6 +66,14 @@ export default function ActionButtons({ actionId, onMutated }: Props) {
     revalidatePortalPath('/protect/actions');
     revalidatePortalPath('/dashboard');
     startTransition(() => router.refresh());
+  }
+
+  if (done === 'awaiting_verification') {
+    return (
+      <p className="text-xs flex items-center gap-1 mt-3" style={{ color: 'var(--blue)' }}>
+        <CheckCircle size={12} /> Sent for verification — someone else will check and sign it off
+      </p>
+    );
   }
 
   if (done === 'complete') {

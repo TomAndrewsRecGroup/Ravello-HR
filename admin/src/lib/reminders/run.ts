@@ -50,10 +50,14 @@ export async function runReminders(
         entity_type: rule.entity,
         entity_id:   row.id,
         event_type:  'reminder',
-        payload:     { bucket, due_date: due, row: slim },
+        payload:     { bucket, due_date: due, row: slim, rule: rule.id },
         actor_id:    null,
         actor_kind:  'system',
-        dedupe_key:  `reminder:${rule.entity}:${row.id}:${bucket}`,
+        // One entity may carry more than one dated rule (a RAMS has a
+        // review date AND an end date); the rule id keeps them apart.
+        dedupe_key:  rule.id === rule.entity
+          ? `reminder:${rule.entity}:${row.id}:${bucket}`
+          : `reminder:${rule.id}:${row.id}:${bucket}`,
       });
     }
 

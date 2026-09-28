@@ -41,6 +41,8 @@ PAIRS=(
   "admin/src/lib/hs/vocab.ts|portal/src/lib/hs/vocab.ts"
   "admin/src/lib/hs/recurrence.ts|portal/src/lib/hs/recurrence.ts"
   "admin/src/lib/hs/types.ts|portal/src/lib/hs/types.ts"
+  "admin/src/lib/hs/safetyVocab.ts|portal/src/lib/hs/safetyVocab.ts"
+  "admin/src/lib/hs/riskMatrix.ts|portal/src/lib/hs/riskMatrix.ts"
   "admin/src/lib/hs/evidence.ts|portal/src/lib/hs/evidence.ts"
   "admin/src/lib/hs/testTokens.ts|portal/src/lib/hs/testTokens.ts"
   "admin/src/lib/hs/testMarking.ts|portal/src/lib/hs/testMarking.ts"
@@ -58,6 +60,7 @@ PAIRS=(
   "admin/src/lib/lead/checklistTasks.ts|portal/src/lib/lead/checklistTasks.ts"
   "admin/src/lib/support/sla.ts|portal/src/lib/support/sla.ts"
   "admin/src/lib/auth/policyAckTokens.ts|portal/src/lib/auth/policyAckTokens.ts"
+  "admin/src/lib/auth/capabilities.ts|portal/src/lib/auth/capabilities.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -11,6 +11,7 @@ import { hsRules } from './hsRules';
 import { leadRules } from './leadRules';
 import { supportRules } from './supportRules';
 import { hireRules } from './hireRules';
+import { safetyRules } from './safetyRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -423,7 +424,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);

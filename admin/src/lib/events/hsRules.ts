@@ -278,83 +278,9 @@ export const hsRules: Rule[] = [
     on: 'hs_audits.created',
     then: auditSubmittedConsequences,
   },
-  {
-    // Incidents (112) are the client's own legal RIDDOR record-keeping
-    // duty — Core OS 360 records it on their behalf, so unlike a failed
-    // check (which raises a CLIENT action) a RIDDOR-reportable incident
-    // raises a STAFF task: reporting to the HSE is Core OS 360's job,
-    // not something to hand the client. No specific day-count deadline
-    // is asserted here — RIDDOR's reporting window varies by category,
-    // and a wrong number would be worse than "without delay."
-    id: 'hs_incident_reported',
-    on: 'hs_incidents.created',
-    then: async (ctx) => {
-      const { event, companyName } = ctx;
-      const { new: n } = rowPayload(event);
-      if (!event.company_id) return [];
-      const typeLabel = s(n.incident_type).replace(/_/g, ' ');
-      const company = await companyName();
-      const riddor = n.riddor_reportable === true;
-      const out: Consequence[] = [
-        {
-          kind: 'notify',
-          input: {
-            audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_incident_reported',
-            title: `Incident recorded: ${typeLabel}`,
-            body:  s(n.description).slice(0, 200),
-            link:  { portal: '/protect/incidents' },
-          },
-        },
-        {
-          kind: 'notify',
-          input: {
-            audiences: staffOnly, companyId: event.company_id, type: 'hs_incident_reported', urgent: riddor,
-            title: `${company || 'A client'}: ${typeLabel} incident recorded${riddor ? ' — RIDDOR reportable' : ''}`,
-            link:  { admin: `/health-safety/${event.company_id}/incidents` },
-          },
-        },
-      ];
-      if (riddor) {
-        out.push({
-          kind: 'run', label: `riddor report task ${event.entity_id}`,
-          fn: async (sb) => {
-            const owner = await staffOwnerFor(sb, event.company_id);
-            await createKeyedInternalTask(sb, {
-              company_id: event.company_id, assigned_to: owner, priority: 'urgent',
-              title: `RIDDOR: report incident to the HSE — ${company || 'client'}`,
-              description: `A ${typeLabel} incident on ${s(n.occurred_on)} is RIDDOR reportable. Report it via RIDDOR online without delay, then record the report date on the incident.`,
-              source_ref: `hs_incident_riddor:${event.entity_id}`,
-            });
-          },
-        });
-      }
-      return out;
-    },
-  },
-  {
-    // The creation rule above only ever fires once, at report time — a
-    // closed investigation (status open -> investigating -> closed,
-    // written directly from IncidentsClient.tsx) previously reached
-    // nobody. The client would otherwise only learn an investigation
-    // had concluded by re-checking their read-only Incidents tab.
-    id: 'hs_incident_status_changed',
-    on: 'hs_incidents.updated',
-    when: e => changedTo(e, 'status', ['closed']),
-    then: async (ctx) => {
-      const { event } = ctx;
-      const { new: n } = rowPayload(event);
-      if (!event.company_id) return [];
-      const typeLabel = s(n.incident_type).replace(/_/g, ' ');
-      return [{
-        kind: 'notify',
-        input: {
-          audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_incident_status_changed',
-          title: `Investigation closed: ${typeLabel} incident`,
-          link:  { portal: '/protect/incidents' },
-        },
-      }];
-    },
-  },
+  // Incident rules moved to safetyRules.ts (125): severity is
+  // confirmed by a person later, RIDDOR is decided on the RIDDOR review,
+  // and the outbox no longer carries the description at all.
   {
     // Every hs_documents row is a finished, already-current version —
     // a replacement is a NEW row (the old one flips to 'superseded' via

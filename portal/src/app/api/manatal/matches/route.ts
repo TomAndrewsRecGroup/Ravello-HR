@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 import {
   getManatalMatches,
   getManatalStages,
@@ -23,13 +24,13 @@ export async function GET(_req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('company_id, companies(manatal_client_id, name)')
-    .eq('id', user.id)
-    .single();
+  // The ACTIVE organisation, not the home one — see activeOrganisation.ts.
+  const companyId = await effectiveCompanyId(supabase);
+  const { data: company } = companyId
+    ? await supabase.from('companies').select('manatal_client_id, name').eq('id', companyId).single()
+    : { data: null };
 
-  const manatalId: string = (profile as any)?.companies?.manatal_client_id ?? '';
+  const manatalId: string = (company as any)?.manatal_client_id ?? '';
   if (!manatalId) {
     return NextResponse.json({ matches: [], stages: [], configured: false });
   }

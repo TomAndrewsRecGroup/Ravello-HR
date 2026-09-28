@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ivylensRequest } from '@/lib/ivylens';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 
 // Force dynamic — this route reads cookies via supabase.auth.getUser(),
 // so it can never be statically prerendered. Without this, Next 14
@@ -17,17 +18,16 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id, companies(ivylens_company_id)')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.company_id) {
+    // The ACTIVE organisation (a consultant may be working in a client),
+    // not profiles.company_id — see lib/auth/activeOrganisation.ts.
+    const companyId = await effectiveCompanyId(supabase);
+    if (!companyId) {
       return NextResponse.json({ error: 'No company' }, { status: 400 });
     }
+    const { data: company } = await supabase
+      .from('companies').select('ivylens_company_id').eq('id', companyId).single();
 
-    const ivylensCompanyId = (profile as any)?.companies?.ivylens_company_id;
+    const ivylensCompanyId = (company as any)?.ivylens_company_id;
 
     // Try IvyLens first if company is registered
     if (ivylensCompanyId) {
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     const { data: assessment } = await supabase
       .from('company_assessments')
       .select('*')
-      .eq('company_id', profile.company_id)
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

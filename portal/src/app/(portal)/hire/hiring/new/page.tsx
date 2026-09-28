@@ -6,6 +6,7 @@ import FrictionScoreCard from '@/components/FrictionScoreCard';
 import { createClient } from '@/lib/supabase/client';
 import type { FrictionScore } from '@/lib/supabase/types';
 import { Loader2, Zap, Upload, ChevronDown, ChevronUp, Wand2 } from 'lucide-react';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
 
 interface JDTemplate {
   id: string;
@@ -114,7 +115,10 @@ export default function NewRequisitionPage() {
     e.preventDefault(); setLoading(true); setError('');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError('Not authenticated'); setLoading(false); return; }
-    const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
+    // The ACTIVE organisation, not profiles.company_id — see activeOrganisation.ts.
+    const activeCompanyId = await effectiveCompanyId(supabase);
+    const profile = activeCompanyId ? { company_id: activeCompanyId } : null;
+    if (!profile) { setError('Could not work out which organisation you are in. Please refresh.'); setLoading(false); return; }
     const must_haves    = form.must_haves_raw.split('\n').map(s => s.trim()).filter(Boolean);
     const nice_to_haves = form.nice_to_haves_raw.split('\n').map(s => s.trim()).filter(Boolean);
     const salary_min    = form.salary_min ? Number(form.salary_min) : 0;

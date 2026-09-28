@@ -179,7 +179,7 @@ export default async function MetricsPage() {
   const maxDoc = Math.max(...Object.values(docByCat), 1);
 
   /* ── Actions stats ── */
-  const activeActions   = actions.filter(a => a.status === 'active');
+  const activeActions   = actions.filter(a => ['active', 'in_progress', 'awaiting_verification'].includes(a.status));
   const completeActions = actions.filter(a => a.status === 'complete');
   const actionRate      = pct(completeActions.length, actions.length);
 
