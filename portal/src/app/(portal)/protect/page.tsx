@@ -40,7 +40,7 @@ export default async function ProtectOverviewPage() {
     supabase.from('actions')
       .select('id, title, priority, action_type, created_at')
       .eq('company_id', companyId)
-      .eq('status', 'active')
+      .in('status', ['active', 'in_progress', 'awaiting_verification'])
       .in('action_type', ['hs_failed_check', 'hs_actions_raised', 'hs_followup'])
       .order('created_at', { ascending: false })
       .limit(10),

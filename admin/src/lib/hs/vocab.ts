@@ -32,37 +32,65 @@ export const HS_ACTIVITY_TYPE_LABELS: Record<HsActivityType, string> = {
   other:           'Other',
 };
 
-// Incidents (112) — RIDDOR record-keeping. The client can read these
-// (it is THEIR legal duty; Core OS 360 maintains it on their behalf).
+// Incidents — 125 replaced 112's vocabulary (0 live rows at the time).
+// The client can read their incidents; RIDDOR record-keeping is THEIR
+// legal duty. The rest of the incident vocabulary is in safetyVocab.ts.
 export const HS_INCIDENT_TYPES = [
-  'injury', 'near_miss', 'dangerous_occurrence', 'disease', 'property_damage', 'other',
+  'accident', 'injury', 'near_miss', 'dangerous_occurrence', 'property_damage', 'environmental',
+  'occupational_ill_health', 'security', 'other',
 ] as const;
 export type HsIncidentType = typeof HS_INCIDENT_TYPES[number];
 export const HS_INCIDENT_TYPE_LABELS: Record<HsIncidentType, string> = {
-  injury:               'Injury',
-  near_miss:            'Near miss',
-  dangerous_occurrence: 'Dangerous occurrence',
-  disease:              'Reportable disease',
-  property_damage:      'Property damage',
-  other:                'Other',
+  accident:                'Accident',
+  injury:                  'Injury',
+  near_miss:               'Near miss',
+  dangerous_occurrence:    'Dangerous occurrence',
+  property_damage:         'Property damage',
+  environmental:           'Environmental',
+  occupational_ill_health: 'Occupational ill health',
+  security:                'Security',
+  other:                   'Other',
 };
 
-export const HS_INCIDENT_SEVERITIES = ['minor', 'significant', 'major', 'fatal'] as const;
+/** Confirmed by a person (who, when) — nullable until then. */
+export const HS_INCIDENT_SEVERITIES = ['minor', 'moderate', 'serious', 'major', 'critical', 'fatal'] as const;
 export type HsIncidentSeverity = typeof HS_INCIDENT_SEVERITIES[number];
 export const HS_INCIDENT_SEVERITY_LABELS: Record<HsIncidentSeverity, string> = {
-  minor:       'Minor',
-  significant: 'Significant',
-  major:       'Major',
-  fatal:       'Fatal',
+  minor:    'Minor',
+  moderate: 'Moderate',
+  serious:  'Serious',
+  major:    'Major',
+  critical: 'Critical',
+  fatal:    'Fatal',
 };
+/** Severities whose corrective actions must be verified (actions_lifecycle). */
+export const HS_VERIFY_SEVERITIES = ['major', 'critical', 'fatal'] as const;
 
-export const HS_INCIDENT_STATUSES = ['open', 'investigating', 'closed'] as const;
+export const HS_INCIDENT_STATUSES = [
+  'reported', 'triage', 'under_investigation', 'awaiting_actions', 'awaiting_verification', 'closed', 'archived',
+] as const;
 export type HsIncidentStatus = typeof HS_INCIDENT_STATUSES[number];
 export const HS_INCIDENT_STATUS_LABELS: Record<HsIncidentStatus, string> = {
-  open:          'Open',
-  investigating: 'Investigating',
-  closed:        'Closed',
+  reported:              'Reported',
+  triage:                'Triage',
+  under_investigation:   'Under investigation',
+  awaiting_actions:      'Awaiting actions',
+  awaiting_verification: 'Awaiting verification',
+  closed:                'Closed',
+  archived:              'Archived',
 };
+/** Mirror of hs_incident_transition_ok (125) — the database is the gate. */
+const HS_INCIDENT_TRANSITIONS: ReadonlyArray<readonly [HsIncidentStatus, HsIncidentStatus]> = [
+  ['reported', 'triage'],
+  ['triage', 'under_investigation'], ['triage', 'awaiting_actions'], ['triage', 'closed'],
+  ['under_investigation', 'awaiting_actions'], ['under_investigation', 'closed'], ['under_investigation', 'triage'],
+  ['awaiting_actions', 'awaiting_verification'], ['awaiting_actions', 'closed'], ['awaiting_actions', 'under_investigation'],
+  ['awaiting_verification', 'closed'], ['awaiting_verification', 'awaiting_actions'],
+  ['closed', 'archived'], ['closed', 'triage'],
+];
+export function incidentNextStatuses(from: HsIncidentStatus): HsIncidentStatus[] {
+  return HS_INCIDENT_TRANSITIONS.filter(([f]) => f === from).map(([, t]) => t);
+}
 
 // Equipment register (112) — register-shaped like compliance_items (a
 // mutable next_inspection_due a session updates directly), not

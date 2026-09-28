@@ -216,40 +216,8 @@ describe('hs rules', () => {
     expect(db.tables.actions).toHaveLength(1);
   });
 
-  const incident = (over: Row = {}) => eventRow({
-    id: 17, entity_type: 'hs_incidents', event_type: 'created', actor_kind: 'staff', entity_id: 'inc-1',
-    payload: { new: { incident_type: 'near_miss', severity: 'minor', occurred_on: '2026-09-24', description: 'A pallet fell from a shelf, nobody hurt.', riddor_reportable: false, status: 'open', ...over }, old: {}, changed: [] },
-  });
 
-  it('a recorded incident tells the client and staff', async () => {
-    db.tables.platform_events.push(incident());
-    const t = await processEvents(db.client, { rules: RULES });
-    expect(t.failed).toBe(0);
-    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
-    expect(client).toMatchObject({ type: 'hs_incident_reported', link: '/protect/incidents' });
-    expect(client.title).toBe('Incident recorded: near miss');
-    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
-    expect(staff).toMatchObject({ type: 'hs_incident_reported', link: '/health-safety/co-1/incidents' });
-    expect(db.tables.internal_tasks ?? []).toHaveLength(0);
-  });
-
-  it('a RIDDOR-reportable incident also raises an URGENT staff task to report it — never a client action', async () => {
-    db.tables.platform_events.push(incident({ incident_type: 'injury', severity: 'major', riddor_reportable: true }));
-    await processEvents(db.client, { rules: RULES });
-    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
-    expect(staff.title).toContain('RIDDOR reportable');
-    expect(db.tables.actions).toHaveLength(0);
-    expect(db.tables.internal_tasks).toHaveLength(1);
-    expect(db.tables.internal_tasks[0]).toMatchObject({
-      company_id: 'co-1', assigned_to: 'staff-1', priority: 'urgent', source_ref: 'hs_incident_riddor:inc-1', status: 'todo',
-    });
-    expect(db.tables.internal_tasks[0].title).toContain('RIDDOR');
-
-    // re-processing raises nothing twice
-    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
-    await processEvents(db.client, { rules: RULES });
-    expect(db.tables.internal_tasks).toHaveLength(1);
-  });
+  // Incident rules and their tests live in safetyRules.ts / safetyRules.test.ts (125).
 
   it('a clean audit (no failed answers) raises no action, and the client link points at the timeline', async () => {
     db.tables.hs_audit_responses = db.tables.hs_audit_responses.map(r => r.rating === 'fail' ? { ...r, rating: 'pass' } : r);
@@ -259,28 +227,6 @@ describe('hs rules', () => {
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
     expect(client).toMatchObject({ link: '/protect/timeline' });
     expect(client.body).toBe('No findings.');
-  });
-
-  it('closing an incident investigation tells the client — the creation rule alone only fires once', async () => {
-    const closed = eventRow({
-      id: 18, entity_type: 'hs_incidents', event_type: 'updated', actor_kind: 'staff', entity_id: 'inc-1',
-      payload: { new: { incident_type: 'near_miss', status: 'closed' }, old: { status: 'investigating' }, changed: ['status'] },
-    });
-    db.tables.platform_events.push(closed);
-    await processEvents(db.client, { rules: RULES });
-    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
-    expect(client).toMatchObject({ type: 'hs_incident_status_changed', link: '/protect/incidents' });
-    expect(client.title).toBe('Investigation closed: near miss incident');
-  });
-
-  it('moving an incident to investigating (not closed) raises nothing', async () => {
-    const moved = eventRow({
-      id: 19, entity_type: 'hs_incidents', event_type: 'updated', actor_kind: 'staff', entity_id: 'inc-1',
-      payload: { new: { incident_type: 'near_miss', status: 'investigating' }, old: { status: 'open' }, changed: ['status'] },
-    });
-    db.tables.platform_events.push(moved);
-    await processEvents(db.client, { rules: RULES });
-    expect(db.tables.notifications).toHaveLength(0);
   });
 
   it('a new H&S document tells the client admins', async () => {

@@ -130,7 +130,8 @@ export default async function ActionsPage() {
     .from('actions')
     .select('id,created_at,updated_at,company_id,action_type,title,description,related_entity_id,related_entity_type,priority,status,dismissed_at,completed_at,dismiss_until,due_date,created_by_admin')
     .eq('company_id', companyId)
-    .eq('status', 'active')
+    // Open = active, in progress or awaiting verification (125).
+    .in('status', ['active', 'in_progress', 'awaiting_verification'])
     .or(`dismiss_until.is.null,dismiss_until.lt.${now}`)
     .order('priority')
     .order('created_at', { ascending: false });

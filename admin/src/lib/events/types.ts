@@ -73,6 +73,14 @@ export const REMINDER_ENTITIES = [
   'referral_applications',
   'training_records',
   'hs_equipment',
+  // Core-OS 360 Phase 2 (122+): the operational H&S core.
+  'risk_assessments',
+  'method_statements',
+  'coshh_assessments',
+  'hazards',
+  'hs_incidents',
+  'incident_investigations',
+  'actions',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 
@@ -97,6 +105,9 @@ export interface ReminderPayload {
   bucket: ReminderBucket;
   due_date: string;
   row: Record<string, unknown>;
+  /** The reminder rule that fired (lib/reminders/rules.ts) — an entity
+   *  can have more than one dated rule. */
+  rule: string;
 }
 
 /** How far a dated row is from its due date on the day the reminders
@@ -140,6 +151,7 @@ export function reminderPayload(e: PlatformEvent): ReminderPayload {
     bucket: (p.bucket ?? 'overdue') as ReminderBucket,
     due_date: String(p.due_date ?? ''),
     row: (p.row ?? {}) as Record<string, unknown>,
+    rule: String(p.rule ?? e.entity_type),
   };
 }
 

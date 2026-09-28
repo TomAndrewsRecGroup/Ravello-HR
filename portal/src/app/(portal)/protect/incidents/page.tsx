@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const SEVERITY_COLOUR: Record<HsIncidentSeverity, string> = {
-  minor: 'var(--ink-faint)', significant: 'var(--gold)', major: 'var(--red)', fatal: 'var(--red)',
+  minor: 'var(--ink-faint)', moderate: 'var(--gold)', serious: 'var(--gold)',
+  major: 'var(--red)', critical: 'var(--red)', fatal: 'var(--red)',
 };
 
 // This is the client's own legal RIDDOR record-keeping duty — Core OS
@@ -47,7 +48,7 @@ export default async function ProtectIncidentsPage() {
             <li key={inc.id} className="card p-4">
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <span className="badge">{HS_INCIDENT_TYPE_LABELS[inc.incident_type]}</span>
-                <strong style={{ color: SEVERITY_COLOUR[inc.severity] }}>{HS_INCIDENT_SEVERITY_LABELS[inc.severity]}</strong>
+                {inc.severity && <strong style={{ color: SEVERITY_COLOUR[inc.severity] }}>{HS_INCIDENT_SEVERITY_LABELS[inc.severity]}</strong>}
                 {inc.riddor_reportable && (
                   <span className="badge flex items-center gap-1" style={{ background: 'rgba(217,68,68,0.12)', color: 'var(--red)' }}>
                     <AlertTriangle size={11} /> RIDDOR{inc.riddor_reported_on ? ` · reported ${fmt(inc.riddor_reported_on)}` : ''}

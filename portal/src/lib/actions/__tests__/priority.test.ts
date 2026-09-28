@@ -7,7 +7,11 @@ import { ACTION_PRIORITIES, ACTION_PRIORITY_LABELS, ACTION_STATUSES } from '@/li
 // Broadcast wrote priority 'normal'; the Actions page grouped high /
 // medium / low. Every broadcast action was silently invisible.
 
-const sql097 = readFileSync(resolve(__dirname, '../../../../../supabase/migrations/097_vocab_checks.sql'), 'utf8');
+const MIG = resolve(__dirname, '../../../../../supabase/migrations');
+const sql097 = readFileSync(`${MIG}/097_vocab_checks.sql`, 'utf8');
+// The live status CHECK is the LAST one defined (097 → 119 → 125).
+const statusSql = ['097_vocab_checks.sql', '119_actions_documents_search.sql', '125_incidents_investigations_riddor.sql']
+  .map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 describe('action priority vocabulary', () => {
   it('the grouping shows every priority the database can hold', () => {
@@ -24,10 +28,12 @@ describe('action priority vocabulary', () => {
   it('labels cover the tuple exactly', () => {
     expect(Object.keys(ACTION_PRIORITY_LABELS).sort()).toEqual([...ACTION_PRIORITIES].sort());
   });
-  it('097 CHECKs equal the tuples', () => {
+  it('the latest CHECKs equal the tuples', () => {
     const p = /CHECK \(priority IN \(([^)]+)\)\)/.exec(sql097)![1].split(',').map(s => s.trim().replace(/'/g, '')).sort();
     expect(p).toEqual([...ACTION_PRIORITIES].sort());
-    const st = /actions_status_check\s+CHECK \(status IN \(([^)]+)\)\)/.exec(sql097)![1].split(',').map(s => s.trim().replace(/'/g, '')).sort();
+    const all = [...statusSql.matchAll(/ADD CONSTRAINT actions_status_check\s+CHECK \(status IN \(([^)]+)\)\)/g)];
+    expect(all.length).toBe(3);
+    const st = all[all.length - 1][1].split(',').map(s => s.trim().replace(/'/g, '')).sort();
     expect(st).toEqual([...ACTION_STATUSES].sort());
   });
   it('no page still groups on the old medium value', () => {

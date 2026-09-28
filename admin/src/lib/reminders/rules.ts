@@ -211,6 +211,85 @@ REMINDERS.push(
   },
 );
 
+// ── PROTECT: the operational safety core (Phase 2, 123-125) ──────
+// Controlled documents fall due for review; a RAMS reaches its end
+// date; a hazard sits unassessed; a RIDDOR review stays undecided; an
+// investigation or a safety action passes its date. Titles and
+// references only — never a description, which can hold medical detail.
+export const HAZARD_UNASSESSED_AFTER_DAYS = 14;
+export const RIDDOR_UNRESOLVED_AFTER_DAYS = 3;
+export const SAFETY_ACTION_SOURCES = ['incident', 'investigation', 'hazard', 'risk_assessment', 'method_statement',
+  'coshh_assessment', 'riddor_review', 'audit', 'audit_finding', 'inspection', 'equipment_inspection', 'hs_check'] as const;
+const LIVE_DOC = ['approved', 'active'];
+REMINDERS.push(
+  {
+    id: 'risk_assessments', entity: 'risk_assessments',
+    select: 'id, company_id, reference, version, title, review_date, status, assessor_id, responsible_manager_id',
+    query: (sb, from, to) => sb.from('risk_assessments').select('id, company_id, reference, version, title, review_date, status, assessor_id, responsible_manager_id')
+      .in('status', LIVE_DOC).not('review_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
+    buckets: ['due_30', 'due_7', 'overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'method_statements', entity: 'method_statements',
+    select: 'id, company_id, reference, version, title, review_date, status, author_id, responsible_manager_id',
+    query: (sb, from, to) => sb.from('method_statements').select('id, company_id, reference, version, title, review_date, status, author_id, responsible_manager_id')
+      .in('status', LIVE_DOC).not('review_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
+    buckets: ['due_30', 'due_7', 'overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'method_statements_end', entity: 'method_statements',
+    select: 'id, company_id, reference, version, title, end_date, status, author_id, responsible_manager_id',
+    query: (sb, from, to) => sb.from('method_statements').select('id, company_id, reference, version, title, end_date, status, author_id, responsible_manager_id')
+      .in('status', LIVE_DOC).not('end_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.end_date),
+    buckets: ['due_7', 'due_0', 'overdue'],
+  },
+  {
+    id: 'coshh_assessments', entity: 'coshh_assessments',
+    select: 'id, company_id, reference, version, title, review_date, status, assessor_id, responsible_manager_id',
+    query: (sb, from, to) => sb.from('coshh_assessments').select('id, company_id, reference, version, title, review_date, status, assessor_id, responsible_manager_id')
+      .in('status', LIVE_DOC).not('review_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
+    buckets: ['due_30', 'due_7', 'overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'hazards', entity: 'hazards',
+    select: 'id, company_id, reference, title, status, owner_id, identified_at',
+    query: (sb, from, to) => sb.from('hazards').select('id, company_id, reference, title, status, owner_id, identified_at')
+      .eq('status', 'identified').order('id').range(from, to),
+    dueDateOf: r => (r.identified_at ? addDays(String(r.identified_at), HAZARD_UNASSESSED_AFTER_DAYS) : null),
+    buckets: ['overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'hs_incidents', entity: 'hs_incidents',
+    select: 'id, company_id, incident_number, incident_type, riddor_review_status, status, reported_at',
+    query: (sb, from, to) => sb.from('hs_incidents').select('id, company_id, incident_number, incident_type, riddor_review_status, status, reported_at')
+      .in('riddor_review_status', ['review_required', 'potentially_reportable', 'confirmed_reportable'])
+      .not('status', 'in', '(closed,archived)').order('id').range(from, to),
+    dueDateOf: r => (r.reported_at ? addDays(String(r.reported_at), RIDDOR_UNRESOLVED_AFTER_DAYS) : null),
+    buckets: ['overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'incident_investigations', entity: 'incident_investigations',
+    select: 'id, company_id, incident_id, reference, status, lead_investigator_id, target_completion_date',
+    query: (sb, from, to) => sb.from('incident_investigations').select('id, company_id, incident_id, reference, status, lead_investigator_id, target_completion_date')
+      .in('status', ['in_progress', 'changes_requested']).not('target_completion_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.target_completion_date),
+    buckets: ['due_7', 'overdue', 'overdue_weekly'],
+  },
+  {
+    id: 'actions', entity: 'actions',
+    select: 'id, company_id, title, due_date, status, source_type, assigned_to, verifier_id',
+    query: (sb, from, to) => sb.from('actions').select('id, company_id, title, due_date, status, source_type, assigned_to, verifier_id')
+      .in('status', ['active', 'in_progress', 'awaiting_verification']).in('source_type', [...SAFETY_ACTION_SOURCES])
+      .not('due_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.due_date),
+    buckets: ['due_7', 'due_0', 'overdue', 'overdue_weekly'],
+  },
+);
+
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;
   const one = Array.isArray(inst) ? inst[0] : inst;

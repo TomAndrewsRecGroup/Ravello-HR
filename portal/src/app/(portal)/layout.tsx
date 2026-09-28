@@ -68,7 +68,7 @@ export default async function PortalLayout({ children }: { children: React.React
   if (companyId) {
     const [actRes, tickRes, candRes] = await Promise.all([
       supabase.from('actions').select('id', { count: 'exact', head: true })
-        .eq('company_id', companyId).eq('status', 'active')
+        .eq('company_id', companyId).in('status', ['active', 'in_progress', 'awaiting_verification'])
         .or(`dismiss_until.is.null,dismiss_until.lt.${now}`),
       // service_requests is the support object (tickets never had a writer).
       supabase.from('service_requests').select('id', { count: 'exact', head: true })

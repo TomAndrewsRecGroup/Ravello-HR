@@ -336,7 +336,6 @@ const emptyMilestoneForm = () => ({
 });
 
 const PRIORITIES = ACTION_PRIORITIES;
-const ACTION_STATUSES = ['active', 'complete', 'dismissed'] as const;
 
 // 'health_safety' removed 2026-09-25: H&S items now belong on the
 // dedicated /health-safety register (recurrence, evidence, the Safety
@@ -437,11 +436,13 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   }
 
   async function completeAction(id: string) {
-    const { error } = await supabase.from('actions').update({ status: 'complete', completed_at: new Date().toISOString() }).eq('id', id);
-    if (!error) {
-      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
-      revalidateAdminPath('/clients');
-    }
+    // completed_at/by are stamped by actions_lifecycle. A must-verify
+    // corrective action (125) cannot be completed in one step — the
+    // database refuses, and that refusal is shown, never swallowed.
+    const { error } = await supabase.from('actions').update({ status: 'complete' }).eq('id', id);
+    if (error) { window.alert(`Could not complete this action: ${error.message}`); return; }
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'complete' } : a));
+    revalidateAdminPath('/clients');
   }
 
   // Candidates state lives inside CandidatesTab.

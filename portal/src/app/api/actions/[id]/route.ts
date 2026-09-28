@@ -1,45 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
+import { parseBody } from '@/lib/validation/parseBody';
+import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 
 export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Body {
-  op?: 'complete' | 'dismiss_7d';
-}
-
 // PATCH /api/actions/[id]
 //
-// Two operations on a single endpoint:
-//   - { op: 'complete' }   → mark the action complete
-//   - { op: 'dismiss_7d' } → snooze for 7 days
+//   { op: 'complete' }   → done. An action that must be verified (125:
+//                          every corrective action from a major, critical
+//                          or fatal incident, or one flagged by its
+//                          assigner) goes to awaiting_verification — a
+//                          different person verifies it. The response
+//                          says which happened.
+//   { op: 'dismiss_7d' } → snooze for 7 days (assigners only, 126).
 //
-// We re-check the action's company_id against the caller's company on
-// the server so a typo in the URL can't accidentally tick someone
-// else's action even if RLS were misconfigured. The actual write
-// still happens through the user's session client, so RLS is the
-// authoritative gate; this is belt-and-braces.
+// The organisation is the ACTIVE one (a consultant works in a client's),
+// never the home company. The write runs under the caller's own session:
+// RLS and the 126 party guard decide, and a refused or zero-row write is
+// reported as refused, never as success.
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
-  const { user, companyId } = await getSessionProfile();
-  if (!user)      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!companyId) return NextResponse.json({ error: 'no company assigned' }, { status: 403 });
+  const { user } = await getSessionProfile();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: Body;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+  const parsed = await parseBody(req, z.object({ op: z.enum(['complete', 'dismiss_7d']) }));
+  if (!parsed.ok) return parsed.response;
+  const { op } = parsed.data;
 
   const supabase = await createServerSupabaseClient();
+  const companyId = await effectiveCompanyId(supabase);
+  if (!companyId) return NextResponse.json({ error: 'no company assigned' }, { status: 403 });
 
   const { data: action, error: lookupErr } = await supabase
     .from('actions')
-    .select('id, company_id, status')
+    .select('id, company_id, status, verification_required, evidence_required')
     .eq('id', params.id)
     .maybeSingle();
   if (lookupErr) return NextResponse.json({ error: lookupErr.message }, { status: 500 });
@@ -48,21 +51,30 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   }
 
   let patch: Record<string, unknown>;
-  if (body.op === 'complete') {
-    patch = { status: 'complete', completed_at: new Date().toISOString() };
-  } else if (body.op === 'dismiss_7d') {
+  let result: 'complete' | 'awaiting_verification' | 'snoozed';
+  if (op === 'complete') {
+    if (!['active', 'in_progress'].includes(action.status)) {
+      return NextResponse.json({ error: `This action is already ${String(action.status).replace(/_/g, ' ')}.` }, { status: 409 });
+    }
+    if (action.evidence_required) {
+      return NextResponse.json({ error: 'This action needs completion evidence — open it to add the evidence.' }, { status: 422 });
+    }
+    result = action.verification_required ? 'awaiting_verification' : 'complete';
+    patch = { status: result };
+  } else {
     const until = new Date();
     until.setDate(until.getDate() + 7);
     patch = { dismiss_until: until.toISOString() };
-  } else {
-    return NextResponse.json({ error: 'unknown op' }, { status: 400 });
+    result = 'snoozed';
   }
 
-  const { error: updErr } = await supabase
-    .from('actions')
-    .update(patch)
-    .eq('id', params.id);
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+  const res = await supabase.from('actions').update(patch, COUNT_EXACT)
+    .eq('id', params.id).eq('status', action.status);
+  const outcome = judgeWrite({ error: res.error, count: res.count }, 'The action');
+  if (!outcome.ok) {
+    const refused = res.error?.code === '42501' || res.count === 0;
+    return NextResponse.json({ error: outcome.message }, { status: refused ? 403 : 500 });
+  }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, status: result });
 }
