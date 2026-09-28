@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import EmployeeRecordsClient from './EmployeeRecordsClient';
 import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
+import { EMPLOYEE_SAFE_COLUMNS, readEmployeePrivate, withPrivate } from '@/lib/lead/employeePrivate';
 
 export const metadata: Metadata = { title: 'Employee Records' };
 export const revalidate = 30;
@@ -27,10 +28,13 @@ export default async function EmployeeRecordsPage() {
   // leave per the role spec, so both should be able to share the link.
   const canManageLeave = isAdmin || role === 'client_editor';
 
-  const [empRes, leaveRes] = await Promise.all([
+  // Salary, NI, DOB, diversity, address, emergency contacts, notes and the
+  // leave token are not readable columns (131): they come from
+  // employee_private_fields(), blanked unless the viewer may see them.
+  const [empRes, leaveRes, priv, capsRes] = await Promise.all([
     supabase
       .from('employee_records')
-      .select('id,full_name,email,phone,job_title,department,employment_type,status,start_date,end_date,salary,salary_currency,gender,ethnicity,line_manager,annual_leave_allowance,sick_day_allowance,leave_year_type,leave_token,created_at')
+      .select(EMPLOYEE_SAFE_COLUMNS)
       .eq('company_id', companyId)
       .order('full_name'),
     supabase
@@ -38,7 +42,10 @@ export default async function EmployeeRecordsPage() {
       .select('id,employee_id,employee_name,leave_type:absence_type,start_date,end_date,days_count:days,status')
       .eq('company_id', companyId)
       .order('start_date', { ascending: false }),
+    readEmployeePrivate(supabase, companyId),
+    supabase.rpc('my_capabilities'),
   ]);
+  const caps = new Set<string>(Array.isArray(capsRes.data) ? (capsRes.data as string[]) : []);
 
   return (
     <main className="portal-page flex-1">
@@ -47,7 +54,9 @@ export default async function EmployeeRecordsPage() {
         userId={user.id}
         isAdmin={isAdmin}
         canManageLeave={canManageLeave}
-        initialEmployees={empRes.data ?? []}
+        canReadHr={caps.has('hr.sensitive.read')}
+        canWriteHr={caps.has('hr.sensitive.write')}
+        initialEmployees={withPrivate((empRes.data ?? []) as unknown as { id: string }[], priv) as any}
         leaveRecords={normaliseAbsenceRows(leaveRes.data as any) as any}
       />
     </main>

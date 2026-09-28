@@ -26,10 +26,14 @@ interface Props {
   setField: (key: keyof EmployeeFormState, val: string) => void;
   onClose: () => void;
   onSave: () => void;
+  /** Show DOB, diversity, address, pay, tax/NI, emergency contact and
+   *  notes. Off unless the viewer holds hr.sensitive.read AND .write (131):
+   *  those values are never loaded for anyone else. */
+  showHr: boolean;
 }
 
 export default function EmployeeDrawer({
-  editingId, saving, form, setField, onClose, onSave,
+  editingId, saving, form, setField, onClose, onSave, showHr,
 }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -64,6 +68,7 @@ export default function EmployeeDrawer({
                 <label className="label">Phone</label>
                 <input className="input" value={form.phone} onChange={e => setField('phone', e.target.value)} />
               </div>
+              {showHr && (<>
               <div className="form-group">
                 <label className="label">Date of Birth</label>
                 <input className="input" type="date" value={form.date_of_birth} onChange={e => setField('date_of_birth', e.target.value)} />
@@ -110,6 +115,7 @@ export default function EmployeeDrawer({
                 <label className="label">Address</label>
                 <textarea className="input" rows={2} value={form.address} onChange={e => setField('address', e.target.value)} />
               </div>
+              </>)}
             </div>
           </fieldset>
 
@@ -179,6 +185,7 @@ export default function EmployeeDrawer({
           <div className="divider-gradient" />
 
           {/* Pay */}
+          {showHr && (
           <fieldset>
             <legend className="eyebrow mb-3">Pay</legend>
             <div className="grid sm:grid-cols-3 gap-4">
@@ -204,6 +211,7 @@ export default function EmployeeDrawer({
               </div>
             </div>
           </fieldset>
+          )}
 
           <div className="divider-gradient" />
 
@@ -253,6 +261,7 @@ export default function EmployeeDrawer({
           <div className="divider-gradient" />
 
           {/* Tax & NI */}
+          {showHr && (
           <fieldset>
             <legend className="eyebrow mb-3">Tax &amp; National Insurance</legend>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -266,10 +275,12 @@ export default function EmployeeDrawer({
               </div>
             </div>
           </fieldset>
+          )}
 
           <div className="divider-gradient" />
 
           {/* Emergency Contact */}
+          {showHr && (
           <fieldset>
             <legend className="eyebrow mb-3">Emergency Contact</legend>
             <div className="grid sm:grid-cols-3 gap-4">
@@ -287,14 +298,17 @@ export default function EmployeeDrawer({
               </div>
             </div>
           </fieldset>
+          )}
 
           <div className="divider-gradient" />
 
           {/* Notes */}
+          {showHr && (
           <fieldset>
             <legend className="eyebrow mb-3">Notes</legend>
             <textarea className="input" rows={3} value={form.notes} onChange={e => setField('notes', e.target.value)} placeholder="Any additional notes..." />
           </fieldset>
+          )}
         </div>
 
         {/* Save bar */}

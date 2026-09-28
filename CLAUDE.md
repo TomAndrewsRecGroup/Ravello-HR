@@ -4080,3 +4080,37 @@ the report forms on a phone. **Phase 3 has not been started.**
 - **Joined by `employee_records.person_id`** (118). An externally named
   person has no record and is refused, not shown as "not recorded".
 
+
+---
+
+## employee_records sensitive columns (hotfix, 2026-09-28, migration 131)
+
+Found by the Phase 3 pre-flight gate (High). `employee_records_select` is
+row-level only and `authenticated` held table-level SELECT, so any
+signed-in user of a client, the `employee` role included, could read every
+colleague's salary, NI number, tax code, DOB, diversity data, address and
+emergency contacts (proven live, rolled back). 0 live rows were exposed.
+
+- **Only the columns in `EMPLOYEE_SAFE_COLUMNS` are readable by a session**
+  (`portal/src/lib/lead/employeePrivate.ts`, pinned to 131's GRANT both
+  ways). Naming any other column, `*`, or a bare `.select()` after an
+  insert/update is a permission error. `employeePrivate.test.ts` scans
+  every portal `.from('employee_records')` and embed for that.
+- **The sensitive fields come from `employee_private_fields(company, ids)`**
+  (DEFINER): the organisation you are acting in (or staff) only; HR fields
+  blank without `hr.sensitive.read`; the leave token needs `people.write`
+  or HR. Use `readEmployeePrivate()` + `withPrivate()`.
+- **A write that touches a sensitive column needs `hr.sensitive.write`**
+  (trigger, keyed on `current_user`; the service role is unaffected).
+  Today only client_admin can write the table, and it holds that, so the
+  guard refuses nothing that works. It exists for the day the write
+  policy widens.
+- **The employee form sends HR fields only when the viewer may read AND
+  write them** (`withoutHrFields`). It used to load ~10 columns it never
+  selected (employee number, probation end, DOB, NI, emergency contacts…)
+  as blanks and save them back, wiping them on every edit.
+- **Apply 131 AFTER this code deploys.** The deployed code selects the
+  revoked columns: Add Employee would fail, and the org chart's
+  `select('*', head)` count would fail and its `count ?? 0` self-seed
+  would add a "Founder" row on every admin visit. Probe:
+  `supabase/probes/131_employee_records_sensitive.sql` (24/24, rolled back).

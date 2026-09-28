@@ -42,6 +42,9 @@ interface LeaveRecord {
 interface Props {
   employees: Employee[];
   leaveRecords: LeaveRecord[];
+  /** hr.sensitive.read: gender, ethnicity and disability are loaded (131).
+   *  Without it they are all null, so the DE&I report is not offered. */
+  diversityVisible: boolean;
 }
 
 type ReportType = 'growth' | 'dei' | 'leave' | 'department';
@@ -74,7 +77,7 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 }
 
 /* ─── Component ─────────────────────────────────────── */
-export default function HRReportsClient({ employees, leaveRecords }: Props) {
+export default function HRReportsClient({ employees, leaveRecords, diversityVisible }: Props) {
   const [activeReport, setActiveReport] = useState<ReportType>('growth');
 
   const active = employees.filter(e => e.status !== 'terminated');
@@ -189,7 +192,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
     { type: 'dei',        label: 'DE&I Report',     icon: PieChart,    desc: 'Gender, ethnicity & disability breakdown' },
     { type: 'leave',      label: 'Leave & Absence', icon: Palmtree,    desc: 'Leave usage, sick days, balances' },
     { type: 'department', label: 'Departments',     icon: BarChart3,   desc: 'Headcount by department' },
-  ];
+  ].filter(r => r.type !== 'dei' || diversityVisible) as { type: ReportType; label: string; icon: React.ElementType; desc: string }[];
 
   return (
     <div>
@@ -290,7 +293,7 @@ export default function HRReportsClient({ employees, leaveRecords }: Props) {
         )}
 
         {/* ── DE&I Report ───────────────────────────────── */}
-        {activeReport === 'dei' && (
+        {activeReport === 'dei' && diversityVisible && (
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
