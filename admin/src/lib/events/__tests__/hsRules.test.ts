@@ -412,4 +412,19 @@ describe('hs rules', () => {
     await processEvents(db.client, { rules: RULES });
     expect(db.tables.notifications.some(n => n.type === 'permit_status_changed')).toBe(false);
   });
+
+  it('an isolation being applied tells staff only, naming the asset and the client company', async () => {
+    const created = eventRow({
+      id: 27, entity_type: 'isolations', event_type: 'created', actor_kind: 'staff', entity_id: 'iso-1',
+      payload: { new: { asset_id: 'asset-1' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'isolation_applied', link: '/health-safety/co-1/equipment' });
+    expect(staff.title).toContain('Sample Co');
+    expect(staff.title).toContain('Forklift 3');
+  });
 });

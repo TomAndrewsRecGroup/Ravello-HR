@@ -65,6 +65,8 @@ export const TRIGGERED_ENTITIES = [
   'contractors',
   // Core-OS 360 Phase 4 (152): a permit to work status change.
   'permits',
+  // Core-OS 360 Phase 4 (153): an isolation / LOTO status change.
+  'isolations',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

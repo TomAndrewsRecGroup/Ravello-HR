@@ -85,6 +85,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   contractor_insurance_expiring: { icon: CalendarClock, color: 'var(--amber)' },
   permit_status_changed:       { icon: ShieldCheck,   color: 'var(--amber)' },
   permit_expiring:             { icon: CalendarClock, color: 'var(--amber)' },
+  isolation_applied:           { icon: ShieldCheck,   color: 'var(--amber)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
   onboarding_started:         { icon: Users,         color: 'var(--blue)' },

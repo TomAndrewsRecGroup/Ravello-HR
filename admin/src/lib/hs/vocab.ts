@@ -193,6 +193,30 @@ export const PERMIT_STATUS_LABELS: Record<PermitStatus, string> = {
   revoked:   'Revoked',
 };
 
+// Isolation / LOTO (153). isolation_type is the energy source being
+// de-energised; status is the lifecycle applied -> verified -> removed,
+// enforced by isolations_lifecycle_guard() — verification and removal
+// each need a DIFFERENT person from whoever did the previous step.
+export const ISOLATION_TYPES = ['electrical', 'mechanical', 'hydraulic', 'pneumatic', 'thermal', 'chemical', 'other'] as const;
+export type IsolationType = typeof ISOLATION_TYPES[number];
+export const ISOLATION_TYPE_LABELS: Record<IsolationType, string> = {
+  electrical: 'Electrical',
+  mechanical: 'Mechanical',
+  hydraulic:  'Hydraulic',
+  pneumatic:  'Pneumatic',
+  thermal:    'Thermal',
+  chemical:   'Chemical',
+  other:      'Other',
+};
+
+export const ISOLATION_STATUSES = ['applied', 'verified', 'removed'] as const;
+export type IsolationStatus = typeof ISOLATION_STATUSES[number];
+export const ISOLATION_STATUS_LABELS: Record<IsolationStatus, string> = {
+  applied:  'Applied',
+  verified: 'Verified',
+  removed:  'Removed',
+};
+
 // LOLER thorough examination type (149) — a single value today, framed
 // as a vocabulary because a generic "thorough examination" framework is
 // meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means

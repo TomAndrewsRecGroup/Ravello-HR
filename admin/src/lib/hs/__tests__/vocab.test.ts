@@ -27,7 +27,9 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 150 adds the contractor approval status / risk rating / insurance type vocabularies.
   + readFileSync(`${MIG}/150_contractors.sql`, 'utf8')
   // 152 adds the permit type / status vocabularies.
-  + readFileSync(`${MIG}/152_permit_to_work.sql`, 'utf8');
+  + readFileSync(`${MIG}/152_permit_to_work.sql`, 'utf8')
+  // 153 adds the isolation type / status vocabularies.
+  + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -72,6 +74,8 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['contractor insurance types', V.CONTRACTOR_INSURANCE_TYPES, /insurance_type\s+text NOT NULL CHECK \(insurance_type IN \(/],
     ['permit types', V.PERMIT_TYPES, /permit_type\s+text NOT NULL CHECK \(permit_type IN \(/],
     ['permit statuses', V.PERMIT_STATUSES, /status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    ['isolation types', V.ISOLATION_TYPES, /isolation_type\s+text NOT NULL CHECK \(isolation_type IN \(/],
+    ['isolation statuses', V.ISOLATION_STATUSES, /status\s+text NOT NULL DEFAULT 'applied' CHECK \(status IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -95,6 +99,8 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.CONTRACTOR_INSURANCE_TYPES, V.CONTRACTOR_INSURANCE_TYPE_LABELS],
       [V.PERMIT_TYPES, V.PERMIT_TYPE_LABELS],
       [V.PERMIT_STATUSES, V.PERMIT_STATUS_LABELS],
+      [V.ISOLATION_TYPES, V.ISOLATION_TYPE_LABELS],
+      [V.ISOLATION_STATUSES, V.ISOLATION_STATUS_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

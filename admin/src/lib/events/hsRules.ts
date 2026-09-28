@@ -473,6 +473,33 @@ export const hsRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (153): an isolation applied, taking an asset
+    // out of service. Only the CREATE is raised here (removal is the
+    // normal, expected end of the story and not worth a separate
+    // nudge — the register/equipment page already shows the asset back
+    // in service). STAFF-ONLY for now, the same reasoning as
+    // contractor/permit rules above: isolations have no portal page yet
+    // (Group 13 builds admin+portal UI).
+    id: 'isolation_applied',
+    on: 'isolations.created',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'isolation_applied',
+            title: `${company || 'A client'}: ${asset} is out of service (isolation applied)`,
+            link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
     // Every hs_documents row is a finished, already-current version —
     // a replacement is a NEW row (the old one flips to 'superseded' via
     // its own .updated, which needs no separate notification since this

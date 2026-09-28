@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), and permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), and isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4883,11 +4883,83 @@ with no new test count; 600 portal, unchanged — this group touched
 only the shared-dupe vocab/notify files, byte-identical to admin's),
 all five CI guards pass, both production builds compile.
 
-**Remaining Phase 4 groups** (tracked, not yet started): isolation/LOTO;
-emergency planning (drill findings → the universal `actions` table,
-never a second table); notifications/audit/platform_events wiring for
-all of the above; admin + portal UI (including the contractor AND
-permit pages Groups 7-9's notifications are waiting on); and a final
-regression/security-review/handover/gate/PR pass. **Phase 5 is not to
-begin** until Phase 4's own gate passes, per the operator's instruction.
+### Group 10: isolation / lockout-tag-out (migration 153)
+
+An isolation de-energises ONE energy source on an asset (electrical,
+mechanical, hydraulic, pneumatic, thermal, chemical, other). Optionally
+linked to a `permits` row (a permit to work often requires an isolation
+first) but not a hard dependency — `permit_id` is nullable.
+
+- **`isolation_locks` is the GROUP/multi-lock layer**: a single job may
+  need several workers each applying their own personal lock to the
+  same isolation point, and the asset may not be re-energised until
+  EVERY lock is cleared by its own owner — never by whoever happens to
+  be doing the paperwork. `UNIQUE (isolation_id, person_id)` — one lock
+  per worker per isolation.
+- **Removing someone else's lock needs a recorded, authorised
+  override** — a real LOTO scenario (a worker off site, unreachable),
+  never silent and never self-authorised: the override needs a reason
+  AND an authorising person who is NOT the one doing the removing.
+- **Verification by another person is a hard rule, twice over** — the
+  same "nobody approves their own work" posture Phase 2's guards
+  already apply: the person who verifies an isolation is effective
+  must not be the person who applied it, and the person who verifies
+  it is safe to remove must not be the person who removed it. Both
+  enforced by `isolations_lifecycle_guard()` (BEFORE UPDATE), not the
+  UI.
+- **Lifecycle is `applied → verified → removed`**, strict: removal is
+  refused while ANY personal lock is still open (checked with a live
+  `count(*)` against `isolation_locks`, not a cached flag), and any
+  other transition — including backwards — is refused outright.
+- **Asset availability is `out_of_service`, never `quarantined`.**
+  Quarantine (Group 4) is reserved for a safety DEFECT — a different
+  concern with a different meaning; isolation is a planned, controlled
+  unavailability. Applying an isolation moves an `in_service` asset to
+  `out_of_service`; removing the LAST open isolation on that asset
+  restores it — but ONLY from `out_of_service`, so a `quarantined` or
+  `decommissioned` asset is never silently reopened by an isolation
+  clearing. Proven live: with two isolations open on one asset,
+  clearing the first leaves it `out_of_service` (the second is still
+  open); clearing the second restores `in_service`.
+- **RLS reuses `contractors.manage`** — same "one more variant of
+  managing site safety records" reasoning as Group 9's permits, no new
+  capability invented.
+- **No REMINDER_ENTITIES entry.** An open isolation has no due date of
+  its own to remind against — unlike a permit's bounded `valid_until`,
+  an isolation is meant to be cleared promptly, not on a schedule.
+  Only `isolations` joins `TRIGGERED_ENTITIES`, for the one
+  `isolation_applied` notification (STAFF-ONLY, same reasoning as
+  Groups 7-9 — no portal page yet).
+
+**Live probe** (`153_isolation_loto.sql`, rolled back, the entire
+sequence under one simulated staff session, the same lesson 152's own
+probe learned): 16 checks — apply moves the asset to `out_of_service`;
+two personal locks added; self-verification refused, a different
+verifier succeeds; removal refused while locks are open; removing
+another's lock with no override refused, self-authorised override
+refused, a properly authorised override (different remover AND
+authoriser) succeeds; a worker's own self-removal succeeds; removal
+with the same remover/verifier refused, a different verifier succeeds
+and restores the asset to `in_service`; no lock addable after removal;
+a backwards transition refused; and the two-isolations-on-one-asset
+case — the asset stays `out_of_service` after the first clears (a
+probe bug initially left `iso2` from an earlier check open on the SAME
+asset, correctly blocking restoration — fixed by isolating that check
+to its own asset, not a migration defect) and is restored only once
+the LAST one clears. All 16 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1127 admin — 1124 + 3 new: 1 `hsRules.test.ts` case, 2 `vocab.test.ts`
+cases pinning `ISOLATION_TYPES`/`ISOLATION_STATUSES`; 600 portal,
+unchanged — this group touched only the shared-dupe vocab/notify
+files), all five CI guards pass, both production builds compile.
+
+**Remaining Phase 4 groups** (tracked, not yet started): emergency
+planning (drill findings → the universal `actions` table, never a
+second table); notifications/audit/platform_events wiring for all of
+the above; admin + portal UI (including the contractor, permit AND
+isolation pages Groups 7-10's notifications are waiting on); and a
+final regression/security-review/handover/gate/PR pass. **Phase 5 is
+not to begin** until Phase 4's own gate passes, per the operator's
+instruction.
 
