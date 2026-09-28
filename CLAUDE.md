@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3, copying `hs_audits`' atomic-submit shape), defects + a database-enforced return-to-service gate (Group 4), and PUWER assessments (Group 5, reusing Group 3's checklist machinery, never asserting legal compliance). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), and LOLER thorough examinations + immediate danger (Group 6, extending `hs_equipment_inspections`, flagged never decided). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4605,15 +4605,75 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1112 admin, 600 portal), all five CI guards pass, admin production
 build compiles.
 
-**Remaining Phase 4 groups** (tracked, not yet started): LOLER
-examinations + immediate danger (extending `hs_equipment_inspections`,
-not a new table); contractor companies + insurance + prequalification;
-contractor workers + Safe-to-Deploy + access gate; permit to work
-(numbering via `next_record_number()`, live compliance re-check at
-issue, suspension/revalidation/closeout); isolation/LOTO; emergency
-planning (drill findings → the universal `actions` table, never a
-second table); notifications/audit/platform_events wiring for all of
-the above; admin + portal UI; and a final regression/security-review/
-handover/gate/PR pass. **Phase 5 is not to begin** until Phase 4's own
-gate passes, per the operator's instruction.
+### Group 6: LOLER thorough examinations + immediate danger (migration 149)
+
+A LOLER thorough examination is a single dated pass/fail event with a
+next-due date — exactly the shape `hs_equipment_inspections` (114)
+already has, and NOT a checklist (unlike Group 3's `inspections` or
+Group 5's PUWER assessments). Per the existing-operations audit's own
+recommendation, this **extends `hs_equipment_inspections` in place** —
+"a generic thorough-examination framework, LOLER first" — rather than
+a new table. `hs_equipment.loler_applicable` (144) gates it, mirroring
+Group 5's `puwer_applicable` guard exactly.
+
+- **Two new columns**: `examination_type` (nullable — NULL means a
+  plain routine inspection, unaffected by any of this; `'loler_
+  thorough_examination'` is the one value today, framed as a
+  vocabulary because the framework is meant to grow) and
+  `immediate_danger` (boolean, default false).
+- **A LOLER examination against a non-LOLER-applicable asset is
+  refused** (`hs_equipment_inspection_examination_guard()`), the same
+  shape as Group 5's PUWER-applicable check.
+- **Immediate danger (LOLER reg 8) quarantines the asset
+  UNCONDITIONALLY, regardless of what `outcome` says** — the examiner
+  should always record a fail alongside it, but the database does not
+  trust that to have happened correctly (the same defence-in-depth
+  Group 4's `hs_submit_inspection`/`hs_quarantine_asset` already
+  apply). Checked at the TOP of `hs_equipment_inspection_roll()`,
+  before the existing pass/fail branch, and reuses
+  `hs_quarantine_asset()` (146) rather than a second quarantine path.
+- **Flagged, never decided.** This follows the EXACT "RIDDOR is
+  decision support, never auto-decide, never submit to the HSE"
+  posture Phase 2 already established for a different regulator:
+  nothing here reports anything to the HSE or asserts a legal
+  conclusion. It raises one urgent, verification-required `actions` row
+  (`action_type = 'hs_immediate_danger'`, `severity = 'critical'`,
+  `source_type = 'equipment_inspection'` — already an allowed CHECK
+  value since 119/125, no CHECK change needed) and an urgent
+  notification to both the client and staff; a person reads it and
+  acts.
+- **`hs_equipment_inspections` joins `TRIGGERED_ENTITIES` for the first
+  time** — it never needed an outbox entry until immediate danger
+  needed one to react to. Whitelist: `equipment_id, outcome,
+  next_due_on, examination_type, immediate_danger` — never notes.
+
+**Live probe** (`149_loler_examinations.sql`, rolled back, under a
+simulated staff session for the same reason 146's probe needed one —
+`hs_quarantine_asset()` keys on a real session): 6 checks — a LOLER
+exam against a non-applicable asset refused; a passing LOLER exam
+rolls `next_inspection_due` forward as before; a plain routine
+inspection (no `examination_type`) is unaffected; `immediate_danger =
+true` quarantines even when `outcome = 'pass'`; the roll-forward date
+is untouched by the immediate-danger row; the outbox payload carries
+`immediate_danger`. All 6 passed.
+
+`hsRules.ts` gained `loler_immediate_danger` (raises the action + both
+notifications, idempotent on re-processing); a new `loler_immediate_
+danger` notification type (both bells); `HS_EXAMINATION_TYPES`/`_LABELS`
+added to `lib/hs/vocab.ts` (shared-dupe pair).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1115 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+**Remaining Phase 4 groups** (tracked, not yet started): contractor
+companies + insurance + prequalification; contractor workers +
+Safe-to-Deploy + access gate; permit to work (numbering via
+`next_record_number()`, live compliance re-check at issue, suspension/
+revalidation/closeout); isolation/LOTO; emergency planning (drill
+findings → the universal `actions` table, never a second table);
+notifications/audit/platform_events wiring for all of the above; admin
++ portal UI; and a final regression/security-review/handover/gate/PR
+pass. **Phase 5 is not to begin** until Phase 4's own gate passes, per
+the operator's instruction.
 

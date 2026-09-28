@@ -359,6 +359,57 @@ export const hsRules: Rule[] = [
       return out;
     },
   },
+  {
+    // Core-OS 360 Phase 4 (149): a LOLER thorough examination recorded
+    // 'immediate danger' (LOLER reg 8). The asset is ALREADY quarantined
+    // — synchronously, inside hs_equipment_inspection_roll(), before
+    // this event is even processed. This rule only reports what already
+    // happened and raises the follow-up defect action; it never decides
+    // anything and never reports to the HSE — the exact "flag, never
+    // decide" posture Phase 2's RIDDOR review already established for a
+    // different regulator.
+    id: 'loler_immediate_danger',
+    on: 'hs_equipment_inspections.created',
+    when: e => rowPayload(e).new.immediate_danger === true,
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id || !event.entity_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.equipment_id));
+      const company = await companyName();
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `hs_equipment_inspection:${event.entity_id}`,
+          row: {
+            action_type: 'hs_immediate_danger', priority: 'urgent', severity: 'critical', verification_required: true,
+            title: `Immediate danger recorded: ${asset}`.slice(0, 200),
+            source_type: 'equipment_inspection', source_id: String(event.entity_id),
+            related_entity_type: 'hs_equipment', related_entity_id: s(n.equipment_id),
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'loler_immediate_danger', urgent: true,
+            title: `Immediate danger recorded: ${asset}`,
+            body:  'A thorough examination recorded an immediate danger. This asset has been quarantined and must not be used until the defect is resolved and verified.',
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'loler_immediate_danger',
+            title: `${company || 'A client'}: immediate danger recorded — ${asset}`,
+            body:  'Asset quarantined. Review and follow up as required.',
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
   // Incident rules moved to safetyRules.ts (125): severity is
   // confirmed by a person later, RIDDOR is decided on the RIDDOR review,
   // and the outbox no longer carries the description at all.

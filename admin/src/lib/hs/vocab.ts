@@ -138,6 +138,16 @@ export const PUWER_ASSESSMENT_OUTCOME_LABELS: Record<PuwerAssessmentOutcome, str
   compliant_with_actions:  'Compliant, with actions',
 };
 
+// LOLER thorough examination type (149) — a single value today, framed
+// as a vocabulary because a generic "thorough examination" framework is
+// meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means
+// a plain routine inspection, not a LOLER thorough examination.
+export const HS_EXAMINATION_TYPES = ['loler_thorough_examination'] as const;
+export type HsExaminationType = typeof HS_EXAMINATION_TYPES[number];
+export const HS_EXAMINATION_TYPE_LABELS: Record<HsExaminationType, string> = {
+  loler_thorough_examination: 'LOLER thorough examination',
+};
+
 // Equipment inspection outcomes (114) — insert-only evidence trail, the
 // same "a correction is a new row" shape as hs_register_completions.
 // Unlike HS_COMPLETION_OUTCOMES there is no 'pass_with_actions' middle

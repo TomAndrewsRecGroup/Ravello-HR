@@ -58,6 +58,9 @@ export const TRIGGERED_ENTITIES = [
   'inspections',
   // Core-OS 360 Phase 4 (148): a PUWER assessment against an asset.
   'puwer_assessments',
+  // Core-OS 360 Phase 4 (149): equipment inspections/examinations,
+  // joined so an immediate-danger LOLER finding can be reacted to.
+  'hs_equipment_inspections',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

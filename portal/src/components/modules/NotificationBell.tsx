@@ -68,6 +68,7 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_equipment_inspection_due: { Icon: HardHat,       color: 'var(--gold)' },
   inspection_completed:       { Icon: HardHat,        color: 'var(--blue)' },
   puwer_review_due:           { Icon: HardHat,        color: 'var(--amber)' },
+  loler_immediate_danger:     { Icon: AlertTriangle,  color: 'var(--danger)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

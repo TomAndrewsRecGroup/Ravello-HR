@@ -288,6 +288,47 @@ describe('hs rules', () => {
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
   });
 
+  it('a LOLER thorough examination recording immediate danger raises a critical, verification-required action and tells both sides urgently', async () => {
+    const exam = eventRow({
+      id: 18, entity_type: 'hs_equipment_inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'exam-1',
+      payload: {
+        new: { equipment_id: 'asset-1', outcome: 'pass', next_due_on: null, examination_type: 'loler_thorough_examination', immediate_danger: true },
+        old: {}, changed: [],
+      },
+    });
+    db.tables.platform_events.push(exam);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_immediate_danger', priority: 'urgent', severity: 'critical',
+      verification_required: true, source_type: 'equipment_inspection', source_id: 'exam-1',
+      source_ref: 'hs_equipment_inspection:exam-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+    });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'loler_immediate_danger', link: '/protect/actions' });
+    expect(client.title).toBe('Immediate danger recorded: Forklift 3');
+    expect(client.body).toContain('quarantined');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'loler_immediate_danger', link: '/health-safety/co-1' });
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+  });
+
+  it('a normal (non-immediate-danger) equipment inspection raises nothing from this rule', async () => {
+    const exam = eventRow({
+      id: 19, entity_type: 'hs_equipment_inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'exam-2',
+      payload: { new: { equipment_id: 'asset-1', outcome: 'pass', next_due_on: '2027-09-28', examination_type: null, immediate_danger: false }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(exam);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications.some(n => n.type === 'loler_immediate_danger')).toBe(false);
+  });
+
   it('a new H&S document tells the client admins', async () => {
     const doc = eventRow({
       id: 20, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-1',

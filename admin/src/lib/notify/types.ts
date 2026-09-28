@@ -66,6 +66,8 @@ export const NOTIFICATION_TYPES = [
   'inspection_completed',
   // Core-OS 360 Phase 4 (148): PUWER assessments.
   'puwer_review_due',
+  // Core-OS 360 Phase 4 (149): LOLER immediate danger.
+  'loler_immediate_danger',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -182,6 +184,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   hs_equipment_inspection_due: 'Equipment inspection due',
   inspection_completed:       'Asset inspection completed',
   puwer_review_due:           'PUWER review due',
+  loler_immediate_danger:     'LOLER immediate danger recorded',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',
