@@ -126,6 +126,18 @@ export const HS_ASSET_TYPE_LABELS: Record<HsAssetType, string> = {
   other:               'Other',
 };
 
+// PUWER assessment outcomes (148) — a RECORDED outcome, never a legal
+// compliance certification (Phase 4's own standing rule: never assert
+// legal compliance). Every label here says what was found, not what the
+// law requires.
+export const PUWER_ASSESSMENT_OUTCOMES = ['compliant', 'non_compliant', 'compliant_with_actions'] as const;
+export type PuwerAssessmentOutcome = typeof PUWER_ASSESSMENT_OUTCOMES[number];
+export const PUWER_ASSESSMENT_OUTCOME_LABELS: Record<PuwerAssessmentOutcome, string> = {
+  compliant:               'Compliant',
+  non_compliant:           'Non-compliant',
+  compliant_with_actions:  'Compliant, with actions',
+};
+
 // Equipment inspection outcomes (114) — insert-only evidence trail, the
 // same "a correction is a new row" shape as hs_register_completions.
 // Unlike HS_COMPLETION_OUTCOMES there is no 'pass_with_actions' middle

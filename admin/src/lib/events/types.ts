@@ -56,6 +56,8 @@ export const TRIGGERED_ENTITIES = [
   'deployment_status_log',
   // Core-OS 360 Phase 4 (145): a checklist inspection against an asset.
   'inspections',
+  // Core-OS 360 Phase 4 (148): a PUWER assessment against an asset.
+  'puwer_assessments',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -90,6 +92,8 @@ export const REMINDER_ENTITIES = [
   'person_authorisations',
   'requirement_exceptions',
   'person_health_outcomes',
+  // Core-OS 360 Phase 4 (148): PUWER assessment review cycle.
+  'puwer_assessments',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

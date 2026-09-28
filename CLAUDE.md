@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3, copying `hs_audits`' atomic-submit shape), and defects + a database-enforced return-to-service gate (Group 4, `hs_equipment_return_to_service_guard()`, the `inspection.perform` capability). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3, copying `hs_audits`' atomic-submit shape), defects + a database-enforced return-to-service gate (Group 4), and PUWER assessments (Group 5, reusing Group 3's checklist machinery, never asserting legal compliance). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4529,16 +4529,91 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1111 admin, 600 portal), all five CI guards pass, admin production
 build compiles.
 
-**Remaining Phase 4 groups** (tracked, not yet started): PUWER
-assessments; LOLER examinations + immediate danger (extending
-`hs_equipment_inspections`, not a new table); contractor companies +
-insurance + prequalification; contractor workers + Safe-to-Deploy +
-access gate; permit to work (numbering via `next_record_number()`,
-live compliance re-check at issue, suspension/revalidation/closeout);
-isolation/LOTO; emergency planning (drill findings → the universal
-`actions` table, never a second table); notifications/audit/
-platform_events wiring for all of the above; admin + portal UI; and a
-final regression/security-review/handover/gate/PR pass. **Phase 5 is
-not to begin** until Phase 4's own gate passes, per the operator's
-instruction.
+### Group 5: PUWER assessments (migrations 148-148a)
+
+A PUWER assessment is a formal, periodic compliance review of one
+asset — distinct from a routine pre-use inspection (Group 3: frequent,
+pass/fail per item) and from a LOLER thorough examination (Group 6,
+next: a single dated pass/fail event). It produces a compliance
+OUTCOME and a review cycle, and may optionally be backed by a checklist
+run via `inspection_id` — **reusing Group 3's `inspections`/
+`inspection_responses` machinery, never a second checklist engine.**
+
+- **`hs_equipment.puwer_applicable` (144) gates it**: a trigger refuses
+  recording an assessment against an asset not flagged PUWER-applicable,
+  so the register can never silently apply the wrong regulation to the
+  wrong asset type. A linked `inspection_id` must belong to the SAME
+  asset (and organisation) or is refused.
+- **Never assert legal compliance — applied here first because it is
+  where a wrong word would matter most.** Every outcome label
+  (`compliant | non_compliant | compliant_with_actions`) and every
+  piece of Timeline/notification copy says "recorded assessment
+  outcome", never "this machine is legally compliant". A live probe
+  check (`8c`) asserts the Timeline summary text literally does not
+  contain "legally compliant".
+- **Insert-only** (a correction is a new assessment) — same "a
+  correction is a new row" discipline as the rest of the register's
+  evidence tables.
+- **A non-compliant or compliant-with-actions outcome does NOT
+  auto-quarantine the asset**, unlike a critical inspection failure
+  (Group 4) — a compliance finding needs correction by a review date,
+  not necessarily an immediate stop-use; that trade was made
+  deliberately, not left undecided. A finding still becomes an
+  `actions` row (never a second table): `'puwer_assessment'` joins
+  `actions_source_type_check`'s existing `'inspection'`/
+  `'equipment_inspection'` CHECK values.
+- **A real gap found live while wiring the reminder**: `puwer_
+  assessments` is insert-only, so a reminder rule reading it directly
+  would fire once per HISTORICAL row — every past assessment's
+  `review_due_on`, not just the current one. **148a** rolls the latest
+  assessment's review date forward onto `hs_equipment.puwer_review_
+  due_on` (the exact pattern `hs_equipment_inspections`/
+  `hs_equipment_inspection_roll()` (114) already established for
+  `next_inspection_due`, applied here rather than inventing a second
+  one), guarded by "only advance when this is the NEWEST assessment for
+  the asset" so a late-backfilled old assessment never moves a newer
+  one backwards. The reminder rule reads `hs_equipment`, not
+  `puwer_assessments`.
+- **Evidence, RLS, capability**: reuses `asset.read`/`asset.manage`
+  (Group 2) — recording a formal PUWER assessment is gated on
+  `asset.manage`, deliberately NOT the narrower `inspection.perform`
+  Group 4 introduced for routine checks (a compliance assessment is an
+  asset-management act, not a driver's daily tick-list).
+
+**Live probe** (`148_puwer_assessments.sql`, rolled back): 12 checks —
+recording against a PUWER-applicable asset succeeds; against a
+non-applicable asset refused; cross-company asset refused; a linked
+inspection belonging to a different asset refused, to the same asset
+accepted; evidence vocab resolves; the CHECK accepts the new
+`source_type`; immutability holds; the Timeline entry fires with
+neutral, non-"legally compliant" wording; the outbox payload carries
+`outcome`. All 12 passed.
+
+`TRIGGERED_ENTITIES`/`REMINDER_ENTITIES` gained `puwer_assessments`;
+`platformEventsSql.test.ts` gained 148 to its `LATER` list; a new
+`puwer_review_reminder` rule and `puwer_review_due` notification type
+(both bells). `PUWER_ASSESSMENT_OUTCOMES`/`_LABELS` added to
+`lib/hs/vocab.ts` (shared-dupe pair) — `vocab.test.ts`'s anchor regexes
+for BOTH the new tuple and 114's pre-existing "equipment inspection
+outcomes" tuple needed disambiguating on a preceding column, since the
+two tables' `outcome` CHECK clauses are textually identical and the
+test's "latest match wins" helper would otherwise have silently
+resolved both tuples to whichever migration is read last — caught
+because the first version of the new test failed, not assumed correct.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1112 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+**Remaining Phase 4 groups** (tracked, not yet started): LOLER
+examinations + immediate danger (extending `hs_equipment_inspections`,
+not a new table); contractor companies + insurance + prequalification;
+contractor workers + Safe-to-Deploy + access gate; permit to work
+(numbering via `next_record_number()`, live compliance re-check at
+issue, suspension/revalidation/closeout); isolation/LOTO; emergency
+planning (drill findings → the universal `actions` table, never a
+second table); notifications/audit/platform_events wiring for all of
+the above; admin + portal UI; and a final regression/security-review/
+handover/gate/PR pass. **Phase 5 is not to begin** until Phase 4's own
+gate passes, per the operator's instruction.
 

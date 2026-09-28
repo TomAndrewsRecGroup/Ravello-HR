@@ -67,6 +67,7 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   occupational_health_review_due: { Icon: CalendarClock,  color: 'var(--amber)' },
   hs_equipment_inspection_due: { Icon: HardHat,       color: 'var(--gold)' },
   inspection_completed:       { Icon: HardHat,        color: 'var(--blue)' },
+  puwer_review_due:           { Icon: HardHat,        color: 'var(--amber)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

@@ -341,6 +341,25 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (148/148a): the PUWER review cycle, read from
+    // hs_equipment.puwer_review_due_on (the rolled-forward column — see
+    // 148a's own header comment for why this can't read
+    // puwer_assessments directly). Copy is deliberately neutral: "review
+    // due", never "compliance due" or "certification due" — a recorded
+    // assessment is not a legal certification (Phase 4's standing rule).
+    id: 'puwer_review_reminder',
+    on: 'puwer_assessments.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'puwer_review_due',
+        title: `PUWER review of "${s(row.name, 'equipment')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/equipment`, portal: '/protect/equipment' },
+      })];
+    },
+  },
+  {
     id: 'policy_ack_reminder',
     on: 'policy_acknowledgements.reminder',
     when: e => overdue(reminderPayload(e).bucket),

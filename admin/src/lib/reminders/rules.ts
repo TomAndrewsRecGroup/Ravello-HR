@@ -209,6 +209,22 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 4 (148/148a): PUWER's own review cycle.
+    // puwer_assessments is INSERT-ONLY (a correction is a new
+    // assessment), so reading it directly would fire once per
+    // HISTORICAL row — every past assessment's review_due_on, not just
+    // the current one. 148a rolls the latest assessment's review date
+    // forward onto hs_equipment.puwer_review_due_on (the same pattern
+    // hs_equipment_inspections already uses for next_inspection_due),
+    // so this rule reads the ONE column that reflects the live state.
+    id: 'puwer_assessments', entity: 'puwer_assessments',
+    select: 'id, company_id, name, puwer_review_due_on',
+    query: (sb, from, to) => sb.from('hs_equipment').select('id, company_id, name, puwer_review_due_on')
+      .eq('puwer_applicable', true).not('puwer_review_due_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.puwer_review_due_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

@@ -64,6 +64,8 @@ export const NOTIFICATION_TYPES = [
   'hs_test_result',
   // Core-OS 360 Phase 4 (145): the asset inspection engine.
   'inspection_completed',
+  // Core-OS 360 Phase 4 (148): PUWER assessments.
+  'puwer_review_due',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -179,6 +181,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   occupational_health_review_due: 'Occupational health review due',
   hs_equipment_inspection_due: 'Equipment inspection due',
   inspection_completed:       'Asset inspection completed',
+  puwer_review_due:           'PUWER review due',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',
