@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -12,6 +12,7 @@ const m137 = readFileSync(`${MIG}/137_workforce_integration.sql`, 'utf8');
 const m139 = readFileSync(`${MIG}/139_safety_critical_verification.sql`, 'utf8');
 const m140 = readFileSync(`${MIG}/140_my_capabilities_explicit.sql`, 'utf8');
 const m141 = readFileSync(`${MIG}/141_hired_athlete_becomes_employee.sql`, 'utf8');
+const m142 = readFileSync(`${MIG}/142_workforce_org_isolation.sql`, 'utf8');
 import { EXPLICIT_ONLY_CAPABILITIES } from '../capabilities';
 
 function fn(sql: string, name: string): { header: string; body: string } {
@@ -165,5 +166,77 @@ describe('141: a hired athlete becomes an employee (QA 2, HIGH)', () => {
     expect(b).toMatch(/WHERE id = NEW\.person_id AND worker_type IN \('candidate','athlete','employee','former_employee'\)/);
     // the lists include only these worker types — the promotion is what gets a hire onto them
     expect(fn(m136, 'workforce_readiness').body).toMatch(/p\.worker_type IN \('employee','contractor','consultant','temporary_worker'\)/);
+  });
+});
+
+describe('142: workforce evidence stays inside its own organisation (QA 42, three CRITICAL)', () => {
+  const stripped = m142.replace(/--.*$/gm, '');
+  it('142 is the LATEST definition of every function it replaces (an older copy is not what runs)', () => {
+    const files = readdirSync(MIG).filter(f => f.endsWith('.sql')).sort();
+    for (const f of ['_wf_judge', 'workforce_evidence_guard', 'health_record_guard']) {
+      const defining = files.filter(x => readFileSync(`${MIG}/${x}`, 'utf8').includes(`FUNCTION public.${f}(`));
+      expect(defining.at(-1), f).toBe('142_workforce_org_isolation.sql');
+    }
+  });
+  it('C1/H: every evidence query in the judge is filtered to the person\'s own organisation', () => {
+    const judge = fn(m142, '_wf_judge').body;
+    expect(judge).toMatch(/org uuid := \(SELECT company_id FROM people WHERE id = p_person\);/);
+    const reads = [...judge.matchAll(/\b(\w+)\.person_id = p_person\b(.{0,30})/g)].filter(m => m[1] !== 'ra');
+    // training 2, competency suspension 1 + assessment 2, credential 2, induction 1,
+    // medical 1, authorisation 1, ppe 1, document 2, pre-employment 1
+    expect(reads.length).toBe(14);
+    for (const m of reads) expect(m[2], `${m[1]} read`).toMatch(new RegExp(`^ AND ${m[1]}\\.company_id = org\\b`));
+  });
+  it('the redefined judge keeps what 136 guaranteed', () => {
+    const judge = fn(m142, '_wf_judge').body;
+    expect(judge).toMatch(/need_verified boolean := COALESCE\(p_evidence, false\) OR COALESCE\(p_sc, false\);/);
+    expect(branch(judge, "WHEN 'training' THEN", "WHEN 'competency'")).toMatch(/NOT need_verified OR \(t\.verification_status = 'verified' AND t\.verified_at::date <= p_as_of\)/);
+    expect(branch(judge, "WHEN 'competency' THEN", "WHEN 'qualification'").replace(/--.*$/gm, '')).not.toMatch(/training_records/);
+    expect(judge).not.toMatch(/restriction_summary|occupational_health_clinical|clinical_notes/);
+  });
+  it('C1: a safety-critical document requirement counts only a document filed with workforce authority', () => {
+    const doc = branch(fn(m142, '_wf_judge').body, "WHEN 'document' THEN", "WHEN 'pre_employment_check'");
+    expect(doc).toMatch(/AND \(NOT need_verified OR d\.filed_by_authorised\)/);
+    expect(doc).toMatch(/status := 'review'/);
+    const g = fn(m142, 'employee_document_person_guard');
+    expect(g.header).toMatch(/SECURITY INVOKER/);
+    // computed on every session write, from the session's own authority — never from the caller's value
+    expect(g.body).toMatch(/IF sess THEN\s+(--.*\s+)?NEW\.filed_by_authorised := NEW\.person_id IS NOT NULL\s+AND public\.workforce_can\(NEW\.company_id, 'workforce\.manage'\)\s+AND NOT public\.is_me\(NEW\.person_id\);/);
+    expect(g.body).toMatch(/workforce_person_company\(NEW\.person_id\) IS DISTINCT FROM NEW\.company_id/);
+  });
+  it('M1: a safety-critical item gets no grace, and nothing uses the raw grace any more', () => {
+    const judge = fn(m142, '_wf_judge').body;
+    expect(judge).toMatch(/g integer := CASE WHEN COALESCE\(p_sc, false\) THEN 0 ELSE p_grace END;/);
+    expect(judge).not.toMatch(/_wf_(expiry_status|next_edge)\([^)]*p_grace/);
+  });
+  it('C2: an evidence path must sit in the row\'s own <org>/<kind>/<person>/ folder, checked after person_id is final', () => {
+    const b = fn(m142, 'workforce_evidence_guard').body;
+    const after = b.slice(b.indexOf('END CASE;'));
+    expect(after).toMatch(/workforce_person_company\(\(nj ->> 'person_id'\)::uuid\) IS DISTINCT FROM NEW\.company_id/);
+    expect(after).toMatch(/IF ekind IS NULL OR \(nj ->> 'person_id'\) IS NULL\s+OR NOT starts_with\(nj ->> 'evidence_path', NEW\.company_id::text \|\| '\/' \|\| ekind \|\| '\/' \|\| \(nj ->> 'person_id'\) \|\| '\/'\)\s+OR position\('\/\.\.\/' IN nj ->> 'evidence_path'\) > 0 THEN\s+RAISE EXCEPTION/);
+    // both checks run for every writer, before the session-only section
+    expect(after.indexOf('starts_with')).toBeLessThan(after.indexOf('IF NOT sess THEN RETURN NEW'));
+    for (const [t, k] of [['training_records', 'training'], ['person_credentials', 'credential'], ['person_competencies', 'competency'],
+      ['induction_completions', 'induction'], ['person_authorisations', 'authorisation'], ['pre_employment_checks', 'pre_employment']]) {
+      expect(after).toMatch(new RegExp(`WHEN '${t}' THEN '${k}'`));
+    }
+  });
+  it('C3: a clinical document path must sit in the row\'s own <org>/<person>/ folder', () => {
+    expect(fn(m142, 'health_record_guard').body).toMatch(/IF \(to_jsonb\(NEW\) ->> 'document_path'\) IS NOT NULL\s+AND \(NOT starts_with\(to_jsonb\(NEW\) ->> 'document_path', org::text \|\| '\/' \|\| NEW\.person_id::text \|\| '\/'\)\s+OR position\('\/\.\.\/' IN to_jsonb\(NEW\) ->> 'document_path'\) > 0\) THEN\s+RAISE EXCEPTION/);
+  });
+  it('C2/C3: the storage read policies check the row\'s organisation and person folders too', () => {
+    const wf = stripped.slice(stripped.indexOf('CREATE POLICY workforce_evidence_read'), stripped.indexOf('DROP POLICY IF EXISTS oh_clinical_read'));
+    expect(wf.match(/r\.evidence_path = objects\.name/g)).toHaveLength(6);
+    expect(wf.match(/r\.company_id::text = \(storage\.foldername\(objects\.name\)\)\[1\] AND r\.person_id::text = \(storage\.foldername\(objects\.name\)\)\[3\]/g)).toHaveLength(6);
+    const oh = stripped.slice(stripped.indexOf('CREATE POLICY oh_clinical_read'));
+    expect(oh).toMatch(/r\.company_id::text = \(storage\.foldername\(objects\.name\)\)\[1\]\s+AND r\.person_id::text = \(storage\.foldername\(objects\.name\)\)\[2\]/);
+  });
+  it('H: no person link crosses an organisation on employee_records, candidates or athletes', () => {
+    expect(fn(m142, 'person_same_org_guard').body).toMatch(/workforce_person_company\(NEW\.person_id\) IS DISTINCT FROM NEW\.company_id/);
+    expect(stripped).toMatch(/FOREACH t IN ARRAY ARRAY\['employee_records','candidates','athletes'\] LOOP/);
+    expect(stripped).toMatch(/BEFORE INSERT OR UPDATE OF person_id, company_id ON public\.%1\$I\s+FOR EACH ROW EXECUTE FUNCTION public\.person_same_org_guard\(\)/);
+  });
+  it('the catalogues the judge reads all mark statuses stale', () => {
+    expect(stripped).toMatch(/ARRAY\['ppe_types','pre_employment_check_types'\]/);
   });
 });

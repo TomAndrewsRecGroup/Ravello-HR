@@ -168,6 +168,7 @@ No live workforce data was migrated or put at risk.
 | 139 | Verification uses the engine's safety-critical rule (QA 10, HIGH) | yes | md5 1/1; QA probe 10/10 |
 | 140 | `my_capabilities` honours explicit-only | yes | md5 1/1; probe |
 | 141 | A hired athlete becomes an employee (QA 2, HIGH) | yes | md5 1/1; QA2 re-probe |
+| 142 | Organisation isolation of evidence (QA 42: three CRITICAL, one HIGH, two MEDIUM): judge filtered to the person's organisation; same-organisation `person_id` on employee records, candidates, athletes, documents; evidence and clinical paths pinned to the row's own folders, in the guard and in the storage policies; `filed_by_authorised` for safety-critical documents; no grace for a safety-critical item; two missing dirty triggers | yes | md5 5/5; probe 9/9 |
 
 35 new tables, all with RLS on. Every table a client can write calls `apply_write_guard`, has same-organisation triggers, and is audited with whitelisted columns. Live data after all of it: no fixture persisted; the workforce tables are empty (0 roles, 0 assignments); all 2,665 candidates are linked to a person.
 
@@ -177,7 +178,8 @@ No live workforce data was migrated or put at risk.
 - **Writes:** writes go through `workforce_can(company, capability)`, which checks the active organisation. Self-service insert is allowed only for training records and credentials, and is always unverified.
 - **History tables:** update and delete are revoked; suspensions and exceptions are written only through RPCs. The cache and log cannot be written by any session.
 - **Guards:** all `current_user`-keyed guards are SECURITY INVOKER. `invokerGuards.test.ts` fails on a DEFINER one; the 134 defect was exactly that.
-- **Storage:** `workforce-evidence` reads inherit the row's RLS. Uploads are allowed only into the active organisation's folder, with a capability, or into your own person folder. `oh-clinical` needs the explicit grant.
+- **Storage:** `workforce-evidence` reads inherit the row's RLS **and, since 142, require the file to sit in that row's own organisation and person folders** (the row is caller-written, so "a row I can see names this file" alone was a cross-client read: QA 42 C2/C3). The guards refuse a path outside the row's folder when the row is written. Uploads are allowed only into the active organisation's folder, with a capability, or into your own person folder. `oh-clinical` needs the explicit grant.
+- **Person links (142):** `person_id` on employee records, candidates, athletes and employee documents must be in the row's own organisation, for every writer. `people` visibility (118) is derived from these links, so a cross-organisation link was also a read path.
 - **Proven live** (`phase3_qa.sql`):
   - another client reads 0 of A's workforce rows across 12 tables and writes nothing (QA 35);
   - cannot read or plant evidence in A (QA 36);
@@ -214,6 +216,9 @@ No live workforce data was migrated or put at risk.
 8. **Import duplicates are checked under the importer's own visibility.** The tables have no unique constraint for this.
 9. **Suspensions from an incident need `competency.verify`** (stricter than `incident.investigate`), by design.
 10. **Not verified in a real browser:** mobile layout, print output, the notification emails. They are covered by unit tests and builds only.
+11. **Documents are not linked to a person by the UI.** Neither employee-document form (portal LEAD Employee Docs, admin upload route) sets `employee_id` or `person_id`, so a document requirement can only be met by a document linked by other means (the 134 backfill, or a direct write). The requirement shows "Document not on file" until then — it fails closed, never open. Medium: a document picker on the upload forms is the fix.
+12. **Self-submitted evidence counts for non-safety-critical mandatory items** (QA 42 Medium 2). An employee can record their own training or credential, unverified and with an expiry they choose, and it satisfies a mandatory item that is neither safety-critical nor marked evidence-required. This is the plan's stated design (verification is required only where the rule or the catalogue says so), so it was not changed. **Product decision for Tom:** keep, or require verification for every mandatory item (one line in `_wf_judge`: `need_verified` would include `mandatory`).
+13. **Lookup helpers are callable by any signed-in user** (QA 42 Low): `workforce_person_company`, `workforce_employee_person`, `workforce_course_title`, `workforce_row_company`, `health_outcome_person`, `assert_catalogue`, `assert_same_org`. Given a UUID they reveal an organisation id, a course title or a person id. They cannot be revoked: the INVOKER guards call them as the caller. UUIDs are unguessable and none of these returns personal data. Low.
 
 ## M. Phase 4 readiness
 
@@ -270,10 +275,10 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | 18 | Inductions | 134 induction assignments + completions | — | qa2 QA13 | PASS |
 | 19 | OH requirements | 133 catalogue + rule type `medical` | workforceVocab | 136, qa2 | PASS |
 | 20 | OH outcomes | 135 `person_health_outcomes` | — | 135, 136 | PASS |
-| 21 | Clinical restricted | 135 + 140 | tenancySql, workforceSql | 135 (17/17), 140 | PASS |
+| 21 | Clinical restricted | 135 + 140 + 142 (clinical path pinned) | tenancySql, workforceSql | 135 (17/17), 140, probe 142 C3 | PASS (after 142) |
 | 22 | STD works | 136 engine | workforceSql | 136 37/37 | PASS |
 | 23 | STD explainable | `reasons[]`, sources per requirement | workforceSql | 136 | PASS |
-| 24 | Safety-critical blocks | Unverified → review; expiry → unmet | workforceSql | 136, qa QA10 (139) | PASS |
+| 24 | Safety-critical blocks | Unverified → review; expiry → unmet, no grace (142); a document needs `filed_by_authorised` (142) | workforceSql | 136, qa QA10 (139), probe 142 C1b/M1 | PASS (after 142) |
 | 25 | Conditional controlled / auditable | Exceptions ≤ 90 days, approver, audited, auto-lapse | — | 136 QA17 | PASS |
 | 26 | Recruitment → person | 118 + 137 hire sync | — | 137, qa QA21 | PASS |
 | 27 | Hire → onboarding | Gates copied from template | checklistTasks | 136 gate | PASS |
@@ -287,7 +292,7 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | 35 | Compliance expiries | Reminder entities (credentials, authorisations, exceptions, OH, training) | workforceRules | — | PASS (unit) |
 | 36 | Incident integration | 137 requirement/development item; suspension RPCs | workforceSql | 137, qa QA28 | PASS |
 | 37 | Risk/COSHH-derived requirements | 137, explicit scope only | workforceSql | 137 (RA → site) | PASS |
-| 38 | RLS secure | 35 tables, RLS on | invokerGuards, tenancySql | qa QA35/36 | PASS |
+| 38 | RLS secure | 35 tables, RLS on; 142 organisation isolation | invokerGuards, tenancySql, workforceSql (142) | qa QA35/36, probe 142 9/9 | PASS (after 142) |
 | 39 | Sensitive protected | person_private, OH split, 131 | — | 131, 135 | PASS |
 | 40 | History available | Versioned rules, log, insert-only evidence | workforceSql | 133, 136 | PASS |
 | 41 | Existing modules functional | — | Full suites | 117_121 26/26 | PASS |
@@ -306,13 +311,13 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | 6 | Site A → B | The site rule is added on transfer; history kept (136). | PASS |
 | 7 | Training lifecycle | Recorded → verified → expired → renewed; both records kept (qa2). Scheduled covered by sessions (UI + RPC). | PASS |
 | 8 | Expiry today / tomorrow / 7 / 30 / expired | All edges on the server's UK date (136). | PASS |
-| 9 | Safety-critical expiry READY → NOT_READY | 136 (expired on a later date), qa QA21. | PASS |
+| 9 | Safety-critical expiry READY → NOT_READY | 136 (expired on a later date), qa QA21. Until 142 a rule's `grace_days` kept an expired safety-critical item counted (QA 42 Medium); now it is unmet the day after expiry (probe 142 M1). | PASS (after 142) |
 | 10 | Competency lifecycle | **Covered:** create, assess, verify, suspend, reinstate (qa); a lower level refused (136); an assessor cannot verify their own safety-critical assessment (qa, after **139**). | PASS (after 139) |
 | 11 | Training only ≠ competency | 136 ("verified training alone does not satisfy the competency"); pinned in workforceSql. | PASS |
 | 12 | Qualifications | Issue, verify, expire, renew, reject (qa2). | PASS |
 | 13 | Inductions | Site induction, re-induction due → overdue → re-inducted (qa2). **Scopes:** organisation, project and department exist in the catalogue; only the site scope was probed. | PASS |
 | 14 | OH per user type | Employee (own only; a colleague sees nothing), site manager, HR manager, admin, OH advisor, staff, other client (135 17/17). By role (132): HR manager holds the summary; HSE manager and admins hold summary + manage; **only** the OH advisor holds clinical. The HSE manager case follows from the same RLS and was not probed separately. | PASS |
-| 15 | Clinical leak | Admin, HR, site manager, the person, staff and another client all read 0 clinical rows and 0 objects (135). Staff are not even offered the section (140). | PASS |
+| 15 | Clinical leak | Admin, HR, site manager, the person, staff and another client all read 0 clinical rows and 0 objects (135). Staff are not even offered the section (140). **The security review found a route 135 did not probe:** an advisor granted on A wrote an A clinical row naming B's file and could then read it (QA 42 C3). Closed by 142; re-proved refused (probe 142 C3). | PASS (after 142) |
 | 16 | STD all → READY; remove one → NOT_READY | 136. | PASS |
 | 17 | Conditional | Reason, approver, end date ≤ 90 days, auto-lapse, revoke (136). | PASS |
 | 18 | Calculation failure → REVIEW_REQUIRED | A READY person whose calculation breaks mid-way (136). | PASS |
@@ -323,7 +328,7 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | 23 | Contractor company with 2 workers | A READY, B NOT_READY (qa). | PASS |
 | 24 | Manager team A vs B | Site manager sees their site only (qa). | PASS |
 | 25 | Consultancy A only | Consultant sees A only while acting in A (qa). | PASS |
-| 26 | Certificate storage cross-client | B cannot read or plant A's evidence (qa QA36). | PASS |
+| 26 | Certificate storage cross-client | B cannot read or plant A's evidence (qa QA36). **The security review found a route QA36 did not probe:** a row the attacker writes, naming the victim's file, granted the read (QA 42 C2). Closed by 142 in the guard and the storage policy; both re-proved (probe 142 C2, C2b). | PASS (after 142) |
 | 27 | E-learning | A completion counts only where the rule allows it (qa QA27); nothing creates a record from a purchase. | PASS |
 | 28 | Incident actions | Reassessment requirement, suspension, development item, all by a person (137, qa). | PASS |
 | 29 | Risk/COSHH scope | Person, site or role only; from an incident or action, named people only (137). | PASS |
@@ -332,11 +337,65 @@ Every result below comes from an executed probe or test, unless it is marked oth
 | 32 | Rehire | qa QA32. | PASS |
 | 33 | Duplicate detection | Same email in any case flagged, both kept; an employee cannot list duplicates (137). | PASS |
 | 34 | Notifications | Rules for not-ready, credential, authorisation, exception, OH review and training reminders (workforceRules 14, two mutations caught). Induction-overdue and competency-expiry reminders are not separate rules: they appear on Safe to Deploy and the matrix. | PASS WITH MINOR ISSUES |
-| 35 | RLS direct CRUD cross-tenant | 12 tables, 0 rows readable; inserts and updates refused (qa). | PASS |
-| 36 | Storage cross-client | qa QA36; 135 (clinical). | PASS |
+| 35 | RLS direct CRUD cross-tenant | 12 tables, 0 rows readable; inserts and updates refused (qa). **The review found a write QA35 did not try:** a row in A's own organisation pointing at B's person (a document made B's worker READY: QA 42 C1). Closed by 142; re-proved refused, and B's status unchanged (probe 142 C1, H). | PASS (after 142) |
+| 36 | Storage cross-client | qa QA36; 135 (clinical); both incomplete until 142 (see QA 26, 15, 42). | PASS (after 142) |
 | 37 | Performance | Measured at 2,000 workers, projected to 10,000 (section L1). | PASS WITH MINOR ISSUES |
 | 38 | Stale READY | A suspension on a cached READY person reads NOT_READY at once (136). | PASS |
 | 39 | Concurrent verify | The second decision is refused with 40001 (qa). | PASS |
 | 40 | Import | Valid, invalid, duplicates, other-organisation references, malformed dates (importCsv tests). | PASS |
 | 41 | Regression | Section K. | PASS |
-| 42 | Security review | See QA 42 below. | — |
+| 42 | Security review | An independent adversarial review found 3 Critical, 1 High, 2 Medium, 2 Low. Every Critical and High is closed by 142 and re-proved refused; see QA 42 below. | PASS (after 142) |
+
+## QA 42 — Security review
+
+**How it was run.** A separate agent was told to attack the Phase 3 database as a hostile signed-in user, with read-only access to the repository. Every attack ran live against `sbmekaviwkiyorvmtgcu` inside a DO block ending in RAISE, so each one rolled back. Fixtures: clients A and B, and a consultancy H. A has a client admin and a plain `client_user`. An occupational health advisor has home H and a grant on A, active there. B has one active worker in a role that needs a `right_to_work` document.
+
+The review's own evidence line, before 142:
+`B-before=NOT_READY | T1 insert-ok B-after=READY | T2 insert-ok B-person=active/employee B-status=READY | T3 before=0 after=1 | T6 before=0 after=1`
+
+| # | Sev. | Finding | Proven | Fixed by | Re-proved after the fix (probe `142_workforce_org_isolation`) |
+|---|---|---|---|---|---|
+| C1 | **Critical** | **A plain user in A could make B's worker READY.** They inserted an `employee_documents` row in A pointing at B's person. The judge read documents by person with no organisation filter. Inside one client, any user could also satisfy a colleague's safety-critical document requirement. | Live: NOT_READY → READY | 142 §1–2, §4 | Cross-client link refused and B stays NOT_READY. A colleague's document meets an ordinary requirement. A safety-critical one waits (REVIEW_REQUIRED) until an admin files one (READY). Nobody can set `filed_by_authorised` themselves (C1, C1b PASS). |
+| C2 | **Critical** | **An employee in A could read B's workforce evidence file.** They self-submitted a training record whose `evidence_path` was B's file, and the storage policy granted any file that a visible row named. | Live: 0 → 1 object | 142 §3 (guard + policy) | A foreign path, a colleague's folder and the wrong kind folder are all refused. Their own folder still works. A row forced in with the guard disabled still cannot open the file, because the policy checks the folders (C2, C2b PASS). |
+| C3 | **Critical** | **An OH advisor granted on A could read B's clinical file.** The same pattern, through an `occupational_health_clinical` row. | Live: 0 → 1 object | 142 §3 | A foreign path is refused, and so is another person's folder. The row's own folder works (C3 PASS). |
+| H1 | High | **`person_id` on `employee_records` (and candidates, athletes) could point at another client's person.** That feeds lifecycle, onboarding gates, people visibility and the training guard's employee route. Only the insert was proven, not every consequence. | Live: insert accepted | 142 §1, §3 | Insert, update and a candidate link are all refused, for every writer. B's worker is untouched. An ordinary candidate still links (H, H2 PASS). The training guard re-checks the organisation after it derives `person_id`. |
+| M1 | Medium | A safety-critical item past its expiry counted as met during `grace_days`. | Code | 142 §4 | An ordinary item is `expiring` in grace. A safety-critical one is `unmet` (M1 PASS). |
+| M2 | Medium | Self-submitted, unverified evidence satisfies non-safety-critical mandatory items. | Code | Not changed. It is the plan's stated design. | Product decision: section L12. |
+| L1 | Low | Lookup helpers callable by any signed-in user reveal ids and course titles for a known UUID. | Code | Not changed. The INVOKER guards need them. | Section L13. |
+| L2 | Low | `ppe_types` and `pre_employment_check_types` never marked cached statuses stale. | Code | 142 §5 | A `ppe_types` insert marks the organisation stale (M2 PASS). |
+
+**Attacks that were already refused before 142.** The review tried each of these; each was refused, or correctly scoped:
+- Staff reading clinical rows or files. There is no staff shortcut in `has_explicit_capability`, `can_read_clinical` or `my_capabilities`.
+- Self-verification, self-assessment, self-authorisation.
+- Editing verified evidence or history.
+- Deleting verified evidence.
+- Writing suspensions or exceptions directly.
+- Any session write to `person_deployment_status` or `deployment_status_log`.
+- Executing `_wf_*`, `workforce_refresh*` or `workforce_daily_tick` as a session.
+- `workforce_readiness` or `workforce_matrix` for an organisation other than the active one.
+- `role_change_preview` and `person_duplicate_candidates` for a person the caller cannot see.
+- `workforce_requirement_from_source` outside the active organisation.
+- Changing a rule in force, or back-dating one.
+- Restriction or clinical text in the audit, outbox, notifications or engine output.
+
+**Lesson recorded (CLAUDE.md, Phase 3 rules).** A storage policy of the form "you may read a file if a row you can see names it" is only as safe as the check on who wrote that row. The row is caller-written, so the policy must also check that the row owns the path. Before 142, QA 26/35/36 tested direct reads and plants only, and passed. They are re-marked "PASS (after 142)" above.
+
+## QA 43 — Defect classification
+
+Defects found during Phase 3 QA, all closed:
+
+| Defect | Found by | Severity | Fixed by | Verified |
+|---|---|---|---|---|
+| The evidence guard was SECURITY DEFINER, so every session-only rule was skipped (self-submitted evidence stored as verified) | Probe 134, run 1 | Critical | 134a | Probe 134 16/16; `invokerGuards.test` |
+| C1 document → another client's worker READY | QA 42 | Critical | 142 | Probe 142 C1, C1b |
+| C2 another client's evidence file readable | QA 42 | Critical | 142 | Probe 142 C2, C2b |
+| C3 another client's clinical file readable | QA 42 | Critical | 142 | Probe 142 C3 |
+| A verifier could verify their own assessment on a safety-critical role (verification ignored the role's flag) | QA 10 | High | 139 | `phase3_qa` 10/10 |
+| A hired athlete stayed `athlete` and never appeared on Safe to Deploy | QA 2 | High | 141 | `phase3_qa2` |
+| H1 cross-organisation `person_id` on employee records, candidates, athletes | QA 42 | High | 142 | Probe 142 H, H2 |
+| Grace applied to an expired safety-critical item | QA 42 | Medium | 142 | Probe 142 M1 |
+| Staff offered the clinical section they cannot open | Code review | Low | 140 | Probe 140 |
+| Two catalogues never invalidated the cache | QA 42 | Low | 142 | Probe 142 M2 |
+| Workforce notification links pointed at `/workforce/people` (a 404) | Code review | Low | App fix | `workforceRules.test` |
+
+Open, not defects (decisions or known limits): L11 documents are not linked to people by the UI (fails closed); L12 self-submitted evidence on non-safety-critical items (product decision); L13 lookup helpers (Low, accepted).
