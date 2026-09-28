@@ -459,7 +459,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
-| C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-142): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
+| C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
 
 ---
 
@@ -4120,10 +4120,10 @@ emergency contacts (proven live, rolled back). 0 live rows were exposed.
 
 ---
 
-## Core-OS 360 Phase 3: workforce and Safe to Deploy (2026-09-28, migrations 131-142)
+## Core-OS 360 Phase 3: workforce and Safe to Deploy (2026-09-28, migrations 131-143)
 
 Plan: `docs/CORE_OS_360_PHASE3_PLAN.md`. Handover + QA: `docs/CORE_OS_360_PHASE3_HANDOVER.md`.
-Probes: `supabase/probes/13[1-9]_*`, `14[0-2]_*`, `phase3_qa.sql`, `phase3_qa2.sql`, `phase3_perf.sql`.
+Probes: `supabase/probes/13[1-9]_*`, `14[0-3]_*`, `phase3_qa.sql`, `phase3_qa2.sql`, `phase3_perf.sql`.
 Portal pages: `/lead/workforce/*` (flags `lead` + `workforce`).
 
 ### Rules
@@ -4196,6 +4196,14 @@ Portal pages: `/lead/workforce/*` (flags `lead` + `workforce`).
     the writer held `workforce.manage` and is not the worker). The engine
     runs without a session, so authority must be recorded, not asked.
   - a safety-critical item gets **no grace** once expired.
+- **A mandatory item always needs verified evidence (143, product decision
+  on QA 42 Medium 2).** `_wf_judge` gained `p_mandatory`; `need_verified`
+  is now true for ANY mandatory item, not only safety-critical or
+  evidence-required ones. A worker's own unverified, self-dated submission
+  never counts toward a mandatory requirement. An optional requirement is
+  unaffected. Note `role_requirements.mandatory` defaults to `true` — a
+  requirement inserted without naming it explicitly is mandatory, and now
+  needs a verifier too.
 
 ### Operations
 

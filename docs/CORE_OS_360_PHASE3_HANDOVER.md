@@ -169,6 +169,7 @@ No live workforce data was migrated or put at risk.
 | 140 | `my_capabilities` honours explicit-only | yes | md5 1/1; probe |
 | 141 | A hired athlete becomes an employee (QA 2, HIGH) | yes | md5 1/1; QA2 re-probe |
 | 142 | Organisation isolation of evidence (QA 42: three CRITICAL, one HIGH, two MEDIUM): judge filtered to the person's organisation; same-organisation `person_id` on employee records, candidates, athletes, documents; evidence and clinical paths pinned to the row's own folders, in the guard and in the storage policies; `filed_by_authorised` for safety-critical documents; no grace for a safety-critical item; two missing dirty triggers | yes | md5 5/5; probe 9/9 |
+| 143 | Mandatory items always need verified evidence (QA 42 Medium 2, product decision — Tom chose "require"): `_wf_judge` gains `p_mandatory`; `need_verified` includes it | yes | md5 2/2 (`_wf_judge`, `_wf_deployment`); the stray 12-arg overload `CREATE OR REPLACE` left behind was dropped in a same-day follow-up (143a) so exactly one `_wf_judge` exists; probe 142 re-run 9/9 after updating its C1b fixture, which had never marked `role_a`'s requirement `mandatory: false` and so was relying on a schema default it didn't name |
 
 35 new tables, all with RLS on. Every table a client can write calls `apply_write_guard`, has same-organisation triggers, and is audited with whitelisted columns. Live data after all of it: no fixture persisted; the workforce tables are empty (0 roles, 0 assignments); all 2,665 candidates are linked to a person.
 
@@ -227,7 +228,7 @@ No live workforce data was migrated or put at risk.
 9. **Suspensions from an incident need `competency.verify`** (stricter than `incident.investigate`), by design.
 10. **Not verified in a real browser:** mobile layout, print output, the notification emails. They are covered by unit tests and builds only.
 11. **Documents are not linked to a person by the UI.** Neither employee-document form (portal LEAD Employee Docs, admin upload route) sets `employee_id` or `person_id`, so a document requirement can only be met by a document linked by other means (the 134 backfill, or a direct write). The requirement shows "Document not on file" until then — it fails closed, never open. Medium: a document picker on the upload forms is the fix.
-12. **Self-submitted evidence counts for non-safety-critical mandatory items** (QA 42 Medium 2). An employee can record their own training or credential, unverified and with an expiry they choose, and it satisfies a mandatory item that is neither safety-critical nor marked evidence-required. This is the plan's stated design (verification is required only where the rule or the catalogue says so), so it was not changed. **Product decision for Tom:** keep, or require verification for every mandatory item (one line in `_wf_judge`: `need_verified` would include `mandatory`).
+12. **CLOSED (143).** Self-submitted evidence no longer counts for a mandatory item, safety-critical or not — Tom's decision was "require". `need_verified` now includes `p_mandatory`. Note `role_requirements.mandatory` defaults to `true`, so a requirement inserted without naming it is mandatory and, since 143, needs a verifier too; the 142 probe's C1b case had exactly this gap (it called an "ordinary" requirement one that was mandatory by that default) and was corrected to test a requirement marked `mandatory: false` explicitly.
 13. **Lookup helpers are callable by any signed-in user** (QA 42 Low): `workforce_person_company`, `workforce_employee_person`, `workforce_course_title`, `workforce_row_company`, `health_outcome_person`, `assert_catalogue`, `assert_same_org`. Given a UUID they reveal an organisation id, a course title or a person id. They cannot be revoked: the INVOKER guards call them as the caller. UUIDs are unguessable and none of these returns personal data. Low.
 
 ## M. Phase 4 readiness
@@ -372,9 +373,9 @@ The review's own evidence line, before 142:
 | C3 | **Critical** | **An OH advisor granted on A could read B's clinical file.** The same pattern, through an `occupational_health_clinical` row. | Live: 0 → 1 object | 142 §3 | A foreign path is refused, and so is another person's folder. The row's own folder works (C3 PASS). |
 | H1 | High | **`person_id` on `employee_records` (and candidates, athletes) could point at another client's person.** That feeds lifecycle, onboarding gates, people visibility and the training guard's employee route. Only the insert was proven, not every consequence. | Live: insert accepted | 142 §1, §3 | Insert, update and a candidate link are all refused, for every writer. B's worker is untouched. An ordinary candidate still links (H, H2 PASS). The training guard re-checks the organisation after it derives `person_id`. |
 | M1 | Medium | A safety-critical item past its expiry counted as met during `grace_days`. | Code | 142 §4 | An ordinary item is `expiring` in grace. A safety-critical one is `unmet` (M1 PASS). |
-| M2 | Medium | Self-submitted, unverified evidence satisfies non-safety-critical mandatory items. | Code | Not changed. It is the plan's stated design. | Product decision: section L12. |
+| M2 | Medium | Self-submitted, unverified evidence satisfies non-safety-critical mandatory items. | Code | 143 (Tom's decision: require verification for every mandatory item) | Probe 143 M2a/M2b |
 | L1 | Low | Lookup helpers callable by any signed-in user reveal ids and course titles for a known UUID. | Code | Not changed. The INVOKER guards need them. | Section L13. |
-| L2 | Low | `ppe_types` and `pre_employment_check_types` never marked cached statuses stale. | Code | 142 §5 | A `ppe_types` insert marks the organisation stale (M2 PASS). |
+| L2 | Low | `ppe_types` and `pre_employment_check_types` never marked cached statuses stale. | Code | 142 §5 | A `ppe_types` insert marks the organisation stale (probe 142 M2 PASS). |
 
 **Attacks that were already refused before 142.** The review tried each of these; each was refused, or correctly scoped:
 - Staff reading clinical rows or files. There is no staff shortcut in `has_explicit_capability`, `can_read_clinical` or `my_capabilities`.
@@ -408,6 +409,7 @@ Defects found during Phase 3 QA, all closed:
 | Grace applied to an expired safety-critical item | QA 42 | Medium | 142 | Probe 142 M1 |
 | Staff offered the clinical section they cannot open | Code review | Low | 140 | Probe 140 |
 | Two catalogues never invalidated the cache | QA 42 | Low | 142 | Probe 142 M2 |
+| Self-submitted evidence satisfied a mandatory item with no verification | QA 42 | Medium | 143 (product decision: require) | Probe 143 M2a/M2b |
 | Workforce notification links pointed at `/workforce/people` (a 404) | Code review | Low | App fix | `workforceRules.test` |
 
 Open, not defects (decisions or known limits): L11 documents are not linked to people by the UI (fails closed); L12 self-submitted evidence on non-safety-critical items (product decision); L13 lookup helpers (Low, accepted).
@@ -421,13 +423,13 @@ Open, not defects (decisions or known limits): L11 documents are not linked to p
   - three Criticals and one High from the security review, fixed by 142;
   - the QA 10 and QA 2 Highs, fixed by 139 and 141.
 
-  Each fix was re-proved refused against the live database, and pinned by tests that fail when the defect is put back (six mutations for 142). No Critical or High is open.
-- **Regression:** after 142, every earlier probe was re-run and still passes, the full suites are green, tsc is clean, and all five CI guards pass.
-- **Minor issues, recorded in section L:**
+  Each fix was re-proved refused against the live database, and pinned by tests that fail when the defect is put back (six mutations for 142, two for 143). No Critical or High is open.
+- **Regression:** after 142 and 143, every earlier probe was re-run and still passes, the full suites are green, tsc is clean, and all five CI guards pass.
+- **Both QA 42 Mediums are now closed:** M1 (grace on a safety-critical item) by 142; M2 (unverified self-submitted evidence satisfying a mandatory item) by 143, per Tom's decision to require verification everywhere mandatory, not just where safety-critical or evidence-required.
+- **Minor issues, recorded in section L (all Low):**
   - performance under a mass change (L1);
   - documents are not linked to people by the UI; this fails closed (L11);
-  - self-submitted evidence counts for non-safety-critical mandatory items, which is a product decision (L12);
   - lookup helpers reveal ids for a known UUID, accepted as Low (L13);
   - no real-browser verification of layout, print or emails (L10).
 
-**Phase 4 is not started.** It stays blocked until this branch is merged and deployed, and until the product decision in L12 is made.
+**Phase 4 is not started.** It stays blocked until this branch is merged and deployed.

@@ -10,7 +10,7 @@ DO $$
 DECLARE r text := ''; n int; s text; e text; t date := public.workforce_today();
   a uuid := gen_random_uuid(); b uuid := gen_random_uuid(); h uuid := gen_random_uuid();
   adm uuid := gen_random_uuid(); usr uuid := gen_random_uuid(); oh uuid := gen_random_uuid(); bu uuid := gen_random_uuid();
-  p_usr uuid; wa uuid; wa2 uuid; wb uuid; role_a uuid; role_b uuid; role_sc uuid; course uuid; course_sc uuid; ppe uuid;
+  p_usr uuid; wa uuid; wa2 uuid; wa3 uuid; wb uuid; role_a uuid; role_opt uuid; role_b uuid; role_sc uuid; course uuid; course_sc uuid; ppe uuid;
   er_a uuid; bpath text; bclin text; reqn uuid;
 BEGIN
   INSERT INTO companies (id, name, slug, organisation_type, active) VALUES
@@ -36,12 +36,17 @@ BEGIN
   INSERT INTO storage.objects (bucket_id, name) VALUES ('workforce-evidence', bpath), ('oh-clinical', bclin);
 
   INSERT INTO job_roles (company_id, title) VALUES (a, 'P142 A Clerk') RETURNING id INTO role_a;
+  INSERT INTO job_roles (company_id, title) VALUES (a, 'P142 A Optional') RETURNING id INTO role_opt;
   INSERT INTO job_roles (company_id, title, safety_critical) VALUES (a, 'P142 A Rigger', true) RETURNING id INTO role_sc;
+  -- role_a's requirement takes the schema default (mandatory=true) — since
+  -- 143, that alone needs filed_by_authorised, same as role_sc.
   INSERT INTO role_requirements (company_id, role_id, requirement_type, reference_key, effective_from) VALUES (a, role_a, 'document', 'right_to_work', current_date);
+  INSERT INTO role_requirements (company_id, role_id, requirement_type, reference_key, mandatory, effective_from) VALUES (a, role_opt, 'document', 'right_to_work', false, current_date);
   INSERT INTO role_requirements (company_id, role_id, requirement_type, reference_key, mandatory, effective_from) VALUES (a, role_sc, 'document', 'right_to_work', true, current_date);
   INSERT INTO people (company_id, full_name, worker_type, lifecycle_status) VALUES (a, 'P142 A Clerk', 'employee', 'active') RETURNING id INTO wa;
   INSERT INTO people (company_id, full_name, worker_type, lifecycle_status) VALUES (a, 'P142 A Rigger', 'employee', 'active') RETURNING id INTO wa2;
-  INSERT INTO role_assignments (company_id, person_id, role_id, start_date) VALUES (a, wa, role_a, t), (a, wa2, role_sc, t);
+  INSERT INTO people (company_id, full_name, worker_type, lifecycle_status) VALUES (a, 'P142 A Optional Worker', 'employee', 'active') RETURNING id INTO wa3;
+  INSERT INTO role_assignments (company_id, person_id, role_id, start_date) VALUES (a, wa, role_a, t), (a, wa2, role_sc, t), (a, wa3, role_opt, t);
   INSERT INTO employee_records (company_id, full_name, job_title, start_date, status) VALUES (a, 'P142 A Staff', 'Staff', t, 'active') RETURNING id INTO er_a;
 
   -- ── C1: another client's worker made READY by a document ──
@@ -58,25 +63,30 @@ BEGIN
   r := r || CASE WHEN s = 'NOT_READY→NOT_READY' AND e = 'cross-client-doc-refused' THEN 'PASS' ELSE 'FAIL' END
           || ' C1 a user in A cannot link a document to B''s worker (' || s || '/' || e || '); ';
 
-  -- C1 inside one client: a plain user's document satisfies an ordinary
-  -- document requirement (unchanged HR behaviour) but not a safety-critical
-  -- one, which needs one filed by workforce authority.
+  -- C1 inside one client: a plain user's document satisfies a genuinely
+  -- OPTIONAL document requirement (unchanged HR behaviour), but not a
+  -- mandatory one (role_a, mandatory by the schema default, and role_sc,
+  -- mandatory + safety-critical) — since 143 those need one filed by
+  -- workforce authority.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', usr, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   INSERT INTO employee_documents (company_id, employee_name, doc_type, title, status, person_id, filed_by_authorised)
     VALUES (a, 'P142 A Clerk', 'right_to_work', 'RTW', 'active', wa, true),
-           (a, 'P142 A Rigger', 'right_to_work', 'RTW', 'active', wa2, true);
+           (a, 'P142 A Rigger', 'right_to_work', 'RTW', 'active', wa2, true),
+           (a, 'P142 A Optional Worker', 'right_to_work', 'RTW', 'active', wa3, true);
   RESET ROLE;
-  s := (public._wf_deployment(wa, t) ->> 'status') || '/' || (public._wf_deployment(wa2, t) ->> 'status');
-  SELECT count(*) INTO n FROM employee_documents WHERE person_id IN (wa, wa2) AND filed_by_authorised;
+  s := (public._wf_deployment(wa, t) ->> 'status') || '/' || (public._wf_deployment(wa2, t) ->> 'status')
+       || '/' || (public._wf_deployment(wa3, t) ->> 'status');
+  SELECT count(*) INTO n FROM employee_documents WHERE person_id IN (wa, wa2, wa3) AND filed_by_authorised;
   PERFORM set_config('request.jwt.claims', json_build_object('sub', adm, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   INSERT INTO employee_documents (company_id, employee_name, doc_type, title, status, person_id)
-    VALUES (a, 'P142 A Rigger', 'right_to_work', 'RTW (checked)', 'active', wa2);
+    VALUES (a, 'P142 A Clerk', 'right_to_work', 'RTW (checked)', 'active', wa),
+           (a, 'P142 A Rigger', 'right_to_work', 'RTW (checked)', 'active', wa2);
   RESET ROLE;
-  s := s || '→' || (public._wf_deployment(wa2, t) ->> 'status');
-  r := r || CASE WHEN s = 'READY/REVIEW_REQUIRED→READY' AND n = 0 THEN 'PASS' ELSE 'FAIL' END
-          || ' C1b a colleague''s document meets an ordinary requirement, a safety-critical one waits for an admin''s, and nobody sets filed_by_authorised themselves (' || s || '/' || n || '); ';
+  s := s || '→' || (public._wf_deployment(wa, t) ->> 'status') || '/' || (public._wf_deployment(wa2, t) ->> 'status');
+  r := r || CASE WHEN s = 'REVIEW_REQUIRED/REVIEW_REQUIRED/READY→READY/READY' AND n = 0 THEN 'PASS' ELSE 'FAIL' END
+          || ' C1b a colleague''s document meets only a genuinely optional requirement; a mandatory one (by default or explicit) waits for an admin''s, and nobody sets filed_by_authorised themselves (' || s || '/' || n || '); ';
 
   -- ── C2: another client's evidence file read through a self-submitted row ──
   INSERT INTO training_courses (company_id, title) VALUES (a, 'P142 Course') RETURNING id INTO course;
@@ -169,8 +179,8 @@ BEGIN
   INSERT INTO training_records (company_id, person_id, course_id, course_name, completed_on, expires_on, result, verification_status, verified_at, source)
     VALUES (a, wa, course, 'x', t - 400, t - 5, 'pass', 'verified', now() - interval '300 days', 'manual'),
            (a, wa, course_sc, 'x', t - 400, t - 5, 'pass', 'verified', now() - interval '300 days', 'manual');
-  s := (public._wf_judge(wa, 'training', course, NULL, NULL, false, false, false, NULL, 30, t, 30)).status
-       || '/' || (public._wf_judge(wa, 'training', course_sc, NULL, NULL, true, false, false, NULL, 30, t, 30)).status;
+  s := (public._wf_judge(wa, 'training', course, NULL, NULL, false, false, false, NULL, 30, t, 30, false)).status
+       || '/' || (public._wf_judge(wa, 'training', course_sc, NULL, NULL, true, false, false, NULL, 30, t, 30, false)).status;
   r := r || CASE WHEN s = 'expiring/unmet' THEN 'PASS' ELSE 'FAIL' END
           || ' M1 grace keeps an ordinary lapsed item counted; a safety-critical one is unmet the day after expiry (' || s || '); ';
 

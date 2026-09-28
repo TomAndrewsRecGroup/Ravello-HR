@@ -13,6 +13,7 @@ const m139 = readFileSync(`${MIG}/139_safety_critical_verification.sql`, 'utf8')
 const m140 = readFileSync(`${MIG}/140_my_capabilities_explicit.sql`, 'utf8');
 const m141 = readFileSync(`${MIG}/141_hired_athlete_becomes_employee.sql`, 'utf8');
 const m142 = readFileSync(`${MIG}/142_workforce_org_isolation.sql`, 'utf8');
+const m143 = readFileSync(`${MIG}/143_mandatory_needs_verification.sql`, 'utf8');
 import { EXPLICIT_ONLY_CAPABILITIES } from '../capabilities';
 
 function fn(sql: string, name: string): { header: string; body: string } {
@@ -173,10 +174,11 @@ describe('142: workforce evidence stays inside its own organisation (QA 42, thre
   const stripped = m142.replace(/--.*$/gm, '');
   it('142 is the LATEST definition of every function it replaces (an older copy is not what runs)', () => {
     const files = readdirSync(MIG).filter(f => f.endsWith('.sql')).sort();
-    for (const f of ['_wf_judge', 'workforce_evidence_guard', 'health_record_guard']) {
+    for (const f of ['workforce_evidence_guard', 'health_record_guard']) {
       const defining = files.filter(x => readFileSync(`${MIG}/${x}`, 'utf8').includes(`FUNCTION public.${f}(`));
       expect(defining.at(-1), f).toBe('142_workforce_org_isolation.sql');
     }
+    // _wf_judge is redefined again by 143 (adds p_mandatory) — that test lives in the 143 describe block below.
   });
   it('C1/H: every evidence query in the judge is filtered to the person\'s own organisation', () => {
     const judge = fn(m142, '_wf_judge').body;
@@ -238,5 +240,36 @@ describe('142: workforce evidence stays inside its own organisation (QA 42, thre
   });
   it('the catalogues the judge reads all mark statuses stale', () => {
     expect(stripped).toMatch(/ARRAY\['ppe_types','pre_employment_check_types'\]/);
+  });
+});
+
+describe('143: a mandatory item always needs verified evidence (QA 42 M2, product decision)', () => {
+  it('need_verified is true for a mandatory item even when it is neither safety-critical nor evidence-required', () => {
+    const f = fn(m143, '_wf_judge');
+    expect(f.header).toMatch(/p_as_of date, p_soon integer, p_mandatory boolean DEFAULT false,/);
+    expect(f.body).toMatch(/need_verified boolean := COALESCE\(p_evidence, false\) OR COALESCE\(p_sc, false\) OR COALESCE\(p_mandatory, false\);/);
+  });
+  it('an optional (non-mandatory) requirement is unaffected: self-submitted evidence still counts', () => {
+    // p_mandatory defaults to false, so a caller that never passes it keeps 142's behaviour exactly.
+    expect(fn(m143, '_wf_judge').header).toMatch(/p_mandatory boolean DEFAULT false/);
+  });
+  it('the one real caller passes req.mandatory', () => {
+    expect(fn(m143, '_wf_deployment').body).toMatch(/req\.grace_days, p_as_of, soon, req\.mandatory\);/);
+  });
+  it('143 is the LATEST definition of _wf_judge and _wf_deployment', () => {
+    const MIG_ALL = MIG;
+    const files = readdirSync(MIG_ALL).filter(f => f.endsWith('.sql')).sort();
+    for (const f of ['_wf_judge', '_wf_deployment']) {
+      const defining = files.filter(x => readFileSync(`${MIG_ALL}/${x}`, 'utf8').includes(`FUNCTION public.${f}(`));
+      expect(defining.at(-1), f).toBe('143_mandatory_needs_verification.sql');
+    }
+  });
+  it('everything 142 guaranteed about the judge still holds', () => {
+    const judge = fn(m143, '_wf_judge').body;
+    expect(judge).toMatch(/org uuid := \(SELECT company_id FROM people WHERE id = p_person\);/);
+    expect(judge).toMatch(/g integer := CASE WHEN COALESCE\(p_sc, false\) THEN 0 ELSE p_grace END;/);
+    expect(branch(judge, "WHEN 'competency' THEN", "WHEN 'qualification'").replace(/--.*$/gm, '')).not.toMatch(/training_records/);
+    const doc = branch(judge, "WHEN 'document' THEN", "WHEN 'pre_employment_check'");
+    expect(doc).toMatch(/AND \(NOT need_verified OR d\.filed_by_authorised\)/);
   });
 });
