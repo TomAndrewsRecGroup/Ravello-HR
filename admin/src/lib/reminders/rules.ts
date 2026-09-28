@@ -70,10 +70,50 @@ export const REMINDERS: ReminderRule[] = [
     // the same way hsRules.ts's itemTitle() does, rather than an embed
     // here: slimRow() never lets an embed into the reminder payload.
     id: 'training_records', entity: 'training_records',
-    select: 'id, company_id, employee_id, course_name, expires_on',
-    query: (sb, from, to) => sb.from('training_records').select('id, company_id, employee_id, course_name, expires_on')
-      .not('expires_on', 'is', null).order('id').range(from, to),
+    // person_id since 134: a record added through the workforce pages may
+    // have no employee_records row behind it.
+    select: 'id, company_id, employee_id, person_id, course_id, course_name, expires_on',
+    query: (sb, from, to) => sb.from('training_records').select('id, company_id, employee_id, person_id, course_id, course_name, expires_on')
+      .not('expires_on', 'is', null).neq('verification_status', 'rejected').order('id').range(from, to),
     dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  // ── Core-OS 360 Phase 3: workforce evidence (134-135) ──
+  // Ids and dates only: the consuming rules (workforceRules.ts) look up
+  // names themselves and skip a row a newer one has replaced.
+  {
+    id: 'person_credentials', entity: 'person_credentials',
+    select: 'id, company_id, person_id, credential_type_id, expires_on',
+    query: (sb, from, to) => sb.from('person_credentials').select('id, company_id, person_id, credential_type_id, expires_on')
+      .not('expires_on', 'is', null).neq('verification_status', 'rejected').order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    id: 'person_authorisations', entity: 'person_authorisations',
+    select: 'id, company_id, person_id, authorisation_type_id, expires_on',
+    query: (sb, from, to) => sb.from('person_authorisations').select('id, company_id, person_id, authorisation_type_id, expires_on')
+      .eq('status', 'active').not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // A temporary exception lapsing puts the person back to NOT_READY.
+    id: 'requirement_exceptions', entity: 'requirement_exceptions',
+    select: 'id, company_id, person_id, requirement_type, kind, valid_until',
+    query: (sb, from, to) => sb.from('requirement_exceptions').select('id, company_id, person_id, requirement_type, kind, valid_until')
+      .is('revoked_at', null).order('id').range(from, to),
+    dueDateOf: r => str(r.valid_until),
+    buckets: ['due_7', 'due_0'],
+  },
+  {
+    // The outcome CATEGORY is not selected: a reminder says a review is
+    // due, never what the last one found.
+    id: 'person_health_outcomes', entity: 'person_health_outcomes',
+    select: 'id, company_id, person_id, requirement_id, review_date',
+    query: (sb, from, to) => sb.from('person_health_outcomes').select('id, company_id, person_id, requirement_id, review_date')
+      .not('review_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {

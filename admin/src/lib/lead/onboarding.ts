@@ -16,7 +16,7 @@ export async function autoStartOnboarding(sb: SupabaseClient, employeeId: string
   if (existing) return { started: false, reason: 'already' };
 
   const { data: tmpl } = await sb.from('onboarding_templates')
-    .select('id, onboarding_template_tasks(title, description, category, due_day_offset, assigned_to, sort_order)')
+    .select('id, onboarding_template_tasks(title, description, category, due_day_offset, assigned_to, sort_order, gate, gate_days)')
     .eq('company_id', e.company_id).eq('is_default', true).order('created_at').limit(1).maybeSingle();
   const t = tmpl as { id: string; onboarding_template_tasks: TemplateTaskLike[] } | null;
   if (!t) return { started: false, reason: 'no default template' };

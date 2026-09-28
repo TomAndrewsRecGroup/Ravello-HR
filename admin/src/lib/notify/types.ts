@@ -78,6 +78,11 @@ export const NOTIFICATION_TYPES = [
   'action_verification_requested',
   'action_verification_rejected',
   'action_overdue',
+  // Core-OS 360 Phase 3: workforce
+  'workforce_not_ready',
+  'workforce_evidence_expiring',
+  'workforce_exception_lapsing',
+  'occupational_health_review_due',
   // LEAD / HR flow
   'leave_requested',
   'role_filled',
@@ -166,6 +171,10 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   action_verification_requested: 'Action awaiting your verification',
   action_verification_rejected:  'Action not verified',
   action_overdue:                'Action overdue',
+  workforce_not_ready:            'No longer ready to deploy',
+  workforce_evidence_expiring:    'Workforce evidence expiring',
+  workforce_exception_lapsing:    'Deployment exception ending',
+  occupational_health_review_due: 'Occupational health review due',
   hs_equipment_inspection_due: 'Equipment inspection due',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',

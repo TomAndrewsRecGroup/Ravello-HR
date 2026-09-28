@@ -52,6 +52,8 @@ export const TRIGGERED_ENTITIES = [
   'coshh_assessments',
   'substances',
   'incident_investigations',
+  // Core-OS 360 Phase 3 (137): a Safe to Deploy status change.
+  'deployment_status_log',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -81,6 +83,11 @@ export const REMINDER_ENTITIES = [
   'hs_incidents',
   'incident_investigations',
   'actions',
+  // Core-OS 360 Phase 3 (134-135): workforce evidence with an end date.
+  'person_credentials',
+  'person_authorisations',
+  'requirement_exceptions',
+  'person_health_outcomes',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

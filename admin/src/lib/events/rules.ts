@@ -12,6 +12,7 @@ import { leadRules } from './leadRules';
 import { supportRules } from './supportRules';
 import { hireRules } from './hireRules';
 import { safetyRules } from './safetyRules';
+import { workforceRules } from './workforceRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -268,9 +269,22 @@ const reminderRules: Rule[] = [
       const { bucket, due_date, row } = reminderPayload(event);
       const expired = bucket === 'overdue';
       const employeeId = s(row.employee_id);
+      const personId = s(row.person_id);
+      // A newer completion of the same course has replaced this record.
+      if (personId && row.course_id) {
+        const { data: newer } = await sb.from('training_records').select('id')
+          .eq('person_id', personId).eq('course_id', s(row.course_id)).neq('id', s(row.id))
+          .neq('verification_status', 'rejected').or(`expires_on.is.null,expires_on.gt.${s(row.expires_on)}`).limit(1);
+        if ((newer ?? []).length) return [];
+      }
       let employeeName = 'an employee';
       if (employeeId) {
         const { data } = await sb.from('employee_records').select('full_name').eq('id', employeeId).maybeSingle();
+        employeeName = (data as { full_name?: string } | null)?.full_name ?? employeeName;
+      } else if (personId) {
+        // 134: a record added through the workforce pages has a person
+        // and may have no employee record.
+        const { data } = await sb.from('people').select('full_name').eq('id', personId).maybeSingle();
         employeeName = (data as { full_name?: string } | null)?.full_name ?? employeeName;
       }
       return [notifyC({
@@ -424,7 +438,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);
