@@ -21,7 +21,7 @@ const s = (v: unknown, fallback = ''): string => (v == null ? fallback : String(
 const cap = (companyId: string, capability: string): Audience => ({ kind: 'capability', companyId, capability });
 const notifyC = (input: NotifyConsequence['input']): NotifyConsequence => ({ kind: 'notify', input });
 
-export const personPath = (personId: string) => `/workforce/people/${personId}`;
+export const personPath = (personId: string) => `/lead/workforce/people/${personId}`;
 
 const DEPLOYABLE = ['READY', 'CONDITIONALLY_READY'];
 

@@ -68,6 +68,9 @@ export const FLAG_GROUPS: FlagGroup[] = [
       { key: 'offboarding',            label: 'Offboarding Workflows' },
       { key: 'policy_acknowledgement', label: 'Policy Acknowledgements' },
       { key: 'protect_dashboard',      label: 'HR Dashboard' },
+      // Core-OS 360 Phase 3: roles, requirements, training, competency,
+      // occupational health and Safe to Deploy (/lead/workforce).
+      { key: 'workforce',              label: 'Workforce & Safe to Deploy' },
     ],
   },
   {

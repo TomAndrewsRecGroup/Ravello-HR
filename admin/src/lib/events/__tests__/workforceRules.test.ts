@@ -66,7 +66,7 @@ describe('Safe to Deploy status changes', () => {
     const n = db.tables.notifications[0];
     expect(n.type).toBe('workforce_not_ready');
     expect(n.title).toBe('Sam Driver is no longer ready to deploy');
-    expect(n.link).toBe('/workforce/people/p-1');
+    expect(n.link).toBe('/lead/workforce/people/p-1');
   });
   it('CONDITIONALLY_READY → NOT_READY notifies too', async () => {
     await run(statusChange('CONDITIONALLY_READY', 'NOT_READY'));
