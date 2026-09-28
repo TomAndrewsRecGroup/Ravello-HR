@@ -11,6 +11,7 @@ const m136 = readFileSync(`${MIG}/136_safe_to_deploy.sql`, 'utf8');
 const m137 = readFileSync(`${MIG}/137_workforce_integration.sql`, 'utf8');
 const m139 = readFileSync(`${MIG}/139_safety_critical_verification.sql`, 'utf8');
 const m140 = readFileSync(`${MIG}/140_my_capabilities_explicit.sql`, 'utf8');
+const m141 = readFileSync(`${MIG}/141_hired_athlete_becomes_employee.sql`, 'utf8');
 import { EXPLICIT_ONLY_CAPABILITIES } from '../capabilities';
 
 function fn(sql: string, name: string): { header: string; body: string } {
@@ -155,5 +156,14 @@ describe('140: the capability list offers only what the database allows', () => 
     const keys = [...list.matchAll(/'([^']+)'/g)].map(m => m[1]).sort();
     expect(keys).toEqual([...EXPLICIT_ONLY_CAPABILITIES].sort());
     expect(f.body).toMatch(/THEN public\.has_explicit_capability\(public\.my_company_id\(\), c\.key\)/);
+  });
+});
+
+describe('141: a hired athlete becomes an employee (QA 2, HIGH)', () => {
+  it('the hire promotes an athlete person, so they appear on the workforce lists', () => {
+    const b = fn(m141, 'person_link_row').body;
+    expect(b).toMatch(/WHERE id = NEW\.person_id AND worker_type IN \('candidate','athlete','employee','former_employee'\)/);
+    // the lists include only these worker types — the promotion is what gets a hire onto them
+    expect(fn(m136, 'workforce_readiness').body).toMatch(/p\.worker_type IN \('employee','contractor','consultant','temporary_worker'\)/);
   });
 });
