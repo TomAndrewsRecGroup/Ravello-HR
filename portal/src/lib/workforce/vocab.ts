@@ -181,6 +181,20 @@ export const HEALTH_OUTCOME_LABELS: Record<HealthOutcome, string> = {
   further_assessment_required: 'Further assessment required',
 };
 
+/** 133 training_courses.delivery_method (pinned to the migration by test). */
+export const DELIVERY_METHODS = ['internal', 'external', 'classroom', 'elearning', 'practical', 'toolbox', 'certification', 'refresher'] as const;
+export const DELIVERY_METHOD_LABELS: Record<typeof DELIVERY_METHODS[number], string> = {
+  internal: 'Internal', external: 'External', classroom: 'Classroom', elearning: 'E-learning', practical: 'Practical',
+  toolbox: 'Toolbox talk', certification: 'Certification', refresher: 'Refresher',
+};
+/** 133 occupational_health_requirements.category (pinned to the migration by test). */
+export const OH_REQUIREMENT_CATEGORIES = ['audiometry', 'respiratory', 'havs', 'skin', 'night_worker', 'safety_critical_medical',
+  'driver_medical', 'fitness_for_task', 'other'] as const;
+export const OH_REQUIREMENT_CATEGORY_LABELS: Record<typeof OH_REQUIREMENT_CATEGORIES[number], string> = {
+  audiometry: 'Audiometry', respiratory: 'Respiratory', havs: 'Hand-arm vibration', skin: 'Skin', night_worker: 'Night worker',
+  safety_critical_medical: 'Safety-critical medical', driver_medical: 'Driver medical', fitness_for_task: 'Fitness for task', other: 'Other',
+};
+
 /** 134 induction_templates.scope. */
 export const INDUCTION_SCOPES = ['company', 'site', 'project', 'department', 'contractor', 'role'] as const;
 /** 134 authorisation_types.scope_kind. */
