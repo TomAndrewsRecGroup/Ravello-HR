@@ -51,6 +51,7 @@ export const TRIGGERED_ENTITIES = [
   'method_statements',
   'coshh_assessments',
   'substances',
+  'incident_investigations',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

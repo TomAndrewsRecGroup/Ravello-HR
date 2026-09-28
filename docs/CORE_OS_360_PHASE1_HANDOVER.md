@@ -222,7 +222,7 @@ These are the results of automated tests plus live database probes. Browser-leve
 | Live Manatal / IvyLens / Resend calls | **EXTERNAL.** They were not exercised live from the sandbox; the existing mocked suites pass. |
 | Browser run of the switcher on a deployed preview | **EXTERNAL.** There are no Supabase credentials in the sandbox build. |
 | Supabase "Leaked password protection" | **EXTERNAL CONFIGURATION.** It is a dashboard toggle. |
-| First referral cron run after 118 (candidate person-link trigger) | Pending at 11:00 UTC. Check `referral_scan_runs` for `ok`. |
+| First referral cron run after 118 (candidate person-link trigger) | **RESOLVED 2026-09-28.** Every hourly `referral_scan_runs` row since 118 (26 Sep 08:00 → 28 Sep 10:00 UTC, 51 runs) reads `outcome = ok`, `ok = true`, no notes; invites continued to send. `candidates.person_id IS NULL` = 0 of 2,657. The same check found an unrelated, older defect: the 06:00 reminders cron has been `degraded` since 096 because every keyed upsert (`platform_events`, `notifications`, `email_log`, `internal_tasks`, `actions`, calendar, hire→employee, probation reviews) targeted a PARTIAL unique index PostgREST cannot infer (42P10). 0 keyed rows had ever been written; nothing was yet lost (0 consequences in 885 consumer runs). Fixed by migration 126a (full unique indexes, same columns), probed live. |
 | Code defects | **None known open.** |
 
 ## J. Phase 2 readiness
