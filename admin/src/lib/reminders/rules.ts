@@ -225,6 +225,20 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 4 (150): contractor insurance expiry. One row
+    // per (contractor, insurance_type) — a renewal updates it in place,
+    // so unlike the insert-only tables elsewhere in this file, reading
+    // it directly is already correct: there is only ever one row per
+    // type to be due. The consuming rule looks the contractor's name up
+    // itself, the same way every other reminder in this file does.
+    id: 'contractor_insurances', entity: 'contractor_insurances',
+    select: 'id, company_id, contractor_id, insurance_type, expires_on',
+    query: (sb, from, to) => sb.from('contractor_insurances').select('id, company_id, contractor_id, insurance_type, expires_on')
+      .order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

@@ -23,7 +23,9 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 148 adds the PUWER assessment outcome vocabulary.
   + readFileSync(`${MIG}/148_puwer_assessments.sql`, 'utf8')
   // 149 adds the examination_type vocabulary.
-  + readFileSync(`${MIG}/149_loler_examinations.sql`, 'utf8');
+  + readFileSync(`${MIG}/149_loler_examinations.sql`, 'utf8')
+  // 150 adds the contractor approval status / risk rating / insurance type vocabularies.
+  + readFileSync(`${MIG}/150_contractors.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -63,6 +65,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['PUWER assessment outcomes', V.PUWER_ASSESSMENT_OUTCOMES,
       /inspection_id\s+uuid REFERENCES public\.inspections\(id\) ON DELETE SET NULL,\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
     ['examination types', V.HS_EXAMINATION_TYPES, /examination_type IS NULL OR examination_type IN \(/],
+    ['contractor approval statuses', V.CONTRACTOR_APPROVAL_STATUSES, /approval_status\s+text NOT NULL DEFAULT 'pending' CHECK \(approval_status IN \(/],
+    ['contractor risk ratings', V.CONTRACTOR_RISK_RATINGS, /risk_rating IS NULL OR risk_rating IN \(/],
+    ['contractor insurance types', V.CONTRACTOR_INSURANCE_TYPES, /insurance_type\s+text NOT NULL CHECK \(insurance_type IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -81,6 +86,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.HS_ASSET_TYPES, V.HS_ASSET_TYPE_LABELS],
       [V.PUWER_ASSESSMENT_OUTCOMES, V.PUWER_ASSESSMENT_OUTCOME_LABELS],
       [V.HS_EXAMINATION_TYPES, V.HS_EXAMINATION_TYPE_LABELS],
+      [V.CONTRACTOR_APPROVAL_STATUSES, V.CONTRACTOR_APPROVAL_STATUS_LABELS],
+      [V.CONTRACTOR_RISK_RATINGS, V.CONTRACTOR_RISK_RATING_LABELS],
+      [V.CONTRACTOR_INSURANCE_TYPES, V.CONTRACTOR_INSURANCE_TYPE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

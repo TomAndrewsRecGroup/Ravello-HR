@@ -61,6 +61,8 @@ export const TRIGGERED_ENTITIES = [
   // Core-OS 360 Phase 4 (149): equipment inspections/examinations,
   // joined so an immediate-danger LOLER finding can be reacted to.
   'hs_equipment_inspections',
+  // Core-OS 360 Phase 4 (150): a contractor's approval status change.
+  'contractors',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -97,6 +99,8 @@ export const REMINDER_ENTITIES = [
   'person_health_outcomes',
   // Core-OS 360 Phase 4 (148): PUWER assessment review cycle.
   'puwer_assessments',
+  // Core-OS 360 Phase 4 (150): contractor insurance expiry.
+  'contractor_insurances',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

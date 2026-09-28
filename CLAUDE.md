@@ -460,7 +460,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
 | C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
-| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), and LOLER thorough examinations + immediate danger (Group 6, extending `hs_equipment_inspections`, flagged never decided). Delivered in logical, independently-gated groups. See the section at the end. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, emergency planning** (in progress, migration 144 onward): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), and contractor companies/insurance/prequalification (Group 7, finally enforcing the long-dormant `contractors.manage` capability). Delivered in logical, independently-gated groups. See the section at the end. |
 
 ---
 
@@ -4666,14 +4666,83 @@ Verified: `tsc --noEmit` clean both apps, full `vitest run` green
 (1115 admin, 600 portal), all five CI guards pass, admin production
 build compiles.
 
+### Group 7: contractor companies, insurance, prequalification (migration 150)
+
+A contractor is a company distinct from a worker (Group 8 links
+individual contractor WORKERS into the Phase 3 person model; this
+group is the company record they work for). **`contractors.manage`
+(117) has existed since Phase 1 and was unenforced until now** — the
+existing-operations audit's own recommendation was to decide whether
+to enforce or retire it. Enforced: it already sat on the right roles
+(consultancy/organisation owners and admins, `hse_manager`,
+`site_manager`, platform staff), so no capability grant change was
+needed, only RLS policies that finally read it.
+
+- **Prequalification is deliberately NOT a second checklist engine.**
+  Group 3's `inspections` is asset-scoped (`asset_id NOT NULL`) and
+  widening it to also cover contractors would blur what it means — a
+  contractor prequalification is a company-level compliance decision,
+  not a per-visit check. `approval_status` (`pending | approved |
+  suspended | rejected`) IS the prequalification outcome, decided by a
+  person reading the insurance/document evidence this migration
+  tracks. No numeric "prequalification score" table exists; that would
+  be new scope, not something this migration should invent to look
+  complete.
+- **`contractor_insurances` is MUTABLE, one row per (contractor,
+  insurance_type)** — a renewal UPDATEs the row in place. This is a
+  deliberate departure from the "a correction is a new row" discipline
+  the register's EVENT tables (inspections, PUWER assessments) use: an
+  insurance policy is ongoing STATE with one current expiry, not a
+  point-in-time event history.
+- **`contractor_is_current(contractor_id)`** is the one deterministic
+  "is this contractor OK to use" check — pure SQL, no scoring, no AI:
+  `approval_status = 'approved'` AND both UK-standard required
+  policies (`employers_liability`, `public_liability`) in date AND no
+  ON-FILE policy of ANY type past its expiry (a lapsed
+  `professional_indemnity`, though not required, still fails it).
+  Exposed now so Group 8's access gate never needs a second
+  implementation of the same fact.
+- **Performance reviews reuse the EXISTING `actions.source_type`
+  value `'contractor_review'`** (119/125's CHECK already allows it) —
+  never a second review table.
+- **A suspended/rejected contractor's notification is STAFF-ONLY for
+  now**, not sent to the client — contractor management has no portal
+  page yet (Group 13 builds it). A client-facing notification with
+  nowhere to link was exactly the gap `rules.test.ts`'s own "every
+  client notification has a portal link" check caught on the first
+  version of the insurance-expiry reminder (it had a `company_admins`
+  audience and only an admin link) — both new rules were narrowed to
+  `staffOnly` rather than inventing a link to a page that does not
+  exist, to be widened once Group 13 ships it.
+
+**Live probe** (`150_contractors.sql`, rolled back): 14 checks — a
+new pending contractor is never current; approved-but-uninsured is
+never current; missing either required policy is never current; both
+required policies in date makes it current; a renewal updates the same
+row (not a second one); an expired NON-required policy still fails
+currency; suspension overrides everything; insurance `company_id` is
+filled from the parent contractor, never trusted from the caller;
+evidence vocab resolves; the Timeline and outbox fire on an
+approval-status change; the generic audit trail fires. All 14 passed.
+
+`TRIGGERED_ENTITIES` gained `contractors`; `REMINDER_ENTITIES` gained
+`contractor_insurances`. `CONTRACTOR_APPROVAL_STATUSES`/`_RISK_
+RATINGS`/`_INSURANCE_TYPES` (+ labels) added to `lib/hs/vocab.ts`
+(shared-dupe pair).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1120 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
 **Remaining Phase 4 groups** (tracked, not yet started): contractor
-companies + insurance + prequalification; contractor workers +
-Safe-to-Deploy + access gate; permit to work (numbering via
+workers + Safe-to-Deploy + access gate (reading `contractor_is_
+current()` from this group); permit to work (numbering via
 `next_record_number()`, live compliance re-check at issue, suspension/
 revalidation/closeout); isolation/LOTO; emergency planning (drill
 findings → the universal `actions` table, never a second table);
 notifications/audit/platform_events wiring for all of the above; admin
-+ portal UI; and a final regression/security-review/handover/gate/PR
-pass. **Phase 5 is not to begin** until Phase 4's own gate passes, per
-the operator's instruction.
++ portal UI (including the contractor pages this group's notifications
+are waiting on); and a final regression/security-review/handover/gate/
+PR pass. **Phase 5 is not to begin** until Phase 4's own gate passes,
+per the operator's instruction.
 

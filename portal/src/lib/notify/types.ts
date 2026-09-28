@@ -68,6 +68,9 @@ export const NOTIFICATION_TYPES = [
   'puwer_review_due',
   // Core-OS 360 Phase 4 (149): LOLER immediate danger.
   'loler_immediate_danger',
+  // Core-OS 360 Phase 4 (150): contractors.
+  'contractor_status_changed',
+  'contractor_insurance_expiring',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -185,6 +188,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   inspection_completed:       'Asset inspection completed',
   puwer_review_due:           'PUWER review due',
   loler_immediate_danger:     'LOLER immediate danger recorded',
+  contractor_status_changed:    'Contractor status changed',
+  contractor_insurance_expiring: 'Contractor insurance expiring',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

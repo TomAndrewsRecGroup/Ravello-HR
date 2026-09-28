@@ -364,4 +364,28 @@ describe('hs rules', () => {
     expect(client.title).toBe('Jordan Lee: Fire Warden Refresher — Passed');
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
   });
+
+  it('a contractor suspended tells staff only (no portal page yet) with the client company name', async () => {
+    const updated = eventRow({
+      id: 23, entity_type: 'contractors', event_type: 'updated', actor_kind: 'staff', entity_id: 'contractor-1',
+      payload: { new: { name: 'Acme Scaffolding Ltd', approval_status: 'suspended', risk_rating: 'high' }, old: { approval_status: 'approved' }, changed: ['approval_status'] },
+    });
+    db.tables.platform_events.push(updated);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'contractor_status_changed', link: '/health-safety/co-1' });
+    expect(staff.title).toBe('Sample Co: Acme Scaffolding Ltd is now suspended');
+  });
+
+  it('a contractor moving to approved raises nothing from this rule', async () => {
+    const updated = eventRow({
+      id: 24, entity_type: 'contractors', event_type: 'updated', actor_kind: 'staff', entity_id: 'contractor-1',
+      payload: { new: { name: 'Acme Scaffolding Ltd', approval_status: 'approved', risk_rating: 'low' }, old: { approval_status: 'pending' }, changed: ['approval_status'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.type === 'contractor_status_changed')).toBe(false);
+  });
 });

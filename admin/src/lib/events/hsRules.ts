@@ -34,6 +34,7 @@ async function assetName(sb: { from: (t: string) => any }, assetId: string): Pro
   return (data as { name?: string } | null)?.name ?? 'an asset';
 }
 
+
 async function itemTitle(ctx: { sb: { from: (t: string) => any } }, itemId: string): Promise<string> {
   const { data } = await ctx.sb.from('compliance_items').select('title').eq('id', itemId).maybeSingle();
   return (data as { title?: string } | null)?.title ?? 'Register item';
@@ -404,6 +405,37 @@ export const hsRules: Rule[] = [
             audiences: staffOnly, companyId: event.company_id, type: 'loler_immediate_danger',
             title: `${company || 'A client'}: immediate danger recorded — ${asset}`,
             body:  'Asset quarantined. Review and follow up as required.',
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (150): a contractor's approval status
+    // changed. Only 'suspended'/'rejected' are worth a nudge — an
+    // approval or a return to pending is informational and not raised
+    // here.
+    // STAFF-ONLY for now: contractor management has no portal page yet
+    // (Group 13 builds admin+portal UI). A client-facing notification
+    // with no page to link to is exactly the gap rules.test.ts's own
+    // "every client notification has a portal link" check exists to
+    // catch — widen to admins() once that page exists, rather than
+    // inventing a link to a page that is not there yet.
+    id: 'contractor_status_changed',
+    on: 'contractors.updated',
+    when: e => changedTo(e, 'approval_status', ['suspended', 'rejected']),
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const name = s(n.name, 'A contractor');
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'contractor_status_changed',
+            title: `${company || 'A client'}: ${name} is now ${s(n.approval_status).replace('_', ' ')}`,
             link:  { admin: `/health-safety/${event.company_id}` },
           },
         },

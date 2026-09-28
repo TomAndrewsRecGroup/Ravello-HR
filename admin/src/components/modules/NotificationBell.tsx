@@ -81,6 +81,8 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   inspection_completed:       { icon: HardHat,       color: 'var(--blue)' },
   puwer_review_due:           { icon: HardHat,       color: 'var(--amber)' },
   loler_immediate_danger:     { icon: AlertTriangle, color: 'var(--danger)' },
+  contractor_status_changed:    { icon: ShieldCheck,   color: 'var(--amber)' },
+  contractor_insurance_expiring: { icon: CalendarClock, color: 'var(--amber)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
   onboarding_started:         { icon: Users,         color: 'var(--blue)' },

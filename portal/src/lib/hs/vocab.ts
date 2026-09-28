@@ -138,6 +138,36 @@ export const PUWER_ASSESSMENT_OUTCOME_LABELS: Record<PuwerAssessmentOutcome, str
   compliant_with_actions:  'Compliant, with actions',
 };
 
+// Contractors (150). approval_status is the prequalification OUTCOME —
+// there is no separate score. risk_rating is optional (a contractor may
+// have no rating yet). insurance_type covers the two UK-standard
+// required policies plus a catch-all 'other'.
+export const CONTRACTOR_APPROVAL_STATUSES = ['pending', 'approved', 'suspended', 'rejected'] as const;
+export type ContractorApprovalStatus = typeof CONTRACTOR_APPROVAL_STATUSES[number];
+export const CONTRACTOR_APPROVAL_STATUS_LABELS: Record<ContractorApprovalStatus, string> = {
+  pending:   'Pending',
+  approved:  'Approved',
+  suspended: 'Suspended',
+  rejected:  'Rejected',
+};
+
+export const CONTRACTOR_RISK_RATINGS = ['low', 'medium', 'high'] as const;
+export type ContractorRiskRating = typeof CONTRACTOR_RISK_RATINGS[number];
+export const CONTRACTOR_RISK_RATING_LABELS: Record<ContractorRiskRating, string> = {
+  low:    'Low',
+  medium: 'Medium',
+  high:   'High',
+};
+
+export const CONTRACTOR_INSURANCE_TYPES = ['employers_liability', 'public_liability', 'professional_indemnity', 'other'] as const;
+export type ContractorInsuranceType = typeof CONTRACTOR_INSURANCE_TYPES[number];
+export const CONTRACTOR_INSURANCE_TYPE_LABELS: Record<ContractorInsuranceType, string> = {
+  employers_liability:     "Employers' liability",
+  public_liability:        'Public liability',
+  professional_indemnity:  'Professional indemnity',
+  other:                   'Other',
+};
+
 // LOLER thorough examination type (149) — a single value today, framed
 // as a vocabulary because a generic "thorough examination" framework is
 // meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means

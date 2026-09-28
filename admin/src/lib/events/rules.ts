@@ -360,6 +360,32 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 4 (150): a contractor insurance policy expiring
+    // or lapsed. The reminder row carries only contractor_id/insurance_
+    // type (contractor_insurances has no name of its own) — looked up
+    // here, the same "read once, don't embed" shape every other
+    // reminder rule in this file already uses.
+    // STAFF-ONLY for now: contractor management has no portal page yet
+    // (Group 13 builds admin+portal UI) — a client-facing notification
+    // with no page to link to is exactly the gap rules.test.ts's own
+    // "every client notification has a portal link" check exists to
+    // catch. Widen to admins() once that page exists.
+    id: 'contractor_insurance_reminder',
+    on: 'contractor_insurances.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const { data } = await sb.from('contractors').select('name').eq('id', s(row.contractor_id)).maybeSingle();
+      const name = (data as { name?: string } | null)?.name ?? 'a contractor';
+      const type = s(row.insurance_type).replace(/_/g, ' ');
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'contractor_insurance_expiring',
+        title: `${name}'s ${type} insurance is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
+      })];
+    },
+  },
+  {
     id: 'policy_ack_reminder',
     on: 'policy_acknowledgements.reminder',
     when: e => overdue(reminderPayload(e).bucket),
