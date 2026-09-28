@@ -10,6 +10,8 @@ const MIG = resolve(__dirname, '../../../../../supabase/migrations');
 const m136 = readFileSync(`${MIG}/136_safe_to_deploy.sql`, 'utf8');
 const m137 = readFileSync(`${MIG}/137_workforce_integration.sql`, 'utf8');
 const m139 = readFileSync(`${MIG}/139_safety_critical_verification.sql`, 'utf8');
+const m140 = readFileSync(`${MIG}/140_my_capabilities_explicit.sql`, 'utf8');
+import { EXPLICIT_ONLY_CAPABILITIES } from '../capabilities';
 
 function fn(sql: string, name: string): { header: string; body: string } {
   const start = sql.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
@@ -142,5 +144,16 @@ describe('139: verification and the engine agree on what is safety-critical', ()
   it('stays callable only from workforce_verify', () => {
     expect(m139).toMatch(/REVOKE ALL ON FUNCTION public\.workforce_item_safety_critical\(uuid, text, uuid\) FROM PUBLIC, anon, authenticated;/);
     expect(m139).not.toMatch(/GRANT EXECUTE ON FUNCTION public\.workforce_item_safety_critical/);
+  });
+});
+
+describe('140: the capability list offers only what the database allows', () => {
+  it('every explicit-only capability is tested with has_explicit_capability (staff never offered clinical)', () => {
+    const f = fn(m140, 'my_capabilities');
+    expect(f.header).not.toMatch(/SECURITY DEFINER/);
+    const list = /c\.key IN \(([^)]*)\)/.exec(f.body)?.[1] ?? '';
+    const keys = [...list.matchAll(/'([^']+)'/g)].map(m => m[1]).sort();
+    expect(keys).toEqual([...EXPLICIT_ONLY_CAPABILITIES].sort());
+    expect(f.body).toMatch(/THEN public\.has_explicit_capability\(public\.my_company_id\(\), c\.key\)/);
   });
 });
