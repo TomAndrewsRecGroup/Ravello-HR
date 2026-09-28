@@ -4065,6 +4065,18 @@ MINOR ISSUES): `docs/CORE_OS_360_PHASE2_HANDOVER.md`. Live probes:
 
 Watch `automation_runs` for the reminders cron (it can now write keyed rows
 it never could) and see one real notification of each safety kind; check
-the report forms on a phone. Open: incident→training link (needs an
-employee↔person link). **Phase 3 has not been started.**
+the report forms on a phone. **Phase 3 has not been started.**
+
+### Incident → training (migration 130)
+
+- **Evidence, never a verdict.** `incident_training_evidence()` shows an
+  investigator each person's training status ON THE INCIDENT DATE
+  (`hs_training_status_at()`, one rule). Nothing writes a cause: that
+  stays a confirmed `incident_causes` row.
+- **The recorded finding is a snapshot** (`incident_training_checks`),
+  written only by `record_/withdraw_incident_training_check()` through
+  `hs_training_check_gate()`. A DEFINER writer must check
+  `session_can_write()` itself: it bypasses the restrictive write guard.
+- **Joined by `employee_records.person_id`** (118). An externally named
+  person has no record and is refused, not shown as "not recorded".
 

@@ -10,7 +10,10 @@ import {
 } from '@/lib/hs/safetyVocab';
 import { ACTION_STATUS_LABELS } from '@/lib/ui/statusMaps';
 import PrintShell, { PrintSection } from '@/components/safety/PrintShell';
-import type { CauseRow, IncidentPersonRow, IncidentRow, InvestigationRow, RiddorRow, SensitiveRow, TimelineRow, WhyRow } from '../types';
+import { trainingFindingLabel, trainingFindingText } from '@/lib/hs/trainingFinding';
+import type {
+  CauseRow, IncidentPersonRow, IncidentRow, InvestigationRow, RiddorRow, SensitiveRow, TimelineRow, TrainingCheckRow, WhyRow,
+} from '../types';
 
 export const metadata: Metadata = { title: 'Incident report' };
 export const dynamic = 'force-dynamic';
@@ -51,7 +54,7 @@ export default async function IncidentPrintPage(props: { params: Promise<{ id: s
   const riddor = (riddorRes.data ?? null) as RiddorRow | null;
 
   const personIds = people.map(p => p.person_id).filter((x): x is string => !!x);
-  const [tlRes, causeRes, whyRes, invFilesRes, invActRes, sensRes, orgPeopleRes] = await Promise.all([
+  const [tlRes, causeRes, whyRes, invFilesRes, invActRes, sensRes, orgPeopleRes, trainRes] = await Promise.all([
     inv ? supabase.from('incident_timeline_events').select('id, sequence, event_time, title, description, person_id').eq('investigation_id', inv.id).order('sequence').limit(500) : EMPTY,
     inv ? supabase.from('incident_causes').select('id, cause_level, category, description, confirmed_by, confirmed_at').eq('investigation_id', inv.id).order('created_at').limit(200) : EMPTY,
     inv ? supabase.from('investigation_why_analyses').select('id, problem, whys, conclusion, linked_cause_id').eq('investigation_id', inv.id).order('created_at').limit(100) : EMPTY,
@@ -61,6 +64,8 @@ export default async function IncidentPrintPage(props: { params: Promise<{ id: s
       ? supabase.from('incident_person_sensitive').select('incident_person_id, contact_phone, contact_email, contact_address, body_parts, injury_types, treatment, first_aid_given, hospital_attendance, time_lost, days_lost, work_restriction, return_date, notes, recorded_by, updated_at').in('incident_person_id', people.map(p => p.id)).limit(200)
       : Promise.resolve({ data: null }),
     personIds.length ? supabase.from('people').select('id, full_name').in('id', personIds).limit(200) : EMPTY,
+    // Recorded training findings (130); RLS returns none without incident.read. Withdrawn ones are not printed.
+    supabase.from('incident_training_checks').select('id, incident_person_id, course_name, completed_on, expires_on, status_at_incident, incident_date, note, checked_by, checked_at, withdrawn_at, withdrawn_by, withdrawn_reason').eq('incident_id', id).is('withdrawn_at', null).order('checked_at').limit(500),
   ]);
 
   const orgPeople = (orgPeopleRes.data ?? []) as { id: string; full_name: string }[];
@@ -73,6 +78,7 @@ export default async function IncidentPrintPage(props: { params: Promise<{ id: s
   const timeline = (tlRes.data ?? []) as unknown as TimelineRow[];
   const causes = (causeRes.data ?? []) as unknown as CauseRow[];
   const whys = (whyRes.data ?? []) as unknown as WhyRow[];
+  const trainChecks = (trainRes.data ?? []) as unknown as TrainingCheckRow[];
   type Act = { id: string; title: string; status: string; action_class: string | null; due_date: string | null; assigned_to: string | null; verified_at: string | null; verified_by: string | null; completed_at: string | null };
   const actions = [...((actRes.data ?? []) as Act[]), ...((invActRes.data ?? []) as unknown as Act[])];
   const where = [sites.find(s => s.id === inc.site_id)?.name, departments.find(d => d.id === inc.department_id)?.name, inc.exact_location].filter(Boolean).join(' · ') || '—';
@@ -154,6 +160,28 @@ export default async function IncidentPrintPage(props: { params: Promise<{ id: s
           </div>
         )}
       </PrintSection>
+
+      {trainChecks.length > 0 && (
+        <PrintSection title="Training at the time">
+          <table className="table text-sm">
+            <thead><tr><th>Person</th><th>Training required</th><th>Recorded completion</th><th>Checked</th></tr></thead>
+            <tbody>
+              {trainChecks.map(c => {
+                const p = people.find(x => x.id === c.incident_person_id);
+                return (
+                  <tr key={c.id} style={{ verticalAlign: 'top' }}>
+                    <td>{p ? personName(p) : '—'}</td>
+                    <td>{c.course_name}{c.note ? <div className="text-xs">{c.note}</div> : null}</td>
+                    <td>{trainingFindingLabel(c.status_at_incident)}: {trainingFindingText(c)}</td>
+                    <td>{nameOf(dir, c.checked_by)}, {fmtDate(c.checked_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="text-xs italic" style={{ color: 'var(--ink-faint)' }}>Facts from the training record on the incident date. Causation is recorded under Causes.</p>
+        </PrintSection>
+      )}
 
       <PrintSection title="Causes">
         {causes.length === 0 && !inv?.immediate_causes && !inv?.underlying_causes && !inv?.root_causes ? text('No causes recorded.') : (

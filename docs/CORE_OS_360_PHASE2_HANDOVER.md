@@ -192,7 +192,7 @@ These records are the raw material for future intelligence. **No predictive feat
 |---|---|---|
 | 1 | **Notifications and reminders are not live.** The branch is not deployed, so the Phase 2 rules are verified by unit tests only (17 in `safetyRules.test.ts`, plus reminders). After deploy, check `automation_runs` and one real notification of each kind. | Medium (verification gap) |
 | 2 | **Mobile and tablet layouts are not browser-verified.** The forms are built phone-first (44–48 px targets, single column), but no signed-in browser session was possible in this sandbox. | Medium (verification gap) |
-| 3 | **No incident→training link.** `training_records` is keyed to `employee_records`, not `people`, so there is no reliable join to show factual training status for a person in an incident. It needs an employee↔person link first. | Medium |
+| 3 | ~~No incident→training link.~~ **Closed 2026-09-28 by migration 130** (see below). The original note here was wrong: the employee↔person link already existed (`employee_records.person_id`, Phase 1 migration 118), so the join was available all along. | — |
 | 4 | **Full QA volume not loaded.** The runner stops at 60 s. The probe was measured at 10% and 25% of the spec's volume: list queries did not grow, and aggregates grew sub-linearly (see 128_volume). | Low |
 | 5 | No UI to manage escalation rules. The platform default applies, and the organisation rule table exists. | Low |
 | 6 | No draft autosave on long forms. | Low |
@@ -265,7 +265,7 @@ This QA was run as an independent pass: every result below comes from an execute
 | 27 | Effectiveness review | Effectiveness fields, stamped | — | 125 | PASS |
 | 28 | RIDDOR review | `riddor_reviews` | safetyRules | 125, 128_qa QA17 | PASS |
 | 29 | Human legal confirmation | `riddor.review` + rationale; flags only prompt | safetyRules | 125, 128_qa | PASS |
-| 30 | Relationships | `hs_links` (same-organisation trigger) | tenancySql | 128_qa19 | PASS (training: FAIL, see QA 19) |
+| 30 | Relationships | `hs_links` (same-organisation trigger); training via 130 | tenancySql, incidentTrainingSql | 128_qa19, 130 | PASS |
 | 31 | Notifications | `safetyRules.ts`, reminders | safetyRules (17), upsertConflictTargets | — | PASS (unit); live NOT VERIFIED |
 | 32 | Audit events | `hs_doc_after`, `audit_row` | — | 123, 124, 125, 128_qa | PASS |
 | 33 | Platform events | Whitelisted outbox triggers | platformEventsSql | 123 (10 events), 125 | PASS |
@@ -300,7 +300,7 @@ This QA was run as an independent pass: every result below comes from an execute
 | 16 | High-severity close | **Close without override:** BLOCKED. **Token override:** refused. **Real override:** accepted only with a recorded reason (125). | PASS |
 | 17 | RIDDOR scenarios | **Each of the 7 flags:** gives `potentially_reportable`, `riddor_reportable = false` and no decision. **Minor near miss:** stays `not_reviewed`. **Decisions:** need a person and a rationale; nothing is submitted to the HSE (125, 128_qa). | PASS |
 | 18 | RIDDOR permission | **Refused:** employee, site manager, HSE adviser (125), recruiter (128_qa). **Allowed:** HSE manager (125). | PASS |
-| 19 | Incident relationships | **Links work to:** risk assessment, RAMS, COSHH, equipment, actions, contractor (as an incident person). **Survival:** links survive versioning and archiving (128_qa19). **Training:** not built (J3). | **FAIL (training only) — Medium** |
+| 19 | Incident relationships | **Links work to:** risk assessment, RAMS, COSHH, equipment, actions, contractor (as an incident person). **Survival:** links survive versioning and archiving (128_qa19). **Training:** added by 130 — investigators see each person's training status on the incident date and record snapshotted findings; nothing is marked as a cause (probe 130, 30/30). | PASS |
 | 20 | Consultancy | **Authorised client (ABC):** full work, and records are owned by ABC with the consultant as the audited actor. **Unauthorised client (XYZ):** no access. **Revocation:** immediate (128_consultancy). **Two simultaneous grants:** switching between them was proven in Phase 1. | PASS |
 | 21 | Client access | **HSE manager and admin:** see everything. **Employee:** sees 0 others' incidents, 0 RIDDOR rows and 0 RAs, and cannot read injury detail (125, 128_qa). | PASS |
 | 22 | Storage attack | **Refused:** listing, writing, `../` traversal, registering, cross-record attach (128_qa). | PASS |
@@ -327,7 +327,7 @@ This QA was run as an independent pass: every result below comes from an execute
 | Incident retry after a lost reply created a duplicate | Medium | Fixed in QA |
 | RAMS could not link equipment in the UI | Medium | Fixed in QA |
 | Portal build broke: a client component imported a server-only module | High (build) | Fixed + boundary test |
-| No incident→training link | Medium | **Open** (J3) |
+| No incident→training link | Medium | Fixed (130) |
 | Mobile and live notifications not verified | Verification gap | **Open** (J1, J2) |
 
 **No Critical defect was found.**
@@ -345,6 +345,49 @@ None of the stop conditions holds:
 - evidence access secure;
 - no protected-system regression.
 
-The open items are one Medium functional gap (training link) and two verification gaps, which must be closed after deploy (J1, J2).
+The open items are two verification gaps, which must be closed after deploy (J1, J2). The one Medium functional gap (training link) was closed by migration 130 on 2026-09-28.
 
 **Phase 3 has not been started.**
+
+---
+
+## Addendum: incident → training link (spec 59, migration 130, 2026-09-28)
+
+**What an investigator gets.** For each person on an incident who is on the organisation's records, the incident page's "Training at the time" panel shows:
+- every training record held for that person;
+- each record's status **on the incident date**: in date, no expiry, expired, or completed after the incident.
+
+The investigator can record what was required, e.g. "Training required: Working at Height". The database then stores the finding, e.g. "Completed 20 Jul 2024 · expired 14 days before the incident".
+
+**Design:**
+- **The join already existed:** incident person → `employee_records.person_id` (from migration 118) → `training_records`. Nothing new was needed to connect the two.
+- **`incident_training_evidence(incident)`** is a SECURITY DEFINER function, deliberately narrow:
+  - it covers only the people on that incident;
+  - only `incident.investigate` or `incident.approve` holders acting in that organisation can call it;
+  - it returns course facts only, never notes;
+  - anyone else gets 42501.
+- **`incident_training_checks`** stores a **snapshot** of each finding, so a later edit to a training record cannot rewrite the evidence. Only two RPCs write it:
+  - both pass one gate: same organisation, `incident.investigate`, a writable session, and an open incident;
+  - there is no session write policy at all;
+  - checks are withdrawn with a reason, never deleted;
+  - every change is audited;
+  - the timeline records the course and finding, never the person's name.
+- **Nothing concludes causation.** No cause row is written, no category is set and the incident is not touched. The panel and the print both say that causation is the investigator's decision, recorded under Causes.
+- **External people are excluded.** Visitors and contractors named by hand have no record here, so a check on them is refused rather than shown as "not recorded".
+
+**Evidence:**
+
+| Check | Result |
+|---|---|
+| Live probe `supabase/probes/130_incident_training.sql`, run in a rolled-back transaction before apply | 30/30 PASS |
+| Applied function bodies md5-matched to the file | 5/5 |
+| `incidentTrainingSql.test.ts` | 10 tests |
+| `trainingFinding.test.ts` | 10 tests |
+| `safetyVocab.test.ts` pins the finding tuple against 130's CHECK | pass |
+| Mutations reintroduced and caught | 5: no `session_can_write`, a session insert policy, no capability gate, CHECK/tuple drift, a reversed day count |
+| Portal tests | 452 |
+| Admin tests | 1,052 |
+| tsc, all five CI guards, both production builds | clean |
+
+**Live data:** `employee_records` and `training_records` hold 0 rows today, so the panel will show real content once clients load their workforce and training.
+

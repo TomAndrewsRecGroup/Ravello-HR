@@ -5,8 +5,8 @@ import { ArrowLeft, Lock, Printer } from 'lucide-react';
 import { getSafetyContext, orgDirectory, orgSitesAndDepartments, nameOf, fmtDate, fmtDateTime } from '@/lib/hs/safetyContext';
 import { HS_INCIDENT_SEVERITY_LABELS, HS_INCIDENT_STATUS_LABELS, HS_INCIDENT_TYPE_LABELS } from '@/lib/hs/vocab';
 import {
-  ACTION_CLASS_LABELS, INCIDENT_IMMEDIATE_ACTION_LABELS, RIDDOR_REVIEW_STATUS_LABELS, docPath, hazardPath,
-  type ActionClass, type IncidentImmediateAction,
+  ACTION_CLASS_LABELS, INCIDENT_IMMEDIATE_ACTION_LABELS, INCIDENT_PERSON_ROLE_LABELS, RIDDOR_REVIEW_STATUS_LABELS, docPath, hazardPath,
+  humanise, type ActionClass, type IncidentImmediateAction, type IncidentPersonRole,
 } from '@/lib/hs/safetyVocab';
 import { ACTION_STATUS_LABELS } from '@/lib/ui/statusMaps';
 import Pill, { toneFor } from '@/components/safety/Pill';
@@ -17,8 +17,10 @@ import IncidentPeople from './IncidentPeople';
 import InvestigationPanel from './InvestigationPanel';
 import RiddorPanel from './RiddorPanel';
 import IncidentLinks, { type ResolvedLink } from './IncidentLinks';
+import IncidentTraining from './IncidentTraining';
 import type {
-  ActionRow, CauseRow, IncidentPersonRow, IncidentRow, InvestigationRow, Option, RiddorRow, SensitiveRow, TimelineRow, WhyRow,
+  ActionRow, CauseRow, IncidentPersonRow, IncidentRow, InvestigationRow, Option, RiddorRow, SensitiveRow, TimelineRow,
+  TrainingCheckRow, TrainingEvidenceRow, WhyRow,
 } from './types';
 
 export const metadata: Metadata = { title: 'Incident' };
@@ -95,7 +97,8 @@ export default async function IncidentPage(props: { params: Promise<{ id: string
   if (inc.linked_asset_id) byType.set('equipment', [...(byType.get('equipment') ?? []), inc.linked_asset_id]);
   const ids = (t: string) => byType.get(t) ?? [];
 
-  const [labelRes, tlRes, causeRes, whyRes, invFilesRes, invActRes, sensRes, eventsRes] = await Promise.all([
+  const onRecordIds = people.filter(p => p.person_id).map(p => p.id);
+  const [labelRes, tlRes, causeRes, whyRes, invFilesRes, invActRes, sensRes, eventsRes, trainEvRes, trainChkRes] = await Promise.all([
     Promise.all([
       ids('hazard').length ? supabase.from('hazards').select('id, reference, title').in('id', ids('hazard')).limit(200) : EMPTY,
       ids('risk_assessment').length ? supabase.from('risk_assessments').select('id, reference, version, title').in('id', ids('risk_assessment')).limit(200) : EMPTY,
@@ -112,6 +115,9 @@ export default async function IncidentPage(props: { params: Promise<{ id: string
       ? supabase.from('incident_person_sensitive').select('incident_person_id, contact_phone, contact_email, contact_address, body_parts, injury_types, treatment, first_aid_given, hospital_attendance, time_lost, days_lost, work_restriction, return_date, notes, recorded_by, updated_at').in('incident_person_id', people.map(p => p.id)).limit(200)
       : Promise.resolve({ data: null }),
     canRead ? supabase.from('hs_events').select('id, occurred_at, summary, actor_id').eq('company_id', companyId).in('entity_id', inv ? [id, inv.id] : [id]).order('occurred_at', { ascending: false }).limit(100) : EMPTY,
+    // Training evidence: investigators / approvers only, and only for people on the records (130).
+    (canInvestigate || canApprove) && onRecordIds.length ? supabase.rpc('incident_training_evidence', { p_incident: id }) : Promise.resolve({ data: null }),
+    canRead ? supabase.from('incident_training_checks').select('id, incident_person_id, course_name, completed_on, expires_on, status_at_incident, incident_date, note, checked_by, checked_at, withdrawn_at, withdrawn_by, withdrawn_reason').eq('incident_id', id).order('checked_at').limit(500) : EMPTY,
   ]);
 
   const labels = new Map<string, string>();
@@ -230,6 +236,18 @@ export default async function IncidentPage(props: { params: Promise<{ id: string
           <EvidencePanel companyId={companyId} entityType="investigation" entityId={inv.id} files={invFiles}
             canUpload={canInvestigate && open} sensitiveTypes={canSensitive} />
         </section>
+      )}
+
+      {canRead && people.length > 0 && (
+        <IncidentTraining incidentId={inc.id} dir={dir} canRecord={canInvestigate && open}
+          evidence={canInvestigate || canApprove ? ((trainEvRes.data ?? []) as TrainingEvidenceRow[]) : null}
+          evidenceFailed={'error' in trainEvRes && !!trainEvRes.error}
+          checks={(trainChkRes.data ?? []) as unknown as TrainingCheckRow[]}
+          people={people.map(p => ({
+            incidentPersonId: p.id, onRecord: !!p.person_id,
+            name: p.person_id ? personName(p.person_id) : p.external_name ?? '—',
+            role: INCIDENT_PERSON_ROLE_LABELS[p.role_in_incident as IncidentPersonRole] ?? humanise(p.role_in_incident),
+          }))} />
       )}
 
       {(riddor || canInvestigate || canRiddor) && (

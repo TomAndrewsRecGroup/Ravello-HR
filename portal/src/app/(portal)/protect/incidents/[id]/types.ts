@@ -1,5 +1,5 @@
 import type { HsIncidentSeverity, HsIncidentStatus, HsIncidentType } from '@/lib/hs/vocab';
-import type { InvestigationStatus, RiddorDecision, RiddorReviewStatus } from '@/lib/hs/safetyVocab';
+import type { InvestigationStatus, RiddorDecision, RiddorReviewStatus, TrainingFinding } from '@/lib/hs/safetyVocab';
 
 export interface IncidentRow {
   id: string; company_id: string; incident_number: string; incident_type: HsIncidentType; title: string | null; description: string;
@@ -51,3 +51,16 @@ export interface ActionRow {
 
 export interface Option { id: string; label: string }
 export interface Person { user_id: string; full_name: string }
+
+/** incident_training_evidence() — investigators only (130). */
+export interface TrainingEvidenceRow {
+  incident_person_id: string; person_id: string; training_record_id: string; course_name: string; provider: string | null;
+  completed_on: string; expires_on: string | null; status_at_incident: TrainingFinding; incident_date: string;
+}
+
+/** incident_training_checks — the investigator's recorded finding, a snapshot (130). */
+export interface TrainingCheckRow {
+  id: string; incident_person_id: string; course_name: string; completed_on: string | null; expires_on: string | null;
+  status_at_incident: TrainingFinding; incident_date: string; note: string | null; checked_by: string | null; checked_at: string;
+  withdrawn_at: string | null; withdrawn_by: string | null; withdrawn_reason: string | null;
+}

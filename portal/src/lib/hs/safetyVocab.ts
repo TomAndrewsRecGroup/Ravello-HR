@@ -1,9 +1,10 @@
 // Core-OS 360 Phase 2 — the operational H&S core's vocabularies, one
 // tuple per CHECK in migrations 123 (hazards, risk assessments), 124
-// (RAMS, COSHH) and 125 (incidents, investigations, RIDDOR, corrective
-// actions). safetyVocab.test.ts pins every tuple against the LATEST SQL
-// definition in both directions, so a value added on one side alone
-// fails the suite instead of 22P02-ing a save.
+// (RAMS, COSHH), 125 (incidents, investigations, RIDDOR, corrective
+// actions) and 130 (incident → training findings). safetyVocab.test.ts
+// pins every tuple against the LATEST SQL definition in both
+// directions, so a value added on one side alone fails the suite
+// instead of 22P02-ing a save.
 //
 // Byte-identical in admin and portal (scripts/check-shared-dupes.sh).
 // Hazard categories and assessment types are LOOKUP TABLES (org-
@@ -271,6 +272,17 @@ export const EFFECTIVENESS_OUTCOMES = ['effective', 'partially_effective', 'not_
 export type EffectivenessOutcome = typeof EFFECTIVENESS_OUTCOMES[number];
 export const EFFECTIVENESS_OUTCOME_LABELS = labels<EffectivenessOutcome>({
   effective: 'Effective', partially_effective: 'Partially effective', not_effective: 'Not effective',
+});
+
+/* ─── Incident → training (130) ───────────────────────────────── */
+// What a training record said ON THE INCIDENT DATE — a fact for the
+// investigator, never a cause. hs_training_status_at() decides it.
+
+export const TRAINING_FINDINGS = ['current', 'no_expiry', 'expired', 'completed_after', 'not_recorded'] as const;
+export type TrainingFinding = typeof TRAINING_FINDINGS[number];
+export const TRAINING_FINDING_LABELS = labels<TrainingFinding>({
+  current: 'In date', no_expiry: 'Completed, no expiry', expired: 'Expired',
+  completed_after: 'Completed after the incident', not_recorded: 'No completion on record',
 });
 
 /* ─── Where each record lives in the portal ───────────────────── */

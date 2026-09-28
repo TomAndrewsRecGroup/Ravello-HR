@@ -8,7 +8,8 @@ import { HS_INCIDENT_STATUSES, incidentNextStatuses } from '../vocab';
 // definition wins. A value on one side only fails here, not as a 22P02
 // on somebody's Save.
 const MIG = resolve(__dirname, '../../../../../supabase/migrations');
-const sql = ['123_hazards_risk_assessments.sql', '124_rams_coshh.sql', '125_incidents_investigations_riddor.sql']
+const sql = ['123_hazards_risk_assessments.sql', '124_rams_coshh.sql', '125_incidents_investigations_riddor.sql',
+  '130_incident_training_link.sql']
   .map(f => readFileSync(`${MIG}/${f}`, 'utf8')).join('\n');
 
 function listAfter(anchor: RegExp): string[] {
@@ -51,6 +52,7 @@ describe('Phase 2 vocabularies match the SQL CHECKs', () => {
     ['cause categories',       S.CAUSE_CATEGORIES,       /category\s+text NOT NULL CHECK \(category IN \(/],
     ['action classes',         S.ACTION_CLASSES,         /action_class IN \(/],
     ['effectiveness outcomes', S.EFFECTIVENESS_OUTCOMES, /effectiveness_outcome IN \(/],
+    ['training findings',      S.TRAINING_FINDINGS,      /status_at_incident IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect(sorted(tuple)).toEqual(sorted(listAfter(anchor)));
   });
@@ -103,6 +105,7 @@ describe('Phase 2 vocabularies match the SQL CHECKs', () => {
       [S.INVESTIGATION_STATUSES, S.INVESTIGATION_STATUS_LABELS], [S.CAUSE_LEVELS, S.CAUSE_LEVEL_LABELS],
       [S.CAUSE_CATEGORIES, S.CAUSE_CATEGORY_LABELS], [S.ACTION_CLASSES, S.ACTION_CLASS_LABELS],
       [S.EFFECTIVENESS_OUTCOMES, S.EFFECTIVENESS_OUTCOME_LABELS],
+      [S.TRAINING_FINDINGS, S.TRAINING_FINDING_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(sorted(Object.keys(labels))).toEqual(sorted(tuple));
   });
