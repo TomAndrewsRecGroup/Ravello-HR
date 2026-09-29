@@ -2,6 +2,7 @@
 // (scripts/check-shared-dupes.sh).
 
 import type {
+  ObservationSeverity, ObservationType,
   ReviewFrequency, ServiceLedgerEntryType, ServiceScopeStatus, ServiceType,
   VisitStatus, VisitTemplateCategory, VisitType,
 } from './vocab';
@@ -78,6 +79,23 @@ export interface ConsultancyServiceLedgerEntry {
   summary: string;
   source_type: string | null;
   source_id: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface VisitObservation {
+  id: string;
+  visit_id: string;
+  company_id: string;
+  location_section: string | null;
+  observation_type: ObservationType;
+  description: string;
+  severity: ObservationSeverity | null;
+  client_visible: boolean;
+  action_required: boolean;
+  linked_source_type: string | null;
+  linked_source_id: string | null;
+  resulting_action_id: string | null;
   created_by: string | null;
   created_at: string;
 }
