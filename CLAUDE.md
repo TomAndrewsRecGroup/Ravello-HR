@@ -8028,3 +8028,39 @@ against another.
   CI guards pass (unchanged across the board — no new table, no new
   route, no new write path), admin production build compiles.
 
+### Group 2 (no migration): UI
+
+A 27th `HsCompanyTabs.tsx` tab, `/health-safety/<companyId>/
+incident-patterns` (admin), plus a read-only `/protect/incident-
+patterns` (portal), gated by `protect` alone. `lib/incidentPatterns/
+analyze.ts` and a new `IncidentPatternsView.tsx` presentational
+component are both shared-dupe pairs (50 pairs, up from 48).
+
+- **A window picker (30/90/365 days) is a plain `?days=` searchParams
+  re-render**, the exact pattern the Safety Timeline page's own
+  pagination already uses — no client-side fetch needed for a filter
+  this simple, unlike Phase 9's date-picker tab, which genuinely
+  needed its own re-fetch shape for a different reason (a per-day
+  slice with no natural "prev page" URL semantics).
+- **Every read is under the caller's own session RLS, no service role
+  anywhere** — `hs_incidents`/`incident_investigations`/
+  `incident_causes`/`hs_sites`/`departments` are all already readable
+  by a `client_admin`-shaped session holding `incident.read`, the same
+  capability that already gates the existing Incidents tab. Checked
+  live against the actual policies before writing either page, not
+  assumed from table name alone.
+- **`IncidentPatternsView.tsx` needs no `'use client'`** — a window
+  picker made of plain `<Link>` navigation has no interactivity to
+  manage client-side, so the ONE presentational component serves both
+  apps' server components directly, mirrored byte-identical.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1481 admin, unchanged — this group is UI-only; 707 portal — 705 +
+  2, the two sweep tests picking up the new route), all five CI
+  guards pass (50 shared-dupe pairs, up from 48; row-cap clean; 44
+  unvalidated routes, unchanged; 42 static admin routes, all
+  reachable — the new admin route nests under the already-linked
+  `/health-safety` prefix; 102 blind-update chains, unchanged — this
+  group writes nothing, read-only throughout), both production
+  builds compile, including `/health-safety/<companyId>/incident-
+  patterns` and `/protect/incident-patterns`.
+

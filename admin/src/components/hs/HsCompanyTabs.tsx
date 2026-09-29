@@ -8,6 +8,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'activities', label: 'Activities' },
   { seg: 'audits',     label: 'Audits' },
   { seg: 'incidents',  label: 'Incidents' },
+  { seg: 'incident-patterns', label: 'Incident Patterns' },
   { seg: 'equipment',  label: 'Equipment' },
   { seg: 'contractors', label: 'Contractors' },
   { seg: 'permits',    label: 'Permits' },
