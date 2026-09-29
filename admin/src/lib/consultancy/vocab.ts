@@ -107,3 +107,28 @@ export const SERVICE_LEDGER_ENTRY_TYPE_LABELS: Record<ServiceLedgerEntryType, st
   management_review_support:   'Management review support',
   manual:                      'Manual entry',
 };
+
+// Migration 174 (Phase 7, Group 3): visit_observations.observation_type
+// / .severity — structured findings captured during a mobile/tablet
+// visit. immediate_danger escalates synchronously regardless of what
+// severity is set to (visit_observation_escalate(), not this vocabulary).
+export const OBSERVATION_TYPES = [
+  'positive', 'observation', 'improvement', 'nonconformance', 'immediate_danger',
+] as const;
+export type ObservationType = typeof OBSERVATION_TYPES[number];
+export const OBSERVATION_TYPE_LABELS: Record<ObservationType, string> = {
+  positive:         'Positive finding',
+  observation:      'Observation',
+  improvement:      'Improvement opportunity',
+  nonconformance:   'Nonconformance',
+  immediate_danger: 'Immediate danger',
+};
+
+export const OBSERVATION_SEVERITIES = ['minor', 'moderate', 'major', 'critical'] as const;
+export type ObservationSeverity = typeof OBSERVATION_SEVERITIES[number];
+export const OBSERVATION_SEVERITY_LABELS: Record<ObservationSeverity, string> = {
+  minor:    'Minor',
+  moderate: 'Moderate',
+  major:    'Major',
+  critical: 'Critical',
+};

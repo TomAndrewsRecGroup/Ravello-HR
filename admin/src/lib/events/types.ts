@@ -104,6 +104,12 @@ export const TRIGGERED_ENTITIES = [
   'consultancy_visits',
   'reports',
   'training_records',
+  // Core-OS 360 Phase 7, Group 3 (174): a structured finding captured
+  // during a visit. The synchronous immediate-danger escalation
+  // (visit_observation_escalate()) already raises its own action at
+  // INSERT time — this outbox entry is for an eventual notification
+  // alongside that, never instead of it.
+  'visit_observations',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

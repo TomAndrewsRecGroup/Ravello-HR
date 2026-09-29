@@ -7057,3 +7057,154 @@ rather than trusted from the apply call's own success response.
 may begin** — it explicitly EXTENDS `consultancy_visits` (168's own
 documented plan), never replaces it.
 
+---
+
+## Core-OS 360 Phase 7: Consultant Visit Mode & Automated Site-Visit
+## Reporting (in progress, from migration 173 onward)
+
+Same discipline as every phase since Phase 4: logical, independently
+verified groups — migration → apply live → live rolled-back probe →
+SQL-shape test → TS/UI work → `tsc`/`vitest`/CI guards/builds clean →
+commit → PR → merge → next group. One visit, one page across its whole
+lifecycle (`consultancy/clients/[id]/visits/[visitId]/page.tsx`) rather
+than a page per stage — each group adds a section to the SAME page.
+
+### Group 1 (migration 173): the visit entity, extended in place
+
+`consultancy_visits` (168's own deliberately-minimal table) gains the
+full lifecycle: `previous_visit_id` (same-client only, guarded by
+`consultancy_visit_previous_guard()` — a legitimate cross-CLIENT
+reference inside the SAME consultancy's portfolio is refused, not just
+an unrelated stranger org), `started_at`/`ended_at`, `scope`,
+`client_attendees`, `internal_notes`/`shared_summary` (the visibility
+split Group 2's brief and Group 6's future report both key off),
+`template_id`. `status` widens from 168's 3 values to the full
+8-value lifecycle (`planned → confirmed → in_progress →
+awaiting_report → report_draft → report_issued → closed`, plus
+`cancelled`) — 0 live rows existed, so the CHECK was tightened
+directly. New `consultancy_visit_templates`/`consultancy_visit_
+template_items` (a template + its checklist items), portfolio-wide RLS
+(`my_home_company_id()`, never `my_company_id()`), gated on
+`consultancy.service_manage` — the same capability every Phase 6 write
+already uses, not a new one.
+
+### Group 2 (no new migration): Pre-Visit Brief + template instantiation
+
+`buildPreVisitBrief()`/`loadPreVisitBrief()` (portal) reuse the
+EXISTING `buildAttentionQueue()` output filtered to one client, rather
+than re-deriving the same open-items facts a second time — the
+standing "never a second source of the same fact" rule. `POST
+/api/consultancy/clients/[id]/visits` books a visit: `previous_
+visit_id` is resolved SERVER-SIDE from the client's own most recent
+closed/report_issued visit (never taken from the request — a client
+could otherwise be pointed at another client's visit, which the
+migration 173 guard would refuse anyway, but there's no reason to make
+the caller get this right when the server already knows), and a given
+`template_id` is verified by reading it under the caller's OWN RLS
+session first, never trusted from the body. `/consultancy/templates`
+is a direct-session-write CRUD page for templates/items, the same
+"session insert under RLS" pattern `DocumentsClient.tsx`/
+`EquipmentClient.tsx` already use for staff-side register writes.
+
+### Group 3 (migration 174): structured observations + mobile capture
+
+Section 5 (Structured Observations) and section 4 (Mobile/Tablet Visit
+Mode) of the Phase 7 spec, built together because the capture UI is
+where an observation is actually created.
+
+- **`visit_observations`**: `observation_type` (`positive |
+  observation | improvement | nonconformance | immediate_danger`),
+  optional `severity` (`minor | moderate | major | critical`),
+  `client_visible` (default true — a client sees a finding unless
+  explicitly marked internal-only), `action_required`, and a
+  polymorphic `linked_source_type`/`linked_source_id` (an asset,
+  contractor, person or document this observation is ABOUT) — the same
+  `(source_type, source_id)` shape `requirement_evidence_links` (163)
+  already established for exactly this "link to one of several kinds
+  of existing record" need.
+- **`company_id` is derived from the visit, never trusted from the
+  caller** (`visit_observation_fill()`, BEFORE INSERT, SECURITY
+  DEFINER) — the same "derived, not asked" discipline
+  `hs_audit_response_fill()`/`hs_completion_fill()` already use.
+- **The Phase 7 QA command's own named attack — "attempt to attach
+  Client B asset/document/person during Client A visit" — is refused
+  in that same trigger**, via `hs_entity_company()`/`hs_entity_table()`
+  (both gain a `'visit_observation'` branch, additive to every prior
+  branch — a regression test pins four pre-existing branches survive
+  unchanged). A linked record naming a DIFFERENT company than the
+  visit's own client raises `42501`. Proved live
+  (`supabase/probes/174_visit_observations_mobile_capture.sql`, 11/11):
+  a Client B asset is refused, a same-client asset accepted.
+- **Immediate-danger findings escalate SYNCHRONOUSLY, inside the same
+  INSERT** (`visit_observation_escalate()`, AFTER INSERT) — the exact
+  discipline `hs_quarantine_asset()` (146) / LOLER immediate danger
+  (149) already established: a safety-critical consequence cannot wait
+  for the five-minute `platform_events` consumer. Never gated on
+  `action_required` — an immediate-danger observation escalates
+  REGARDLESS of what that flag says, the same defence-in-depth
+  `hs_submit_inspection()` already applies to its own callers. Raises
+  one urgent/critical, `verification_required` action
+  (`source_type = 'consultant_visit'`, already a valid CHECK value
+  since Phase 4) and stamps `resulting_action_id` on the observation.
+  A non-immediate-danger observation creates no action. `visit_
+  observations` also joins `TRIGGERED_ENTITIES` for an EVENTUAL
+  notification alongside (never instead of) the synchronous action.
+- **Portfolio-wide RLS, keyed on the VISIT's own client** (the exact
+  Phase 6 pattern: `consultancy_organisation_id = my_home_company_id()
+  AND has_capability(v.client_organisation_id, 'consultancy.service_
+  manage')`, resolved via an `EXISTS` against `consultancy_visits` —
+  never `my_company_id()`). A client read policy shows only
+  `client_visible = true` rows — nothing here is self-certified, and
+  an internal-only note is never shown to the client it's about.
+- **The single-tenant vs. portfolio-wide tension in the pre-existing
+  H&S evidence infrastructure, found and resolved here.**
+  `hs_evidence_readable()`/`hs_evidence_writable()`/the `hs_files`
+  RLS/the `hs-evidence` storage bucket policies all gate on
+  `company_id = my_company_id()` — the ACTIVE org, which a
+  portfolio-wide consultant who never switches into the client will
+  never satisfy. Resolved by ADDING two new, narrowly-scoped `hs_files`
+  policies and one new storage policy, all scoped to `entity_type =
+  'visit_observation'` only — never modifying `hs_files_client_read`/
+  `hs_files_client_insert` or the shared evidence functions used by 20+
+  other entity types. RLS ORs permissive policies, so this is purely
+  additive; a regression check (probe check 9) confirms a pre-existing
+  entity type (`equipment`) is still refused cross-organisation exactly
+  as before.
+- **Capture is insert-as-you-go, not a batch submit** — unlike
+  `hs_audits`' one atomic `hs_submit_audit()`, each observation is its
+  own session insert the moment the form is submitted, because a visit
+  can run for hours and a consultant should never lose observations 1
+  through 9 waiting to submit number 10. "Offline-tolerant" here means
+  precisely: the observation CURRENTLY being typed survives a dropped
+  connection, reload or closed tab (localStorage, keyed per visit,
+  wrapped in try/catch per this codebase's own browser-storage
+  discipline) — not a full background-sync queue of unsent rows. A
+  submit made with genuinely no connection simply fails and stays in
+  the draft.
+  `VisitCaptureClient.tsx` also carries the visit's own start/finish
+  controls (`planned/confirmed → in_progress`, stamping `started_at`;
+  `in_progress → awaiting_report`, stamping `ended_at`) as ordinary
+  `COUNT_EXACT`/`judgeWrite()` updates — 173 deliberately left
+  `consultancy_visits.status` with no lifecycle GUARD trigger (unlike
+  permits/isolations), so any authorised session may move between any
+  two listed values; the UI is what keeps the sequence sane for now.
+- **Evidence photos** reuse the existing `uploadEvidence()`/
+  `evidenceUrl()` helpers verbatim (`entity_type: 'visit_observation'`)
+  — no new upload path, no new signing logic.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1414 admin — 14 new `visitObservationsSql.test.ts` cases; 690
+  portal, unchanged — this group's portal work is UI/loader code with
+  no new portal test file, covered by the existing
+  `clientServerBoundary.test.ts`/`portalPagesLinked.test.ts` sweeps
+  picking up the new component and route automatically), all five CI
+  guards pass (46 shared-dupe pairs, unchanged; row-cap clean; 44
+  unvalidated routes, unchanged; 42 static admin routes, all reachable;
+  102 blind-update chains, unchanged), both production builds compile.
+  Migration 174 applied live and verified (11/11 probe checks —
+  the first run caught a probe-setup gap, not a migration defect: a
+  randomly-picked second real `auth.users` row was already staff,
+  which needed an explicit non-staff role before it could actually
+  exercise the portfolio RLS policy under test).
+
+**Group 4 (Universal Actions integration) has not been started.**
+

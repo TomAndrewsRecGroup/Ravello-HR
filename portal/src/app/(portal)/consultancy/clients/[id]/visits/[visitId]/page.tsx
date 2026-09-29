@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 import { loadPreVisitBrief } from '@/lib/consultancy/loadPreVisitBrief';
+import { loadVisitCapture } from '@/lib/consultancy/loadVisitCapture';
 import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyVisit } from '@/lib/consultancy/types';
+import VisitCaptureClient from './VisitCaptureClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +17,14 @@ export async function generateMetadata({ params }: { params: Promise<{ visitId: 
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
-// Core-OS 360 Phase 7, Group 2 (section 2: Pre-Visit Brief). For a
-// visit that has not yet started (planned/confirmed), this page IS
-// the brief — "understand current context" before arriving on site.
-// Group 3 extends this same page with the mobile capture UI once
-// status reaches in_progress; Group 5 extends it again with the
-// report builder — one visit, one page, not a page per lifecycle
-// stage.
+// Core-OS 360 Phase 7. For a visit that has not yet started
+// (planned/confirmed), this page IS the brief (Group 2, section 2:
+// Pre-Visit Brief) — "understand current context" before arriving on
+// site. Group 3 (section 4/5: Mobile/Tablet Visit Mode, Structured
+// Observations) adds VisitCaptureClient, which takes over as the
+// primary interaction once status reaches in_progress. Group 5 will
+// extend this same page again with the report builder — one visit,
+// one page, not a page per lifecycle stage.
 export default async function VisitDetailPage({ params }: { params: Promise<{ id: string; visitId: string }> }) {
   const { id, visitId } = await params;
   const portfolio = await requirePortfolioSession();
@@ -34,7 +37,10 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
   const v = visit as ConsultancyVisit;
 
   const org = portfolio.organisations.find(o => o.organisation_id === id)!;
-  const brief = await loadPreVisitBrief(portfolio, id, visitId);
+  const [brief, capture] = await Promise.all([
+    loadPreVisitBrief(portfolio, id, visitId),
+    loadVisitCapture(id, visitId, v.template_id),
+  ]);
 
   return (
     <main className="portal-page flex-1 space-y-4">
@@ -49,6 +55,21 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
         </div>
         <Link href={`/consultancy/clients/${id}`} className="btn-secondary btn-sm">Back to Client 360</Link>
       </div>
+
+      {v.status !== 'cancelled' && (
+        <VisitCaptureClient
+          visitId={visitId}
+          clientOrganisationId={id}
+          status={v.status}
+          observations={capture.observations}
+          evidenceByObservation={capture.evidenceByObservation}
+          templateItems={capture.templateItems}
+          linkableAssets={capture.linkableAssets}
+          linkableContractors={capture.linkableContractors}
+          linkablePeople={capture.linkablePeople}
+          linkableDocuments={capture.linkableDocuments}
+        />
+      )}
 
       <section className="card p-4 space-y-3">
         <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Pre-visit brief</h2>
