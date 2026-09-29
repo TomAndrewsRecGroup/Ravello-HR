@@ -264,3 +264,13 @@ describe('assembleComplianceTwin', () => {
     });
   });
 });
+
+describe('adversarial: no redundant reasons within one area', () => {
+  it('reports the evidence coverage fact ONCE, not a duplicate red+amber pair, when below the red threshold', () => {
+    const input = baseInput();
+    input.evidence.coveragePercent = 30; // below both the 50% red and 90% amber thresholds
+    const a = areaOf(assembleComplianceTwin(input), 'evidence');
+    expect(a.band).toBe('red');
+    expect(a.reasons).toHaveLength(1);
+  });
+});
