@@ -42,6 +42,11 @@ export const CAPABILITIES = [
   'asset.read', 'asset.manage', 'inspection.perform',
   // Phase 5 (migration 156): environmental aspects & impacts.
   'environmental.read', 'environmental.manage',
+  // Phase 6 (migration 167): consultancy portfolio command centre —
+  // service scope, visits and the service ledger for an authorised
+  // client. Distinct from consultancy.manage_access, which governs WHO
+  // has access, not managing delivery for a client already granted.
+  'consultancy.service_manage',
 ] as const;
 export type Capability = typeof CAPABILITIES[number];
 
@@ -138,12 +143,14 @@ export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
     'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
     'risk.read', 'risk.create', 'risk.approve', 'incident.create', 'incident.investigate', 'actions.assign',
     'contractors.manage', 'documents.manage', 'training.manage', 'billing.read', 'consultancy.client_access',
-    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
+    'consultancy.manage_access', 'consultancy.service_manage', 'broadcast.send', 'audit.read',
+    ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
   ],
   consultant: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', 'consultancy.client_access', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
+    'training.manage', 'consultancy.client_access', 'consultancy.service_manage',
+    ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
   ],
   organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ENV_ALL],
   organisation_admin: [...ORG_ADMIN, ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ENV_ALL],
