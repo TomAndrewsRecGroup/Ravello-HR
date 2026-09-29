@@ -8,8 +8,10 @@ export const metadata: Metadata = { title: 'Open workspace' };
 export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// Only a same-app PROTECT path: never an absolute URL (open redirect).
-const SAFE_NEXT = /^\/protect(\/[A-Za-z0-9\-/]*)?$/;
+// Only a same-app path under one of these prefixes: never an absolute
+// URL (open redirect). Widened for Core-OS 360 Phase 6's Attention
+// Queue/Client 360, whose items span every pillar, not just PROTECT.
+const SAFE_NEXT = /^\/(protect|lead|hire|support|dashboard)(\/[A-Za-z0-9\-/]*)?$/;
 
 // Entry point for the admin app's "Open safety workspace" link. Switching
 // organisation is a state change, so it happens on a button (a POST to
