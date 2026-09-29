@@ -38,6 +38,7 @@ const TABS = [
   { href: '/protect/timeline',         label: 'Timeline' },
   { href: '/protect/risk-graph',       label: 'Risk Graph' },
   { href: '/protect/incident-patterns', label: 'Incident Patterns' },
+  { href: '/protect/evidence',         label: 'Evidence' },
   { href: '/protect/analysis',         label: 'Analysis' },
   { href: '/protect/reports',          label: 'Reports' },
 ];
