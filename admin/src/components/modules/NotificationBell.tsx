@@ -96,6 +96,8 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   environmental_monitoring_exceedance: { icon: ShieldCheck, color: 'var(--amber)' },
   environmental_permit_status_changed: { icon: ShieldCheck, color: 'var(--amber)' },
   environmental_permit_condition_review: { icon: ShieldCheck, color: 'var(--amber)' },
+  iso_certification_expiring: { icon: FileText, color: 'var(--amber)' },
+  iso_certification_expired:  { icon: FileText, color: 'var(--danger)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
   onboarding_started:         { icon: Users,         color: 'var(--blue)' },

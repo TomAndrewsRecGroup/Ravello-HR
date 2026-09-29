@@ -377,6 +377,31 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+    // certificate's own recorded expiry — never a computed compliance
+    // conclusion. The reminder payload never carries an embed
+    // (slimRow() strips it), so the standard's name is looked up here,
+    // the same way training_record_reminder resolves an employee name.
+    id: 'iso_certification_reminder',
+    on: 'iso_certifications.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const expired = bucket === 'overdue';
+      let standardName = 'An ISO certification';
+      const standardId = s(row.standard_id);
+      if (standardId) {
+        const { data } = await sb.from('management_system_standards').select('name').eq('id', standardId).maybeSingle();
+        standardName = (data as { name?: string } | null)?.name ?? standardName;
+      }
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: expired ? 'iso_certification_expired' : 'iso_certification_expiring',
+        title: `${standardName} certificate ${s(row.certificate_number, '')} ${expired ? `expired on ${due_date}` : `expires ${due_date}`}`.replace(/\s+/g, ' ').trim(),
+        link:  { admin: `/health-safety/${event.company_id}/iso`, portal: '/protect/iso-readiness' },
+      })];
+    },
+  },
+  {
     id: 'hs_equipment_reminder',
     on: 'hs_equipment.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },

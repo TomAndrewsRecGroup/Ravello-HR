@@ -456,3 +456,45 @@ export const PERMIT_CONDITION_STATUS_LABELS: Record<PermitConditionStatus, strin
   breach_recorded: 'Breach recorded',
   review_required: 'Review required',
 };
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): the shared ISO 45001/
+// 14001 management-system framework. management_system_standards.code
+// is seeded, not CHECK-constrained (deliberately extensible to a third
+// standard later) — this tuple pins the two rows migration 158 seeds;
+// vocab.test.ts parses the INSERT and pins it against 158's SQL.
+export const ISO_STANDARD_CODES = ['iso_45001_2018', 'iso_14001_2015'] as const;
+export type IsoStandardCode = typeof ISO_STANDARD_CODES[number];
+export const ISO_STANDARD_CODE_LABELS: Record<IsoStandardCode, string> = {
+  iso_45001_2018: 'ISO 45001:2018',
+  iso_14001_2015: 'ISO 14001:2015',
+};
+
+// A short menu of what kind of EXISTING record a piece of evidence can
+// be — the hs_entity_table() keys this platform already has evidence
+// for. Not exhaustive of every hs_entity_table() key (a certification
+// or an action makes an odd "evidence for a clause" choice) — this is
+// the practical subset the "add evidence" form offers, and the ones
+// this migration's own seeded clauses use as a maps_to_hint.
+export const STANDARD_EVIDENCE_ENTITY_TYPES = [
+  'document', 'risk_assessment', 'hazard', 'compliance_item', 'training_record',
+  'audit', 'inspection', 'incident', 'contractor', 'equipment', 'action',
+  'environmental_aspect', 'environmental_permit', 'environmental_monitoring', 'waste_movement',
+] as const;
+export type StandardEvidenceEntityType = typeof STANDARD_EVIDENCE_ENTITY_TYPES[number];
+export const STANDARD_EVIDENCE_ENTITY_TYPE_LABELS: Record<StandardEvidenceEntityType, string> = {
+  document:                    'Document',
+  risk_assessment:              'Risk assessment',
+  hazard:                       'Hazard',
+  compliance_item:              'Register item',
+  training_record:              'Training record',
+  audit:                        'Audit',
+  inspection:                   'Inspection',
+  incident:                     'Incident',
+  contractor:                   'Contractor',
+  equipment:                    'Asset / equipment',
+  action:                       'Action',
+  environmental_aspect:         'Environmental aspect',
+  environmental_permit:         'Environmental permit',
+  environmental_monitoring:     'Environmental monitoring reading',
+  waste_movement:               'Waste movement',
+};

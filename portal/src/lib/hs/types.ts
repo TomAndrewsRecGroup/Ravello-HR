@@ -10,6 +10,7 @@ import type {
   EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
   EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
   EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
+  IsoStandardCode, StandardEvidenceEntityType,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -516,6 +517,49 @@ export interface PermitCondition {
   next_review_due: string | null;
   status: PermitConditionStatus;
   last_evidence_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): the shared ISO 45001/
+// 14001 management-system framework.
+
+export interface ManagementSystemStandard {
+  id: string;
+  code: IsoStandardCode;
+  name: string;
+  created_at: string;
+}
+
+export interface StandardClause {
+  id: string;
+  standard_id: string;
+  clause_number: string;
+  title: string;
+  maps_to_hint: StandardEvidenceEntityType | string | null;
+  display_order: number;
+  created_at: string;
+}
+
+export interface StandardEvidenceLink {
+  id: string;
+  company_id: string;
+  clause_id: string;
+  entity_type: string;
+  entity_id: string;
+  added_by: string | null;
+  created_at: string;
+}
+
+export interface IsoCertification {
+  id: string;
+  company_id: string;
+  standard_id: string;
+  certificate_number: string | null;
+  certifying_body: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

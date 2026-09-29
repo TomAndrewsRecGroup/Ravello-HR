@@ -84,6 +84,8 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   environmental_monitoring_exceedance: { Icon: ShieldCheck, color: 'var(--amber)' },
   environmental_permit_status_changed: { Icon: ShieldCheck, color: 'var(--amber)' },
   environmental_permit_condition_review: { Icon: ShieldCheck, color: 'var(--amber)' },
+  iso_certification_expiring: { Icon: FileText, color: 'var(--amber)' },
+  iso_certification_expired:  { Icon: FileText, color: 'var(--danger)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

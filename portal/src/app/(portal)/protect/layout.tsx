@@ -26,6 +26,7 @@ const TABS = [
   { href: '/protect/environmental-waste', label: 'Waste' },
   { href: '/protect/environmental-monitoring', label: 'Monitoring' },
   { href: '/protect/environmental-permits', label: 'Env. Permits' },
+  { href: '/protect/iso-readiness',    label: 'ISO Readiness' },
   { href: '/protect/documents',        label: 'Documents' },
   { href: '/protect/tests',            label: 'Tests' },
   { href: '/protect/timeline',         label: 'Timeline' },

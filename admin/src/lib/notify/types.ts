@@ -92,6 +92,11 @@ export const NOTIFICATION_TYPES = [
   'environmental_monitoring_exceedance',
   'environmental_permit_status_changed',
   'environmental_permit_condition_review',
+  // Core-OS 360 Phase 5 Group 3 (158): shared ISO 45001/14001
+  // management-system framework. Never "compliant"/"certified" — a
+  // real user-entered certificate's own recorded expiry.
+  'iso_certification_expiring',
+  'iso_certification_expired',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -224,6 +229,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   environmental_monitoring_exceedance: 'Environmental monitoring exceedance',
   environmental_permit_status_changed: 'Environmental permit status changed',
   environmental_permit_condition_review: 'Environmental permit condition needs review',
+  iso_certification_expiring: 'ISO certification expiring',
+  iso_certification_expired:  'ISO certification expired',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

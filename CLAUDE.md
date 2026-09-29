@@ -5545,3 +5545,137 @@ waste,environmental-monitoring,environmental-permits}`) and the four
 new portal routes (`/protect/environmental-{spills,waste,monitoring,
 permits}`). Migration 157 applied live and verified.
 
+### Core-OS 360 Phase 5, Group 3: a shared ISO 45001/14001 management-
+### system framework + a purely factual readiness dashboard (2026-09-29,
+### migration 158)
+
+Builds on Groups 1-2 (156-157) per the governance map. This group is
+the framework Phase 5's spec calls for: ONE shared clause taxonomy
+behind both ISO 45001 (H&S) and ISO 14001 (Environmental), a bare
+polymorphic link into evidence this platform already has, and a
+readiness view that is counts only — the Evidence Engine itself is
+explicitly NOT built here, only its foundation.
+
+- **One shared framework, never two.** `management_system_standards`
+  (two rows: ISO 45001:2018, ISO 14001:2015 — the `code` column is
+  format-checked, not value-restricted, so a third standard can be
+  seeded later with no migration to the shape) and ONE
+  `standard_clauses` table, joined by `standard_id`, holding both
+  standards' clauses. There is no `iso45001_clauses`/`iso14001_clauses`
+  pair to keep in step — a later group adding a third standard inserts
+  rows, not tables.
+- **No copyrighted text, anywhere.** Every `clause_number`/`title` is a
+  short (<=200 char), hand-written, one-sentence paraphrase this
+  migration's own seed writes — never the ISO document's actual
+  wording. 12 clauses per standard, covering the well-known top-level
+  structure (Context, Leadership, Planning, Support, Operation,
+  Performance Evaluation, Improvement) plus each standard's own
+  distinguishing sub-clauses (Hazard ID for 45001; Environmental
+  Aspects, Compliance Obligations, Emergency Preparedness for 14001).
+- **`standard_evidence_links` is the Evidence Engine's FOUNDATION, not
+  the Evidence Engine.** A bare `(entity_type, entity_id)` polymorphic
+  reference into EXISTING evidence, reusing `hs_entity_table()`/
+  `hs_entity_company()` (122) for the cross-organisation check —
+  exactly the pattern the task brief named, and never a new copy of the
+  evidence. `hs_entity_table()` gained one real gap-fill,
+  `'compliance_item' → 'compliance_items'` (the HR/H&S register was
+  never mapped despite being an obvious evidence source), plus
+  `'iso_certification' → 'iso_certifications'` for the new table's own
+  evidence. `standard_evidence_links_fill()` refuses an unknown
+  `entity_type` and a link naming another organisation's record — both
+  proved live in the rolled-back probe.
+- **Readiness is COUNTS ONLY, computed in TypeScript at read time —
+  never a stored score, never a percentage.** Both the admin cross-
+  client `/health-safety/iso-readiness` page and the per-client
+  `/health-safety/<companyId>/iso` tab / portal `/protect/iso-readiness`
+  page compute "clauses total / with evidence / without" directly from
+  `standard_clauses` + `standard_evidence_links` — the exact
+  `lib/hs/kpis.ts`/`lib/health/scoring.ts` posture ("no stored aggregate
+  that can drift out of sync with the rows it summarises"), applied
+  here to the one number this phase is most tempted to fake. The
+  dashboard's own copy says "Recorded evidence mapped to applicable
+  management-system requirements" — never "compliant" or "certified".
+- **`iso_certifications` is the ONE place a real certificate may be
+  recorded**, and the only thing anywhere in this subsystem that may
+  ever be read as "this client holds a certification" — a real,
+  user-entered fact (certificate number, certifying body, issued/
+  expires dates), never a computed conclusion from the evidence links.
+  It is mutable (a renewal updates the row in place), the same
+  "ongoing state with one current expiry" shape `contractor_insurances`
+  (150) already established — deliberately NOT the register's
+  "correction is a new row" discipline, because a certificate has one
+  current expiry, not a history of them.
+- **RLS deliberately deviates from the hs_sector_packs/hs_audit_templates
+  precedent for `management_system_standards`/`standard_clauses`,
+  documented as a decision, not an oversight.** Those two are staff-
+  authored reference data a client never browses directly (they only
+  ever see the MATERIALISED result after staff apply a pack to their
+  register). The UI spec here explicitly needs a client to read the
+  clause catalogue itself, so this follows `inspection_templates'`
+  (145) precedent instead: staff `ALL`, any signed-in user with
+  `risk.read` may `SELECT` the catalogue, no client write path at all.
+  `standard_evidence_links`/`iso_certifications` are the ordinary
+  per-company client-read (`risk.read`) + client-write (`risk.create`)
+  shape.
+- **No new capability seeded.** `risk.read`/`risk.create` — the
+  broadest existing "can see/add to the H&S register" pair — already
+  span both standards: every `environmental.manage` role already holds
+  `risk.create` too (checked against 156's `ENV_ALL` role list before
+  relying on it), so ISO 14001 evidence is never gated on a capability
+  an environmental-only role lacks.
+- **`iso_certifications` joins `REMINDER_ENTITIES`** for its own
+  `expires_on` (`due_30`/`due_7`/`overdue`, new notification types
+  `iso_certification_expiring`/`iso_certification_expired`, both
+  bells). The reminder payload never carries an embed (`slimRow()`
+  strips it), so the standard's name is looked up in the consuming
+  rule, the same way `training_record_reminder` resolves an employee
+  name by id. No `TRIGGERED_ENTITIES` entry — recording a certificate
+  or a link has no consequence worth an immediate outbox event, only
+  the eventual expiry reminder.
+
+### Live probe
+
+`supabase/probes/158_iso_framework.sql`, rolled back: 13 checks — two
+standards seeded; each has 8-12 clauses; `hs_entity_table()` resolves
+`'compliance_item'`/`'iso_certification'`; a cross-organisation
+evidence link (naming another company's `compliance_items` row) is
+refused; a same-organisation link is accepted; an unknown
+`entity_type` is refused; a certification inserts and updates
+(renewal) in place; no clause or standard title contains "compliant"/
+"certified"; RLS is on for all four new tables; the write guard
+(`write_guard_ins/upd/del`) is present on both client-writable tables;
+neither new `SECURITY DEFINER` function is executable by `anon`;
+`standard_evidence_links` has a `UNIQUE` constraint; both new tables
+carry an audit trigger. **All 13 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1173 admin —
+1157 + 16 new: 12 `isoFrameworkSql.test.ts` + 4 new `vocab.test.ts`
+cases pinning `ISO_STANDARD_CODES` against 158's seed, the extensible-
+code CHECK, every seeded clause's `maps_to_hint` against a real
+`hs_entity_table()` key, and the no-compliance-claim-string check;
+`STANDARD_EVIDENCE_ENTITY_TYPES` gained `'action'` to cover the one
+seeded clause (`8.2`, emergency preparedness) that hints at it; 614
+portal — 612 + 2, `moduleAccess.test.ts`/`portalPagesLinked.test.ts`
+picking up `/protect/iso-readiness` automatically), all five CI guards
+pass with no regressions (`check-shared-dupes.sh`: 43 pairs, unchanged
+— vocab.ts/types.ts/notify/types.ts stayed byte-identical across both
+mirrors; `check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 67 pages, all reachable —
+the two new admin pages (`iso-readiness` cross-client, the per-company
+`iso` tab) both nest under the already-linked `/health-safety` prefix,
+no sidebar entry needed; `check-blind-updates.sh`: 102, unchanged —
+this group made no `.update()` writes from a client component, only
+inserts and one delete), both production builds compile, including
+`/health-safety/iso-readiness`, `/health-safety/<companyId>/iso` and
+`/protect/iso-readiness`. Migration 158 applied live and verified (RLS
+on, write guard applied, both capabilities-gated read policies in
+place, evidence vocab resolves, no Group 3 `SECURITY DEFINER` function
+executable by `anon`).
+
+**Later Phase 5 groups** (the legal register, document control,
+objectives & targets, management review, audit-engine enhancement,
+final QA) build on migration 158 onward and should read the governance
+map first.
+

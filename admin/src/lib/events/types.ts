@@ -127,6 +127,9 @@ export const REMINDER_ENTITIES = [
   // expiry and a permit condition's next review date.
   'environmental_permits',
   'permit_conditions',
+  // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+  // certificate's own recorded expiry.
+  'iso_certifications',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

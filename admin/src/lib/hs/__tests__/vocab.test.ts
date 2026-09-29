@@ -162,6 +162,8 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.ENVIRONMENTAL_MONITORING_CATEGORIES, V.ENVIRONMENTAL_MONITORING_CATEGORY_LABELS],
       [V.ENVIRONMENTAL_PERMIT_STATUSES, V.ENVIRONMENTAL_PERMIT_STATUS_LABELS],
       [V.PERMIT_CONDITION_STATUSES, V.PERMIT_CONDITION_STATUS_LABELS],
+      [V.ISO_STANDARD_CODES, V.ISO_STANDARD_CODE_LABELS],
+      [V.STANDARD_EVIDENCE_ENTITY_TYPES, V.STANDARD_EVIDENCE_ENTITY_TYPE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });
@@ -178,5 +180,48 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     expect(V.domainOf('hr_payroll')).toBe('hr');
     expect(V.domainOf('employment')).toBe('hr');
     expect(sql).toContain("CASE WHEN category LIKE 'hs\\_%' OR category = 'health_safety' THEN 'hs' ELSE 'hr' END");
+  });
+});
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): management_system_
+// standards.code is SEEDED, not CHECK-constrained (deliberately
+// extensible to a third standard later — see 158's own header comment),
+// so ISO_STANDARD_CODES is pinned against the literal INSERT rather
+// than a CHECK list.
+describe('ISO management-system framework (158)', () => {
+  const m158 = readFileSync(`${MIG}/158_iso_management_system_framework.sql`, 'utf8');
+
+  it('ISO_STANDARD_CODES matches the two seeded standard codes', () => {
+    const start = m158.indexOf('management_system_standards (id, code, name) VALUES');
+    const block = m158.slice(start, m158.indexOf(';', start));
+    const seeded = [...block.matchAll(/'[0-9a-f-]+',\s*'([a-z0-9_]+)'/g)].map(m => m[1]);
+    expect(seeded.length).toBe(2);
+    expect([...V.ISO_STANDARD_CODES].sort()).toEqual(seeded.sort());
+  });
+
+  it('management_system_standards.code is extensible, never CHECK-restricted to only the seed', () => {
+    // A format/length CHECK is fine; a value-list CHECK would defeat
+    // "extensible to more standards later" (rule 1).
+    expect(m158).toMatch(/code\s+text NOT NULL UNIQUE CHECK \(code ~/);
+    expect(m158).not.toMatch(/code\s+text NOT NULL UNIQUE CHECK \(code IN \(/);
+  });
+
+  const clauseBlockStart = m158.indexOf('standard_clauses (standard_id, clause_number, title, maps_to_hint, display_order) VALUES');
+  const clauseBlock = m158.slice(clauseBlockStart);
+  // Each clause tuple: (standard_id, 'clause_number', 'title', 'hint'|NULL, display_order)
+  const clauseTuples = [...clauseBlock.matchAll(/'[0-9a-f-]+',\s*'([^']*)',\s*'([^']*)',\s*'([a-z_]+)',\s*\d+\)/g)];
+
+  it('every seeded clause names a real hs_entity_table() key as its maps_to_hint', () => {
+    expect(clauseTuples.length).toBe(24);
+    for (const [, , , hint] of clauseTuples) expect(V.STANDARD_EVIDENCE_ENTITY_TYPES as readonly string[]).toContain(hint);
+  });
+
+  it('no clause or standard title asserts compliance or certification', () => {
+    for (const [, , title] of clauseTuples) expect(title.toLowerCase()).not.toMatch(/compliant|certified/);
+    const start = m158.indexOf('management_system_standards (id, code, name) VALUES');
+    const stdBlock = m158.slice(start, m158.indexOf(';', start));
+    const stdTitles = [...stdBlock.matchAll(/'[a-z0-9_]+',\s*'([^']*)'/g)].map(m => m[1]);
+    expect(stdTitles.length).toBe(2);
+    for (const t of stdTitles) expect(t.toLowerCase()).not.toMatch(/compliant|certified/);
   });
 });

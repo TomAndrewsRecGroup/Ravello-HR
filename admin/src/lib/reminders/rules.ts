@@ -285,6 +285,21 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+    // certificate's own recorded expiry — never a computed compliance
+    // conclusion, just reminding that a certificate's expires_on is
+    // approaching or has passed. All rows are read: the table has no
+    // status column to filter a "still current" set by, so the
+    // consuming rule (rules.ts) decides expired vs. expiring from the
+    // bucket alone.
+    id: 'iso_certifications', entity: 'iso_certifications',
+    select: 'id, company_id, standard_id, certificate_number, expires_on',
+    query: (sb, from, to) => sb.from('iso_certifications').select('id, company_id, standard_id, certificate_number, expires_on')
+      .not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')
