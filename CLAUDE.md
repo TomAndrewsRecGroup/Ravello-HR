@@ -8153,3 +8153,37 @@ analyze.ts` answers exactly that, and only that.
   CI guards pass (unchanged across the board — no new table, no new
   route, no new write path), admin production build compiles.
 
+### Group 2 (no migration): UI
+
+A 28th `HsCompanyTabs.tsx` tab, `/health-safety/<companyId>/evidence`
+(admin), plus a read-only `/protect/evidence` (portal), gated by
+`protect` alone. `lib/evidenceEngine/analyze.ts` and a new
+`EvidenceEngineClient.tsx` are both shared-dupe pairs (52 pairs, up
+from 50).
+
+- **Two things on one page**: an Evidence Library (every `hs_files`
+  row for the client, newest first, capped at 200 — a browsing list,
+  not an exhaustive export, so well under the 1,000-row PostgREST
+  ceiling is the right cap, not a workaround for it) and the register's
+  own evidence-coverage gap report (Group 1).
+- **A "View" link signs a URL ON DEMAND when clicked**, under the
+  viewer's own session, rather than pre-signing every row on the
+  server — avoiding up to 200 signed-URL round trips on a single page
+  load. The same "signed under the user's own session" discipline
+  `evidenceUrl()` already documents; reused verbatim, not
+  reimplemented.
+- **Every read is under the caller's own session RLS** —
+  `hs_files_client_read`/`hs_completions_client_read` already exist
+  and already scope correctly; checked live against the actual policy
+  text before writing either page, not assumed from table name alone.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1492 admin, unchanged — this group is UI-only; 710 portal — 707 +
+  3, the sweep tests picking up the new route), all five CI guards
+  pass (52 shared-dupe pairs, up from 50; row-cap clean; 44
+  unvalidated routes, unchanged; 42 static admin routes, all
+  reachable — the new admin route nests under the already-linked
+  `/health-safety` prefix; 102 blind-update chains, unchanged — this
+  group writes nothing, read-only throughout), both production
+  builds compile, including `/health-safety/<companyId>/evidence`
+  and `/protect/evidence`.
+

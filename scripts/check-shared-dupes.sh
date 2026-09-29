@@ -68,6 +68,8 @@ PAIRS=(
   "admin/src/lib/riskGraph/intelligence.ts|portal/src/lib/riskGraph/intelligence.ts"
   "admin/src/lib/incidentPatterns/analyze.ts|portal/src/lib/incidentPatterns/analyze.ts"
   "admin/src/components/hs/IncidentPatternsView.tsx|portal/src/components/hs/IncidentPatternsView.tsx"
+  "admin/src/lib/evidenceEngine/analyze.ts|portal/src/lib/evidenceEngine/analyze.ts"
+  "admin/src/components/hs/EvidenceEngineClient.tsx|portal/src/components/hs/EvidenceEngineClient.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
