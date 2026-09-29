@@ -8117,3 +8117,39 @@ read-only throughout), both production builds compile.
 **Phase 10 is complete. Phase 11 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 11: Evidence Engine & Evidence-Backed Compliance
+## (in progress, no migration so far)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-10 were in). Scope: `docs/CORE_OS_360_PHASE11_PLAN.md`.
+
+### Group 1 (no migration): the pure computation
+
+`hs_files` (095) has always accepted `entity_type = 'register_
+completion'` — a completion CAN already carry evidence. Nothing has
+ever checked whether one actually DOES. `lib/evidenceEngine/
+analyze.ts` answers exactly that, and only that.
+
+- **Deliberately NOT the `requirement_evidence_links`/ISO-readiness
+  system** (Phase 5) — that already reports its own clause-evidence
+  coverage; duplicating that logic here would be a second source of
+  the same kind of fact. This closes a DIFFERENT, checked gap: the
+  H&S register's own completions have no equivalent report at all.
+- **"Has a file" is the entire test** — never a judgement of whether
+  the file is legible, current, or actually proves what it claims to.
+  No AI anywhere in this module.
+- **`coveragePercent` is `null`, never `0`, with zero completions** —
+  "not applicable" and "0% covered" are different facts, the same
+  distinction `lib/hs/kpis.ts`/`lib/governance/kpis.ts` already draw
+  for their own null-with-no-data cases.
+- **Grouped by the register item's own `category`, sorted by the
+  WIDEST gap first** — the categories most worth a human's attention
+  lead, tie-broken alphabetically for determinism.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1492 admin — 7 new `analyze.test.ts` cases; 707 portal, unchanged
+  — this group is admin-only, pure functions with no page), all five
+  CI guards pass (unchanged across the board — no new table, no new
+  route, no new write path), admin production build compiles.
+
