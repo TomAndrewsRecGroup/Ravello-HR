@@ -65,6 +65,7 @@ PAIRS=(
   "admin/src/lib/consultancy/types.ts|portal/src/lib/consultancy/types.ts"
   "admin/src/lib/consultancy/followUpDue.ts|portal/src/lib/consultancy/followUpDue.ts"
   "admin/src/components/ui/useUnsavedChangesWarning.ts|portal/src/components/ui/useUnsavedChangesWarning.ts"
+  "admin/src/lib/riskGraph/intelligence.ts|portal/src/lib/riskGraph/intelligence.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

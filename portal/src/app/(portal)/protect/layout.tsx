@@ -36,6 +36,7 @@ const TABS = [
   { href: '/protect/documents',        label: 'Documents' },
   { href: '/protect/tests',            label: 'Tests' },
   { href: '/protect/timeline',         label: 'Timeline' },
+  { href: '/protect/risk-graph',       label: 'Risk Graph' },
   { href: '/protect/analysis',         label: 'Analysis' },
   { href: '/protect/reports',          label: 'Reports' },
 ];

@@ -7703,3 +7703,56 @@ relationship between two records, not in either alone.
   all five CI guards pass (unchanged across the board — no new table,
   no new route, no new write path), admin production build compiles.
 
+### Group 3 (no migration): Risk Graph + Intelligence UI
+
+`lib/riskGraph/intelligence.ts` is now a shared-dupe pair (mirrored to
+portal byte-identical, 48 pairs). Admin gets a 26th `HsCompanyTabs.tsx`
+tab, `/health-safety/<companyId>/risk-graph` — no new sidebar entry,
+nests under the already-linked `/health-safety` prefix, the
+established precedent. Portal gets a read-only
+`/protect/risk-graph`, gated by `protect` alone (nothing here is
+self-certified).
+
+- **Two halves on one page, a deliberate consolidation of the plan's
+  own "explorer" and "dashboard" into one, recorded rather than
+  silently done**: the Connected Compliance Intelligence dashboard
+  (Group 2's pure function, computed server-side, never recomputed
+  client-side) and an "explore connections" panel calling
+  `risk_graph_neighbors()` (Group 1) directly under the signed-in
+  session — the same `supabase.rpc(...)` pattern `GlobalSearch.tsx`
+  already uses for `search_records()`.
+- **Hazards and risk assessments have NO admin-side per-record page —
+  checked, not assumed.** Migration 122's own header comment
+  ("staff may work in the portal's PROTECT workspace exactly as a
+  consultant does") and a scan of `HsCompanyTabs.tsx`'s existing 24
+  tabs (neither hazards nor risk assessments ever appeared there)
+  confirmed it: both are managed exclusively through the portal, staff
+  included. The dashboard therefore links OUT to
+  `${portalUrl()}/protect/hazards/<id>` /
+  `.../risk-assessments/<id>` for those two rows, and internally to
+  the admin's own `/legal` tab for legal obligations, which DOES have
+  one.
+- **The explorer's starting point is limited to entities this page
+  already has a resolvable label for** (hazards, risk assessments,
+  legal obligations loaded server-side for the dashboard) — a free-text
+  UUID field would be poor UX and error-prone. A NEIGHBOUR beyond that
+  set shows only its type and a truncated id, never a fabricated label
+  — a known, disclosed scope limit (per the plan doc), not an
+  oversight: labelling every one of the ~35 `hs_entity_table()`
+  branches would need a query per branch, real scope for a later pass
+  if this proves worth extending.
+- **No component-level test** — consistent with this codebase's
+  established convention (no React-component-rendering tests exist
+  anywhere in either app); verified via `tsc`, both production builds,
+  and code review. Portal's `portalPagesLinked.test.ts`/
+  `clientServerBoundary.test.ts` pick up the new route automatically.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1459 admin, unchanged; 705 portal — 703 + 2, the two sweep tests
+  picking up the new route), all five CI guards pass (48 shared-dupe
+  pairs, up from 47; row-cap clean; 44 unvalidated routes, unchanged;
+  42 static admin routes, all reachable — the new admin route nests
+  under an already-linked prefix; 102 blind-update chains, unchanged
+  — this group writes nothing, read-only throughout), both production
+  builds compile, including `/health-safety/<companyId>/risk-graph`
+  and `/protect/risk-graph`.
+
