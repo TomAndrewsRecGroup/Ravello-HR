@@ -8,6 +8,8 @@ import type {
   PermitType, PermitStatus, IsolationType, IsolationStatus,
   EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
   EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
+  EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
+  EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -409,4 +411,112 @@ export interface EnvironmentalAspectAssessment {
   methodology_notes: string | null;
   created_by: string | null;
   created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 2 (migration 157).
+
+export interface EnvironmentalIncidentDetail {
+  id: string;
+  hs_incident_id: string;
+  company_id: string;
+  substance: string | null;
+  estimated_volume: number | null;
+  volume_unit: string | null;
+  receiving_environment: EnvironmentalSpillReceivingEnvironment | null;
+  environmental_agency_notified: boolean;
+  notified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalSpill {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  occurred_at: string;
+  substance: string;
+  estimated_volume: number | null;
+  volume_unit: string | null;
+  receiving_environment: EnvironmentalSpillReceivingEnvironment;
+  contained: boolean;
+  notified_authority: boolean;
+  notified_at: string | null;
+  hs_incident_id: string | null;
+  status: EnvironmentalSpillStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WasteStream {
+  id: string;
+  company_id: string;
+  name: string;
+  waste_code: string | null;
+  hazardous: boolean;
+  typical_disposal_route: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface WasteMovement {
+  id: string;
+  company_id: string;
+  waste_stream_id: string;
+  site_id: string | null;
+  moved_at: string;
+  quantity: number;
+  unit: string;
+  carrier_contractor_id: string;
+  disposal_site_contractor_id: string | null;
+  consignment_note_reference: string | null;
+  non_conformance: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalMonitoringReading {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  category: EnvironmentalMonitoringCategory;
+  parameter: string;
+  value: number;
+  unit: string;
+  recorded_limit: number | null;
+  within_limit: boolean | null;
+  recorded_at: string;
+  recorded_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalPermit {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  permit_type: string;
+  permit_number: string | null;
+  issuing_authority: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  status: EnvironmentalPermitStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PermitCondition {
+  id: string;
+  environmental_permit_id: string;
+  company_id: string;
+  condition_text: string;
+  review_frequency: string | null;
+  next_review_due: string | null;
+  status: PermitConditionStatus;
+  last_evidence_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }

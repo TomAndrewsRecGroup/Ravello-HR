@@ -5413,3 +5413,135 @@ register, document control, objectives & targets, management review,
 audit-engine enhancement, UI, final QA) build on migration 156 onward
 and should read the governance map first.
 
+### Core-OS 360 Phase 5, Group 2: Environmental Incidents, Spills,
+### Waste, Monitoring, Environmental Permits & Conditions (2026-09-29,
+### migration 157)
+
+Builds on Group 1 per the governance map. Read `docs/CORE_OS_360_
+PHASE5_GOVERNANCE_MAP.md` before touching this — it commits the same
+"REUSE/EXTEND, never a parallel system" discipline this group follows.
+
+- **Environmental incidents already existed — checked live before
+  writing a line of SQL.** `hs_incidents.incident_type` (125) already
+  includes `'environmental'`, so tagging an incident as environmental
+  needed NO ADD COLUMN or enum change. What was missing was
+  environmental-specific DETAIL (substance, volume, receiving
+  environment), added as `environmental_incident_details` — one row
+  per `hs_incidents.id`, never a parallel incident table.
+- **Never a second action table (standing rule 1).** Four new
+  `actions.source_type` values: `environmental_spill`,
+  `waste_movement`, `environmental_monitoring`,
+  `environmental_permit_condition`. A non-contained spill, a waste
+  non-conformance, a monitoring exceedance and a permit condition
+  moved to `breach_recorded`/`review_required` each raise exactly one
+  keyed `actions` row via `admin/src/lib/events/environmentalRules.ts`
+  (extended, not forked) — never a second findings table.
+- **Waste carriers/disposal sites are `contractors` rows (150) —
+  never a parallel supplier table.** `waste_movements.carrier_
+  contractor_id`/`disposal_site_contractor_id` FK straight to
+  `contractors`. The only schema change needed was one new
+  `contractor_insurances.insurance_type` value,
+  `'waste_carrier_licence'` — `contractor_is_current()` (150) already
+  fails currency on ANY on-file policy past its expiry, not only the
+  two required ones, so an expired waste-carrier licence surfaces
+  correctly with **no function change at all**. Proved live in the
+  probe (check 11).
+- **`environmental_monitoring.within_limit` is a database-GENERATED
+  column, computed ONLY when `recorded_limit` is on file — never
+  defaulted true or false.** `GENERATED ALWAYS AS (CASE WHEN
+  recorded_limit IS NULL THEN NULL ELSE (value <= recorded_limit) END)
+  STORED`. This assumes an UPPER-bound limit (the common case: max
+  noise dB, max effluent load) — a lower-bound limit (e.g. minimum
+  flow rate) is a documented, known gap for a later group, not
+  silently guessed at. The table is insert-only (a correction is a new
+  reading, never an edit), the same "correction is a new row"
+  discipline the register's other evidence tables already use.
+- **`permit_conditions.status` is a FACTUAL vocabulary, never a
+  compliance verdict**: `current | evidence_due | overdue |
+  breach_recorded | review_required`. Copies PUWER's own "recorded
+  assessment outcome, never legally compliant" discipline (148) —
+  the probe (check 7) proves the CHECK itself refuses a
+  `'compliant'`/`'non_compliant'` value, so this cannot regress
+  silently. `environmental_permits.status` is a separate, genuinely
+  lifecycle fact (`active | expired | surrendered | revoked`) — the
+  permit's own status, distinct from any one condition's.
+- **Environmental permits are their own table, deliberately NOT
+  attached to `contractors` or to H&S's `permits` (152).** `permits`
+  is Health & Safety's permit-TO-WORK — a time-bounded authorisation
+  for one job; `environmental_permits` is a regulator's ongoing
+  licence to operate (e.g. an Environmental Permitting Regulations
+  permit, a discharge consent). Different concept, different table,
+  different admin tab (`environmental-permits`, distinct from the
+  existing `permits` tab), by design.
+- **Capabilities are reused, not invented.** `environmental.read`/
+  `environmental.manage` (156) govern all five new client-writable
+  tables — no new capability grant needed for this group, per the
+  task brief.
+- **Evidence** rides the existing `hs_files`/`hs-evidence`
+  infrastructure: `hs_entity_table()`/`hs_scope_for_entity()`/
+  `hs_evidence_readable()`/`hs_evidence_writable()`/`hs_files_entity_
+  check()` all re-created (150's latest bodies) with four new branches
+  (`environmental_spill`, `waste_movement`, `environmental_monitoring`,
+  `environmental_permit`), scope `register`, gated on
+  `environmental.read`/`.manage` — the exact pattern Group 2 of Phase
+  4 (`'equipment'`) and Group 3 (`'inspection'`) already established.
+- **Reminders**: `environmental_permits` (own `expires_on`) and
+  `permit_conditions` (own `next_review_due`) join
+  `REMINDER_ENTITIES`, `due_30`/`due_7`/`overdue` buckets, plus
+  `STATUS_WRITES` entries (`environmental_permit_expired`,
+  `permit_condition_overdue`, `permit_condition_evidence_due`) —
+  `breach_recorded`/`review_required` are excluded from every
+  reminder read, so a human-recorded fact can never be silently
+  overwritten by the cron.
+- **Two new notification types added to both bells and both apps'
+  shared `notify/types.ts`**: `environmental_spill_reported`,
+  `waste_non_conformance`, `environmental_monitoring_exceedance`,
+  `environmental_permit_status_changed`,
+  `environmental_permit_condition_review`.
+- **Admin gets four new `HsCompanyTabs.tsx` tabs** (Spills, Waste,
+  Monitoring, Env. Permits) under the existing `/health-safety/
+  <companyId>` prefix — no new sidebar entry needed, the same
+  precedent every Phase 4/5 group used. Every status-changing
+  `.update(` uses `COUNT_EXACT` + `judgeWrite()` from the start.
+  Portal gets four read-only pages under `/protect/environmental-*`,
+  gated by `protect` alone (nothing here is self-certified), added to
+  `moduleAccess.ts` and `/protect`'s `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/157_environmental_group2.sql`, rolled back: 17
+checks — cross-org site refused on spills; same-org spill accepted;
+cross-org carrier refused on waste movements; same-org waste movement
+with `non_conformance` accepted; `within_limit` is NULL with no
+recorded limit; an exceedance (80 > 70) computed `within_limit =
+false`; `environmental_monitoring` has no UPDATE grant to
+`authenticated`; `permit_conditions` refuses a compliance-verdict
+status value (`'compliant'`) and accepts the factual vocabulary
+(`'breach_recorded'`); cross-org site refused on environmental
+permits; `environmental_incident_details.company_id` derived from the
+parent incident; `actions_source_type_check` includes the four new
+values; an expired `waste_carrier_licence` fails
+`contractor_is_current()` with no function change; evidence vocab
+resolves for all four new entity types; the write guard is present;
+RLS is enabled on all 7 new tables; no new `SECURITY DEFINER` function
+is executable by `anon`. **All 17 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1157 admin —
+1145 + 12 new: 8 `environmentalRules.test.ts` cases and 5 new
+`vocab.test.ts` it.each entries, minus a 1-line existing-test update
+for the two new `STATUS_WRITES` keys; 612 portal — 604 + 8,
+`moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up the four
+new `/protect/environmental-*` routes automatically), all five CI
+guards pass with no regressions (`check-shared-dupes.sh`: 43 pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 65 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — every new admin write is
+either an insert or a counted+judged update from the start), both
+production builds compile, including the four new admin routes
+(`/health-safety/<companyId>/{environmental-spills,environmental-
+waste,environmental-monitoring,environmental-permits}`) and the four
+new portal routes (`/protect/environmental-{spills,waste,monitoring,
+permits}`). Migration 157 applied live and verified.
+

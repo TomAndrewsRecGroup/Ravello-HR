@@ -108,3 +108,112 @@ describe('environmental aspects (156)', () => {
     expect(db.tables.notifications).toHaveLength(0);
   });
 });
+
+// Core-OS 360 Phase 5, Group 2 (157): incidents/spills/waste/
+// monitoring/permits.
+describe('environmental spills, waste, monitoring, permits (157)', () => {
+  it('a spill NOT contained raises an urgent action and tells both sides', async () => {
+    const created = eventRow({
+      id: 10, entity_type: 'environmental_spills', event_type: 'created', actor_kind: 'client', entity_id: 'spill-1',
+      payload: { new: { site_id: null, receiving_environment: 'water', contained: false, notified_authority: false, status: 'reported', hs_incident_id: null }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ action_type: 'environmental_spill_response', priority: 'urgent', source_type: 'environmental_spill', source_id: 'spill-1' });
+    expect(db.tables.notifications.some(n => n.user_id === 'ca' && n.type === 'environmental_spill_reported')).toBe(true);
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1' && n.type === 'environmental_spill_reported')).toBe(true);
+  });
+
+  it('a CONTAINED spill notifies but raises no action', async () => {
+    const created = eventRow({
+      id: 11, entity_type: 'environmental_spills', event_type: 'created', actor_kind: 'client', entity_id: 'spill-2',
+      payload: { new: { site_id: null, receiving_environment: 'land', contained: true, notified_authority: false, status: 'reported', hs_incident_id: null }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications.some(n => n.type === 'environmental_spill_reported')).toBe(true);
+  });
+
+  it('a waste movement with non_conformance raises an action; a routine one raises nothing', async () => {
+    const nc = eventRow({
+      id: 12, entity_type: 'waste_movements', event_type: 'created', actor_kind: 'client', entity_id: 'wm-1',
+      payload: { new: { waste_stream_id: 'ws-1', site_id: null, quantity: 10, unit: 'kg', non_conformance: true }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(nc);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ action_type: 'environmental_waste_non_conformance', source_type: 'waste_movement', source_id: 'wm-1' });
+
+    const routine = eventRow({
+      id: 13, entity_type: 'waste_movements', event_type: 'created', actor_kind: 'client', entity_id: 'wm-2',
+      payload: { new: { waste_stream_id: 'ws-1', site_id: null, quantity: 10, unit: 'kg', non_conformance: false }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(routine);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1); // unchanged — no second action from the routine movement
+  });
+
+  it('a monitoring exceedance (within_limit=false) raises an action; within-limit raises nothing', async () => {
+    const exceeded = eventRow({
+      id: 14, entity_type: 'environmental_monitoring', event_type: 'created', actor_kind: 'client', entity_id: 'em-1',
+      payload: { new: { site_id: null, category: 'noise', parameter: 'Site boundary noise', recorded_limit: 70, within_limit: false }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(exceeded);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ action_type: 'environmental_monitoring_exceedance', source_type: 'environmental_monitoring', source_id: 'em-1' });
+
+    const ok = eventRow({
+      id: 15, entity_type: 'environmental_monitoring', event_type: 'created', actor_kind: 'client', entity_id: 'em-2',
+      payload: { new: { site_id: null, category: 'noise', parameter: 'Site boundary noise', recorded_limit: 70, within_limit: true }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(ok);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1); // unchanged
+
+    const noLimit = eventRow({
+      id: 16, entity_type: 'environmental_monitoring', event_type: 'created', actor_kind: 'client', entity_id: 'em-3',
+      payload: { new: { site_id: null, category: 'noise', parameter: 'Site boundary noise', recorded_limit: null, within_limit: null }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(noLimit);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1); // still unchanged — null within_limit is never treated as an exceedance
+  });
+
+  it('an environmental permit moving to expired/surrendered/revoked tells staff only (no portal page yet)', async () => {
+    const changed = eventRow({
+      id: 17, entity_type: 'environmental_permits', event_type: 'updated', actor_kind: 'staff', entity_id: 'perm-1',
+      payload: { new: { site_id: null, permit_type: 'Discharge consent', status: 'expired', expires_on: '2026-01-01' }, old: { status: 'active' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(changed);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1' && n.type === 'environmental_permit_status_changed')).toBe(true);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+  });
+
+  it('a permit condition moving to breach_recorded raises an action and tells both sides', async () => {
+    const changed = eventRow({
+      id: 18, entity_type: 'permit_conditions', event_type: 'updated', actor_kind: 'staff', entity_id: 'cond-1',
+      payload: { new: { environmental_permit_id: 'perm-1', status: 'breach_recorded', next_review_due: null }, old: { status: 'current' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(changed);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ action_type: 'environmental_permit_condition_review', source_type: 'environmental_permit_condition', source_id: 'cond-1' });
+    expect(db.tables.notifications.some(n => n.user_id === 'ca' && n.type === 'environmental_permit_condition_review')).toBe(true);
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1' && n.type === 'environmental_permit_condition_review')).toBe(true);
+  });
+
+  it('a permit condition moving to current (resolved) raises nothing from this rule', async () => {
+    const changed = eventRow({
+      id: 19, entity_type: 'permit_conditions', event_type: 'updated', actor_kind: 'staff', entity_id: 'cond-2',
+      payload: { new: { environmental_permit_id: 'perm-1', status: 'current', next_review_due: null }, old: { status: 'overdue' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(changed);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+  });
+});

@@ -263,6 +263,28 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_0', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's
+    // own expiry — only 'active' permits are read, since an already
+    // expired/surrendered/revoked one is no longer live.
+    id: 'environmental_permits', entity: 'environmental_permits',
+    select: 'id, company_id, permit_type, expires_on, status',
+    query: (sb, from, to) => sb.from('environmental_permits').select('id, company_id, permit_type, expires_on, status')
+      .eq('status', 'active').not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 2 (157): a permit condition's own
+    // review cycle. 'breach_recorded' rows are excluded — that status
+    // is a human-recorded fact, never overwritten by a reminder.
+    id: 'permit_conditions', entity: 'permit_conditions',
+    select: 'id, company_id, environmental_permit_id, next_review_due, status',
+    query: (sb, from, to) => sb.from('permit_conditions').select('id, company_id, environmental_permit_id, next_review_due, status')
+      .in('status', ['current', 'evidence_due', 'overdue']).not('next_review_due', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_review_due),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')
@@ -421,5 +443,28 @@ export const STATUS_WRITES: StatusWrite[] = [
     id: 'policy_ack_overdue', table: 'policy_acknowledgements',
     apply: (sb, today) => sb.from('policy_acknowledgements').update({ status: 'overdue', reminder_sent: true }, { count: 'exact' })
       .eq('status', 'pending').lt('sent_at', `${addDays(today, -14)}T00:00:00Z`),
+  },
+  {
+    // Core-OS 360 Phase 5, Group 2 (157): environmental_permits.status
+    // is a lifecycle fact, not a compliance verdict — 'expired' simply
+    // means the permit's own expires_on has passed.
+    id: 'environmental_permit_expired', table: 'environmental_permits',
+    apply: (sb, today) => sb.from('environmental_permits').update({ status: 'expired' }, { count: 'exact' })
+      .lt('expires_on', today).eq('status', 'active'),
+  },
+  {
+    // permit_conditions.status stays factual (rule 5): 'overdue' means
+    // "past its own review date", never a compliance judgement.
+    // 'breach_recorded'/'review_required' are human-recorded facts and
+    // are excluded from the read (REMINDERS' own query), so this write
+    // can never overwrite either.
+    id: 'permit_condition_overdue', table: 'permit_conditions',
+    apply: (sb, today) => sb.from('permit_conditions').update({ status: 'overdue' }, { count: 'exact' })
+      .lt('next_review_due', today).in('status', ['current', 'evidence_due']),
+  },
+  {
+    id: 'permit_condition_evidence_due', table: 'permit_conditions',
+    apply: (sb, today) => sb.from('permit_conditions').update({ status: 'evidence_due' }, { count: 'exact' })
+      .lte('next_review_due', addDays(today, 7)).gte('next_review_due', today).eq('status', 'current'),
   },
 ];

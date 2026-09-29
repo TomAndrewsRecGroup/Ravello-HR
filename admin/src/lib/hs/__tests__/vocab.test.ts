@@ -33,7 +33,10 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 154 adds the emergency plan type / status and drill outcome vocabularies.
   + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8')
   // 156 adds the environmental aspect type / condition / status vocabularies.
-  + readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8');
+  + readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8')
+  // 157 adds spill receiving-environment/status, monitoring category
+  // and environmental permit / permit condition status vocabularies.
+  + readFileSync(`${MIG}/157_environmental_incidents_waste_monitoring_permits.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -106,6 +109,23 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     // "status text NOT NULL DEFAULT 'draft' CHECK (status IN (" phrase.
     ['environmental aspect statuses', V.ENVIRONMENTAL_ASPECT_STATUSES,
       /version\s+integer NOT NULL DEFAULT 1 CHECK \(version >= 1\),\s*status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    // 157's spill table uses NOT NULL (no default); the incident-detail
+    // table's own receiving_environment CHECK is nullable and textually
+    // distinct ("IS NULL OR receiving_environment IN ("), so no anchor
+    // collision here.
+    ['environmental spill receiving environments', V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS,
+      /receiving_environment text NOT NULL CHECK \(receiving_environment IN \(/],
+    ['environmental spill statuses', V.ENVIRONMENTAL_SPILL_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'reported' CHECK \(status IN \(/],
+    ['environmental monitoring categories', V.ENVIRONMENTAL_MONITORING_CATEGORIES,
+      /category\s+text NOT NULL DEFAULT 'other' CHECK \(category IN \(/],
+    // Anchored through the preceding issued_on/expires_on columns,
+    // unique to environmental_permits — emergency_plans (154) also
+    // defaults its own status to 'active'.
+    ['environmental permit statuses', V.ENVIRONMENTAL_PERMIT_STATUSES,
+      /issued_on\s+date,\s*expires_on\s+date,\s*status\s+text NOT NULL DEFAULT 'active' CHECK \(status IN \(/],
+    ['permit condition statuses', V.PERMIT_CONDITION_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'current' CHECK \(status IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -137,6 +157,11 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.ENVIRONMENTAL_ASPECT_TYPES, V.ENVIRONMENTAL_ASPECT_TYPE_LABELS],
       [V.ENVIRONMENTAL_ASPECT_CONDITIONS, V.ENVIRONMENTAL_ASPECT_CONDITION_LABELS],
       [V.ENVIRONMENTAL_ASPECT_STATUSES, V.ENVIRONMENTAL_ASPECT_STATUS_LABELS],
+      [V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS, V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS],
+      [V.ENVIRONMENTAL_SPILL_STATUSES, V.ENVIRONMENTAL_SPILL_STATUS_LABELS],
+      [V.ENVIRONMENTAL_MONITORING_CATEGORIES, V.ENVIRONMENTAL_MONITORING_CATEGORY_LABELS],
+      [V.ENVIRONMENTAL_PERMIT_STATUSES, V.ENVIRONMENTAL_PERMIT_STATUS_LABELS],
+      [V.PERMIT_CONDITION_STATUSES, V.PERMIT_CONDITION_STATUS_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

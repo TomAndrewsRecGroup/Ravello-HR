@@ -85,6 +85,13 @@ export const NOTIFICATION_TYPES = [
   'puwer_assessment_recorded',
   // Core-OS 360 Phase 5 Group 1 (156): environmental aspects & impacts.
   'environmental_aspect_significant',
+  // Core-OS 360 Phase 5 Group 2 (157): incidents, spills, waste,
+  // monitoring, permits & conditions.
+  'environmental_spill_reported',
+  'waste_non_conformance',
+  'environmental_monitoring_exceedance',
+  'environmental_permit_status_changed',
+  'environmental_permit_condition_review',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -212,6 +219,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   emergency_plan_added:      'Emergency plan added',
   puwer_assessment_recorded: 'PUWER assessment recorded',
   environmental_aspect_significant: 'Environmental aspect confirmed significant',
+  environmental_spill_reported:    'Environmental spill reported',
+  waste_non_conformance:           'Waste movement non-conformance',
+  environmental_monitoring_exceedance: 'Environmental monitoring exceedance',
+  environmental_permit_status_changed: 'Environmental permit status changed',
+  environmental_permit_condition_review: 'Environmental permit condition needs review',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

@@ -74,6 +74,13 @@ export const TRIGGERED_ENTITIES = [
   // Core-OS 360 Phase 5, Group 1 (156): an environmental aspect added
   // or its status changed (assessed / confirmed significant or not).
   'environmental_aspects',
+  // Core-OS 360 Phase 5, Group 2 (157): spills, waste movements,
+  // monitoring readings and environmental permits/conditions.
+  'environmental_spills',
+  'waste_movements',
+  'environmental_monitoring',
+  'environmental_permits',
+  'permit_conditions',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -116,6 +123,10 @@ export const REMINDER_ENTITIES = [
   'permits',
   // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
   'emergency_plans',
+  // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's
+  // expiry and a permit condition's next review date.
+  'environmental_permits',
+  'permit_conditions',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

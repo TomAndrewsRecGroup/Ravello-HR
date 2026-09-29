@@ -398,3 +398,61 @@ export const ENVIRONMENTAL_ASPECT_STATUS_LABELS: Record<EnvironmentalAspectStatu
   confirmed_not_significant: 'Confirmed not significant',
   superseded:                'Superseded',
 };
+
+// Core-OS 360 Phase 5, Group 2 (migration 157): environmental
+// incidents/spills/waste/monitoring/permits. Mirrors the CHECKs on
+// environmental_spills.receiving_environment/.status,
+// environmental_monitoring.category, environmental_permits.status and
+// permit_conditions.status; vocab.test.ts pins these against 157's SQL.
+
+export const ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS = ['land', 'water', 'drain', 'air', 'other'] as const;
+export type EnvironmentalSpillReceivingEnvironment = typeof ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS[number];
+export const ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS: Record<EnvironmentalSpillReceivingEnvironment, string> = {
+  land:  'Land',
+  water: 'Water',
+  drain: 'Drain',
+  air:   'Air',
+  other: 'Other',
+};
+
+export const ENVIRONMENTAL_SPILL_STATUSES = ['reported', 'contained', 'closed'] as const;
+export type EnvironmentalSpillStatus = typeof ENVIRONMENTAL_SPILL_STATUSES[number];
+export const ENVIRONMENTAL_SPILL_STATUS_LABELS: Record<EnvironmentalSpillStatus, string> = {
+  reported:  'Reported',
+  contained: 'Contained',
+  closed:    'Closed',
+};
+
+export const ENVIRONMENTAL_MONITORING_CATEGORIES = ['water', 'air', 'noise', 'energy', 'emissions', 'other'] as const;
+export type EnvironmentalMonitoringCategory = typeof ENVIRONMENTAL_MONITORING_CATEGORIES[number];
+export const ENVIRONMENTAL_MONITORING_CATEGORY_LABELS: Record<EnvironmentalMonitoringCategory, string> = {
+  water:     'Water',
+  air:       'Air',
+  noise:     'Noise',
+  energy:    'Energy',
+  emissions: 'Emissions',
+  other:     'Other',
+};
+
+// A lifecycle fact about the permit itself, never a compliance verdict.
+export const ENVIRONMENTAL_PERMIT_STATUSES = ['active', 'expired', 'surrendered', 'revoked'] as const;
+export type EnvironmentalPermitStatus = typeof ENVIRONMENTAL_PERMIT_STATUSES[number];
+export const ENVIRONMENTAL_PERMIT_STATUS_LABELS: Record<EnvironmentalPermitStatus, string> = {
+  active:      'Active',
+  expired:     'Expired',
+  surrendered: 'Surrendered',
+  revoked:     'Revoked',
+};
+
+// Never 'compliant'/'non_compliant'/'legal' — a permit condition's
+// status is a factual record, never a compliance judgement. See
+// CLAUDE.md's standing rule against certification language.
+export const PERMIT_CONDITION_STATUSES = ['current', 'evidence_due', 'overdue', 'breach_recorded', 'review_required'] as const;
+export type PermitConditionStatus = typeof PERMIT_CONDITION_STATUSES[number];
+export const PERMIT_CONDITION_STATUS_LABELS: Record<PermitConditionStatus, string> = {
+  current:         'Current',
+  evidence_due:    'Evidence due',
+  overdue:         'Overdue',
+  breach_recorded: 'Breach recorded',
+  review_required: 'Review required',
+};

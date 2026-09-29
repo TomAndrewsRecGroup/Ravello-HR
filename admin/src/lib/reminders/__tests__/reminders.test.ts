@@ -105,7 +105,12 @@ describe('runReminders', () => {
       platform_events: [],
     });
     const t = await runReminders(db.client, { today, rules: [], statusWrites: STATUS_WRITES });
-    expect(t.status_writes).toEqual({ employee_terminated: 1, compliance_overdue: 2, employee_document_expired: 1, policy_ack_overdue: 1 });
+    expect(t.status_writes).toEqual({
+      employee_terminated: 1, compliance_overdue: 2, employee_document_expired: 1, policy_ack_overdue: 1,
+      // Core-OS 360 Phase 5, Group 2 (157): no rows of these types in
+      // this fake DB, so all three report zero.
+      environmental_permit_expired: 0, permit_condition_overdue: 0, permit_condition_evidence_due: 0,
+    });
     expect(db.tables.employee_records.map(r => r.status)).toEqual(['terminated', 'active', 'terminated', 'active']);
     expect(db.tables.compliance_items.map(r => r.status)).toEqual(['overdue', 'pending', 'complete', 'overdue']);
     expect(db.tables.employee_documents.map(r => r.status)).toEqual(['expired', 'archived']);

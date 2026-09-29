@@ -346,6 +346,37 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's own
+    // expiry. Client-facing (unlike Phase 4's H&S permits reminder) —
+    // there is a real portal environmental-permits page for this.
+    id: 'environmental_permit_reminder',
+    on: 'environmental_permits.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'environmental_permit_status_changed',
+        title: `Environmental permit "${s(row.permit_type, 'a permit')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/environmental-permits`, portal: '/protect/environmental-permits' },
+      })];
+    },
+  },
+  {
+    // A permit condition's own review cycle. Never "compliance due" —
+    // this is a recorded review date, not a legal deadline.
+    id: 'permit_condition_reminder',
+    on: 'permit_conditions.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'environmental_permit_condition_review',
+        title: `A permit condition review is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/environmental-permits`, portal: '/protect/environmental-permits' },
+      })];
+    },
+  },
+  {
     id: 'hs_equipment_reminder',
     on: 'hs_equipment.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
