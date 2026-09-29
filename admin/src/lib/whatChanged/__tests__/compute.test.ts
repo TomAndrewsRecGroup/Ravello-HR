@@ -16,9 +16,27 @@ describe('computeWhatChanged', () => {
       ev('hazards', 'created'), ev('hazards', 'created'), ev('hazards', 'updated'), ev('hazards', 'deleted'),
     ], '2026-09-29');
     expect(out.categories).toEqual([
-      { entityType: 'hazards', label: 'Hazards', created: 2, updated: 1, deleted: 1, total: 4 },
+      { entityType: 'hazards', label: 'Hazards', created: 2, updated: 1, deleted: 1, reminders: 0, total: 4 },
     ]);
     expect(out.totalEvents).toBe(4);
+  });
+
+  it('counts a reminder row separately from created/updated/deleted, never silently dropping it from every breakdown column while still inflating total', () => {
+    // Found in Group 3's adversarial review: lib/reminders/run.ts
+    // writes event_type = 'reminder' directly into platform_events for
+    // every due-date bucket it fires — a real fourth value the first
+    // version of this module never branched on, so `total` counted a
+    // reminder row but none of created/updated/deleted did.
+    const out = computeWhatChanged([
+      ev('compliance_items', 'reminder'), ev('compliance_items', 'reminder'), ev('compliance_items', 'created'),
+    ], '2026-09-29');
+    expect(out.categories).toEqual([
+      { entityType: 'compliance_items', label: 'Register items', created: 1, updated: 0, deleted: 0, reminders: 2, total: 3 },
+    ]);
+    // The breakdown columns must sum to the total — the exact property
+    // the original bug violated.
+    const cat = out.categories[0];
+    expect(cat.created + cat.updated + cat.deleted + cat.reminders).toBe(cat.total);
   });
 
   it('sorts categories by total descending', () => {

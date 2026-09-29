@@ -21,9 +21,20 @@
 // count ("3 hazards created, 1 updated") is a complete, honest answer
 // to "what changed" on its own.
 
+// event_type is NOT only 'created'/'updated'/'deleted' — checked, not
+// assumed, during Group 3's adversarial review. lib/reminders/run.ts
+// upserts a FOURTH real value, 'reminder', directly into this table for
+// every due-date bucket it fires (due_30/due_7/due_0/overdue/…). The
+// first version of this module counted every row into `total` but only
+// ever incremented created/updated/deleted — a day with reminder rows
+// showed a total that didn't match the sum of its own breakdown
+// columns, and the reminders themselves were invisible. emitEvent()
+// (the other direct writer, for entities with no row of their own) is
+// typed to the three CRUD values only, so 'reminder' is the one other
+// value that can actually appear.
 export interface PlatformEventRow {
   entity_type: string;
-  event_type: 'created' | 'updated' | 'deleted';
+  event_type: 'created' | 'updated' | 'deleted' | 'reminder';
   actor_kind: string;
 }
 
@@ -33,6 +44,7 @@ export interface ChangeCategory {
   created: number;
   updated: number;
   deleted: number;
+  reminders: number;
   total: number;
 }
 
@@ -102,12 +114,13 @@ export function computeWhatChanged(events: PlatformEventRow[], day: string): Wha
   for (const e of events) {
     let cat = byType.get(e.entity_type);
     if (!cat) {
-      cat = { entityType: e.entity_type, label: labelForEntityType(e.entity_type), created: 0, updated: 0, deleted: 0, total: 0 };
+      cat = { entityType: e.entity_type, label: labelForEntityType(e.entity_type), created: 0, updated: 0, deleted: 0, reminders: 0, total: 0 };
       byType.set(e.entity_type, cat);
     }
     if (e.event_type === 'created') cat.created++;
     else if (e.event_type === 'updated') cat.updated++;
     else if (e.event_type === 'deleted') cat.deleted++;
+    else if (e.event_type === 'reminder') cat.reminders++;
     cat.total++;
 
     if (e.actor_kind === 'system') systemActorCount++;

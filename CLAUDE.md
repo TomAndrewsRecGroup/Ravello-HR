@@ -7821,7 +7821,7 @@ merged and deployed, per the operator's standing instruction.
 ---
 
 ## Core-OS 360 Phase 9: "What Changed?" Daily Operational Intelligence
-## (in progress, no migration so far)
+## (complete, no migration)
 
 No detailed operator brief exists in the repo for this phase (the same
 situation Phase 8 was in). Scope: `docs/CORE_OS_360_PHASE9_PLAN.md`,
@@ -7920,4 +7920,57 @@ Governance/Consultancy alike).
   route, no new write path; the new tab reads `platform_events`
   directly under RLS, no route needed), admin production build
   compiles.
+
+### Group 3 (no migration): full regression, adversarial QA, handover
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE9_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**One real, Medium-severity defect found: `computeWhatChanged()`
+silently dropped `event_type = 'reminder'` rows from every breakdown
+column while still counting them in `total`.** Found by re-checking
+every REAL writer of `platform_events` (three: the per-table
+`platform_event_row()` triggers, `emitEvent()`, and — the one Group 1
+missed — `lib/reminders/run.ts`, which upserts `event_type =
+'reminder'` directly into the table for every due-date bucket a
+reminder rule fires) against the TypeScript type that claimed to model
+the column completely. A day with reminder activity showed a total
+that didn't reconcile with the sum of its own breakdown columns, and
+the reminders themselves were invisible on the one page built to show
+activity. Fixed: the `event_type` union widened to include
+`'reminder'`, `ChangeCategory` gained a `reminders` field, the UI
+table gained a matching column. **Mutation-tested live in this
+session** — the fix was reverted, watched fail a new test asserting
+`created + updated + deleted + reminders === total`, then restored.
+
+**Everything else audited clean**:
+
+- **Tenant scoping, date-boundary correctness and the rapid-navigation
+  race guard** were all reviewed on their own terms (not merely
+  assumed correct from the first pass) and found correct — a
+  `company_id = NULL` event (the cross-client shape `referral_
+  scan_runs` events use) correctly never matches any client's view;
+  UTC boundaries are used consistently throughout, never leaking the
+  browser's own timezone; the `useEffect`'s `cancelled` flag correctly
+  guards against a rapid date-navigation race.
+- **Regression**: the full `vitest` suites across both apps ARE the
+  regression suite (none deleted, none skipped) — every pre-existing
+  module stayed green throughout this pass, and both production
+  builds compile.
+- **Every scope decision that might otherwise look like an oversight
+  is explicitly documented** in the handover doc: staff-only (no
+  portal version), no emailed digest, no Jev narrative, the ~20-entity
+  label map's bounded scope, UTC day boundaries.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1470 admin — 1469 + 1 new `compute.test.ts` case for the fix; 705
+portal, unchanged — this phase touched admin only), all five CI
+guards pass with no regressions (48 shared-dupe pairs; row-cap clean;
+44 unvalidated routes, unchanged; 42 static admin routes, all
+reachable; 102 blind-update chains, unchanged — this phase writes
+nothing, entirely read-only throughout), both production builds
+compile.
+
+**Phase 9 is complete. Phase 10 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 

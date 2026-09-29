@@ -103,7 +103,7 @@ export default function WhatChangedTab({ companyId }: { companyId: string }) {
             </div>
             <div className="table-wrapper">
               <table className="table">
-                <thead><tr><th>Record type</th><th>Created</th><th>Updated</th><th>Deleted</th><th>Total</th></tr></thead>
+                <thead><tr><th>Record type</th><th>Created</th><th>Updated</th><th>Deleted</th><th>Reminders</th><th>Total</th></tr></thead>
                 <tbody>
                   {summary.categories.map(c => (
                     <tr key={c.entityType}>
@@ -111,6 +111,7 @@ export default function WhatChangedTab({ companyId }: { companyId: string }) {
                       <td style={{ color: c.created > 0 ? 'var(--teal)' : 'var(--ink-faint)' }}>{c.created || '—'}</td>
                       <td style={{ color: c.updated > 0 ? 'var(--gold)' : 'var(--ink-faint)' }}>{c.updated || '—'}</td>
                       <td style={{ color: c.deleted > 0 ? 'var(--red)' : 'var(--ink-faint)' }}>{c.deleted || '—'}</td>
+                      <td style={{ color: c.reminders > 0 ? 'var(--blue)' : 'var(--ink-faint)' }}>{c.reminders || '—'}</td>
                       <td className="font-semibold">{c.total}</td>
                     </tr>
                   ))}
