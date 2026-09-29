@@ -62,6 +62,13 @@ beforeEach(() => {
       { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
       { id: 'resp-3', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Alarm tested this quarter?', rating: 'na', comment: null },
     ],
+    // Core-OS 360 Phase 5, Group 7 (162): hs_submit_audit() always
+    // creates one of these synchronously for every failed response, so
+    // the consequence rule always has one to read — seeded here the
+    // same way, minor severity (the default with no template item).
+    audit_findings: [
+      { id: 'finding-1', hs_audit_response_id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', severity: 'minor', root_cause: null, corrective_action_id: null, closed_at: null },
+    ],
     notification_preferences: [{ user_id: 'staff-1', email_mode: 'immediate', muted_types: [], weekly_summary: true }],
     platform_events: [], notifications: [], email_log: [], actions: [], jev_decisions: [],
   });
@@ -204,10 +211,13 @@ describe('hs rules', () => {
     // one finding (resp-1); the pass and the na raise nothing
     expect(db.tables.actions).toHaveLength(1);
     expect(db.tables.actions[0]).toMatchObject({
-      company_id: 'co-1', action_type: 'hs_audit_finding', priority: 'high',
+      company_id: 'co-1', action_type: 'hs_audit_finding', priority: 'normal',
       source_ref: 'hs_audit_response:resp-1', related_entity_type: 'hs_audit', related_entity_id: 'audit-1',
       title: 'Audit finding: Fire exits clear?', description: 'Boxes stacked against the rear exit.',
+      severity: 'low', source_type: 'audit_finding', source_id: 'resp-1', verification_required: false,
     });
+    // the finding row is linked back to the action just raised for it
+    expect(db.tables.audit_findings[0].corrective_action_id).toBe(db.tables.actions[0].id);
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
     expect(client).toMatchObject({ type: 'hs_audit_completed', link: '/protect/actions' });
     expect(client.title).toBe('Audit completed: Fire safety walk-round — 67%');
@@ -222,6 +232,31 @@ describe('hs rules', () => {
     expect(db.tables.actions).toHaveLength(1);
   });
 
+  it('a critical finding gets urgent priority, critical severity, and verification_required', async () => {
+    db.tables.audit_findings[0].severity = 'critical';
+    db.tables.platform_events.push(audit());
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'urgent', severity: 'critical', verification_required: true });
+  });
+
+  it('a finding closing (Core-OS 360 Phase 5, Group 7, migration 162) tells the client and staff', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 17, entity_type: 'audit_findings', event_type: 'updated', actor_kind: 'staff', entity_id: 'finding-1', company_id: 'co-1',
+      payload: { new: { closed_at: '2026-09-29T00:00:00Z' }, old: { closed_at: null }, changed: ['closed_at'] },
+    }));
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.filter(n => n.type === 'audit_finding_closed')).toHaveLength(2);
+  });
+
+  it('a re-opened row (closed_at cleared) never fires the closed notification', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 18, entity_type: 'audit_findings', event_type: 'updated', actor_kind: 'staff', entity_id: 'finding-1', company_id: 'co-1',
+      payload: { new: { closed_at: null }, old: { closed_at: '2026-09-29T00:00:00Z' }, changed: ['closed_at'] },
+    }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.filter(n => n.type === 'audit_finding_closed')).toHaveLength(0);
+  });
 
   // Incident rules and their tests live in safetyRules.ts / safetyRules.test.ts (125).
 

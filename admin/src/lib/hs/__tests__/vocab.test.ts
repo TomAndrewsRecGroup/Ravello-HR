@@ -48,7 +48,10 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // Core-OS 360 Phase 5, Group 6 (161): Objectives & Targets, and
   // Management Review — objective status/target_direction, and
   // management review status.
-  + readFileSync(`${MIG}/161_objectives_management_review.sql`, 'utf8');
+  + readFileSync(`${MIG}/161_objectives_management_review.sql`, 'utf8')
+  // Core-OS 360 Phase 5, Group 7 (162): audit finding severity, audit
+  // programme frequency, consultation method, complaint source.
+  + readFileSync(`${MIG}/162_audit_enhancement_calendar_consultation.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -147,8 +150,12 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       /applicability_status\s+text NOT NULL DEFAULT 'not_assessed' CHECK \(applicability_status IN \(/],
     ['compliance evaluation statuses', V.COMPLIANCE_EVALUATION_STATUSES,
       /status\s+text NOT NULL CHECK \(status IN \(/],
+    // 162's environmental_complaints has an identical "source text NOT
+    // NULL CHECK (source IN (" phrase and is concatenated AFTER this
+    // file — anchored on the preceding legal_requirement_id column,
+    // unique to legal_requirement_research_notes.
     ['legal research sources', V.LEGAL_RESEARCH_SOURCES,
-      /source\s+text NOT NULL CHECK \(source IN \(/],
+      /legal_requirement_id\s+uuid NOT NULL REFERENCES public\.legal_requirements\(id\) ON DELETE CASCADE,\s*source\s+text NOT NULL CHECK \(source IN \(/],
     // Core-OS 360 Phase 5, Group 5 (160): a NAMED constraint, so no
     // preceding-context disambiguation is needed against 106's
     // original unnamed inline CHECK — that text never spells this name.
@@ -164,6 +171,20 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       /target_direction\s+text NOT NULL DEFAULT 'increase' CHECK \(target_direction IN \(/],
     ['management review statuses', V.MANAGEMENT_REVIEW_STATUSES,
       /status\s+text NOT NULL DEFAULT 'scheduled' CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 7 (162). 162 is the LAST migration
+    // concatenated into `sql`, so a generic anchor resolves to its own
+    // occurrence regardless of any earlier textually-similar CHECK.
+    ['audit finding severities', V.AUDIT_FINDING_SEVERITIES,
+      /severity\s+text NOT NULL DEFAULT 'minor' CHECK \(severity IN \(/],
+    ['audit programme frequencies', V.AUDIT_PROGRAMME_FREQUENCIES,
+      /frequency\s+text NOT NULL CHECK \(frequency IN \(/],
+    ['consultation methods', V.CONSULTATION_METHODS,
+      /method\s+text NOT NULL CHECK \(method IN \(/],
+    // 159's legal_requirement_research_notes has an identical "source
+    // text NOT NULL CHECK (source IN (" phrase — anchored on the
+    // preceding received_at column, unique to environmental_complaints.
+    ['complaint sources', V.COMPLAINT_SOURCES,
+      /received_at\s+timestamptz NOT NULL DEFAULT now\(\),\s*source\s+text NOT NULL CHECK \(source IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -210,6 +231,10 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.OBJECTIVE_STATUSES, V.OBJECTIVE_STATUS_LABELS],
       [V.OBJECTIVE_TARGET_DIRECTIONS, V.OBJECTIVE_TARGET_DIRECTION_LABELS],
       [V.MANAGEMENT_REVIEW_STATUSES, V.MANAGEMENT_REVIEW_STATUS_LABELS],
+      [V.AUDIT_FINDING_SEVERITIES, V.AUDIT_FINDING_SEVERITY_LABELS],
+      [V.AUDIT_PROGRAMME_FREQUENCIES, V.AUDIT_PROGRAMME_FREQUENCY_LABELS],
+      [V.CONSULTATION_METHODS, V.CONSULTATION_METHOD_LABELS],
+      [V.COMPLAINT_SOURCES, V.COMPLAINT_SOURCE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

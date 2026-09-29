@@ -634,3 +634,49 @@ export const MANAGEMENT_REVIEW_STATUS_LABELS: Record<ManagementReviewStatus, str
   completed:   'Completed',
   cancelled:   'Cancelled',
 };
+
+// Core-OS 360 Phase 5, Group 7 (migration 162): Internal Audit
+// Enhancement, Governance Calendar, Worker Consultation, Environmental
+// Complaints. audit_findings.severity — a genuinely new, small
+// vocabulary the task itself specifies (not a reuse of actions.severity,
+// which is low/medium/high/critical for a DIFFERENT column on a
+// different table). audit_findings_closure_guard() (the database, not
+// this UI) is what actually enforces the major/critical closure gate.
+export const AUDIT_FINDING_SEVERITIES = ['minor', 'major', 'critical'] as const;
+export type AuditFindingSeverity = typeof AUDIT_FINDING_SEVERITIES[number];
+export const AUDIT_FINDING_SEVERITY_LABELS: Record<AuditFindingSeverity, string> = {
+  minor:    'Minor',
+  major:    'Major',
+  critical: 'Critical',
+};
+
+export const AUDIT_PROGRAMME_FREQUENCIES = ['weekly', 'monthly', 'quarterly', 'biannual', 'annual', 'other'] as const;
+export type AuditProgrammeFrequency = typeof AUDIT_PROGRAMME_FREQUENCIES[number];
+export const AUDIT_PROGRAMME_FREQUENCY_LABELS: Record<AuditProgrammeFrequency, string> = {
+  weekly:    'Weekly',
+  monthly:   'Monthly',
+  quarterly: 'Quarterly',
+  biannual:  'Twice a year',
+  annual:    'Annual',
+  other:     'Other',
+};
+
+export const CONSULTATION_METHODS = ['meeting', 'survey', 'committee', 'one_to_one', 'other'] as const;
+export type ConsultationMethod = typeof CONSULTATION_METHODS[number];
+export const CONSULTATION_METHOD_LABELS: Record<ConsultationMethod, string> = {
+  meeting:    'Meeting',
+  survey:     'Survey',
+  committee:  'Safety committee',
+  one_to_one: 'One-to-one',
+  other:      'Other',
+};
+
+export const COMPLAINT_SOURCES = ['neighbour', 'regulator', 'employee', 'public', 'other'] as const;
+export type ComplaintSource = typeof COMPLAINT_SOURCES[number];
+export const COMPLAINT_SOURCE_LABELS: Record<ComplaintSource, string> = {
+  neighbour: 'Neighbour',
+  regulator: 'Regulator',
+  employee:  'Employee',
+  public:    'Member of the public',
+  other:     'Other',
+};

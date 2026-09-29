@@ -6153,3 +6153,187 @@ needed).
 **Later Phase 5 groups** (audit-engine enhancement, final QA) build on
 migration 161 onward and should read the governance map first.
 
+### Core-OS 360 Phase 5, Group 7: Internal Audit Enhancement, Governance
+### Calendar, Worker Consultation, Environmental Complaints (2026-09-29,
+### migration 162)
+
+Builds on Groups 1-6 (156-161). Four pieces, none of them a new engine.
+
+- **Audit enhancement extends the EXISTING `hs_audits`/`hs_audit_
+  responses`/`hs_audit_templates` system (110/113), never a second
+  audit engine.** `audit_programmes` is a new, small table — a planned
+  SCHEDULE of audits (nothing existing modelled "we run a fire audit
+  here quarterly"): staff-managed, plain-company client read, the exact
+  `hs_audits` posture (no capability gate). `audit_findings` is the
+  richer finding record: one row per FAILED `hs_audit_responses` row
+  (`UNIQUE (hs_audit_response_id)`), created SYNCHRONOUSLY inside the
+  existing atomic `hs_submit_audit()` RPC (extended, not duplicated) —
+  never by the async event consumer, so a finding exists the instant
+  the audit itself does. Unlike `hs_audit_responses`, `audit_findings`
+  is MUTABLE: a finding is worked on over days (root cause, a linked
+  corrective action, eventually closed) — the audit's own "correction
+  is a new row" discipline applies to the AUDIT, not to investigating
+  one of its findings.
+- **Severity is derived from the template item, never guessed.**
+  `hs_audit_template_items` gained `default_severity` (nullable
+  `minor|major|critical`, mirroring Group 3's `inspection_template_
+  items.critical` flag) — an item with none set defaults the finding
+  to `minor`. `AUDIT_FINDING_SEVERITIES` in `lib/hs/vocab.ts` is a
+  genuinely new, small vocabulary the task itself specified — never a
+  reuse of `actions.severity` (`low|medium|high|critical`, a different
+  column on a different table).
+- **A MAJOR or CRITICAL finding cannot be closed without a root cause
+  AND a linked corrective action AND that action's OWN effectiveness
+  verification — enforced by `audit_findings_closure_guard()`, a
+  database trigger, never the UI.** "Effectiveness verification"
+  reuses the EXISTING `actions.status`/`verified_at`/
+  `effectiveness_outcome` columns from Phase 2 (125/126) — no parallel
+  verification mechanism. The gate is severity-SCOPED: a MINOR finding
+  closes freely, with no root cause or linked action required. Proved
+  live in both directions (root cause missing, then present but no
+  action, then linked-but-unverified, then genuinely closable) and for
+  a minor finding closing with none of that.
+- **Never a second action table (this file's own standing rule).** A
+  finding's corrective action is an ordinary `actions` row,
+  `source_type = 'audit_finding'` — a value already present on
+  `actions_source_type_check` since migration 161, confirmed live
+  before writing this migration; no ALTER needed for it here. The
+  consequence rule (`hsRules.ts`, extending the EXISTING
+  `auditSubmittedConsequences`/`hs_audit_completed` handler) raises one
+  keyed action per failed response with the finding's own severity
+  driving `priority` (`minor→normal`, `major→high`, `critical→urgent`),
+  `severity` (`minor→low`, `major→medium`, `critical→critical`) and
+  `verification_required` (major/critical only) — then a `run`
+  consequence links the just-raised action's id back onto
+  `audit_findings.corrective_action_id`, but ONLY while it is still
+  null, so a later human change (or a different, hand-picked action) is
+  never clobbered by a re-processed event. A `run` write that touches
+  the database now uses `{ count: 'exact' }` from the start —
+  `check-blind-updates.sh`'s ratchet did not move.
+- **Governance Calendar is a READ-TIME AGGREGATE, never a new events/
+  scheduling table.** `admin/src/lib/governance/calendar.ts`'s
+  `governanceCalendarEvents()` unions the already-dated rows across
+  `audit_programmes`, `management_reviews`, `objectives`,
+  `organisation_legal_obligations`, `hs_documents`,
+  `environmental_permits`, `permit_conditions` and `iso_certifications`
+  — the source rows remain the single source of truth; each returned
+  event carries its own type, a real admin AND portal link, and
+  nothing here is stored. TypeScript over one SQL view: the eight
+  source tables have genuinely different shapes (some `date`, one
+  `timestamptz`; several need no join, none need a join for the
+  calendar itself) and this is materially easier to read, test and
+  extend than one large `UNION ALL`, and nothing here needs to run
+  inside a policy or a trigger. `/health-safety/governance-calendar`
+  (cross-client) is a simple month-grouped list — no interactive
+  calendar widget needed, per the task's own scope note.
+- **`consultation_records` and `environmental_complaints` are simple,
+  insert-mostly record-keeping tables, not workflow engines.** A
+  follow-up from either is, again, an ordinary `actions` row
+  (`source_type` `'consultation'` / `'environmental_complaint'`, two
+  new values added to the shared CHECK). `consultation_records` is
+  staff-manage / client-read, reusing `risk.read` — the broadest
+  existing "can see the register" capability, the 158/159/161
+  precedent, since this is a cross-pillar governance record rather
+  than an environmental-specific one; its consequence rule lives in
+  `governanceRules.ts` for that reason. `environmental_complaints`
+  follows the EXACT Group 2 spills/waste shape (staff full access,
+  client read with `environmental.read`, client insert/update with
+  `environmental.manage` — a client is often the one who receives the
+  complaint); its consequence rules live in `environmentalRules.ts`,
+  extending that file rather than forking a new one.
+- **Evidence functions had moved well past migration 113's snapshot by
+  the time this group was written** (extra branches from Phase 2/3/4/
+  Group 3, and `hs_evidence_readable`/`hs_evidence_writable` had
+  different parameter names/order than 113 ever had). The LIVE bodies
+  were fetched via `execute_sql` immediately before writing the
+  migration and reproduced verbatim with only the new
+  `'audit_finding'`/`'consultation_record'`/`'environmental_complaint'`
+  branches added — never guessed from an older migration file. Two
+  live-apply attempts were needed the same reason 144a/147a record
+  twice already: the first draft assumed 113's simpler function
+  shapes and failed live with `cannot change name of input parameter`
+  before the real signatures were read and matched.
+- **`audit_programmes` has no outbox entry of its own** — a reminder-
+  only entity, the `training_records` precedent — but IS in
+  `REMINDER_ENTITIES` for its own `next_due_date`
+  (`due_30`/`due_7`/`overdue`, new notification type
+  `audit_programme_due`, both bells).
+
+### Admin + portal UI
+
+Admin: `/health-safety/<companyId>/audit-programmes` (schedule/pause a
+programme), the audit detail page gained a findings panel per failed
+answer (severity, root cause, a linked corrective-action id field, a
+Close button) that surfaces the database's own refusal message
+verbatim via the toast — no client-side pre-validation of the closure
+gate, the same posture every H&S workflow guard in this codebase
+already takes. `/health-safety/<companyId>/consultation` and
+`/health-safety/<companyId>/environmental-complaints` (simple add/
+list/mark-investigated/close forms), plus the cross-client
+`/health-safety/governance-calendar`. No new sidebar entries needed —
+all four nest under the already-linked `/health-safety` prefix. Portal
+gets read-only `/protect/audit-programmes`, `/protect/consultation`
+and `/protect/environmental-complaints`, gated by `protect` alone
+(nothing here is self-certified), added to the PROTECT `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/162_audit_enhancement_calendar_consultation.sql`,
+rolled back: 18 checks — a fail response auto-creates a finding; its
+severity defaults to minor with no template item, and is derived
+correctly from the item's `default_severity` when one is set; a
+retried `hs_submit_audit()` call is idempotent (still exactly one
+finding); the closure gate refuses with no root cause, refuses with a
+root cause but no corrective action, refuses with a corrective action
+that is not yet verified/effective, and succeeds once it is; a minor
+finding closes freely; `consultation_records`/`environmental_
+complaints` both refuse a cross-organisation site and accept a
+same-organisation one; evidence vocab resolves for all three new
+entity types; write guards and RLS are present on all four new tables;
+no new `SECURITY DEFINER` function is executable by `anon`; the
+calendar's own source data spans the three tables checked live
+(`audit_programmes`, `objectives`, `management_reviews` all present).
+**All 18 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1286 admin —
+1257 + 29 new: `auditEnhancementSql.test.ts` (13), 5 new
+`calendar.test.ts` cases, 3 new `hsRules.test.ts` cases, 1 new
+`governanceRules.test.ts` case, 3 new `environmentalRules.test.ts`
+cases, 4 new `vocab.test.ts` it.each entries plus their label-map-
+coverage pairs; 626 portal — 620 + 6, `moduleAccess.test.ts`/
+`portalPagesLinked.test.ts` picking up the three new
+`/protect/audit-programmes`/`/protect/consultation`/`/protect/
+environmental-complaints` routes automatically), all five CI guards
+pass with no regressions (`check-shared-dupes.sh`: 43 pairs, unchanged
+— `vocab.ts`/`types.ts`/`notify/types.ts` stayed byte-identical across
+both mirrors; `check-row-cap.sh`: clean; `check-route-validation.sh`:
+44, unchanged; `check-admin-routes-linked.sh`: 75 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — the two new UPDATE call
+sites this group added (the finding panel's save, and the async
+finding→action linking `run` consequence) were both built with
+`{ count: 'exact' }` + `judgeWrite()`/the counted-write discipline from
+the start), both production builds compile. Migration 162 applied live
+and verified in two parts (`162c`/`162d` — see the migration file's own
+header for why) after the placeholder-content trap below was caught
+and corrected: RLS on, write guards applied, evidence vocab resolves,
+`actions.source_type` allows both new values, no Group 7 `SECURITY
+DEFINER` function executable by `anon`.
+
+**A tooling trap worth recording**: the first `apply_migration` call
+for 162 was sent with a placeholder comment instead of the real SQL
+body (a copy-paste slip, not a database defect) and reported success —
+the migrations table recorded a "162_audit_enhancement_calendar_
+consultation" entry with no tables actually created. Caught immediately
+by checking `to_regclass()` for the new tables before trusting the
+apply call's own success response, the same discipline this file's
+"IvyLens telemetry table existed only on disk" entry already
+established. The real content was applied as follow-up migrations
+(`162c` for the evidence-function wiring, `162d` for the tables/
+triggers/RLS) rather than silently overwriting the empty `162` entry.
+
+**Phase 5's remaining item**: final QA (an adversarial security review
+across Groups 1-7, matching the Phase 3/4 precedent) has not been
+started.
+

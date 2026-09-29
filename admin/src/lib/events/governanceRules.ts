@@ -150,4 +150,27 @@ export const governanceRules: Rule[] = [
       ];
     },
   },
+
+  {
+    // Core-OS 360 Phase 5, Group 7 (162): a routine worker consultation
+    // record — staff-managed, so the client just gets told it happened
+    // (never a client action; consultation records are simple
+    // record-keeping, not a workflow engine). Never puts the topic/
+    // outcome_summary free text into the notification title.
+    id: 'consultation_recorded',
+    on: 'consultation_records.created',
+    then: async ({ event }): Promise<Consequence[]> => {
+      if (!event.company_id) return [];
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'consultation_recorded',
+            title: 'A worker consultation has been recorded for your organisation',
+            link:  { portal: '/protect/consultation' },
+          },
+        },
+      ];
+    },
+  },
 ];

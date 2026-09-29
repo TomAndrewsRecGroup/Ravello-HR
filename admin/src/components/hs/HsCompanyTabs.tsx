@@ -22,6 +22,9 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'legal',      label: 'Legal Register' },
   { seg: 'objectives', label: 'Objectives' },
   { seg: 'management-review', label: 'Management Review' },
+  { seg: 'audit-programmes', label: 'Audit Programmes' },
+  { seg: 'consultation', label: 'Consultation' },
+  { seg: 'environmental-complaints', label: 'Complaints' },
   { seg: 'kpis',       label: 'KPIs' },
   { seg: 'timeline',   label: 'Timeline' },
 ];

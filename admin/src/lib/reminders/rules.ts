@@ -340,6 +340,17 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'due_0'],
   },
   {
+    // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
+    // next_due_date. Only ACTIVE programmes — a paused/retired one has
+    // nothing due.
+    id: 'audit_programmes', entity: 'audit_programmes',
+    select: 'id, company_id, name, next_due_date, active',
+    query: (sb, from, to) => sb.from('audit_programmes').select('id, company_id, name, next_due_date, active')
+      .eq('active', true).not('next_due_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_due_date),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

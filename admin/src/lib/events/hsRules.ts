@@ -46,10 +46,24 @@ async function itemTitle(ctx: { sb: { from: (t: string) => any } }, itemId: stri
   return (data as { title?: string } | null)?.title ?? 'Register item';
 }
 
+// audit_findings.severity ('minor'|'major'|'critical') -> the
+// corrective action's own actions.priority/actions.severity vocabulary
+// (a different, existing CHECK: low/medium/high/critical for severity,
+// low/normal/high/urgent for priority) — never the same tuple reused
+// under a different name.
+const FINDING_PRIORITY: Record<string, 'normal' | 'high' | 'urgent'> = { minor: 'normal', major: 'high', critical: 'urgent' };
+const FINDING_ACTION_SEVERITY: Record<string, 'low' | 'medium' | 'high' | 'critical'> = { minor: 'low', major: 'medium', critical: 'critical' };
+
 // On-site audit (110): one platform_event per audit (not per answer —
 // a 20-question checklist would otherwise raise 20 events for one
 // visit). The responses are read directly from the row the event
-// points at, one query, here.
+// points at, one query, here. Core-OS 360 Phase 5, Group 7 (162):
+// every failed response now also has an audit_findings row (created
+// synchronously inside hs_submit_audit, never here) — read its
+// severity to set the corrective action's own priority/severity/
+// verification_required, and link the action back onto the finding
+// once created, so audit_findings.corrective_action_id is never left
+// null for a finding that already has its own raised action.
 async function auditSubmittedConsequences(ctx: {
   sb: { from: (t: string) => any };
   event: PlatformEvent;
@@ -63,27 +77,63 @@ async function auditSubmittedConsequences(ctx: {
     .eq('audit_id', event.entity_id)
     .eq('rating', 'fail');
   const findings = (data ?? []) as { id: string; prompt: string; comment: string | null }[];
+  let fdata: { hs_audit_response_id: string; severity: string }[] = [];
+  if (findings.length > 0) {
+    const res = await sb.from('audit_findings').select('hs_audit_response_id, severity').eq('audit_id', event.entity_id);
+    fdata = (res.data ?? []) as { hs_audit_response_id: string; severity: string }[];
+  }
+  const severityByResponse = new Map<string, string>(fdata.map(r => [r.hs_audit_response_id, r.severity]));
   const title = s(n.title, 'Audit');
   const scoreText = n.score == null ? '' : ` — ${Math.round(Number(n.score))}%`;
   const findingText = findings.length === 1 ? '1 finding' : `${findings.length} findings`;
   const company = await companyName();
+  const hasMajorOrCritical = findings.some(f => ['major', 'critical'].includes(severityByResponse.get(f.id) ?? 'minor'));
 
-  const out: Consequence[] = findings.map(f => ({
-    kind: 'action',
-    companyId: event.company_id!,
-    sourceRef: `hs_audit_response:${f.id}`,
-    row: {
-      action_type: HS_AUDIT_FINDING_ACTION_TYPE, priority: 'high',
-      title: `Audit finding: ${f.prompt}`.slice(0, 200),
-      description: f.comment,
-      related_entity_type: 'hs_audit', related_entity_id: event.entity_id,
-      created_by_admin: true,
-    },
-  }));
+  const out: Consequence[] = findings.map(f => {
+    const severity = severityByResponse.get(f.id) ?? 'minor';
+    const sourceRef = `hs_audit_response:${f.id}`;
+    return {
+      kind: 'action',
+      companyId: event.company_id!,
+      sourceRef,
+      row: {
+        action_type: HS_AUDIT_FINDING_ACTION_TYPE, priority: FINDING_PRIORITY[severity] ?? 'high',
+        title: `Audit finding: ${f.prompt}`.slice(0, 200),
+        description: f.comment,
+        related_entity_type: 'hs_audit', related_entity_id: event.entity_id,
+        created_by_admin: true,
+        severity: FINDING_ACTION_SEVERITY[severity] ?? 'high',
+        source_type: 'audit_finding', source_id: f.id,
+        verification_required: severity === 'major' || severity === 'critical',
+      },
+    };
+  });
+  // Link each finding's corrective_action_id to the action just raised
+  // for it — only when still unset, so a later human change is never
+  // clobbered by a re-processed event.
+  if (findings.length > 0) {
+    out.push({
+      kind: 'run',
+      label: 'link audit findings to their raised actions',
+      fn: async (rsb) => {
+        for (const f of findings) {
+          const { data: act } = await rsb.from('actions').select('id')
+            .eq('company_id', event.company_id!).eq('source_ref', `hs_audit_response:${f.id}`).maybeSingle();
+          const actionId = (act as { id?: string } | null)?.id;
+          if (!actionId) continue;
+          // { count: 'exact' } so a 0 (already linked by a later human
+          // edit, or the row no longer exists) is distinguishable from
+          // an actual write — check-blind-updates.sh's own ratchet.
+          await rsb.from('audit_findings').update({ corrective_action_id: actionId }, { count: 'exact' })
+            .eq('hs_audit_response_id', f.id).is('corrective_action_id', null);
+        }
+      },
+    });
+  }
   out.push({
     kind: 'notify',
     input: {
-      audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_audit_completed', urgent: findings.length > 0,
+      audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_audit_completed', urgent: hasMajorOrCritical,
       title: `Audit completed: ${title}${scoreText}`,
       body:  findings.length > 0 ? `${findingText} — actions have been added to your PROTECT actions.` : 'No findings.',
       link:  { portal: findings.length > 0 ? '/protect/actions' : '/protect/timeline' },
@@ -289,6 +339,37 @@ export const hsRules: Rule[] = [
     id: 'hs_audit_completed',
     on: 'hs_audits.created',
     then: auditSubmittedConsequences,
+  },
+  {
+    // Core-OS 360 Phase 5, Group 7 (162): a finding closing (the
+    // database's own audit_findings_closure_guard() already refused
+    // this unless a major/critical finding had a root cause, a linked
+    // corrective action, AND that action's own verified/effective
+    // state — this rule only reports what already happened).
+    id: 'audit_finding_closed',
+    on: 'audit_findings.updated',
+    when: e => changedTo(e, 'closed_at') && rowPayload(e).new.closed_at != null,
+    then: async ({ event }) => {
+      if (!event.company_id) return [];
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'audit_finding_closed',
+            title: 'An audit finding has been closed out',
+            link:  { portal: '/protect/audits' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'audit_finding_closed',
+            title: 'An audit finding has been closed out',
+            link:  { admin: `/health-safety/${event.company_id}/audits` },
+          },
+        },
+      ];
+    },
   },
   {
     // inspections is INSERT-only (145, Phase 4 Group 3) — every row is

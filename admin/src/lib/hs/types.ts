@@ -13,6 +13,7 @@ import type {
   IsoStandardCode, StandardEvidenceEntityType,
   LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
   ObjectiveStatus, ObjectiveTargetDirection, ManagementReviewStatus,
+  AuditFindingSeverity, AuditProgrammeFrequency, ConsultationMethod, ComplaintSource,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -711,4 +712,66 @@ export interface ManagementReviewDecision {
   resulting_action_id: string | null;
   created_by: string | null;
   created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 7 (migration 162).
+export interface AuditProgramme {
+  id: string;
+  company_id: string;
+  name: string;
+  frequency: AuditProgrammeFrequency;
+  standard_id: string | null;
+  template_id: string | null;
+  next_due_date: string | null;
+  active: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditFinding {
+  id: string;
+  hs_audit_response_id: string;
+  audit_id: string;
+  company_id: string;
+  severity: AuditFindingSeverity;
+  root_cause: string | null;
+  corrective_action_id: string | null;
+  closed_at: string | null;
+  closed_by: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConsultationRecord {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  consultation_date: string;
+  topic: string;
+  method: ConsultationMethod;
+  participants: string[];
+  outcome_summary: string | null;
+  linked_action_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalComplaint {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  received_at: string;
+  source: ComplaintSource;
+  description: string;
+  investigated: boolean;
+  outcome: string | null;
+  linked_action_id: string | null;
+  closed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }

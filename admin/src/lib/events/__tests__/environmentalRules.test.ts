@@ -217,3 +217,40 @@ describe('environmental spills, waste, monitoring, permits (157)', () => {
     expect(db.tables.actions).toHaveLength(0);
   });
 });
+
+describe('environmental complaints (Core-OS 360 Phase 5, Group 7, migration 162)', () => {
+  it('a received complaint tells both the client and staff, never the free-text description', async () => {
+    const created = eventRow({
+      id: 20, entity_type: 'environmental_complaints', event_type: 'created', actor_kind: 'staff', entity_id: 'comp-1', company_id: 'co-1',
+      payload: { new: { source: 'neighbour', investigated: false, closed_at: null, site_id: null }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+
+    const client = db.tables.notifications.find(n => n.user_id === 'ca' && n.type === 'environmental_complaint_received')!;
+    expect(client).toMatchObject({ link: '/protect/environmental-complaints' });
+    expect(client.title).not.toContain('description');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1' && n.type === 'environmental_complaint_received')!;
+    expect(staff).toMatchObject({ link: '/health-safety/co-1/environmental-complaints' });
+  });
+
+  it('investigated flipping to true tells the client admins', async () => {
+    const updated = eventRow({
+      id: 21, entity_type: 'environmental_complaints', event_type: 'updated', actor_kind: 'staff', entity_id: 'comp-1', company_id: 'co-1',
+      payload: { new: { investigated: true, closed_at: null }, old: { investigated: false }, changed: ['investigated'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.user_id === 'ca' && n.type === 'environmental_complaint_updated')).toBe(true);
+  });
+
+  it('an unrelated column change raises nothing from either complaint rule', async () => {
+    const updated = eventRow({
+      id: 22, entity_type: 'environmental_complaints', event_type: 'updated', actor_kind: 'staff', entity_id: 'comp-1', company_id: 'co-1',
+      payload: { new: { source: 'regulator' }, old: { source: 'neighbour' }, changed: ['source'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+});

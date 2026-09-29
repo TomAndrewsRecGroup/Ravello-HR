@@ -90,6 +90,13 @@ export const TRIGGERED_ENTITIES = [
   // 'missed'/'achieved' on an objective, 'completed' on a review).
   'objectives',
   'management_reviews',
+  // Core-OS 360 Phase 5, Group 7 (162): a richer audit finding created/
+  // closed, a worker consultation recorded, an environmental complaint
+  // received/updated. audit_programmes has no outbox entry of its own
+  // (a reminder-only entity, the training_records precedent).
+  'audit_findings',
+  'consultation_records',
+  'environmental_complaints',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -146,6 +153,9 @@ export const REMINDER_ENTITIES = [
   // and a scheduled management review's own review_date.
   'objectives',
   'management_reviews',
+  // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
+  // next_due_date.
+  'audit_programmes',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

@@ -138,3 +138,19 @@ describe('management review completion (161)', () => {
     expect(db.tables.notifications).toHaveLength(0);
   });
 });
+
+describe('worker consultation recorded (Core-OS 360 Phase 5, Group 7, migration 162)', () => {
+  it('tells the client admins, never puts the topic/outcome text in the title', async () => {
+    const created = eventRow({
+      id: 7, entity_type: 'consultation_records', event_type: 'created', actor_kind: 'staff', entity_id: 'cons-1', company_id: 'co-1',
+      payload: { new: { consultation_date: '2026-09-29', method: 'meeting', site_id: null }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+
+    const client = db.tables.notifications.find(n => n.user_id === 'ca' && n.type === 'consultation_recorded')!;
+    expect(client).toMatchObject({ link: '/protect/consultation' });
+    expect(client.title).not.toContain('topic');
+    expect(db.tables.actions).toHaveLength(0);
+  });
+});

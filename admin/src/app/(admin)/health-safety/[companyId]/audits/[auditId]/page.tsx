@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { HsAudit, HsAuditResponse, HsFile } from '@/lib/hs/types';
+import type { HsAudit, HsAuditResponse, HsFile, AuditFinding } from '@/lib/hs/types';
 import AuditDetailClient from '@/components/hs/AuditDetailClient';
 
 export const metadata: Metadata = { title: 'Audit detail' };
@@ -42,6 +42,12 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         .in('entity_id', responseIds)
     : { data: [] };
 
+  const { data: findings } = responseIds.length > 0
+    ? await supabase.from('audit_findings')
+        .select('id, hs_audit_response_id, audit_id, company_id, severity, root_cause, corrective_action_id, closed_at, closed_by, created_by, created_at, updated_at')
+        .in('hs_audit_response_id', responseIds)
+    : { data: [] };
+
   return (
     <div className="space-y-4">
       <Link href={`/health-safety/${params.companyId}/audits`} className="flex items-center gap-1 text-sm" style={{ color: 'var(--ink-faint)' }}>
@@ -51,6 +57,7 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         audit={audit as HsAudit}
         responses={rows}
         files={(files ?? []) as HsFile[]}
+        findings={(findings ?? []) as AuditFinding[]}
         loadError={error?.message ?? null}
       />
     </div>

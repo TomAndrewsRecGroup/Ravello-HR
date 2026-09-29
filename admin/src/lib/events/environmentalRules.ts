@@ -294,4 +294,45 @@ export const environmentalRules: Rule[] = [
       ];
     },
   },
+
+  {
+    // Core-OS 360 Phase 5, Group 7 (162): an environmental complaint is
+    // received — staff always hears; the client hears too (many
+    // complaints are logged BY the client themselves, but staff may log
+    // one on their behalf, so both sides always know it exists). Never
+    // puts the free-text description into the notification title.
+    id: 'environmental_complaint_received',
+    on: 'environmental_complaints.created',
+    then: async ({ event, companyName }): Promise<Consequence[]> => {
+      if (!event.company_id) return [];
+      const p = event.payload as { new?: Record<string, unknown> };
+      const source = s(p.new?.source, 'other');
+      const company = await companyName();
+      return [
+        { kind: 'notify', input: { audiences: admins(event.company_id), companyId: event.company_id, type: 'environmental_complaint_received',
+            title: `An environmental complaint was received (${source})`, link: { portal: '/protect/environmental-complaints' } } },
+        { kind: 'notify', input: { audiences: staffOnly, companyId: event.company_id, type: 'environmental_complaint_received',
+            title: `${company || 'A client'}: environmental complaint received (${source})`,
+            link: { admin: `/health-safety/${event.company_id}/environmental-complaints` } } },
+      ];
+    },
+  },
+  {
+    // investigated flipping to true, or the complaint closing — a
+    // status change worth a quieter update, never a title carrying the
+    // free-text outcome.
+    id: 'environmental_complaint_updated',
+    on: 'environmental_complaints.updated',
+    when: (e: PlatformEvent) => changedTo(e, 'investigated', ['true']) || changedTo(e, 'closed_at'),
+    then: async ({ event }): Promise<Consequence[]> => {
+      if (!event.company_id) return [];
+      const p = event.payload as { new?: Record<string, unknown> };
+      const closed = p.new?.closed_at != null;
+      return [
+        { kind: 'notify', input: { audiences: admins(event.company_id), companyId: event.company_id, type: 'environmental_complaint_updated',
+            title: closed ? 'An environmental complaint has been closed' : 'An environmental complaint has been investigated',
+            link: { portal: '/protect/environmental-complaints' } } },
+      ];
+    },
+  },
 ];
