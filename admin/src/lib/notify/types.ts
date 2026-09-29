@@ -83,6 +83,8 @@ export const NOTIFICATION_TYPES = [
   // Core-OS 360 Phase 4 Group 12 wiring sweep: PUWER had a trigger
   // but no consuming rule beyond its review-cycle reminder.
   'puwer_assessment_recorded',
+  // Core-OS 360 Phase 5 Group 1 (156): environmental aspects & impacts.
+  'environmental_aspect_significant',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -209,6 +211,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   emergency_drill_recorded:  'Emergency drill recorded',
   emergency_plan_added:      'Emergency plan added',
   puwer_assessment_recorded: 'PUWER assessment recorded',
+  environmental_aspect_significant: 'Environmental aspect confirmed significant',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

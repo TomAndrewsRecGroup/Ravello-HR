@@ -354,3 +354,47 @@ export const HS_TEST_SOURCE_TYPE_LABELS: Record<HsTestSourceType, string> = {
   ms_forms: 'Microsoft Forms',
   manual:   'Manual / in-person',
 };
+
+// Core-OS 360 Phase 5, Group 1 (migration 156): environmental aspects &
+// impacts. Mirrors the CHECK on environmental_aspects.aspect_type/
+// .condition/.status; vocab.test.ts pins these against 156's SQL.
+export const ENVIRONMENTAL_ASPECT_TYPES = [
+  'emissions_to_air', 'discharge_to_water', 'waste_generation', 'land_contamination',
+  'resource_use', 'noise', 'energy_use', 'raw_material_use', 'other',
+] as const;
+export type EnvironmentalAspectType = typeof ENVIRONMENTAL_ASPECT_TYPES[number];
+export const ENVIRONMENTAL_ASPECT_TYPE_LABELS: Record<EnvironmentalAspectType, string> = {
+  emissions_to_air:    'Emissions to air',
+  discharge_to_water:  'Discharge to water',
+  waste_generation:    'Waste generation',
+  land_contamination:  'Land contamination',
+  resource_use:        'Resource use',
+  noise:               'Noise',
+  energy_use:          'Energy use',
+  raw_material_use:    'Raw material use',
+  other:               'Other',
+};
+
+export const ENVIRONMENTAL_ASPECT_CONDITIONS = ['normal', 'abnormal', 'emergency'] as const;
+export type EnvironmentalAspectCondition = typeof ENVIRONMENTAL_ASPECT_CONDITIONS[number];
+export const ENVIRONMENTAL_ASPECT_CONDITION_LABELS: Record<EnvironmentalAspectCondition, string> = {
+  normal:    'Normal operation',
+  abnormal:  'Abnormal operation',
+  emergency: 'Emergency condition',
+};
+
+// Never 'compliant'/'non_compliant' — significance is a risk-based
+// judgement (likelihood x severity x frequency, confirmed by a named
+// person), not a legal-compliance verdict. See CLAUDE.md's standing
+// rule against certification language.
+export const ENVIRONMENTAL_ASPECT_STATUSES = [
+  'draft', 'assessed', 'confirmed_significant', 'confirmed_not_significant', 'superseded',
+] as const;
+export type EnvironmentalAspectStatus = typeof ENVIRONMENTAL_ASPECT_STATUSES[number];
+export const ENVIRONMENTAL_ASPECT_STATUS_LABELS: Record<EnvironmentalAspectStatus, string> = {
+  draft:                     'Draft',
+  assessed:                  'Assessed',
+  confirmed_significant:     'Confirmed significant',
+  confirmed_not_significant: 'Confirmed not significant',
+  superseded:                'Superseded',
+};

@@ -21,6 +21,7 @@ const TABS = [
   { href: '/protect/audits',           label: 'Audits' },
   { href: '/protect/equipment',        label: 'Equipment' },
   { href: '/protect/emergency-plans',  label: 'Emergency Plans' },
+  { href: '/protect/environmental-aspects', label: 'Environmental Aspects' },
   { href: '/protect/documents',        label: 'Documents' },
   { href: '/protect/tests',            label: 'Tests' },
   { href: '/protect/timeline',         label: 'Timeline' },
