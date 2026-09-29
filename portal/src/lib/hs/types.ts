@@ -81,8 +81,21 @@ export interface HsDocument {
   description: string | null;
   version: number;
   review_due_at: string | null;
-  status: 'active' | 'superseded';
+  // Core-OS 360 Phase 5, Group 5 (160): the formal author/reviewer/
+  // approver lifecycle. See lib/hs/vocab.ts's HsDocumentStatus.
+  status: 'draft' | 'pending_review' | 'pending_approval' | 'approved' | 'active'
+    | 'review_due' | 'superseded' | 'withdrawn' | 'archived';
   supersedes_id: string | null;
+  author_id: string | null;
+  reviewer_id: string | null;
+  approver_id: string | null;
+  reviewed_at: string | null;
+  approved_at: string | null;
+  effective_from: string | null;
+  retention_period_months: number | null;
+  retention_until: string | null;
+  withdrawn_at: string | null;
+  withdrawn_by: string | null;
   created_at: string;
   updated_at: string;
 }

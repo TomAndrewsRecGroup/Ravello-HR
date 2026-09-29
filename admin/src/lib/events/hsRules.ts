@@ -638,23 +638,101 @@ export const hsRules: Rule[] = [
     },
   },
   {
-    // Every hs_documents row is a finished, already-current version —
-    // a replacement is a NEW row (the old one flips to 'superseded' via
-    // its own .updated, which needs no separate notification since this
-    // .created already covers it). Only staff write this table (client
-    // RLS is read-only), so unlike documents.created (leadRules.ts) there
-    // is no client-vs-staff actor branch to make.
+    // Core-OS 360 Phase 5, Group 5 (160): every hs_documents INSERT is
+    // now always a draft (hs_document_lifecycle_guard's own rule 2), so
+    // "a new document reached the client" is a transition TO 'active'
+    // (published), never the insert itself — replacing the pre-160
+    // insert-with-status-active check, which is now unreachable.
     id: 'hs_document_added',
-    on: 'hs_documents.created',
+    on: 'hs_documents.updated',
+    when: e => changedTo(e, 'status', ['active']),
     then: ({ event }) => {
       const { new: n } = rowPayload(event);
-      if (!event.company_id || n.status !== 'active') return [];
+      if (!event.company_id) return [];
       return [{
         kind: 'notify',
         input: {
           audiences: admins(event.company_id), companyId: event.company_id, type: 'hs_document_added',
           title: `New H&S document from Core OS 360: ${s(n.title, 'a document')}`,
           link:  { portal: '/protect/documents' },
+        },
+      }];
+    },
+  },
+  {
+    // A named reviewer is told directly ({ kind: 'user' }) — staff also
+    // hear, since this is still an internal step (the client never sees
+    // a document before it is published).
+    id: 'hs_document_submitted_for_review',
+    on: 'hs_documents.updated',
+    when: e => changedTo(e, 'status', ['pending_review']),
+    then: ({ event }) => {
+      const { new: n } = rowPayload(event);
+      const reviewerId = s(n.reviewer_id);
+      if (!reviewerId) return [];
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: [{ kind: 'user', userId: reviewerId }, ...staffOnly], companyId: event.company_id, type: 'hs_document_submitted_for_review',
+          title: `Ready for your review: ${s(n.title, 'a document')}`,
+          link:  { admin: event.company_id ? `/health-safety/${event.company_id}/documents` : '/health-safety' },
+        },
+      }];
+    },
+  },
+  {
+    id: 'hs_document_submitted_for_approval',
+    on: 'hs_documents.updated',
+    when: e => changedTo(e, 'status', ['pending_approval']),
+    then: ({ event }) => {
+      const { new: n } = rowPayload(event);
+      const approverId = s(n.approver_id);
+      if (!approverId) return [];
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: [{ kind: 'user', userId: approverId }, ...staffOnly], companyId: event.company_id, type: 'hs_document_submitted_for_approval',
+          title: `Ready for your approval: ${s(n.title, 'a document')}`,
+          link:  { admin: event.company_id ? `/health-safety/${event.company_id}/documents` : '/health-safety' },
+        },
+      }];
+    },
+  },
+  {
+    // Staff-only: approval is not yet publication (that is
+    // hs_document_added, above, on the LATER active transition).
+    id: 'hs_document_approved',
+    on: 'hs_documents.updated',
+    when: e => changedTo(e, 'status', ['approved']),
+    then: ({ event }) => {
+      const { new: n } = rowPayload(event);
+      return [{
+        kind: 'notify',
+        input: {
+          audiences: staffOnly, companyId: event.company_id, type: 'hs_document_approved',
+          title: `Approved: ${s(n.title, 'a document')} — publish when ready`,
+          link:  { admin: event.company_id ? `/health-safety/${event.company_id}/documents` : '/health-safety' },
+        },
+      }];
+    },
+  },
+  {
+    // A document withdrawn while already published tells the client
+    // too (it may have been in their hands); one still in internal
+    // review/approval is staff-only, since the client never saw it.
+    id: 'hs_document_withdrawn',
+    on: 'hs_documents.updated',
+    when: e => changedTo(e, 'status', ['withdrawn']),
+    then: ({ event }) => {
+      const { new: n, old: o } = rowPayload(event);
+      const wasPublished = ['active', 'review_due'].includes(s(o.status));
+      const audiences: Audience[] = wasPublished && event.company_id ? [...admins(event.company_id), ...staffOnly] : staffOnly;
+      return [{
+        kind: 'notify',
+        input: {
+          audiences, companyId: event.company_id, type: 'hs_document_withdrawn',
+          title: `Withdrawn: ${s(n.title, 'a document')}`,
+          link:  wasPublished ? { portal: '/protect/documents' } : undefined,
         },
       }];
     },

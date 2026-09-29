@@ -40,7 +40,11 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 159 adds the Legal Register's applicability status, compliance
   // evaluation status, requirement category and research-note source
   // vocabularies.
-  + readFileSync(`${MIG}/159_legal_register.sql`, 'utf8');
+  + readFileSync(`${MIG}/159_legal_register.sql`, 'utf8')
+  // 160 extends hs_documents' status CHECK to the formal author/
+  // reviewer/approver lifecycle (a NAMED constraint, so its anchor
+  // cannot collide with 106's original unnamed inline CHECK text).
+  + readFileSync(`${MIG}/160_document_control.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -141,6 +145,11 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       /status\s+text NOT NULL CHECK \(status IN \(/],
     ['legal research sources', V.LEGAL_RESEARCH_SOURCES,
       /source\s+text NOT NULL CHECK \(source IN \(/],
+    // Core-OS 360 Phase 5, Group 5 (160): a NAMED constraint, so no
+    // preceding-context disambiguation is needed against 106's
+    // original unnamed inline CHECK — that text never spells this name.
+    ['H&S document statuses', V.HS_DOCUMENT_STATUSES,
+      /hs_documents_status_check CHECK \(status IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -183,6 +192,7 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.LEGAL_APPLICABILITY_STATUSES, V.LEGAL_APPLICABILITY_STATUS_LABELS],
       [V.COMPLIANCE_EVALUATION_STATUSES, V.COMPLIANCE_EVALUATION_STATUS_LABELS],
       [V.LEGAL_RESEARCH_SOURCES, V.LEGAL_RESEARCH_SOURCE_LABELS],
+      [V.HS_DOCUMENT_STATUSES, V.HS_DOCUMENT_STATUS_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

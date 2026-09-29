@@ -15,10 +15,10 @@ export default async function HealthSafetyDocumentsPage(props: { params: Promise
   const params = await props.params;
   const supabase = await createServerSupabaseClient();
 
-  const [documents, files] = await Promise.all([
+  const [documents, files, staff] = await Promise.all([
     readAllPages<HsDocument>((from, to) =>
       supabase.from('hs_documents')
-        .select('id, company_id, site_id, category, title, description, version, review_due_at, status, supersedes_id, created_at, updated_at')
+        .select('id, company_id, site_id, category, title, description, version, review_due_at, status, supersedes_id, author_id, reviewer_id, approver_id, reviewed_at, approved_at, effective_from, retention_period_months, retention_until, withdrawn_at, withdrawn_by, created_at, updated_at')
         .eq('company_id', params.companyId)
         .order('status', { ascending: true })
         .order('review_due_at', { ascending: true, nullsFirst: false })
@@ -31,6 +31,9 @@ export default async function HealthSafetyDocumentsPage(props: { params: Promise
         .eq('entity_type', 'document')
         .order('created_at', { ascending: false }).order('id')
         .range(from, to)),
+    // Reviewer/approver options: the same staff picker pattern
+    // hiring/new/page.tsx already uses.
+    supabase.from('profiles').select('id, full_name').eq('role', 'tps_admin').order('full_name'),
   ]);
 
   return (
@@ -38,6 +41,7 @@ export default async function HealthSafetyDocumentsPage(props: { params: Promise
       companyId={params.companyId}
       documents={documents.rows}
       files={files.rows}
+      staff={(staff.data ?? []) as { id: string; full_name: string | null }[]}
       loadError={documents.error ?? files.error ?? (documents.truncated ? 'Showing the first part of a very long document library.' : null)}
     />
   );

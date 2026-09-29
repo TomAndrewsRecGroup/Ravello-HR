@@ -5818,3 +5818,178 @@ executable by `anon`, `actions.source_type` already allows
 management review, audit-engine enhancement, final QA) build on
 migration 159 onward and should read the governance map first.
 
+### Core-OS 360 Phase 5, Group 5: Controlled Document Management
+### (2026-09-29, migration 160)
+
+Builds on Groups 1-4 (156-159). Extends `hs_documents` (106) in place
+with a formal author/reviewer/approver workflow, a stricter lifecycle,
+effective-date separation, retention metadata, acknowledgement
+version-pinning and obsolete-document protection — never a second
+document table, per the governance map's own verdict on `hs_documents`
+("EXTEND (pattern reused, table not)").
+
+- **Every INSERT is a draft, whatever the caller sends.**
+  `hs_document_lifecycle_guard()` (BEFORE INSERT OR UPDATE) forces
+  `NEW.status := 'draft'` unconditionally at insert time — this is what
+  makes "editing an approved document is always a new draft version,
+  never an overwrite" true by construction, for the same "New version"
+  (`supersedes_id`) flow 106 already had. The status CHECK is extended
+  from 106's plain `active | superseded` to
+  `draft | pending_review | pending_approval | approved | active |
+  review_due | superseded | withdrawn | archived`
+  (`HS_DOCUMENT_STATUSES` in `lib/hs/vocab.ts`, a shared-dupe pair).
+- **A named reviewer or approver cannot be bypassed.** A document
+  naming a reviewer must pass through `pending_review`; a jump straight
+  from `draft` to `pending_approval` with `reviewer_id` set is refused.
+  One naming neither may go `draft → active` directly.
+- **Content (title/category/description) is immutable once
+  approved/active/review_due/superseded/withdrawn/archived** — the
+  trigger refuses an UPDATE that changes any of them once a row is in
+  one of those statuses; an edit request is always a fresh INSERT with
+  `supersedes_id` set. Administrative columns (`review_due_at`,
+  `effective_from`, `retention_period_months`, `reviewer_id`/
+  `approver_id`, `status` itself) may still move within the lifecycle's
+  own rules — `review_due_at` deliberately stays movable on an approved
+  row, since the reminders cron needs to keep pushing it.
+- **Nobody approves their own work — a bare `auth.uid()` comparison, no
+  role exemption.** The first draft of this copied `hs_doc_guard()`'s
+  (123) "staff excepted" phrasing verbatim; the probe's own `check3`
+  caught that it was a complete no-op, because `hs_documents` is
+  staff-only end to end (RLS lets nobody else write it) — exempting
+  staff exempts EVERY possible writer. Fixed to the 155 self-
+  authorisation precedent instead: `auth.uid() = NEW.author_id OR
+  auth.uid() = NEW.reviewer_id` refuses the transition to `approved`,
+  with no `is_tps_staff()` branch at all. Re-proved refused live before
+  trusting it (probe re-run, 16/16). Separately, a CHECK constraint
+  (`hs_documents_approver_distinct`) refuses `approver_id` ever equalling
+  `author_id` or `reviewer_id` on the same row, independent of who is
+  acting.
+- **`effective_from` may be in the future, and the database is the
+  gate, not a read-side filter.** A document may only reach `active`
+  when `effective_from IS NULL` or already `<= current_date`. Because of
+  this, `status = 'active'` alone already implies "currently
+  effective"; the portal's read-only `/protect/documents` page still
+  adds an explicit `effective_from` filter as defence in depth, never
+  as the thing actually enforcing it.
+- **Superseding the older version happens only when the NEW version
+  actually reaches `active`, never at draft time**
+  (`hs_document_supersede_roll()`, AFTER UPDATE, mirroring the
+  `hs_completion_roll`/`hs_equipment_inspection_roll` "roll forward on
+  the newest event" shape). This is a deliberate departure from 106's
+  original behaviour, which flipped the old version to `superseded` the
+  instant a replacement was created — under the new workflow that would
+  have left NO current document while the replacement worked through
+  review/approval. Now the old version stays `active` throughout, and
+  flips the moment the new one publishes: proven live in the probe
+  (`check11`) by reading the old version's status mid-review and
+  confirming it is still `active`.
+- **No auto-delete, anywhere, ever, for any reason.** `review_due_at`
+  passing moves a document toward `review_due` (a reminder — new
+  `STATUS_WRITES` entry `hs_document_review_due`, `active → review_due`
+  when `review_due_at < today`), never removal.
+  `retention_period_months`/`retention_until` (computed by the trigger
+  as `approved_at + retention_period_months`) are METADATA ONLY — no
+  cron, route or trigger anywhere in this codebase reads `retention_until`
+  to delete a row. No DELETE grant exists on `hs_documents` for any
+  session role, and this migration adds none.
+- **Acknowledgements are pinned to a SPECIFIC VERSION.**
+  `policy_acknowledgements` gains a nullable `hs_document_id`
+  (`REFERENCES hs_documents(id)`) alongside the existing `document_id`
+  (`REFERENCES documents(id)`) — a CHECK requires exactly one of the two
+  set. Unlike the generic `documents` table (which needed 119's
+  `document_versions`/`document_version_id` machinery because an update
+  there overwrites the SAME row's `file_path` in place), `hs_documents`
+  needs no extra version column at all: a new version is already a new
+  row (rule above), so naming a specific `hs_documents.id` already pins
+  to a specific version for ever. An employee who acknowledged v3 stays
+  recorded against v3's own id even after v4 is published — proven live
+  (probe `check12`) and in a TypeScript unit test
+  (`policyAckRules.test.ts`'s "an hs_documents acknowledgement stays
+  pinned to its version" block): the emailed link and the sign-off
+  notification both name v3, unaffected by v4 existing.
+  `sendPolicyAckLink()` (admin) and the portal's `/api/policy/[token]`
+  route both branch on which of `document_id`/`hs_document_id` is set;
+  an hs_documents-sourced file opens from the `hs-evidence` bucket
+  (`hs_files`, `entity_type = 'document'`), never the generic
+  `documents` bucket.
+- **RLS is unchanged** (staff ALL, client SELECT own company) — this
+  migration adds columns and workflow, never changes who may read or
+  write `hs_documents`.
+- **Consequence rules** (`hsRules.ts`): `hs_document_added` moved from
+  firing on INSERT-with-`status=active` (now unreachable, since every
+  insert is a draft) to firing on the transition TO `active` — the
+  actual publish event. Four new rules cover the steps before that:
+  `hs_document_submitted_for_review`/`_for_approval` notify the named
+  reviewer/approver directly (`{ kind: 'user', userId }`) plus staff;
+  `hs_document_approved` is staff-only (approval is not yet
+  publication); `hs_document_withdrawn` tells the client too when the
+  withdrawn version had already been published, staff-only otherwise
+  (the client never saw an internal draft/review/approval version).
+  Four new notification types
+  (`hs_document_submitted_for_review`/`_for_approval`/`_approved`/
+  `_withdrawn`), both bells, both apps' shared `notify/types.ts`.
+- **Admin UI**: `DocumentsClient.tsx` gained reviewer/approver pickers
+  (a staff dropdown, the same `profiles.role = 'tps_admin'` pattern
+  `hiring/new`'s recruiter picker already uses), effective-date and
+  retention-period fields on the add/new-version form, a per-status
+  workflow action bar (Submit for review / Submit for approval /
+  Approve / Publish / Withdraw / Archive, whichever the CURRENT status
+  legally allows) and a History view (walks the `supersedes_id` chain
+  in both directions, showing every version clearly labelled by
+  status). Every workflow button is an ordinary `.update({ status })`
+  with `COUNT_EXACT` + `judgeWrite()` — no UI-side pre-validation
+  duplicating `hs_document_lifecycle_guard()`; the database's own
+  refusal message is surfaced verbatim in the toast, the same posture
+  every H&S workflow guard in this codebase already takes.
+- **Portal**: `/protect/documents` now filters `status = 'active'` AND
+  (`effective_from IS NULL OR effective_from <= today`) — the second
+  clause is defence in depth, since the database already refuses
+  `active` before its own effective date. A full version-history view
+  was judged unnecessary scope for the read-only portal page and was
+  not built; the admin History view is the one place to see every
+  version.
+
+### Live probe
+
+`supabase/probes/160_document_control.sql`, rolled back: 16 checks —
+the full draft → pending_review → pending_approval → approved → active
+lifecycle; self-approval refused at the CHECK level (approver = author)
+and at the session level (acting as the author even with a different
+named approver); a different staff approver succeeds; approving before
+review (reviewer named, jumping straight to pending_approval) refused;
+the no-reviewer path (straight to pending_approval) succeeds; an
+approved row's title cannot be changed but its `review_due_at` still
+can; `effective_from` in the future refuses `active`, in the past
+allows it; superseding only happens once the new version PUBLISHES,
+with the old version proven still `active` throughout the new one's own
+review; an acknowledgement naming v1 stays pinned to v1 through two
+further versions; an impossible status jump (`draft → superseded`) is
+refused; RLS is on; no DELETE grant exists for any session role; no new
+`SECURITY DEFINER` function is anon-executable. **The first draft
+failed check3** (self-approval, staff exempted) — fixed live and
+re-proved before trusting it; **all 16 passed** on the corrected
+function.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1228 admin —
+1205 (1204 + the new `HS_DOCUMENT_STATUSES` vocab pin) + 23 more:
+`documentControlSql.test.ts` (16), 5 new `hsRules.test.ts` cases, 2 new
+`policyAckRules.test.ts` cases pinning the version-pinning property; 616
+portal, unchanged — this group touched only the shared-dupe vocab/
+types/notify files plus one read-only page filter and one route's
+document-source branch, none of which added a new test file), all five
+CI guards pass with no regressions (`check-shared-dupes.sh`: 43 pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 69 pages, all reachable — no new admin
+route, `documents` already nests under the linked `/health-safety`
+prefix; `check-blind-updates.sh`: 102, unchanged — every new workflow
+button was built with `COUNT_EXACT` + `judgeWrite()` from the start),
+both production builds compile. Migration 160 applied live and
+verified (function bodies re-read back after the same-day self-approval
+fix, confirmed matching what the probe re-ran against).
+
+**Later Phase 5 groups** (objectives & targets, management review,
+audit-engine enhancement, final QA) build on migration 160 onward and
+should read the governance map first.
+

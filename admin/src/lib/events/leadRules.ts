@@ -260,15 +260,18 @@ export const leadRules: Rule[] = [
     then: async ({ event, sb }) => {
       if (!event.company_id) return [];
       const { new: n } = rowPayload(event);
-      const [{ data: emp }, { data: doc }] = await Promise.all([
+      const hsDocId = s(n.hs_document_id);
+      const [{ data: emp }, { data: doc }, { data: hsDoc }] = await Promise.all([
         sb.from('employee_records').select('full_name').eq('id', s(n.employee_id)).maybeSingle(),
-        sb.from('documents').select('name').eq('id', s(n.document_id)).maybeSingle(),
+        n.document_id ? sb.from('documents').select('name').eq('id', s(n.document_id)).maybeSingle() : Promise.resolve({ data: null }),
+        hsDocId ? sb.from('hs_documents').select('title').eq('id', hsDocId).maybeSingle() : Promise.resolve({ data: null }),
       ]);
+      const docName = (doc as { name?: string } | null)?.name ?? (hsDoc as { title?: string } | null)?.title ?? 'a policy';
       return [{
         kind: 'notify',
         input: {
           audiences: admins(event.company_id), companyId: event.company_id, type: 'policy_ack_signed',
-          title: `${(emp as { full_name?: string } | null)?.full_name ?? 'An employee'} acknowledged ${(doc as { name?: string } | null)?.name ?? 'a policy'}`,
+          title: `${(emp as { full_name?: string } | null)?.full_name ?? 'An employee'} acknowledged ${docName}`,
           link:  { portal: '/lead/policy-acknowledgements' },
         },
       }];

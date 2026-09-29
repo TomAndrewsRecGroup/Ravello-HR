@@ -110,6 +110,8 @@ describe('runReminders', () => {
       // Core-OS 360 Phase 5, Group 2 (157): no rows of these types in
       // this fake DB, so all three report zero.
       environmental_permit_expired: 0, permit_condition_overdue: 0, permit_condition_evidence_due: 0,
+      // Core-OS 360 Phase 5, Group 5 (160): no hs_documents rows either.
+      hs_document_review_due: 0,
     });
     expect(db.tables.employee_records.map(r => r.status)).toEqual(['terminated', 'active', 'terminated', 'active']);
     expect(db.tables.compliance_items.map(r => r.status)).toEqual(['overdue', 'pending', 'complete', 'overdue']);

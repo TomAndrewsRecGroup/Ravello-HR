@@ -330,10 +330,10 @@ describe('hs rules', () => {
     expect(db.tables.notifications.some(n => n.type === 'loler_immediate_danger')).toBe(false);
   });
 
-  it('a new H&S document tells the client admins', async () => {
+  it('a document PUBLISHED (reaching active) tells the client admins — Core-OS 360 Phase 5, Group 5 (160): every insert is now a draft, so this is a status transition, never the insert', async () => {
     const doc = eventRow({
-      id: 20, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-1',
-      payload: { new: { title: 'Fire Risk Assessment 2026', status: 'active', category: 'hs_fire' }, old: {}, changed: [] },
+      id: 20, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-1',
+      payload: { new: { title: 'Fire Risk Assessment 2026', status: 'active', category: 'hs_fire' }, old: { status: 'approved' }, changed: ['status'] },
     });
     db.tables.platform_events.push(doc);
     await processEvents(db.client, { rules: RULES });
@@ -341,6 +341,68 @@ describe('hs rules', () => {
     expect(client).toMatchObject({ type: 'hs_document_added', link: '/protect/documents' });
     expect(client.title).toContain('Fire Risk Assessment 2026');
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
+
+  it('an insert (always a draft) raises no hs_document_added notification', async () => {
+    const doc = eventRow({
+      id: 200, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-draft',
+      payload: { new: { title: 'Draft Doc', status: 'draft', category: 'hs_fire' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('submitted for review tells the named reviewer and staff', async () => {
+    const doc = eventRow({
+      id: 201, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-2',
+      payload: { new: { title: 'Handbook v2', status: 'pending_review', reviewer_id: 'staff-1' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_submitted_for_review');
+    expect(notes.map(n => n.user_id).sort()).toEqual(['staff-1']);
+    expect(notes[0].title).toContain('Handbook v2');
+  });
+
+  it('submitted for approval tells the named approver and staff', async () => {
+    const doc = eventRow({
+      id: 202, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-3',
+      payload: { new: { title: 'Handbook v2', status: 'pending_approval', approver_id: 'staff-1' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_submitted_for_approval');
+    expect(notes.map(n => n.user_id).sort()).toEqual(['staff-1']);
+  });
+
+  it('approved (not yet published) is staff-only', async () => {
+    const doc = eventRow({
+      id: 203, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-4',
+      payload: { new: { title: 'Handbook v2', status: 'approved' }, old: { status: 'pending_approval' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_approved');
+    expect(notes.some(n => n.user_id === 'ca')).toBe(false);
+    expect(notes.some(n => n.user_id === 'staff-1')).toBe(true);
+  });
+
+  it('a document withdrawn while already published tells the client too; one still in draft/review is staff-only', async () => {
+    const publishedWithdrawn = eventRow({
+      id: 204, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-5',
+      payload: { new: { title: 'Old Policy', status: 'withdrawn' }, old: { status: 'active' }, changed: ['status'] },
+    });
+    const draftWithdrawn = eventRow({
+      id: 205, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-6',
+      payload: { new: { title: 'Never Published', status: 'withdrawn' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(publishedWithdrawn, draftWithdrawn);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_withdrawn');
+    expect(notes.some(n => n.user_id === 'ca' && n.title.includes('Old Policy'))).toBe(true);
+    expect(notes.some(n => n.user_id === 'ca' && n.title.includes('Never Published'))).toBe(false);
+    expect(notes.some(n => n.user_id === 'staff-1' && n.title.includes('Never Published'))).toBe(true);
   });
 
   it('a document write that only marks the OLD version superseded raises nothing (the new row\'s own .created already covers it)', async () => {

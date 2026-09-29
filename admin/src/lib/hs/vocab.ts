@@ -564,3 +564,38 @@ export const LEGAL_RESEARCH_SOURCE_LABELS: Record<LegalResearchSource, string> =
   tavily: 'Tavily (automated research)',
   manual: 'Manual',
 };
+
+// Core-OS 360 Phase 5, Group 5 (migration 160): Controlled Document
+// Management. hs_documents' status CHECK extended from 106's plain
+// active/superseded to a formal author/reviewer/approver lifecycle,
+// enforced by hs_document_lifecycle_guard() (the database, not the
+// UI). vocab.test.ts pins this against 160's SQL.
+export const HS_DOCUMENT_STATUSES = [
+  'draft', 'pending_review', 'pending_approval', 'approved', 'active',
+  'review_due', 'superseded', 'withdrawn', 'archived',
+] as const;
+export type HsDocumentStatus = typeof HS_DOCUMENT_STATUSES[number];
+export const HS_DOCUMENT_STATUS_LABELS: Record<HsDocumentStatus, string> = {
+  draft:             'Draft',
+  pending_review:    'Pending review',
+  pending_approval:  'Pending approval',
+  approved:          'Approved',
+  active:            'Active (current)',
+  review_due:        'Review due',
+  superseded:        'Superseded',
+  withdrawn:         'Withdrawn',
+  archived:          'Archived',
+};
+
+/** Statuses whose content (title/category/description) is immutable —
+ *  the exact set hs_document_lifecycle_guard() locks; an edit request
+ *  on one of these must be a NEW VERSION, never an UPDATE. */
+export const HS_DOCUMENT_IMMUTABLE_STATUSES: readonly HsDocumentStatus[] = [
+  'approved', 'active', 'review_due', 'superseded', 'withdrawn', 'archived',
+];
+
+/** Statuses that no longer represent the current, in-force version —
+ *  shown in a document's History view, never in a "current" list. */
+export const HS_DOCUMENT_HISTORY_STATUSES: readonly HsDocumentStatus[] = [
+  'superseded', 'withdrawn', 'archived',
+];

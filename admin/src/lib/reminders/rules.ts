@@ -499,4 +499,15 @@ export const STATUS_WRITES: StatusWrite[] = [
     apply: (sb, today) => sb.from('permit_conditions').update({ status: 'evidence_due' }, { count: 'exact' })
       .lte('next_review_due', addDays(today, 7)).gte('next_review_due', today).eq('status', 'current'),
   },
+  {
+    // Core-OS 360 Phase 5, Group 5 (160): a published document past its
+    // own review_due_at moves toward 'review_due' — a reminder, never a
+    // deletion (rule 8: no auto-delete anywhere for this table). The
+    // hs_documents reminder rule above reads status='active' BEFORE this
+    // write runs each cron pass (reads-then-writes, lib/reminders/run.ts),
+    // so the overdue notification still fires the first time.
+    id: 'hs_document_review_due', table: 'hs_documents',
+    apply: (sb, today) => sb.from('hs_documents').update({ status: 'review_due' }, { count: 'exact' })
+      .lt('review_due_at', today).eq('status', 'active'),
+  },
 ];

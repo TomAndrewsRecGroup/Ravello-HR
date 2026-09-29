@@ -18,18 +18,27 @@ export type PolicyAckLinkOutcome = 'sent' | 'already' | 'failed' | 'no_email' | 
 
 export async function sendPolicyAckLink(sb: SupabaseClient, ackId: string, dedupeKey: string, opts: { reminder?: boolean; now?: Date } = {}): Promise<{ outcome: PolicyAckLinkOutcome; error: string | null; employeeName: string | null }> {
   const now = opts.now ?? new Date();
-  const { data: ackRow } = await sb.from('policy_acknowledgements').select('id, company_id, document_id, employee_id, status').eq('id', ackId).maybeSingle();
-  const ack = ackRow as { id: string; company_id: string; document_id: string; employee_id: string; status: string } | null;
+  const { data: ackRow } = await sb.from('policy_acknowledgements').select('id, company_id, document_id, hs_document_id, employee_id, status').eq('id', ackId).maybeSingle();
+  const ack = ackRow as { id: string; company_id: string; document_id: string | null; hs_document_id: string | null; employee_id: string; status: string } | null;
   if (!ack) return { outcome: 'not_found', error: null, employeeName: null };
   if (ack.status !== 'pending' && ack.status !== 'overdue') return { outcome: 'not_open', error: null, employeeName: null };
 
-  const [{ data: emp }, { data: doc }, { data: co }] = await Promise.all([
+  // The document may be either the generic client documents table or
+  // an hs_documents controlled-document VERSION (Core-OS 360 Phase 5,
+  // Group 5) — exactly one of document_id/hs_document_id is ever set
+  // (the database's own CHECK). hs_documents needs no separate version
+  // column the way `documents` does: a new version there is a new row,
+  // so pinning to this id already pins to a specific version for ever.
+  const [{ data: emp }, { data: doc }, { data: hsDoc }, { data: co }] = await Promise.all([
     sb.from('employee_records').select('full_name, email, status').eq('id', ack.employee_id).maybeSingle(),
-    sb.from('documents').select('name, category').eq('id', ack.document_id).maybeSingle(),
+    ack.document_id ? sb.from('documents').select('name, category').eq('id', ack.document_id).maybeSingle() : Promise.resolve({ data: null }),
+    ack.hs_document_id ? sb.from('hs_documents').select('title, category').eq('id', ack.hs_document_id).maybeSingle() : Promise.resolve({ data: null }),
     sb.from('companies').select('name').eq('id', ack.company_id).maybeSingle(),
   ]);
   const e = emp as { full_name: string; email: string | null; status: string } | null;
-  const d = doc as { name: string; category: string } | null;
+  const docRow = doc as { name: string; category: string } | null;
+  const hsDocRow = hsDoc as { title: string; category: string } | null;
+  const d = docRow ? { name: docRow.name, category: docRow.category } : hsDocRow ? { name: hsDocRow.title, category: hsDocRow.category } : null;
   const name = e?.full_name ?? null;
   if (!e || !d) return { outcome: 'not_found', error: null, employeeName: name };
   if (!e.email?.trim()) return { outcome: 'no_email', error: null, employeeName: name };

@@ -104,6 +104,14 @@ export const NOTIFICATION_TYPES = [
   'legal_evaluation_recorded',
   'legal_evaluation_noncompliance',
   'legal_obligation_review_due',
+  // Core-OS 360 Phase 5 Group 5 (160): Controlled Document Management —
+  // the formal author/reviewer/approver workflow's own transitions.
+  // 'hs_document_added' (below) still covers a document reaching
+  // 'active' (published); these cover the steps before that.
+  'hs_document_submitted_for_review',
+  'hs_document_submitted_for_approval',
+  'hs_document_approved',
+  'hs_document_withdrawn',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -242,6 +250,10 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   legal_evaluation_recorded:     'Legal evaluation recorded',
   legal_evaluation_noncompliance:'Legal register: non-compliance recorded',
   legal_obligation_review_due:   'Legal register review due',
+  hs_document_submitted_for_review:   'H&S document submitted for review',
+  hs_document_submitted_for_approval: 'H&S document submitted for approval',
+  hs_document_approved:               'H&S document approved',
+  hs_document_withdrawn:              'H&S document withdrawn',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',
