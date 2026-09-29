@@ -7,6 +7,13 @@ import type {
   ContractorApprovalStatus, ContractorRiskRating, ContractorInsuranceType,
   PermitType, PermitStatus, IsolationType, IsolationStatus,
   EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
+  EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
+  EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
+  EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
+  IsoStandardCode, StandardEvidenceEntityType,
+  LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
+  ObjectiveStatus, ObjectiveTargetDirection, ManagementReviewStatus,
+  AuditFindingSeverity, AuditProgrammeFrequency, ConsultationMethod, ComplaintSource,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -76,8 +83,21 @@ export interface HsDocument {
   description: string | null;
   version: number;
   review_due_at: string | null;
-  status: 'active' | 'superseded';
+  // Core-OS 360 Phase 5, Group 5 (160): the formal author/reviewer/
+  // approver lifecycle. See lib/hs/vocab.ts's HsDocumentStatus.
+  status: 'draft' | 'pending_review' | 'pending_approval' | 'approved' | 'active'
+    | 'review_due' | 'superseded' | 'withdrawn' | 'archived';
   supersedes_id: string | null;
+  author_id: string | null;
+  reviewer_id: string | null;
+  approver_id: string | null;
+  reviewed_at: string | null;
+  approved_at: string | null;
+  effective_from: string | null;
+  retention_period_months: number | null;
+  retention_until: string | null;
+  withdrawn_at: string | null;
+  withdrawn_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -374,5 +394,400 @@ export interface EmergencyDrill {
   outcome: EmergencyDrillOutcome;
   findings: string | null;
   created_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalAspect {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  activity: string;
+  aspect_type: EnvironmentalAspectType;
+  condition: EnvironmentalAspectCondition;
+  description: string | null;
+  version: number;
+  status: EnvironmentalAspectStatus;
+  supersedes_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalAspectAssessment {
+  id: string;
+  aspect_id: string;
+  company_id: string;
+  likelihood: number;
+  severity: number;
+  frequency: number;
+  computed_score: number;
+  significance_threshold_used: number;
+  is_significant: boolean;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  methodology_notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 2 (migration 157).
+
+export interface EnvironmentalIncidentDetail {
+  id: string;
+  hs_incident_id: string;
+  company_id: string;
+  substance: string | null;
+  estimated_volume: number | null;
+  volume_unit: string | null;
+  receiving_environment: EnvironmentalSpillReceivingEnvironment | null;
+  environmental_agency_notified: boolean;
+  notified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalSpill {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  occurred_at: string;
+  substance: string;
+  estimated_volume: number | null;
+  volume_unit: string | null;
+  receiving_environment: EnvironmentalSpillReceivingEnvironment;
+  contained: boolean;
+  notified_authority: boolean;
+  notified_at: string | null;
+  hs_incident_id: string | null;
+  status: EnvironmentalSpillStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WasteStream {
+  id: string;
+  company_id: string;
+  name: string;
+  waste_code: string | null;
+  hazardous: boolean;
+  typical_disposal_route: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface WasteMovement {
+  id: string;
+  company_id: string;
+  waste_stream_id: string;
+  site_id: string | null;
+  moved_at: string;
+  quantity: number;
+  unit: string;
+  carrier_contractor_id: string;
+  disposal_site_contractor_id: string | null;
+  consignment_note_reference: string | null;
+  non_conformance: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalMonitoringReading {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  category: EnvironmentalMonitoringCategory;
+  parameter: string;
+  value: number;
+  unit: string;
+  recorded_limit: number | null;
+  within_limit: boolean | null;
+  recorded_at: string;
+  recorded_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalPermit {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  permit_type: string;
+  permit_number: string | null;
+  issuing_authority: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  status: EnvironmentalPermitStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PermitCondition {
+  id: string;
+  environmental_permit_id: string;
+  company_id: string;
+  condition_text: string;
+  review_frequency: string | null;
+  next_review_due: string | null;
+  status: PermitConditionStatus;
+  last_evidence_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): the shared ISO 45001/
+// 14001 management-system framework.
+
+export interface ManagementSystemStandard {
+  id: string;
+  code: IsoStandardCode;
+  name: string;
+  created_at: string;
+}
+
+export interface StandardClause {
+  id: string;
+  standard_id: string;
+  clause_number: string;
+  title: string;
+  maps_to_hint: StandardEvidenceEntityType | string | null;
+  display_order: number;
+  created_at: string;
+}
+
+export interface StandardEvidenceLink {
+  id: string;
+  company_id: string;
+  clause_id: string;
+  entity_type: string;
+  entity_id: string;
+  added_by: string | null;
+  created_at: string;
+}
+
+export interface IsoCertification {
+  id: string;
+  company_id: string;
+  standard_id: string;
+  certificate_number: string | null;
+  certifying_body: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+
+export interface LegalRequirement {
+  id: string;
+  title: string;
+  category: LegalRequirementCategory;
+  jurisdiction: string;
+  summary: string | null;
+  source_url: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganisationLegalObligation {
+  id: string;
+  company_id: string;
+  legal_requirement_id: string;
+  applicability_status: LegalApplicabilityStatus;
+  assessed_by: string | null;
+  assessed_at: string | null;
+  assessment_rationale: string | null;
+  next_review_due: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplianceEvaluation {
+  id: string;
+  obligation_id: string;
+  company_id: string;
+  status: ComplianceEvaluationStatus;
+  evaluated_by: string | null;
+  evaluated_at: string;
+  notes: string | null;
+  next_review_due: string | null;
+  created_at: string;
+}
+
+// Inert Tavily-research foundation — no live API call anywhere in this
+// codebase yet; a later group wires one.
+export interface LegalRequirementResearchNote {
+  id: string;
+  legal_requirement_id: string;
+  source: LegalResearchSource;
+  query_used: string | null;
+  raw_result_summary: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  action_taken: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 6 (migration 161): Objectives & Targets,
+// and Management Review.
+
+export interface Objective {
+  id: string;
+  company_id: string;
+  standard_id: string | null;
+  title: string;
+  description: string | null;
+  target_value: number | null;
+  target_unit: string | null;
+  baseline_value: number | null;
+  target_direction: ObjectiveTargetDirection;
+  target_date: string | null;
+  owner_person_id: string | null;
+  status: ObjectiveStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ObjectiveMeasurement {
+  id: string;
+  objective_id: string;
+  company_id: string;
+  measured_at: string;
+  value: number;
+  notes: string | null;
+  recorded_by: string | null;
+  created_at: string;
+}
+
+export interface ManagementReview {
+  id: string;
+  company_id: string;
+  review_date: string;
+  chaired_by: string | null;
+  status: ManagementReviewStatus;
+  completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ManagementReviewAttendee {
+  id: string;
+  review_id: string;
+  company_id: string;
+  person_id: string;
+  attended: boolean;
+  created_at: string;
+}
+
+/** A stored, reproducible snapshot of factual counts — never
+ *  recomputed live once generated. The shape of `data` is whatever
+ *  admin/src/lib/governance/dataPack.ts computed at generation time;
+ *  treat it as read-only, opaque JSON on the reading side. */
+export interface ManagementReviewDataPack {
+  id: string;
+  review_id: string;
+  company_id: string;
+  computed_at: string;
+  computed_by: string | null;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ManagementReviewDecision {
+  id: string;
+  review_id: string;
+  company_id: string;
+  topic: string;
+  decision_text: string;
+  resulting_action_id: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 7 (migration 162).
+export interface AuditProgramme {
+  id: string;
+  company_id: string;
+  name: string;
+  frequency: AuditProgrammeFrequency;
+  standard_id: string | null;
+  template_id: string | null;
+  next_due_date: string | null;
+  active: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditFinding {
+  id: string;
+  hs_audit_response_id: string;
+  audit_id: string;
+  company_id: string;
+  severity: AuditFindingSeverity;
+  root_cause: string | null;
+  corrective_action_id: string | null;
+  closed_at: string | null;
+  closed_by: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConsultationRecord {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  consultation_date: string;
+  topic: string;
+  method: ConsultationMethod;
+  participants: string[];
+  outcome_summary: string | null;
+  linked_action_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalComplaint {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  received_at: string;
+  source: ComplaintSource;
+  description: string;
+  investigated: boolean;
+  outcome: string | null;
+  linked_action_id: string | null;
+  closed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 8 (migration 163): the evidence-link
+// foundation. source_type is one of 'legal_obligation' | 'objective' |
+// 'audit_finding' — kept as `string` here, the same choice
+// StandardEvidenceLink.entity_type already makes, so a future fourth
+// source type needs no type-file edit, only the migration's own CHECK.
+export interface RequirementEvidenceLink {
+  id: string;
+  company_id: string;
+  source_type: string;
+  source_id: string;
+  entity_type: string;
+  entity_id: string;
+  added_by: string | null;
   created_at: string;
 }

@@ -354,3 +354,329 @@ export const HS_TEST_SOURCE_TYPE_LABELS: Record<HsTestSourceType, string> = {
   ms_forms: 'Microsoft Forms',
   manual:   'Manual / in-person',
 };
+
+// Core-OS 360 Phase 5, Group 1 (migration 156): environmental aspects &
+// impacts. Mirrors the CHECK on environmental_aspects.aspect_type/
+// .condition/.status; vocab.test.ts pins these against 156's SQL.
+export const ENVIRONMENTAL_ASPECT_TYPES = [
+  'emissions_to_air', 'discharge_to_water', 'waste_generation', 'land_contamination',
+  'resource_use', 'noise', 'energy_use', 'raw_material_use', 'other',
+] as const;
+export type EnvironmentalAspectType = typeof ENVIRONMENTAL_ASPECT_TYPES[number];
+export const ENVIRONMENTAL_ASPECT_TYPE_LABELS: Record<EnvironmentalAspectType, string> = {
+  emissions_to_air:    'Emissions to air',
+  discharge_to_water:  'Discharge to water',
+  waste_generation:    'Waste generation',
+  land_contamination:  'Land contamination',
+  resource_use:        'Resource use',
+  noise:               'Noise',
+  energy_use:          'Energy use',
+  raw_material_use:    'Raw material use',
+  other:               'Other',
+};
+
+export const ENVIRONMENTAL_ASPECT_CONDITIONS = ['normal', 'abnormal', 'emergency'] as const;
+export type EnvironmentalAspectCondition = typeof ENVIRONMENTAL_ASPECT_CONDITIONS[number];
+export const ENVIRONMENTAL_ASPECT_CONDITION_LABELS: Record<EnvironmentalAspectCondition, string> = {
+  normal:    'Normal operation',
+  abnormal:  'Abnormal operation',
+  emergency: 'Emergency condition',
+};
+
+// Never 'compliant'/'non_compliant' — significance is a risk-based
+// judgement (likelihood x severity x frequency, confirmed by a named
+// person), not a legal-compliance verdict. See CLAUDE.md's standing
+// rule against certification language.
+export const ENVIRONMENTAL_ASPECT_STATUSES = [
+  'draft', 'assessed', 'confirmed_significant', 'confirmed_not_significant', 'superseded',
+] as const;
+export type EnvironmentalAspectStatus = typeof ENVIRONMENTAL_ASPECT_STATUSES[number];
+export const ENVIRONMENTAL_ASPECT_STATUS_LABELS: Record<EnvironmentalAspectStatus, string> = {
+  draft:                     'Draft',
+  assessed:                  'Assessed',
+  confirmed_significant:     'Confirmed significant',
+  confirmed_not_significant: 'Confirmed not significant',
+  superseded:                'Superseded',
+};
+
+// Core-OS 360 Phase 5, Group 2 (migration 157): environmental
+// incidents/spills/waste/monitoring/permits. Mirrors the CHECKs on
+// environmental_spills.receiving_environment/.status,
+// environmental_monitoring.category, environmental_permits.status and
+// permit_conditions.status; vocab.test.ts pins these against 157's SQL.
+
+export const ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS = ['land', 'water', 'drain', 'air', 'other'] as const;
+export type EnvironmentalSpillReceivingEnvironment = typeof ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS[number];
+export const ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS: Record<EnvironmentalSpillReceivingEnvironment, string> = {
+  land:  'Land',
+  water: 'Water',
+  drain: 'Drain',
+  air:   'Air',
+  other: 'Other',
+};
+
+export const ENVIRONMENTAL_SPILL_STATUSES = ['reported', 'contained', 'closed'] as const;
+export type EnvironmentalSpillStatus = typeof ENVIRONMENTAL_SPILL_STATUSES[number];
+export const ENVIRONMENTAL_SPILL_STATUS_LABELS: Record<EnvironmentalSpillStatus, string> = {
+  reported:  'Reported',
+  contained: 'Contained',
+  closed:    'Closed',
+};
+
+export const ENVIRONMENTAL_MONITORING_CATEGORIES = ['water', 'air', 'noise', 'energy', 'emissions', 'other'] as const;
+export type EnvironmentalMonitoringCategory = typeof ENVIRONMENTAL_MONITORING_CATEGORIES[number];
+export const ENVIRONMENTAL_MONITORING_CATEGORY_LABELS: Record<EnvironmentalMonitoringCategory, string> = {
+  water:     'Water',
+  air:       'Air',
+  noise:     'Noise',
+  energy:    'Energy',
+  emissions: 'Emissions',
+  other:     'Other',
+};
+
+// A lifecycle fact about the permit itself, never a compliance verdict.
+export const ENVIRONMENTAL_PERMIT_STATUSES = ['active', 'expired', 'surrendered', 'revoked'] as const;
+export type EnvironmentalPermitStatus = typeof ENVIRONMENTAL_PERMIT_STATUSES[number];
+export const ENVIRONMENTAL_PERMIT_STATUS_LABELS: Record<EnvironmentalPermitStatus, string> = {
+  active:      'Active',
+  expired:     'Expired',
+  surrendered: 'Surrendered',
+  revoked:     'Revoked',
+};
+
+// Never 'compliant'/'non_compliant'/'legal' — a permit condition's
+// status is a factual record, never a compliance judgement. See
+// CLAUDE.md's standing rule against certification language.
+export const PERMIT_CONDITION_STATUSES = ['current', 'evidence_due', 'overdue', 'breach_recorded', 'review_required'] as const;
+export type PermitConditionStatus = typeof PERMIT_CONDITION_STATUSES[number];
+export const PERMIT_CONDITION_STATUS_LABELS: Record<PermitConditionStatus, string> = {
+  current:         'Current',
+  evidence_due:    'Evidence due',
+  overdue:         'Overdue',
+  breach_recorded: 'Breach recorded',
+  review_required: 'Review required',
+};
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): the shared ISO 45001/
+// 14001 management-system framework. management_system_standards.code
+// is seeded, not CHECK-constrained (deliberately extensible to a third
+// standard later) — this tuple pins the two rows migration 158 seeds;
+// vocab.test.ts parses the INSERT and pins it against 158's SQL.
+export const ISO_STANDARD_CODES = ['iso_45001_2018', 'iso_14001_2015'] as const;
+export type IsoStandardCode = typeof ISO_STANDARD_CODES[number];
+export const ISO_STANDARD_CODE_LABELS: Record<IsoStandardCode, string> = {
+  iso_45001_2018: 'ISO 45001:2018',
+  iso_14001_2015: 'ISO 14001:2015',
+};
+
+// A short menu of what kind of EXISTING record a piece of evidence can
+// be — the hs_entity_table() keys this platform already has evidence
+// for. Not exhaustive of every hs_entity_table() key (a certification
+// or an action makes an odd "evidence for a clause" choice) — this is
+// the practical subset the "add evidence" form offers, and the ones
+// this migration's own seeded clauses use as a maps_to_hint.
+export const STANDARD_EVIDENCE_ENTITY_TYPES = [
+  'document', 'risk_assessment', 'hazard', 'compliance_item', 'training_record',
+  'audit', 'inspection', 'incident', 'contractor', 'equipment', 'action',
+  'environmental_aspect', 'environmental_permit', 'environmental_monitoring', 'waste_movement',
+] as const;
+export type StandardEvidenceEntityType = typeof STANDARD_EVIDENCE_ENTITY_TYPES[number];
+export const STANDARD_EVIDENCE_ENTITY_TYPE_LABELS: Record<StandardEvidenceEntityType, string> = {
+  document:                    'Document',
+  risk_assessment:              'Risk assessment',
+  hazard:                       'Hazard',
+  compliance_item:              'Register item',
+  training_record:              'Training record',
+  audit:                        'Audit',
+  inspection:                   'Inspection',
+  incident:                     'Incident',
+  contractor:                   'Contractor',
+  equipment:                    'Asset / equipment',
+  action:                       'Action',
+  environmental_aspect:         'Environmental aspect',
+  environmental_permit:         'Environmental permit',
+  environmental_monitoring:     'Environmental monitoring reading',
+  waste_movement:               'Waste movement',
+};
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+// EXACT cautious vocabulary — never "compliant"/"non_compliant"/
+// "legal"/"illegal" anywhere in these labels. See CLAUDE.md's standing
+// rule against certification/compliance-verdict language.
+
+// A HUMAN applicability decision (never AI, never automatic — the
+// database's own gate on organisation_legal_obligations_stamp() refuses
+// 'applicable'/'not_applicable' without a named assessor + timestamp).
+export const LEGAL_APPLICABILITY_STATUSES = ['not_assessed', 'applicable', 'not_applicable', 'under_review'] as const;
+export type LegalApplicabilityStatus = typeof LEGAL_APPLICABILITY_STATUSES[number];
+export const LEGAL_APPLICABILITY_STATUS_LABELS: Record<LegalApplicabilityStatus, string> = {
+  not_assessed:   'Not yet assessed',
+  applicable:     'Applicable',
+  not_applicable: 'Not applicable',
+  under_review:   'Under review',
+};
+
+// The ONE vocabulary compliance_evaluations.status may ever hold —
+// factual evaluation states, never a verdict on the platform's own
+// authority. 'potential_noncompliance'/'confirmed_noncompliance' are
+// the two that raise a client action (lib/events/legalRegisterRules.ts).
+export const COMPLIANCE_EVALUATION_STATUSES = [
+  'evidence_current', 'evidence_incomplete', 'review_due',
+  'potential_noncompliance', 'confirmed_noncompliance', 'not_evaluated',
+] as const;
+export type ComplianceEvaluationStatus = typeof COMPLIANCE_EVALUATION_STATUSES[number];
+export const COMPLIANCE_EVALUATION_STATUS_LABELS: Record<ComplianceEvaluationStatus, string> = {
+  evidence_current:        'Evidence current',
+  evidence_incomplete:     'Evidence incomplete',
+  review_due:              'Review due',
+  potential_noncompliance: 'Potential non-compliance recorded',
+  confirmed_noncompliance: 'Confirmed non-compliance recorded',
+  not_evaluated:           'Not yet evaluated',
+};
+
+// legal_requirements.category — a parallel, small legal-domain set,
+// genuinely different from COMPLIANCE_CATEGORIES (a client's own item
+// categories) and HS_REGISTER_CATEGORIES (recurring H&S check types): a
+// piece of LEGISLATION is neither. See migration 159's own header.
+export const LEGAL_REQUIREMENT_CATEGORIES = [
+  'health_safety', 'environmental', 'employment_law', 'data_protection',
+  'fire_safety', 'food_safety', 'licensing', 'consumer', 'general', 'other',
+] as const;
+export type LegalRequirementCategory = typeof LEGAL_REQUIREMENT_CATEGORIES[number];
+export const LEGAL_REQUIREMENT_CATEGORY_LABELS: Record<LegalRequirementCategory, string> = {
+  health_safety:   'Health & Safety',
+  environmental:   'Environmental',
+  employment_law:  'Employment Law',
+  data_protection: 'Data Protection',
+  fire_safety:     'Fire Safety',
+  food_safety:     'Food Safety',
+  licensing:       'Licensing',
+  consumer:        'Consumer',
+  general:         'General',
+  other:           'Other',
+};
+
+// The Tavily-research-notes foundation (inert today — no live API call
+// anywhere in this codebase; a later group wires one).
+export const LEGAL_RESEARCH_SOURCES = ['tavily', 'manual'] as const;
+export type LegalResearchSource = typeof LEGAL_RESEARCH_SOURCES[number];
+export const LEGAL_RESEARCH_SOURCE_LABELS: Record<LegalResearchSource, string> = {
+  tavily: 'Tavily (automated research)',
+  manual: 'Manual',
+};
+
+// Core-OS 360 Phase 5, Group 5 (migration 160): Controlled Document
+// Management. hs_documents' status CHECK extended from 106's plain
+// active/superseded to a formal author/reviewer/approver lifecycle,
+// enforced by hs_document_lifecycle_guard() (the database, not the
+// UI). vocab.test.ts pins this against 160's SQL.
+export const HS_DOCUMENT_STATUSES = [
+  'draft', 'pending_review', 'pending_approval', 'approved', 'active',
+  'review_due', 'superseded', 'withdrawn', 'archived',
+] as const;
+export type HsDocumentStatus = typeof HS_DOCUMENT_STATUSES[number];
+export const HS_DOCUMENT_STATUS_LABELS: Record<HsDocumentStatus, string> = {
+  draft:             'Draft',
+  pending_review:    'Pending review',
+  pending_approval:  'Pending approval',
+  approved:          'Approved',
+  active:            'Active (current)',
+  review_due:        'Review due',
+  superseded:        'Superseded',
+  withdrawn:         'Withdrawn',
+  archived:          'Archived',
+};
+
+/** Statuses whose content (title/category/description) is immutable —
+ *  the exact set hs_document_lifecycle_guard() locks; an edit request
+ *  on one of these must be a NEW VERSION, never an UPDATE. */
+export const HS_DOCUMENT_IMMUTABLE_STATUSES: readonly HsDocumentStatus[] = [
+  'approved', 'active', 'review_due', 'superseded', 'withdrawn', 'archived',
+];
+
+/** Statuses that no longer represent the current, in-force version —
+ *  shown in a document's History view, never in a "current" list. */
+export const HS_DOCUMENT_HISTORY_STATUSES: readonly HsDocumentStatus[] = [
+  'superseded', 'withdrawn', 'archived',
+];
+
+// Core-OS 360 Phase 5, Group 6 (migration 161): Objectives & Targets,
+// and Management Review. Factual progress states, never a compliance
+// verdict — objective_measurements_roll() (the database, not this UI)
+// computes the transition deterministically from the latest measurement
+// against target_value/target_direction.
+export const OBJECTIVE_STATUSES = [
+  'draft', 'active', 'on_track', 'at_risk', 'achieved', 'missed', 'abandoned',
+] as const;
+export type ObjectiveStatus = typeof OBJECTIVE_STATUSES[number];
+export const OBJECTIVE_STATUS_LABELS: Record<ObjectiveStatus, string> = {
+  draft:     'Draft',
+  active:    'Active',
+  on_track:  'On track',
+  at_risk:   'At risk',
+  achieved:  'Achieved',
+  missed:    'Missed',
+  abandoned: 'Abandoned',
+};
+
+export const OBJECTIVE_TARGET_DIRECTIONS = ['increase', 'decrease'] as const;
+export type ObjectiveTargetDirection = typeof OBJECTIVE_TARGET_DIRECTIONS[number];
+export const OBJECTIVE_TARGET_DIRECTION_LABELS: Record<ObjectiveTargetDirection, string> = {
+  increase: 'Higher is better (increase toward target)',
+  decrease: 'Lower is better (decrease toward target)',
+};
+
+export const MANAGEMENT_REVIEW_STATUSES = ['scheduled', 'in_progress', 'completed', 'cancelled'] as const;
+export type ManagementReviewStatus = typeof MANAGEMENT_REVIEW_STATUSES[number];
+export const MANAGEMENT_REVIEW_STATUS_LABELS: Record<ManagementReviewStatus, string> = {
+  scheduled:   'Scheduled',
+  in_progress: 'In progress',
+  completed:   'Completed',
+  cancelled:   'Cancelled',
+};
+
+// Core-OS 360 Phase 5, Group 7 (migration 162): Internal Audit
+// Enhancement, Governance Calendar, Worker Consultation, Environmental
+// Complaints. audit_findings.severity — a genuinely new, small
+// vocabulary the task itself specifies (not a reuse of actions.severity,
+// which is low/medium/high/critical for a DIFFERENT column on a
+// different table). audit_findings_closure_guard() (the database, not
+// this UI) is what actually enforces the major/critical closure gate.
+export const AUDIT_FINDING_SEVERITIES = ['minor', 'major', 'critical'] as const;
+export type AuditFindingSeverity = typeof AUDIT_FINDING_SEVERITIES[number];
+export const AUDIT_FINDING_SEVERITY_LABELS: Record<AuditFindingSeverity, string> = {
+  minor:    'Minor',
+  major:    'Major',
+  critical: 'Critical',
+};
+
+export const AUDIT_PROGRAMME_FREQUENCIES = ['weekly', 'monthly', 'quarterly', 'biannual', 'annual', 'other'] as const;
+export type AuditProgrammeFrequency = typeof AUDIT_PROGRAMME_FREQUENCIES[number];
+export const AUDIT_PROGRAMME_FREQUENCY_LABELS: Record<AuditProgrammeFrequency, string> = {
+  weekly:    'Weekly',
+  monthly:   'Monthly',
+  quarterly: 'Quarterly',
+  biannual:  'Twice a year',
+  annual:    'Annual',
+  other:     'Other',
+};
+
+export const CONSULTATION_METHODS = ['meeting', 'survey', 'committee', 'one_to_one', 'other'] as const;
+export type ConsultationMethod = typeof CONSULTATION_METHODS[number];
+export const CONSULTATION_METHOD_LABELS: Record<ConsultationMethod, string> = {
+  meeting:    'Meeting',
+  survey:     'Survey',
+  committee:  'Safety committee',
+  one_to_one: 'One-to-one',
+  other:      'Other',
+};
+
+export const COMPLAINT_SOURCES = ['neighbour', 'regulator', 'employee', 'public', 'other'] as const;
+export type ComplaintSource = typeof COMPLAINT_SOURCES[number];
+export const COMPLAINT_SOURCE_LABELS: Record<ComplaintSource, string> = {
+  neighbour: 'Neighbour',
+  regulator: 'Regulator',
+  employee:  'Employee',
+  public:    'Member of the public',
+  other:     'Other',
+};

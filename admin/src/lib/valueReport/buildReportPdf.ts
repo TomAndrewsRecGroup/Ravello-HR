@@ -123,6 +123,24 @@ export function buildReportPdf(
     ['Onboarding completed',       r.lead.onboardingCompleted],
   ]);
 
+  // Core-OS 360 Phase 5, Group 8. ISO readiness is reported per
+  // standard as counts only ("3 of 12 clauses have recorded evidence"),
+  // never a percentage or a certification claim — the standalone
+  // readiness dashboard's own posture (158).
+  section('GOVERNANCE', [
+    ...r.governance.isoReadiness.map(
+      s => [`ISO readiness — ${s.standardCode}`, `${s.clausesWithEvidence} of ${s.clausesTotal} clauses have recorded evidence`] as [string, string],
+    ),
+    ['Legal obligations recorded applicable', r.governance.legalObligationsApplicable],
+    ['Legal evaluations this month',          r.governance.legalEvaluationsThisMonth],
+    ['Evaluations flagging non-compliance',   r.governance.legalEvaluationsNonComplianceThisMonth],
+    ['Objectives tracked (current)',          r.governance.objectivesTotal],
+    ['Objectives on track or achieved (current)', r.governance.objectivesOnTrack],
+    ['Audit findings opened this month',      r.governance.auditFindingsOpenedThisMonth],
+    ['Audit findings closed this month',      r.governance.auditFindingsClosedThisMonth],
+    ['Audit findings open (current)',         r.governance.auditFindingsOpen],
+  ]);
+
   section('SYSTEM USAGE', [
     ['Portal users',     r.usage.portalUsers],
     ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],

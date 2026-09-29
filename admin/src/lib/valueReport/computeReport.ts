@@ -1,4 +1,9 @@
 import { computeLeadMetrics, type AbsenceRecordRow, type OnboardingInstanceRow, type PerformanceReviewRow, type TrainingNeedRow } from './leadMetrics';
+import {
+  computeGovernanceMetrics,
+  type GovernanceAuditFindingRow, type GovernanceClauseRow, type GovernanceComplianceEvaluationRow,
+  type GovernanceEvidenceLinkRow, type GovernanceLegalObligationRow, type GovernanceObjectiveRow, type GovernanceStandardRow,
+} from '../governance/governanceReportMetrics';
 
 // The full Client Value Report computation, extracted from
 // ValueReportClient's useMemo so the monthly auto-generation cron
@@ -26,6 +31,14 @@ export interface ValueReportInputs {
   performanceReviews: PerformanceReviewRow[];
   absenceRecords: AbsenceRecordRow[];
   onboardingInstances: OnboardingInstanceRow[];
+  // Core-OS 360 Phase 5, Group 8: GOVERNANCE section inputs.
+  standards: GovernanceStandardRow[];
+  standardClauses: GovernanceClauseRow[];
+  standardEvidenceLinks: GovernanceEvidenceLinkRow[];
+  legalObligations: GovernanceLegalObligationRow[];
+  complianceEvaluations: GovernanceComplianceEvaluationRow[];
+  objectives: GovernanceObjectiveRow[];
+  auditFindings: GovernanceAuditFindingRow[];
 }
 
 export interface ValueReportData {
@@ -33,6 +46,7 @@ export interface ValueReportData {
   support: { ticketsRaised: number; ticketsResolved: number; avgResolutionHours: number; serviceRequests: number; serviceRequestsResponded: number };
   protect: { complianceItems: number; documentsUploaded: number; actionsCreated: number; actionsCompleted: number };
   lead: ReturnType<typeof computeLeadMetrics>;
+  governance: ReturnType<typeof computeGovernanceMetrics>;
   usage: { portalUsers: number; activeServices: any[]; mrr: number };
 }
 
@@ -65,12 +79,17 @@ export function computeValueReport(companyId: string, year: number, month: numbe
   }
 
   const lead = computeLeadMetrics(cid, year, month, d.trainingNeeds, d.performanceReviews, d.absenceRecords, d.onboardingInstances);
+  const governance = computeGovernanceMetrics(
+    cid, year, month, d.standards, d.standardClauses, d.standardEvidenceLinks,
+    d.legalObligations, d.complianceEvaluations, d.objectives, d.auditFindings,
+  );
 
   return {
     hire: { newRoles: monthReqs.length, filled: filledReqs.length, candidates: monthCandidates.length, activeRoles: totalActiveRoles, totalFilled },
     support: { ticketsRaised: monthTickets.length, ticketsResolved: resolvedTickets.length, avgResolutionHours: avgResolution, serviceRequests: monthServReqs.length, serviceRequestsResponded: respondedServReqs.length },
     protect: { complianceItems: monthCompliance.length, documentsUploaded: monthDocs.length, actionsCreated: monthActions.length, actionsCompleted: completedActions.length },
     lead,
+    governance,
     usage: { portalUsers: totalUsers, activeServices, mrr },
   };
 }

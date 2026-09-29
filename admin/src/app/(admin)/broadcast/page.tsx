@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import BroadcastClient from './BroadcastClient';
 import RecentBroadcasts from './RecentBroadcasts';
+import { buildLegalPrefill } from '@/lib/governance/broadcastPrefill';
 
 export const metadata: Metadata = { title: 'Broadcast' };
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,26 @@ async function loadPrefill(sb: ReturnType<typeof adminClient>, updateId: string 
   };
 }
 
-export default async function BroadcastPage(props: { searchParams: Promise<{ update?: string }> }) {
+// Core-OS 360 Phase 5, Group 8: the Legal Register's own "Broadcast"
+// link (?legal=<legal_requirements id>, from LegalRequirementsCatalogueClient)
+// pre-fills the SAME compose form and reuses the SAME confirm-modal
+// flow as the regulatory-update prefill above — never a second, weaker
+// notification path. Affected clients are read from their own
+// organisation_legal_obligations row: only companies that have
+// actually recorded this requirement as 'applicable' are pre-selected,
+// never every client on the platform. As with loadPrefill above, this
+// is a starting point a staff member reviews and can change or clear
+// entirely before Send — nothing here sends on its own.
+async function loadLegalPrefill(sb: ReturnType<typeof adminClient>, legalId: string | undefined) {
+  if (!legalId) return null;
+  const { data: requirement } = await sb.from('legal_requirements')
+    .select('id, title').eq('id', legalId).maybeSingle();
+  const { data: obligations } = await sb.from('organisation_legal_obligations')
+    .select('company_id').eq('legal_requirement_id', legalId).eq('applicability_status', 'applicable');
+  return buildLegalPrefill(requirement, (obligations ?? []).map((o: { company_id: string }) => o.company_id));
+}
+
+export default async function BroadcastPage(props: { searchParams: Promise<{ update?: string; legal?: string }> }) {
   const searchParams = await props.searchParams;
   const sb = adminClient();
 
@@ -47,9 +67,13 @@ export default async function BroadcastPage(props: { searchParams: Promise<{ upd
   //    healthy buffer (last 200 admin-created actions in the last
   //    90 days) and the client groups by title+created_at-second so
   //    a 50-company broadcast collapses to one row.
-  // 3. A prefill from a regulatory-change suggestion, when linked here.
+  // 3. A prefill from a regulatory-change suggestion, or from the Legal
+  //    Register's own Broadcast link, when linked here. At most one of
+  //    the two query params is expected in practice; if both were ever
+  //    present, the regulatory-update prefill wins (it is the one this
+  //    page has supported longest).
   const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-  const [companiesRes, actionsRes, prefill] = await Promise.all([
+  const [companiesRes, actionsRes, updatePrefill, legalPrefill] = await Promise.all([
     sb.from('companies').select('id, slug, name, active').order('name'),
     sb.from('actions')
       .select('id, title, description, action_type, priority, due_date, created_at, company_id, companies(id, slug, name)')
@@ -58,7 +82,9 @@ export default async function BroadcastPage(props: { searchParams: Promise<{ upd
       .order('created_at', { ascending: false })
       .limit(200),
     loadPrefill(sb, searchParams?.update),
+    loadLegalPrefill(sb, searchParams?.legal),
   ]);
+  const prefill = updatePrefill ?? legalPrefill;
 
   return (
     <>

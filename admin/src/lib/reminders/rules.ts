@@ -263,6 +263,94 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_0', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's
+    // own expiry — only 'active' permits are read, since an already
+    // expired/surrendered/revoked one is no longer live.
+    id: 'environmental_permits', entity: 'environmental_permits',
+    select: 'id, company_id, permit_type, expires_on, status',
+    query: (sb, from, to) => sb.from('environmental_permits').select('id, company_id, permit_type, expires_on, status')
+      .eq('status', 'active').not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 2 (157): a permit condition's own
+    // review cycle. 'breach_recorded' rows are excluded — that status
+    // is a human-recorded fact, never overwritten by a reminder.
+    id: 'permit_conditions', entity: 'permit_conditions',
+    select: 'id, company_id, environmental_permit_id, next_review_due, status',
+    query: (sb, from, to) => sb.from('permit_conditions').select('id, company_id, environmental_permit_id, next_review_due, status')
+      .in('status', ['current', 'evidence_due', 'overdue']).not('next_review_due', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_review_due),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+    // certificate's own recorded expiry — never a computed compliance
+    // conclusion, just reminding that a certificate's expires_on is
+    // approaching or has passed. All rows are read: the table has no
+    // status column to filter a "still current" set by, so the
+    // consuming rule (rules.ts) decides expired vs. expiring from the
+    // bucket alone.
+    id: 'iso_certifications', entity: 'iso_certifications',
+    select: 'id, company_id, standard_id, certificate_number, expires_on',
+    query: (sb, from, to) => sb.from('iso_certifications').select('id, company_id, standard_id, certificate_number, expires_on')
+      .not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+    // next_review_due, rolled forward by compliance_evaluations_roll()
+    // from the newest evaluation for that obligation — reading
+    // compliance_evaluations directly would fire once per historical
+    // row (the exact 148a/PUWER lesson). All obligations with a rolled
+    // date are read; 'not_assessed'/'under_review' ones with no
+    // evaluation yet simply have next_review_due = null and are
+    // filtered out by the .not(...is null) below.
+    id: 'organisation_legal_obligations', entity: 'organisation_legal_obligations',
+    select: 'id, company_id, legal_requirement_id, applicability_status, next_review_due',
+    query: (sb, from, to) => sb.from('organisation_legal_obligations')
+      .select('id, company_id, legal_requirement_id, applicability_status, next_review_due')
+      .not('next_review_due', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_review_due),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): an objective's own target
+    // date. Only OPEN objectives — an objective that already reached a
+    // terminal status (achieved/missed/abandoned) needs no further
+    // reminder about a date that no longer matters.
+    id: 'objectives', entity: 'objectives',
+    select: 'id, company_id, title, target_date, status',
+    query: (sb, from, to) => sb.from('objectives').select('id, company_id, title, target_date, status')
+      .in('status', ['draft', 'active', 'on_track', 'at_risk']).not('target_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.target_date),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): a SCHEDULED management review's
+    // own review_date — once it moves to in_progress/completed/cancelled
+    // there is nothing left to remind anyone about.
+    id: 'management_reviews', entity: 'management_reviews',
+    select: 'id, company_id, review_date, status',
+    query: (sb, from, to) => sb.from('management_reviews').select('id, company_id, review_date, status')
+      .eq('status', 'scheduled').order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
+    buckets: ['due_30', 'due_7', 'due_0'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
+    // next_due_date. Only ACTIVE programmes — a paused/retired one has
+    // nothing due.
+    id: 'audit_programmes', entity: 'audit_programmes',
+    select: 'id, company_id, name, next_due_date, active',
+    query: (sb, from, to) => sb.from('audit_programmes').select('id, company_id, name, next_due_date, active')
+      .eq('active', true).not('next_due_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_due_date),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')
@@ -421,5 +509,39 @@ export const STATUS_WRITES: StatusWrite[] = [
     id: 'policy_ack_overdue', table: 'policy_acknowledgements',
     apply: (sb, today) => sb.from('policy_acknowledgements').update({ status: 'overdue', reminder_sent: true }, { count: 'exact' })
       .eq('status', 'pending').lt('sent_at', `${addDays(today, -14)}T00:00:00Z`),
+  },
+  {
+    // Core-OS 360 Phase 5, Group 2 (157): environmental_permits.status
+    // is a lifecycle fact, not a compliance verdict — 'expired' simply
+    // means the permit's own expires_on has passed.
+    id: 'environmental_permit_expired', table: 'environmental_permits',
+    apply: (sb, today) => sb.from('environmental_permits').update({ status: 'expired' }, { count: 'exact' })
+      .lt('expires_on', today).eq('status', 'active'),
+  },
+  {
+    // permit_conditions.status stays factual (rule 5): 'overdue' means
+    // "past its own review date", never a compliance judgement.
+    // 'breach_recorded'/'review_required' are human-recorded facts and
+    // are excluded from the read (REMINDERS' own query), so this write
+    // can never overwrite either.
+    id: 'permit_condition_overdue', table: 'permit_conditions',
+    apply: (sb, today) => sb.from('permit_conditions').update({ status: 'overdue' }, { count: 'exact' })
+      .lt('next_review_due', today).in('status', ['current', 'evidence_due']),
+  },
+  {
+    id: 'permit_condition_evidence_due', table: 'permit_conditions',
+    apply: (sb, today) => sb.from('permit_conditions').update({ status: 'evidence_due' }, { count: 'exact' })
+      .lte('next_review_due', addDays(today, 7)).gte('next_review_due', today).eq('status', 'current'),
+  },
+  {
+    // Core-OS 360 Phase 5, Group 5 (160): a published document past its
+    // own review_due_at moves toward 'review_due' — a reminder, never a
+    // deletion (rule 8: no auto-delete anywhere for this table). The
+    // hs_documents reminder rule above reads status='active' BEFORE this
+    // write runs each cron pass (reads-then-writes, lib/reminders/run.ts),
+    // so the overdue notification still fires the first time.
+    id: 'hs_document_review_due', table: 'hs_documents',
+    apply: (sb, today) => sb.from('hs_documents').update({ status: 'review_due' }, { count: 'exact' })
+      .lt('review_due_at', today).eq('status', 'active'),
   },
 ];

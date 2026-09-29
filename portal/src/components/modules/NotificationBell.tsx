@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles, GraduationCap } from 'lucide-react';
+import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles, GraduationCap, Target } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 
@@ -45,6 +45,21 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_incident_reported:       { Icon: AlertTriangle,  color: 'var(--red)' },
   hs_incident_status_changed: { Icon: AlertTriangle,  color: 'var(--blue)' },
   hs_document_added:          { Icon: FileText,       color: 'var(--blue)' },
+  hs_document_submitted_for_review:   { Icon: FileText, color: 'var(--amber)' },
+  hs_document_submitted_for_approval: { Icon: FileText, color: 'var(--amber)' },
+  hs_document_approved:               { Icon: FileText, color: 'var(--teal)' },
+  hs_document_withdrawn:              { Icon: FileText, color: 'var(--danger)' },
+  objective_at_risk:           { Icon: Target,        color: 'var(--amber)' },
+  objective_missed:            { Icon: Target,        color: 'var(--danger)' },
+  objective_achieved:          { Icon: Target,        color: 'var(--success)' },
+  management_review_due:       { Icon: CalendarClock, color: 'var(--amber)' },
+  management_review_completed: { Icon: Check,         color: 'var(--success)' },
+  audit_finding_raised:              { Icon: HardHat,       color: 'var(--danger)' },
+  audit_finding_closed:              { Icon: Check,         color: 'var(--success)' },
+  audit_programme_due:               { Icon: CalendarClock, color: 'var(--amber)' },
+  consultation_recorded:             { Icon: Users,         color: 'var(--blue)' },
+  environmental_complaint_received:  { Icon: AlertTriangle, color: 'var(--amber)' },
+  environmental_complaint_updated:   { Icon: AlertTriangle, color: 'var(--blue)' },
   hs_test_result:             { Icon: GraduationCap,  color: 'var(--purple)' },
   hazard_reported:               { Icon: AlertTriangle,  color: 'var(--gold)' },
   hazard_assigned:               { Icon: CheckSquare,  color: 'var(--blue)' },
@@ -78,6 +93,18 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   emergency_drill_recorded:   { Icon: ShieldCheck,   color: 'var(--amber)' },
   emergency_plan_added:       { Icon: ShieldCheck,   color: 'var(--amber)' },
   puwer_assessment_recorded:  { Icon: ShieldCheck,   color: 'var(--amber)' },
+  environmental_aspect_significant: { Icon: ShieldCheck, color: 'var(--red)' },
+  environmental_spill_reported: { Icon: ShieldCheck, color: 'var(--red)' },
+  waste_non_conformance: { Icon: ShieldCheck, color: 'var(--amber)' },
+  environmental_monitoring_exceedance: { Icon: ShieldCheck, color: 'var(--amber)' },
+  environmental_permit_status_changed: { Icon: ShieldCheck, color: 'var(--amber)' },
+  environmental_permit_condition_review: { Icon: ShieldCheck, color: 'var(--amber)' },
+  iso_certification_expiring: { Icon: FileText, color: 'var(--amber)' },
+  iso_certification_expired:  { Icon: FileText, color: 'var(--danger)' },
+  legal_obligation_applicable:    { Icon: FileText,      color: 'var(--blue)' },
+  legal_evaluation_recorded:      { Icon: FileText,      color: 'var(--blue)' },
+  legal_evaluation_noncompliance: { Icon: AlertTriangle, color: 'var(--red)' },
+  legal_obligation_review_due:    { Icon: CalendarClock, color: 'var(--amber)' },
   leave_requested:            { Icon: CalendarClock,  color: 'var(--amber)' },
   role_filled:                { Icon: Check,          color: 'var(--success)' },
   onboarding_started:         { Icon: Users,          color: 'var(--blue)' },

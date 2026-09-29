@@ -83,6 +83,51 @@ export const NOTIFICATION_TYPES = [
   // Core-OS 360 Phase 4 Group 12 wiring sweep: PUWER had a trigger
   // but no consuming rule beyond its review-cycle reminder.
   'puwer_assessment_recorded',
+  // Core-OS 360 Phase 5 Group 1 (156): environmental aspects & impacts.
+  'environmental_aspect_significant',
+  // Core-OS 360 Phase 5 Group 2 (157): incidents, spills, waste,
+  // monitoring, permits & conditions.
+  'environmental_spill_reported',
+  'waste_non_conformance',
+  'environmental_monitoring_exceedance',
+  'environmental_permit_status_changed',
+  'environmental_permit_condition_review',
+  // Core-OS 360 Phase 5 Group 3 (158): shared ISO 45001/14001
+  // management-system framework. Never "compliant"/"certified" — a
+  // real user-entered certificate's own recorded expiry.
+  'iso_certification_expiring',
+  'iso_certification_expired',
+  // Core-OS 360 Phase 5 Group 4 (159): the Legal Register. Never
+  // "compliant"/"non-compliant"/"legal"/"illegal" — see CLAUDE.md's
+  // standing rule against certification/compliance-verdict language.
+  'legal_obligation_applicable',
+  'legal_evaluation_recorded',
+  'legal_evaluation_noncompliance',
+  'legal_obligation_review_due',
+  // Core-OS 360 Phase 5 Group 5 (160): Controlled Document Management —
+  // the formal author/reviewer/approver workflow's own transitions.
+  // 'hs_document_added' (below) still covers a document reaching
+  // 'active' (published); these cover the steps before that.
+  'hs_document_submitted_for_review',
+  'hs_document_submitted_for_approval',
+  'hs_document_approved',
+  'hs_document_withdrawn',
+  // Core-OS 360 Phase 5 Group 6 (161): Objectives & Targets, and
+  // Management Review. Never a compliance verdict — a factual progress
+  // status ('at_risk'/'missed') or a recorded review milestone.
+  'objective_at_risk',
+  'objective_missed',
+  'objective_achieved',
+  'management_review_due',
+  'management_review_completed',
+  // Core-OS 360 Phase 5, Group 7 (162): Internal Audit Enhancement,
+  // Worker Consultation, Environmental Complaints.
+  'audit_finding_raised',
+  'audit_finding_closed',
+  'audit_programme_due',
+  'consultation_recorded',
+  'environmental_complaint_received',
+  'environmental_complaint_updated',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -209,6 +254,33 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   emergency_drill_recorded:  'Emergency drill recorded',
   emergency_plan_added:      'Emergency plan added',
   puwer_assessment_recorded: 'PUWER assessment recorded',
+  environmental_aspect_significant: 'Environmental aspect confirmed significant',
+  environmental_spill_reported:    'Environmental spill reported',
+  waste_non_conformance:           'Waste movement non-conformance',
+  environmental_monitoring_exceedance: 'Environmental monitoring exceedance',
+  environmental_permit_status_changed: 'Environmental permit status changed',
+  environmental_permit_condition_review: 'Environmental permit condition needs review',
+  iso_certification_expiring: 'ISO certification expiring',
+  iso_certification_expired:  'ISO certification expired',
+  legal_obligation_applicable:   'Legal requirement marked applicable',
+  legal_evaluation_recorded:     'Legal evaluation recorded',
+  legal_evaluation_noncompliance:'Legal register: non-compliance recorded',
+  legal_obligation_review_due:   'Legal register review due',
+  hs_document_submitted_for_review:   'H&S document submitted for review',
+  hs_document_submitted_for_approval: 'H&S document submitted for approval',
+  hs_document_approved:               'H&S document approved',
+  hs_document_withdrawn:              'H&S document withdrawn',
+  objective_at_risk:          'Objective at risk',
+  objective_missed:           'Objective missed',
+  objective_achieved:         'Objective achieved',
+  management_review_due:      'Management review due',
+  management_review_completed:'Management review completed',
+  audit_finding_raised:              'Audit finding raised',
+  audit_finding_closed:              'Audit finding closed',
+  audit_programme_due:               'Planned audit due',
+  consultation_recorded:             'Worker consultation recorded',
+  environmental_complaint_received:  'Environmental complaint received',
+  environmental_complaint_updated:   'Environmental complaint updated',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

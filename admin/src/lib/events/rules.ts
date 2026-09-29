@@ -13,6 +13,9 @@ import { supportRules } from './supportRules';
 import { hireRules } from './hireRules';
 import { safetyRules } from './safetyRules';
 import { workforceRules } from './workforceRules';
+import { environmentalRules } from './environmentalRules';
+import { legalRegisterRules } from './legalRegisterRules';
+import { governanceRules } from './governanceRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -345,6 +348,138 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's own
+    // expiry. Client-facing (unlike Phase 4's H&S permits reminder) —
+    // there is a real portal environmental-permits page for this.
+    id: 'environmental_permit_reminder',
+    on: 'environmental_permits.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'environmental_permit_status_changed',
+        title: `Environmental permit "${s(row.permit_type, 'a permit')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/environmental-permits`, portal: '/protect/environmental-permits' },
+      })];
+    },
+  },
+  {
+    // A permit condition's own review cycle. Never "compliance due" —
+    // this is a recorded review date, not a legal deadline.
+    id: 'permit_condition_reminder',
+    on: 'permit_conditions.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'environmental_permit_condition_review',
+        title: `A permit condition review is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/environmental-permits`, portal: '/protect/environmental-permits' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+    // certificate's own recorded expiry — never a computed compliance
+    // conclusion. The reminder payload never carries an embed
+    // (slimRow() strips it), so the standard's name is looked up here,
+    // the same way training_record_reminder resolves an employee name.
+    id: 'iso_certification_reminder',
+    on: 'iso_certifications.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const expired = bucket === 'overdue';
+      let standardName = 'An ISO certification';
+      const standardId = s(row.standard_id);
+      if (standardId) {
+        const { data } = await sb.from('management_system_standards').select('name').eq('id', standardId).maybeSingle();
+        standardName = (data as { name?: string } | null)?.name ?? standardName;
+      }
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: expired ? 'iso_certification_expired' : 'iso_certification_expiring',
+        title: `${standardName} certificate ${s(row.certificate_number, '')} ${expired ? `expired on ${due_date}` : `expires ${due_date}`}`.replace(/\s+/g, ' ').trim(),
+        link:  { admin: `/health-safety/${event.company_id}/iso`, portal: '/protect/iso-readiness' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+    // next_review_due — rolled forward from the newest compliance_
+    // evaluations row by the database's own trigger (the 148a/PUWER
+    // lesson: an insert-only history table cannot be read directly for
+    // a reminder, or it fires once per historical row). Never
+    // "compliance due" — a recorded review date, not a legal deadline.
+    id: 'legal_obligation_review_reminder',
+    on: 'organisation_legal_obligations.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const reqId = s(row.legal_requirement_id);
+      let title = 'A legal requirement';
+      if (reqId) {
+        const { data } = await sb.from('legal_requirements').select('title').eq('id', reqId).maybeSingle();
+        title = (data as { title?: string } | null)?.title ?? title;
+      }
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'legal_obligation_review_due',
+        title: `Legal register review of "${title}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/legal`, portal: '/protect/legal-register' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): an objective's own target_date
+    // approaching or passed. Only draft/active/on_track/at_risk
+    // objectives reach this reminder at all (the query already excludes
+    // achieved/missed/abandoned) — a factual date nudge, never a
+    // compliance verdict.
+    id: 'objective_target_date_reminder',
+    on: 'objectives.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const overdue = bucket === 'overdue';
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id,
+        type: overdue ? 'objective_missed' : 'objective_at_risk',
+        title: `Objective "${s(row.title, 'An objective')}" target date is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/objectives`, portal: '/protect/objectives' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): a SCHEDULED management review's
+    // own review_date approaching.
+    id: 'management_review_date_reminder',
+    on: 'management_reviews.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'due_0'; },
+    then: ({ event }) => {
+      const { bucket, due_date } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'management_review_due',
+        title: `Management review is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/management-review`, portal: '/protect/management-review' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
+    // next_due_date approaching or passed — a scheduling nudge, never a
+    // compliance verdict.
+    id: 'audit_programme_reminder',
+    on: 'audit_programmes.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'audit_programme_due',
+        title: `"${s(row.name, 'A planned audit')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/audits`, portal: '/protect/audits' },
+      })];
+    },
+  },
+  {
     id: 'hs_equipment_reminder',
     on: 'hs_equipment.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
@@ -523,7 +658,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules, ...environmentalRules, ...legalRegisterRules, ...governanceRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);

@@ -33,6 +33,7 @@ const m122 = readFileSync(`${MIG}/122_safety_foundation.sql`, 'utf8');
 const m132 = readFileSync(`${MIG}/132_workforce_foundation.sql`, 'utf8');
 const m144 = readFileSync(`${MIG}/144_asset_register.sql`, 'utf8');
 const m147 = readFileSync(`${MIG}/147_inspection_perform_capability.sql`, 'utf8');
+const m156 = readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -87,8 +88,19 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144 +
       seed.get(r)!.push(cap);
     }
   }
+  // 156 (Phase 5, Group 1: environmental aspects) adds two capabilities,
+  // copying 117's own risk.read/risk.create role lists verbatim — the
+  // same call 144's asset.read/asset.manage already made.
+  const added156 = [...m156.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added156.length).toBe(2);
+  for (const [, cap, roles] of added156) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `156 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
   for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
-  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144 + '\n' + m147;
+  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144 + '\n' + m147 + '\n' + m156;
   const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {

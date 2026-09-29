@@ -37,12 +37,20 @@ export default async function ProtectDocumentsPage() {
   const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const [documents, files] = await Promise.all([
     readAllPages<HsDocument>((from, to) =>
       supabase.from('hs_documents')
-        .select('id, company_id, site_id, category, title, description, version, review_due_at, status, supersedes_id, created_at, updated_at')
+        .select('id, company_id, site_id, category, title, description, version, review_due_at, status, supersedes_id, effective_from, created_at, updated_at')
         .eq('company_id', companyId)
         .eq('status', 'active')
+        // Defence in depth (Core-OS 360 Phase 5, Group 5): the database's
+        // own hs_document_lifecycle_guard() already refuses 'active'
+        // while effective_from is in the future, so status = 'active'
+        // alone already implies "currently effective" — this filter is
+        // belt and braces, never load-bearing on its own.
+        .or(`effective_from.is.null,effective_from.lte.${today}`)
         .order('review_due_at', { ascending: true, nullsFirst: false }).order('id')
         .range(from, to)),
     readAllPages<HsFile>((from, to) =>

@@ -6,6 +6,7 @@ import {
   Search, X, Building2, Briefcase, Users, LifeBuoy,
   FileText, ShieldCheck, Loader2, UserRound, Trophy, MapPin, Network,
   CheckSquare, AlertTriangle, ClipboardCheck, Wrench,
+  Leaf, Scale, Target, Users2, ClipboardList, MessageSquare,
 } from 'lucide-react';
 
 interface SearchResult {
@@ -33,6 +34,15 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   equipment:       { icon: Wrench,      color: 'var(--ink-soft)', label: 'Equipment' },
   service_request: { icon: LifeBuoy,    color: 'var(--gold)',   label: 'Request' },
   compliance:      { icon: ShieldCheck, color: 'var(--red)',    label: 'Compliance' },
+  // Core-OS 360 Phase 5 (Group 8): search_records (163) gained these
+  // seven branches — they had no search coverage at all before.
+  environmental_aspect: { icon: Leaf,           color: 'var(--teal)',   label: 'Env. aspect' },
+  environmental_permit: { icon: Leaf,           color: 'var(--teal)',   label: 'Env. permit' },
+  legal_requirement:    { icon: Scale,          color: 'var(--ink-soft)', label: 'Legal requirement' },
+  objective:            { icon: Target,         color: 'var(--purple)', label: 'Objective' },
+  management_review:    { icon: Users2,         color: 'var(--purple)', label: 'Management review' },
+  audit_programme:      { icon: ClipboardList,  color: 'var(--teal)',   label: 'Audit programme' },
+  consultation_record:  { icon: MessageSquare,  color: 'var(--gold)',   label: 'Consultation' },
 };
 
 // Where each kind of record lives in the admin app. Anything without a
@@ -50,6 +60,16 @@ export function hrefFor(type: string, id: string, org: string | null): string {
     case 'incident':        return org ? `/health-safety/${org}/incidents` : '/health-safety';
     case 'audit':           return org ? `/health-safety/${org}/audits/${id}` : '/health-safety';
     case 'equipment':       return org ? `/health-safety/${org}/equipment` : '/health-safety';
+    case 'environmental_aspect': return org ? `/health-safety/${org}/environmental-aspects` : '/health-safety';
+    case 'environmental_permit': return org ? `/health-safety/${org}/environmental-permits` : '/health-safety';
+    // legal_requirement has no per-organisation home — it's the staff
+    // catalogue (159), not a per-company row (search_records returns a
+    // null organisation_id for it, same reason).
+    case 'legal_requirement':   return '/health-safety/legal-register';
+    case 'objective':           return org ? `/health-safety/${org}/objectives` : '/health-safety';
+    case 'management_review':   return org ? `/health-safety/${org}/management-review` : '/health-safety';
+    case 'audit_programme':     return org ? `/health-safety/${org}/audit-programmes` : '/health-safety';
+    case 'consultation_record': return org ? `/health-safety/${org}/consultation` : '/health-safety';
     default:                return org ? `/clients/${org}` : '/clients';
   }
 }

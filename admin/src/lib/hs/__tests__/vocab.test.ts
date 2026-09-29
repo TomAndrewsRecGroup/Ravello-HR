@@ -31,7 +31,27 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 153 adds the isolation type / status vocabularies.
   + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8')
   // 154 adds the emergency plan type / status and drill outcome vocabularies.
-  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8');
+  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8')
+  // 156 adds the environmental aspect type / condition / status vocabularies.
+  + readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8')
+  // 157 adds spill receiving-environment/status, monitoring category
+  // and environmental permit / permit condition status vocabularies.
+  + readFileSync(`${MIG}/157_environmental_incidents_waste_monitoring_permits.sql`, 'utf8')
+  // 159 adds the Legal Register's applicability status, compliance
+  // evaluation status, requirement category and research-note source
+  // vocabularies.
+  + readFileSync(`${MIG}/159_legal_register.sql`, 'utf8')
+  // 160 extends hs_documents' status CHECK to the formal author/
+  // reviewer/approver lifecycle (a NAMED constraint, so its anchor
+  // cannot collide with 106's original unnamed inline CHECK text).
+  + readFileSync(`${MIG}/160_document_control.sql`, 'utf8')
+  // Core-OS 360 Phase 5, Group 6 (161): Objectives & Targets, and
+  // Management Review — objective status/target_direction, and
+  // management review status.
+  + readFileSync(`${MIG}/161_objectives_management_review.sql`, 'utf8')
+  // Core-OS 360 Phase 5, Group 7 (162): audit finding severity, audit
+  // programme frequency, consultation method, complaint source.
+  + readFileSync(`${MIG}/162_audit_enhancement_calendar_consultation.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -75,7 +95,13 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['contractor risk ratings', V.CONTRACTOR_RISK_RATINGS, /risk_rating IS NULL OR risk_rating IN \(/],
     ['contractor insurance types', V.CONTRACTOR_INSURANCE_TYPES, /insurance_type\s+text NOT NULL CHECK \(insurance_type IN \(/],
     ['permit types', V.PERMIT_TYPES, /permit_type\s+text NOT NULL CHECK \(permit_type IN \(/],
-    ['permit statuses', V.PERMIT_STATUSES, /status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    // 156's environmental_aspects ALSO defaults status to 'draft' with an
+    // identical "status text NOT NULL DEFAULT 'draft' CHECK (status IN ("
+    // phrase — anchored on the preceding scope_of_work column, unique to
+    // permits, the same "distinguish via preceding context" rule this
+    // file already follows for 114/148's outcome collision.
+    ['permit statuses', V.PERMIT_STATUSES,
+      /scope_of_work\s+text NOT NULL CHECK \(length\(btrim\(scope_of_work\)\) BETWEEN 1 AND 4000\),\s*status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
     ['isolation types', V.ISOLATION_TYPES, /isolation_type\s+text NOT NULL CHECK \(isolation_type IN \(/],
     ['isolation statuses', V.ISOLATION_STATUSES, /status\s+text NOT NULL DEFAULT 'applied' CHECK \(status IN \(/],
     ['emergency plan types', V.EMERGENCY_PLAN_TYPES, /plan_type\s+text NOT NULL CHECK \(plan_type IN \(/],
@@ -91,6 +117,74 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     // unique to emergency_drills.
     ['emergency drill outcomes', V.EMERGENCY_DRILL_OUTCOMES,
       /evacuation_time_seconds\s+integer CHECK \(evacuation_time_seconds IS NULL OR evacuation_time_seconds >= 0\),\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['environmental aspect types', V.ENVIRONMENTAL_ASPECT_TYPES, /aspect_type\s+text NOT NULL CHECK \(aspect_type IN \(/],
+    ['environmental aspect conditions', V.ENVIRONMENTAL_ASPECT_CONDITIONS, /condition\s+text NOT NULL DEFAULT 'normal' CHECK \(condition IN \(/],
+    // Anchored on the preceding version column, unique to
+    // environmental_aspects — 152's permits table has an identical
+    // "status text NOT NULL DEFAULT 'draft' CHECK (status IN (" phrase.
+    ['environmental aspect statuses', V.ENVIRONMENTAL_ASPECT_STATUSES,
+      /version\s+integer NOT NULL DEFAULT 1 CHECK \(version >= 1\),\s*status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    // 157's spill table uses NOT NULL (no default); the incident-detail
+    // table's own receiving_environment CHECK is nullable and textually
+    // distinct ("IS NULL OR receiving_environment IN ("), so no anchor
+    // collision here.
+    ['environmental spill receiving environments', V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS,
+      /receiving_environment text NOT NULL CHECK \(receiving_environment IN \(/],
+    ['environmental spill statuses', V.ENVIRONMENTAL_SPILL_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'reported' CHECK \(status IN \(/],
+    ['environmental monitoring categories', V.ENVIRONMENTAL_MONITORING_CATEGORIES,
+      /category\s+text NOT NULL DEFAULT 'other' CHECK \(category IN \(/],
+    // Anchored through the preceding issued_on/expires_on columns,
+    // unique to environmental_permits — emergency_plans (154) also
+    // defaults its own status to 'active'.
+    ['environmental permit statuses', V.ENVIRONMENTAL_PERMIT_STATUSES,
+      /issued_on\s+date,\s*expires_on\s+date,\s*status\s+text NOT NULL DEFAULT 'active' CHECK \(status IN \(/],
+    ['permit condition statuses', V.PERMIT_CONDITION_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'current' CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 4 (159): the Legal Register. 159 is the
+    // LAST migration concatenated into `sql`, so a generic anchor
+    // resolves to its own occurrence regardless of earlier collisions.
+    ['legal requirement categories', V.LEGAL_REQUIREMENT_CATEGORIES,
+      /category\s+text NOT NULL CHECK \(category IN \(/],
+    ['legal applicability statuses', V.LEGAL_APPLICABILITY_STATUSES,
+      /applicability_status\s+text NOT NULL DEFAULT 'not_assessed' CHECK \(applicability_status IN \(/],
+    ['compliance evaluation statuses', V.COMPLIANCE_EVALUATION_STATUSES,
+      /status\s+text NOT NULL CHECK \(status IN \(/],
+    // 162's environmental_complaints has an identical "source text NOT
+    // NULL CHECK (source IN (" phrase and is concatenated AFTER this
+    // file — anchored on the preceding legal_requirement_id column,
+    // unique to legal_requirement_research_notes.
+    ['legal research sources', V.LEGAL_RESEARCH_SOURCES,
+      /legal_requirement_id\s+uuid NOT NULL REFERENCES public\.legal_requirements\(id\) ON DELETE CASCADE,\s*source\s+text NOT NULL CHECK \(source IN \(/],
+    // Core-OS 360 Phase 5, Group 5 (160): a NAMED constraint, so no
+    // preceding-context disambiguation is needed against 106's
+    // original unnamed inline CHECK — that text never spells this name.
+    ['H&S document statuses', V.HS_DOCUMENT_STATUSES,
+      /hs_documents_status_check CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 6 (161). objectives.status also
+    // defaults to 'draft' — the same phrase environmental_aspects (156)
+    // and permits (152) already use — so this is anchored on the
+    // preceding owner_person_id column, unique to objectives.
+    ['objective statuses', V.OBJECTIVE_STATUSES,
+      /owner_person_id\s+uuid REFERENCES public\.people\(id\) ON DELETE SET NULL,[\s\S]*?status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    ['objective target directions', V.OBJECTIVE_TARGET_DIRECTIONS,
+      /target_direction\s+text NOT NULL DEFAULT 'increase' CHECK \(target_direction IN \(/],
+    ['management review statuses', V.MANAGEMENT_REVIEW_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'scheduled' CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 7 (162). 162 is the LAST migration
+    // concatenated into `sql`, so a generic anchor resolves to its own
+    // occurrence regardless of any earlier textually-similar CHECK.
+    ['audit finding severities', V.AUDIT_FINDING_SEVERITIES,
+      /severity\s+text NOT NULL DEFAULT 'minor' CHECK \(severity IN \(/],
+    ['audit programme frequencies', V.AUDIT_PROGRAMME_FREQUENCIES,
+      /frequency\s+text NOT NULL CHECK \(frequency IN \(/],
+    ['consultation methods', V.CONSULTATION_METHODS,
+      /method\s+text NOT NULL CHECK \(method IN \(/],
+    // 159's legal_requirement_research_notes has an identical "source
+    // text NOT NULL CHECK (source IN (" phrase — anchored on the
+    // preceding received_at column, unique to environmental_complaints.
+    ['complaint sources', V.COMPLAINT_SOURCES,
+      /received_at\s+timestamptz NOT NULL DEFAULT now\(\),\s*source\s+text NOT NULL CHECK \(source IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -119,6 +213,28 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.EMERGENCY_PLAN_TYPES, V.EMERGENCY_PLAN_TYPE_LABELS],
       [V.EMERGENCY_PLAN_STATUSES, V.EMERGENCY_PLAN_STATUS_LABELS],
       [V.EMERGENCY_DRILL_OUTCOMES, V.EMERGENCY_DRILL_OUTCOME_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_TYPES, V.ENVIRONMENTAL_ASPECT_TYPE_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_CONDITIONS, V.ENVIRONMENTAL_ASPECT_CONDITION_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_STATUSES, V.ENVIRONMENTAL_ASPECT_STATUS_LABELS],
+      [V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS, V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS],
+      [V.ENVIRONMENTAL_SPILL_STATUSES, V.ENVIRONMENTAL_SPILL_STATUS_LABELS],
+      [V.ENVIRONMENTAL_MONITORING_CATEGORIES, V.ENVIRONMENTAL_MONITORING_CATEGORY_LABELS],
+      [V.ENVIRONMENTAL_PERMIT_STATUSES, V.ENVIRONMENTAL_PERMIT_STATUS_LABELS],
+      [V.PERMIT_CONDITION_STATUSES, V.PERMIT_CONDITION_STATUS_LABELS],
+      [V.ISO_STANDARD_CODES, V.ISO_STANDARD_CODE_LABELS],
+      [V.STANDARD_EVIDENCE_ENTITY_TYPES, V.STANDARD_EVIDENCE_ENTITY_TYPE_LABELS],
+      [V.LEGAL_REQUIREMENT_CATEGORIES, V.LEGAL_REQUIREMENT_CATEGORY_LABELS],
+      [V.LEGAL_APPLICABILITY_STATUSES, V.LEGAL_APPLICABILITY_STATUS_LABELS],
+      [V.COMPLIANCE_EVALUATION_STATUSES, V.COMPLIANCE_EVALUATION_STATUS_LABELS],
+      [V.LEGAL_RESEARCH_SOURCES, V.LEGAL_RESEARCH_SOURCE_LABELS],
+      [V.HS_DOCUMENT_STATUSES, V.HS_DOCUMENT_STATUS_LABELS],
+      [V.OBJECTIVE_STATUSES, V.OBJECTIVE_STATUS_LABELS],
+      [V.OBJECTIVE_TARGET_DIRECTIONS, V.OBJECTIVE_TARGET_DIRECTION_LABELS],
+      [V.MANAGEMENT_REVIEW_STATUSES, V.MANAGEMENT_REVIEW_STATUS_LABELS],
+      [V.AUDIT_FINDING_SEVERITIES, V.AUDIT_FINDING_SEVERITY_LABELS],
+      [V.AUDIT_PROGRAMME_FREQUENCIES, V.AUDIT_PROGRAMME_FREQUENCY_LABELS],
+      [V.CONSULTATION_METHODS, V.CONSULTATION_METHOD_LABELS],
+      [V.COMPLAINT_SOURCES, V.COMPLAINT_SOURCE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });
@@ -135,5 +251,88 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     expect(V.domainOf('hr_payroll')).toBe('hr');
     expect(V.domainOf('employment')).toBe('hr');
     expect(sql).toContain("CASE WHEN category LIKE 'hs\\_%' OR category = 'health_safety' THEN 'hs' ELSE 'hr' END");
+  });
+});
+
+// Core-OS 360 Phase 5, Group 3 (migration 158): management_system_
+// standards.code is SEEDED, not CHECK-constrained (deliberately
+// extensible to a third standard later — see 158's own header comment),
+// so ISO_STANDARD_CODES is pinned against the literal INSERT rather
+// than a CHECK list.
+describe('ISO management-system framework (158)', () => {
+  const m158 = readFileSync(`${MIG}/158_iso_management_system_framework.sql`, 'utf8');
+
+  it('ISO_STANDARD_CODES matches the two seeded standard codes', () => {
+    const start = m158.indexOf('management_system_standards (id, code, name) VALUES');
+    const block = m158.slice(start, m158.indexOf(';', start));
+    const seeded = [...block.matchAll(/'[0-9a-f-]+',\s*'([a-z0-9_]+)'/g)].map(m => m[1]);
+    expect(seeded.length).toBe(2);
+    expect([...V.ISO_STANDARD_CODES].sort()).toEqual(seeded.sort());
+  });
+
+  it('management_system_standards.code is extensible, never CHECK-restricted to only the seed', () => {
+    // A format/length CHECK is fine; a value-list CHECK would defeat
+    // "extensible to more standards later" (rule 1).
+    expect(m158).toMatch(/code\s+text NOT NULL UNIQUE CHECK \(code ~/);
+    expect(m158).not.toMatch(/code\s+text NOT NULL UNIQUE CHECK \(code IN \(/);
+  });
+
+  const clauseBlockStart = m158.indexOf('standard_clauses (standard_id, clause_number, title, maps_to_hint, display_order) VALUES');
+  const clauseBlock = m158.slice(clauseBlockStart);
+  // Each clause tuple: (standard_id, 'clause_number', 'title', 'hint'|NULL, display_order)
+  const clauseTuples = [...clauseBlock.matchAll(/'[0-9a-f-]+',\s*'([^']*)',\s*'([^']*)',\s*'([a-z_]+)',\s*\d+\)/g)];
+
+  it('every seeded clause names a real hs_entity_table() key as its maps_to_hint', () => {
+    expect(clauseTuples.length).toBe(24);
+    for (const [, , , hint] of clauseTuples) expect(V.STANDARD_EVIDENCE_ENTITY_TYPES as readonly string[]).toContain(hint);
+  });
+
+  it('no clause or standard title asserts compliance or certification', () => {
+    for (const [, , title] of clauseTuples) expect(title.toLowerCase()).not.toMatch(/compliant|certified/);
+    const start = m158.indexOf('management_system_standards (id, code, name) VALUES');
+    const stdBlock = m158.slice(start, m158.indexOf(';', start));
+    const stdTitles = [...stdBlock.matchAll(/'[a-z0-9_]+',\s*'([^']*)'/g)].map(m => m[1]);
+    expect(stdTitles.length).toBe(2);
+    for (const t of stdTitles) expect(t.toLowerCase()).not.toMatch(/compliant|certified/);
+  });
+});
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+// Rule 2 is EXACT and absolute — never "compliant"/"non_compliant"/
+// "legal"/"illegal" as a standalone compliance-verdict word anywhere in
+// these labels (the table names legal_requirements/legal_register are
+// fine; it is a VERDICT word this checks for).
+describe('the Legal Register (159) never asserts a compliance verdict', () => {
+  const m159 = readFileSync(`${MIG}/159_legal_register.sql`, 'utf8');
+
+  it('no label anywhere in this vocabulary reads compliant/non-compliant/illegal', () => {
+    const labelMaps: Record<string, string>[] = [
+      { ...V.LEGAL_APPLICABILITY_STATUS_LABELS },
+      { ...V.COMPLIANCE_EVALUATION_STATUS_LABELS },
+      { ...V.LEGAL_REQUIREMENT_CATEGORY_LABELS },
+      { ...V.LEGAL_RESEARCH_SOURCE_LABELS },
+    ];
+    for (const map of labelMaps) {
+      for (const label of Object.values(map)) {
+        expect(label.toLowerCase()).not.toMatch(/\bcompliant\b|\bnon-compliant\b|\billegal\b/);
+      }
+    }
+  });
+
+  it('compliance_evaluations.status is EXACTLY the six-value cautious vocabulary, never widened', () => {
+    expect([...V.COMPLIANCE_EVALUATION_STATUSES].sort()).toEqual([
+      'confirmed_noncompliance', 'evidence_current', 'evidence_incomplete',
+      'not_evaluated', 'potential_noncompliance', 'review_due',
+    ].sort());
+    expect(m159).not.toMatch(/status IN \([^)]*'compliant'/);
+    expect(m159).not.toMatch(/status IN \([^)]*'non_compliant'/);
+  });
+
+  it('an applicability decision needs a named assessor before it may read applicable/not_applicable', () => {
+    const fn = m159.slice(
+      m159.indexOf('FUNCTION public.organisation_legal_obligations_stamp'),
+      m159.indexOf('REVOKE ALL ON FUNCTION public.organisation_legal_obligations_stamp'));
+    expect(fn).toMatch(/applicability_status IN \('applicable', 'not_applicable'\)/);
+    expect(fn).toMatch(/assessed_by IS NULL OR NEW\.assessed_at IS NULL/);
   });
 });

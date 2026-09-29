@@ -5242,3 +5242,1446 @@ re-created, `REVOKE ALL` confirmed via `has_function_privilege`).
 **Phase 4 is complete. Phase 5 is not to begin** until this branch is
 merged and deployed, per the operator's instruction.
 
+---
+
+## Core-OS 360 Phase 5, Group 1: Governance Map + Environmental Aspects
+## & Impacts (2026-09-29, migration 156)
+
+Phase 5 turns Core-OS 360 into a full EHS management system
+(Environmental Management, ISO 45001/14001 support, Legal Register,
+Compliance Obligations, Controlled Documents, Objectives & Targets,
+Management Review, Governance, Audit Evidence, Environmental Aspects/
+Impacts, Waste, Spills, Emissions, Water, Energy, Environmental
+Permits, Environmental Incidents), delivered in the same logical,
+independently-verified groups as Phase 4. **Group 1 is this PR**: the
+governance map every later group must read first, and the Environmental
+Aspects & Impacts subsystem itself.
+
+### Governance map: `docs/CORE_OS_360_PHASE5_GOVERNANCE_MAP.md`
+
+Classifies every existing EHS-relevant component (register,
+`hs_documents`, `hs_audits`, `hs_incidents`, the asset register,
+contractors, policy acknowledgements, `latest_updates`/regulatory
+classification, `actions`, Broadcast, value reports, `platform_events`/
+notify, Phase 1's organisations/capabilities model) as REUSE / EXTEND /
+MIGRATE / DEPRECATE / REPLACE. **No REPLACE anywhere** — every
+component is REUSE or EXTEND, consistent with the platform-wide rule
+this codebase has followed since Phase 4's own existing-operations
+audit. It also records three decisions binding on later Phase 5
+groups: Environmental Aspects lives under the existing
+`/health-safety/<companyId>/environmental-aspects` tab (a 13th
+`HsCompanyTabs.tsx` entry), not a new top-level sidebar group; the
+portal page is gated by `protect` alone, not a new flag; and the
+vocabulary lives in the existing `lib/hs/vocab.ts` shared-dupe pair.
+Read it before touching any related code in a later group.
+
+### Environmental Aspects & Impacts (migration 156)
+
+An "aspect" is an element of an activity that can interact with the
+environment (e.g. "diesel generator run during power cuts" → aspect
+type `emissions_to_air`); its "impact" is what actually happens as a
+result. This schema records the aspect and scores its SIGNIFICANCE —
+never its legal compliance.
+
+- **No black-box AI significance scoring, absolute rule.**
+  `environmental_aspect_assessments` stores three named, inspectable
+  1-5 integer criteria (`likelihood`, `severity`, `frequency`);
+  `computed_score` is `GENERATED ALWAYS AS (likelihood * severity *
+  frequency) STORED` — deterministic, never computed in application
+  code where it could drift from what is stored. Jev is never invoked
+  anywhere in this subsystem, and no later Phase 5 group may change
+  that without an explicit product decision recorded here first.
+- **The database refuses an unconfirmed significance decision, not
+  just the UI.** `environmental_aspect_assessments_fill()` (BEFORE
+  INSERT) raises unless BOTH `confirmed_by` and `confirmed_at` are set
+  — regardless of which way `is_significant` points. An unconfirmed row
+  is not yet a decision, so allowing `is_significant` on one would be
+  exactly the "the platform decided" shape this rule forbids, whichever
+  way it points. Probed live both directions (checks 4 and 4c).
+- **History is preserved exactly like `hs_documents` (106) and
+  `emergency_plans` (154): a material change is a NEW ROW.** The old
+  row flips to `'superseded'` via its own UPDATE; both remain
+  individually readable forever. `environmental_aspects_stamp()`
+  refuses a cross-organisation `supersedes_id` the same way
+  `emergency_plans_stamp()` already does.
+- **The newest confirmed assessment — and ONLY that — decides the
+  aspect's status.** `environmental_aspect_assessments_roll()` (AFTER
+  INSERT) sets `status` to `confirmed_significant` /
+  `confirmed_not_significant`, skipping a `superseded` row so an old
+  version's status can never be resurrected by a late assessment
+  insert. Assessments are insert-only (`REVOKE UPDATE, DELETE,
+  TRUNCATE`) — a correction is a new assessment, never an edit.
+- **Never a second action table (rule 1).** A confirmed-significant
+  aspect raises exactly one `actions` row
+  (`action_type: 'environmental_significant_aspect'`,
+  `source_type: 'environmental_aspect'` — a new value 156 added to the
+  shared `actions_source_type_check`), keyed
+  `environmental_aspect:<id>` so a re-processed event never raises two.
+  `admin/src/lib/events/environmentalRules.ts` is its OWN file, not
+  folded into `hsRules.ts` — Environmental is its own EHS pillar
+  alongside H&S, the same call `leadRules.ts`/`hireRules.ts`/
+  `supportRules.ts` already made for their own pillars. It tells the
+  client admins (portal link `/protect/environmental-aspects`) and
+  staff (`/health-safety/<companyId>/environmental-aspects`) — never
+  decides anything itself, only reports what the database's own roll
+  trigger already decided.
+- **Evidence rides the existing `hs_files`/`hs-evidence` infrastructure**:
+  `hs_scope_for_entity()`/`hs_entity_table()`/`hs_evidence_readable()`/
+  `hs_evidence_writable()`/`hs_files_entity_check()` all gain an
+  `'environmental_aspect'` branch (scope `register`, gated on new
+  capabilities `environmental.read`/`environmental.manage`) — the exact
+  pattern Group 2's `'equipment'` branch (144) and Group 3's
+  `'inspection'` branch (145) already established in Phase 4. No new
+  bucket, no new evidence table.
+- **Capabilities seeded in the literal `('capability', ARRAY[roles])`
+  shape**, copying `risk.read`/`risk.create`'s role list verbatim (the
+  same choice Group 2's `asset.read`/`asset.manage` made) — never a
+  dynamic `SELECT ... FROM access_role_capabilities` grant, which
+  `tenancySql.test.ts`'s regex-driven TS↔SQL parity check cannot parse
+  (the 144a/147a trap this file's own history records twice already).
+  `capabilities.ts` (shared-dupe pair) mirrors it in the same PR, with
+  a new `ENV_ALL` constant following `ASSET_ALL`'s own pattern.
+- **RLS, write guard, audit trail**: staff full access;
+  `environmental.read`/`environmental.manage` govern client access on
+  both new tables; `apply_write_guard()` on both (a read-only
+  consultancy grant can insert nothing); `audit_row()` whitelists
+  identifying/classifying columns only (`activity`, `aspect_type`,
+  `condition`, `status`, `version` on the aspect; `aspect_id`,
+  `computed_score`, `is_significant` on the assessment) — never
+  `description`/`methodology_notes`.
+- **Outbox**: `environmental_aspects` joins `TRIGGERED_ENTITIES`
+  (whitelist `site_id, aspect_type, condition, status` — never
+  `description`). `environmental_aspect_assessments` is deliberately
+  NOT in the outbox — the aspect's own `.updated` event (fired when the
+  roll trigger changes its status) is the one thing worth reacting to,
+  the same "one event per meaningful record, not per sub-row" rule
+  `hs_audit_responses`/`permit_checklist_responses` already established.
+
+### Admin + portal UI
+
+Admin: a 13th `HsCompanyTabs.tsx` tab,
+`/health-safety/<companyId>/environmental-aspects`
+(`EnvironmentalAspectsClient.tsx`) — add an aspect, then "Assess
+significance" opens a form showing the live computed score against the
+chosen threshold BEFORE submission, with a mandatory confirmation
+checkbox; the insert fails outright if the checkbox is unchecked and
+the caller tries to bypass it client-side, because the database's own
+gate (above) enforces it regardless. No new sidebar entry needed — it
+nests under the already-linked `/health-safety` prefix. Portal: a
+read-only `/protect/environmental-aspects` page, gated by `protect`
+alone (nothing here is self-certified, the same posture Register/
+Documents/Audits/Equipment/Emergency Plans already have), linked from
+`/protect`'s own `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/156_environmental_aspects.sql`, rolled back: 13
+checks — cross-organisation site refused; an aspect inserts with
+`status = draft`; evidence vocab resolves; an unconfirmed significant
+assessment refused; an unconfirmed non-significant assessment ALSO
+refused (the gate is about being a decision at all, not its polarity);
+a confirmed assessment accepted with `computed_score = likelihood x
+severity x frequency` (4×4×3 = 48) and rolls the aspect to
+`confirmed_significant`; assessments table has no UPDATE/DELETE grant
+to `authenticated`; a new version is a new row, the old row supersedes,
+both remain readable; a cross-organisation `supersedes_id` refused;
+`actions.source_type` allows `'environmental_aspect'`; the write guard
+is applied to both tables; both capabilities are seeded and granted;
+RLS is enabled on both tables; no Group 1 `SECURITY DEFINER` function
+is executable by `anon`. All 13 passed.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1145 admin —
+1138 + 4 `environmentalRules.test.ts` + 3 new `vocab.test.ts` it.each
+cases for the aspect type/condition/status tuples; 604 portal — 602 +
+2, `moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up
+`/protect/environmental-aspects` automatically), all five CI guards
+pass (`check-shared-dupes.sh`: 43 pairs, unchanged;
+`check-admin-routes-linked.sh`: 61 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — this group made no UPDATE
+writes from a client component, only inserts), both production builds
+compile, including the new `/health-safety/<companyId>/environmental-
+aspects` admin route and the new `/protect/environmental-aspects`
+portal route. Migration 156 applied live and verified (RLS on, write
+guard applied, capabilities seeded and granted, evidence vocab
+resolves, no Group 1 DEFINER function executable by `anon`).
+
+**Later Phase 5 groups** (environmental incidents/waste/spills/
+monitoring/permits, the ISO 45001/14001 framework layer, the legal
+register, document control, objectives & targets, management review,
+audit-engine enhancement, UI, final QA) build on migration 156 onward
+and should read the governance map first.
+
+### Core-OS 360 Phase 5, Group 2: Environmental Incidents, Spills,
+### Waste, Monitoring, Environmental Permits & Conditions (2026-09-29,
+### migration 157)
+
+Builds on Group 1 per the governance map. Read `docs/CORE_OS_360_
+PHASE5_GOVERNANCE_MAP.md` before touching this — it commits the same
+"REUSE/EXTEND, never a parallel system" discipline this group follows.
+
+- **Environmental incidents already existed — checked live before
+  writing a line of SQL.** `hs_incidents.incident_type` (125) already
+  includes `'environmental'`, so tagging an incident as environmental
+  needed NO ADD COLUMN or enum change. What was missing was
+  environmental-specific DETAIL (substance, volume, receiving
+  environment), added as `environmental_incident_details` — one row
+  per `hs_incidents.id`, never a parallel incident table.
+- **Never a second action table (standing rule 1).** Four new
+  `actions.source_type` values: `environmental_spill`,
+  `waste_movement`, `environmental_monitoring`,
+  `environmental_permit_condition`. A non-contained spill, a waste
+  non-conformance, a monitoring exceedance and a permit condition
+  moved to `breach_recorded`/`review_required` each raise exactly one
+  keyed `actions` row via `admin/src/lib/events/environmentalRules.ts`
+  (extended, not forked) — never a second findings table.
+- **Waste carriers/disposal sites are `contractors` rows (150) —
+  never a parallel supplier table.** `waste_movements.carrier_
+  contractor_id`/`disposal_site_contractor_id` FK straight to
+  `contractors`. The only schema change needed was one new
+  `contractor_insurances.insurance_type` value,
+  `'waste_carrier_licence'` — `contractor_is_current()` (150) already
+  fails currency on ANY on-file policy past its expiry, not only the
+  two required ones, so an expired waste-carrier licence surfaces
+  correctly with **no function change at all**. Proved live in the
+  probe (check 11).
+- **`environmental_monitoring.within_limit` is a database-GENERATED
+  column, computed ONLY when `recorded_limit` is on file — never
+  defaulted true or false.** `GENERATED ALWAYS AS (CASE WHEN
+  recorded_limit IS NULL THEN NULL ELSE (value <= recorded_limit) END)
+  STORED`. This assumes an UPPER-bound limit (the common case: max
+  noise dB, max effluent load) — a lower-bound limit (e.g. minimum
+  flow rate) is a documented, known gap for a later group, not
+  silently guessed at. The table is insert-only (a correction is a new
+  reading, never an edit), the same "correction is a new row"
+  discipline the register's other evidence tables already use.
+- **`permit_conditions.status` is a FACTUAL vocabulary, never a
+  compliance verdict**: `current | evidence_due | overdue |
+  breach_recorded | review_required`. Copies PUWER's own "recorded
+  assessment outcome, never legally compliant" discipline (148) —
+  the probe (check 7) proves the CHECK itself refuses a
+  `'compliant'`/`'non_compliant'` value, so this cannot regress
+  silently. `environmental_permits.status` is a separate, genuinely
+  lifecycle fact (`active | expired | surrendered | revoked`) — the
+  permit's own status, distinct from any one condition's.
+- **Environmental permits are their own table, deliberately NOT
+  attached to `contractors` or to H&S's `permits` (152).** `permits`
+  is Health & Safety's permit-TO-WORK — a time-bounded authorisation
+  for one job; `environmental_permits` is a regulator's ongoing
+  licence to operate (e.g. an Environmental Permitting Regulations
+  permit, a discharge consent). Different concept, different table,
+  different admin tab (`environmental-permits`, distinct from the
+  existing `permits` tab), by design.
+- **Capabilities are reused, not invented.** `environmental.read`/
+  `environmental.manage` (156) govern all five new client-writable
+  tables — no new capability grant needed for this group, per the
+  task brief.
+- **Evidence** rides the existing `hs_files`/`hs-evidence`
+  infrastructure: `hs_entity_table()`/`hs_scope_for_entity()`/
+  `hs_evidence_readable()`/`hs_evidence_writable()`/`hs_files_entity_
+  check()` all re-created (150's latest bodies) with four new branches
+  (`environmental_spill`, `waste_movement`, `environmental_monitoring`,
+  `environmental_permit`), scope `register`, gated on
+  `environmental.read`/`.manage` — the exact pattern Group 2 of Phase
+  4 (`'equipment'`) and Group 3 (`'inspection'`) already established.
+- **Reminders**: `environmental_permits` (own `expires_on`) and
+  `permit_conditions` (own `next_review_due`) join
+  `REMINDER_ENTITIES`, `due_30`/`due_7`/`overdue` buckets, plus
+  `STATUS_WRITES` entries (`environmental_permit_expired`,
+  `permit_condition_overdue`, `permit_condition_evidence_due`) —
+  `breach_recorded`/`review_required` are excluded from every
+  reminder read, so a human-recorded fact can never be silently
+  overwritten by the cron.
+- **Two new notification types added to both bells and both apps'
+  shared `notify/types.ts`**: `environmental_spill_reported`,
+  `waste_non_conformance`, `environmental_monitoring_exceedance`,
+  `environmental_permit_status_changed`,
+  `environmental_permit_condition_review`.
+- **Admin gets four new `HsCompanyTabs.tsx` tabs** (Spills, Waste,
+  Monitoring, Env. Permits) under the existing `/health-safety/
+  <companyId>` prefix — no new sidebar entry needed, the same
+  precedent every Phase 4/5 group used. Every status-changing
+  `.update(` uses `COUNT_EXACT` + `judgeWrite()` from the start.
+  Portal gets four read-only pages under `/protect/environmental-*`,
+  gated by `protect` alone (nothing here is self-certified), added to
+  `moduleAccess.ts` and `/protect`'s `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/157_environmental_group2.sql`, rolled back: 17
+checks — cross-org site refused on spills; same-org spill accepted;
+cross-org carrier refused on waste movements; same-org waste movement
+with `non_conformance` accepted; `within_limit` is NULL with no
+recorded limit; an exceedance (80 > 70) computed `within_limit =
+false`; `environmental_monitoring` has no UPDATE grant to
+`authenticated`; `permit_conditions` refuses a compliance-verdict
+status value (`'compliant'`) and accepts the factual vocabulary
+(`'breach_recorded'`); cross-org site refused on environmental
+permits; `environmental_incident_details.company_id` derived from the
+parent incident; `actions_source_type_check` includes the four new
+values; an expired `waste_carrier_licence` fails
+`contractor_is_current()` with no function change; evidence vocab
+resolves for all four new entity types; the write guard is present;
+RLS is enabled on all 7 new tables; no new `SECURITY DEFINER` function
+is executable by `anon`. **All 17 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1157 admin —
+1145 + 12 new: 8 `environmentalRules.test.ts` cases and 5 new
+`vocab.test.ts` it.each entries, minus a 1-line existing-test update
+for the two new `STATUS_WRITES` keys; 612 portal — 604 + 8,
+`moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up the four
+new `/protect/environmental-*` routes automatically), all five CI
+guards pass with no regressions (`check-shared-dupes.sh`: 43 pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 65 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — every new admin write is
+either an insert or a counted+judged update from the start), both
+production builds compile, including the four new admin routes
+(`/health-safety/<companyId>/{environmental-spills,environmental-
+waste,environmental-monitoring,environmental-permits}`) and the four
+new portal routes (`/protect/environmental-{spills,waste,monitoring,
+permits}`). Migration 157 applied live and verified.
+
+### Core-OS 360 Phase 5, Group 3: a shared ISO 45001/14001 management-
+### system framework + a purely factual readiness dashboard (2026-09-29,
+### migration 158)
+
+Builds on Groups 1-2 (156-157) per the governance map. This group is
+the framework Phase 5's spec calls for: ONE shared clause taxonomy
+behind both ISO 45001 (H&S) and ISO 14001 (Environmental), a bare
+polymorphic link into evidence this platform already has, and a
+readiness view that is counts only — the Evidence Engine itself is
+explicitly NOT built here, only its foundation.
+
+- **One shared framework, never two.** `management_system_standards`
+  (two rows: ISO 45001:2018, ISO 14001:2015 — the `code` column is
+  format-checked, not value-restricted, so a third standard can be
+  seeded later with no migration to the shape) and ONE
+  `standard_clauses` table, joined by `standard_id`, holding both
+  standards' clauses. There is no `iso45001_clauses`/`iso14001_clauses`
+  pair to keep in step — a later group adding a third standard inserts
+  rows, not tables.
+- **No copyrighted text, anywhere.** Every `clause_number`/`title` is a
+  short (<=200 char), hand-written, one-sentence paraphrase this
+  migration's own seed writes — never the ISO document's actual
+  wording. 12 clauses per standard, covering the well-known top-level
+  structure (Context, Leadership, Planning, Support, Operation,
+  Performance Evaluation, Improvement) plus each standard's own
+  distinguishing sub-clauses (Hazard ID for 45001; Environmental
+  Aspects, Compliance Obligations, Emergency Preparedness for 14001).
+- **`standard_evidence_links` is the Evidence Engine's FOUNDATION, not
+  the Evidence Engine.** A bare `(entity_type, entity_id)` polymorphic
+  reference into EXISTING evidence, reusing `hs_entity_table()`/
+  `hs_entity_company()` (122) for the cross-organisation check —
+  exactly the pattern the task brief named, and never a new copy of the
+  evidence. `hs_entity_table()` gained one real gap-fill,
+  `'compliance_item' → 'compliance_items'` (the HR/H&S register was
+  never mapped despite being an obvious evidence source), plus
+  `'iso_certification' → 'iso_certifications'` for the new table's own
+  evidence. `standard_evidence_links_fill()` refuses an unknown
+  `entity_type` and a link naming another organisation's record — both
+  proved live in the rolled-back probe.
+- **Readiness is COUNTS ONLY, computed in TypeScript at read time —
+  never a stored score, never a percentage.** Both the admin cross-
+  client `/health-safety/iso-readiness` page and the per-client
+  `/health-safety/<companyId>/iso` tab / portal `/protect/iso-readiness`
+  page compute "clauses total / with evidence / without" directly from
+  `standard_clauses` + `standard_evidence_links` — the exact
+  `lib/hs/kpis.ts`/`lib/health/scoring.ts` posture ("no stored aggregate
+  that can drift out of sync with the rows it summarises"), applied
+  here to the one number this phase is most tempted to fake. The
+  dashboard's own copy says "Recorded evidence mapped to applicable
+  management-system requirements" — never "compliant" or "certified".
+- **`iso_certifications` is the ONE place a real certificate may be
+  recorded**, and the only thing anywhere in this subsystem that may
+  ever be read as "this client holds a certification" — a real,
+  user-entered fact (certificate number, certifying body, issued/
+  expires dates), never a computed conclusion from the evidence links.
+  It is mutable (a renewal updates the row in place), the same
+  "ongoing state with one current expiry" shape `contractor_insurances`
+  (150) already established — deliberately NOT the register's
+  "correction is a new row" discipline, because a certificate has one
+  current expiry, not a history of them.
+- **RLS deliberately deviates from the hs_sector_packs/hs_audit_templates
+  precedent for `management_system_standards`/`standard_clauses`,
+  documented as a decision, not an oversight.** Those two are staff-
+  authored reference data a client never browses directly (they only
+  ever see the MATERIALISED result after staff apply a pack to their
+  register). The UI spec here explicitly needs a client to read the
+  clause catalogue itself, so this follows `inspection_templates'`
+  (145) precedent instead: staff `ALL`, any signed-in user with
+  `risk.read` may `SELECT` the catalogue, no client write path at all.
+  `standard_evidence_links`/`iso_certifications` are the ordinary
+  per-company client-read (`risk.read`) + client-write (`risk.create`)
+  shape.
+- **No new capability seeded.** `risk.read`/`risk.create` — the
+  broadest existing "can see/add to the H&S register" pair — already
+  span both standards: every `environmental.manage` role already holds
+  `risk.create` too (checked against 156's `ENV_ALL` role list before
+  relying on it), so ISO 14001 evidence is never gated on a capability
+  an environmental-only role lacks.
+- **`iso_certifications` joins `REMINDER_ENTITIES`** for its own
+  `expires_on` (`due_30`/`due_7`/`overdue`, new notification types
+  `iso_certification_expiring`/`iso_certification_expired`, both
+  bells). The reminder payload never carries an embed (`slimRow()`
+  strips it), so the standard's name is looked up in the consuming
+  rule, the same way `training_record_reminder` resolves an employee
+  name by id. No `TRIGGERED_ENTITIES` entry — recording a certificate
+  or a link has no consequence worth an immediate outbox event, only
+  the eventual expiry reminder.
+
+### Live probe
+
+`supabase/probes/158_iso_framework.sql`, rolled back: 13 checks — two
+standards seeded; each has 8-12 clauses; `hs_entity_table()` resolves
+`'compliance_item'`/`'iso_certification'`; a cross-organisation
+evidence link (naming another company's `compliance_items` row) is
+refused; a same-organisation link is accepted; an unknown
+`entity_type` is refused; a certification inserts and updates
+(renewal) in place; no clause or standard title contains "compliant"/
+"certified"; RLS is on for all four new tables; the write guard
+(`write_guard_ins/upd/del`) is present on both client-writable tables;
+neither new `SECURITY DEFINER` function is executable by `anon`;
+`standard_evidence_links` has a `UNIQUE` constraint; both new tables
+carry an audit trigger. **All 13 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1173 admin —
+1157 + 16 new: 12 `isoFrameworkSql.test.ts` + 4 new `vocab.test.ts`
+cases pinning `ISO_STANDARD_CODES` against 158's seed, the extensible-
+code CHECK, every seeded clause's `maps_to_hint` against a real
+`hs_entity_table()` key, and the no-compliance-claim-string check;
+`STANDARD_EVIDENCE_ENTITY_TYPES` gained `'action'` to cover the one
+seeded clause (`8.2`, emergency preparedness) that hints at it; 614
+portal — 612 + 2, `moduleAccess.test.ts`/`portalPagesLinked.test.ts`
+picking up `/protect/iso-readiness` automatically), all five CI guards
+pass with no regressions (`check-shared-dupes.sh`: 43 pairs, unchanged
+— vocab.ts/types.ts/notify/types.ts stayed byte-identical across both
+mirrors; `check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 67 pages, all reachable —
+the two new admin pages (`iso-readiness` cross-client, the per-company
+`iso` tab) both nest under the already-linked `/health-safety` prefix,
+no sidebar entry needed; `check-blind-updates.sh`: 102, unchanged —
+this group made no `.update()` writes from a client component, only
+inserts and one delete), both production builds compile, including
+`/health-safety/iso-readiness`, `/health-safety/<companyId>/iso` and
+`/protect/iso-readiness`. Migration 158 applied live and verified (RLS
+on, write guard applied, both capabilities-gated read policies in
+place, evidence vocab resolves, no Group 3 `SECURITY DEFINER` function
+executable by `anon`).
+
+**Later Phase 5 groups** (the legal register, document control,
+objectives & targets, management review, audit-engine enhancement,
+final QA) build on migration 158 onward and should read the governance
+map first.
+
+### Core-OS 360 Phase 5, Group 4: the Legal Register (2026-09-29,
+### migration 159)
+
+Builds on Groups 1-3 (156-158). Legal requirements, per-company
+obligations and evaluations, plus an inert foundation for a LATER
+Tavily-based external legal research feature (storage only, no live API
+call anywhere in this group).
+
+- **AI never decides applicability, absolute.**
+  `organisation_legal_obligations.applicability_status` is a human
+  decision; the database's own gate
+  (`organisation_legal_obligations_stamp()`) refuses recording
+  `applicable`/`not_applicable` without a named assessor
+  (`assessed_by`) and a timestamp (`assessed_at`) set together —
+  `under_review` needs no confirmer, since it is a staff FLAG for
+  further work, not a decision. No AI is wired anywhere in this group;
+  the gate exists so a later group cannot slip one in without also
+  rewriting this trigger. `assessed_by` is never auto-stamped from
+  `auth.uid()` — unlike ordinary bookkeeping columns, WHO made the
+  applicability call is itself part of the recorded decision, the same
+  choice `environmental_aspect_assessments_fill()` (156) made for
+  `confirmed_by`.
+- **Cautious, factual compliance vocabulary, exactly.**
+  `compliance_evaluations.status` is `evidence_current |
+  evidence_incomplete | review_due | potential_noncompliance |
+  confirmed_noncompliance | not_evaluated` — never
+  "compliant"/"non-compliant"/"legal"/"illegal" anywhere in this
+  subsystem's labels, copy or notifications. A vocab test
+  (`vocab.test.ts`) scans every label map for the banned verdict words;
+  a SQL-shape test (`legalRegisterSql.test.ts`) pins the CHECK's exact
+  six values.
+- **`legal_requirements` is a register of SOURCE MATERIAL, staff-only,
+  never client-visible even read-only** — a title, a small legal-domain
+  `category` (a parallel tuple, genuinely different from
+  `COMPLIANCE_CATEGORIES`/`HS_REGISTER_CATEGORIES`: a piece of
+  LEGISLATION is neither an HR item category nor a recurring H&S check
+  type), a jurisdiction, a SHORT staff-written internal summary — never
+  the actual statute text — and an optional link OUT to the real
+  legislation. A client sees the OBLIGATION and its EVALUATIONS for
+  requirements that apply to them (via `organisation_legal_obligations`/
+  `compliance_evaluations`, client-READ + staff-MANAGE, reusing
+  `risk.read`/`risk.create` — the same broadest existing "can see/add to
+  the H&S register" pair 158's ISO framework already reused), never the
+  browsable catalogue itself. The portal page therefore reads
+  `legal_requirements` titles with the SERVICE ROLE, scoped to exactly
+  the ids the session's own RLS-protected read of its obligations
+  already returned — never a broader catalogue browse.
+- **`compliance_evaluations` is event/history-shaped, insert-only** — a
+  correction is a new evaluation, never an edit
+  (`REVOKE UPDATE, DELETE, TRUNCATE`), the `hs_register_completions`/
+  `puwer_assessments` discipline. The one live "next review due" column
+  a reminder needs is rolled FORWARD onto
+  `organisation_legal_obligations.next_review_due` by an AFTER INSERT
+  trigger (`compliance_evaluations_roll()`), guarded "only when this is
+  the newest evaluation for this obligation" — the exact 148a/PUWER
+  lesson this codebase already learned: reading an insert-only history
+  table directly for a reminder fires once per historical row, not just
+  the current one. `company_id` on an evaluation is always derived from
+  its obligation, never trusted from the caller.
+- **Never a second action table.** A `potential_noncompliance` or
+  `confirmed_noncompliance` evaluation raises exactly one `actions` row
+  via the EXISTING `source_type = 'legal_requirement'` value — already
+  present in `actions_source_type_check` since Phase 4, so this
+  migration adds no `ALTER TABLE public.actions` at all.
+  `confirmed_noncompliance` is urgent and verification-required;
+  `potential_noncompliance` is high, not urgent, not yet a confirmed
+  finding. `evidence_current` is reported to STAFF ONLY (a routine,
+  clean evaluation needs no client email); a move to `applicable`
+  notifies the client admins + staff but raises no action on its own.
+  `admin/src/lib/events/legalRegisterRules.ts` is its own file — the
+  legal register spans every EHS pillar, the same "genuinely different
+  content gets its own file" call `environmentalRules.ts`/
+  `leadRules.ts`/`hireRules.ts`/`supportRules.ts` already made.
+- **Evidence rides the existing `hs_files`/`hs-evidence`
+  infrastructure** via a new `'compliance_evaluation'` branch (scope
+  `register`, gated on `risk.read`/`risk.create`) on the four evidence
+  functions — hung off the EVALUATION the proof was gathered for, not
+  the standing obligation link, a documented choice.
+- **The Tavily research-notes table
+  (`legal_requirement_research_notes`) is inert storage only** —
+  `source` (`tavily` | `manual`), `query_used`, `raw_result_summary`,
+  `reviewed_by`/`reviewed_at`, `action_taken`. No live API call
+  anywhere in this migration or the TypeScript it ships with; staff-only
+  RLS, never a Tavily key referenced. A LATER group wires the real call
+  and populates it; nothing here automates a legal conclusion or a
+  compliance-status change from anything in this table.
+- **`apply_write_guard()` on the two client-readable tables only**
+  (`organisation_legal_obligations`, `compliance_evaluations`) — the
+  exact 158 precedent (`management_system_standards`/`standard_clauses`
+  got no write guard; only the client-facing tables did).
+- Admin: a new `HsCompanyTabs.tsx` tab
+  (`/health-safety/<companyId>/legal`) for linking requirements, setting
+  applicability and recording evaluations, plus a cross-client
+  `/health-safety/legal-register` catalogue page (staff add/edit
+  `legal_requirements`) — no new sidebar entry, nests under the
+  already-linked `/health-safety` prefix. Portal: a read-only
+  `/protect/legal-register` page, gated by `protect` alone (nothing here
+  is self-certified).
+
+### Live probe
+
+`supabase/probes/159_legal_register.sql`, rolled back: 17 checks — RLS
+enabled on all four tables; `legal_requirements`/research-notes have no
+client SELECT policy at all; an `applicable` decision with no
+assessor refused, WITH one accepted; `under_review` needs no assessor;
+a non-cautious status (`'compliant'`) refused, `'potential_
+noncompliance'` accepted; a second evaluation preserves the first
+(`ORDER BY evaluated_at DESC` gives the latest); a late-backfilled OLDER
+evaluation never moves `next_review_due` backwards; `company_id` always
+derived from the obligation; evidence vocab resolves for
+`'compliance_evaluation'`; cross-organisation evidence refused; the
+write guard is present on both client-readable tables; RLS enabled; no
+new `SECURITY DEFINER` function executable by `anon`;
+`actions_source_type_check` already allows `'legal_requirement'`; no
+label anywhere reads a compliance-verdict word; `compliance_evaluations`
+has no UPDATE/DELETE grant to `authenticated`. All 17 passed.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1204 admin —
+1173 + 31 new: `legalRegisterSql.test.ts` (17), `legalRegisterRules.test.ts`
+(7), plus 7 new `vocab.test.ts` cases/entries for the four new
+vocabularies; 616 portal — 614 + 2, `moduleAccess.test.ts`/
+`portalPagesLinked.test.ts` picking up `/protect/legal-register`
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+69 pages, all reachable; `check-blind-updates.sh`: 102, unchanged — the
+one new admin `.update()` on `organisation_legal_obligations` was built
+counted + judged from the start), both production builds compile.
+Migration 159 applied live and verified (RLS on, write guard applied,
+evidence vocab resolves, no Group 4 `SECURITY DEFINER` function
+executable by `anon`, `actions.source_type` already allows
+`'legal_requirement'`).
+
+**Later Phase 5 groups** (document control, objectives & targets,
+management review, audit-engine enhancement, final QA) build on
+migration 159 onward and should read the governance map first.
+
+### Core-OS 360 Phase 5, Group 5: Controlled Document Management
+### (2026-09-29, migration 160)
+
+Builds on Groups 1-4 (156-159). Extends `hs_documents` (106) in place
+with a formal author/reviewer/approver workflow, a stricter lifecycle,
+effective-date separation, retention metadata, acknowledgement
+version-pinning and obsolete-document protection — never a second
+document table, per the governance map's own verdict on `hs_documents`
+("EXTEND (pattern reused, table not)").
+
+- **Every INSERT is a draft, whatever the caller sends.**
+  `hs_document_lifecycle_guard()` (BEFORE INSERT OR UPDATE) forces
+  `NEW.status := 'draft'` unconditionally at insert time — this is what
+  makes "editing an approved document is always a new draft version,
+  never an overwrite" true by construction, for the same "New version"
+  (`supersedes_id`) flow 106 already had. The status CHECK is extended
+  from 106's plain `active | superseded` to
+  `draft | pending_review | pending_approval | approved | active |
+  review_due | superseded | withdrawn | archived`
+  (`HS_DOCUMENT_STATUSES` in `lib/hs/vocab.ts`, a shared-dupe pair).
+- **A named reviewer or approver cannot be bypassed.** A document
+  naming a reviewer must pass through `pending_review`; a jump straight
+  from `draft` to `pending_approval` with `reviewer_id` set is refused.
+  One naming neither may go `draft → active` directly.
+- **Content (title/category/description) is immutable once
+  approved/active/review_due/superseded/withdrawn/archived** — the
+  trigger refuses an UPDATE that changes any of them once a row is in
+  one of those statuses; an edit request is always a fresh INSERT with
+  `supersedes_id` set. Administrative columns (`review_due_at`,
+  `effective_from`, `retention_period_months`, `reviewer_id`/
+  `approver_id`, `status` itself) may still move within the lifecycle's
+  own rules — `review_due_at` deliberately stays movable on an approved
+  row, since the reminders cron needs to keep pushing it.
+- **Nobody approves their own work — a bare `auth.uid()` comparison, no
+  role exemption.** The first draft of this copied `hs_doc_guard()`'s
+  (123) "staff excepted" phrasing verbatim; the probe's own `check3`
+  caught that it was a complete no-op, because `hs_documents` is
+  staff-only end to end (RLS lets nobody else write it) — exempting
+  staff exempts EVERY possible writer. Fixed to the 155 self-
+  authorisation precedent instead: `auth.uid() = NEW.author_id OR
+  auth.uid() = NEW.reviewer_id` refuses the transition to `approved`,
+  with no `is_tps_staff()` branch at all. Re-proved refused live before
+  trusting it (probe re-run, 16/16). Separately, a CHECK constraint
+  (`hs_documents_approver_distinct`) refuses `approver_id` ever equalling
+  `author_id` or `reviewer_id` on the same row, independent of who is
+  acting.
+- **`effective_from` may be in the future, and the database is the
+  gate, not a read-side filter.** A document may only reach `active`
+  when `effective_from IS NULL` or already `<= current_date`. Because of
+  this, `status = 'active'` alone already implies "currently
+  effective"; the portal's read-only `/protect/documents` page still
+  adds an explicit `effective_from` filter as defence in depth, never
+  as the thing actually enforcing it.
+- **Superseding the older version happens only when the NEW version
+  actually reaches `active`, never at draft time**
+  (`hs_document_supersede_roll()`, AFTER UPDATE, mirroring the
+  `hs_completion_roll`/`hs_equipment_inspection_roll` "roll forward on
+  the newest event" shape). This is a deliberate departure from 106's
+  original behaviour, which flipped the old version to `superseded` the
+  instant a replacement was created — under the new workflow that would
+  have left NO current document while the replacement worked through
+  review/approval. Now the old version stays `active` throughout, and
+  flips the moment the new one publishes: proven live in the probe
+  (`check11`) by reading the old version's status mid-review and
+  confirming it is still `active`.
+- **No auto-delete, anywhere, ever, for any reason.** `review_due_at`
+  passing moves a document toward `review_due` (a reminder — new
+  `STATUS_WRITES` entry `hs_document_review_due`, `active → review_due`
+  when `review_due_at < today`), never removal.
+  `retention_period_months`/`retention_until` (computed by the trigger
+  as `approved_at + retention_period_months`) are METADATA ONLY — no
+  cron, route or trigger anywhere in this codebase reads `retention_until`
+  to delete a row. No DELETE grant exists on `hs_documents` for any
+  session role, and this migration adds none.
+- **Acknowledgements are pinned to a SPECIFIC VERSION.**
+  `policy_acknowledgements` gains a nullable `hs_document_id`
+  (`REFERENCES hs_documents(id)`) alongside the existing `document_id`
+  (`REFERENCES documents(id)`) — a CHECK requires exactly one of the two
+  set. Unlike the generic `documents` table (which needed 119's
+  `document_versions`/`document_version_id` machinery because an update
+  there overwrites the SAME row's `file_path` in place), `hs_documents`
+  needs no extra version column at all: a new version is already a new
+  row (rule above), so naming a specific `hs_documents.id` already pins
+  to a specific version for ever. An employee who acknowledged v3 stays
+  recorded against v3's own id even after v4 is published — proven live
+  (probe `check12`) and in a TypeScript unit test
+  (`policyAckRules.test.ts`'s "an hs_documents acknowledgement stays
+  pinned to its version" block): the emailed link and the sign-off
+  notification both name v3, unaffected by v4 existing.
+  `sendPolicyAckLink()` (admin) and the portal's `/api/policy/[token]`
+  route both branch on which of `document_id`/`hs_document_id` is set;
+  an hs_documents-sourced file opens from the `hs-evidence` bucket
+  (`hs_files`, `entity_type = 'document'`), never the generic
+  `documents` bucket.
+- **RLS is unchanged** (staff ALL, client SELECT own company) — this
+  migration adds columns and workflow, never changes who may read or
+  write `hs_documents`.
+- **Consequence rules** (`hsRules.ts`): `hs_document_added` moved from
+  firing on INSERT-with-`status=active` (now unreachable, since every
+  insert is a draft) to firing on the transition TO `active` — the
+  actual publish event. Four new rules cover the steps before that:
+  `hs_document_submitted_for_review`/`_for_approval` notify the named
+  reviewer/approver directly (`{ kind: 'user', userId }`) plus staff;
+  `hs_document_approved` is staff-only (approval is not yet
+  publication); `hs_document_withdrawn` tells the client too when the
+  withdrawn version had already been published, staff-only otherwise
+  (the client never saw an internal draft/review/approval version).
+  Four new notification types
+  (`hs_document_submitted_for_review`/`_for_approval`/`_approved`/
+  `_withdrawn`), both bells, both apps' shared `notify/types.ts`.
+- **Admin UI**: `DocumentsClient.tsx` gained reviewer/approver pickers
+  (a staff dropdown, the same `profiles.role = 'tps_admin'` pattern
+  `hiring/new`'s recruiter picker already uses), effective-date and
+  retention-period fields on the add/new-version form, a per-status
+  workflow action bar (Submit for review / Submit for approval /
+  Approve / Publish / Withdraw / Archive, whichever the CURRENT status
+  legally allows) and a History view (walks the `supersedes_id` chain
+  in both directions, showing every version clearly labelled by
+  status). Every workflow button is an ordinary `.update({ status })`
+  with `COUNT_EXACT` + `judgeWrite()` — no UI-side pre-validation
+  duplicating `hs_document_lifecycle_guard()`; the database's own
+  refusal message is surfaced verbatim in the toast, the same posture
+  every H&S workflow guard in this codebase already takes.
+- **Portal**: `/protect/documents` now filters `status = 'active'` AND
+  (`effective_from IS NULL OR effective_from <= today`) — the second
+  clause is defence in depth, since the database already refuses
+  `active` before its own effective date. A full version-history view
+  was judged unnecessary scope for the read-only portal page and was
+  not built; the admin History view is the one place to see every
+  version.
+
+### Live probe
+
+`supabase/probes/160_document_control.sql`, rolled back: 16 checks —
+the full draft → pending_review → pending_approval → approved → active
+lifecycle; self-approval refused at the CHECK level (approver = author)
+and at the session level (acting as the author even with a different
+named approver); a different staff approver succeeds; approving before
+review (reviewer named, jumping straight to pending_approval) refused;
+the no-reviewer path (straight to pending_approval) succeeds; an
+approved row's title cannot be changed but its `review_due_at` still
+can; `effective_from` in the future refuses `active`, in the past
+allows it; superseding only happens once the new version PUBLISHES,
+with the old version proven still `active` throughout the new one's own
+review; an acknowledgement naming v1 stays pinned to v1 through two
+further versions; an impossible status jump (`draft → superseded`) is
+refused; RLS is on; no DELETE grant exists for any session role; no new
+`SECURITY DEFINER` function is anon-executable. **The first draft
+failed check3** (self-approval, staff exempted) — fixed live and
+re-proved before trusting it; **all 16 passed** on the corrected
+function.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1228 admin —
+1205 (1204 + the new `HS_DOCUMENT_STATUSES` vocab pin) + 23 more:
+`documentControlSql.test.ts` (16), 5 new `hsRules.test.ts` cases, 2 new
+`policyAckRules.test.ts` cases pinning the version-pinning property; 616
+portal, unchanged — this group touched only the shared-dupe vocab/
+types/notify files plus one read-only page filter and one route's
+document-source branch, none of which added a new test file), all five
+CI guards pass with no regressions (`check-shared-dupes.sh`: 43 pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 69 pages, all reachable — no new admin
+route, `documents` already nests under the linked `/health-safety`
+prefix; `check-blind-updates.sh`: 102, unchanged — every new workflow
+button was built with `COUNT_EXACT` + `judgeWrite()` from the start),
+both production builds compile. Migration 160 applied live and
+verified (function bodies re-read back after the same-day self-approval
+fix, confirmed matching what the probe re-ran against).
+
+**Later Phase 5 groups** (objectives & targets, management review,
+audit-engine enhancement, final QA) build on migration 160 onward and
+should read the governance map first.
+
+### Core-OS 360 Phase 5, Group 6: Objectives & Targets, and Management
+### Review (2026-09-29, migration 161)
+
+Builds on Groups 1-5 (156-160). ISO clauses 6.2 (objectives) and 9.3
+(management review), spanning every EHS pillar — an objective may be
+tied to ISO 45001 or 14001 via `standard_id`, or stand alone.
+
+- **No black-box AI progress judgement, absolute rule.** An objective's
+  status (`draft | active | on_track | at_risk | achieved | missed |
+  abandoned`) is rolled forward by `objective_measurements_roll()` — a
+  plain, inspectable comparison of the LATEST measurement against
+  `target_value`/`target_direction`, never a model call. `target_
+  direction` (`increase`/`decrease`) is the one column added beyond the
+  task brief's literal list: "is 40 above or below a target of 20"
+  cannot be answered without knowing which way the objective is meant
+  to move, the same kind of documented, necessary assumption
+  `environmental_monitoring`'s upper-bound-only `within_limit` (157)
+  already recorded rather than silently guessing.
+- **`objective_measurements` is insert-only** (`REVOKE UPDATE, DELETE,
+  TRUNCATE`) — a correction is a new measurement, never an edit, the
+  `hs_register_completions`/`compliance_evaluations` discipline. The
+  roll only ever advances from the NEWEST measurement (guarded `NOT
+  EXISTS` against a later `measured_at`) — the exact 148a/PUWER lesson:
+  reading an insert-only history table directly fires once per
+  historical row, not just the current one. It never overrides a human
+  `'abandoned'` decision, and does nothing at all when `target_value`
+  is null (a purely qualitative objective has nothing to compare).
+- **Never a second action table (rule 1).** An objective reaching
+  `at_risk`/`missed` raises exactly one `actions` row (`source_type =
+  'objective'`, keyed `objective:<id>:<status>` — a re-processed event
+  never raises two, and a genuine later episode after recovering to
+  `on_track` still gets its own fresh action). A management review
+  decision that needs follow-up is an ordinary `actions` row too
+  (`source_type = 'management_review'`) — created FIRST, then named on
+  the decision via `resulting_action_id`, so `management_review_
+  decisions` never needs an UPDATE to attach it after the fact. Two new
+  values added to the existing shared `actions_source_type_check`.
+- **A completed review's decisions are immutable, and finality means
+  something.** `management_review_decisions` is fully insert-only (a
+  correction is a new decision row, the `hs_documents`/`environmental_
+  aspects` "material change is a new row" discipline) AND
+  `management_review_decisions_guard()` refuses a new INSERT once the
+  parent review's `status = 'completed'` — a genuinely different
+  decision after that point needs a NEW `management_reviews` row (a
+  follow-up review), never an addition to a closed one.
+- **The data pack is a STORED SNAPSHOT, never recomputed after the
+  fact.** `admin/src/lib/governance/dataPack.ts`'s
+  `computeManagementReviewDataPack()` is pure counts/aggregates read
+  from existing tables at generation time (open actions, overdue
+  register items, incidents/environmental incidents/audits since the
+  previous completed review, audits scoring below a fixed 70%
+  threshold, objective status breakdown, legal obligation applicability
+  breakdown, legal evaluation EVENTS breakdown since the last review,
+  ISO readiness clause-with-evidence counts per standard, environmental
+  aspects confirmed significant) — never an AI-generated summary, never
+  a conclusion like "the organisation is performing well".
+  `management_review_data_pack` is insert-only
+  (`REVOKE UPDATE, DELETE, TRUNCATE`): generating a new pack for the
+  same review inserts a fresh row rather than overwriting the old one,
+  so a printed pack stays reproducible/auditable even after the
+  underlying counts have moved on — proved live in the probe (check 19:
+  inserting a new measurement after a pack was generated leaves the
+  stored snapshot byte-identical).
+- **RLS: staff MANAGE, client READ-ONLY, no client write path at all**
+  on every client-visible table — the exact `organisation_legal_
+  obligations`/`compliance_evaluations` (159) posture, reusing
+  `risk.read` (never a new capability, per the task brief and the
+  158/159 precedent: this spans H&S and Environmental alike, and every
+  `environmental.manage` role already holds `risk.create` too).
+  `management_review_data_pack` is STAFF-ONLY, not client-visible at
+  all — the internal analysis pack is not the same thing as the
+  decisions a review reaches, which the client DOES see.
+  `apply_write_guard()` on every client-readable table (objectives,
+  objective_measurements, management_reviews, management_review_
+  attendees, management_review_decisions), not on the staff-only data
+  pack — the 158/159 precedent.
+- **Same-organisation checks** guard `objectives.owner_person_id`,
+  `management_reviews.chaired_by` and `management_review_attendees.
+  person_id` (all via `assert_same_org()`), and a decision's
+  `resulting_action_id` must belong to the same organisation.
+- **Outbox + audit + reminders**: `objectives` (whitelist `title,
+  standard_id, status, target_date`) and `management_reviews`
+  (whitelist `review_date, chaired_by, status, completed_at`) join
+  `TRIGGERED_ENTITIES` — never `description`/`decision_text`/`notes`.
+  Both also join `REMINDER_ENTITIES`: an open objective's own
+  `target_date` (`due_30`/`due_7`/`overdue`, filtered to non-terminal
+  statuses) and a SCHEDULED review's own `review_date`
+  (`due_30`/`due_7`/`due_0`). `admin/src/lib/events/governanceRules.ts`
+  is its own file — spanning every EHS pillar, the same "genuinely
+  different content gets its own file" call `environmentalRules.ts`/
+  `legalRegisterRules.ts` already made.
+
+### Admin + portal UI
+
+Admin: a 14th/15th `HsCompanyTabs.tsx` tab pair,
+`/health-safety/<companyId>/objectives` (`ObjectivesClient.tsx` — add an
+objective, record a measurement, abandon one) and `/health-safety/
+<companyId>/management-review` (`ManagementReviewClient.tsx` — schedule
+a review, add attendees, generate the data pack, record decisions with
+an optional follow-up action, mark statuses, and a Print pack button
+that lazy-loads jsPDF + autotable and calls `admin/src/lib/governance/
+buildReviewPdf.ts` — the EXACT `lib/valueReport/buildReportPdf.ts`
+pattern: the PDF library is a parameter, never imported at the top of
+the builder module). No new sidebar entry needed — both nest under the
+already-linked `/health-safety` prefix. Portal: read-only `/protect/
+objectives` (shows the calculated status and recent measurements) and
+`/protect/management-review` (shows only COMPLETED reviews and their
+decisions — the internal data pack is deliberately not shown, since
+`management_review_data_pack` is staff-only RLS and the client's actual
+need is the outcome reached, not the working behind it), both gated by
+`protect` alone.
+
+### Live probe
+
+`supabase/probes/161_objectives_management_review.sql`, rolled back: 21
+checks — RLS enabled on all six tables; write guard present on the five
+client-readable tables; a cross-organisation owner refused; a plain
+objective insert defaults to `draft`; `objective_measurements` has no
+UPDATE/DELETE grant; a measurement reaching the target rolls the
+objective to `achieved`; a measurement short of target with a near
+deadline rolls to `at_risk`; the roll never overrides `abandoned`; a
+late-backfilled OLDER measurement never moves status backwards;
+`company_id` always derived from the objective; `actions_source_type_
+check` allows both new values; `completed_at` is stamped exactly once,
+the moment status reaches `completed`; a cross-organisation chair
+refused; a cross-organisation attendee refused; a decision inserts
+while not completed; a decision is refused once the review is
+completed; decisions have no UPDATE/DELETE grant; the data pack has no
+UPDATE/DELETE grant; the data pack snapshot is genuinely stored (a new
+measurement inserted after generation leaves it unchanged); no new
+`SECURITY DEFINER` function is anon-executable; a decision naming
+another company's action is refused. **All 21 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1257 admin —
+1228 + 29 new: `objectivesManagementReviewSql.test.ts` (19),
+`governanceRules.test.ts` (7), 3 new `vocab.test.ts` it.each entries
+(objective statuses, objective target directions, management review
+statuses) plus their label-map-coverage pairs; 620 portal — 616 + 4,
+`moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up the two
+new `/protect/objectives`/`/protect/management-review` routes
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 43 pairs, unchanged — `vocab.ts`/`types.ts`/
+`notify/types.ts` stayed byte-identical across both mirrors;
+`check-row-cap.sh`: clean, after lowering one `dataPack.ts` query from
+`.limit(1000)` to `.limit(500)` to match the guard's exact threshold;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+71 pages, all reachable; `check-blind-updates.sh`: 102, unchanged —
+the two new admin `.update()` writes (objective abandon, review status)
+were built with `COUNT_EXACT` + `judgeWrite()` from the start), both
+production builds compile, including the two new admin routes and the
+two new portal routes. Migration 161 applied live and verified (RLS on,
+write guard applied, both source_type values present on `actions`,
+evidence untouched by this group — no new evidence entity type was
+needed).
+
+**Later Phase 5 groups** (audit-engine enhancement, final QA) build on
+migration 161 onward and should read the governance map first.
+
+### Core-OS 360 Phase 5, Group 7: Internal Audit Enhancement, Governance
+### Calendar, Worker Consultation, Environmental Complaints (2026-09-29,
+### migration 162)
+
+Builds on Groups 1-6 (156-161). Four pieces, none of them a new engine.
+
+- **Audit enhancement extends the EXISTING `hs_audits`/`hs_audit_
+  responses`/`hs_audit_templates` system (110/113), never a second
+  audit engine.** `audit_programmes` is a new, small table — a planned
+  SCHEDULE of audits (nothing existing modelled "we run a fire audit
+  here quarterly"): staff-managed, plain-company client read, the exact
+  `hs_audits` posture (no capability gate). `audit_findings` is the
+  richer finding record: one row per FAILED `hs_audit_responses` row
+  (`UNIQUE (hs_audit_response_id)`), created SYNCHRONOUSLY inside the
+  existing atomic `hs_submit_audit()` RPC (extended, not duplicated) —
+  never by the async event consumer, so a finding exists the instant
+  the audit itself does. Unlike `hs_audit_responses`, `audit_findings`
+  is MUTABLE: a finding is worked on over days (root cause, a linked
+  corrective action, eventually closed) — the audit's own "correction
+  is a new row" discipline applies to the AUDIT, not to investigating
+  one of its findings.
+- **Severity is derived from the template item, never guessed.**
+  `hs_audit_template_items` gained `default_severity` (nullable
+  `minor|major|critical`, mirroring Group 3's `inspection_template_
+  items.critical` flag) — an item with none set defaults the finding
+  to `minor`. `AUDIT_FINDING_SEVERITIES` in `lib/hs/vocab.ts` is a
+  genuinely new, small vocabulary the task itself specified — never a
+  reuse of `actions.severity` (`low|medium|high|critical`, a different
+  column on a different table).
+- **A MAJOR or CRITICAL finding cannot be closed without a root cause
+  AND a linked corrective action AND that action's OWN effectiveness
+  verification — enforced by `audit_findings_closure_guard()`, a
+  database trigger, never the UI.** "Effectiveness verification"
+  reuses the EXISTING `actions.status`/`verified_at`/
+  `effectiveness_outcome` columns from Phase 2 (125/126) — no parallel
+  verification mechanism. The gate is severity-SCOPED: a MINOR finding
+  closes freely, with no root cause or linked action required. Proved
+  live in both directions (root cause missing, then present but no
+  action, then linked-but-unverified, then genuinely closable) and for
+  a minor finding closing with none of that.
+- **Never a second action table (this file's own standing rule).** A
+  finding's corrective action is an ordinary `actions` row,
+  `source_type = 'audit_finding'` — a value already present on
+  `actions_source_type_check` since migration 161, confirmed live
+  before writing this migration; no ALTER needed for it here. The
+  consequence rule (`hsRules.ts`, extending the EXISTING
+  `auditSubmittedConsequences`/`hs_audit_completed` handler) raises one
+  keyed action per failed response with the finding's own severity
+  driving `priority` (`minor→normal`, `major→high`, `critical→urgent`),
+  `severity` (`minor→low`, `major→medium`, `critical→critical`) and
+  `verification_required` (major/critical only) — then a `run`
+  consequence links the just-raised action's id back onto
+  `audit_findings.corrective_action_id`, but ONLY while it is still
+  null, so a later human change (or a different, hand-picked action) is
+  never clobbered by a re-processed event. A `run` write that touches
+  the database now uses `{ count: 'exact' }` from the start —
+  `check-blind-updates.sh`'s ratchet did not move.
+- **Governance Calendar is a READ-TIME AGGREGATE, never a new events/
+  scheduling table.** `admin/src/lib/governance/calendar.ts`'s
+  `governanceCalendarEvents()` unions the already-dated rows across
+  `audit_programmes`, `management_reviews`, `objectives`,
+  `organisation_legal_obligations`, `hs_documents`,
+  `environmental_permits`, `permit_conditions` and `iso_certifications`
+  — the source rows remain the single source of truth; each returned
+  event carries its own type, a real admin AND portal link, and
+  nothing here is stored. TypeScript over one SQL view: the eight
+  source tables have genuinely different shapes (some `date`, one
+  `timestamptz`; several need no join, none need a join for the
+  calendar itself) and this is materially easier to read, test and
+  extend than one large `UNION ALL`, and nothing here needs to run
+  inside a policy or a trigger. `/health-safety/governance-calendar`
+  (cross-client) is a simple month-grouped list — no interactive
+  calendar widget needed, per the task's own scope note.
+- **`consultation_records` and `environmental_complaints` are simple,
+  insert-mostly record-keeping tables, not workflow engines.** A
+  follow-up from either is, again, an ordinary `actions` row
+  (`source_type` `'consultation'` / `'environmental_complaint'`, two
+  new values added to the shared CHECK). `consultation_records` is
+  staff-manage / client-read, reusing `risk.read` — the broadest
+  existing "can see the register" capability, the 158/159/161
+  precedent, since this is a cross-pillar governance record rather
+  than an environmental-specific one; its consequence rule lives in
+  `governanceRules.ts` for that reason. `environmental_complaints`
+  follows the EXACT Group 2 spills/waste shape (staff full access,
+  client read with `environmental.read`, client insert/update with
+  `environmental.manage` — a client is often the one who receives the
+  complaint); its consequence rules live in `environmentalRules.ts`,
+  extending that file rather than forking a new one.
+- **Evidence functions had moved well past migration 113's snapshot by
+  the time this group was written** (extra branches from Phase 2/3/4/
+  Group 3, and `hs_evidence_readable`/`hs_evidence_writable` had
+  different parameter names/order than 113 ever had). The LIVE bodies
+  were fetched via `execute_sql` immediately before writing the
+  migration and reproduced verbatim with only the new
+  `'audit_finding'`/`'consultation_record'`/`'environmental_complaint'`
+  branches added — never guessed from an older migration file. Two
+  live-apply attempts were needed the same reason 144a/147a record
+  twice already: the first draft assumed 113's simpler function
+  shapes and failed live with `cannot change name of input parameter`
+  before the real signatures were read and matched.
+- **`audit_programmes` has no outbox entry of its own** — a reminder-
+  only entity, the `training_records` precedent — but IS in
+  `REMINDER_ENTITIES` for its own `next_due_date`
+  (`due_30`/`due_7`/`overdue`, new notification type
+  `audit_programme_due`, both bells).
+
+### Admin + portal UI
+
+Admin: `/health-safety/<companyId>/audit-programmes` (schedule/pause a
+programme), the audit detail page gained a findings panel per failed
+answer (severity, root cause, a linked corrective-action id field, a
+Close button) that surfaces the database's own refusal message
+verbatim via the toast — no client-side pre-validation of the closure
+gate, the same posture every H&S workflow guard in this codebase
+already takes. `/health-safety/<companyId>/consultation` and
+`/health-safety/<companyId>/environmental-complaints` (simple add/
+list/mark-investigated/close forms), plus the cross-client
+`/health-safety/governance-calendar`. No new sidebar entries needed —
+all four nest under the already-linked `/health-safety` prefix. Portal
+gets read-only `/protect/audit-programmes`, `/protect/consultation`
+and `/protect/environmental-complaints`, gated by `protect` alone
+(nothing here is self-certified), added to the PROTECT `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/162_audit_enhancement_calendar_consultation.sql`,
+rolled back: 18 checks — a fail response auto-creates a finding; its
+severity defaults to minor with no template item, and is derived
+correctly from the item's `default_severity` when one is set; a
+retried `hs_submit_audit()` call is idempotent (still exactly one
+finding); the closure gate refuses with no root cause, refuses with a
+root cause but no corrective action, refuses with a corrective action
+that is not yet verified/effective, and succeeds once it is; a minor
+finding closes freely; `consultation_records`/`environmental_
+complaints` both refuse a cross-organisation site and accept a
+same-organisation one; evidence vocab resolves for all three new
+entity types; write guards and RLS are present on all four new tables;
+no new `SECURITY DEFINER` function is executable by `anon`; the
+calendar's own source data spans the three tables checked live
+(`audit_programmes`, `objectives`, `management_reviews` all present).
+**All 18 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1286 admin —
+1257 + 29 new: `auditEnhancementSql.test.ts` (13), 5 new
+`calendar.test.ts` cases, 3 new `hsRules.test.ts` cases, 1 new
+`governanceRules.test.ts` case, 3 new `environmentalRules.test.ts`
+cases, 4 new `vocab.test.ts` it.each entries plus their label-map-
+coverage pairs; 626 portal — 620 + 6, `moduleAccess.test.ts`/
+`portalPagesLinked.test.ts` picking up the three new
+`/protect/audit-programmes`/`/protect/consultation`/`/protect/
+environmental-complaints` routes automatically), all five CI guards
+pass with no regressions (`check-shared-dupes.sh`: 43 pairs, unchanged
+— `vocab.ts`/`types.ts`/`notify/types.ts` stayed byte-identical across
+both mirrors; `check-row-cap.sh`: clean; `check-route-validation.sh`:
+44, unchanged; `check-admin-routes-linked.sh`: 75 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — the two new UPDATE call
+sites this group added (the finding panel's save, and the async
+finding→action linking `run` consequence) were both built with
+`{ count: 'exact' }` + `judgeWrite()`/the counted-write discipline from
+the start), both production builds compile. Migration 162 applied live
+and verified in two parts (`162c`/`162d` — see the migration file's own
+header for why) after the placeholder-content trap below was caught
+and corrected: RLS on, write guards applied, evidence vocab resolves,
+`actions.source_type` allows both new values, no Group 7 `SECURITY
+DEFINER` function executable by `anon`.
+
+**A tooling trap worth recording**: the first `apply_migration` call
+for 162 was sent with a placeholder comment instead of the real SQL
+body (a copy-paste slip, not a database defect) and reported success —
+the migrations table recorded a "162_audit_enhancement_calendar_
+consultation" entry with no tables actually created. Caught immediately
+by checking `to_regclass()` for the new tables before trusting the
+apply call's own success response, the same discipline this file's
+"IvyLens telemetry table existed only on disk" entry already
+established. The real content was applied as follow-up migrations
+(`162c` for the evidence-function wiring, `162d` for the tables/
+triggers/RLS) rather than silently overwriting the empty `162` entry.
+
+### Core-OS 360 Phase 5, Group 8: evidence-link foundation, a
+### governance KPI framework, Broadcast integration, and reporting/
+### search coverage for Groups 1-7 (2026-09-29, migration 163)
+
+Builds on Groups 1-7 (156-162). The last piece of connective tissue for
+the Legal Register, Objectives and Audit Findings before final QA: a
+human can now explicitly link any of the three to an existing record
+elsewhere in the platform, the platform can report a handful of
+deterministic EHS numbers about them, and — for the first time —
+Phase 5's own tables are actually reachable through search and the
+Broadcast tool.
+
+- **`requirement_evidence_links` is a SIBLING to `standard_evidence_
+  links` (158), never an extension of it.** `standard_evidence_links`
+  is keyed to a `standard_clauses` row — a fixed ISO clause. A legal
+  obligation, an objective and an audit finding are not clauses and
+  have no `clause_id` to hang off, so the new table carries its own
+  polymorphic SOURCE side (`source_type`/`source_id`) alongside the
+  same polymorphic EVIDENCE side (`entity_type`/`entity_id`) — both
+  validated by the exact same `hs_entity_table()`/`hs_entity_company()`
+  mechanism the evidence side already used, reused rather than
+  reinvented for the source side too. `source_type` is a small, CLOSED
+  vocabulary (`legal_obligation | objective | audit_finding`) — the
+  three kinds the task named, never "any entity can be a source",
+  which is scope that belongs to a later Evidence Engine, if one is
+  ever built, not to this foundation.
+- **`hs_entity_table()` gained exactly two branches** (`legal_
+  obligation → organisation_legal_obligations`, `objective →
+  objectives`) — `audit_finding` already resolved, added in 162 for its
+  own evidence branch. Every prior branch is copied unchanged;
+  `requirementEvidenceLinksSql.test.ts` spot-checks five of them to
+  prove this migration is additive, not a rewrite.
+- **No automated evidence suggestion, no AI, no cross-subsystem
+  scoring, anywhere.** A link is an explicit human action — insert or
+  delete, never an update ("a wrong link is removed, not edited", the
+  same rule `standard_evidence_links` already follows).
+- **The one UI, `EvidenceLinksPanel.tsx`, is reused UNCHANGED across
+  all three source pages** (a legal obligation on `/health-safety/
+  <companyId>/legal`, an objective on `.../objectives`, an audit
+  finding on the audit detail page) — it takes a caller-supplied
+  `sourceType`/`sourceId` rather than being three separate copies, and
+  reuses the SAME `STANDARD_EVIDENCE_ENTITY_TYPES` vocabulary `IsoClient.tsx`
+  already uses for the evidence side (the evidence side is the same set
+  of existing record kinds regardless of which table is doing the
+  linking). No record-picker UI was built — the id field is a plain
+  paste, matching `IsoClient.tsx`'s own existing pattern for
+  `standard_evidence_links`, since this is explicitly the evidence-link
+  FOUNDATION, not the full Evidence Engine.
+- **Capability reuse, no new capability seeded**: `risk.read`/
+  `risk.create` — the same broadest existing "can see/add to the
+  register" pair Groups 3-7 (158-162) already reused for exactly this
+  reason.
+- **Governance KPI framework**: `lib/governance/kpis.ts`
+  (`computeGovernanceKpis()`) is a SIBLING to Phase 4's `lib/hs/
+  kpis.ts`, not an extension of it — that module's incident/audit/
+  equipment counts are pure H&S register signals; this one spans
+  Environmental, the Legal Register and Objectives, the same "own file
+  for cross-pillar content" call `environmentalRules.ts`/
+  `legalRegisterRules.ts`/`governanceRules.ts` already made for
+  consequence rules. Pure, deterministic, computed at read time — no
+  stored aggregate, no AI, no significance judgement, and every KPI
+  reports which tables/columns/date-range it came from
+  (`GovernanceKpiDataSource`) rather than storing that provenance.
+  **"Waste diverted %" was named as an EXAMPLE in the task brief, but
+  was not built as specified** — `waste_streams.typical_disposal_route`
+  (157) is free text with no diverted/landfill classification, and
+  string-matching it (e.g. for "recycl") would be exactly the kind of
+  guessed default this codebase's own standing rule already rejects
+  (see `lib/bd/score.ts`: "an honest degrade... not a guessed
+  default"). `wasteNonConformancePercent` is used instead — honestly
+  computable from `waste_movements.non_conformance`, and a real,
+  standard EHS metric in its own right, not a substitute invented to
+  look complete. `incidentFrequencyRatePer100` is a genuinely new
+  metric, not a duplicate of `lib/hs/kpis.ts`'s existing raw incident
+  count: EHS frequency rates are always normalised per headcount (or
+  hours worked), which that module never computed.
+- **Broadcast integration reuses the EXISTING confirm-modal flow,
+  never a second, weaker path.** The Legal Register catalogue page
+  gained a "Broadcast" link per requirement
+  (`/broadcast?legal=<legal_requirements id>`), and `BroadcastPage`
+  gained `loadLegalPrefill()` alongside the existing regulatory-update
+  `loadPrefill()` — both populate the SAME `BroadcastPrefill` shape
+  `BroadcastClient.tsx` already consumes, so the confirm modal a staff
+  member sees before Send is identical either way. Only companies that
+  have actually recorded the requirement as `applicable` are
+  pre-selected — never every client on the platform. The pure mapping
+  (`buildLegalPrefill()`, `lib/governance/broadcastPrefill.ts`) is
+  extracted and unit-tested separately from the Supabase fetch, the
+  same "pure computation out of a server component" shape
+  `computeValueReport()`/`computeGovernanceKpis()` already use
+  elsewhere. Nothing here sends anything automatically.
+- **Reporting reuses `computeReport.ts`/`buildReportPdf.ts`'s exact
+  parameterised-PDF-builder pattern**, following Group 6's own LEAD-
+  section precedent rather than a new report type: a GOVERNANCE
+  section (`lib/governance/governanceReportMetrics.ts`,
+  `computeGovernanceMetrics()`) sits between PROTECT/LEAD and SYSTEM
+  USAGE on both the on-screen Value Report and its PDF, fed by the same
+  seven reads both `/value-reports/page.tsx` and the monthly cron's
+  route now make, so a staff download and the emailed PDF for the same
+  company/month stay byte-identical. **ISO readiness is reported as
+  counts only** ("3 of 12 clauses have recorded evidence"), never a
+  percentage or a certification claim — the standalone readiness
+  dashboard's own posture (158), extended here rather than relaxed.
+- **`search_records()` (Phase 1) stays SECURITY INVOKER — never
+  changed.** It gained seven branches for tables that had NO search
+  coverage at all before this: `environmental_aspect`, `environmental_
+  permit`, `legal_requirement`, `objective`, `management_review`,
+  `audit_programme`, `consultation_record`, plus an eighth,
+  `iso_certification`. `legal_requirements` is staff-only RLS (159) —
+  a non-staff caller's own row-level security already hides it from
+  this branch with no extra check needed, the same reason `hs_documents`
+  never needed one either. **Deliberately excluded**:
+  `audit_findings.root_cause` and `environmental_complaints.
+  description` are free-text narrative with no short controlled title
+  field to search on instead — the same "never surface notes in a
+  search title" discipline the outbox whitelists already apply.
+  `GlobalSearch.tsx` gained icons, labels and `hrefFor()` routing for
+  all seven; `legal_requirement` has no per-organisation home (it is
+  the staff catalogue, not a per-company row — `search_records` itself
+  returns a null `organisation_id` for it) and routes to the catalogue
+  page instead of a client's own workspace.
+
+### Live probe
+
+`supabase/probes/163_evidence_link_foundation.sql`, rolled back, run
+under a simulated client session (Andrews Recruitment Group's own
+`client_admin`) for the search-scoping checks: 10 checks — a same-org
+link succeeds; a cross-org EVIDENCE record is refused; a cross-org
+SOURCE record is refused; an unknown `source_type` is refused by the
+CHECK constraint itself; the simulated session's `search_records` sees
+its own company's objective; never a different company's objective;
+never the staff-only `legal_requirements` catalogue at all; the write
+guard is present; RLS is enabled; the DEFINER fill trigger is not
+executable by `anon`. **All 10 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1317 admin —
+1286 + 31 new: `governance/kpis.test.ts` (7), `governance/
+broadcastPrefill.test.ts` (5), `governance/governanceReportMetrics.
+test.ts` (5), `hs/__tests__/requirementEvidenceLinksSql.test.ts` (13),
+plus 1 new `computeReport.test.ts` case; 626 portal, unchanged — this
+group touched only the byte-identical `types.ts` mirror on the portal
+side, no portal test files), all five CI guards pass with no
+regressions (`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged; `check-admin-
+routes-linked.sh`: 75 pages, all reachable — no new admin route, every
+page touched nests under an already-linked prefix;
+`check-blind-updates.sh`: 102, unchanged — `EvidenceLinksPanel.tsx`
+only inserts and deletes, never updates), both production builds
+compile, including `/broadcast`'s new `?legal=` prefill path and the
+Legal Register catalogue's new "Broadcast" link. Migration 163 applied
+live and verified (the new table's RLS/write-guard/trigger shape
+confirmed structurally identical to `standard_evidence_links`'
+already-audited shape; `hs_entity_table()` resolves both new branches;
+`search_records()` confirmed still `SECURITY INVOKER`, with `anon`
+still refused execute on it).
+
+### Core-OS 360 Phase 5, Group 9: UI consistency pass across Groups 1-8
+### (2026-09-29)
+
+A background audit agent reviewed every admin/portal page shipped in
+Groups 1-8 against the established `hs/` component conventions (button
+placement, empty-state markup, status colour-coding, sidebar reachability).
+Four findings, all fixed:
+
+- **Three cross-client pages had no sidebar entry**
+  (`/health-safety/legal-register`, `/health-safety/iso-readiness`,
+  `/health-safety/governance-calendar`) — reachable only by a direct
+  URL. `check-admin-routes-linked.sh` did not catch this: it matches by
+  TOP-LEVEL path segment, and `/health-safety` was already linked via
+  the per-client workspace — **a real, now-documented gap in that
+  guard**, not a false pass on these specific pages. Fixed: three links
+  added to `AdminSidebar.tsx`'s PROTECT group.
+- **Button-wrapper and empty-state markup had drifted** on
+  `EnvironmentalAspectsClient.tsx`, `EnvironmentalSpillsClient.tsx`,
+  `EnvironmentalMonitoringClient.tsx`, `EnvironmentalPermitsClient.tsx`,
+  `LegalRegisterClient.tsx`, `LegalRequirementsCatalogueClient.tsx`,
+  `ObjectivesClient.tsx`, `ManagementReviewClient.tsx` — several
+  Group 7/8 components stopped matching the `flex ml-auto` button-row
+  and `card empty-state p-10` pattern every earlier `hs/` component
+  uses. Fixed to match.
+- **`environmental_spills.status` and `permit_conditions.status`
+  rendered with no colour anywhere** — admin table/select AND the
+  portal's read-only equivalents — despite both vocabularies including
+  urgent values (`breach_recorded`, `overdue`) that should stand out
+  from a routine one, the same colour-badge-next-to-a-select pattern
+  `IncidentsClient.tsx` already established. Fixed in all four
+  locations, portal given the identical colour maps as admin rather
+  than independently invented ones.
+- **The portal's `/protect/environmental-waste` page fetched
+  `waste_streams` but never rendered it** — only the movements table
+  showed, silently dropping the "what kind of waste" reference data a
+  client needs to make sense of the movements below it. Fixed: added a
+  read-only waste-streams section mirroring admin's
+  `EnvironmentalWasteClient.tsx` two-section layout.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1320
+admin, unchanged — this group edited only markup, no new test-covered
+logic; 626 portal, unchanged), all five CI guards pass
+(`check-admin-routes-linked.sh`: 75 pages, all reachable — up from the
+count before the sidebar fix), both production builds compile.
+
+### Core-OS 360 Phase 5, Group 10: final regression, adversarial QA,
+### two real concurrency bugs found and fixed, handover (2026-09-29,
+### migrations 164-166)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE5_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**Concurrency testing (the brief's own explicit request: "two users
+approving different document versions — only one becomes active")
+found two real, High-severity bugs — not a hypothetical, both
+reproduced live before being fixed.**
+
+- **`hs_documents` (160) — migration 164.** Two INSERTs both naming the
+  same `supersedes_id` (two editors starting a new version off the SAME
+  currently-active parent) both reached `'active'` simultaneously —
+  160's own rule 7 ("exactly one document current at any time") was
+  false. `hs_document_supersede_roll()` only ever superseded the NAMED
+  parent, never the sibling that lost the race. Fixed: the trigger now
+  ALSO supersedes any other row sharing the same `supersedes_id` still
+  active. Reproduced failing 2/2 before, passing 4/4 after
+  (`supabase/probes/164_document_sibling_race.sql`), a normal linear
+  chain proven unaffected.
+- **`emergency_plans` (154) — migration 165, worse than the
+  hs_documents case.** Had **no automated supersede trigger at all** —
+  the documented "insert new, then update the old row to superseded"
+  discipline was entirely a client-side, two-sequential-write
+  responsibility (`EmergencyPlansClient.tsx`, Phase 4 Group 13) with
+  nothing in the database enforcing it. A single dropped connection
+  between the two writes — not a rare race, an ordinary partial
+  failure — leaves two active plans in the same lineage permanently,
+  since nothing ever reconciles it afterwards. This was **currently
+  reachable through the shipped product**, unlike the next finding.
+  Fixed with an AFTER INSERT trigger mirroring 164's shape, adapted to
+  this table's simpler active/superseded-only lifecycle. Proved 3/3:
+  the bug scenario, a normal chain, a genuine sibling race.
+- **`environmental_aspects` (156) — migration 166, same defect class,
+  fixed defensively.** Same missing-trigger gap. **Not yet reachable
+  through the product** — `EnvironmentalAspectsClient.tsx` has no "new
+  version" action yet, so no live write path sets `supersedes_id`
+  today. Fixed anyway, ahead of any future group wiring up aspect
+  versioning — workflow invariants live in triggers, never only in the
+  UI that happens to exist today. Proved 3/3.
+- **Every table using `supersedes_id` in this codebase is now
+  covered** — a repo-wide search confirms exactly these three tables
+  use the pattern, and all three now carry an automated,
+  adversarially-proven roll trigger.
+
+**Cross-tenant UUID-substitution attacks** (5 record types the brief
+named — legal obligations, controlled documents, audit findings,
+management reviews, environmental permits — both read and write,
+against a simulated live `authenticated` session):
+**zero vulnerabilities found**, 13/13 checks passed
+(`supabase/probes/phase5_qa_cross_tenant.sql`).
+
+**Storage security**: `hs_evidence_client_read` confirmed to genuinely
+inherit `hs_files`' own RLS through its `EXISTS` subquery, not an
+independently-maintained boundary that could drift — no cross-client
+access possible for any entity type.
+
+**RLS sweep**: all 27 Phase 5 tables plus the two 165/166-fixed tables
+confirmed RLS-on, no `anon` grant anywhere, no permissive `USING
+(true)` policy.
+
+**Governance calendar correctness, network-failure-during-write, and
+every already-proven per-group invariant** (aspect versioning, ISO
+evidence-mapping non-mutation, legal-applicability confirm gate,
+document immutability/effective-date/acknowledgement-pinning,
+objectives/management-review/audit-finding history) are all covered in
+the handover doc's §D.5-D.7 — cited against their own group's live
+probe rather than re-derived, since nothing in this pass touched those
+triggers.
+
+**Regression of pre-existing protected modules** (Referrals, A2I,
+Development Plans, E-Learning, Broadcast, Billing, HR, Recruitment,
+every Phase 1-4 H&S/workforce/operational-safety system): the full
+green test suites ARE the regression suite (none deleted, none
+skipped), both production builds compile, and a live-DB sweep confirmed
+RLS/grants/triggers/constraints on 21 sampled pre-existing critical
+tables — including `profiles`' three security-hardening guard triggers
+(088/093) — are untouched by anything in Phase 5.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(**1326 admin** — 1320 + 6 new: `emergencyPlanSupersedeRaceSql.test.ts`
+(3) and `environmentalAspectSupersedeRaceSql.test.ts` (3);
+`documentSiblingRaceSql.test.ts` (3) was already inside the 1320
+baseline, having landed with migration 164 before this pass began;
+**626 portal**, unchanged — this pass's portal edits were read-only
+page markup with no new route), all five CI guards pass
+(`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+75 pages, all reachable; `check-blind-updates.sh`: 102, unchanged), both
+production builds compile. Migrations 164, 165, 166 applied and
+verified live — each: trigger exists, function is `SECURITY DEFINER`,
+neither `anon` nor `authenticated` can execute it directly, and the
+specific bug scenario re-proved fixed against the LIVE function, not
+the dry-run copy.
+
+**Phase 5 is complete. Phase 6 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
+
+### Phase 5 gate follow-up: the admin routes-linked guard rewritten
+### (2026-09-29)
+
+Before opening the PR, the handover's own "minor issues" list (§G) was
+reviewed to decide what actually needed fixing versus what was already
+a documented, deliberate scope decision. One was genuinely fixable:
+**`check-admin-routes-linked.sh` matched only the TOP-LEVEL path
+segment against the sidebar**, which is exactly why Group 9 found
+three `/health-safety/...` pages unlinked without the guard catching
+it — each sat under an already-linked prefix while having no link of
+its own anywhere in the app.
+
+- **Rewritten to check every STATIC (non-dynamic-segment) route's FULL
+  path against a literal reference ANYWHERE in the admin app** — the
+  sidebar, a tab, a button, a redirect — the same "quoted literal,
+  own-directory excluded" approach `portalPagesLinked.test.ts` (the
+  portal's own equivalent of this script) already established. A
+  dynamic route (`[id]`, `[companyId]`, …) stays excluded: it's reached
+  at runtime with a computed path, never a literal string a text search
+  could find.
+- **The rewrite itself found one genuinely unlinked-by-design page**:
+  `/clients/new`, a retired page kept only as a redirect to
+  `/clients/onboard` for old bookmarks — its only mention anywhere is a
+  code comment on the page that replaced it. Added to the guard's
+  `ALLOWED` list with that reason, the same pattern the script already
+  used for `/dashboard` (which needed no entry: it appears as a literal
+  `'/dashboard'` string in `AdminSidebar.tsx` itself).
+- **Mutation-tested against the real codebase, not just read**: a
+  single-reference route (`/health-safety/governance-calendar`) with
+  its one link removed correctly fails; restored, and the real,
+  unmodified codebase passes clean at 42 static routes checked, 0
+  unlinked. Runtime: under a second.
+- The guard's own reported count changed meaning — 75 → 42 — because it
+  now counts STATIC routes only (the old count included every
+  `page.tsx` under a linked top-level dynamic-segment tree, which said
+  nothing about whether that specific page was itself reachable).
+
+The other three §G minor issues were reviewed and left as-is,
+deliberately: `environmental_monitoring.within_limit`'s upper-bound-only
+shape and the inert Tavily research table are both documented, in-scope
+decisions, not bugs; permit checklist responses are a pre-existing
+Phase 4 scope note, unrelated to this phase.
+
+Verified: `tsc --noEmit` clean both apps (the change is a shell script,
+no TypeScript touched), full `vitest run` green (1326 admin, 626
+portal, unchanged), all five CI guards pass
+(`check-admin-routes-linked.sh`: 42 static routes, all reachable — the
+new, more precise count), both production builds compile.
+

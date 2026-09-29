@@ -62,6 +62,13 @@ beforeEach(() => {
       { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
       { id: 'resp-3', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Alarm tested this quarter?', rating: 'na', comment: null },
     ],
+    // Core-OS 360 Phase 5, Group 7 (162): hs_submit_audit() always
+    // creates one of these synchronously for every failed response, so
+    // the consequence rule always has one to read — seeded here the
+    // same way, minor severity (the default with no template item).
+    audit_findings: [
+      { id: 'finding-1', hs_audit_response_id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', severity: 'minor', root_cause: null, corrective_action_id: null, closed_at: null },
+    ],
     notification_preferences: [{ user_id: 'staff-1', email_mode: 'immediate', muted_types: [], weekly_summary: true }],
     platform_events: [], notifications: [], email_log: [], actions: [], jev_decisions: [],
   });
@@ -204,10 +211,13 @@ describe('hs rules', () => {
     // one finding (resp-1); the pass and the na raise nothing
     expect(db.tables.actions).toHaveLength(1);
     expect(db.tables.actions[0]).toMatchObject({
-      company_id: 'co-1', action_type: 'hs_audit_finding', priority: 'high',
+      company_id: 'co-1', action_type: 'hs_audit_finding', priority: 'normal',
       source_ref: 'hs_audit_response:resp-1', related_entity_type: 'hs_audit', related_entity_id: 'audit-1',
       title: 'Audit finding: Fire exits clear?', description: 'Boxes stacked against the rear exit.',
+      severity: 'low', source_type: 'audit_finding', source_id: 'resp-1', verification_required: false,
     });
+    // the finding row is linked back to the action just raised for it
+    expect(db.tables.audit_findings[0].corrective_action_id).toBe(db.tables.actions[0].id);
     const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
     expect(client).toMatchObject({ type: 'hs_audit_completed', link: '/protect/actions' });
     expect(client.title).toBe('Audit completed: Fire safety walk-round — 67%');
@@ -222,6 +232,31 @@ describe('hs rules', () => {
     expect(db.tables.actions).toHaveLength(1);
   });
 
+  it('a critical finding gets urgent priority, critical severity, and verification_required', async () => {
+    db.tables.audit_findings[0].severity = 'critical';
+    db.tables.platform_events.push(audit());
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'urgent', severity: 'critical', verification_required: true });
+  });
+
+  it('a finding closing (Core-OS 360 Phase 5, Group 7, migration 162) tells the client and staff', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 17, entity_type: 'audit_findings', event_type: 'updated', actor_kind: 'staff', entity_id: 'finding-1', company_id: 'co-1',
+      payload: { new: { closed_at: '2026-09-29T00:00:00Z' }, old: { closed_at: null }, changed: ['closed_at'] },
+    }));
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.filter(n => n.type === 'audit_finding_closed')).toHaveLength(2);
+  });
+
+  it('a re-opened row (closed_at cleared) never fires the closed notification', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 18, entity_type: 'audit_findings', event_type: 'updated', actor_kind: 'staff', entity_id: 'finding-1', company_id: 'co-1',
+      payload: { new: { closed_at: null }, old: { closed_at: '2026-09-29T00:00:00Z' }, changed: ['closed_at'] },
+    }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.filter(n => n.type === 'audit_finding_closed')).toHaveLength(0);
+  });
 
   // Incident rules and their tests live in safetyRules.ts / safetyRules.test.ts (125).
 
@@ -330,10 +365,10 @@ describe('hs rules', () => {
     expect(db.tables.notifications.some(n => n.type === 'loler_immediate_danger')).toBe(false);
   });
 
-  it('a new H&S document tells the client admins', async () => {
+  it('a document PUBLISHED (reaching active) tells the client admins — Core-OS 360 Phase 5, Group 5 (160): every insert is now a draft, so this is a status transition, never the insert', async () => {
     const doc = eventRow({
-      id: 20, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-1',
-      payload: { new: { title: 'Fire Risk Assessment 2026', status: 'active', category: 'hs_fire' }, old: {}, changed: [] },
+      id: 20, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-1',
+      payload: { new: { title: 'Fire Risk Assessment 2026', status: 'active', category: 'hs_fire' }, old: { status: 'approved' }, changed: ['status'] },
     });
     db.tables.platform_events.push(doc);
     await processEvents(db.client, { rules: RULES });
@@ -341,6 +376,68 @@ describe('hs rules', () => {
     expect(client).toMatchObject({ type: 'hs_document_added', link: '/protect/documents' });
     expect(client.title).toContain('Fire Risk Assessment 2026');
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
+
+  it('an insert (always a draft) raises no hs_document_added notification', async () => {
+    const doc = eventRow({
+      id: 200, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-draft',
+      payload: { new: { title: 'Draft Doc', status: 'draft', category: 'hs_fire' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('submitted for review tells the named reviewer and staff', async () => {
+    const doc = eventRow({
+      id: 201, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-2',
+      payload: { new: { title: 'Handbook v2', status: 'pending_review', reviewer_id: 'staff-1' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_submitted_for_review');
+    expect(notes.map(n => n.user_id).sort()).toEqual(['staff-1']);
+    expect(notes[0].title).toContain('Handbook v2');
+  });
+
+  it('submitted for approval tells the named approver and staff', async () => {
+    const doc = eventRow({
+      id: 202, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-3',
+      payload: { new: { title: 'Handbook v2', status: 'pending_approval', approver_id: 'staff-1' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_submitted_for_approval');
+    expect(notes.map(n => n.user_id).sort()).toEqual(['staff-1']);
+  });
+
+  it('approved (not yet published) is staff-only', async () => {
+    const doc = eventRow({
+      id: 203, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-4',
+      payload: { new: { title: 'Handbook v2', status: 'approved' }, old: { status: 'pending_approval' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(doc);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_approved');
+    expect(notes.some(n => n.user_id === 'ca')).toBe(false);
+    expect(notes.some(n => n.user_id === 'staff-1')).toBe(true);
+  });
+
+  it('a document withdrawn while already published tells the client too; one still in draft/review is staff-only', async () => {
+    const publishedWithdrawn = eventRow({
+      id: 204, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-5',
+      payload: { new: { title: 'Old Policy', status: 'withdrawn' }, old: { status: 'active' }, changed: ['status'] },
+    });
+    const draftWithdrawn = eventRow({
+      id: 205, entity_type: 'hs_documents', event_type: 'updated', actor_kind: 'staff', entity_id: 'doc-6',
+      payload: { new: { title: 'Never Published', status: 'withdrawn' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(publishedWithdrawn, draftWithdrawn);
+    await processEvents(db.client, { rules: RULES });
+    const notes = db.tables.notifications.filter(n => n.type === 'hs_document_withdrawn');
+    expect(notes.some(n => n.user_id === 'ca' && n.title.includes('Old Policy'))).toBe(true);
+    expect(notes.some(n => n.user_id === 'ca' && n.title.includes('Never Published'))).toBe(false);
+    expect(notes.some(n => n.user_id === 'staff-1' && n.title.includes('Never Published'))).toBe(true);
   });
 
   it('a document write that only marks the OLD version superseded raises nothing (the new row\'s own .created already covers it)', async () => {

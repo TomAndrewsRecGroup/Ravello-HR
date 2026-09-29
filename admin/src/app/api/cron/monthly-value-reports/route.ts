@@ -40,6 +40,7 @@ async function run(req: NextRequest) {
       companiesRes, reqsPage, candsPage, ticketsPage, docsPage, compliancePage,
       servReqsPage, actionsPage, profilesPage, servicesPage,
       trainingPage, reviewsPage, absencePage, onboardingPage,
+      standardsPage, clausesPage, evidenceLinksPage, legalObligationsPage, evaluationsPage, objectivesPage, auditFindingsPage,
     ] = await Promise.all([
       sb.from('companies').select('id, name, active, contact_email').eq('active', true).not('contact_email', 'is', null),
       readAllPages<any>((from, to) => sb.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
@@ -55,6 +56,16 @@ async function run(req: NextRequest) {
       readAllPages<any>((from, to) => sb.from('performance_reviews').select('id, company_id, status, due_date, completed_at, created_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('absence_records').select('id, company_id, status, start_date, days, created_at').eq('status', 'approved').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('onboarding_instances').select('id, company_id, status, started_at, completed_at').order('id').range(from, to)),
+      // GOVERNANCE (Core-OS 360 Phase 5, Group 8) — same seven reads
+      // the /value-reports page makes, so the emailed PDF and a staff
+      // download for the same company/month are byte-identical.
+      readAllPages<any>((from, to) => sb.from('management_system_standards').select('id, code').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('standard_clauses').select('id, standard_id').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('standard_evidence_links').select('company_id, clause_id').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('organisation_legal_obligations').select('id, company_id, applicability_status').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('compliance_evaluations').select('company_id, status, evaluated_at').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('objectives').select('company_id, status').order('id').range(from, to)),
+      readAllPages<any>((from, to) => sb.from('audit_findings').select('company_id, created_at, closed_at').order('id').range(from, to)),
     ]);
 
     const companies = (companiesRes.data ?? []) as { id: string; name: string; contact_email: string }[];
@@ -66,6 +77,9 @@ async function run(req: NextRequest) {
       profiles: profilesPage.rows, services: servicesPage.rows,
       trainingNeeds: trainingPage.rows, performanceReviews: reviewsPage.rows,
       absenceRecords: absencePage.rows, onboardingInstances: onboardingPage.rows,
+      standards: standardsPage.rows, standardClauses: clausesPage.rows, standardEvidenceLinks: evidenceLinksPage.rows,
+      legalObligations: legalObligationsPage.rows, complianceEvaluations: evaluationsPage.rows,
+      objectives: objectivesPage.rows, auditFindings: auditFindingsPage.rows,
     };
 
     let generated = 0, emailed = 0, alreadySent = 0;

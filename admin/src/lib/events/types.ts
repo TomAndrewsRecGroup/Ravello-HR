@@ -71,6 +71,32 @@ export const TRIGGERED_ENTITIES = [
   // a drill recorded.
   'emergency_plans',
   'emergency_drills',
+  // Core-OS 360 Phase 5, Group 1 (156): an environmental aspect added
+  // or its status changed (assessed / confirmed significant or not).
+  'environmental_aspects',
+  // Core-OS 360 Phase 5, Group 2 (157): spills, waste movements,
+  // monitoring readings and environmental permits/conditions.
+  'environmental_spills',
+  'waste_movements',
+  'environmental_monitoring',
+  'environmental_permits',
+  'permit_conditions',
+  // Core-OS 360 Phase 5, Group 4 (159): the Legal Register — an
+  // applicability decision changing, and a new compliance evaluation.
+  'organisation_legal_obligations',
+  'compliance_evaluations',
+  // Core-OS 360 Phase 5, Group 6 (161): Objectives & Targets, and
+  // Management Review — a status change (esp. reaching 'at_risk'/
+  // 'missed'/'achieved' on an objective, 'completed' on a review).
+  'objectives',
+  'management_reviews',
+  // Core-OS 360 Phase 5, Group 7 (162): a richer audit finding created/
+  // closed, a worker consultation recorded, an environmental complaint
+  // received/updated. audit_programmes has no outbox entry of its own
+  // (a reminder-only entity, the training_records precedent).
+  'audit_findings',
+  'consultation_records',
+  'environmental_complaints',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -113,6 +139,23 @@ export const REMINDER_ENTITIES = [
   'permits',
   // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
   'emergency_plans',
+  // Core-OS 360 Phase 5, Group 2 (157): an environmental permit's
+  // expiry and a permit condition's next review date.
+  'environmental_permits',
+  'permit_conditions',
+  // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
+  // certificate's own recorded expiry.
+  'iso_certifications',
+  // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+  // next_review_due, rolled forward from the newest evaluation.
+  'organisation_legal_obligations',
+  // Core-OS 360 Phase 5, Group 6 (161): an objective's own target_date,
+  // and a scheduled management review's own review_date.
+  'objectives',
+  'management_reviews',
+  // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
+  // next_due_date.
+  'audit_programmes',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

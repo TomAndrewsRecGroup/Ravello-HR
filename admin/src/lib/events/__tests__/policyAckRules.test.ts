@@ -140,4 +140,38 @@ describe('a sign-off request', () => {
     await run();
     expect(notes('policy_ack_signed').map(n => [n.user_id, n.title, n.link])).toEqual([['ca', 'Ada Lovelace acknowledged Remote Working Policy', '/lead/policy-acknowledgements']]);
   });
+
+  // Core-OS 360 Phase 5, Group 5 (160): an hs_documents-sourced
+  // acknowledgement is pinned to a SPECIFIC VERSION (that row's own
+  // id) — never a name or category. Assign v3, then create v4 without
+  // ever touching the ack row, and confirm the emailed link (and its
+  // sign-off notification) always names v3.
+  describe('an hs_documents acknowledgement stays pinned to its version', () => {
+    beforeEach(() => {
+      db.tables.hs_documents = [
+        { id: 'hsdoc-3', company_id: 'co-1', title: 'H&S Handbook v3', category: 'hs_policy_governance', version: 3, status: 'active' },
+        { id: 'hsdoc-4', company_id: 'co-1', title: 'H&S Handbook v4', category: 'hs_policy_governance', version: 4, status: 'active', supersedes_id: 'hsdoc-3' },
+      ];
+      db.tables.hs_files = [];
+      db.tables.policy_acknowledgements.push({ id: 'ack-3', company_id: 'co-1', document_id: null, hs_document_id: 'hsdoc-3', employee_id: 'emp-1', status: 'pending', link_sent_at: null });
+    });
+
+    it('the emailed link names the v3 hs_documents title, unaffected by v4 existing', async () => {
+      push({ entity_type: 'policy_acknowledgements', event_type: 'created', entity_id: 'ack-3', actor_kind: 'client',
+        payload: { new: { status: 'pending', hs_document_id: 'hsdoc-3', employee_id: 'emp-1' }, old: {}, changed: [] } });
+      await run();
+      const mail = toEmployee().find(m => m.subject.includes('H&S Handbook v3'));
+      expect(mail).toBeTruthy();
+      expect(sent.some(m => m.subject.includes('H&S Handbook v4'))).toBe(false);
+    });
+
+    it('the sign-off notification names v3, never v4, when signed via the link', async () => {
+      push({ entity_type: 'policy_acknowledgements', event_type: 'updated', entity_id: 'ack-3', actor_kind: 'system',
+        payload: { new: { status: 'acknowledged', hs_document_id: 'hsdoc-3', employee_id: 'emp-1', acknowledged_at: '2026-09-29T10:00:00Z' }, old: { status: 'pending' }, changed: ['status', 'acknowledged_at'] } });
+      await run();
+      const note = notes('policy_ack_signed').find(n => n.title.includes('Ada Lovelace'));
+      expect(note?.title).toContain('H&S Handbook v3');
+      expect(note?.title).not.toContain('v4');
+    });
+  });
 });
