@@ -70,6 +70,7 @@ PAIRS=(
   "admin/src/components/hs/IncidentPatternsView.tsx|portal/src/components/hs/IncidentPatternsView.tsx"
   "admin/src/lib/evidenceEngine/analyze.ts|portal/src/lib/evidenceEngine/analyze.ts"
   "admin/src/components/hs/EvidenceEngineClient.tsx|portal/src/components/hs/EvidenceEngineClient.tsx"
+  "admin/src/lib/complianceTwin/assemble.ts|portal/src/lib/complianceTwin/assemble.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
