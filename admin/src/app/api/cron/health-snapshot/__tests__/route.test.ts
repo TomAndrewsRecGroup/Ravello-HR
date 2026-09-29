@@ -33,6 +33,19 @@ beforeEach(() => {
     documents: [],
     client_health_snapshots: [],
     automation_runs: [],
+    actions: [],
+    organisation_legal_obligations: [],
+    hs_documents: [],
+    hs_incidents: [],
+    person_deployment_status: [],
+    hs_equipment: [],
+    audit_findings: [],
+    contractors: [],
+    contractor_insurances: [],
+    environmental_permits: [],
+    management_reviews: [],
+    service_requests: [],
+    consultancy_visits: [],
   });
 });
 
@@ -57,6 +70,37 @@ describe('GET /api/cron/health-snapshot', () => {
     expect(inactive?.band).toBe('red'); // an inactive company is always red
 
     expect(db.tables.automation_runs[0]).toMatchObject({ job: 'health-snapshot', outcome: 'ok' });
+  });
+
+  it('also writes the Phase 6 portfolio counts, sourced from real rows never a second copy of the band formula', async () => {
+    db.tables.actions = [
+      { id: 'a1', company_id: 'co-healthy', status: 'active', severity: 'critical' },
+      { id: 'a2', company_id: 'co-healthy', status: 'complete', severity: 'critical' }, // closed — does not count
+      { id: 'a3', company_id: 'co-healthy', status: 'active', severity: 'low' }, // not critical — does not count
+    ];
+    db.tables.hs_documents = [{ id: 'd1', company_id: 'co-healthy', status: 'review_due' }];
+    db.tables.person_deployment_status = [
+      { person_id: 'p1', company_id: 'co-healthy', status: 'READY', result: { summary: { safety_critical_gap: false } } },
+      { person_id: 'p2', company_id: 'co-healthy', status: 'REVIEW_REQUIRED', result: { summary: { safety_critical_gap: true } } },
+    ];
+    db.tables.consultancy_visits = [
+      { id: 'v1', client_organisation_id: 'co-healthy', status: 'scheduled', scheduled_date: '2099-01-15' },
+      { id: 'v2', client_organisation_id: 'co-healthy', status: 'scheduled', scheduled_date: '2099-01-05' },
+      { id: 'v3', client_organisation_id: 'co-healthy', status: 'cancelled', scheduled_date: '2099-01-01' },
+    ];
+
+    const res = await GET(req('s3cret'));
+    expect(res.status).toBe(200);
+    const healthy = db.tables.client_health_snapshots.find((r: any) => r.company_id === 'co-healthy');
+    expect(healthy?.open_critical_actions).toBe(1);
+    expect(healthy?.overdue_controlled_documents).toBe(1);
+    expect(healthy?.workers_not_ready).toBe(1);
+    expect(healthy?.safety_critical_gaps).toBe(1);
+    expect(healthy?.next_consultant_visit_date).toBe('2099-01-05'); // earliest scheduled, cancelled one ignored
+
+    const inactive = db.tables.client_health_snapshots.find((r: any) => r.company_id === 'co-inactive');
+    expect(inactive?.open_critical_actions).toBe(0); // no cross-company leakage
+    expect(inactive?.next_consultant_visit_date).toBeNull();
   });
 
   it('re-running the same day upserts (overwrites) rather than duplicating', async () => {
