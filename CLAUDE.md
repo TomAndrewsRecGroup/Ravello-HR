@@ -7568,3 +7568,80 @@ reachable; `check-blind-updates.sh`: 102, unchanged — both new
 **Phase 7 is complete. Phase 8 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 8: Risk Graph & Connected Compliance Intelligence
+## (in progress, from migration 177 onward)
+
+No detailed operator brief exists in the repo for this phase (unlike
+Phases 1-3's own `_PLAN.md` files). Scope was derived from the phase's
+own name plus what the codebase already has: `docs/
+CORE_OS_360_PHASE8_PLAN.md`. Same discipline as every phase since
+Phase 4: logical, independently verified groups.
+
+### Group 1 (migration 177): Risk Graph foundation
+
+`hs_links` (122) has been, in its own header comment, "the Risk
+Graph's foundation — relationships as rows, not free text" since
+Phase 2. It has sat unused as anything but a per-record "linked items"
+list ever since — five portal pages each show ONE record's direct
+links; nothing anywhere traversed the graph beyond one hop, and no
+cross-cutting insight was ever surfaced from the connections
+themselves.
+
+- **`hs_entity_table()` gains four branches that were checked live to
+  be missing, not guessed**: `permit` (152), `isolation` (153),
+  `emergency_plan` (154), `management_review` (161) — each table added
+  in its own migration with nobody circling back to this shared
+  resolver. Every prior branch is reproduced unchanged (a regression
+  test pins several of them, and the live probe confirms `hazard`/
+  `risk_assessment`/`action`/`legal_obligation` still resolve
+  correctly). `hs_entity_company()` needed no change — it already
+  resolves any table generically via `hs_entity_table()` +
+  `EXECUTE format()`.
+- **`risk_graph_neighbors(p_type, p_id, p_depth)`** — a recursive walk
+  of `hs_links` in BOTH directions (an edge is undirected for
+  traversal purposes; `direction` in the result says which way THIS
+  edge actually points), hard-capped at 3 hops and 500 rows regardless
+  of what the caller asks for (`LEAST(GREATEST(p_depth, 1), 3)`,
+  `LIMIT 500`) — the same row-cap discipline this codebase applies
+  everywhere else, applied here to a query shape (recursive graph
+  walk) that could otherwise grow unboundedly on a densely-linked
+  organisation.
+- **`SECURITY INVOKER`, deliberately, the exact `search_records()`
+  rule**: it can never return a row the caller's own `hs_links` RLS
+  would refuse them directly, because every underlying read runs AS
+  the caller, never as a privilege-escalated definer. `REVOKE ALL ...
+  FROM PUBLIC, anon` / `GRANT EXECUTE ... TO authenticated` matches
+  `search_records()`'s own precedent (119/126/137/163) exactly, even
+  though anon would see nothing regardless (no `auth.uid()`, so RLS
+  already returns zero rows) — the established belt-and-braces shape.
+- **A deliberate scope decision, recorded rather than left implicit**:
+  no portfolio-wide (consultancy) RLS was added anywhere in this
+  group. Unlike Phases 6-7, nothing about "Risk Graph & Connected
+  Compliance Intelligence" as a phase name implies a cross-client
+  capability — `hs_links`' existing `my_company_id()`-scoped RLS
+  (staff-in-client-workspace, or a client's own session) already
+  covers every reader this phase's UI will target. See `docs/
+  CORE_OS_360_PHASE8_PLAN.md` for the full reasoning.
+- Verified live (`supabase/probes/177_risk_graph_foundation.sql`, all
+  checks passed, built entirely from `actions` rows chained through
+  `hs_links` rather than hazards/risk_assessments — those carry CHECK
+  constraints unrelated to what this probe needed to prove): a 5-node
+  chain walked from its middle node sees exactly its direct neighbours
+  at depth 1 (one incoming, one outgoing) and both 2-hop nodes at
+  depth 2, self excluded; the depth cap holds at exactly 3 hops even
+  when the caller asks for 10; an unauthorised session (a different
+  organisation, no relationship) sees zero rows of another company's
+  graph, never an error; the SAME organisation's own client session
+  sees the full neighbourhood; a cross-organisation link insert is
+  still refused by the pre-existing `hs_links_check()` trigger,
+  unaffected by this migration.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1443 admin — 6 new `riskGraphFoundationSql.test.ts` cases; 703
+  portal, unchanged — this group is admin/database only), all five CI
+  guards pass (47 shared-dupe pairs, unchanged; row-cap clean; 44
+  unvalidated routes, unchanged; 42 static admin routes, all
+  reachable; 102 blind-update chains, unchanged — this group added no
+  new write path), admin production build compiles.
+
