@@ -9,7 +9,8 @@ import {
   OBJECTIVE_STATUS_LABELS, type ObjectiveStatus,
   OBJECTIVE_TARGET_DIRECTIONS, OBJECTIVE_TARGET_DIRECTION_LABELS, type ObjectiveTargetDirection,
 } from '@/lib/hs/vocab';
-import type { Objective, ObjectiveMeasurement, ManagementSystemStandard } from '@/lib/hs/types';
+import type { Objective, ObjectiveMeasurement, ManagementSystemStandard, RequirementEvidenceLink } from '@/lib/hs/types';
+import EvidenceLinksPanel from './EvidenceLinksPanel';
 
 interface Props {
   companyId: string;
@@ -17,6 +18,7 @@ interface Props {
   measurements: ObjectiveMeasurement[];
   standards: ManagementSystemStandard[];
   people: { id: string; full_name: string }[];
+  evidenceLinks: RequirementEvidenceLink[];
   loadError: string | null;
 }
 
@@ -33,7 +35,7 @@ const STATUS_COLOUR: Record<ObjectiveStatus, string> = {
   abandoned: 'var(--ink-faint)',
 };
 
-export default function ObjectivesClient({ companyId, objectives, measurements, standards, people, loadError }: Props) {
+export default function ObjectivesClient({ companyId, objectives, measurements, standards, people, evidenceLinks, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
@@ -239,6 +241,8 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
                         </ul>
                       )}
                     </div>
+
+                    <EvidenceLinksPanel companyId={companyId} sourceType="objective" sourceId={o.id} links={evidenceLinks} />
                   </div>
                 )}
               </div>

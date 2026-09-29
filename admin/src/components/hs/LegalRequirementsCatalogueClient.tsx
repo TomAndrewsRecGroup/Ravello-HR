@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Scale } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Scale, Megaphone } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/modules/Toast';
 import { LEGAL_REQUIREMENT_CATEGORIES, LEGAL_REQUIREMENT_CATEGORY_LABELS, type LegalRequirementCategory } from '@/lib/hs/vocab';
@@ -79,7 +80,7 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
       ) : (
         <div className="table-wrapper">
           <table className="table">
-            <thead><tr><th>Title</th><th>Category</th><th>Jurisdiction</th><th>Source</th></tr></thead>
+            <thead><tr><th>Title</th><th>Category</th><th>Jurisdiction</th><th>Source</th><th></th></tr></thead>
             <tbody>
               {requirements.map(r => (
                 <tr key={r.id}>
@@ -93,6 +94,19 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
                     {r.source_url
                       ? <a href={r.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--purple)' }}>Source</a>
                       : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
+                  </td>
+                  <td>
+                    {/* Prefills the Broadcast compose form and pre-selects every
+                        client whose own register already holds this requirement
+                        as 'applicable' — the same reviewed-before-sending confirm
+                        modal as any other broadcast; nothing sends automatically. */}
+                    <Link
+                      href={`/broadcast?legal=${r.id}`}
+                      className="btn-ghost btn-sm flex items-center gap-1.5 whitespace-nowrap"
+                      title="Broadcast an update about this requirement to affected clients"
+                    >
+                      <Megaphone size={13} /> Broadcast
+                    </Link>
                   </td>
                 </tr>
               ))}

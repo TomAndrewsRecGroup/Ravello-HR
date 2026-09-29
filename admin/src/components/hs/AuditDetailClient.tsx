@@ -7,13 +7,15 @@ import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { useToast } from '@/components/modules/Toast';
 import { evidenceUrl } from '@/lib/hs/evidence';
 import { HS_AUDIT_RATING_LABELS, HS_REGISTER_CATEGORY_LABELS, AUDIT_FINDING_SEVERITY_LABELS, type HsRegisterCategory } from '@/lib/hs/vocab';
-import type { HsAudit, HsAuditResponse, HsFile, AuditFinding } from '@/lib/hs/types';
+import type { HsAudit, HsAuditResponse, HsFile, AuditFinding, RequirementEvidenceLink } from '@/lib/hs/types';
+import EvidenceLinksPanel from './EvidenceLinksPanel';
 
 interface Props {
   audit:     HsAudit;
   responses: HsAuditResponse[];
   files:     HsFile[];
   findings:  AuditFinding[];
+  evidenceLinks: RequirementEvidenceLink[];
   loadError: string | null;
 }
 
@@ -23,7 +25,7 @@ const SEVERITY_COLOUR: Record<string, string> = { minor: 'var(--ink-faint)', maj
 // entirely by the database (audit_findings_closure_guard()) — this
 // component never pre-validates the close attempt, and surfaces
 // whatever the trigger refuses verbatim via the toast.
-function FindingPanel({ finding }: { finding: AuditFinding }) {
+function FindingPanel({ finding, evidenceLinks }: { finding: AuditFinding; evidenceLinks: RequirementEvidenceLink[] }) {
   const router = useRouter();
   const { toast } = useToast();
   const [rootCause, setRootCause] = useState(finding.root_cause ?? '');
@@ -72,6 +74,9 @@ function FindingPanel({ finding }: { finding: AuditFinding }) {
           </p>
         </div>
       )}
+      <div className="mt-3">
+        <EvidenceLinksPanel companyId={finding.company_id} sourceType="audit_finding" sourceId={finding.id} links={evidenceLinks} />
+      </div>
     </div>
   );
 }
@@ -80,7 +85,7 @@ const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB'
 
 const RATING_COLOUR: Record<string, string> = { pass: 'var(--teal)', fail: 'var(--red)', na: 'var(--ink-faint)' };
 
-export default function AuditDetailClient({ audit, responses, files, findings, loadError }: Props) {
+export default function AuditDetailClient({ audit, responses, files, findings, evidenceLinks, loadError }: Props) {
   const { toast } = useToast();
 
   async function openFile(f: HsFile) {
@@ -131,7 +136,7 @@ export default function AuditDetailClient({ audit, responses, files, findings, l
                     </ul>
                   )}
                   {findings.filter(fd => fd.hs_audit_response_id === r.id).map(fd => (
-                    <FindingPanel key={fd.id} finding={fd} />
+                    <FindingPanel key={fd.id} finding={fd} evidenceLinks={evidenceLinks} />
                   ))}
                 </div>
               </div>

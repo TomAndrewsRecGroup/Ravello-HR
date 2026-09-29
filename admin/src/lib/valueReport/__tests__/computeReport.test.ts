@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { computeValueReport } from '../computeReport';
 
 const CO = 'co-1';
-const empty = { requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], services: [], trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [] };
+const empty = {
+  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], services: [],
+  trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [],
+  standards: [], standardClauses: [], standardEvidenceLinks: [], legalObligations: [], complianceEvaluations: [], objectives: [], auditFindings: [],
+};
 
 describe('computeValueReport', () => {
   it('counts roles raised and filled this month, and all-time totals regardless of month', () => {
@@ -51,5 +55,17 @@ describe('computeValueReport', () => {
     expect(r.hire).toEqual({ newRoles: 0, filled: 0, candidates: 0, activeRoles: 0, totalFilled: 0 });
     expect(r.support.avgResolutionHours).toBe(0);
     expect(r.usage.mrr).toBe(0);
+    expect(r.governance.auditFindingsOpen).toBe(0);
+    expect(r.governance.isoReadiness).toEqual([]);
+  });
+
+  it('includes a governance section computed the same way computeGovernanceMetrics does standalone', () => {
+    const standards = [{ id: 'std-1', code: 'iso_45001_2018' }];
+    const standardClauses = [{ id: 'clause-1', standard_id: 'std-1' }];
+    const standardEvidenceLinks = [{ company_id: CO, clause_id: 'clause-1' }];
+    const objectives = [{ company_id: CO, status: 'on_track' }];
+    const r = computeValueReport(CO, 2026, 8, { ...empty, standards, standardClauses, standardEvidenceLinks, objectives });
+    expect(r.governance.isoReadiness).toEqual([{ standardCode: 'iso_45001_2018', clausesTotal: 1, clausesWithEvidence: 1 }]);
+    expect(r.governance.objectivesOnTrack).toBe(1);
   });
 });

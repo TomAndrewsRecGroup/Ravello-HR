@@ -6333,7 +6333,165 @@ established. The real content was applied as follow-up migrations
 (`162c` for the evidence-function wiring, `162d` for the tables/
 triggers/RLS) rather than silently overwriting the empty `162` entry.
 
-**Phase 5's remaining item**: final QA (an adversarial security review
-across Groups 1-7, matching the Phase 3/4 precedent) has not been
-started.
+### Core-OS 360 Phase 5, Group 8: evidence-link foundation, a
+### governance KPI framework, Broadcast integration, and reporting/
+### search coverage for Groups 1-7 (2026-09-29, migration 163)
+
+Builds on Groups 1-7 (156-162). The last piece of connective tissue for
+the Legal Register, Objectives and Audit Findings before final QA: a
+human can now explicitly link any of the three to an existing record
+elsewhere in the platform, the platform can report a handful of
+deterministic EHS numbers about them, and — for the first time —
+Phase 5's own tables are actually reachable through search and the
+Broadcast tool.
+
+- **`requirement_evidence_links` is a SIBLING to `standard_evidence_
+  links` (158), never an extension of it.** `standard_evidence_links`
+  is keyed to a `standard_clauses` row — a fixed ISO clause. A legal
+  obligation, an objective and an audit finding are not clauses and
+  have no `clause_id` to hang off, so the new table carries its own
+  polymorphic SOURCE side (`source_type`/`source_id`) alongside the
+  same polymorphic EVIDENCE side (`entity_type`/`entity_id`) — both
+  validated by the exact same `hs_entity_table()`/`hs_entity_company()`
+  mechanism the evidence side already used, reused rather than
+  reinvented for the source side too. `source_type` is a small, CLOSED
+  vocabulary (`legal_obligation | objective | audit_finding`) — the
+  three kinds the task named, never "any entity can be a source",
+  which is scope that belongs to a later Evidence Engine, if one is
+  ever built, not to this foundation.
+- **`hs_entity_table()` gained exactly two branches** (`legal_
+  obligation → organisation_legal_obligations`, `objective →
+  objectives`) — `audit_finding` already resolved, added in 162 for its
+  own evidence branch. Every prior branch is copied unchanged;
+  `requirementEvidenceLinksSql.test.ts` spot-checks five of them to
+  prove this migration is additive, not a rewrite.
+- **No automated evidence suggestion, no AI, no cross-subsystem
+  scoring, anywhere.** A link is an explicit human action — insert or
+  delete, never an update ("a wrong link is removed, not edited", the
+  same rule `standard_evidence_links` already follows).
+- **The one UI, `EvidenceLinksPanel.tsx`, is reused UNCHANGED across
+  all three source pages** (a legal obligation on `/health-safety/
+  <companyId>/legal`, an objective on `.../objectives`, an audit
+  finding on the audit detail page) — it takes a caller-supplied
+  `sourceType`/`sourceId` rather than being three separate copies, and
+  reuses the SAME `STANDARD_EVIDENCE_ENTITY_TYPES` vocabulary `IsoClient.tsx`
+  already uses for the evidence side (the evidence side is the same set
+  of existing record kinds regardless of which table is doing the
+  linking). No record-picker UI was built — the id field is a plain
+  paste, matching `IsoClient.tsx`'s own existing pattern for
+  `standard_evidence_links`, since this is explicitly the evidence-link
+  FOUNDATION, not the full Evidence Engine.
+- **Capability reuse, no new capability seeded**: `risk.read`/
+  `risk.create` — the same broadest existing "can see/add to the
+  register" pair Groups 3-7 (158-162) already reused for exactly this
+  reason.
+- **Governance KPI framework**: `lib/governance/kpis.ts`
+  (`computeGovernanceKpis()`) is a SIBLING to Phase 4's `lib/hs/
+  kpis.ts`, not an extension of it — that module's incident/audit/
+  equipment counts are pure H&S register signals; this one spans
+  Environmental, the Legal Register and Objectives, the same "own file
+  for cross-pillar content" call `environmentalRules.ts`/
+  `legalRegisterRules.ts`/`governanceRules.ts` already made for
+  consequence rules. Pure, deterministic, computed at read time — no
+  stored aggregate, no AI, no significance judgement, and every KPI
+  reports which tables/columns/date-range it came from
+  (`GovernanceKpiDataSource`) rather than storing that provenance.
+  **"Waste diverted %" was named as an EXAMPLE in the task brief, but
+  was not built as specified** — `waste_streams.typical_disposal_route`
+  (157) is free text with no diverted/landfill classification, and
+  string-matching it (e.g. for "recycl") would be exactly the kind of
+  guessed default this codebase's own standing rule already rejects
+  (see `lib/bd/score.ts`: "an honest degrade... not a guessed
+  default"). `wasteNonConformancePercent` is used instead — honestly
+  computable from `waste_movements.non_conformance`, and a real,
+  standard EHS metric in its own right, not a substitute invented to
+  look complete. `incidentFrequencyRatePer100` is a genuinely new
+  metric, not a duplicate of `lib/hs/kpis.ts`'s existing raw incident
+  count: EHS frequency rates are always normalised per headcount (or
+  hours worked), which that module never computed.
+- **Broadcast integration reuses the EXISTING confirm-modal flow,
+  never a second, weaker path.** The Legal Register catalogue page
+  gained a "Broadcast" link per requirement
+  (`/broadcast?legal=<legal_requirements id>`), and `BroadcastPage`
+  gained `loadLegalPrefill()` alongside the existing regulatory-update
+  `loadPrefill()` — both populate the SAME `BroadcastPrefill` shape
+  `BroadcastClient.tsx` already consumes, so the confirm modal a staff
+  member sees before Send is identical either way. Only companies that
+  have actually recorded the requirement as `applicable` are
+  pre-selected — never every client on the platform. The pure mapping
+  (`buildLegalPrefill()`, `lib/governance/broadcastPrefill.ts`) is
+  extracted and unit-tested separately from the Supabase fetch, the
+  same "pure computation out of a server component" shape
+  `computeValueReport()`/`computeGovernanceKpis()` already use
+  elsewhere. Nothing here sends anything automatically.
+- **Reporting reuses `computeReport.ts`/`buildReportPdf.ts`'s exact
+  parameterised-PDF-builder pattern**, following Group 6's own LEAD-
+  section precedent rather than a new report type: a GOVERNANCE
+  section (`lib/governance/governanceReportMetrics.ts`,
+  `computeGovernanceMetrics()`) sits between PROTECT/LEAD and SYSTEM
+  USAGE on both the on-screen Value Report and its PDF, fed by the same
+  seven reads both `/value-reports/page.tsx` and the monthly cron's
+  route now make, so a staff download and the emailed PDF for the same
+  company/month stay byte-identical. **ISO readiness is reported as
+  counts only** ("3 of 12 clauses have recorded evidence"), never a
+  percentage or a certification claim — the standalone readiness
+  dashboard's own posture (158), extended here rather than relaxed.
+- **`search_records()` (Phase 1) stays SECURITY INVOKER — never
+  changed.** It gained seven branches for tables that had NO search
+  coverage at all before this: `environmental_aspect`, `environmental_
+  permit`, `legal_requirement`, `objective`, `management_review`,
+  `audit_programme`, `consultation_record`, plus an eighth,
+  `iso_certification`. `legal_requirements` is staff-only RLS (159) —
+  a non-staff caller's own row-level security already hides it from
+  this branch with no extra check needed, the same reason `hs_documents`
+  never needed one either. **Deliberately excluded**:
+  `audit_findings.root_cause` and `environmental_complaints.
+  description` are free-text narrative with no short controlled title
+  field to search on instead — the same "never surface notes in a
+  search title" discipline the outbox whitelists already apply.
+  `GlobalSearch.tsx` gained icons, labels and `hrefFor()` routing for
+  all seven; `legal_requirement` has no per-organisation home (it is
+  the staff catalogue, not a per-company row — `search_records` itself
+  returns a null `organisation_id` for it) and routes to the catalogue
+  page instead of a client's own workspace.
+
+### Live probe
+
+`supabase/probes/163_evidence_link_foundation.sql`, rolled back, run
+under a simulated client session (Andrews Recruitment Group's own
+`client_admin`) for the search-scoping checks: 10 checks — a same-org
+link succeeds; a cross-org EVIDENCE record is refused; a cross-org
+SOURCE record is refused; an unknown `source_type` is refused by the
+CHECK constraint itself; the simulated session's `search_records` sees
+its own company's objective; never a different company's objective;
+never the staff-only `legal_requirements` catalogue at all; the write
+guard is present; RLS is enabled; the DEFINER fill trigger is not
+executable by `anon`. **All 10 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1317 admin —
+1286 + 31 new: `governance/kpis.test.ts` (7), `governance/
+broadcastPrefill.test.ts` (5), `governance/governanceReportMetrics.
+test.ts` (5), `hs/__tests__/requirementEvidenceLinksSql.test.ts` (13),
+plus 1 new `computeReport.test.ts` case; 626 portal, unchanged — this
+group touched only the byte-identical `types.ts` mirror on the portal
+side, no portal test files), all five CI guards pass with no
+regressions (`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged; `check-admin-
+routes-linked.sh`: 75 pages, all reachable — no new admin route, every
+page touched nests under an already-linked prefix;
+`check-blind-updates.sh`: 102, unchanged — `EvidenceLinksPanel.tsx`
+only inserts and deletes, never updates), both production builds
+compile, including `/broadcast`'s new `?legal=` prefill path and the
+Legal Register catalogue's new "Broadcast" link. Migration 163 applied
+live and verified (the new table's RLS/write-guard/trigger shape
+confirmed structurally identical to `standard_evidence_links`'
+already-audited shape; `hs_entity_table()` resolves both new branches;
+`search_records()` confirmed still `SECURITY INVOKER`, with `anon`
+still refused execute on it).
+
+**Group 9** (an admin+portal UI consistency pass across Groups 1-8) and
+**Group 10** (final regression, full adversarial QA, the Phase 5
+handover doc, and the phase gate) have not been started.
 

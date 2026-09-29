@@ -49,6 +49,8 @@ beforeEach(() => {
     requisitions: [], candidates: [], tickets: [], documents: [], compliance_items: [],
     service_requests: [], actions: [], profiles: [], client_services: [],
     training_needs: [], performance_reviews: [], absence_records: [], onboarding_instances: [],
+    management_system_standards: [], standard_clauses: [], standard_evidence_links: [],
+    organisation_legal_obligations: [], compliance_evaluations: [], objectives: [], audit_findings: [],
     reports: [], email_log: [], automation_runs: [],
   });
   db.client.storage = {

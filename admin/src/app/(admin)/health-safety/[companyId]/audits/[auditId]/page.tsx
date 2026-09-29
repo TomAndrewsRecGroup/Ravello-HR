@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { HsAudit, HsAuditResponse, HsFile, AuditFinding } from '@/lib/hs/types';
+import type { HsAudit, HsAuditResponse, HsFile, AuditFinding, RequirementEvidenceLink } from '@/lib/hs/types';
 import AuditDetailClient from '@/components/hs/AuditDetailClient';
 
 export const metadata: Metadata = { title: 'Audit detail' };
@@ -48,6 +48,14 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         .in('hs_audit_response_id', responseIds)
     : { data: [] };
 
+  const findingIds = (findings ?? []).map((f: { id: string }) => f.id);
+  // Evidence-link foundation (163) — fetched by id list, never blind.
+  const { data: evidenceLinks } = findingIds.length > 0
+    ? await supabase.from('requirement_evidence_links')
+        .select('id, company_id, source_type, source_id, entity_type, entity_id, added_by, created_at')
+        .eq('source_type', 'audit_finding').in('source_id', findingIds)
+    : { data: [] };
+
   return (
     <div className="space-y-4">
       <Link href={`/health-safety/${params.companyId}/audits`} className="flex items-center gap-1 text-sm" style={{ color: 'var(--ink-faint)' }}>
@@ -58,6 +66,7 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         responses={rows}
         files={(files ?? []) as HsFile[]}
         findings={(findings ?? []) as AuditFinding[]}
+        evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
         loadError={error?.message ?? null}
       />
     </div>

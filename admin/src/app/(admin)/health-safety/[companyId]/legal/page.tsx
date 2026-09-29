@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation } from '@/lib/hs/types';
+import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation, RequirementEvidenceLink } from '@/lib/hs/types';
 import LegalRegisterClient from '@/components/hs/LegalRegisterClient';
 
 export const metadata: Metadata = { title: 'Legal register' };
@@ -27,11 +27,21 @@ export default async function HealthSafetyLegalRegisterPage(props: { params: Pro
   ]);
 
   const obligationIds = obligations.rows.map(o => o.id);
-  const { data: evaluations, error: evalError } = obligationIds.length > 0
-    ? await supabase.from('compliance_evaluations')
-        .select('id, obligation_id, company_id, status, evaluated_by, evaluated_at, notes, next_review_due, created_at')
-        .in('obligation_id', obligationIds).order('evaluated_at', { ascending: false })
-    : { data: [] as ComplianceEvaluation[], error: null };
+  const [{ data: evaluations, error: evalError }, { data: evidenceLinks, error: linksError }] = await Promise.all([
+    obligationIds.length > 0
+      ? supabase.from('compliance_evaluations')
+          .select('id, obligation_id, company_id, status, evaluated_by, evaluated_at, notes, next_review_due, created_at')
+          .in('obligation_id', obligationIds).order('evaluated_at', { ascending: false })
+      : Promise.resolve({ data: [] as ComplianceEvaluation[], error: null }),
+    // Evidence-link foundation (163): fetched by id list, never blind —
+    // the same "fetch by id list" shape the referral PATCH route and
+    // the H&S test-logging routes already established.
+    obligationIds.length > 0
+      ? supabase.from('requirement_evidence_links')
+          .select('id, company_id, source_type, source_id, entity_type, entity_id, added_by, created_at')
+          .eq('source_type', 'legal_obligation').in('source_id', obligationIds)
+      : Promise.resolve({ data: [] as RequirementEvidenceLink[], error: null }),
+  ]);
 
   return (
     <LegalRegisterClient
@@ -39,7 +49,8 @@ export default async function HealthSafetyLegalRegisterPage(props: { params: Pro
       catalogue={(catalogue ?? []) as LegalRequirement[]}
       obligations={obligations.rows}
       evaluations={(evaluations ?? []) as ComplianceEvaluation[]}
-      loadError={catError?.message ?? obligations.error ?? evalError?.message ?? null}
+      evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
+      loadError={catError?.message ?? obligations.error ?? evalError?.message ?? linksError?.message ?? null}
     />
   );
 }

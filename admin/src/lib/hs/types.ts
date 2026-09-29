@@ -775,3 +775,19 @@ export interface EnvironmentalComplaint {
   created_at: string;
   updated_at: string;
 }
+
+// Core-OS 360 Phase 5, Group 8 (migration 163): the evidence-link
+// foundation. source_type is one of 'legal_obligation' | 'objective' |
+// 'audit_finding' — kept as `string` here, the same choice
+// StandardEvidenceLink.entity_type already makes, so a future fourth
+// source type needs no type-file edit, only the migration's own CHECK.
+export interface RequirementEvidenceLink {
+  id: string;
+  company_id: string;
+  source_type: string;
+  source_id: string;
+  entity_type: string;
+  entity_id: string;
+  added_by: string | null;
+  created_at: string;
+}

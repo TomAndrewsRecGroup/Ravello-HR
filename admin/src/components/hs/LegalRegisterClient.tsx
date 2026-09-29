@@ -10,13 +10,15 @@ import {
   COMPLIANCE_EVALUATION_STATUSES, COMPLIANCE_EVALUATION_STATUS_LABELS, type ComplianceEvaluationStatus,
   LEGAL_REQUIREMENT_CATEGORY_LABELS,
 } from '@/lib/hs/vocab';
-import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation } from '@/lib/hs/types';
+import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation, RequirementEvidenceLink } from '@/lib/hs/types';
+import EvidenceLinksPanel from './EvidenceLinksPanel';
 
 interface Props {
   companyId: string;
   catalogue: LegalRequirement[];
   obligations: OrganisationLegalObligation[];
   evaluations: ComplianceEvaluation[];
+  evidenceLinks: RequirementEvidenceLink[];
   loadError: string | null;
 }
 
@@ -41,7 +43,7 @@ const EVALUATION_COLOUR: Record<ComplianceEvaluationStatus, string> = {
   not_evaluated:           'var(--ink-faint)',
 };
 
-export default function LegalRegisterClient({ companyId, catalogue, obligations, evaluations, loadError }: Props) {
+export default function LegalRegisterClient({ companyId, catalogue, obligations, evaluations, evidenceLinks, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [linkOpen, setLinkOpen] = useState(false);
@@ -253,6 +255,8 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
                         </ul>
                       )}
                     </div>
+
+                    <EvidenceLinksPanel companyId={companyId} sourceType="legal_obligation" sourceId={o.id} links={evidenceLinks} />
                   </div>
                 )}
               </div>

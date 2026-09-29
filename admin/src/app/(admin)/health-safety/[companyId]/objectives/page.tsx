@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import type { Objective, ObjectiveMeasurement, ManagementSystemStandard } from '@/lib/hs/types';
+import type { Objective, ObjectiveMeasurement, ManagementSystemStandard, RequirementEvidenceLink } from '@/lib/hs/types';
 import ObjectivesClient from '@/components/hs/ObjectivesClient';
 
 export const metadata: Metadata = { title: 'Objectives & targets' };
@@ -27,11 +27,19 @@ export default async function HealthSafetyObjectivesPage(props: { params: Promis
 
   const objectiveRows = (objectives ?? []) as Objective[];
   const objectiveIds = objectiveRows.map(o => o.id);
-  const { data: measurements, error: mError } = objectiveIds.length > 0
-    ? await supabase.from('objective_measurements')
-        .select('id, objective_id, company_id, measured_at, value, notes, recorded_by, created_at')
-        .in('objective_id', objectiveIds).order('measured_at', { ascending: false })
-    : { data: [] as ObjectiveMeasurement[], error: null };
+  const [{ data: measurements, error: mError }, { data: evidenceLinks, error: linksError }] = await Promise.all([
+    objectiveIds.length > 0
+      ? supabase.from('objective_measurements')
+          .select('id, objective_id, company_id, measured_at, value, notes, recorded_by, created_at')
+          .in('objective_id', objectiveIds).order('measured_at', { ascending: false })
+      : Promise.resolve({ data: [] as ObjectiveMeasurement[], error: null }),
+    // Evidence-link foundation (163) — fetched by id list, never blind.
+    objectiveIds.length > 0
+      ? supabase.from('requirement_evidence_links')
+          .select('id, company_id, source_type, source_id, entity_type, entity_id, added_by, created_at')
+          .eq('source_type', 'objective').in('source_id', objectiveIds)
+      : Promise.resolve({ data: [] as RequirementEvidenceLink[], error: null }),
+  ]);
 
   return (
     <ObjectivesClient
@@ -40,7 +48,8 @@ export default async function HealthSafetyObjectivesPage(props: { params: Promis
       measurements={(measurements ?? []) as ObjectiveMeasurement[]}
       standards={(standards ?? []) as ManagementSystemStandard[]}
       people={people.rows}
-      loadError={objError?.message ?? stdError?.message ?? mError?.message ?? null}
+      evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
+      loadError={objError?.message ?? stdError?.message ?? mError?.message ?? linksError?.message ?? null}
     />
   );
 }

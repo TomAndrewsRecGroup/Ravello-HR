@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap } from 'lucide-react';
+import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap, Scale } from 'lucide-react';
 import { computeValueReport } from '@/lib/valueReport/computeReport';
 import { buildReportPdf } from '@/lib/valueReport/buildReportPdf';
 
@@ -19,13 +19,24 @@ interface Props {
   performanceReviews: any[];
   absenceRecords: any[];
   onboardingInstances: any[];
+  standards: any[];
+  standardClauses: any[];
+  standardEvidenceLinks: any[];
+  legalObligations: any[];
+  complianceEvaluations: any[];
+  objectives: any[];
+  auditFindings: any[];
 }
 
 function fmtMonth(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
-export default function ValueReportClient({ companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances }: Props) {
+export default function ValueReportClient({
+  companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
+  trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
+  standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
+}: Props) {
   const now = new Date();
   const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -52,10 +63,15 @@ export default function ValueReportClient({ companies, requisitions, candidates,
     const data = computeValueReport(cid, y, m, {
       requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
       trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
+      standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
     });
 
     return { company, month: fmtMonth(new Date(y, m)), ...data };
-  }, [selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances]);
+  }, [
+    selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems,
+    serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
+    standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
+  ]);
 
   async function downloadReport() {
     if (!report) return;
@@ -120,7 +136,7 @@ export default function ValueReportClient({ companies, requisitions, candidates,
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: Core OS 360</p>
           </div>
 
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-5">
             {/* HIRE */}
             <div className="card p-5">
               <div className="flex items-center gap-2 mb-4">
@@ -206,6 +222,33 @@ export default function ValueReportClient({ companies, requisitions, candidates,
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
                     <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--gold)' : 'var(--ink)' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* GOVERNANCE */}
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Scale size={15} style={{ color: 'var(--red)' }} />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>GOVERNANCE</h3>
+              </div>
+              <div className="space-y-3">
+                {report.governance.isoReadiness.map((s: { standardCode: string; clausesTotal: number; clausesWithEvidence: number }) => (
+                  <div key={s.standardCode} className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{s.standardCode}</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{s.clausesWithEvidence}/{s.clausesTotal} clauses</span>
+                  </div>
+                ))}
+                {[
+                  { label: 'Legal obligations applicable', value: report.governance.legalObligationsApplicable },
+                  { label: 'Legal evaluations this month', value: report.governance.legalEvaluationsThisMonth },
+                  { label: 'Objectives on track (current)', value: report.governance.objectivesOnTrack, highlight: true },
+                  { label: 'Audit findings opened', value: report.governance.auditFindingsOpenedThisMonth },
+                  { label: 'Audit findings open (current)', value: report.governance.auditFindingsOpen },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>
+                    <span className="text-sm font-bold" style={{ color: item.highlight ? 'var(--red)' : 'var(--ink)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
