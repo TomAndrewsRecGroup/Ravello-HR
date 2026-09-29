@@ -7977,7 +7977,7 @@ merged and deployed, per the operator's standing instruction.
 ---
 
 ## Core-OS 360 Phase 10: Incident Pattern Intelligence
-## (in progress, no migration so far)
+## (complete, no migration)
 
 No detailed operator brief exists in the repo for this phase (the same
 situation Phases 8-9 were in). Scope: `docs/CORE_OS_360_PHASE10_PLAN.md`.
@@ -8063,4 +8063,57 @@ component are both shared-dupe pairs (50 pairs, up from 48).
   group writes nothing, read-only throughout), both production
   builds compile, including `/health-safety/<companyId>/incident-
   patterns` and `/protect/incident-patterns`.
+
+### Group 3 (no migration): full regression, adversarial QA, handover
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE10_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**One real, Medium-severity defect found: the current and prior
+comparison windows were not the same length.** The first version built
+the current window as `[today - N, today]` (BOTH ends inclusive —
+`N + 1` distinct dates, not `N`) and the prior window as `[today - 2N,
+today - N)` (half-open, genuinely `N` dates) — every single
+period-over-period severity comparison this phase ever produced was
+comparing a slightly LONGER "current" period against a slightly
+SHORTER "prior" one, on every run, for every client, since Group 2
+shipped. Found by re-deriving the date arithmetic by hand rather than
+trusting that "N days ago to today" and "2N days ago to N days ago"
+were obviously symmetric — they look right at a glance and are wrong
+by exactly one day. Fixed by extracting `incidentPatternWindows()`, a
+new shared, testable pure function in `analyze.ts` producing two
+provably equal-length half-open windows, replacing the duplicated
+(and duplicately wrong) inline date math in both `page.tsx` files.
+**Mutation-tested live in this session** — the fix was reverted to
+the original inclusive-both-ends formula, 3 of 4 new tests failed,
+then restored.
+
+**Everything else audited clean**:
+
+- **The absolute "no prediction, no AI" rule** was re-verified against
+  the actual code (no reference to `incident_person_sensitive` or any
+  free-text `description` column anywhere in this phase's files), not
+  merely trusted from `analyze.ts`'s own header comment.
+- **Tenant scoping and the "cause counted against the wrong window"
+  edge case** were both independently re-checked and confirmed
+  correct — `incident_causes`/`incident_investigations` carry their
+  own `company_id`, and a cause is only counted when its own incident
+  is present in the window-scoped `incidents` array, never derived
+  from the cause's own confirmation date.
+- **Regression**: the full `vitest` suites across both apps ARE the
+  regression suite (none deleted, none skipped) — every pre-existing
+  module stayed green throughout this pass, and both production
+  builds compile.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1485 admin — 1481 + 4 new `incidentPatternWindows` test cases; 707
+portal, unchanged — the fix and its tests are in the shared `analyze.
+ts`, re-mirrored byte-identical), all five CI guards pass with no
+regressions (50 shared-dupe pairs; row-cap clean; 44 unvalidated
+routes, unchanged; 42 static admin routes, all reachable; 102
+blind-update chains, unchanged — this phase writes nothing, entirely
+read-only throughout), both production builds compile.
+
+**Phase 10 is complete. Phase 11 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 

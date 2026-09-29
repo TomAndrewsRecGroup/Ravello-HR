@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import { analyzeIncidentPatterns, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
+import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
 import IncidentPatternsView from '@/components/hs/IncidentPatternsView';
 
 export const metadata: Metadata = { title: 'Incident Patterns' };
@@ -16,11 +16,6 @@ function isWindow(n: number): n is Window {
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
-}
-function daysAgo(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - days);
-  return toISODate(d);
 }
 
 // Core-OS 360 Phase 10, Group 2. Historical, factual pattern surfacing
@@ -39,16 +34,15 @@ export default async function IncidentPatternsPage(
 
   const supabase = await createServerSupabaseClient();
   const today = toISODate(new Date());
-  const windowStart = daysAgo(windowDays);
-  const priorStart = daysAgo(windowDays * 2);
+  const { windowStart, windowEndExclusive, priorStart, priorEndExclusive } = incidentPatternWindows(today, windowDays);
 
   const [incidents, priorIncidents, investigations, causes, sitesRes, deptsRes] = await Promise.all([
     readAllPages<IncidentRow>((from, to) =>
       supabase.from('hs_incidents').select('id, incident_type, severity, site_id, department_id, occurred_on')
-        .eq('company_id', params.companyId).gte('occurred_on', windowStart).lte('occurred_on', today).range(from, to)),
+        .eq('company_id', params.companyId).gte('occurred_on', windowStart).lt('occurred_on', windowEndExclusive).range(from, to)),
     readAllPages<IncidentRow>((from, to) =>
       supabase.from('hs_incidents').select('id, incident_type, severity, site_id, department_id, occurred_on')
-        .eq('company_id', params.companyId).gte('occurred_on', priorStart).lt('occurred_on', windowStart).range(from, to)),
+        .eq('company_id', params.companyId).gte('occurred_on', priorStart).lt('occurred_on', priorEndExclusive).range(from, to)),
     readAllPages<IncidentInvestigationRow>((from, to) =>
       supabase.from('incident_investigations').select('id, incident_id').eq('company_id', params.companyId).range(from, to)),
     readAllPages<IncidentCauseRow>((from, to) =>
