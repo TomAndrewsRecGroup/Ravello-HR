@@ -8212,3 +8212,104 @@ builds compile.
 **Phase 11 is complete. Phase 12 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 12: Compliance Digital Twin (2026-09-29)
+
+No detailed operator brief exists in the repo for this phase either —
+the same situation Phases 8-11 were in. Scope: `docs/CORE_OS_360_
+PHASE12_PLAN.md`, derived from the phase's own name plus a careful
+audit of what the codebase already computes.
+
+A "digital twin" here means exactly one thing: a single, read-time,
+deterministic model of a client's ENTIRE compliance state, assembled
+from five modules this codebase already has — never a new raw fact.
+**No migration, no new table.** Delivered in **3 groups**.
+
+### Group 1: the assembly module
+
+`lib/complianceTwin/assemble.ts` (shared-dupe pair) — `assembleComplianceTwin()`
+combines the ALREADY-COMPUTED outputs of five existing pure modules:
+
+| Source module | What it already computes |
+|---|---|
+| `lib/hs/kpis.ts` (`computeHsKpis`, Phase 4, admin-only) | Incidents/RIDDOR, last audit score, equipment overdue/due-soon |
+| `lib/governance/kpis.ts` (`computeGovernanceKpis`, Phase 5 Gp 8, admin-only) | Objectives on-track %, overdue legal evaluations, waste non-conformance % |
+| `lib/riskGraph/intelligence.ts` (Phase 8) | Uncovered hazards, ineffective shared controls, unlinked legal obligations |
+| `lib/incidentPatterns/analyze.ts` (Phase 10) | Recurring root causes, site/department clusters, severity trend |
+| `lib/evidenceEngine/analyze.ts` (Phase 11) | Register-completion evidence coverage % |
+
+This file adds no new data computation. Its only new logic is a
+per-area RAG (red/amber/green) band, derived by fixed, NAMED numeric
+thresholds — the same `if`-chain-over-thresholds shape `lib/health/
+scoring.ts`'s own `computeBand()` already uses, never a formula or a
+score — plus combining the five areas into one snapshot with an
+overall band (the worst of the five, `worstBand()`).
+
+- **Two of the five source modules are admin-only** (`lib/hs/kpis.ts`,
+  `lib/governance/kpis.ts` — checked live before writing a line of
+  code: neither has ever had a portal copy, and neither is imported
+  anywhere in the portal app). `assemble.ts` therefore does NOT import
+  their types — it declares two narrow, self-contained local
+  interfaces (`ComplianceTwinHsKpisInput`, `ComplianceTwinGovernanceKpisInput`)
+  naming only the fields this file actually reads, structurally
+  compatible with admin's own `HsKpis`/`GovernanceKpis` so the admin
+  page can pass either straight through with no mapping step. The
+  other three source types (`RiskGraphIntelligence`,
+  `IncidentPatternSummary`, `EvidenceCoverageSummary`) ARE imported
+  directly, since both apps carry byte-identical copies of those three
+  modules already.
+- **Every "reason" is a plain sentence built from a number a source
+  module already computed — never an AI narrative.** The same absolute
+  rule Phase 10's own header comment states: report what has ALREADY
+  happened, past tense, a real inspectable count behind it, never a
+  probability or a "likely to recur" framing. No AI anywhere in this
+  file.
+- **An area that is red for one reason still reports every amber-level
+  fact that is ALSO true**, rather than hiding it behind the worse
+  finding — `buildArea()` builds both a red-reasons list and an
+  amber-reasons list unconditionally from independent checks, then
+  derives the band from whichever lists are non-empty.
+- **Thresholds are named constants, reusing an existing precedent
+  where one already exists**: the 70%-audit-score threshold echoes
+  Phase 5 Group 6's management-review data pack's own "audits scoring
+  below a fixed 70% threshold." The evidence thresholds (50%/90%) and
+  the objectives/waste thresholds (50%/10%) are new to this module,
+  chosen as round, documented numbers rather than tuned to any
+  particular client's data.
+- **A null percentage is never treated as zero.** `objectivesOnTrackPercent`,
+  `wasteNonConformancePercent` and `coveragePercent` are each `number |
+  null` on their source module (null means "nothing to measure yet",
+  not "0% healthy") — every threshold check is guarded `!= null &&
+  ...`, matching the same distinction Phase 11's own evidence module
+  already drew ("coveragePercent... null with zero completions, never
+  0").
+- **A real test-fixture bug was found and fixed while writing this
+  group's own tests, before any review — not a defect in the shipped
+  module itself.** The first version of the test file's `baseInput()`
+  helper built each test's input via a shallow `{ ...CLEAN_INCIDENT_
+  PATTERNS }` spread; `severityComparison` is a nested object, so every
+  test SHARED the same `currentWindow`/`priorWindow` object across the
+  whole file — one test mutating `currentWindow.major` leaked into
+  every test that ran after it, and four tests failed non-deterministically
+  depending on execution order. Fixed by building every test's input
+  through `structuredClone()` instead of a shallow spread. Caught by
+  the tests themselves failing on first run, not by inspection — kept
+  here as the recorded lesson for any future test fixture with a
+  nested object.
+- 25 unit tests: entirely-green baseline, each area's own red/amber/
+  green conditions independently, exact threshold boundaries (a score
+  of exactly 70/50/90 never trips the adjacent band), the
+  red-still-reports-amber-reasons property, null-vs-zero handling, and
+  the overall-band worst-of-five combination.
+
+### Group 2 and Group 3
+
+Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+merged on its own branch first, per this codebase's standing "regular
+merges so you don't lose anything" discipline; the UI and the final
+regression/adversarial-QA/handover pass follow as their own PRs.
+
+**Phase 13 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
