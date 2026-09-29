@@ -93,3 +93,73 @@ export function computeValueReport(companyId: string, year: number, month: numbe
     usage: { portalUsers: totalUsers, activeServices, mrr },
   };
 }
+
+// Core-OS 360 Phase 6, section 10: "monthly/quarterly consultancy
+// reporting". Rather than widen computeValueReport()'s own month-only
+// filtering (real regression risk to the already-live monthly report
+// this file's own header comment says must never drift from the
+// downloaded one), a quarter is composed from the SAME, UNCHANGED
+// per-month computation run three times and merged field-by-field —
+// FLOW fields (something that happened in the period: new roles,
+// tickets raised, actions completed, …) are SUMMED across the three
+// months; STOCK fields (a snapshot of current state — active roles,
+// portal users, MRR, ISO readiness, objectives on track, open audit
+// findings, open training/onboarding, …) are taken from the quarter's
+// LAST month only, because summing three snapshots of the same fact
+// would triple-count it. `reviewsOverdue` is the one field that is
+// genuinely NEITHER: it is "as of THIS report month" (leadMetrics.ts's
+// own comment), so a naive sum across three months would count the
+// same still-overdue review three times over — it is treated as a
+// stock field here too, read from the quarter's last month, meaning
+// "overdue as of the quarter's close".
+export function quarterMonths(year: number, quarter: 1 | 2 | 3 | 4): [number, number, number] {
+  const first = (quarter - 1) * 3;
+  return [first, first + 1, first + 2];
+}
+
+export function computeQuarterlyValueReport(companyId: string, year: number, quarter: 1 | 2 | 3 | 4, d: ValueReportInputs): ValueReportData {
+  const months = quarterMonths(year, quarter).map(m => computeValueReport(companyId, year, m, d));
+  const [m1, m2, m3] = months;
+  const sum = (k: (r: ValueReportData) => number) => months.reduce((s, r) => s + k(r), 0);
+
+  return {
+    hire: {
+      newRoles: sum(r => r.hire.newRoles), filled: sum(r => r.hire.filled), candidates: sum(r => r.hire.candidates),
+      activeRoles: m3.hire.activeRoles, totalFilled: m3.hire.totalFilled,
+    },
+    support: {
+      ticketsRaised: sum(r => r.support.ticketsRaised), ticketsResolved: sum(r => r.support.ticketsResolved),
+      // A simple average of the three months' own averages — not
+      // recomputed from raw tickets, which this composed function
+      // never sees; each month's avgResolutionHours is already 0 when
+      // that month resolved nothing, so this never divides by a count
+      // of months with no data.
+      avgResolutionHours: Math.round((m1.support.avgResolutionHours + m2.support.avgResolutionHours + m3.support.avgResolutionHours) / 3),
+      serviceRequests: sum(r => r.support.serviceRequests), serviceRequestsResponded: sum(r => r.support.serviceRequestsResponded),
+    },
+    protect: {
+      complianceItems: sum(r => r.protect.complianceItems), documentsUploaded: sum(r => r.protect.documentsUploaded),
+      actionsCreated: sum(r => r.protect.actionsCreated), actionsCompleted: sum(r => r.protect.actionsCompleted),
+    },
+    lead: {
+      trainingNeedsFlagged: sum(r => r.lead.trainingNeedsFlagged), trainingNeedsResolved: sum(r => r.lead.trainingNeedsResolved),
+      trainingNeedsOpen: m3.lead.trainingNeedsOpen,
+      reviewsDue: sum(r => r.lead.reviewsDue), reviewsCompleted: sum(r => r.lead.reviewsCompleted),
+      reviewsOverdue: m3.lead.reviewsOverdue,
+      absenceDays: sum(r => r.lead.absenceDays),
+      onboardingStarted: sum(r => r.lead.onboardingStarted), onboardingCompleted: sum(r => r.lead.onboardingCompleted),
+      onboardingActive: m3.lead.onboardingActive,
+    },
+    governance: {
+      isoReadiness: m3.governance.isoReadiness,
+      legalObligationsApplicable: m3.governance.legalObligationsApplicable,
+      legalEvaluationsThisMonth: sum(r => r.governance.legalEvaluationsThisMonth),
+      legalEvaluationsNonComplianceThisMonth: sum(r => r.governance.legalEvaluationsNonComplianceThisMonth),
+      objectivesTotal: m3.governance.objectivesTotal, objectivesOnTrack: m3.governance.objectivesOnTrack,
+      auditFindingsOpenedThisMonth: sum(r => r.governance.auditFindingsOpenedThisMonth),
+      auditFindingsClosedThisMonth: sum(r => r.governance.auditFindingsClosedThisMonth),
+      auditFindingsOpen: m3.governance.auditFindingsOpen,
+    },
+    usage: m3.usage,
+  };
+}

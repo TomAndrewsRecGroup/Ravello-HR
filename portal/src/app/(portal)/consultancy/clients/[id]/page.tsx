@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyServiceLedgerEntry, ConsultancyServiceScope, ConsultancyVisit } from '@/lib/consultancy/types';
+import { buildCommunicationTimeline, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,7 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
   const [
     { data: company }, { data: snapshot }, { data: scopes }, { data: visits },
     { data: ledger }, { data: milestones }, { data: serviceRequests }, { data: documents },
+    { data: valueReports }, { data: emails }, { data: broadcasts },
   ] = await Promise.all([
     sb.from('companies').select('id, name, sector, contact_email, active').eq('id', id).maybeSingle(),
     sb.from('client_health_snapshots').select('*').eq('company_id', id).order('snapshot_date', { ascending: false }).limit(1).maybeSingle(),
@@ -39,11 +41,47 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
     sb.from('consultancy_visits').select('*').eq('client_organisation_id', id).order('scheduled_date', { ascending: false }).limit(10),
     sb.from('consultancy_service_ledger').select('*').eq('client_organisation_id', id).order('occurred_at', { ascending: false }).limit(15),
     sb.from('milestones').select('id, title, status, quarter, due_date, pillar').eq('company_id', id).order('due_date', { ascending: true }).limit(10),
-    sb.from('service_requests').select('id, subject, status, priority, created_at').eq('company_id', id).order('created_at', { ascending: false }).limit(10),
+    sb.from('service_requests').select('id, subject, status, priority, created_at, responded_at').eq('company_id', id).order('created_at', { ascending: false }).limit(10),
     sb.from('hs_documents').select('id, title, status, review_due_at').eq('company_id', id).eq('status', 'active').order('review_due_at', { ascending: true }).limit(10),
+    // Core-OS 360 Phase 6, section 10: read-only — narrative is
+    // written only from admin's /value-reports page (ValueReportClient.tsx);
+    // this page never inserts or updates `reports`.
+    sb.from('reports').select('id, title, period, narrative, created_at').eq('company_id', id).order('created_at', { ascending: false }).limit(10),
+    // Core-OS 360 Phase 6, section 11: Communication Timeline sources.
+    // email_log only ever records mail actually sent to a company/
+    // candidate/athlete contact (never an internal staff notification,
+    // which goes through notify() instead), so target_type='company'
+    // scoped to this company_id is exactly the client-facing mail.
+    sb.from('email_log').select('id, subject, to_email, sent_at').eq('company_id', id).eq('target_type', 'company').order('sent_at', { ascending: false }).limit(20),
+    sb.from('actions').select('id, title, created_at').eq('company_id', id).eq('created_by_admin', true).order('created_at', { ascending: false }).limit(20),
   ]);
 
   const s = snapshot as any;
+
+  // The manual ledger entries feed the timeline too — reusing the
+  // already-fetched `ledger` rows rather than a second query.
+  const manualLedgerNotes = ((ledger ?? []) as ConsultancyServiceLedgerEntry[])
+    .filter(l => l.entry_type === 'manual')
+    .map(l => ({ id: l.id, summary: l.summary, occurred_at: l.occurred_at }));
+
+  const timeline = buildCommunicationTimeline({
+    emails: (emails ?? []) as any[],
+    broadcasts: (broadcasts ?? []) as any[],
+    serviceRequests: (serviceRequests ?? []) as any[],
+    reports: (valueReports ?? []) as any[],
+    manualLedgerNotes,
+  });
+
+  const VISIBILITY_LABEL: Record<CommunicationVisibility, string> = {
+    client_originated: 'From client',
+    shared_with_client: 'Shared with client',
+    internal_consultancy: 'Internal only',
+  };
+  const VISIBILITY_COLOR: Record<CommunicationVisibility, string> = {
+    client_originated: 'var(--blue)',
+    shared_with_client: 'var(--teal)',
+    internal_consultancy: 'var(--gold)',
+  };
 
   return (
     <main className="portal-page flex-1 space-y-4">
@@ -140,7 +178,43 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
             </ul>
           )}
         </section>
+
+        <section className="card p-4 space-y-2">
+          <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Value reports</h2>
+          {(valueReports ?? []).length === 0 ? <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>None issued yet.</p> : (
+            <ul className="text-sm space-y-2" style={{ color: 'var(--ink-soft)' }}>
+              {(valueReports as any[]).map(r => (
+                <li key={r.id}>
+                  <div>{r.title} {r.period ? <span style={{ color: 'var(--ink-faint)' }}>({r.period})</span> : null}</div>
+                  {r.narrative && <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>{r.narrative}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
+
+      <section className="card p-4 space-y-2">
+        <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Communication timeline</h2>
+        {timeline.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No communications recorded yet.</p>
+        ) : (
+          <ul className="text-sm space-y-2" style={{ color: 'var(--ink-soft)' }}>
+            {timeline.slice(0, 30).map(entry => (
+              <li key={entry.id} className="flex items-start gap-2">
+                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--ink-faint)', minWidth: 90 }}>{fmt(entry.occurredAt)}</span>
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap"
+                  style={{ background: 'rgba(0,0,0,0.04)', color: VISIBILITY_COLOR[entry.visibility] }}
+                >
+                  {VISIBILITY_LABEL[entry.visibility]}
+                </span>
+                <span>{entry.summary}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

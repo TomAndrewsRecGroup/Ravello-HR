@@ -1,8 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap, Scale } from 'lucide-react';
-import { computeValueReport } from '@/lib/valueReport/computeReport';
+import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users, BarChart3, GraduationCap, Scale, Save, Loader2 } from 'lucide-react';
+import { computeValueReport, computeQuarterlyValueReport } from '@/lib/valueReport/computeReport';
 import { buildReportPdf } from '@/lib/valueReport/buildReportPdf';
+import { createClient } from '@/lib/supabase/client';
 
 interface Props {
   companies: any[];
@@ -32,15 +33,25 @@ function fmtMonth(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
+type PeriodType = 'month' | 'quarter';
+
 export default function ValueReportClient({
   companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
   trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
   standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
 }: Props) {
   const now = new Date();
+  const currentQuarter = (Math.floor(now.getMonth() / 3) + 1) as 1 | 2 | 3 | 4;
   const [selectedCompany, setSelectedCompany] = useState<string>('');
+  const [periodType, setPeriodType] = useState<PeriodType>('month');
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedQuarter, setSelectedQuarter] = useState<1 | 2 | 3 | 4>(currentQuarter);
+  const [selectedQuarterYear, setSelectedQuarterYear] = useState(now.getFullYear());
+  const [narrative, setNarrative] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   // Available months (last 12)
   const months = useMemo(() => {
@@ -52,64 +63,183 @@ export default function ValueReportClient({
     return m;
   }, []);
 
-  // Generate report for selected company + month
+  // Available quarters (last 8, i.e. two years back)
+  const quarters = useMemo(() => {
+    const q: { year: number; quarter: 1 | 2 | 3 | 4; label: string }[] = [];
+    let y = now.getFullYear();
+    let qtr = currentQuarter;
+    for (let i = 0; i < 8; i++) {
+      q.push({ year: y, quarter: qtr, label: `Q${qtr} ${y}` });
+      qtr = (qtr - 1) as 1 | 2 | 3 | 4;
+      if (qtr < 1) { qtr = 4; y -= 1; }
+    }
+    return q;
+  }, []);
+
+  const inputs = {
+    requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
+    trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
+    standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
+  };
+
+  // Generate report for selected company + period (month or quarter).
+  // Quarterly composition (computeQuarterlyValueReport) runs the
+  // SAME, UNCHANGED per-month computeValueReport three times and
+  // merges the result field-by-field (flow fields summed, stock
+  // fields taken from the quarter's last month) — see computeReport.ts's
+  // own header comment. The monthly path is completely untouched.
   const report = useMemo(() => {
     if (!selectedCompany) return null;
     const cid = selectedCompany;
-    const y = selectedYear;
-    const m = selectedMonth;
     const company = companies.find(c => c.id === cid);
 
-    const data = computeValueReport(cid, y, m, {
-      requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
-      trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
-      standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
-    });
+    if (periodType === 'quarter') {
+      const data = computeQuarterlyValueReport(cid, selectedQuarterYear, selectedQuarter, inputs);
+      return { company, month: `Q${selectedQuarter} ${selectedQuarterYear}`, period: `Q${selectedQuarter} ${selectedQuarterYear}`, ...data };
+    }
 
-    return { company, month: fmtMonth(new Date(y, m)), ...data };
+    const data = computeValueReport(cid, selectedYear, selectedMonth, inputs);
+    return { company, month: fmtMonth(new Date(selectedYear, selectedMonth)), period: fmtMonth(new Date(selectedYear, selectedMonth)), ...data };
   }, [
-    selectedCompany, selectedMonth, selectedYear, companies, requisitions, candidates, tickets, documents, complianceItems,
-    serviceRequests, actions, profiles, services, trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
-    standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
+    selectedCompany, periodType, selectedMonth, selectedYear, selectedQuarter, selectedQuarterYear, companies, requisitions,
+    candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds,
+    performanceReviews, absenceRecords, onboardingInstances, standards, standardClauses, standardEvidenceLinks,
+    legalObligations, complianceEvaluations, objectives, auditFindings,
   ]);
 
-  async function downloadReport() {
-    if (!report) return;
+  // Narrative is per (company, period) — never carries over silently
+  // when the selection changes, so a consultant never accidentally
+  // saves last quarter's commentary against this quarter's numbers.
+  const reportKey = `${selectedCompany}|${periodType}|${periodType === 'quarter' ? `${selectedQuarterYear}-${selectedQuarter}` : `${selectedYear}-${selectedMonth}`}`;
+  const [lastKey, setLastKey] = useState(reportKey);
+  if (reportKey !== lastKey) {
+    setLastKey(reportKey);
+    setNarrative('');
+    setSaveError('');
+    setSaveSuccess('');
+  }
+
+  async function buildPdf() {
     // Lazy-load jsPDF + autotable so the page bundle stays small.
     // These are browser-side libs (~150 kB combined gzipped) and the
     // import dynamic chunk is only fetched the first time someone
-    // clicks Download.
+    // clicks Download or Save.
     const [{ default: jsPDF }, autoTableMod] = await Promise.all([
       import('jspdf'),
       import('jspdf-autotable'),
     ]);
     const autoTable = (autoTableMod as any).default ?? (autoTableMod as any);
 
-    const doc = buildReportPdf(jsPDF as any, autoTable, {
-      companyName: report.company?.name ?? '—',
-      month: report.month,
+    return buildReportPdf(jsPDF as any, autoTable, {
+      companyName: report!.company?.name ?? '—',
+      month: report!.month,
       generatedAt: new Date(),
-      data: report,
+      data: report!,
+      narrative,
     });
+  }
 
+  async function downloadReport() {
+    if (!report) return;
+    const doc = await buildPdf();
     const safeName = (report.company?.name ?? 'client').replace(/\s+/g, '-');
-    (doc as any).save(`value-report-${safeName}-${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}.pdf`);
+    const periodSlug = periodType === 'quarter'
+      ? `${selectedQuarterYear}-Q${selectedQuarter}`
+      : `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+    (doc as any).save(`value-report-${safeName}-${periodSlug}.pdf`);
+  }
+
+  // Save & Upload: renders the identical PDF the Download button
+  // produces, uploads it to the same private `documents` bucket
+  // ReportUploadForm.tsx already uses (reports/<companyId>/…, never
+  // getPublicUrl on a private bucket), then inserts a `reports` row
+  // carrying the narrative — the portal's read-only /protect/reports
+  // page and Client 360 can then show it with no new API route, since
+  // `tps_reports` RLS is already FOR ALL for staff.
+  async function saveReport() {
+    if (!report || !selectedCompany) return;
+    setSaving(true);
+    setSaveError('');
+    setSaveSuccess('');
+    try {
+      const doc = await buildPdf();
+      const blob: Blob = (doc as any).output('blob');
+
+      const supabase = createClient();
+
+      const periodSlug = periodType === 'quarter'
+        ? `${selectedQuarterYear}-Q${selectedQuarter}`
+        : `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+      const path = `reports/${selectedCompany}/${Date.now()}_value-report-${periodSlug}.pdf`;
+
+      const { error: uploadErr } = await supabase.storage.from('documents').upload(path, blob, {
+        upsert: false,
+        contentType: 'application/pdf',
+      });
+      if (uploadErr) { setSaveError(uploadErr.message); setSaving(false); return; }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const title = `Value Report — ${report.period}`;
+
+      const { error: insertErr } = await supabase.from('reports').insert({
+        company_id: selectedCompany,
+        title,
+        period: report.period,
+        storage_path: path,
+        generated_by: user?.id,
+        narrative: narrative.trim() || null,
+      });
+      if (insertErr) { setSaveError(insertErr.message); setSaving(false); return; }
+
+      setSaveSuccess(`Saved "${title}" to this client's Reports.`);
+      setSaving(false);
+    } catch (e: any) {
+      setSaveError(e?.message ?? 'Failed to save report.');
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       {/* Selectors */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center">
         <select className="input" style={{ maxWidth: 280 }} value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)}>
           <option value="">Select a client...</option>
           {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select className="input" style={{ maxWidth: 200 }} value={`${selectedYear}-${selectedMonth}`} onChange={e => {
-          const [y, m] = e.target.value.split('-').map(Number);
-          setSelectedYear(y); setSelectedMonth(m);
-        }}>
-          {months.map(m => <option key={m.label} value={`${m.year}-${m.month}`}>{m.label}</option>)}
-        </select>
+
+        <div className="flex rounded-[8px] p-0.5" style={{ background: 'var(--surface-alt)', border: '1px solid var(--line)' }}>
+          {(['month', 'quarter'] as PeriodType[]).map(pt => (
+            <button
+              key={pt}
+              type="button"
+              onClick={() => setPeriodType(pt)}
+              className="px-3 py-1.5 rounded-[6px] text-xs font-medium transition-all"
+              style={periodType === pt
+                ? { background: 'var(--surface)', color: 'var(--ink)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }
+                : { color: 'var(--ink-faint)' }}
+            >
+              {pt === 'month' ? 'Monthly' : 'Quarterly'}
+            </button>
+          ))}
+        </div>
+
+        {periodType === 'month' ? (
+          <select className="input" style={{ maxWidth: 200 }} value={`${selectedYear}-${selectedMonth}`} onChange={e => {
+            const [y, m] = e.target.value.split('-').map(Number);
+            setSelectedYear(y); setSelectedMonth(m);
+          }}>
+            {months.map(m => <option key={m.label} value={`${m.year}-${m.month}`}>{m.label}</option>)}
+          </select>
+        ) : (
+          <select className="input" style={{ maxWidth: 200 }} value={`${selectedQuarterYear}-${selectedQuarter}`} onChange={e => {
+            const [y, q] = e.target.value.split('-').map(Number);
+            setSelectedQuarterYear(y); setSelectedQuarter(q as 1 | 2 | 3 | 4);
+          }}>
+            {quarters.map(q => <option key={q.label} value={`${q.year}-${q.quarter}`}>{q.label}</option>)}
+          </select>
+        )}
+
         {report && (
           <button onClick={downloadReport} className="btn-cta btn-sm">
             <Download size={13} /> Download Report
@@ -122,7 +252,7 @@ export default function ValueReportClient({
           <FileText size={28} />
           <p className="text-sm font-medium">Select a client to generate their value report</p>
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-            Shows what Core OS 360 delivered during the selected month.
+            Shows what Core OS 360 delivered during the selected period.
           </p>
         </div>
       ) : (
@@ -133,7 +263,9 @@ export default function ValueReportClient({
               <h2 className="font-display text-xl" style={{ color: 'var(--ink)' }}>{report.company?.name}</h2>
               <span className="eyebrow">{report.month}</span>
             </div>
-            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Monthly value summary: Core OS 360</p>
+            <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              {periodType === 'quarter' ? 'Quarterly' : 'Monthly'} value summary: Core OS 360
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-5">
@@ -285,6 +417,35 @@ export default function ValueReportClient({
                   {report.usage.mrr > 0 ? `£${report.usage.mrr.toLocaleString()}` : '-'}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Core-OS 360 Phase 6, section 10: consultant commentary +
+              save. Free text alongside the computed numbers above —
+              never fed back into any computation. Saving renders the
+              identical PDF Download produces, uploads it to this
+              client's Reports (visible read-only on the portal's
+              Client 360 and /protect/reports), and records the
+              narrative alongside it. */}
+          <div className="card p-5">
+            <h3 className="text-sm font-bold mb-2" style={{ color: 'var(--ink)' }}>Consultant Notes</h3>
+            <p className="text-xs mb-3" style={{ color: 'var(--ink-faint)' }}>
+              Optional commentary for this {periodType === 'quarter' ? 'quarter' : 'month'} — included in the saved/downloaded PDF and shown to the client.
+            </p>
+            <textarea
+              className="input"
+              rows={5}
+              value={narrative}
+              onChange={e => setNarrative(e.target.value)}
+              placeholder="e.g. This quarter we focused on closing the audit findings from the March walk-round..."
+            />
+            <div className="flex items-center gap-3 mt-3">
+              <button onClick={saveReport} disabled={saving} className="btn-secondary btn-sm">
+                {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                {saving ? 'Saving…' : 'Save to Client Reports'}
+              </button>
+              {saveError && <span className="text-xs" style={{ color: 'var(--red)' }}>{saveError}</span>}
+              {saveSuccess && <span className="text-xs" style={{ color: 'var(--teal)' }}>{saveSuccess}</span>}
             </div>
           </div>
         </div>
