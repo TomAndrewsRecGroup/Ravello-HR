@@ -40,6 +40,8 @@ export const CAPABILITIES = [
   'deployment.exception.approve',
   // Phase 4 (migration 144): the asset register.
   'asset.read', 'asset.manage', 'inspection.perform',
+  // Phase 5 (migration 156): environmental aspects & impacts.
+  'environmental.read', 'environmental.manage',
 ] as const;
 export type Capability = typeof CAPABILITIES[number];
 
@@ -122,6 +124,11 @@ const OH_SUMMARY: Capability[] = ['occupational_health.summary.read', 'occupatio
  *  holds asset.manage; 'employee' (147's other grantee) gets it on its
  *  own below, since it holds neither asset.read nor asset.manage. */
 const ASSET_ALL: Capability[] = ['asset.read', 'asset.manage', 'inspection.perform'];
+/** Phase 5 (migration 156): environmental aspects & impacts, same
+ *  role split as risk.read/risk.create (117) and asset.read/asset.manage
+ *  (144) — 'employee'/'hr_manager'/'recruiter'/'occupational_health_advisor'
+ *  hold neither, matching the migration's own role lists verbatim. */
+const ENV_ALL: Capability[] = ['environmental.read', 'environmental.manage'];
 const PLATFORM_ALL: Capability[] = CAPABILITIES.filter(c => !EXPLICIT_ONLY_CAPABILITIES.includes(c));
 
 export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
@@ -131,37 +138,37 @@ export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
     'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
     'risk.read', 'risk.create', 'risk.approve', 'incident.create', 'incident.investigate', 'actions.assign',
     'contractors.manage', 'documents.manage', 'training.manage', 'billing.read', 'consultancy.client_access',
-    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL,
+    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
   ],
   consultant: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', 'consultancy.client_access', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL,
+    'training.manage', 'consultancy.client_access', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL, ...ENV_ALL,
   ],
-  organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY],
-  organisation_admin: [...ORG_ADMIN, ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY],
+  organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ENV_ALL],
+  organisation_admin: [...ORG_ADMIN, ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ENV_ALL],
   organisation_editor: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'risk.read', 'risk.create',
     'incident.create', 'actions.assign', 'documents.manage', 'training.manage', 'recruitment.manage',
-    ...HS_LINE, 'workforce.read', ...ASSET_ALL,
+    ...HS_LINE, 'workforce.read', ...ASSET_ALL, ...ENV_ALL,
   ],
   hse_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ASSET_ALL,
+    'training.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ASSET_ALL, ...ENV_ALL,
   ],
   hse_advisor: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'incident.create',
     'incident.investigate', 'actions.assign', 'documents.manage', ...HS_LINE,
-    'workforce.read', 'training.verify', 'competency.assess', ...ASSET_ALL,
+    'workforce.read', 'training.verify', 'competency.assess', ...ASSET_ALL, ...ENV_ALL,
   ],
   site_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', ...HS_LINE,
-    'training.verify', 'competency.assess', ...ASSET_ALL,
+    'training.verify', 'competency.assess', ...ASSET_ALL, ...ENV_ALL,
   ],
   department_manager: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.create', 'actions.assign', ...HS_LINE,
-    'training.verify', 'competency.assess', 'asset.read'],
+    'training.verify', 'competency.assess', 'asset.read', 'environmental.read'],
   hr_manager: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'hr.sensitive.read', 'hr.sensitive.write',
     'documents.manage', 'training.manage', 'actions.assign', 'audit.read',
@@ -170,7 +177,7 @@ export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
   ],
   recruiter: ['organisation.read', 'people.read', 'recruitment.manage', 'hazard.report'],
   employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report', 'inspection.perform'],
-  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read', 'workforce.read', 'asset.read'],
+  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read', 'workforce.read', 'asset.read', 'environmental.read'],
   occupational_health_advisor: [
     'organisation.read', 'site.read', 'people.read', 'hazard.report', 'workforce.read',
     'occupational_health.summary.read', 'occupational_health.clinical.read', 'occupational_health.manage',

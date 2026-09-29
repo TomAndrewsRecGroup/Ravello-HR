@@ -13,6 +13,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'permits',    label: 'Permits' },
   { seg: 'isolations', label: 'Isolations' },
   { seg: 'emergency-plans', label: 'Emergency Plans' },
+  { seg: 'environmental-aspects', label: 'Environmental Aspects' },
   { seg: 'kpis',       label: 'KPIs' },
   { seg: 'timeline',   label: 'Timeline' },
 ];

@@ -5242,3 +5242,174 @@ re-created, `REVOKE ALL` confirmed via `has_function_privilege`).
 **Phase 4 is complete. Phase 5 is not to begin** until this branch is
 merged and deployed, per the operator's instruction.
 
+---
+
+## Core-OS 360 Phase 5, Group 1: Governance Map + Environmental Aspects
+## & Impacts (2026-09-29, migration 156)
+
+Phase 5 turns Core-OS 360 into a full EHS management system
+(Environmental Management, ISO 45001/14001 support, Legal Register,
+Compliance Obligations, Controlled Documents, Objectives & Targets,
+Management Review, Governance, Audit Evidence, Environmental Aspects/
+Impacts, Waste, Spills, Emissions, Water, Energy, Environmental
+Permits, Environmental Incidents), delivered in the same logical,
+independently-verified groups as Phase 4. **Group 1 is this PR**: the
+governance map every later group must read first, and the Environmental
+Aspects & Impacts subsystem itself.
+
+### Governance map: `docs/CORE_OS_360_PHASE5_GOVERNANCE_MAP.md`
+
+Classifies every existing EHS-relevant component (register,
+`hs_documents`, `hs_audits`, `hs_incidents`, the asset register,
+contractors, policy acknowledgements, `latest_updates`/regulatory
+classification, `actions`, Broadcast, value reports, `platform_events`/
+notify, Phase 1's organisations/capabilities model) as REUSE / EXTEND /
+MIGRATE / DEPRECATE / REPLACE. **No REPLACE anywhere** — every
+component is REUSE or EXTEND, consistent with the platform-wide rule
+this codebase has followed since Phase 4's own existing-operations
+audit. It also records three decisions binding on later Phase 5
+groups: Environmental Aspects lives under the existing
+`/health-safety/<companyId>/environmental-aspects` tab (a 13th
+`HsCompanyTabs.tsx` entry), not a new top-level sidebar group; the
+portal page is gated by `protect` alone, not a new flag; and the
+vocabulary lives in the existing `lib/hs/vocab.ts` shared-dupe pair.
+Read it before touching any related code in a later group.
+
+### Environmental Aspects & Impacts (migration 156)
+
+An "aspect" is an element of an activity that can interact with the
+environment (e.g. "diesel generator run during power cuts" → aspect
+type `emissions_to_air`); its "impact" is what actually happens as a
+result. This schema records the aspect and scores its SIGNIFICANCE —
+never its legal compliance.
+
+- **No black-box AI significance scoring, absolute rule.**
+  `environmental_aspect_assessments` stores three named, inspectable
+  1-5 integer criteria (`likelihood`, `severity`, `frequency`);
+  `computed_score` is `GENERATED ALWAYS AS (likelihood * severity *
+  frequency) STORED` — deterministic, never computed in application
+  code where it could drift from what is stored. Jev is never invoked
+  anywhere in this subsystem, and no later Phase 5 group may change
+  that without an explicit product decision recorded here first.
+- **The database refuses an unconfirmed significance decision, not
+  just the UI.** `environmental_aspect_assessments_fill()` (BEFORE
+  INSERT) raises unless BOTH `confirmed_by` and `confirmed_at` are set
+  — regardless of which way `is_significant` points. An unconfirmed row
+  is not yet a decision, so allowing `is_significant` on one would be
+  exactly the "the platform decided" shape this rule forbids, whichever
+  way it points. Probed live both directions (checks 4 and 4c).
+- **History is preserved exactly like `hs_documents` (106) and
+  `emergency_plans` (154): a material change is a NEW ROW.** The old
+  row flips to `'superseded'` via its own UPDATE; both remain
+  individually readable forever. `environmental_aspects_stamp()`
+  refuses a cross-organisation `supersedes_id` the same way
+  `emergency_plans_stamp()` already does.
+- **The newest confirmed assessment — and ONLY that — decides the
+  aspect's status.** `environmental_aspect_assessments_roll()` (AFTER
+  INSERT) sets `status` to `confirmed_significant` /
+  `confirmed_not_significant`, skipping a `superseded` row so an old
+  version's status can never be resurrected by a late assessment
+  insert. Assessments are insert-only (`REVOKE UPDATE, DELETE,
+  TRUNCATE`) — a correction is a new assessment, never an edit.
+- **Never a second action table (rule 1).** A confirmed-significant
+  aspect raises exactly one `actions` row
+  (`action_type: 'environmental_significant_aspect'`,
+  `source_type: 'environmental_aspect'` — a new value 156 added to the
+  shared `actions_source_type_check`), keyed
+  `environmental_aspect:<id>` so a re-processed event never raises two.
+  `admin/src/lib/events/environmentalRules.ts` is its OWN file, not
+  folded into `hsRules.ts` — Environmental is its own EHS pillar
+  alongside H&S, the same call `leadRules.ts`/`hireRules.ts`/
+  `supportRules.ts` already made for their own pillars. It tells the
+  client admins (portal link `/protect/environmental-aspects`) and
+  staff (`/health-safety/<companyId>/environmental-aspects`) — never
+  decides anything itself, only reports what the database's own roll
+  trigger already decided.
+- **Evidence rides the existing `hs_files`/`hs-evidence` infrastructure**:
+  `hs_scope_for_entity()`/`hs_entity_table()`/`hs_evidence_readable()`/
+  `hs_evidence_writable()`/`hs_files_entity_check()` all gain an
+  `'environmental_aspect'` branch (scope `register`, gated on new
+  capabilities `environmental.read`/`environmental.manage`) — the exact
+  pattern Group 2's `'equipment'` branch (144) and Group 3's
+  `'inspection'` branch (145) already established in Phase 4. No new
+  bucket, no new evidence table.
+- **Capabilities seeded in the literal `('capability', ARRAY[roles])`
+  shape**, copying `risk.read`/`risk.create`'s role list verbatim (the
+  same choice Group 2's `asset.read`/`asset.manage` made) — never a
+  dynamic `SELECT ... FROM access_role_capabilities` grant, which
+  `tenancySql.test.ts`'s regex-driven TS↔SQL parity check cannot parse
+  (the 144a/147a trap this file's own history records twice already).
+  `capabilities.ts` (shared-dupe pair) mirrors it in the same PR, with
+  a new `ENV_ALL` constant following `ASSET_ALL`'s own pattern.
+- **RLS, write guard, audit trail**: staff full access;
+  `environmental.read`/`environmental.manage` govern client access on
+  both new tables; `apply_write_guard()` on both (a read-only
+  consultancy grant can insert nothing); `audit_row()` whitelists
+  identifying/classifying columns only (`activity`, `aspect_type`,
+  `condition`, `status`, `version` on the aspect; `aspect_id`,
+  `computed_score`, `is_significant` on the assessment) — never
+  `description`/`methodology_notes`.
+- **Outbox**: `environmental_aspects` joins `TRIGGERED_ENTITIES`
+  (whitelist `site_id, aspect_type, condition, status` — never
+  `description`). `environmental_aspect_assessments` is deliberately
+  NOT in the outbox — the aspect's own `.updated` event (fired when the
+  roll trigger changes its status) is the one thing worth reacting to,
+  the same "one event per meaningful record, not per sub-row" rule
+  `hs_audit_responses`/`permit_checklist_responses` already established.
+
+### Admin + portal UI
+
+Admin: a 13th `HsCompanyTabs.tsx` tab,
+`/health-safety/<companyId>/environmental-aspects`
+(`EnvironmentalAspectsClient.tsx`) — add an aspect, then "Assess
+significance" opens a form showing the live computed score against the
+chosen threshold BEFORE submission, with a mandatory confirmation
+checkbox; the insert fails outright if the checkbox is unchecked and
+the caller tries to bypass it client-side, because the database's own
+gate (above) enforces it regardless. No new sidebar entry needed — it
+nests under the already-linked `/health-safety` prefix. Portal: a
+read-only `/protect/environmental-aspects` page, gated by `protect`
+alone (nothing here is self-certified, the same posture Register/
+Documents/Audits/Equipment/Emergency Plans already have), linked from
+`/protect`'s own `SectionTabs`.
+
+### Live probe
+
+`supabase/probes/156_environmental_aspects.sql`, rolled back: 13
+checks — cross-organisation site refused; an aspect inserts with
+`status = draft`; evidence vocab resolves; an unconfirmed significant
+assessment refused; an unconfirmed non-significant assessment ALSO
+refused (the gate is about being a decision at all, not its polarity);
+a confirmed assessment accepted with `computed_score = likelihood x
+severity x frequency` (4×4×3 = 48) and rolls the aspect to
+`confirmed_significant`; assessments table has no UPDATE/DELETE grant
+to `authenticated`; a new version is a new row, the old row supersedes,
+both remain readable; a cross-organisation `supersedes_id` refused;
+`actions.source_type` allows `'environmental_aspect'`; the write guard
+is applied to both tables; both capabilities are seeded and granted;
+RLS is enabled on both tables; no Group 1 `SECURITY DEFINER` function
+is executable by `anon`. All 13 passed.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1145 admin —
+1138 + 4 `environmentalRules.test.ts` + 3 new `vocab.test.ts` it.each
+cases for the aspect type/condition/status tuples; 604 portal — 602 +
+2, `moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up
+`/protect/environmental-aspects` automatically), all five CI guards
+pass (`check-shared-dupes.sh`: 43 pairs, unchanged;
+`check-admin-routes-linked.sh`: 61 pages, all reachable;
+`check-blind-updates.sh`: 102, unchanged — this group made no UPDATE
+writes from a client component, only inserts), both production builds
+compile, including the new `/health-safety/<companyId>/environmental-
+aspects` admin route and the new `/protect/environmental-aspects`
+portal route. Migration 156 applied live and verified (RLS on, write
+guard applied, capabilities seeded and granted, evidence vocab
+resolves, no Group 1 DEFINER function executable by `anon`).
+
+**Later Phase 5 groups** (environmental incidents/waste/spills/
+monitoring/permits, the ISO 45001/14001 framework layer, the legal
+register, document control, objectives & targets, management review,
+audit-engine enhancement, UI, final QA) build on migration 156 onward
+and should read the governance map first.
+

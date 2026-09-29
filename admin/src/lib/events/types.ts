@@ -71,6 +71,9 @@ export const TRIGGERED_ENTITIES = [
   // a drill recorded.
   'emergency_plans',
   'emergency_drills',
+  // Core-OS 360 Phase 5, Group 1 (156): an environmental aspect added
+  // or its status changed (assessed / confirmed significant or not).
+  'environmental_aspects',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

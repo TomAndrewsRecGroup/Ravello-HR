@@ -31,7 +31,9 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 153 adds the isolation type / status vocabularies.
   + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8')
   // 154 adds the emergency plan type / status and drill outcome vocabularies.
-  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8');
+  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8')
+  // 156 adds the environmental aspect type / condition / status vocabularies.
+  + readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -75,7 +77,13 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['contractor risk ratings', V.CONTRACTOR_RISK_RATINGS, /risk_rating IS NULL OR risk_rating IN \(/],
     ['contractor insurance types', V.CONTRACTOR_INSURANCE_TYPES, /insurance_type\s+text NOT NULL CHECK \(insurance_type IN \(/],
     ['permit types', V.PERMIT_TYPES, /permit_type\s+text NOT NULL CHECK \(permit_type IN \(/],
-    ['permit statuses', V.PERMIT_STATUSES, /status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    // 156's environmental_aspects ALSO defaults status to 'draft' with an
+    // identical "status text NOT NULL DEFAULT 'draft' CHECK (status IN ("
+    // phrase — anchored on the preceding scope_of_work column, unique to
+    // permits, the same "distinguish via preceding context" rule this
+    // file already follows for 114/148's outcome collision.
+    ['permit statuses', V.PERMIT_STATUSES,
+      /scope_of_work\s+text NOT NULL CHECK \(length\(btrim\(scope_of_work\)\) BETWEEN 1 AND 4000\),\s*status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
     ['isolation types', V.ISOLATION_TYPES, /isolation_type\s+text NOT NULL CHECK \(isolation_type IN \(/],
     ['isolation statuses', V.ISOLATION_STATUSES, /status\s+text NOT NULL DEFAULT 'applied' CHECK \(status IN \(/],
     ['emergency plan types', V.EMERGENCY_PLAN_TYPES, /plan_type\s+text NOT NULL CHECK \(plan_type IN \(/],
@@ -91,6 +99,13 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     // unique to emergency_drills.
     ['emergency drill outcomes', V.EMERGENCY_DRILL_OUTCOMES,
       /evacuation_time_seconds\s+integer CHECK \(evacuation_time_seconds IS NULL OR evacuation_time_seconds >= 0\),\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['environmental aspect types', V.ENVIRONMENTAL_ASPECT_TYPES, /aspect_type\s+text NOT NULL CHECK \(aspect_type IN \(/],
+    ['environmental aspect conditions', V.ENVIRONMENTAL_ASPECT_CONDITIONS, /condition\s+text NOT NULL DEFAULT 'normal' CHECK \(condition IN \(/],
+    // Anchored on the preceding version column, unique to
+    // environmental_aspects — 152's permits table has an identical
+    // "status text NOT NULL DEFAULT 'draft' CHECK (status IN (" phrase.
+    ['environmental aspect statuses', V.ENVIRONMENTAL_ASPECT_STATUSES,
+      /version\s+integer NOT NULL DEFAULT 1 CHECK \(version >= 1\),\s*status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -119,6 +134,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.EMERGENCY_PLAN_TYPES, V.EMERGENCY_PLAN_TYPE_LABELS],
       [V.EMERGENCY_PLAN_STATUSES, V.EMERGENCY_PLAN_STATUS_LABELS],
       [V.EMERGENCY_DRILL_OUTCOMES, V.EMERGENCY_DRILL_OUTCOME_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_TYPES, V.ENVIRONMENTAL_ASPECT_TYPE_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_CONDITIONS, V.ENVIRONMENTAL_ASPECT_CONDITION_LABELS],
+      [V.ENVIRONMENTAL_ASPECT_STATUSES, V.ENVIRONMENTAL_ASPECT_STATUS_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

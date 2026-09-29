@@ -7,6 +7,7 @@ import type {
   ContractorApprovalStatus, ContractorRiskRating, ContractorInsuranceType,
   PermitType, PermitStatus, IsolationType, IsolationStatus,
   EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
+  EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -373,6 +374,39 @@ export interface EmergencyDrill {
   evacuation_time_seconds: number | null;
   outcome: EmergencyDrillOutcome;
   findings: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface EnvironmentalAspect {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  activity: string;
+  aspect_type: EnvironmentalAspectType;
+  condition: EnvironmentalAspectCondition;
+  description: string | null;
+  version: number;
+  status: EnvironmentalAspectStatus;
+  supersedes_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EnvironmentalAspectAssessment {
+  id: string;
+  aspect_id: string;
+  company_id: string;
+  likelihood: number;
+  severity: number;
+  frequency: number;
+  computed_score: number;
+  significance_threshold_used: number;
+  is_significant: boolean;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  methodology_notes: string | null;
   created_by: string | null;
   created_at: string;
 }

@@ -90,6 +90,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   emergency_drill_recorded:   { icon: ShieldCheck,   color: 'var(--amber)' },
   emergency_plan_added:       { icon: ShieldCheck,   color: 'var(--amber)' },
   puwer_assessment_recorded:  { icon: ShieldCheck,   color: 'var(--amber)' },
+  environmental_aspect_significant: { icon: ShieldCheck, color: 'var(--red)' },
   leave_requested:            { icon: CalendarClock, color: 'var(--amber)' },
   role_filled:                { icon: CheckCircle2,  color: 'var(--success)' },
   onboarding_started:         { icon: Users,         color: 'var(--blue)' },
