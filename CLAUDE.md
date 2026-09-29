@@ -7645,3 +7645,61 @@ themselves.
   reachable; 102 blind-update chains, unchanged — this group added no
   new write path), admin production build compiles.
 
+### Group 2 (no migration): Connected Compliance Intelligence
+
+`lib/riskGraph/intelligence.ts` — sibling to `lib/hs/kpis.ts`/`lib/
+governance/kpis.ts`: pure, deterministic, computed at READ TIME, no
+stored aggregate, no AI, no score. What makes it different from those
+two: every insight here is a CONNECTION-shaped question — one no
+single-entity view can answer, because the fact only exists in the
+relationship between two records, not in either alone.
+
+- **The relationships used are the REAL structural ones this schema
+  already has, checked before writing a line of code — not `hs_links`
+  for everything.** `risk_assessment_items.hazard_id` (123) is a
+  direct FK: a hazard's coverage by a risk assessment is THIS, never
+  an `hs_links` row — `hs_links` exists for the OTHER relationships
+  (an incident pointing at an assessment, a related hazard/incident
+  pair), the exact split `RaLinks.tsx`'s own header comment already
+  documents. `risk_item_controls` (123) links a
+  `risk_assessment_item` to a `control`, denormalising
+  `control_title`/`effectiveness` onto the row itself — grouping by
+  `control_id` is how "this control is relied on by N assessments" is
+  answered. A legal obligation has NO direct FK to a risk assessment
+  or hazard at all; the only connection is an explicit `hs_links` row
+  an admin adds by hand, so absence of one is itself the insight, not
+  a defect — not every obligation needs a risk assessment, but a gap
+  is worth a human's look.
+- **Four insights**: `uncoveredHazards` (non-closed/archived hazards
+  with zero `risk_assessment_items` referencing them);
+  `ineffectiveSharedControls` (a control relied on by 2+ DISTINCT
+  assessments whose own recorded effectiveness is `ineffective`/
+  `not_implemented` — sorted by assessment count, the widest-impact
+  gap first; an ineffective control used by only ONE assessment is
+  deliberately NOT flagged here — that is a single-assessment concern,
+  not a shared-exposure one); `assessmentsWithIneffectiveControls`
+  (approved/active/review_due assessments — the ones a client is
+  CURRENTLY relying on — carrying at least one ineffective control,
+  regardless of sharing); `unlinkedApplicableObligations` (applicable
+  legal obligations with no `hs_links` connection to any risk
+  assessment or hazard, in either direction).
+- **`organisation_legal_obligations` has no `title` column** — it
+  references the staff-only `legal_requirements` catalogue (159). The
+  pure function takes an already-resolved `title` and documents in its
+  own type comment that a loader must join it, the same "join by id
+  list, never a bare client read of the catalogue" pattern the Legal
+  Register's own portal page already uses.
+- 16 new unit tests (`intelligence.test.ts`), including the two
+  deliberate non-obvious NEGATIVE cases: a shared-but-effective control
+  is never flagged, and an ineffective control used by only one
+  assessment is never flagged as "shared".
+- **No UI, no loader, no wiring into a page yet — deliberately, per
+  the Group 2/Group 3 split recorded in `docs/
+  CORE_OS_360_PHASE8_PLAN.md`.** This group is the pure computation
+  only; Group 3 reads real rows and renders it.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1459 admin — 16 new `intelligence.test.ts` cases; 703 portal,
+  unchanged — this group is admin-only, pure functions with no page),
+  all five CI guards pass (unchanged across the board — no new table,
+  no new route, no new write path), admin production build compiles.
+
