@@ -647,6 +647,34 @@ const reminderRules: Rule[] = [
       })];
     },
   },
+  {
+    // Core-OS 360 Phase 7, Group 6: a visit's own next_visit_
+    // recommended_date approaching/passed with no follow-up visit
+    // booked yet — followUpDue.ts already excluded anything cleared, so
+    // a row reaching here genuinely still needs one. Notifies the
+    // CONSULTANCY, never the client — this is the consultant's own
+    // workflow, not something to raise with the account. The
+    // {kind:'capability'} audience keyed on the CLIENT's own
+    // company_id resolves to whoever holds a live consultancy.
+    // service_manage grant on that client (portfolio-wide, Phase 6/7's
+    // own established mechanism) — never {kind:'company_admins'},
+    // which would be the client's own staff.
+    id: 'consultancy_followup_reminder',
+    on: 'consultancy_visit_reports.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date } = reminderPayload(event);
+      if (!event.company_id) return [];
+      return [notifyC({
+        audiences: [{ kind: 'capability', companyId: event.company_id, capability: 'consultancy.service_manage' }],
+        companyId: event.company_id, type: 'consultancy_followup_due',
+        title: `A follow-up visit is ${whenText(bucket, due_date)} — no visit booked yet`,
+        // Client 360, not the old visit's own page — "Book a visit" is
+        // the actionable step (Group 2), and lives there.
+        link:  { portal: `/consultancy/clients/${event.company_id}` },
+      })];
+    },
+  },
 ];
 
 function checklistTask(event: PlatformEvent, portalPath: string, kind: string): Consequence[] {

@@ -146,6 +146,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   offer_deadline:             { icon: CalendarClock, color: 'var(--amber)' },
   referral_review_pending:    { icon: Users,         color: 'var(--amber)' },
   referral_scan_failed:       { icon: AlertTriangle, color: 'var(--red)' },
+  consultancy_followup_due:   { icon: CalendarClock, color: 'var(--purple)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

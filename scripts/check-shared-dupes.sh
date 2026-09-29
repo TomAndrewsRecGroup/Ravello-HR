@@ -63,6 +63,7 @@ PAIRS=(
   "admin/src/lib/auth/capabilities.ts|portal/src/lib/auth/capabilities.ts"
   "admin/src/lib/consultancy/vocab.ts|portal/src/lib/consultancy/vocab.ts"
   "admin/src/lib/consultancy/types.ts|portal/src/lib/consultancy/types.ts"
+  "admin/src/lib/consultancy/followUpDue.ts|portal/src/lib/consultancy/followUpDue.ts"
   "admin/src/components/ui/useUnsavedChangesWarning.ts|portal/src/components/ui/useUnsavedChangesWarning.ts"
 )
 

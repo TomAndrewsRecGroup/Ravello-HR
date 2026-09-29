@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { daysUntil } from '@/lib/hs/recurrence';
 import type { ReminderBucket, ReminderEntity } from '@/lib/events/types';
+import { reportsNeedingFollowUp, type ClientVisitDate } from '@/lib/consultancy/followUpDue';
 
 // What has a due date, and what "due" means for it.
 //
@@ -471,6 +472,43 @@ REMINDERS.push(
     buckets: ['due_7', 'due_0', 'overdue', 'overdue_weekly'],
   },
 );
+
+// Core-OS 360 Phase 7, Group 6: a visit report's own next_visit_
+// recommended_date. The "already followed up" check
+// (reportsNeedingFollowUp, followUpDue.ts) needs a second query — a
+// SEPARATE fetch of consultancy_visits for this page's own clients,
+// never a filter on the PAGE ITSELF: readAllPages (paged.ts) uses "did
+// this page come back short of PAGE_SIZE" as its ONLY termination
+// signal, so shrinking a page's row COUNT here would risk stopping the
+// walk early on a genuinely full page. Every candidate row this page
+// fetched is still returned; already-followed-up ones are flagged and
+// skipped by dueDateOf instead, which never affects the row count.
+REMINDERS.push({
+  id: 'consultancy_visit_reports', entity: 'consultancy_visit_reports',
+  select: 'id, visit_id, client_organisation_id, next_visit_recommended_date',
+  query: async (sb, from, to) => {
+    const { data, error } = await sb.from('consultancy_visit_reports')
+      .select('id, visit_id, client_organisation_id, next_visit_recommended_date')
+      .eq('status', 'issued').not('next_visit_recommended_date', 'is', null)
+      .order('id').range(from, to);
+    if (error || !data || data.length === 0) return { data, error };
+
+    const clientIds = [...new Set((data as { client_organisation_id: string }[]).map(r => r.client_organisation_id))];
+    const { data: visits, error: visitsErr } = await sb.from('consultancy_visits')
+      .select('client_organisation_id, id, scheduled_date').in('client_organisation_id', clientIds);
+    if (visitsErr) return { data: null, error: visitsErr };
+
+    const candidates = (data as { id: string; visit_id: string; client_organisation_id: string; next_visit_recommended_date: string }[]);
+    const visitDates: ClientVisitDate[] = ((visits ?? []) as { client_organisation_id: string; id: string; scheduled_date: string }[])
+      .map(v => ({ client_organisation_id: v.client_organisation_id, visit_id: v.id, scheduled_date: v.scheduled_date }));
+    const stillDue = new Set(reportsNeedingFollowUp(candidates, visitDates).map(r => r.id));
+
+    const flagged = candidates.map(r => ({ ...r, _followUpCleared: !stillDue.has(r.id) }));
+    return { data: flagged, error: null };
+  },
+  dueDateOf: r => (r._followUpCleared ? null : str(r.next_visit_recommended_date)),
+  buckets: ['due_30', 'due_7', 'overdue'],
+});
 
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;

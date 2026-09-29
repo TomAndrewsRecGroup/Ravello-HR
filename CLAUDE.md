@@ -7362,6 +7362,66 @@ satisfy.
   Migration 176 applied live and verified (8/8 probe checks —
   `supabase/probes/176_consultancy_visit_reports.sql`).
 
-**Group 6 (Follow-up, Service Ledger, Consultant Metrics) has not been
-started.**
+### Group 6 (no new migration): Follow-up, Service Ledger, Consultant Metrics
+
+- **The follow-up question is "has a visit been BOOKED", never "has a
+  report been ISSUED for it"** — booking is the actionable step; the
+  report for that visit can follow later.
+  `reportsNeedingFollowUp()` (`lib/consultancy/followUpDue.ts`, a new
+  shared-dupe pair, pure and unit-tested) filters a report's own
+  `next_visit_recommended_date` clear only when the SAME client has a
+  DIFFERENT visit scheduled on or after that date — a visit booked
+  BEFORE the recommendation, or for a different client, never clears
+  it, and the visit the report is itself about never counts as its own
+  follow-up.
+- **A real pagination hazard, designed around rather than hit**: the
+  reminders cron's ONLY termination signal (`readAllPages`) is "did
+  this page come back shorter than `PAGE_SIZE`". Filtering rows OUT
+  inside a rule's `query()` would shrink a genuinely full page below
+  that threshold and stop the walk early — the exact failure class
+  `paged.ts`'s own header already warns about. So the new
+  `consultancy_visit_reports` reminder rule never filters inside
+  `query()`: it fetches the RAW page unfiltered, does one extra query
+  for the involved clients' visits, and FLAGS (never removes) each row
+  with `_followUpCleared` — `dueDateOf` then returns `null` for a
+  cleared row, the pagination-safe way to skip a row this codebase's
+  reminder framework already provides.
+- **Notifies the CONSULTANCY, never the client** — `{kind:
+  'capability', companyId: <client>, capability: 'consultancy.
+  service_manage'}`, the exact Phase 6/7 portfolio-wide mechanism,
+  resolves to whoever holds a live grant on that client. This is the
+  first reminder rule in this codebase to use that audience kind for
+  its OWN, not the client's, workflow — a client never hears about
+  their own consultant's follow-up scheduling.
+- **The Service Ledger needed no new code** — `ledger_visit_completed`
+  already covers a visit reaching its terminal state (fixed in Group
+  5), and manually-raised or auto-escalated visit actions already flow
+  through the existing `ledger_action_closed` rule, since they are
+  ordinary `actions` rows with no ledger-specific handling required.
+- **Consultant Metrics is factual aggregation only** — no score, no
+  AI, nothing predicted, the same posture `lib/health/scoring.ts`/
+  `lib/hs/kpis.ts` already take. `computeConsultantMetrics()` (pure,
+  unit-tested) reports: visits completed and reports issued in a
+  trailing-90-day window; the average days between a visit and its
+  report being issued; observations recorded, broken down by type;
+  actions raised/closed (`source_type = 'consultant_visit'` only); and
+  follow-up compliance — **deliberately NOT period-scoped**, since a
+  recommendation made months ago and still unbooked is still
+  outstanding today, whatever window is being viewed. New portal page
+  `/consultancy/metrics`, linked from the Command Centre home.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1437 admin — 7 new `followUpDue.test.ts` cases + 1 new
+  `reminders.test.ts` case; 700 portal — 6 new
+  `consultantMetrics.test.ts` cases + `clientServerBoundary.test.ts`/
+  `portalPagesLinked.test.ts` picking up the new page automatically),
+  all five CI guards pass (47 shared-dupe pairs, up from 46 —
+  `followUpDue.ts` is the new pair; row-cap clean; 44 unvalidated
+  routes, unchanged; 42 static admin routes, all reachable; 102
+  blind-update chains, unchanged), both production builds compile.
+  No new migration was needed — this group is entirely TypeScript
+  (a reminder rule, a notification type, a consequence-rule fix, a
+  metrics computation) over the EXISTING 176 schema. The next
+  schema-bearing group continues from 177.
+
+**Group 7 (visit-mode hardening) has not been started.**
 

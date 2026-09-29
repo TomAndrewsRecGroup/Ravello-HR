@@ -118,4 +118,24 @@ describe('runReminders', () => {
     expect(db.tables.employee_documents.map(r => r.status)).toEqual(['expired', 'archived']);
     expect(db.tables.policy_acknowledgements.map(r => [r.status, r.reminder_sent ?? false])).toEqual([['overdue', true], ['pending', false]]);
   });
+
+  it('consultancy_visit_reports: a follow-up already booked clears the reminder; one with none still fires', async () => {
+    const db = fakeSupabase({
+      consultancy_visit_reports: [
+        { id: 'rep-1', visit_id: 'v1', client_organisation_id: 'co-a', next_visit_recommended_date: '2026-09-20', status: 'issued' },
+        { id: 'rep-2', visit_id: 'v2', client_organisation_id: 'co-b', next_visit_recommended_date: '2026-09-20', status: 'issued' },
+        { id: 'rep-3', visit_id: 'v3', client_organisation_id: 'co-a', next_visit_recommended_date: '2026-09-20', status: 'draft' }, // not issued: excluded by the query itself
+      ],
+      consultancy_visits: [
+        // co-a already has a LATER visit booked (v4) — clears rep-1.
+        { id: 'v4', client_organisation_id: 'co-a', scheduled_date: '2026-10-01' },
+        // co-b's only other visit is BEFORE the recommended date — does not clear rep-2.
+        { id: 'v5', client_organisation_id: 'co-b', scheduled_date: '2026-08-01' },
+      ],
+      platform_events: [],
+    });
+    await runReminders(db.client, { today, rules: REMINDERS.filter(r => r.id === 'consultancy_visit_reports'), statusWrites: [] });
+    const fired = db.tables.platform_events.map((e: any) => e.entity_id);
+    expect(fired).toEqual(['rep-2']);
+  });
 });

@@ -134,6 +134,7 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   offer_deadline:             { Icon: CalendarClock,  color: 'var(--amber)' },
   referral_review_pending:    { Icon: Users,          color: 'var(--amber)' },
   referral_scan_failed:       { Icon: AlertTriangle,  color: 'var(--red)' },
+  consultancy_followup_due:   { Icon: CalendarClock,  color: 'var(--purple)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_META);

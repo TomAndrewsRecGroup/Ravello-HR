@@ -174,6 +174,10 @@ export const NOTIFICATION_TYPES = [
   'offer_deadline',
   'referral_review_pending',
   'referral_scan_failed',
+  // Core-OS 360 Phase 7, Group 6: a report's own next_visit_
+  // recommended_date approaching/passed with no follow-up visit yet
+  // booked for that client.
+  'consultancy_followup_due',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -304,6 +308,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   offer_deadline:             'Offer deadline',
   referral_review_pending:    'Referrals awaiting review',
   referral_scan_failed:       'Referral scan failed',
+  consultancy_followup_due:   'Follow-up visit due',
 };
 
 export function isNotificationType(v: string): v is NotificationType {
