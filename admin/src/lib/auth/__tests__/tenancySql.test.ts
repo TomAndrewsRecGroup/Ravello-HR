@@ -34,6 +34,7 @@ const m132 = readFileSync(`${MIG}/132_workforce_foundation.sql`, 'utf8');
 const m144 = readFileSync(`${MIG}/144_asset_register.sql`, 'utf8');
 const m147 = readFileSync(`${MIG}/147_inspection_perform_capability.sql`, 'utf8');
 const m156 = readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8');
+const m167 = readFileSync(`${MIG}/167_consultancy_portfolio_foundation.sql`, 'utf8');
 
 function fn(src: string, name: string): string {
   const start = src.indexOf(`FUNCTION public.${name}(`);
@@ -99,8 +100,20 @@ describe('capability catalogue: TypeScript ↔ SQL seed (117 + 122 + 132 + 144 +
       seed.get(r)!.push(cap);
     }
   }
+  // 167 (Phase 6, Group 1: consultancy portfolio foundation) adds one
+  // capability, granted to both consultancy roles plus platform staff —
+  // the write-side gate for service scope/visits/ledger, distinct from
+  // consultancy.manage_access (who has access at all).
+  const added167 = [...m167.matchAll(/\('([a-z_]+\.[a-z_.]+)',\s+ARRAY\[([^\]]*)\]\)/g)];
+  expect(added167.length).toBe(1);
+  for (const [, cap, roles] of added167) {
+    for (const r of [...roles.matchAll(/'([a-z_]+)'/g)].map(x => x[1])) {
+      expect(seed.has(r), `167 grants ${cap} to unknown role ${r}`).toBe(true);
+      seed.get(r)!.push(cap);
+    }
+  }
   for (const [k, v] of seed) seed.set(k, [...new Set(v)].sort());
-  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144 + '\n' + m147 + '\n' + m156;
+  const both = m117 + '\n' + m122 + '\n' + m132 + '\n' + m144 + '\n' + m147 + '\n' + m156 + '\n' + m167;
   const sqlCaps = [...both.matchAll(/^\s+\('([a-z_]+\.[a-z_.]+)',\s+'/gm)].map(x => x[1]).sort();
 
   it('declares the same capabilities', () => {
