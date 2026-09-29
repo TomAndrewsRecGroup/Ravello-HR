@@ -188,6 +188,27 @@ describe('computeRiskGraphIntelligence', () => {
       expect(out.unlinkedApplicableObligations).toEqual([]);
     });
 
+    it('does not flag an obligation linked to a hazard specifically', () => {
+      const out = computeRiskGraphIntelligence({
+        ...baseInput(),
+        legalObligations: [{ id: 'o1', title: 'COSHH Regulations 2002', applicability_status: 'applicable' }],
+        legalObligationLinks: [{ from_type: 'hazard', from_id: 'h1', to_type: 'legal_obligation', to_id: 'o1' }],
+      });
+      expect(out.unlinkedApplicableObligations).toEqual([]);
+    });
+
+    it('STILL flags an obligation whose only hs_links connection is to something OTHER than a hazard or risk assessment — a link to a document or incident says nothing about risk-assessment coverage, which is what this insight\'s own label promises', () => {
+      const out = computeRiskGraphIntelligence({
+        ...baseInput(),
+        legalObligations: [{ id: 'o1', title: 'COSHH Regulations 2002', applicability_status: 'applicable' }],
+        legalObligationLinks: [
+          { from_type: 'legal_obligation', from_id: 'o1', to_type: 'incident', to_id: 'inc1' },
+          { from_type: 'document', from_id: 'd1', to_type: 'legal_obligation', to_id: 'o1' },
+        ],
+      });
+      expect(out.unlinkedApplicableObligations).toEqual([{ id: 'o1', title: 'COSHH Regulations 2002' }]);
+    });
+
     it('does not flag an obligation linked as the TO end of an hs_links row', () => {
       const out = computeRiskGraphIntelligence({
         ...baseInput(),

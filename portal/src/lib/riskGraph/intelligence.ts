@@ -194,10 +194,20 @@ export function computeRiskGraphIntelligence(input: RiskGraphIntelligenceInput):
     });
   }
 
+  // Coverage means a link to a hazard or risk assessment specifically —
+  // never any hs_links row naming the obligation. An obligation linked
+  // only to, say, a document or an incident says nothing about whether
+  // a risk assessment covers it, and the insight's own label promises
+  // "no linked risk assessment", not "no link to anything at all".
+  // Found and fixed during Group 4's adversarial review: the first
+  // version counted ANY connection, regardless of the other end's
+  // type — a real gap between what was documented and what was
+  // computed, not just a naming nit.
+  const COVERAGE_TYPES = new Set(['hazard', 'risk_assessment']);
   const linkedObligationIds = new Set<string>();
   for (const l of legalObligationLinks) {
-    if (l.from_type === 'legal_obligation') linkedObligationIds.add(l.from_id);
-    if (l.to_type === 'legal_obligation') linkedObligationIds.add(l.to_id);
+    if (l.from_type === 'legal_obligation' && COVERAGE_TYPES.has(l.to_type)) linkedObligationIds.add(l.from_id);
+    if (l.to_type === 'legal_obligation' && COVERAGE_TYPES.has(l.from_type)) linkedObligationIds.add(l.to_id);
   }
   const unlinkedApplicableObligations = legalObligations
     .filter(o => o.applicability_status === 'applicable' && !linkedObligationIds.has(o.id))

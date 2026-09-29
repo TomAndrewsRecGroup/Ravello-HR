@@ -7571,7 +7571,7 @@ merged and deployed, per the operator's standing instruction.
 ---
 
 ## Core-OS 360 Phase 8: Risk Graph & Connected Compliance Intelligence
-## (in progress, from migration 177 onward)
+## (complete, migration 177)
 
 No detailed operator brief exists in the repo for this phase (unlike
 Phases 1-3's own `_PLAN.md` files). Scope was derived from the phase's
@@ -7755,4 +7755,66 @@ self-certified).
   — this group writes nothing, read-only throughout), both production
   builds compile, including `/health-safety/<companyId>/risk-graph`
   and `/protect/risk-graph`.
+
+### Group 4 (no migration): full regression, adversarial QA, handover
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE8_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**One real, Medium-severity defect found: `unlinkedApplicableObligations`
+counted a link to ANY entity type as coverage, contradicting its own
+documented and labelled meaning ("no linked risk assessment").** Found
+by re-reading the Group 2 CLAUDE.md writeup (which specifically said
+"no `hs_links` connection to any risk assessment or hazard") against
+the actual code, which checked no such thing — the first version
+flagged an obligation as "covered" the moment it was linked to
+ANYTHING (a document, an incident, an audit finding). Fixed: a
+`COVERAGE_TYPES` filter (`hazard`, `risk_assessment`) now decides what
+counts, in the pure function, not the loader query. **Mutation-tested
+live in this session** — the fix was reverted to the original "any
+connection counts" logic, watched fail the new negative-case test,
+then restored. Severity: this would have UNDER-reported gaps (an
+obligation genuinely lacking risk-assessment coverage, but linked to
+something unrelated, would have silently shown as "fine") — the worse
+direction for a tool whose whole purpose is surfacing gaps.
+
+**Everything else audited clean**:
+
+- **Graph traversal correctness and tenant isolation on
+  `risk_graph_neighbors()`**, already proven live in Group 1's own
+  probe, re-read rather than re-run since nothing in this group
+  touched the function.
+- **The pre-existing staff blanket-access policies
+  (`hs_links_staff_all` etc., no `company_id` restriction, migration
+  122/123) were investigated as a genuine "could this leak" question,
+  not assumed safe**: a staff session's `risk_graph_neighbors()` call
+  sees the RLS-level full graph across every organisation, but the
+  traversal only ever visits rows reachable from the ONE starting node
+  supplied, and `hs_links_check()` (122) refuses a cross-organisation
+  edge at CREATION time — so there is no cross-company edge for the
+  walk to ever follow, whatever policy let the session see the row.
+  Confirmed correct, pre-Phase-8 behaviour, not a gap this phase
+  introduced.
+- **Regression**: the full `vitest` suites across both apps ARE the
+  regression suite (none deleted, none skipped) — every pre-existing
+  module stayed green throughout this pass, and both production
+  builds compile.
+- **Every scope decision that might otherwise look like an oversight
+  is explicitly documented** in the handover doc rather than silently
+  made: no portfolio-wide RLS, the explorer/dashboard consolidation
+  onto one page, the "no admin page for hazards/RAs, link out to
+  portal instead" design, the explorer's limited starting-point set.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1461 admin — 1459 + 2 new `intelligence.test.ts` cases for the fix;
+705 portal, unchanged — the fix and its tests are admin-only, though
+the shared-dupe file was re-mirrored byte-identical), all five CI
+guards pass with no regressions (48 shared-dupe pairs; row-cap clean;
+44 unvalidated routes, unchanged; 42 static admin routes, all
+reachable; 102 blind-update chains, unchanged — this phase writes
+nothing, entirely read-only throughout), both production builds
+compile.
+
+**Phase 8 is complete. Phase 9 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 
