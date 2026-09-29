@@ -7877,3 +7877,47 @@ takes.
   CI guards pass (unchanged across the board — no new table, no new
   route, no new write path), admin production build compiles.
 
+### Group 2 (no migration): admin UI
+
+A new **What Changed** tab on the existing per-client detail page
+(`ClientDetailTabs.tsx`) — the cross-pillar per-client home already
+used for Overview/Roles/Documents/Roadmap/HR, the natural place for a
+cross-pillar daily summary, rather than nesting it under the
+H&S-specific `/health-safety/<companyId>` prefix, which would
+undersell how far `platform_events` actually spans (HIRE/LEAD/PROTECT/
+Governance/Consultancy alike).
+
+- **`WhatChangedTab.tsx` manages its own fetch, deliberately bypassing
+  the generic `client-tab-data` lazy-load mechanism** every other tab
+  on this page uses. That mechanism fetches once per tab open with no
+  date parameter; this tab re-fetches on every date change, the same
+  self-contained-fetch shape `RaLinks.tsx`/`EvidenceLinksPanel.tsx`
+  already use for their own per-record data. A plain client-side read
+  under the staff session (`platform_events_staff_read` RLS,
+  `is_tps_staff()`, no `company_id` restriction — no service role
+  needed, matching the RLS shape §G.4 of the Phase 8 handover already
+  documented for the identically-shaped `hs_links`).
+- **Defaults to yesterday, not today** — today is still in progress,
+  and "what changed" reads more naturally as a completed day's
+  retrospective, the same reasoning the H&S weekly digest reports a
+  week that has just ended, never one still running. A date picker
+  (prev/next day, a "Yesterday" reset) looks back as far as the
+  operator wants, one day at a time — "Next day" disables once the
+  picker reaches today, so it can never accidentally request an
+  in-progress day expecting a complete one.
+- **`readAllPages()` used client-side**, the first time this codebase
+  has called it from a browser component rather than a server one —
+  it is a plain callback-driven walker with no dependency on which
+  Supabase client it is handed, and a single client/company/day slice
+  could plausibly exceed 1,000 rows on an unusually active day. A
+  `truncated` flag is surfaced in the UI rather than silently
+  presenting a partial day as complete, the standing `paged.ts` rule.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1469 admin, unchanged — this group is UI-only, consistent with
+  this codebase's established "no component-level test" convention;
+  705 portal, unchanged — this group touches admin only), all five CI
+  guards pass (unchanged across the board — no new table, no new API
+  route, no new write path; the new tab reads `platform_events`
+  directly under RLS, no route needed), admin production build
+  compiles.
+
