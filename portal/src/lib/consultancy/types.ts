@@ -1,7 +1,7 @@
 // Core-OS 360 Phase 6 row shapes. Shared-dupe pair with portal
 // (scripts/check-shared-dupes.sh).
 
-import type { ReviewFrequency, ServiceScopeStatus, ServiceType, VisitStatus, VisitType } from './vocab';
+import type { ReviewFrequency, ServiceLedgerEntryType, ServiceScopeStatus, ServiceType, VisitStatus, VisitType } from './vocab';
 
 export interface ConsultancyServiceScope {
   id: string;
@@ -34,6 +34,19 @@ export interface ConsultancyVisit {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ConsultancyServiceLedgerEntry {
+  id: string;
+  consultancy_organisation_id: string;
+  client_organisation_id: string;
+  entry_type: ServiceLedgerEntryType;
+  occurred_at: string;
+  summary: string;
+  source_type: string | null;
+  source_id: string | null;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface PortfolioOrganisation {

@@ -59,3 +59,25 @@ export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
   completed: 'Completed',
   cancelled: 'Cancelled',
 };
+
+// Migration 169 (Group 3): the Client Service Ledger's own entry
+// types — factual delivered value only, never a fabricated monetary or
+// hours-saved figure.
+export const SERVICE_LEDGER_ENTRY_TYPES = [
+  'visit', 'audit', 'report', 'document', 'broadcast', 'service_request_resolved',
+  'action_closed', 'training', 'incident_support', 'management_review_support', 'manual',
+] as const;
+export type ServiceLedgerEntryType = typeof SERVICE_LEDGER_ENTRY_TYPES[number];
+export const SERVICE_LEDGER_ENTRY_TYPE_LABELS: Record<ServiceLedgerEntryType, string> = {
+  visit:                      'Consultant visit',
+  audit:                      'Audit',
+  report:                     'Report',
+  document:                   'Document',
+  broadcast:                  'Broadcast',
+  service_request_resolved:   'Service request resolved',
+  action_closed:               'Action closed',
+  training:                    'Training',
+  incident_support:            'Incident support',
+  management_review_support:   'Management review support',
+  manual:                      'Manual entry',
+};
