@@ -1,25 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import {
-  assembleComplianceTwin,
-  type ComplianceTwinInput,
-  type ComplianceTwinHsKpisInput,
-  type ComplianceTwinGovernanceKpisInput,
-} from '../assemble';
+import { assembleComplianceTwin, type ComplianceTwinInput } from '../assemble';
+import type { HsKpis } from '@/lib/hs/kpis';
+import type { GovernanceKpis } from '@/lib/governance/kpis';
 import type { RiskGraphIntelligence } from '@/lib/riskGraph/intelligence';
 import type { IncidentPatternSummary } from '@/lib/incidentPatterns/analyze';
 import type { EvidenceCoverageSummary } from '@/lib/evidenceEngine/analyze';
 
-const CLEAN_HS: ComplianceTwinHsKpisInput = {
+const CLEAN_HS: HsKpis = {
+  incidentsLast12Months: 0,
   riddorLast12Months: 0,
+  toolboxTalksLast12Months: 0,
   lastAuditScore: 85,
+  auditScoreTrend: 'flat',
   equipmentOverdueCount: 0,
   equipmentDueSoonCount: 0,
 };
 
-const CLEAN_GOVERNANCE: ComplianceTwinGovernanceKpisInput = {
+const CLEAN_GOVERNANCE: GovernanceKpis = {
+  incidentFrequencyRatePer100: 0,
   wasteNonConformancePercent: 0,
   objectivesOnTrackPercent: 100,
   overdueLegalEvaluationsCount: 0,
+  dataSource: {
+    incidentFrequencyRatePer100: '', wasteNonConformancePercent: '',
+    objectivesOnTrackPercent: '', overdueLegalEvaluationsCount: '',
+  },
 };
 
 const CLEAN_RISK_GRAPH: RiskGraphIntelligence = {

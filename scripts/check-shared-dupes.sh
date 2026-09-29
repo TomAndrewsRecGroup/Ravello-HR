@@ -71,6 +71,9 @@ PAIRS=(
   "admin/src/lib/evidenceEngine/analyze.ts|portal/src/lib/evidenceEngine/analyze.ts"
   "admin/src/components/hs/EvidenceEngineClient.tsx|portal/src/components/hs/EvidenceEngineClient.tsx"
   "admin/src/lib/complianceTwin/assemble.ts|portal/src/lib/complianceTwin/assemble.ts"
+  "admin/src/components/hs/ComplianceTwinView.tsx|portal/src/components/hs/ComplianceTwinView.tsx"
+  "admin/src/lib/hs/kpis.ts|portal/src/lib/hs/kpis.ts"
+  "admin/src/lib/governance/kpis.ts|portal/src/lib/governance/kpis.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
