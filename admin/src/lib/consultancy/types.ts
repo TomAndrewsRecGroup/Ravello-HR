@@ -4,7 +4,7 @@
 import type {
   ObservationSeverity, ObservationType,
   ReviewFrequency, ServiceLedgerEntryType, ServiceScopeStatus, ServiceType,
-  VisitStatus, VisitTemplateCategory, VisitType,
+  VisitReportStatus, VisitStatus, VisitTemplateCategory, VisitType,
 } from './vocab';
 
 export interface ConsultancyServiceScope {
@@ -98,6 +98,25 @@ export interface VisitObservation {
   resulting_action_id: string | null;
   created_by: string | null;
   created_at: string;
+}
+
+export interface ConsultancyVisitReport {
+  id: string;
+  visit_id: string;
+  consultancy_organisation_id: string;
+  client_organisation_id: string;
+  version: number;
+  status: VisitReportStatus;
+  supersedes_id: string | null;
+  summary: string | null;
+  recommendations: string | null;
+  next_visit_recommended_date: string | null;
+  storage_path: string | null;
+  issued_at: string | null;
+  issued_by: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PortfolioOrganisation {

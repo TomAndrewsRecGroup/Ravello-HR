@@ -132,3 +132,16 @@ export const OBSERVATION_SEVERITY_LABELS: Record<ObservationSeverity, string> = 
   major:    'Major',
   critical: 'Critical',
 };
+
+// Migration 176 (Phase 7, Group 5): consultancy_visit_reports.status.
+// 'draft' is issued IN PLACE the first time (no supersedes_id); only a
+// REVISION of an already-issued report is a new row — see the
+// migration's own header for why the old row stays 'issued' until the
+// revision itself publishes.
+export const VISIT_REPORT_STATUSES = ['draft', 'issued', 'superseded'] as const;
+export type VisitReportStatus = typeof VISIT_REPORT_STATUSES[number];
+export const VISIT_REPORT_STATUS_LABELS: Record<VisitReportStatus, string> = {
+  draft:      'Draft',
+  issued:     'Issued',
+  superseded: 'Superseded',
+};

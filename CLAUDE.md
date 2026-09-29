@@ -7277,6 +7277,91 @@ satisfy.
   Migration 175 applied live and verified (6/6 probe checks —
   `supabase/probes/175_consultancy_actions_verification.sql`).
 
-**Group 5 (Report Builder, versioning, distribution) has not been
+### Group 5 (migration 176): Report Builder, versioning, distribution
+
+- **`consultancy_visit_reports` holds only what a consultant WRITES**
+  (summary, recommendations, next-visit date, issue bookkeeping) — the
+  report's FINDINGS are never duplicated onto it. Both the on-screen
+  preview and the PDF read `visit_observations` LIVE, `client_visible
+  = true` only, at generation time — the standing "never a second
+  source of the same fact" rule, applied here to a consultant's own
+  narrative vs. the structured findings underneath it.
+- **Versioning copies `hs_documents`'/`emergency_plans`'/
+  `environmental_aspects`' own discipline exactly, including the
+  sibling-race lesson Phase 5 Group 10 (migrations 164-166) learned
+  the hard way** — built in from day one rather than needing a second
+  pass to rediscover it: a revision reaching `issued` supersedes not
+  just the row it names via `supersedes_id` but ANY other row sharing
+  that same parent. A draft is issued IN PLACE the first time (no
+  `supersedes_id`); only a REVISION of an already-issued report is a
+  new row, and the OLD issued version stays current/visible until the
+  revision itself publishes.
+- **A real gap found and fixed while WRITING the probe, before running
+  it**: `consultancy_visit_report_fill()`'s same-visit check for
+  `supersedes_id` only ran at INSERT time — a bare UPDATE could set
+  `supersedes_id` with no check at all. Fixed by making `supersedes_id`
+  immutable after creation in `consultancy_visit_report_touch()` (the
+  same trigger that already refuses `visit_id`/organisation changes),
+  re-applied live and re-proved before trusting it.
+- **No outbox entry on this table, deliberately** — the ONLY way to
+  issue a report is the server route
+  (`POST .../visits/[visitId]/report/issue`), which already holds a
+  service-role session and does the PDF generation, upload and email
+  SYNCHRONOUSLY, the same "a controlled entry point notifies directly,
+  no async consumer needed" precedent the H&S Tests public-token route
+  already established. **The Service Ledger entry comes for free**:
+  issuing inserts a `reports` row (the SAME table/shape
+  `ReportUploadForm.tsx` and the monthly value-report cron already
+  write), and `ledger_report_generated` (169) already fires on
+  `reports.created` — no new consequence rule needed for that.
+- **`buildVisitReportPdf.ts` mirrors admin's `buildReportPdf.ts`
+  parameter-injection shape exactly** (jsPDF + autoTable passed in,
+  never imported at the top of the module) — portal did not previously
+  depend on jsPDF/jspdf-autotable at all (its existing "print" pages
+  use the browser's native `window.print()`); both were added to
+  `portal/package.json` at the SAME versions admin already pins, since
+  generating a real downloadable/emailable PDF file — as opposed to a
+  print dialog — needs the library, not a browser feature. Evidence
+  photos are noted by COUNT in the PDF, never embedded — a reader opens
+  the portal to see the photo itself, the same scope note migration
+  174's own header records for the mobile capture flow.
+- **A dead consequence rule found and fixed along the way**:
+  `ledger_visit_completed` had listened for `consultancy_visits.status
+  → 'completed'` since Phase 6 (169) — a value that existed only in
+  168's ORIGINAL, pre-Phase-7 vocabulary (`scheduled`/`completed`/
+  `cancelled`). Migration 173 (Phase 7, Group 1) replaced it with the
+  full 8-value lifecycle and nobody updated this rule to match, so it
+  had been silently dead code — unreachable by any event this codebase
+  could ever emit — since the day 173 shipped, and untested the whole
+  time. Fixed to listen for `'report_issued'` instead, the correct
+  terminal signal now (real, distributed value delivered — exactly
+  what this rule exists to record), with two new test cases pinning
+  both the fire and the non-fire.
+- **The issue route claims `email_log` FIRST** (insert with a
+  `dedupe_key` of `visit-report:<visit_id>:<version>`, the unique index
+  from 096), sending only on a successful claim — the same
+  "claim-before-send" discipline every other keyed email in this
+  codebase already follows, so a double-submit never sends the client
+  the same report twice. The visit's own lifecycle advance
+  (`awaiting_report`/`report_draft` → `report_issued`) is best-effort
+  and logged, never blocking the response — the report is already
+  issued and recorded regardless of whether this one bookkeeping
+  update lands.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1429 admin — 10 new `visitReportsSql.test.ts` cases + 2 new
+  `serviceLedgerRules.test.ts` cases for the fixed rule; 692 portal —
+  unchanged besides `clientServerBoundary.test.ts` picking up the new
+  components automatically), all five CI guards pass (46 shared-dupe
+  pairs, unchanged; row-cap clean; 44 unvalidated routes, unchanged —
+  the new issue route reads no request body at all; 42 static admin
+  routes, all reachable; 102 blind-update chains, unchanged after
+  fixing two new ones the guard caught — `ReportBuilderClient.tsx`'s
+  draft save and the issue route's best-effort visit-status bump, both
+  built without `COUNT_EXACT`/`judgeWrite()` on the first pass and
+  corrected before this shipped), both production builds compile.
+  Migration 176 applied live and verified (8/8 probe checks —
+  `supabase/probes/176_consultancy_visit_reports.sql`).
+
+**Group 6 (Follow-up, Service Ledger, Consultant Metrics) has not been
 started.**
 

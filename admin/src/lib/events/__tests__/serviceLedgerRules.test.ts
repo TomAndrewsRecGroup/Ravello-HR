@@ -112,6 +112,27 @@ describe('service ledger: consultancy audits/documents/actions', () => {
     expect(types).toEqual(['action_closed', 'document', 'service_request_resolved']);
   });
 
+  it('a visit reaching report_issued logs entry_type "visit" — the pre-176 rule listened for "completed", a status 173 removed, and was dead code for every event this codebase could ever emit', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 13, entity_type: 'consultancy_visits', event_type: 'updated', entity_id: 'visit-1',
+      company_id: 'co-client', actor_id: 'consultant-1', actor_kind: 'consultant',
+      payload: { new: { visit_type: 'retained_visit', status: 'report_issued' }, old: { status: 'report_draft' }, changed: ['status'] },
+    }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.consultancy_service_ledger).toHaveLength(1);
+    expect(db.tables.consultancy_service_ledger[0]).toMatchObject({ entry_type: 'visit', source_type: 'consultancy_visits', source_id: 'visit-1' });
+  });
+
+  it('a visit reaching a status other than report_issued (e.g. closed) logs nothing for this rule', async () => {
+    db.tables.platform_events.push(eventRow({
+      id: 14, entity_type: 'consultancy_visits', event_type: 'updated', entity_id: 'visit-2',
+      company_id: 'co-client', actor_id: 'consultant-1', actor_kind: 'consultant',
+      payload: { new: { visit_type: 'retained_visit', status: 'closed' }, old: { status: 'report_issued' }, changed: ['status'] },
+    }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.consultancy_service_ledger).toHaveLength(0);
+  });
+
   it('a Broadcast-created action (created_by_admin) logs entry_type "broadcast" on CREATE, separate from its later closure', async () => {
     db.tables.platform_events.push(eventRow({
       id: 8, entity_type: 'actions', event_type: 'created', entity_id: 'act-2',
