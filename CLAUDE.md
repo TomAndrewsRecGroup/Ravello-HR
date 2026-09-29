@@ -7423,5 +7423,48 @@ satisfy.
   metrics computation) over the EXISTING 176 schema. The next
   schema-bearing group continues from 177.
 
-**Group 7 (visit-mode hardening) has not been started.**
+### Group 7 (no new migration): visit-mode hardening
+
+- **A consolidated, cross-cutting tenant-isolation proof**
+  (`supabase/probes/phase7_tenant_isolation.sql`), in the Phase 6
+  Group 8 style — ONE consultant session, authorised for Client A
+  only, checked against EVERY table Groups 3-6 added or extended
+  (`visit_observations`, `consultancy_visit_reports`, the new
+  `actions` consultancy policies) for a genuinely DIFFERENT client, in
+  one pass, rather than each migration's own narrower probe repeated.
+  **A real probe-construction lesson surfaced while writing it**: Client
+  B's visit could not be seeded under the SAME consultancy the test
+  session belongs to — `consultancy_visit_guard()` (168) refuses a
+  `consultancy_visits` row with no live relationship at all, so testing
+  "authorised for A, not B" honestly requires B to belong to a
+  genuinely SEPARATE second consultancy, the actual shape a real
+  data-isolation breach would take.
+- **`ReportBuilderClient.tsx` gains `useUnsavedChangesWarning`**
+  (Phase 6 Group 7's own reusable primitive) — the one Phase 7 form
+  with real unsaved-work risk and no safety net of its own:
+  `VisitCaptureClient.tsx`'s observation form already survives a lost
+  tab via its own localStorage draft (174/Group 3), but a report's
+  summary/recommendations narrative has no such recovery, and can be
+  substantial text. Warns only while genuinely dirty against the last
+  loaded/saved values, never after a successful save.
+- **Stale-tab mutation was AUDITED, not silently assumed clean**: every
+  write Groups 3-6 added is portfolio-wide RLS
+  (`my_home_company_id()`/`has_capability()`, never
+  `my_company_id()`), so — exactly as Phase 6 Group 7 already found for
+  its own Command Centre writes — none of it depends on which
+  organisation happens to be ACTIVE in the browser tab. Switching
+  organisations mid-edit cannot silently misdirect a visit observation,
+  a report save, or an action raise/verify; the classic single-tenant
+  workspace remains the only surface where that risk exists, and it
+  already has its own guard.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1437 admin, unchanged — this group's admin-side work was the probe
+  only, no TypeScript; 700 portal, unchanged — the hook adoption is a
+  one-line change matching an already-tested primitive, no new test
+  file needed), all five CI guards pass, both production builds
+  compile. `supabase/probes/phase7_tenant_isolation.sql` run live and
+  rolled back, all checks passed.
+
+**Group 8 (full regression, adversarial QA, handover) has not been
+started.**
 

@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Save, Send, FileText, History } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
+import { useUnsavedChangesWarning } from '@/components/ui/useUnsavedChangesWarning';
 import { VISIT_REPORT_STATUS_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyVisitReport } from '@/lib/consultancy/types';
 
@@ -31,6 +32,19 @@ export default function ReportBuilderClient({ visitId, clientOrganisationId, rep
   const [startingRevision, setStartingRevision] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+
+  // Core-OS 360 Phase 7, Group 7 (visit-mode hardening). Unlike
+  // VisitCaptureClient's observation form, a draft REPORT has no
+  // localStorage-backed recovery of its own — the summary/
+  // recommendations text is real, often substantial narrative, and a
+  // navigation away with unsaved changes would lose it silently. Warn
+  // only while genuinely dirty (unsaved changes against the last
+  // loaded/saved values), never after a successful save.
+  const isDirty = isDraft && (
+    summary !== (report?.summary ?? '') || recommendations !== (report?.recommendations ?? '')
+    || nextVisitDate !== (report?.next_visit_recommended_date ?? '')
+  );
+  useUnsavedChangesWarning(isDirty);
 
   async function saveDraft() {
     setSaving(true); setError(''); setSaved(false);
