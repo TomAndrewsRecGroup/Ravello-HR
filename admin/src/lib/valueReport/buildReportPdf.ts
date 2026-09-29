@@ -23,14 +23,16 @@ export interface JsPdfLike {
   setPage(n: number): void;
   getNumberOfPages?(): number;
   lastAutoTable?: { finalY: number };
+  splitTextToSize?(text: string, maxWidth: number): string[];
+  addPage?(): void;
 }
 
 export function buildReportPdf(
   JsPdfCtor: new (opts: { unit: string; format: string }) => JsPdfLike,
   autoTable: (doc: JsPdfLike, opts: Record<string, unknown>) => void,
-  opts: { companyName: string; month: string; generatedAt: Date; data: ValueReportData },
+  opts: { companyName: string; month: string; generatedAt: Date; data: ValueReportData; narrative?: string | null },
 ): JsPdfLike {
-  const { companyName, month, generatedAt, data: r } = opts;
+  const { companyName, month, generatedAt, data: r, narrative } = opts;
 
   const PURPLE   = [11, 120, 150] as [number, number, number]; // Core OS 360 accent (#0B7896)
   const INK      = [7, 11, 29]    as [number, number, number];
@@ -146,6 +148,36 @@ export function buildReportPdf(
     ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],
     ['Monthly fee',      `£${r.usage.mrr}`],
   ]);
+
+  // Core-OS 360 Phase 6, section 10: optional consultant commentary.
+  // Free text, never computed — rendered only when present, as its
+  // own section after every deterministic metric table, so a reader
+  // never confuses the person's own words with a computed number.
+  if (narrative && narrative.trim().length > 0) {
+    const H = doc.internal.pageSize.getHeight();
+    if (y > H - 120 && doc.addPage) {
+      doc.addPage();
+      y = 56;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...PURPLE);
+    doc.text('CONSULTANT NOTES', 40, y);
+    y += 18;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...INK);
+    const lines = doc.splitTextToSize ? doc.splitTextToSize(narrative, W - 80) : [narrative];
+    for (const line of lines) {
+      if (y > H - 60 && doc.addPage) {
+        doc.addPage();
+        y = 56;
+      }
+      doc.text(line, 40, y);
+      y += 14;
+    }
+    y += 10;
+  }
 
   const pageCount = doc.getNumberOfPages?.() ?? 1;
   for (let i = 1; i <= pageCount; i++) {

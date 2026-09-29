@@ -25,7 +25,7 @@ export default async function AdminReportsPage() {
   // total order two pages can be ordered differently, dropping or
   // duplicating rows across the boundary.
   const [reportsRes, companiesRes, reqs, cands, comp, tickets] = await Promise.all([
-    supabase.from('reports').select('id,title,period,storage_path,file_url,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
+    supabase.from('reports').select('id,title,period,storage_path,file_url,narrative,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
     supabase.from('companies').select('id,slug,name').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('requisitions')
       .select('id,title,department,seniority,location,stage,assigned_recruiter,created_at,companies(name)')
@@ -181,7 +181,12 @@ export default async function AdminReportsPage() {
                             {(r.companies as any)?.name ?? '-'}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink)' }}>{r.title}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
+                          {r.narrative && (
+                            <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{r.narrative}</p>
+                          )}
+                        </td>
                         <td className="px-4 py-3" style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
                         <td className="px-4 py-3" style={{ color: 'var(--ink-faint)' }}>
                           {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
