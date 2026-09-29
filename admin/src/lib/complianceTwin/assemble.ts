@@ -25,29 +25,18 @@
 //   - lib/incidentPatterns/analyze.ts (analyzeIncidentPatterns, Phase 10)
 //   - lib/evidenceEngine/analyze.ts   (analyzeEvidenceCoverage, Phase 11)
 
+import type { HsKpis } from '@/lib/hs/kpis';
+import type { GovernanceKpis } from '@/lib/governance/kpis';
 import type { RiskGraphIntelligence } from '@/lib/riskGraph/intelligence';
 import type { IncidentPatternSummary } from '@/lib/incidentPatterns/analyze';
 import type { EvidenceCoverageSummary } from '@/lib/evidenceEngine/analyze';
 
-// lib/hs/kpis.ts and lib/governance/kpis.ts are admin-only (there is no
-// portal copy of either, checked before writing this file) — this
-// shared-dupe pair cannot import their types the way it imports the
-// three genuinely-shared modules below. These two interfaces name only
-// the fields this file actually reads, structurally compatible with
-// admin's own HsKpis/GovernanceKpis so the admin page can pass either
-// straight through with no mapping step.
-export interface ComplianceTwinHsKpisInput {
-  equipmentOverdueCount: number;
-  equipmentDueSoonCount: number;
-  riddorLast12Months: number;
-  lastAuditScore: number | null;
-}
-
-export interface ComplianceTwinGovernanceKpisInput {
-  overdueLegalEvaluationsCount: number;
-  objectivesOnTrackPercent: number | null;
-  wasteNonConformancePercent: number | null;
-}
+// lib/hs/kpis.ts and lib/governance/kpis.ts were admin-only until this
+// group needed both in portal too, for exactly this page — both are now
+// shared-dupe pairs (checked: neither has any admin-specific dependency,
+// governance/kpis.ts has no imports at all and hs/kpis.ts only imports
+// the already-shared recurrence.ts), so this file imports their real
+// types directly rather than declaring a duplicate narrower interface.
 
 export type ComplianceTwinBand = 'red' | 'amber' | 'green';
 
@@ -67,8 +56,8 @@ export interface ComplianceTwinSnapshot {
 }
 
 export interface ComplianceTwinInput {
-  hsKpis: ComplianceTwinHsKpisInput;
-  governanceKpis: ComplianceTwinGovernanceKpisInput;
+  hsKpis: HsKpis;
+  governanceKpis: GovernanceKpis;
   riskGraph: RiskGraphIntelligence;
   incidentPatterns: IncidentPatternSummary;
   evidence: EvidenceCoverageSummary;
@@ -114,7 +103,7 @@ function buildArea(
   return { area, label, band, reasons };
 }
 
-function safetyArea(k: ComplianceTwinHsKpisInput): ComplianceTwinArea {
+function safetyArea(k: HsKpis): ComplianceTwinArea {
   const red: string[] = [];
   const amber: string[] = [];
 
@@ -140,7 +129,7 @@ function safetyArea(k: ComplianceTwinHsKpisInput): ComplianceTwinArea {
   );
 }
 
-function governanceArea(k: ComplianceTwinGovernanceKpisInput): ComplianceTwinArea {
+function governanceArea(k: GovernanceKpis): ComplianceTwinArea {
   const red: string[] = [];
   const amber: string[] = [];
 

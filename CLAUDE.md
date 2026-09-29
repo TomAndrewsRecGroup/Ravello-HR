@@ -8303,12 +8303,74 @@ overall band (the worst of the five, `worstBand()`).
   red-still-reports-amber-reasons property, null-vs-zero handling, and
   the overall-band worst-of-five combination.
 
-### Group 2 and Group 3
+### Group 2: admin + portal UI, and two modules that turned out to need mirroring
 
-Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+`ComplianceTwinView.tsx` (shared-dupe pair): a card per area (band icon,
+label, reasons) plus an overall band banner, and a per-area "View
+details →" link. **No interactivity beyond plain navigation, so no
+`'use client'`** — the same call `IncidentPatternsView.tsx` already
+made. Admin: a 29th `HsCompanyTabs.tsx` tab, `/health-safety/
+<companyId>/digital-twin`. Portal: read-only `/protect/digital-twin`,
+gated by `protect` alone (nothing here is self-certified).
+
+- **The component takes an explicit `links: Record<ComplianceTwinAreaKey,
+  string>` prop, not a `basePath` string.** `IncidentPatternsView.tsx`'s
+  own `basePath`-suffix pattern doesn't work here: admin's and portal's
+  route segments for the SAME underlying page genuinely diverge — admin
+  has a combined `/kpis` page portal has no equivalent of (portal's
+  closest thing is `/incidents`), and admin's Legal Register segment is
+  `legal` while portal's is `legal-register`. Rather than guess a shared
+  suffix and risk a broken link in one app, each page supplies its own
+  correct hrefs; the shared component stays a true byte-identical file
+  with no app-specific routing knowledge baked in.
+- **`lib/hs/kpis.ts` and `lib/governance/kpis.ts` were admin-only until
+  this group — and became shared-dupe pairs, not duplicated logic.**
+  The first draft of `assemble.ts` (Group 1) avoided importing their
+  types for exactly that reason and declared narrower local interfaces
+  instead. Writing the portal page exposed the real cost of that
+  choice: portal has no combined KPI computation to call at all, and
+  reimplementing `computeGovernanceKpis`' three-field subset inline in
+  two different page.tsx files would have been a second, parallel copy
+  of a formula that already exists — the "REUSE, never a parallel
+  system" rule this whole codebase holds to. Checked before mirroring:
+  `lib/governance/kpis.ts` has no imports at all, and `lib/hs/kpis.ts`
+  imports only the already-shared `recurrence.ts` — both fully portable
+  with zero admin-specific dependency. Mirrored verbatim, added as two
+  new shared-dupe pairs, and `assemble.ts` reverted to importing the
+  REAL `HsKpis`/`GovernanceKpis` types directly (its local interfaces
+  were removed) now that both apps genuinely carry them.
+- **`computeGovernanceKpis` had never had a real caller anywhere in this
+  codebase before this page** (checked before writing a query — it
+  shipped in Phase 5 Group 8 with only its own unit test). Its
+  `activeEmployeeCount` input (needed only to produce an
+  `incidentFrequencyRatePer100` this twin's governance band never
+  reads) is read fresh via the same `end_date IS NULL OR end_date >
+  today` headcount shape `/lead/hr-dashboard` already established for
+  `employee_records`, and `incidentsLast12MonthsCount` reuses
+  `hsKpis.incidentsLast12Months` rather than a second `hs_incidents`
+  read — the exact same fact ("any hs_incidents row in the trailing 12
+  months"), computed once.
+- **Every other read is copied verbatim from its own source page** — the
+  H&S KPIs page, the Risk Graph page (admin's own and portal's
+  service-role-scoped `legal_requirements` title lookup), the Incident
+  Patterns page (fixed at its 90-day default — the Digital Twin has no
+  window picker of its own), and the Evidence Engine page. No new query
+  shape was invented for any of the five areas beyond the governance
+  reads above.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1517 admin, unchanged; 712 portal — +2, `portalPagesLinked.test.ts`
+picking up the new route automatically), all five CI guards pass
+(`check-shared-dupes.sh`: 56 pairs), both production builds compile,
+including `/health-safety/<companyId>/digital-twin` and
+`/protect/digital-twin`.
+
+### Group 3
+
+Not yet built as of this CLAUDE.md entry — Group 2 is committed and
 merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline; the UI and the final
-regression/adversarial-QA/handover pass follow as their own PRs.
+merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
 
 **Phase 13 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.
