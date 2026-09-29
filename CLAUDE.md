@@ -7206,5 +7206,77 @@ where an observation is actually created.
   which needed an explicit non-staff role before it could actually
   exercise the portfolio RLS policy under test).
 
-**Group 4 (Universal Actions integration) has not been started.**
+### Group 4 (migration 175): Universal Actions integration + "verify previous actions"
+
+The same single-tenant gap Group 3 found in the H&S evidence
+infrastructure, found again in the universal `actions` table itself —
+live inspection (`pg_policy`) before writing a line of SQL confirmed
+`actions_org_insert`/`client_actions_select`/`client_actions_update`
+all gate on `company_id = my_company_id()` (the ACTIVE org), which a
+portfolio-wide consultant who never switches into the client can never
+satisfy.
+
+- **Three new, additive policies** (`actions_consultancy_select/
+  insert/update`), gated on `has_capability(company_id, 'consultancy.
+  service_manage')` — never modifying the three pre-existing
+  single-tenant ones every other write path in this codebase still
+  relies on. **No trigger change was needed at all**: `actions_
+  lifecycle()`'s live, latest definition (read via
+  `pg_get_functiondef()` before writing this, per this codebase's own
+  standing rule — "read the LIVE function body immediately before
+  extending a shared function, never guess from an older migration
+  file") already lets anyone holding `actions.assign` on the row's own
+  `company_id` verify, reject or otherwise progress an action, and the
+  seeded `consultant` role (117) already carries `actions.assign`. So
+  once the RLS gate opened, the consultant's own capability grant was
+  already everything the pre-existing triggers needed — "nobody
+  verifies their own work" (`verified_by = completed_by` refused,
+  `123514`) is completely unaffected, since it checks WHO is acting,
+  never WHICH policy let them reach the row.
+- **"Raise action" (`VisitCaptureClient.tsx`)**: a SEPARATE, manual
+  path from `visit_observation_escalate()`'s synchronous emergency
+  escalation (174) — for an observation flagged `action_required` that
+  needs a follow-up without being an `immediate_danger`. Maps
+  observation severity to the action vocabulary, deliberately capped
+  BELOW `urgent` priority (`minor/moderate → normal`,
+  `major/critical → high`) — the emergency path's `urgent` priority
+  stays a visibly distinct signal, never collided with by a manually
+  raised one. Two client-side writes (insert the action, then link
+  `visit_observations.resulting_action_id`) rather than one atomic RPC
+  — acceptable here because it is a single deliberate click, not an
+  automation needing the same atomicity guarantee as a database
+  trigger, and the button itself disappears from local state the
+  instant the first write succeeds, so a double-click cannot double-raise.
+- **"Verify previous actions" (`PreviousActionVerify.tsx`, extending
+  the Group 2 Pre-Visit Brief's previously read-only action list)**:
+  Verify (`status → complete`, `verified_at`/`verified_by` stamped by
+  the pre-existing trigger) and Send back (`status → in_progress`,
+  requires a `verification_rejection_reason`) for any action showing
+  `awaiting_verification`. The component adds no validation of its
+  own beyond a client-side "did you type a reason" nicety — every real
+  rule (who may verify, who may reject, self-verification) is the
+  database's, surfaced verbatim in the UI on refusal.
+- **A probe-construction trap, not a migration defect, caught on the
+  first run**: `request.jwt.claims` is TRANSACTION-scoped
+  (`set_config`'s third argument), so it survives `RESET ROLE` — a
+  stale claim from an earlier check leaked into a later "as the
+  system" bookkeeping write via `auth.uid()`, silently changing WHO
+  completed the probe's test action and making the self-verification
+  check impossible to reach. Fixed by explicitly clearing
+  `request.jwt.claims` before any write not meant to carry a session
+  identity — the same discipline this file's own history already
+  requires for the "unauthorised consultant" pattern.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1417 admin — 3 new `actionsVerificationSql.test.ts` cases; 691
+  portal — unchanged besides `clientServerBoundary.test.ts` picking up
+  the new component automatically), all five CI guards pass (46
+  shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated routes,
+  unchanged; 42 static admin routes, all reachable; 102 blind-update
+  chains, unchanged — both new UPDATE call sites use `COUNT_EXACT`/
+  `judgeWrite()` from the start), both production builds compile.
+  Migration 175 applied live and verified (6/6 probe checks —
+  `supabase/probes/175_consultancy_actions_verification.sql`).
+
+**Group 5 (Report Builder, versioning, distribution) has not been
+started.**
 

@@ -20,7 +20,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Camera, AlertTriangle, FileText } from 'lucide-react';
+import { Loader2, Plus, Camera, AlertTriangle, FileText, ClipboardCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { uploadEvidence, evidenceUrl } from '@/lib/hs/evidence';
@@ -69,6 +69,19 @@ const EMPTY_DRAFT: DraftForm = {
 
 const fmtTime = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+// Core-OS 360 Phase 7, Group 4. Deliberately never 'urgent'/'critical' —
+// those are reserved for immediate_danger's own synchronous escalation
+// (visit_observation_escalate(), 174), which fires unconditionally and
+// independently of this manual path, so the two can never collide on
+// the same observation and the emergency path stays visibly distinct
+// from a manually-raised follow-up.
+const ACTION_SEVERITY_FROM_OBSERVATION: Record<ObservationSeverity, { severity: 'low' | 'medium' | 'high' | 'critical'; priority: 'normal' | 'high' }> = {
+  minor:    { severity: 'low',      priority: 'normal' },
+  moderate: { severity: 'medium',   priority: 'normal' },
+  major:    { severity: 'high',     priority: 'high' },
+  critical: { severity: 'critical', priority: 'high' },
+};
+
 export default function VisitCaptureClient({
   visitId, clientOrganisationId, status,
   observations: initialObservations, evidenceByObservation: initialEvidence,
@@ -85,6 +98,7 @@ export default function VisitCaptureClient({
   const [statusBusy, setStatusBusy] = useState(false);
   const [statusError, setStatusError] = useState('');
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [raisingFor, setRaisingFor] = useState<string | null>(null);
   const restored = useRef(false);
 
   useEffect(() => {
@@ -156,6 +170,41 @@ export default function VisitCaptureClient({
   async function openPhoto(path: string) {
     const url = await evidenceUrl(createClient(), path);
     if (url) window.open(url, '_blank', 'noopener');
+  }
+
+  // Manual "raise an action" path for a non-immediate-danger finding —
+  // immediate_danger already escalates synchronously and unconditionally
+  // (visit_observation_escalate(), 174); this is the SEPARATE path for
+  // an observation flagged action_required that needs a follow-up
+  // without being an emergency. actions_consultancy_insert (175) is the
+  // real authorization boundary; this only maps observation severity to
+  // an action's own vocabulary and links the two records together.
+  async function raiseAction(o: VisitObservation) {
+    setRaisingFor(o.id);
+    setError('');
+    const supabase = createClient();
+    const mapped = o.severity ? ACTION_SEVERITY_FROM_OBSERVATION[o.severity] : null;
+    const { data, error: insertErr } = await supabase.from('actions').insert({
+      company_id: clientOrganisationId,
+      title: `Visit finding: ${o.description.slice(0, 140)}`,
+      description: o.description,
+      action_type: 'hs_check',
+      priority: mapped?.priority ?? 'normal',
+      severity: mapped?.severity ?? null,
+      status: 'active',
+      source_type: 'consultant_visit',
+      source_id: visitId,
+      related_entity_type: 'visit_observation',
+      related_entity_id: o.id,
+    }).select('id').single();
+    if (insertErr) { setRaisingFor(null); setError(insertErr.message); return; }
+    const res = await supabase.from('visit_observations')
+      .update({ resulting_action_id: data.id }, COUNT_EXACT).eq('id', o.id);
+    const outcome = judgeWrite({ error: res.error, count: res.count });
+    setRaisingFor(null);
+    if (!outcome.ok) { setError(outcome.message ?? 'Action raised, but could not be linked to the observation'); return; }
+    setObservations(prev => prev.map(x => (x.id === o.id ? { ...x, resulting_action_id: data.id } : x)));
+    router.refresh();
   }
 
   async function startVisit() {
@@ -271,8 +320,11 @@ export default function VisitCaptureClient({
                 {o.location_section && <span>{o.location_section}</span>}
                 <span>{fmtTime(o.created_at)}</span>
                 {!o.client_visible && <span>· Internal only</span>}
-                {o.resulting_action_id && (
+                {o.resulting_action_id && o.observation_type === 'immediate_danger' && (
                   <span className="flex items-center gap-1" style={{ color: 'var(--red)' }}><AlertTriangle size={12} /> Escalated — action raised</span>
+                )}
+                {o.resulting_action_id && o.observation_type !== 'immediate_danger' && (
+                  <span className="flex items-center gap-1"><ClipboardCheck size={12} /> Action raised</span>
                 )}
               </div>
               <p className="text-sm mt-1" style={{ color: 'var(--ink)' }}>{o.description}</p>
@@ -288,11 +340,18 @@ export default function VisitCaptureClient({
                 </ul>
               )}
               {status === 'in_progress' && (
-                <label className="btn-ghost btn-sm mt-2 inline-flex items-center gap-1 cursor-pointer">
-                  {uploadingFor === o.id ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />} Add photo
-                  <input type="file" accept="image/*" capture="environment" className="hidden" disabled={uploadingFor === o.id}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) void uploadPhoto(o.id, f); e.target.value = ''; }} />
-                </label>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <label className="btn-ghost btn-sm inline-flex items-center gap-1 cursor-pointer">
+                    {uploadingFor === o.id ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />} Add photo
+                    <input type="file" accept="image/*" capture="environment" className="hidden" disabled={uploadingFor === o.id}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) void uploadPhoto(o.id, f); e.target.value = ''; }} />
+                  </label>
+                  {o.action_required && !o.resulting_action_id && (
+                    <button type="button" className="btn-ghost btn-sm" disabled={raisingFor === o.id} onClick={() => void raiseAction(o)}>
+                      {raisingFor === o.id ? <Loader2 size={13} className="animate-spin" /> : <ClipboardCheck size={13} />} Raise action
+                    </button>
+                  )}
+                </div>
               )}
             </li>
           ))}

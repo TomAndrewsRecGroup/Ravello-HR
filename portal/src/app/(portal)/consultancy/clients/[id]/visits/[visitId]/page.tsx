@@ -7,6 +7,7 @@ import { loadVisitCapture } from '@/lib/consultancy/loadVisitCapture';
 import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyVisit } from '@/lib/consultancy/types';
 import VisitCaptureClient from './VisitCaptureClient';
+import PreviousActionVerify from './PreviousActionVerify';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,10 +87,8 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
               {brief.previousVisitActions.length === 0 ? (
                 <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>No actions raised from that visit.</p>
               ) : (
-                <ul className="text-xs space-y-0.5">
-                  {brief.previousVisitActions.map(a => (
-                    <li key={a.id}>{a.title} — <strong>{a.status}</strong>{a.due_date ? ` (due ${fmt(a.due_date)})` : ''}</li>
-                  ))}
+                <ul className="text-xs space-y-1.5">
+                  {brief.previousVisitActions.map(a => <PreviousActionVerify key={a.id} action={a} />)}
                 </ul>
               )}
             </div>
