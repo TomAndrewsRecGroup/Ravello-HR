@@ -18,6 +18,15 @@ interface Props {
   loadError: string | null;
 }
 
+// A fresh, uncontained spill must never look identical to a closed one —
+// the same colour-badge-next-to-a-select pattern IncidentsClient.tsx
+// already uses for a mutable status.
+const STATUS_COLOUR: Record<EnvironmentalSpillStatus, string> = {
+  reported: 'var(--red)',
+  contained: 'var(--gold)',
+  closed: 'var(--ink-faint)',
+};
+
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
 export default function EnvironmentalSpillsClient({ companyId, spills, loadError }: Props) {
@@ -63,8 +72,8 @@ export default function EnvironmentalSpillsClient({ companyId, spills, loadError
   return (
     <div className="space-y-4">
       {loadError && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>{loadError}</p>}
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setOpen(o => !o)}>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setOpen(o => !o)}>
           <Plus size={14} className="mr-1" /> Record spill
         </button>
       </div>
@@ -98,7 +107,10 @@ export default function EnvironmentalSpillsClient({ companyId, spills, loadError
         </form>
       )}
       {spills.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><Droplets size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No spills recorded</p></div></div>
+        <div className="card empty-state p-10">
+          <Droplets size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No spills recorded.</p>
+        </div>
       ) : (
         <div className="table-wrapper"><table className="table">
           <thead><tr><th>Occurred</th><th>Substance</th><th>Receiving</th><th>Contained</th><th>Status</th></tr></thead>
@@ -110,9 +122,12 @@ export default function EnvironmentalSpillsClient({ companyId, spills, loadError
                 <td>{ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS[s.receiving_environment]}</td>
                 <td>{s.contained ? 'Yes' : 'No'}</td>
                 <td>
-                  <select className="input" value={s.status} onChange={e => updateStatus(s, e.target.value as EnvironmentalSpillStatus)}>
-                    {ENVIRONMENTAL_SPILL_STATUSES.map(st => <option key={st} value={st}>{ENVIRONMENTAL_SPILL_STATUS_LABELS[st]}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <span className="badge" style={{ color: STATUS_COLOUR[s.status] }}>{ENVIRONMENTAL_SPILL_STATUS_LABELS[s.status]}</span>
+                    <select className="input input-sm" value={s.status} onChange={e => updateStatus(s, e.target.value as EnvironmentalSpillStatus)}>
+                      {ENVIRONMENTAL_SPILL_STATUSES.map(st => <option key={st} value={st}>{ENVIRONMENTAL_SPILL_STATUS_LABELS[st]}</option>)}
+                    </select>
+                  </div>
                 </td>
               </tr>
             ))}

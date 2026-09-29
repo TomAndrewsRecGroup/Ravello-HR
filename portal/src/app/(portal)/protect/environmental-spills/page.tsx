@@ -1,11 +1,19 @@
 import type { Metadata } from 'next';
 import { Droplets } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS, ENVIRONMENTAL_SPILL_STATUS_LABELS } from '@/lib/hs/vocab';
+import { ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS, ENVIRONMENTAL_SPILL_STATUS_LABELS, type EnvironmentalSpillStatus } from '@/lib/hs/vocab';
 import type { EnvironmentalSpill } from '@/lib/hs/types';
 
 export const metadata: Metadata = { title: 'Environmental Spills' };
 export const dynamic = 'force-dynamic';
+
+// A fresh, uncontained spill must never look identical to a closed one —
+// mirrors admin's EnvironmentalSpillsClient.tsx STATUS_COLOUR exactly.
+const STATUS_COLOUR: Record<EnvironmentalSpillStatus, string> = {
+  reported: 'var(--red)',
+  contained: 'var(--gold)',
+  closed: 'var(--ink-faint)',
+};
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
@@ -33,7 +41,7 @@ export default async function ProtectEnvironmentalSpillsPage() {
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <strong>{s.substance}</strong>
                 <span className="badge">{ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS[s.receiving_environment]}</span>
-                <span className="ml-auto text-sm font-medium">{ENVIRONMENTAL_SPILL_STATUS_LABELS[s.status]}</span>
+                <span className="ml-auto badge" style={{ color: STATUS_COLOUR[s.status] }}>{ENVIRONMENTAL_SPILL_STATUS_LABELS[s.status]}</span>
               </div>
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmt(s.occurred_at)} · {s.contained ? 'Contained' : 'Not yet contained'}</p>
             </div>

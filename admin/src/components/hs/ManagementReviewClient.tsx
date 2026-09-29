@@ -173,8 +173,8 @@ export default function ManagementReviewClient({ companyId, companyName, reviews
         The data pack is a stored snapshot of factual counts — generated on demand, never recomputed after the
         fact, so a printed pack always matches what was actually reviewed at the time.
       </div>
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setAddOpen(o => !o)}>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setAddOpen(o => !o)}>
           <Plus size={14} className="mr-1" /> Schedule review
         </button>
       </div>
@@ -196,7 +196,10 @@ export default function ManagementReviewClient({ companyId, companyName, reviews
       )}
 
       {reviews.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><ClipboardList size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No management reviews recorded for this client yet</p></div></div>
+        <div className="card empty-state p-10">
+          <ClipboardList size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No management reviews recorded for this client yet.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {reviews.map(r => {

@@ -106,8 +106,8 @@ export default function EnvironmentalAspectsClient({ companyId, aspects, assessm
     <div className="space-y-4">
       {loadError && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>{loadError}</p>}
 
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setOpen(o => !o)}>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setOpen(o => !o)}>
           <Plus size={14} className="mr-1" /> Add aspect
         </button>
       </div>
@@ -141,11 +141,9 @@ export default function EnvironmentalAspectsClient({ companyId, aspects, assessm
       )}
 
       {aspects.length === 0 ? (
-        <div className="card p-12">
-          <div className="empty-state">
-            <Leaf size={28} style={{ color: 'var(--teal)' }} />
-            <p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No environmental aspects recorded yet</p>
-          </div>
+        <div className="card empty-state p-10">
+          <Leaf size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No environmental aspects recorded yet.</p>
         </div>
       ) : (
         <div className="space-y-3">

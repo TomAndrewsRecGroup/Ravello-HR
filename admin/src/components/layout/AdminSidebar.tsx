@@ -51,6 +51,9 @@ import {
   HardHat,
   Workflow,
   Network,
+  Award,
+  Scale,
+  CalendarClock,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
@@ -103,10 +106,13 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'PROTECT',
     items: [
-      { href: '/health-safety',                 label: 'Health & Safety', icon: HardHat },
-      { href: '/health-safety/sector-packs',     label: 'Sector Packs',   icon: Package },
-      { href: '/health-safety/audit-templates',  label: 'Audit Templates', icon: ClipboardList },
-      { href: '/health-safety/tests',            label: 'Tests',          icon: GraduationCap },
+      { href: '/health-safety',                    label: 'Health & Safety', icon: HardHat },
+      { href: '/health-safety/sector-packs',        label: 'Sector Packs',   icon: Package },
+      { href: '/health-safety/audit-templates',     label: 'Audit Templates', icon: ClipboardList },
+      { href: '/health-safety/tests',               label: 'Tests',          icon: GraduationCap },
+      { href: '/health-safety/legal-register',      label: 'Legal Register', icon: Scale },
+      { href: '/health-safety/iso-readiness',       label: 'ISO Readiness',  icon: Award },
+      { href: '/health-safety/governance-calendar', label: 'Governance Calendar', icon: CalendarClock },
     ],
   },
   {

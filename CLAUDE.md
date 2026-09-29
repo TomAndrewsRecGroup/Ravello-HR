@@ -6491,7 +6491,148 @@ already-audited shape; `hs_entity_table()` resolves both new branches;
 `search_records()` confirmed still `SECURITY INVOKER`, with `anon`
 still refused execute on it).
 
-**Group 9** (an admin+portal UI consistency pass across Groups 1-8) and
-**Group 10** (final regression, full adversarial QA, the Phase 5
-handover doc, and the phase gate) have not been started.
+### Core-OS 360 Phase 5, Group 9: UI consistency pass across Groups 1-8
+### (2026-09-29)
+
+A background audit agent reviewed every admin/portal page shipped in
+Groups 1-8 against the established `hs/` component conventions (button
+placement, empty-state markup, status colour-coding, sidebar reachability).
+Four findings, all fixed:
+
+- **Three cross-client pages had no sidebar entry**
+  (`/health-safety/legal-register`, `/health-safety/iso-readiness`,
+  `/health-safety/governance-calendar`) — reachable only by a direct
+  URL. `check-admin-routes-linked.sh` did not catch this: it matches by
+  TOP-LEVEL path segment, and `/health-safety` was already linked via
+  the per-client workspace — **a real, now-documented gap in that
+  guard**, not a false pass on these specific pages. Fixed: three links
+  added to `AdminSidebar.tsx`'s PROTECT group.
+- **Button-wrapper and empty-state markup had drifted** on
+  `EnvironmentalAspectsClient.tsx`, `EnvironmentalSpillsClient.tsx`,
+  `EnvironmentalMonitoringClient.tsx`, `EnvironmentalPermitsClient.tsx`,
+  `LegalRegisterClient.tsx`, `LegalRequirementsCatalogueClient.tsx`,
+  `ObjectivesClient.tsx`, `ManagementReviewClient.tsx` — several
+  Group 7/8 components stopped matching the `flex ml-auto` button-row
+  and `card empty-state p-10` pattern every earlier `hs/` component
+  uses. Fixed to match.
+- **`environmental_spills.status` and `permit_conditions.status`
+  rendered with no colour anywhere** — admin table/select AND the
+  portal's read-only equivalents — despite both vocabularies including
+  urgent values (`breach_recorded`, `overdue`) that should stand out
+  from a routine one, the same colour-badge-next-to-a-select pattern
+  `IncidentsClient.tsx` already established. Fixed in all four
+  locations, portal given the identical colour maps as admin rather
+  than independently invented ones.
+- **The portal's `/protect/environmental-waste` page fetched
+  `waste_streams` but never rendered it** — only the movements table
+  showed, silently dropping the "what kind of waste" reference data a
+  client needs to make sense of the movements below it. Fixed: added a
+  read-only waste-streams section mirroring admin's
+  `EnvironmentalWasteClient.tsx` two-section layout.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1320
+admin, unchanged — this group edited only markup, no new test-covered
+logic; 626 portal, unchanged), all five CI guards pass
+(`check-admin-routes-linked.sh`: 75 pages, all reachable — up from the
+count before the sidebar fix), both production builds compile.
+
+### Core-OS 360 Phase 5, Group 10: final regression, adversarial QA,
+### two real concurrency bugs found and fixed, handover (2026-09-29,
+### migrations 164-166)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE5_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**Concurrency testing (the brief's own explicit request: "two users
+approving different document versions — only one becomes active")
+found two real, High-severity bugs — not a hypothetical, both
+reproduced live before being fixed.**
+
+- **`hs_documents` (160) — migration 164.** Two INSERTs both naming the
+  same `supersedes_id` (two editors starting a new version off the SAME
+  currently-active parent) both reached `'active'` simultaneously —
+  160's own rule 7 ("exactly one document current at any time") was
+  false. `hs_document_supersede_roll()` only ever superseded the NAMED
+  parent, never the sibling that lost the race. Fixed: the trigger now
+  ALSO supersedes any other row sharing the same `supersedes_id` still
+  active. Reproduced failing 2/2 before, passing 4/4 after
+  (`supabase/probes/164_document_sibling_race.sql`), a normal linear
+  chain proven unaffected.
+- **`emergency_plans` (154) — migration 165, worse than the
+  hs_documents case.** Had **no automated supersede trigger at all** —
+  the documented "insert new, then update the old row to superseded"
+  discipline was entirely a client-side, two-sequential-write
+  responsibility (`EmergencyPlansClient.tsx`, Phase 4 Group 13) with
+  nothing in the database enforcing it. A single dropped connection
+  between the two writes — not a rare race, an ordinary partial
+  failure — leaves two active plans in the same lineage permanently,
+  since nothing ever reconciles it afterwards. This was **currently
+  reachable through the shipped product**, unlike the next finding.
+  Fixed with an AFTER INSERT trigger mirroring 164's shape, adapted to
+  this table's simpler active/superseded-only lifecycle. Proved 3/3:
+  the bug scenario, a normal chain, a genuine sibling race.
+- **`environmental_aspects` (156) — migration 166, same defect class,
+  fixed defensively.** Same missing-trigger gap. **Not yet reachable
+  through the product** — `EnvironmentalAspectsClient.tsx` has no "new
+  version" action yet, so no live write path sets `supersedes_id`
+  today. Fixed anyway, ahead of any future group wiring up aspect
+  versioning — workflow invariants live in triggers, never only in the
+  UI that happens to exist today. Proved 3/3.
+- **Every table using `supersedes_id` in this codebase is now
+  covered** — a repo-wide search confirms exactly these three tables
+  use the pattern, and all three now carry an automated,
+  adversarially-proven roll trigger.
+
+**Cross-tenant UUID-substitution attacks** (5 record types the brief
+named — legal obligations, controlled documents, audit findings,
+management reviews, environmental permits — both read and write,
+against a simulated live `authenticated` session):
+**zero vulnerabilities found**, 13/13 checks passed
+(`supabase/probes/phase5_qa_cross_tenant.sql`).
+
+**Storage security**: `hs_evidence_client_read` confirmed to genuinely
+inherit `hs_files`' own RLS through its `EXISTS` subquery, not an
+independently-maintained boundary that could drift — no cross-client
+access possible for any entity type.
+
+**RLS sweep**: all 27 Phase 5 tables plus the two 165/166-fixed tables
+confirmed RLS-on, no `anon` grant anywhere, no permissive `USING
+(true)` policy.
+
+**Governance calendar correctness, network-failure-during-write, and
+every already-proven per-group invariant** (aspect versioning, ISO
+evidence-mapping non-mutation, legal-applicability confirm gate,
+document immutability/effective-date/acknowledgement-pinning,
+objectives/management-review/audit-finding history) are all covered in
+the handover doc's §D.5-D.7 — cited against their own group's live
+probe rather than re-derived, since nothing in this pass touched those
+triggers.
+
+**Regression of pre-existing protected modules** (Referrals, A2I,
+Development Plans, E-Learning, Broadcast, Billing, HR, Recruitment,
+every Phase 1-4 H&S/workforce/operational-safety system): the full
+green test suites ARE the regression suite (none deleted, none
+skipped), both production builds compile, and a live-DB sweep confirmed
+RLS/grants/triggers/constraints on 21 sampled pre-existing critical
+tables — including `profiles`' three security-hardening guard triggers
+(088/093) — are untouched by anything in Phase 5.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(**1326 admin** — 1320 + 6 new: `emergencyPlanSupersedeRaceSql.test.ts`
+(3) and `environmentalAspectSupersedeRaceSql.test.ts` (3);
+`documentSiblingRaceSql.test.ts` (3) was already inside the 1320
+baseline, having landed with migration 164 before this pass began;
+**626 portal**, unchanged — this pass's portal edits were read-only
+page markup with no new route), all five CI guards pass
+(`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+75 pages, all reachable; `check-blind-updates.sh`: 102, unchanged), both
+production builds compile. Migrations 164, 165, 166 applied and
+verified live — each: trigger exists, function is `SECURITY DEFINER`,
+neither `anon` nor `authenticated` can execute it directly, and the
+specific bug scenario re-proved fixed against the LIVE function, not
+the dry-run copy.
+
+**Phase 5 is complete. Phase 6 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 

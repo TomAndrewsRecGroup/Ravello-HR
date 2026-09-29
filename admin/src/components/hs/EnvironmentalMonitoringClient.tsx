@@ -48,8 +48,8 @@ export default function EnvironmentalMonitoringClient({ companyId, readings, loa
   return (
     <div className="space-y-4">
       {loadError && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>{loadError}</p>}
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setOpen(o => !o)}><Plus size={14} className="mr-1" /> Record reading</button>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setOpen(o => !o)}><Plus size={14} className="mr-1" /> Record reading</button>
       </div>
       {open && (
         <form onSubmit={submit} className="card p-4 grid grid-cols-3 gap-3 items-end">
@@ -66,7 +66,10 @@ export default function EnvironmentalMonitoringClient({ companyId, readings, loa
         </form>
       )}
       {readings.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><Gauge size={28} style={{ color: 'var(--teal)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No readings recorded yet</p></div></div>
+        <div className="card empty-state p-10">
+          <Gauge size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No readings recorded yet.</p>
+        </div>
       ) : (
         <div className="table-wrapper"><table className="table">
           <thead><tr><th>Date</th><th>Category</th><th>Parameter</th><th>Value</th><th>Limit</th><th>Within limit</th></tr></thead>

@@ -24,25 +24,47 @@ export default async function ProtectEnvironmentalWastePage() {
   const streamName = (id: string) => streamRows.find(s => s.id === id)?.name ?? '—';
 
   return (
-    <main className="portal-page flex-1 space-y-4">
+    <main className="portal-page flex-1 space-y-6">
       {(streamsError || movementsError) && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>Waste records could not be loaded. Refresh to try again.</p>}
-      {moveRows.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><Trash2 size={28} style={{ color: 'var(--ink-faint)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No waste movements on file</p></div></div>
-      ) : (
-        <div className="table-wrapper"><table className="table">
-          <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Non-conformance</th></tr></thead>
-          <tbody>
-            {moveRows.map(m => (
-              <tr key={m.id}>
-                <td>{fmt(m.moved_at)}</td>
-                <td>{streamName(m.waste_stream_id)}</td>
-                <td>{m.quantity} {m.unit}</td>
-                <td>{m.non_conformance ? <span className="badge badge-urgent">Yes</span> : 'No'}</td>
-              </tr>
+
+      <section className="card p-4 space-y-3">
+        <h3 className="font-semibold">Waste streams</h3>
+        {streamRows.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No waste streams on file.</p>
+        ) : (
+          <ul className="text-sm space-y-1">
+            {streamRows.map(s => (
+              <li key={s.id} className="flex items-center gap-2">
+                <Trash2 size={12} style={{ color: 'var(--ink-faint)' }} />
+                {s.name}
+                {s.waste_code && <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{s.waste_code}</span>}
+                {s.hazardous && <span className="badge badge-urgent">Hazardous</span>}
+              </li>
             ))}
-          </tbody>
-        </table></div>
-      )}
+          </ul>
+        )}
+      </section>
+
+      <section className="card p-4 space-y-3">
+        <h3 className="font-semibold">Waste movements</h3>
+        {moveRows.length === 0 ? (
+          <div className="p-8"><div className="empty-state"><Trash2 size={28} style={{ color: 'var(--ink-faint)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No waste movements on file</p></div></div>
+        ) : (
+          <div className="table-wrapper"><table className="table">
+            <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Non-conformance</th></tr></thead>
+            <tbody>
+              {moveRows.map(m => (
+                <tr key={m.id}>
+                  <td>{fmt(m.moved_at)}</td>
+                  <td>{streamName(m.waste_stream_id)}</td>
+                  <td>{m.quantity} {m.unit}</td>
+                  <td>{m.non_conformance ? <span className="badge badge-urgent">Yes</span> : 'No'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
+      </section>
     </main>
   );
 }

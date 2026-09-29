@@ -135,8 +135,8 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
         Applicability is a human decision, never automatic. Evaluations use a cautious, factual vocabulary — this
         register never asserts a compliance conclusion on its own authority.
       </div>
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setLinkOpen(o => !o)}>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setLinkOpen(o => !o)}>
           <Plus size={14} className="mr-1" /> Link a legal requirement
         </button>
       </div>
@@ -156,7 +156,10 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
       )}
 
       {obligations.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><Scale size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No legal requirements linked to this client yet</p></div></div>
+        <div className="card empty-state p-10">
+          <Scale size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No legal requirements linked to this client yet.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {obligations.map(o => {

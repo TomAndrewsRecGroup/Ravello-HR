@@ -1,11 +1,27 @@
 import type { Metadata } from 'next';
 import { FileCheck } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { ENVIRONMENTAL_PERMIT_STATUS_LABELS, PERMIT_CONDITION_STATUS_LABELS } from '@/lib/hs/vocab';
+import { ENVIRONMENTAL_PERMIT_STATUS_LABELS, PERMIT_CONDITION_STATUS_LABELS, type EnvironmentalPermitStatus, type PermitConditionStatus } from '@/lib/hs/vocab';
 import type { EnvironmentalPermit, PermitCondition } from '@/lib/hs/types';
 
 export const metadata: Metadata = { title: 'Environmental Permits' };
 export const dynamic = 'force-dynamic';
+
+// Mirrors admin's EnvironmentalPermitsClient.tsx colour maps exactly.
+const PERMIT_STATUS_COLOUR: Record<EnvironmentalPermitStatus, string> = {
+  active:      'var(--teal)',
+  expired:     'var(--red)',
+  surrendered: 'var(--ink-faint)',
+  revoked:     'var(--red)',
+};
+
+const CONDITION_STATUS_COLOUR: Record<PermitConditionStatus, string> = {
+  current:          'var(--teal)',
+  evidence_due:     'var(--gold)',
+  overdue:          'var(--red)',
+  breach_recorded:  'var(--red)',
+  review_required:  'var(--gold)',
+};
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
@@ -42,14 +58,14 @@ export default async function ProtectEnvironmentalPermitsPage() {
                 <strong>{p.permit_type}</strong>
                 {p.permit_number && <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{p.permit_number}</span>}
                 <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Expires {fmt(p.expires_on)}</span>
-                <span className="ml-auto badge">{ENVIRONMENTAL_PERMIT_STATUS_LABELS[p.status]}</span>
+                <span className="ml-auto badge" style={{ color: PERMIT_STATUS_COLOUR[p.status] }}>{ENVIRONMENTAL_PERMIT_STATUS_LABELS[p.status]}</span>
               </div>
               {condRows.filter(c => c.environmental_permit_id === p.id).map(c => (
                 <div key={c.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--surface-soft)' }}>
                   <p>{c.condition_text}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
                     <span>Next review: {fmt(c.next_review_due)}</span>
-                    <span className="badge">{PERMIT_CONDITION_STATUS_LABELS[c.status]}</span>
+                    <span className="badge" style={{ color: CONDITION_STATUS_COLOUR[c.status] }}>{PERMIT_CONDITION_STATUS_LABELS[c.status]}</span>
                   </div>
                 </div>
               ))}

@@ -115,8 +115,8 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
         Progress status (on track / at risk / achieved / missed) is calculated automatically by the platform from
         the latest measurement against the stated target — never a manual judgement call.
       </div>
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setAddOpen(o => !o)}>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setAddOpen(o => !o)}>
           <Plus size={14} className="mr-1" /> Add objective
         </button>
       </div>
@@ -173,7 +173,10 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
       )}
 
       {objectives.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><Target size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No objectives recorded for this client yet</p></div></div>
+        <div className="card empty-state p-10">
+          <Target size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No objectives recorded for this client yet.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {objectives.map(o => {

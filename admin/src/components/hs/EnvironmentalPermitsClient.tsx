@@ -18,6 +18,23 @@ interface Props {
   loadError: string | null;
 }
 
+const PERMIT_STATUS_COLOUR: Record<EnvironmentalPermitStatus, string> = {
+  active:      'var(--teal)',
+  expired:     'var(--red)',
+  surrendered: 'var(--ink-faint)',
+  revoked:     'var(--red)',
+};
+
+// breach_recorded/overdue must never look like a routine condition — the
+// same colour-badge-next-to-a-select pattern IncidentsClient.tsx uses.
+const CONDITION_STATUS_COLOUR: Record<PermitConditionStatus, string> = {
+  current:          'var(--teal)',
+  evidence_due:     'var(--gold)',
+  overdue:          'var(--red)',
+  breach_recorded:  'var(--red)',
+  review_required:  'var(--gold)',
+};
+
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
 // A permit's status is a lifecycle fact (active/expired/surrendered/
@@ -84,8 +101,8 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
   return (
     <div className="space-y-4">
       {loadError && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>{loadError}</p>}
-      <div className="flex justify-end">
-        <button type="button" className="btn-cta btn-sm" onClick={() => setOpen(o => !o)}><Plus size={14} className="mr-1" /> Add permit</button>
+      <div className="flex">
+        <button type="button" className="btn-cta btn-sm ml-auto" onClick={() => setOpen(o => !o)}><Plus size={14} className="mr-1" /> Add permit</button>
       </div>
       {open && (
         <form onSubmit={submitPermit} className="card p-4 grid grid-cols-2 gap-3 items-end">
@@ -97,7 +114,10 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
         </form>
       )}
       {permits.length === 0 ? (
-        <div className="card p-12"><div className="empty-state"><FileCheck size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No environmental permits on file</p></div></div>
+        <div className="card empty-state p-10">
+          <FileCheck size={28} style={{ color: 'var(--ink-faint)' }} />
+          <p className="mt-2 text-sm" style={{ color: 'var(--ink-soft)' }}>No environmental permits on file.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {permits.map(p => {
@@ -111,7 +131,7 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
                     <strong>{p.permit_type}</strong>
                     {p.permit_number && <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{p.permit_number}</span>}
                     <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Expires {fmt(p.expires_on)}</span>
-                    <span className="ml-auto badge">{ENVIRONMENTAL_PERMIT_STATUS_LABELS[p.status]}</span>
+                    <span className="ml-auto badge" style={{ color: PERMIT_STATUS_COLOUR[p.status] }}>{ENVIRONMENTAL_PERMIT_STATUS_LABELS[p.status]}</span>
                   </div>
                 </button>
                 {isExpanded && (
@@ -144,6 +164,7 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
                             <p>{c.condition_text}</p>
                             <div className="flex items-center gap-3 mt-2">
                               <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Next review: {fmt(c.next_review_due)}</span>
+                              <span className="badge" style={{ color: CONDITION_STATUS_COLOUR[c.status] }}>{PERMIT_CONDITION_STATUS_LABELS[c.status]}</span>
                               <select className="input" style={{ width: 'auto' }} value={c.status} onChange={e => updateConditionStatus(c, e.target.value as PermitConditionStatus)}>
                                 {PERMIT_CONDITION_STATUSES.map(s => <option key={s} value={s}>{PERMIT_CONDITION_STATUS_LABELS[s]}</option>)}
                               </select>
