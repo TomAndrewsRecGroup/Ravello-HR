@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
-import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS } from '@/lib/consultancy/vocab';
+import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS, VISIT_STATUS_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyServiceLedgerEntry, ConsultancyServiceScope, ConsultancyVisit } from '@/lib/consultancy/types';
 import { buildCommunicationTimeline, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
 import ClientActionForms from './ClientActionForms';
@@ -142,11 +142,18 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
         </section>
 
         <section className="card p-4 space-y-2">
-          <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Visits</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Visits</h2>
+            <Link href={`/consultancy/clients/${id}/visits/new`} className="btn-secondary btn-sm">Book a visit</Link>
+          </div>
           {(visits ?? []).length === 0 ? <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No visits recorded.</p> : (
             <ul className="text-sm space-y-1" style={{ color: 'var(--ink-soft)' }}>
               {(visits as ConsultancyVisit[]).map(v => (
-                <li key={v.id}>{fmt(v.scheduled_date)} — {v.visit_type} ({v.status})</li>
+                <li key={v.id}>
+                  <Link href={`/consultancy/clients/${id}/visits/${v.id}`} className="underline">
+                    {fmt(v.scheduled_date)} — {v.visit_type} ({VISIT_STATUS_LABELS[v.status]})
+                  </Link>
+                </li>
               ))}
             </ul>
           )}
