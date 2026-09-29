@@ -97,6 +97,13 @@ export const TRIGGERED_ENTITIES = [
   'audit_findings',
   'consultation_records',
   'environmental_complaints',
+  // Core-OS 360 Phase 6, Group 3 (169): the Service Ledger's own three
+  // remaining sources — none had a consequence to fire before this,
+  // training_records deliberately so (see its own REMINDER_ENTITIES
+  // comment); the ledger rule is the first consumer of any of them.
+  'consultancy_visits',
+  'reports',
+  'training_records',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
