@@ -7060,7 +7060,7 @@ documented plan), never replaces it.
 ---
 
 ## Core-OS 360 Phase 7: Consultant Visit Mode & Automated Site-Visit
-## Reporting (in progress, from migration 173 onward)
+## Reporting (complete, migrations 173-176)
 
 Same discipline as every phase since Phase 4: logical, independently
 verified groups — migration → apply live → live rolled-back probe →
@@ -7465,6 +7465,106 @@ satisfy.
   compile. `supabase/probes/phase7_tenant_isolation.sql` run live and
   rolled back, all checks passed.
 
-**Group 8 (full regression, adversarial QA, handover) has not been
-started.**
+### Group 8 (no new migration): full regression, adversarial QA, handover
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE7_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+**Adversarial review of the whole Phase 7 surface (not just Group 7's
+own tenant-isolation probe) found one real, High-severity concurrency
+bug in Group 5's own report-issuing route — reproduced in the code's
+own logic before being reported, then fixed and proven with a new
+targeted test file.**
+
+- **The issue route generated the PDF, uploaded it and inserted the
+  `reports` row BEFORE the conditional status-flip that was supposed
+  to guard a double-submit.** `POST .../report/issue` read the draft,
+  built the PDF, uploaded it to storage, inserted a `reports` row (its
+  own Service Ledger entry via `ledger_report_generated`, keyed on
+  THAT row's own id — never deduplicated against a sibling), and only
+  THEN attempted the conditional `status: 'draft' → 'issued'` update
+  that was meant to be the one guard against two concurrent submits. A
+  genuine double-click, or two browser tabs open on the same draft,
+  would have raced past every one of those steps in parallel — both
+  requests see `status = 'draft'`, both generate and upload a PDF, both
+  insert a DISTINCT `reports` row (each with its own Service Ledger
+  entry) — before the SECOND request's status-flip finally lost the
+  race at the very end and only then reported 409, by which point the
+  damage (duplicate file, duplicate `reports` row, duplicate ledger
+  entry) was already done and irreversible from inside the request.
+- **Fixed with a claim-first, compensate-on-failure restructure.** The
+  conditional status update now runs FIRST, before any PDF work at
+  all: `UPDATE consultancy_visit_reports SET status = 'issued', ... {
+  count: 'exact' } WHERE id = draft.id AND status = 'draft'`. Only one
+  concurrent request can ever match — the loser is refused with 409
+  before a single byte of PDF is generated, before storage is touched,
+  before `reports` gets a row. Every subsequent step (PDF build,
+  upload, `reports` insert, `storage_path` link-back, visit-status
+  bump, email) now runs inside a `try`; any failure anywhere in that
+  block reverts the claim (`status` back to `'draft'`, `issued_at`/
+  `issued_by` cleared) in a `catch`, so a mid-work failure never leaves
+  a report permanently stuck `'issued'` with no file behind it — the
+  consultant sees the error and can simply try again. The revert
+  itself is best-effort and logged (matching the existing
+  best-effort/logged pattern the same file already uses for the visit-
+  status bump), since there is nothing more useful to do than surface
+  the ORIGINAL error if the revert also fails.
+- **`portal/src/app/api/consultancy/clients/[id]/visits/[visitId]/
+  report/issue/__tests__/route.test.ts`** (new, 3 cases, a hand-built
+  fake Supabase client): a lost claim (`count: 0`) refuses with 409 and
+  NEVER reaches the PDF/upload/reports-insert path at all (asserted
+  directly against the call log — no `storage:upload`, no
+  `insert:reports`); a won claim proceeds through upload → reports
+  insert → `storage_path` link → email, with the claim itself proven to
+  happen BEFORE any PDF/upload work by comparing call-log indices; a
+  mid-work failure (upload fails) reverts the claim back to `'draft'`.
+- **Two more blind-update chains this rewrite introduced were caught by
+  the CI guard and fixed the same way every prior one in this file
+  has been**: the `storage_path` link-back and the claim-revert both
+  now carry `{ count: 'exact' }` — `check-blind-updates.sh` still
+  reports exactly 102, unchanged.
+
+### Everything else audited clean
+
+- **Tenant isolation**: Group 7's own consolidated
+  `phase7_tenant_isolation.sql` probe already covers `visit_
+  observations`, `consultancy_visit_reports` and the new `actions`
+  consultancy policies for a genuinely different client under a real
+  session — re-read here rather than re-run, since nothing in Group 8
+  touched RLS, a trigger, or a policy on any Phase 7 table. No new
+  migration this group; no new live probe was needed for a defect that
+  is TypeScript-only (the route's own call ordering), and the fix was
+  proven with a route-level test against a fake client instead, the
+  same class of proof `hs_submit_audit()`'s retry-idempotency was
+  originally proven with in-process before its own live probe existed.
+- **Regression**: the full `vitest` suites across both apps ARE the
+  regression suite (none deleted, none skipped) — every pre-existing
+  module (Referrals, A2I, Development Plans, E-Learning, Broadcast,
+  Billing/Stripe, HR, Recruitment, every Phase 1-6 H&S/workforce/
+  governance/consultancy subsystem) stayed green throughout this pass,
+  and both production builds compile.
+- **Email/idempotency**: the issue route's `email_log` claim-before-
+  send (`dedupe_key = visit-report:<visit_id>:<version>`, from Group 5)
+  is unaffected by the claim-first restructure — it still runs after
+  the `reports` insert succeeds, inside the same `try` block, so a
+  reverted claim (a failure before the email step) never leaves a
+  dangling `email_log` row either.
+- **Service Ledger correctness**: with the race closed, `reports.
+  created` can now only ever happen once per successful issue — so
+  `ledger_report_generated` (169) firing once per genuine issue,
+  never once per race participant, is now actually guaranteed by the
+  route's own structure rather than merely usual-case true.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1437 admin, unchanged — this group's fix and its test are portal-only;
+703 portal — 700 + 3 new `route.test.ts` cases for the issue route),
+all five CI guards pass with no regressions (`check-shared-dupes.sh`:
+47 pairs; `check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 42 static routes, all
+reachable; `check-blind-updates.sh`: 102, unchanged — both new
+`.update()` chains this fix introduced were built with `{ count:
+'exact' }` from the start), both production builds compile.
+
+**Phase 7 is complete. Phase 8 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 
