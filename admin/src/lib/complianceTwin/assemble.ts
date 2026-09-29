@@ -117,7 +117,13 @@ function safetyArea(k: HsKpis): ComplianceTwinArea {
     amber.push(`${k.equipmentDueSoonCount} equipment item(s) due for inspection within 30 days`);
   }
   if (k.lastAuditScore != null && k.lastAuditScore < AUDIT_SCORE_LOW_THRESHOLD) {
-    amber.push(`Last audit scored ${k.lastAuditScore}%, below the ${AUDIT_SCORE_LOW_THRESHOLD}% threshold`);
+    // hs_audits.score is always an integer today (hs_submit_audit()
+    // rounds it, and that RPC is the table's only writer — checked
+    // before deciding this needed no Math.round of its own). Rounded
+    // here anyway for the same defensive consistency every other
+    // percentage in this file already has, in case a future writer
+    // ever stores a fractional score.
+    amber.push(`Last audit scored ${Math.round(k.lastAuditScore)}%, below the ${AUDIT_SCORE_LOW_THRESHOLD}% threshold`);
   }
 
   return buildArea(
@@ -151,7 +157,21 @@ function governanceArea(k: GovernanceKpis): ComplianceTwinArea {
     'Governance & Environmental',
     red,
     amber,
-    'No overdue legal obligation reviews, objectives are on track, and recorded waste non-conformance is within range',
+    // Found in Group 3's own adversarial review: unlike the other four
+    // areas' clean reasons, which are all built from plain COUNTS (a
+    // count of zero is unambiguous whether or not anything was ever
+    // recorded), this area's two amber checks are PERCENTAGES that are
+    // null with no data at all — the same shape lib/hs/kpis.ts's own
+    // audit score and lib/evidenceEngine/analyze.ts's own coverage
+    // percent already carry an explicit "(if any)"/"(or none recorded)"
+    // caveat for. The original wording here ("objectives are on track")
+    // read as a verified positive claim even for a client with zero
+    // objectives and zero waste movements ever recorded — indistinguishable
+    // from a client whose objectives were genuinely checked and found on
+    // track. Reworded so a lack of data is never presented as a
+    // confirmed good state, matching this codebase's standing rule that
+    // absence of evidence is not evidence of a positive finding.
+    'No overdue legal obligation reviews on record, and no evidence of objectives falling behind or elevated waste non-conformance',
   );
 }
 
@@ -227,8 +247,14 @@ function evidenceArea(e: EvidenceCoverageSummary): ComplianceTwinArea {
 
   if (e.coveragePercent != null && e.coveragePercent < EVIDENCE_RED_THRESHOLD) {
     red.push(`Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${EVIDENCE_RED_THRESHOLD}% threshold`);
-  }
-  if (e.coveragePercent != null && e.coveragePercent < EVIDENCE_AMBER_THRESHOLD) {
+  } else if (e.coveragePercent != null && e.coveragePercent < EVIDENCE_AMBER_THRESHOLD) {
+    // Deliberately `else if`, not two independent checks — found in
+    // Group 3's own adversarial review. Coverage below the RED
+    // threshold is also, trivially, below the amber one; two
+    // independent `if`s reported both facts together ("below 50%" and
+    // "below 90%") as if they were separate findings, when they are
+    // the same number crossing two thresholds at once. A red area
+    // reports only its own, more severe, reason.
     amber.push(
       `Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${EVIDENCE_AMBER_THRESHOLD}% threshold`,
     );

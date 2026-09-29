@@ -8365,13 +8365,67 @@ picking up the new route automatically), all five CI guards pass
 including `/health-safety/<companyId>/digital-twin` and
 `/protect/digital-twin`.
 
-### Group 3
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Group 2 is committed and
-merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE12_HANDOVER.md`.
 
-**Phase 13 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+Two real Medium-severity defects were found in `assemble.ts`'s own
+reason-string logic, both reproduced (a failing test, or a careful
+manual trace) before being fixed, both re-verified afterward:
+
+- **A redundant, confusing pair of reasons under Evidence.**
+  `evidenceArea()`'s red check (`< 50%`) and amber check (`< 90%`) were
+  two INDEPENDENT `if`s against the SAME `coveragePercent` number, so a
+  coverage of 30% produced BOTH "below the 50% threshold" and "below
+  the 90% threshold" together — the identical fact stated twice at two
+  different, both-true thresholds. Reproduced with a new test
+  (`reports the evidence coverage fact ONCE... when below the red
+  threshold`) — confirmed failing (length 2, expected 1) — then fixed
+  by making the amber check `else if`, so a red finding reports only
+  its own, more severe reason. This is the only place in the file
+  where two thresholds check the SAME number; every other area's red/
+  amber pairs are independent facts, so the bug class cannot recur
+  elsewhere by construction.
+- **Governance's clean-state wording implied verification that may
+  never have happened.** Safety's clean reason already says "...the
+  last audit score (**if any**) is at or above threshold" and
+  evidence's says "...(**or no register completions have been
+  recorded yet**)" — both honestly acknowledge that a lack of adverse
+  findings might mean there is simply no data. Every other area's
+  clean facts are plain COUNTS (unambiguous either way), so only
+  safety and evidence needed the caveat — except governance's own two
+  PERCENTAGE checks (`objectivesOnTrackPercent`,
+  `wasteNonConformancePercent`, null with zero data, the identical
+  shape) had been missed: its original wording ("objectives are on
+  track...") read as a verified positive claim indistinguishable from
+  a client with zero objectives and zero waste movements ever
+  recorded. The same risk this codebase's own standing rules already
+  treat seriously elsewhere (the referral gate's "absence of evidence
+  is a FAIL, not a pass"; the audit engine's "recorded assessment
+  outcome, never legally compliant"). Reworded to "No overdue legal
+  obligation reviews **on record**, and **no evidence of** objectives
+  falling behind or elevated waste non-conformance" — no test needed
+  updating, since the existing test only pins `reasons.length === 1`
+  for the clean baseline, not the exact string.
+- **Also hardened, not a defect**: `lastAuditScore` is now wrapped in
+  `Math.round()` in its amber reason for defensive consistency with
+  every other percentage in the file, even though `hs_submit_audit()`
+  — the table's only writer — already always stores an integer score;
+  checked, not assumed, before deciding this needed nothing.
+- **Checked and found clean**: no reason string anywhere leaks a
+  hazard/obligation/incident title or any free text (every reason is
+  built from a count or a rounded percentage only); every read in both
+  pages is scoped to the caller's own company, the identical pattern
+  every one of the five source pages already uses; the `loadError`-
+  blocks-all-content rendering pattern matches `IncidentPatternsView.tsx`'s
+  own existing convention exactly, not a new gap; the `employee_records`
+  headcount query touches only `EMPLOYEE_SAFE_COLUMNS` (131)-permitted
+  columns.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1518 admin — 1517 + 1 new adversarial regression test; 712 portal,
+unchanged), all five CI guards pass, both production builds compile.
+
+**Phase 12 is complete. Phase 13 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
