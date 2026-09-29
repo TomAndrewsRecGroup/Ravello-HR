@@ -8120,7 +8120,7 @@ is merged and deployed, per the operator's standing instruction.
 ---
 
 ## Core-OS 360 Phase 11: Evidence Engine & Evidence-Backed Compliance
-## (in progress, no migration so far)
+## (complete, no migration)
 
 No detailed operator brief exists in the repo for this phase (the same
 situation Phases 8-10 were in). Scope: `docs/CORE_OS_360_PHASE11_PLAN.md`.
@@ -8186,4 +8186,29 @@ from 50).
   group writes nothing, read-only throughout), both production
   builds compile, including `/health-safety/<companyId>/evidence`
   and `/protect/evidence`.
+
+### Group 3 (no migration): full regression, adversarial QA, handover
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE11_HANDOVER.md`.
+**Gate: PASS.**
+
+A genuinely thorough adversarial pass — sensitive-evidence leakage
+into the Evidence Library, `register_completion`'s own RLS read gate,
+historical-vs-current-state framing of the gap report, the browsing
+list's un-noticed cap, and the signed-URL-on-click flow, each checked
+against actual code and live policy text rather than assumed — found
+**no Critical, High or Medium defect**. This is a genuine, not a
+formulaic, result: the previous three phases (8, 9, 10) each surfaced
+one real Medium-severity issue on their own adversarial passes; this
+one did not, and reporting a clean pass honestly matters more than
+manufacturing a finding to match a pattern. Full reasoning for each
+angle checked is in the handover doc's own §C.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1492 admin, 710 portal, both unchanged — this pass found nothing to
+fix), all five CI guards pass with no regressions, both production
+builds compile.
+
+**Phase 11 is complete. Phase 12 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
