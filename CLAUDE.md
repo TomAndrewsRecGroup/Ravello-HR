@@ -6636,3 +6636,52 @@ the dry-run copy.
 **Phase 5 is complete. Phase 6 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+### Phase 5 gate follow-up: the admin routes-linked guard rewritten
+### (2026-09-29)
+
+Before opening the PR, the handover's own "minor issues" list (§G) was
+reviewed to decide what actually needed fixing versus what was already
+a documented, deliberate scope decision. One was genuinely fixable:
+**`check-admin-routes-linked.sh` matched only the TOP-LEVEL path
+segment against the sidebar**, which is exactly why Group 9 found
+three `/health-safety/...` pages unlinked without the guard catching
+it — each sat under an already-linked prefix while having no link of
+its own anywhere in the app.
+
+- **Rewritten to check every STATIC (non-dynamic-segment) route's FULL
+  path against a literal reference ANYWHERE in the admin app** — the
+  sidebar, a tab, a button, a redirect — the same "quoted literal,
+  own-directory excluded" approach `portalPagesLinked.test.ts` (the
+  portal's own equivalent of this script) already established. A
+  dynamic route (`[id]`, `[companyId]`, …) stays excluded: it's reached
+  at runtime with a computed path, never a literal string a text search
+  could find.
+- **The rewrite itself found one genuinely unlinked-by-design page**:
+  `/clients/new`, a retired page kept only as a redirect to
+  `/clients/onboard` for old bookmarks — its only mention anywhere is a
+  code comment on the page that replaced it. Added to the guard's
+  `ALLOWED` list with that reason, the same pattern the script already
+  used for `/dashboard` (which needed no entry: it appears as a literal
+  `'/dashboard'` string in `AdminSidebar.tsx` itself).
+- **Mutation-tested against the real codebase, not just read**: a
+  single-reference route (`/health-safety/governance-calendar`) with
+  its one link removed correctly fails; restored, and the real,
+  unmodified codebase passes clean at 42 static routes checked, 0
+  unlinked. Runtime: under a second.
+- The guard's own reported count changed meaning — 75 → 42 — because it
+  now counts STATIC routes only (the old count included every
+  `page.tsx` under a linked top-level dynamic-segment tree, which said
+  nothing about whether that specific page was itself reachable).
+
+The other three §G minor issues were reviewed and left as-is,
+deliberately: `environmental_monitoring.within_limit`'s upper-bound-only
+shape and the inert Tavily research table are both documented, in-scope
+decisions, not bugs; permit checklist responses are a pre-existing
+Phase 4 scope note, unrelated to this phase.
+
+Verified: `tsc --noEmit` clean both apps (the change is a shell script,
+no TypeScript touched), full `vitest run` green (1326 admin, 626
+portal, unchanged), all five CI guards pass
+(`check-admin-routes-linked.sh`: 42 static routes, all reachable — the
+new, more precise count), both production builds compile.
+
