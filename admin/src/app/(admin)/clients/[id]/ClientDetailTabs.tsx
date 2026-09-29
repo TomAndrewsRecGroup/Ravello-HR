@@ -17,6 +17,7 @@ import LeadTab from './tabs/LeadTab';
 import HrTab from './tabs/HrTab';
 import CandidatesTab from './tabs/CandidatesTab';
 import InvoicesTab from './tabs/InvoicesTab';
+import WhatChangedTab from './tabs/WhatChangedTab';
 
 import { ACTION_PRIORITIES, COMPLIANCE_CATEGORIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUSES, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
 import FileLink from '@/components/modules/FileLink';
@@ -327,7 +328,7 @@ function BillingPanel({
 
 // Services tab removed — retainer + module access live together on the
 // Overview tab now (retainer modal opens on Save in FeatureFlagToggles).
-const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'HR', 'Friction', 'Invoices'] as const;
+const TABS = ['Overview', 'Roles', 'Candidates', 'Documents', 'Roadmap', 'Actions', 'Compliance', 'LEAD', 'HR', 'Friction', 'Invoices', 'What Changed'] as const;
 type Tab = typeof TABS[number];
 
 // Milestone vocabulary is shared with the portal (lib/roadmap/milestones.ts):
@@ -384,8 +385,11 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   const fetchedTabs = useRef(new Set<string>());
 
   const loadTabData = useCallback(async (tabName: string) => {
-    // Skip tabs that don't need lazy loading or are already loaded
-    if (['Overview', 'Roles', 'Invoices'].includes(tabName)) return;
+    // Skip tabs that don't need lazy loading or are already loaded.
+    // 'What Changed' manages its own fetch (WhatChangedTab.tsx) since
+    // it re-queries on every date change — the single-shot
+    // client-tab-data mechanism has no date parameter to key a refetch on.
+    if (['Overview', 'Roles', 'Invoices', 'What Changed'].includes(tabName)) return;
     if (fetchedTabs.current.has(tabName)) return;
     fetchedTabs.current.add(tabName);
     setTabLoading(tabName);
@@ -1262,6 +1266,11 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
       {/* ─── INVOICES ─────────────────────────────────── */}
       {tab === 'Invoices' && (
         <InvoicesTab companyId={company.id} users={users} />
+      )}
+
+      {/* ─── WHAT CHANGED ─────────────────────────────── */}
+      {tab === 'What Changed' && (
+        <WhatChangedTab companyId={company.id} />
       )}
 
     </div>
