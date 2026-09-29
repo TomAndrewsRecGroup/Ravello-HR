@@ -498,3 +498,69 @@ export const STANDARD_EVIDENCE_ENTITY_TYPE_LABELS: Record<StandardEvidenceEntity
   environmental_monitoring:     'Environmental monitoring reading',
   waste_movement:               'Waste movement',
 };
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+// EXACT cautious vocabulary — never "compliant"/"non_compliant"/
+// "legal"/"illegal" anywhere in these labels. See CLAUDE.md's standing
+// rule against certification/compliance-verdict language.
+
+// A HUMAN applicability decision (never AI, never automatic — the
+// database's own gate on organisation_legal_obligations_stamp() refuses
+// 'applicable'/'not_applicable' without a named assessor + timestamp).
+export const LEGAL_APPLICABILITY_STATUSES = ['not_assessed', 'applicable', 'not_applicable', 'under_review'] as const;
+export type LegalApplicabilityStatus = typeof LEGAL_APPLICABILITY_STATUSES[number];
+export const LEGAL_APPLICABILITY_STATUS_LABELS: Record<LegalApplicabilityStatus, string> = {
+  not_assessed:   'Not yet assessed',
+  applicable:     'Applicable',
+  not_applicable: 'Not applicable',
+  under_review:   'Under review',
+};
+
+// The ONE vocabulary compliance_evaluations.status may ever hold —
+// factual evaluation states, never a verdict on the platform's own
+// authority. 'potential_noncompliance'/'confirmed_noncompliance' are
+// the two that raise a client action (lib/events/legalRegisterRules.ts).
+export const COMPLIANCE_EVALUATION_STATUSES = [
+  'evidence_current', 'evidence_incomplete', 'review_due',
+  'potential_noncompliance', 'confirmed_noncompliance', 'not_evaluated',
+] as const;
+export type ComplianceEvaluationStatus = typeof COMPLIANCE_EVALUATION_STATUSES[number];
+export const COMPLIANCE_EVALUATION_STATUS_LABELS: Record<ComplianceEvaluationStatus, string> = {
+  evidence_current:        'Evidence current',
+  evidence_incomplete:     'Evidence incomplete',
+  review_due:              'Review due',
+  potential_noncompliance: 'Potential non-compliance recorded',
+  confirmed_noncompliance: 'Confirmed non-compliance recorded',
+  not_evaluated:           'Not yet evaluated',
+};
+
+// legal_requirements.category — a parallel, small legal-domain set,
+// genuinely different from COMPLIANCE_CATEGORIES (a client's own item
+// categories) and HS_REGISTER_CATEGORIES (recurring H&S check types): a
+// piece of LEGISLATION is neither. See migration 159's own header.
+export const LEGAL_REQUIREMENT_CATEGORIES = [
+  'health_safety', 'environmental', 'employment_law', 'data_protection',
+  'fire_safety', 'food_safety', 'licensing', 'consumer', 'general', 'other',
+] as const;
+export type LegalRequirementCategory = typeof LEGAL_REQUIREMENT_CATEGORIES[number];
+export const LEGAL_REQUIREMENT_CATEGORY_LABELS: Record<LegalRequirementCategory, string> = {
+  health_safety:   'Health & Safety',
+  environmental:   'Environmental',
+  employment_law:  'Employment Law',
+  data_protection: 'Data Protection',
+  fire_safety:     'Fire Safety',
+  food_safety:     'Food Safety',
+  licensing:       'Licensing',
+  consumer:        'Consumer',
+  general:         'General',
+  other:           'Other',
+};
+
+// The Tavily-research-notes foundation (inert today — no live API call
+// anywhere in this codebase; a later group wires one).
+export const LEGAL_RESEARCH_SOURCES = ['tavily', 'manual'] as const;
+export type LegalResearchSource = typeof LEGAL_RESEARCH_SOURCES[number];
+export const LEGAL_RESEARCH_SOURCE_LABELS: Record<LegalResearchSource, string> = {
+  tavily: 'Tavily (automated research)',
+  manual: 'Manual',
+};

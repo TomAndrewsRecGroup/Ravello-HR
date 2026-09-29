@@ -81,6 +81,10 @@ export const TRIGGERED_ENTITIES = [
   'environmental_monitoring',
   'environmental_permits',
   'permit_conditions',
+  // Core-OS 360 Phase 5, Group 4 (159): the Legal Register — an
+  // applicability decision changing, and a new compliance evaluation.
+  'organisation_legal_obligations',
+  'compliance_evaluations',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -130,6 +134,9 @@ export const REMINDER_ENTITIES = [
   // Core-OS 360 Phase 5, Group 3 (158): a real, user-entered ISO
   // certificate's own recorded expiry.
   'iso_certifications',
+  // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+  // next_review_due, rolled forward from the newest evaluation.
+  'organisation_legal_obligations',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

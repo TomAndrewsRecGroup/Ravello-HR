@@ -5679,3 +5679,142 @@ objectives & targets, management review, audit-engine enhancement,
 final QA) build on migration 158 onward and should read the governance
 map first.
 
+### Core-OS 360 Phase 5, Group 4: the Legal Register (2026-09-29,
+### migration 159)
+
+Builds on Groups 1-3 (156-158). Legal requirements, per-company
+obligations and evaluations, plus an inert foundation for a LATER
+Tavily-based external legal research feature (storage only, no live API
+call anywhere in this group).
+
+- **AI never decides applicability, absolute.**
+  `organisation_legal_obligations.applicability_status` is a human
+  decision; the database's own gate
+  (`organisation_legal_obligations_stamp()`) refuses recording
+  `applicable`/`not_applicable` without a named assessor
+  (`assessed_by`) and a timestamp (`assessed_at`) set together —
+  `under_review` needs no confirmer, since it is a staff FLAG for
+  further work, not a decision. No AI is wired anywhere in this group;
+  the gate exists so a later group cannot slip one in without also
+  rewriting this trigger. `assessed_by` is never auto-stamped from
+  `auth.uid()` — unlike ordinary bookkeeping columns, WHO made the
+  applicability call is itself part of the recorded decision, the same
+  choice `environmental_aspect_assessments_fill()` (156) made for
+  `confirmed_by`.
+- **Cautious, factual compliance vocabulary, exactly.**
+  `compliance_evaluations.status` is `evidence_current |
+  evidence_incomplete | review_due | potential_noncompliance |
+  confirmed_noncompliance | not_evaluated` — never
+  "compliant"/"non-compliant"/"legal"/"illegal" anywhere in this
+  subsystem's labels, copy or notifications. A vocab test
+  (`vocab.test.ts`) scans every label map for the banned verdict words;
+  a SQL-shape test (`legalRegisterSql.test.ts`) pins the CHECK's exact
+  six values.
+- **`legal_requirements` is a register of SOURCE MATERIAL, staff-only,
+  never client-visible even read-only** — a title, a small legal-domain
+  `category` (a parallel tuple, genuinely different from
+  `COMPLIANCE_CATEGORIES`/`HS_REGISTER_CATEGORIES`: a piece of
+  LEGISLATION is neither an HR item category nor a recurring H&S check
+  type), a jurisdiction, a SHORT staff-written internal summary — never
+  the actual statute text — and an optional link OUT to the real
+  legislation. A client sees the OBLIGATION and its EVALUATIONS for
+  requirements that apply to them (via `organisation_legal_obligations`/
+  `compliance_evaluations`, client-READ + staff-MANAGE, reusing
+  `risk.read`/`risk.create` — the same broadest existing "can see/add to
+  the H&S register" pair 158's ISO framework already reused), never the
+  browsable catalogue itself. The portal page therefore reads
+  `legal_requirements` titles with the SERVICE ROLE, scoped to exactly
+  the ids the session's own RLS-protected read of its obligations
+  already returned — never a broader catalogue browse.
+- **`compliance_evaluations` is event/history-shaped, insert-only** — a
+  correction is a new evaluation, never an edit
+  (`REVOKE UPDATE, DELETE, TRUNCATE`), the `hs_register_completions`/
+  `puwer_assessments` discipline. The one live "next review due" column
+  a reminder needs is rolled FORWARD onto
+  `organisation_legal_obligations.next_review_due` by an AFTER INSERT
+  trigger (`compliance_evaluations_roll()`), guarded "only when this is
+  the newest evaluation for this obligation" — the exact 148a/PUWER
+  lesson this codebase already learned: reading an insert-only history
+  table directly for a reminder fires once per historical row, not just
+  the current one. `company_id` on an evaluation is always derived from
+  its obligation, never trusted from the caller.
+- **Never a second action table.** A `potential_noncompliance` or
+  `confirmed_noncompliance` evaluation raises exactly one `actions` row
+  via the EXISTING `source_type = 'legal_requirement'` value — already
+  present in `actions_source_type_check` since Phase 4, so this
+  migration adds no `ALTER TABLE public.actions` at all.
+  `confirmed_noncompliance` is urgent and verification-required;
+  `potential_noncompliance` is high, not urgent, not yet a confirmed
+  finding. `evidence_current` is reported to STAFF ONLY (a routine,
+  clean evaluation needs no client email); a move to `applicable`
+  notifies the client admins + staff but raises no action on its own.
+  `admin/src/lib/events/legalRegisterRules.ts` is its own file — the
+  legal register spans every EHS pillar, the same "genuinely different
+  content gets its own file" call `environmentalRules.ts`/
+  `leadRules.ts`/`hireRules.ts`/`supportRules.ts` already made.
+- **Evidence rides the existing `hs_files`/`hs-evidence`
+  infrastructure** via a new `'compliance_evaluation'` branch (scope
+  `register`, gated on `risk.read`/`risk.create`) on the four evidence
+  functions — hung off the EVALUATION the proof was gathered for, not
+  the standing obligation link, a documented choice.
+- **The Tavily research-notes table
+  (`legal_requirement_research_notes`) is inert storage only** —
+  `source` (`tavily` | `manual`), `query_used`, `raw_result_summary`,
+  `reviewed_by`/`reviewed_at`, `action_taken`. No live API call
+  anywhere in this migration or the TypeScript it ships with; staff-only
+  RLS, never a Tavily key referenced. A LATER group wires the real call
+  and populates it; nothing here automates a legal conclusion or a
+  compliance-status change from anything in this table.
+- **`apply_write_guard()` on the two client-readable tables only**
+  (`organisation_legal_obligations`, `compliance_evaluations`) — the
+  exact 158 precedent (`management_system_standards`/`standard_clauses`
+  got no write guard; only the client-facing tables did).
+- Admin: a new `HsCompanyTabs.tsx` tab
+  (`/health-safety/<companyId>/legal`) for linking requirements, setting
+  applicability and recording evaluations, plus a cross-client
+  `/health-safety/legal-register` catalogue page (staff add/edit
+  `legal_requirements`) — no new sidebar entry, nests under the
+  already-linked `/health-safety` prefix. Portal: a read-only
+  `/protect/legal-register` page, gated by `protect` alone (nothing here
+  is self-certified).
+
+### Live probe
+
+`supabase/probes/159_legal_register.sql`, rolled back: 17 checks — RLS
+enabled on all four tables; `legal_requirements`/research-notes have no
+client SELECT policy at all; an `applicable` decision with no
+assessor refused, WITH one accepted; `under_review` needs no assessor;
+a non-cautious status (`'compliant'`) refused, `'potential_
+noncompliance'` accepted; a second evaluation preserves the first
+(`ORDER BY evaluated_at DESC` gives the latest); a late-backfilled OLDER
+evaluation never moves `next_review_due` backwards; `company_id` always
+derived from the obligation; evidence vocab resolves for
+`'compliance_evaluation'`; cross-organisation evidence refused; the
+write guard is present on both client-readable tables; RLS enabled; no
+new `SECURITY DEFINER` function executable by `anon`;
+`actions_source_type_check` already allows `'legal_requirement'`; no
+label anywhere reads a compliance-verdict word; `compliance_evaluations`
+has no UPDATE/DELETE grant to `authenticated`. All 17 passed.
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1204 admin —
+1173 + 31 new: `legalRegisterSql.test.ts` (17), `legalRegisterRules.test.ts`
+(7), plus 7 new `vocab.test.ts` cases/entries for the four new
+vocabularies; 616 portal — 614 + 2, `moduleAccess.test.ts`/
+`portalPagesLinked.test.ts` picking up `/protect/legal-register`
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 43 pairs; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+69 pages, all reachable; `check-blind-updates.sh`: 102, unchanged — the
+one new admin `.update()` on `organisation_legal_obligations` was built
+counted + judged from the start), both production builds compile.
+Migration 159 applied live and verified (RLS on, write guard applied,
+evidence vocab resolves, no Group 4 `SECURITY DEFINER` function
+executable by `anon`, `actions.source_type` already allows
+`'legal_requirement'`).
+
+**Later Phase 5 groups** (document control, objectives & targets,
+management review, audit-engine enhancement, final QA) build on
+migration 159 onward and should read the governance map first.
+

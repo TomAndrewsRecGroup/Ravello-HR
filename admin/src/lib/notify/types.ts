@@ -97,6 +97,13 @@ export const NOTIFICATION_TYPES = [
   // real user-entered certificate's own recorded expiry.
   'iso_certification_expiring',
   'iso_certification_expired',
+  // Core-OS 360 Phase 5 Group 4 (159): the Legal Register. Never
+  // "compliant"/"non-compliant"/"legal"/"illegal" — see CLAUDE.md's
+  // standing rule against certification/compliance-verdict language.
+  'legal_obligation_applicable',
+  'legal_evaluation_recorded',
+  'legal_evaluation_noncompliance',
+  'legal_obligation_review_due',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -231,6 +238,10 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   environmental_permit_condition_review: 'Environmental permit condition needs review',
   iso_certification_expiring: 'ISO certification expiring',
   iso_certification_expired:  'ISO certification expired',
+  legal_obligation_applicable:   'Legal requirement marked applicable',
+  legal_evaluation_recorded:     'Legal evaluation recorded',
+  legal_evaluation_noncompliance:'Legal register: non-compliance recorded',
+  legal_obligation_review_due:   'Legal register review due',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

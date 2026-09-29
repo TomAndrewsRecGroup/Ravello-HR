@@ -11,6 +11,7 @@ import type {
   EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
   EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
   IsoStandardCode, StandardEvidenceEntityType,
+  LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -563,4 +564,59 @@ export interface IsoCertification {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+
+export interface LegalRequirement {
+  id: string;
+  title: string;
+  category: LegalRequirementCategory;
+  jurisdiction: string;
+  summary: string | null;
+  source_url: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganisationLegalObligation {
+  id: string;
+  company_id: string;
+  legal_requirement_id: string;
+  applicability_status: LegalApplicabilityStatus;
+  assessed_by: string | null;
+  assessed_at: string | null;
+  assessment_rationale: string | null;
+  next_review_due: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplianceEvaluation {
+  id: string;
+  obligation_id: string;
+  company_id: string;
+  status: ComplianceEvaluationStatus;
+  evaluated_by: string | null;
+  evaluated_at: string;
+  notes: string | null;
+  next_review_due: string | null;
+  created_at: string;
+}
+
+// Inert Tavily-research foundation — no live API call anywhere in this
+// codebase yet; a later group wires one.
+export interface LegalRequirementResearchNote {
+  id: string;
+  legal_requirement_id: string;
+  source: LegalResearchSource;
+  query_used: string | null;
+  raw_result_summary: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  action_taken: string | null;
+  created_by: string | null;
+  created_at: string;
 }

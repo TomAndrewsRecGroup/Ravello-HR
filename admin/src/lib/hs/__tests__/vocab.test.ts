@@ -36,7 +36,11 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   + readFileSync(`${MIG}/156_environmental_aspects.sql`, 'utf8')
   // 157 adds spill receiving-environment/status, monitoring category
   // and environmental permit / permit condition status vocabularies.
-  + readFileSync(`${MIG}/157_environmental_incidents_waste_monitoring_permits.sql`, 'utf8');
+  + readFileSync(`${MIG}/157_environmental_incidents_waste_monitoring_permits.sql`, 'utf8')
+  // 159 adds the Legal Register's applicability status, compliance
+  // evaluation status, requirement category and research-note source
+  // vocabularies.
+  + readFileSync(`${MIG}/159_legal_register.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -126,6 +130,17 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       /issued_on\s+date,\s*expires_on\s+date,\s*status\s+text NOT NULL DEFAULT 'active' CHECK \(status IN \(/],
     ['permit condition statuses', V.PERMIT_CONDITION_STATUSES,
       /status\s+text NOT NULL DEFAULT 'current' CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 4 (159): the Legal Register. 159 is the
+    // LAST migration concatenated into `sql`, so a generic anchor
+    // resolves to its own occurrence regardless of earlier collisions.
+    ['legal requirement categories', V.LEGAL_REQUIREMENT_CATEGORIES,
+      /category\s+text NOT NULL CHECK \(category IN \(/],
+    ['legal applicability statuses', V.LEGAL_APPLICABILITY_STATUSES,
+      /applicability_status\s+text NOT NULL DEFAULT 'not_assessed' CHECK \(applicability_status IN \(/],
+    ['compliance evaluation statuses', V.COMPLIANCE_EVALUATION_STATUSES,
+      /status\s+text NOT NULL CHECK \(status IN \(/],
+    ['legal research sources', V.LEGAL_RESEARCH_SOURCES,
+      /source\s+text NOT NULL CHECK \(source IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -164,6 +179,10 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.PERMIT_CONDITION_STATUSES, V.PERMIT_CONDITION_STATUS_LABELS],
       [V.ISO_STANDARD_CODES, V.ISO_STANDARD_CODE_LABELS],
       [V.STANDARD_EVIDENCE_ENTITY_TYPES, V.STANDARD_EVIDENCE_ENTITY_TYPE_LABELS],
+      [V.LEGAL_REQUIREMENT_CATEGORIES, V.LEGAL_REQUIREMENT_CATEGORY_LABELS],
+      [V.LEGAL_APPLICABILITY_STATUSES, V.LEGAL_APPLICABILITY_STATUS_LABELS],
+      [V.COMPLIANCE_EVALUATION_STATUSES, V.COMPLIANCE_EVALUATION_STATUS_LABELS],
+      [V.LEGAL_RESEARCH_SOURCES, V.LEGAL_RESEARCH_SOURCE_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });
@@ -223,5 +242,45 @@ describe('ISO management-system framework (158)', () => {
     const stdTitles = [...stdBlock.matchAll(/'[a-z0-9_]+',\s*'([^']*)'/g)].map(m => m[1]);
     expect(stdTitles.length).toBe(2);
     for (const t of stdTitles) expect(t.toLowerCase()).not.toMatch(/compliant|certified/);
+  });
+});
+
+// Core-OS 360 Phase 5, Group 4 (migration 159): the Legal Register.
+// Rule 2 is EXACT and absolute — never "compliant"/"non_compliant"/
+// "legal"/"illegal" as a standalone compliance-verdict word anywhere in
+// these labels (the table names legal_requirements/legal_register are
+// fine; it is a VERDICT word this checks for).
+describe('the Legal Register (159) never asserts a compliance verdict', () => {
+  const m159 = readFileSync(`${MIG}/159_legal_register.sql`, 'utf8');
+
+  it('no label anywhere in this vocabulary reads compliant/non-compliant/illegal', () => {
+    const labelMaps: Record<string, string>[] = [
+      { ...V.LEGAL_APPLICABILITY_STATUS_LABELS },
+      { ...V.COMPLIANCE_EVALUATION_STATUS_LABELS },
+      { ...V.LEGAL_REQUIREMENT_CATEGORY_LABELS },
+      { ...V.LEGAL_RESEARCH_SOURCE_LABELS },
+    ];
+    for (const map of labelMaps) {
+      for (const label of Object.values(map)) {
+        expect(label.toLowerCase()).not.toMatch(/\bcompliant\b|\bnon-compliant\b|\billegal\b/);
+      }
+    }
+  });
+
+  it('compliance_evaluations.status is EXACTLY the six-value cautious vocabulary, never widened', () => {
+    expect([...V.COMPLIANCE_EVALUATION_STATUSES].sort()).toEqual([
+      'confirmed_noncompliance', 'evidence_current', 'evidence_incomplete',
+      'not_evaluated', 'potential_noncompliance', 'review_due',
+    ].sort());
+    expect(m159).not.toMatch(/status IN \([^)]*'compliant'/);
+    expect(m159).not.toMatch(/status IN \([^)]*'non_compliant'/);
+  });
+
+  it('an applicability decision needs a named assessor before it may read applicable/not_applicable', () => {
+    const fn = m159.slice(
+      m159.indexOf('FUNCTION public.organisation_legal_obligations_stamp'),
+      m159.indexOf('REVOKE ALL ON FUNCTION public.organisation_legal_obligations_stamp'));
+    expect(fn).toMatch(/applicability_status IN \('applicable', 'not_applicable'\)/);
+    expect(fn).toMatch(/assessed_by IS NULL OR NEW\.assessed_at IS NULL/);
   });
 });

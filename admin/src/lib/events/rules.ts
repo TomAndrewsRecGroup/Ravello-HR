@@ -14,6 +14,7 @@ import { hireRules } from './hireRules';
 import { safetyRules } from './safetyRules';
 import { workforceRules } from './workforceRules';
 import { environmentalRules } from './environmentalRules';
+import { legalRegisterRules } from './legalRegisterRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -402,6 +403,31 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+    // next_review_due — rolled forward from the newest compliance_
+    // evaluations row by the database's own trigger (the 148a/PUWER
+    // lesson: an insert-only history table cannot be read directly for
+    // a reminder, or it fires once per historical row). Never
+    // "compliance due" — a recorded review date, not a legal deadline.
+    id: 'legal_obligation_review_reminder',
+    on: 'organisation_legal_obligations.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const reqId = s(row.legal_requirement_id);
+      let title = 'A legal requirement';
+      if (reqId) {
+        const { data } = await sb.from('legal_requirements').select('title').eq('id', reqId).maybeSingle();
+        title = (data as { title?: string } | null)?.title ?? title;
+      }
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'legal_obligation_review_due',
+        title: `Legal register review of "${title}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/legal`, portal: '/protect/legal-register' },
+      })];
+    },
+  },
+  {
     id: 'hs_equipment_reminder',
     on: 'hs_equipment.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
@@ -580,7 +606,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules, ...environmentalRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules, ...environmentalRules, ...legalRegisterRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);

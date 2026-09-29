@@ -300,6 +300,23 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
+    // next_review_due, rolled forward by compliance_evaluations_roll()
+    // from the newest evaluation for that obligation — reading
+    // compliance_evaluations directly would fire once per historical
+    // row (the exact 148a/PUWER lesson). All obligations with a rolled
+    // date are read; 'not_assessed'/'under_review' ones with no
+    // evaluation yet simply have next_review_due = null and are
+    // filtered out by the .not(...is null) below.
+    id: 'organisation_legal_obligations', entity: 'organisation_legal_obligations',
+    select: 'id, company_id, legal_requirement_id, applicability_status, next_review_due',
+    query: (sb, from, to) => sb.from('organisation_legal_obligations')
+      .select('id, company_id, legal_requirement_id, applicability_status, next_review_due')
+      .not('next_review_due', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.next_review_due),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')
