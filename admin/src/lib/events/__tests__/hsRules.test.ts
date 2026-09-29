@@ -51,6 +51,12 @@ beforeEach(() => {
     hs_register_completions: [{ id: 'comp-1', item_id: 'item-1', company_id: 'co-1' }],
     hs_activities: [{ id: 'act-1', company_id: 'co-1', activity_type: 'site_visit', title: 'Quarterly visit', summary: 'Found a blocked fire exit on the mezzanine. Needs clearing before next week.' }],
     hs_audits: [{ id: 'audit-1', company_id: 'co-1', title: 'Fire safety walk-round', conducted_on: '2026-09-24', score: 67 }],
+    hs_equipment: [{ id: 'asset-1', company_id: 'co-1', name: 'Forklift 3', asset_type: 'vehicle' }],
+    emergency_plans: [{ id: 'plan-1', company_id: 'co-1', title: 'Fire Evacuation Plan', plan_type: 'fire' }],
+    inspection_responses: [
+      { id: 'iresp-1', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Forks free of cracks?', critical: true, rating: 'fail', comment: 'Visible crack' },
+      { id: 'iresp-2', inspection_id: 'insp-1', company_id: 'co-1', prompt: 'Tyres OK?', critical: false, rating: 'pass', comment: null },
+    ],
     hs_audit_responses: [
       { id: 'resp-1', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Fire exits clear?', rating: 'fail', comment: 'Boxes stacked against the rear exit.' },
       { id: 'resp-2', audit_id: 'audit-1', company_id: 'co-1', prompt: 'Extinguishers in date?', rating: 'pass', comment: null },
@@ -229,6 +235,101 @@ describe('hs rules', () => {
     expect(client.body).toBe('No findings.');
   });
 
+  const inspection = (overrides: Record<string, unknown> = {}) => eventRow({
+    id: 17, entity_type: 'inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'insp-1',
+    payload: {
+      new: { asset_id: 'asset-1', site_id: null, template_id: null, conducted_on: '2026-09-28', overall_outcome: 'pass', has_critical_failure: false, ...overrides },
+      old: {}, changed: [],
+    },
+  });
+
+  it('a FAILED inspection with a critical failure raises one CRITICAL, verification-required defect action, and tells the client (link to actions) and staff', async () => {
+    db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: true }));
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    // one finding (iresp-1); the pass raises nothing
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_inspection_defect', priority: 'urgent', severity: 'critical',
+      verification_required: true, source_type: 'inspection', source_id: 'iresp-1',
+      source_ref: 'inspection_response:iresp-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+      title: 'Defect: Forks free of cracks?', description: 'Visible crack',
+    });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'inspection_completed', link: '/protect/actions' });
+    expect(client.title).toBe('Inspection failed: Forklift 3');
+    expect(client.body).toContain('quarantined');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'inspection_completed', link: '/health-safety/co-1' });
+    expect(staff.title).toContain('Sample Co');
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+  });
+
+  it('a non-critical failure raises a LOW-severity, non-verification defect and still tells both sides', async () => {
+    db.tables.inspection_responses = db.tables.inspection_responses.map(r => r.id === 'iresp-1' ? { ...r, critical: false } : r);
+    db.tables.platform_events.push(inspection({ overall_outcome: 'fail', has_critical_failure: false }));
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'normal', severity: 'low', verification_required: false });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client.body).toBe('One or more items failed. A defect has been added to your PROTECT actions.');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(true);
+  });
+
+  it('an all-pass inspection tells the client only, not urgent, no staff notification', async () => {
+    db.tables.platform_events.push(inspection({ overall_outcome: 'pass', has_critical_failure: false }));
+    await processEvents(db.client, { rules: RULES });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'inspection_completed' });
+    expect(client.body).toBe('All items passed.');
+    expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
+
+  it('a LOLER thorough examination recording immediate danger raises a critical, verification-required action and tells both sides urgently', async () => {
+    const exam = eventRow({
+      id: 18, entity_type: 'hs_equipment_inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'exam-1',
+      payload: {
+        new: { equipment_id: 'asset-1', outcome: 'pass', next_due_on: null, examination_type: 'loler_thorough_examination', immediate_danger: true },
+        old: {}, changed: [],
+      },
+    });
+    db.tables.platform_events.push(exam);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_immediate_danger', priority: 'urgent', severity: 'critical',
+      verification_required: true, source_type: 'equipment_inspection', source_id: 'exam-1',
+      source_ref: 'hs_equipment_inspection:exam-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+    });
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'loler_immediate_danger', link: '/protect/actions' });
+    expect(client.title).toBe('Immediate danger recorded: Forklift 3');
+    expect(client.body).toContain('quarantined');
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'loler_immediate_danger', link: '/health-safety/co-1' });
+
+    // re-processing raises nothing twice
+    db.tables.platform_events[0].processed_at = null; db.tables.platform_events[0].claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+  });
+
+  it('a normal (non-immediate-danger) equipment inspection raises nothing from this rule', async () => {
+    const exam = eventRow({
+      id: 19, entity_type: 'hs_equipment_inspections', event_type: 'created', actor_kind: 'staff', entity_id: 'exam-2',
+      payload: { new: { equipment_id: 'asset-1', outcome: 'pass', next_due_on: '2027-09-28', examination_type: null, immediate_danger: false }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(exam);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications.some(n => n.type === 'loler_immediate_danger')).toBe(false);
+  });
+
   it('a new H&S document tells the client admins', async () => {
     const doc = eventRow({
       id: 20, entity_type: 'hs_documents', event_type: 'created', actor_kind: 'staff', entity_id: 'doc-1',
@@ -263,5 +364,170 @@ describe('hs rules', () => {
     expect(client).toMatchObject({ type: 'hs_test_result', link: '/protect/tests' });
     expect(client.title).toBe('Jordan Lee: Fire Warden Refresher — Passed');
     expect(db.tables.notifications.some(n => n.user_id === 'staff-1')).toBe(false);
+  });
+
+  it('a contractor suspended tells staff only (no portal page yet) with the client company name', async () => {
+    const updated = eventRow({
+      id: 23, entity_type: 'contractors', event_type: 'updated', actor_kind: 'staff', entity_id: 'contractor-1',
+      payload: { new: { name: 'Acme Scaffolding Ltd', approval_status: 'suspended', risk_rating: 'high' }, old: { approval_status: 'approved' }, changed: ['approval_status'] },
+    });
+    db.tables.platform_events.push(updated);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'contractor_status_changed', link: '/health-safety/co-1' });
+    expect(staff.title).toBe('Sample Co: Acme Scaffolding Ltd is now suspended');
+  });
+
+  it('a contractor moving to approved raises nothing from this rule', async () => {
+    const updated = eventRow({
+      id: 24, entity_type: 'contractors', event_type: 'updated', actor_kind: 'staff', entity_id: 'contractor-1',
+      payload: { new: { name: 'Acme Scaffolding Ltd', approval_status: 'approved', risk_rating: 'low' }, old: { approval_status: 'pending' }, changed: ['approval_status'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.type === 'contractor_status_changed')).toBe(false);
+  });
+
+  it('a permit suspended tells staff only (no portal page yet) with the permit number and company name', async () => {
+    const updated = eventRow({
+      id: 25, entity_type: 'permits', event_type: 'updated', actor_kind: 'staff', entity_id: 'permit-1',
+      payload: { new: { permit_number: 'PTW-2026-000001', status: 'suspended' }, old: { status: 'issued' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(updated);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'permit_status_changed', link: '/health-safety/co-1' });
+    expect(staff.title).toBe('Sample Co: permit PTW-2026-000001 is now suspended');
+  });
+
+  it('a permit moving to issued raises nothing from this rule (the normal, expected path)', async () => {
+    const updated = eventRow({
+      id: 26, entity_type: 'permits', event_type: 'updated', actor_kind: 'staff', entity_id: 'permit-1',
+      payload: { new: { permit_number: 'PTW-2026-000001', status: 'issued' }, old: { status: 'draft' }, changed: ['status'] },
+    });
+    db.tables.platform_events.push(updated);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.notifications.some(n => n.type === 'permit_status_changed')).toBe(false);
+  });
+
+  it('an isolation being applied tells staff only, naming the asset and the client company', async () => {
+    const created = eventRow({
+      id: 27, entity_type: 'isolations', event_type: 'created', actor_kind: 'staff', entity_id: 'iso-1',
+      payload: { new: { asset_id: 'asset-1' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'isolation_applied', link: '/health-safety/co-1/equipment' });
+    expect(staff.title).toContain('Sample Co');
+    expect(staff.title).toContain('Forklift 3');
+  });
+
+  it('a drill with issues raises ONE action, tells the client admins with a portal actions link, and tells staff', async () => {
+    const created = eventRow({
+      id: 28, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-1',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'issues_found' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_emergency_drill_finding', priority: 'normal',
+      source_ref: 'emergency_drill:drill-1', related_entity_type: 'emergency_plan', related_entity_id: 'plan-1',
+    });
+    expect(db.tables.actions[0].title).toBe('Drill finding: Fire Evacuation Plan');
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'emergency_drill_recorded', link: '/protect/actions' });
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'emergency_drill_recorded', link: '/health-safety/co-1' });
+  });
+
+  it('a failed drill raises a high-priority action', async () => {
+    const created = eventRow({
+      id: 29, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-2',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'failed' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'high' });
+  });
+
+  it('a successful drill raises nothing (the normal, expected outcome)', async () => {
+    const created = eventRow({
+      id: 30, entity_type: 'emergency_drills', event_type: 'created', actor_kind: 'staff', entity_id: 'drill-3',
+      payload: { new: { plan_id: 'plan-1', drill_date: '2026-09-28', outcome: 'successful' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  // Group 12 wiring sweep: puwer_assessments and emergency_plans each
+  // had a trigger but no consuming rule beyond a review-cycle reminder.
+
+  it('a non-compliant PUWER assessment raises ONE high-priority action and tells the client via the portal actions link', async () => {
+    const created = eventRow({
+      id: 31, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-1',
+      payload: { new: { asset_id: 'asset-1', outcome: 'non_compliant', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({
+      company_id: 'co-1', action_type: 'hs_puwer_finding', priority: 'high',
+      source_ref: 'puwer_assessment:puwer-1', related_entity_type: 'hs_equipment', related_entity_id: 'asset-1',
+    });
+    expect(db.tables.actions[0].title).toBe('PUWER assessment: Forklift 3');
+    const client = db.tables.notifications.find(n => n.user_id === 'ca')!;
+    expect(client).toMatchObject({ type: 'puwer_assessment_recorded', link: '/protect/actions' });
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'puwer_assessment_recorded', link: '/health-safety/co-1/equipment' });
+  });
+
+  it('a compliant-with-actions PUWER assessment raises a normal-priority action', async () => {
+    const created = eventRow({
+      id: 32, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-2',
+      payload: { new: { asset_id: 'asset-1', outcome: 'compliant_with_actions', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(1);
+    expect(db.tables.actions[0]).toMatchObject({ priority: 'normal' });
+  });
+
+  it('a compliant PUWER assessment raises nothing', async () => {
+    const created = eventRow({
+      id: 33, entity_type: 'puwer_assessments', event_type: 'created', actor_kind: 'staff', entity_id: 'puwer-3',
+      payload: { new: { asset_id: 'asset-1', outcome: 'compliant', assessed_on: '2026-09-28' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    await processEvents(db.client, { rules: RULES });
+    expect(db.tables.actions).toHaveLength(0);
+    expect(db.tables.notifications).toHaveLength(0);
+  });
+
+  it('a new emergency plan tells staff only, naming the client company (no portal page yet)', async () => {
+    const created = eventRow({
+      id: 34, entity_type: 'emergency_plans', event_type: 'created', actor_kind: 'staff', entity_id: 'plan-1',
+      payload: { new: { title: 'Fire Evacuation Plan' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(created);
+    const t = await processEvents(db.client, { rules: RULES });
+    expect(t.failed).toBe(0);
+    expect(db.tables.notifications.some(n => n.user_id === 'ca')).toBe(false);
+    const staff = db.tables.notifications.find(n => n.user_id === 'staff-1')!;
+    expect(staff).toMatchObject({ type: 'emergency_plan_added', link: '/health-safety/co-1' });
+    expect(staff.title).toContain('Sample Co');
+    expect(staff.title).toContain('Fire Evacuation Plan');
   });
 });

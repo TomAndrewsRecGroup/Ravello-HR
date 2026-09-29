@@ -42,10 +42,14 @@ export default function NewRequisitionPage() {
     employment_type: '', urgency: '', reason_for_hire: '',
     interview_stages: '2', reporting_line: '',
     must_haves_raw: '', nice_to_haves_raw: '', description: '',
+    job_role_id: '',
   });
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState('');
   const [templates, setTemplates] = useState<JDTemplate[]>([]);
+  // Core-OS 360 Phase 3: the workforce job role this vacancy fills. The
+  // person hired is assigned to it (137) with its pre-employment checks.
+  const [jobRoles, setJobRoles] = useState<{ id: string; title: string }[]>([]);
 
   function set(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })); }
 
@@ -54,6 +58,10 @@ export default function NewRequisitionPage() {
     const supabaseClient = createClient();
     supabaseClient.from('jd_templates').select('id,title,department,seniority,working_model,description,must_haves').order('title').then(({ data }) => {
       if (data) setTemplates(data as JDTemplate[]);
+    });
+    // RLS returns only this organisation's roles.
+    supabaseClient.from('job_roles').select('id,title').eq('active_status', 'active').order('title').limit(500).then(({ data }) => {
+      if (data) setJobRoles(data as { id: string; title: string }[]);
     });
   }, []);
 
@@ -141,6 +149,7 @@ export default function NewRequisitionPage() {
       must_haves: must_haves.length ? must_haves : null,
       nice_to_haves: nice_to_haves.length ? nice_to_haves : null,
       description: form.description || null, jd_text: jdText || null,
+      job_role_id: form.job_role_id || null,
       friction_score: finalScore ?? null, friction_level: finalScore?.overall_level ?? null,
       friction_recommendations: finalScore?.recommendations ?? null,
       friction_scored_at: finalScore ? new Date().toISOString() : null,
@@ -297,6 +306,18 @@ export default function NewRequisitionPage() {
                 <div><label className="label">Reason for hire</label><select value={form.reason_for_hire} onChange={e => set('reason_for_hire', e.target.value)} className="input"><option value="">Select…</option>{REASONS.map(r => <option key={r}>{r}</option>)}</select></div>
                 <div><label className="label">Interview stages</label><input type="number" min={1} max={6} value={form.interview_stages} onChange={e => set('interview_stages', e.target.value)} className="input" /></div>
                 <div><label className="label">Reporting line</label><input value={form.reporting_line} onChange={e => set('reporting_line', e.target.value)} className="input" placeholder="e.g. CEO, CFO" /></div>
+                {jobRoles.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="job-role">Workforce role <span style={{ color: 'var(--ink-faint)', fontWeight: 400 }}>(optional)</span></label>
+                    <select id="job-role" value={form.job_role_id} onChange={e => set('job_role_id', e.target.value)} className="input">
+                      <option value="">None</option>
+                      {jobRoles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
+                    </select>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+                      Whoever is hired is assigned to this role, with its pre-employment checks. Being hired never makes anyone ready to deploy on its own.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -15,7 +15,23 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   + readFileSync(`${MIG}/112_hs_incidents_equipment_toolbox.sql`, 'utf8')
   + readFileSync(`${MIG}/114_hs_equipment_inspections.sql`, 'utf8')
   // 125 replaces the incident type / severity / status vocabulary.
-  + readFileSync(`${MIG}/125_incidents_investigations_riddor.sql`, 'utf8');
+  + readFileSync(`${MIG}/125_incidents_investigations_riddor.sql`, 'utf8')
+  // 144 replaces hs_equipment's status CHECK to add 'quarantined' (DROP
+  // CONSTRAINT + ADD CONSTRAINT, same name — confirmed live as the ONE
+  // surviving constraint) and adds asset_type.
+  + readFileSync(`${MIG}/144_asset_register.sql`, 'utf8')
+  // 148 adds the PUWER assessment outcome vocabulary.
+  + readFileSync(`${MIG}/148_puwer_assessments.sql`, 'utf8')
+  // 149 adds the examination_type vocabulary.
+  + readFileSync(`${MIG}/149_loler_examinations.sql`, 'utf8')
+  // 150 adds the contractor approval status / risk rating / insurance type vocabularies.
+  + readFileSync(`${MIG}/150_contractors.sql`, 'utf8')
+  // 152 adds the permit type / status vocabularies.
+  + readFileSync(`${MIG}/152_permit_to_work.sql`, 'utf8')
+  // 153 adds the isolation type / status vocabularies.
+  + readFileSync(`${MIG}/153_isolation_loto.sql`, 'utf8')
+  // 154 adds the emergency plan type / status and drill outcome vocabularies.
+  + readFileSync(`${MIG}/154_emergency_planning.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -37,8 +53,44 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     ['incident types',    V.HS_INCIDENT_TYPES,       /hs_incidents_incident_type_check CHECK \(incident_type IN \(/],
     ['incident severities', V.HS_INCIDENT_SEVERITIES, /hs_incidents_severity_check CHECK \(severity IS NULL OR severity IN \(/],
     ['incident statuses', V.HS_INCIDENT_STATUSES,    /hs_incidents_status_check CHECK \(status IN \(/],
-    ['equipment statuses', V.HS_EQUIPMENT_STATUSES,  /DEFAULT 'in_service' CHECK \(status IN \(/],
-    ['equipment inspection outcomes', V.HS_EQUIPMENT_INSPECTION_OUTCOMES, /outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['equipment statuses', V.HS_EQUIPMENT_STATUSES,  /hs_equipment_status_check\s*CHECK \(status IN \(/],
+    // Anchored on the preceding inspected_on column: 148's puwer_assessments
+    // table has a textually identical "outcome text NOT NULL CHECK
+    // (outcome IN (" phrase, and listAfter() takes the LAST match in the
+    // concatenated sql — an unqualified anchor here would silently start
+    // resolving to 148's tuple instead of 114's.
+    ['equipment inspection outcomes', V.HS_EQUIPMENT_INSPECTION_OUTCOMES,
+      /inspected_on\s+date NOT NULL CHECK \(inspected_on <= current_date \+ 1\),\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['asset types', V.HS_ASSET_TYPES, /asset_type\s+text\s*CHECK \(asset_type IS NULL OR asset_type IN\s*\(/],
+    // A distinguishing preceding column is required here: 114's
+    // hs_equipment_inspections.outcome CHECK is textually IDENTICAL
+    // ("outcome          text NOT NULL CHECK (outcome IN (") to this
+    // table's, and listAfter() always takes the LAST match in the
+    // concatenated sql — without this, both tuples would silently
+    // resolve to whichever migration is read last.
+    ['PUWER assessment outcomes', V.PUWER_ASSESSMENT_OUTCOMES,
+      /inspection_id\s+uuid REFERENCES public\.inspections\(id\) ON DELETE SET NULL,\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
+    ['examination types', V.HS_EXAMINATION_TYPES, /examination_type IS NULL OR examination_type IN \(/],
+    ['contractor approval statuses', V.CONTRACTOR_APPROVAL_STATUSES, /approval_status\s+text NOT NULL DEFAULT 'pending' CHECK \(approval_status IN \(/],
+    ['contractor risk ratings', V.CONTRACTOR_RISK_RATINGS, /risk_rating IS NULL OR risk_rating IN \(/],
+    ['contractor insurance types', V.CONTRACTOR_INSURANCE_TYPES, /insurance_type\s+text NOT NULL CHECK \(insurance_type IN \(/],
+    ['permit types', V.PERMIT_TYPES, /permit_type\s+text NOT NULL CHECK \(permit_type IN \(/],
+    ['permit statuses', V.PERMIT_STATUSES, /status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    ['isolation types', V.ISOLATION_TYPES, /isolation_type\s+text NOT NULL CHECK \(isolation_type IN \(/],
+    ['isolation statuses', V.ISOLATION_STATUSES, /status\s+text NOT NULL DEFAULT 'applied' CHECK \(status IN \(/],
+    ['emergency plan types', V.EMERGENCY_PLAN_TYPES, /plan_type\s+text NOT NULL CHECK \(plan_type IN \(/],
+    // hs_documents (106) has an IDENTICAL "status text NOT NULL DEFAULT
+    // 'active' CHECK (status IN (" phrase — anchored from the table's
+    // own plan_type column (unique to emergency_plans) through to its
+    // status column, the same "distinguish via preceding context" rule
+    // 114/148's outcome anchors already established.
+    ['emergency plan statuses', V.EMERGENCY_PLAN_STATUSES,
+      /plan_type\s+text NOT NULL CHECK \(plan_type IN \([\s\S]*?status\s+text NOT NULL DEFAULT 'active' CHECK \(status IN \(/],
+    // 114/148 both have a textually-identical "outcome text NOT NULL
+    // CHECK (outcome IN (" phrase; anchored on evacuation_time_seconds,
+    // unique to emergency_drills.
+    ['emergency drill outcomes', V.EMERGENCY_DRILL_OUTCOMES,
+      /evacuation_time_seconds\s+integer CHECK \(evacuation_time_seconds IS NULL OR evacuation_time_seconds >= 0\),\s*outcome\s+text NOT NULL CHECK \(outcome IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -54,6 +106,19 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.HS_INCIDENT_STATUSES, V.HS_INCIDENT_STATUS_LABELS],
       [V.HS_EQUIPMENT_STATUSES, V.HS_EQUIPMENT_STATUS_LABELS],
       [V.HS_EQUIPMENT_INSPECTION_OUTCOMES, V.HS_EQUIPMENT_INSPECTION_OUTCOME_LABELS],
+      [V.HS_ASSET_TYPES, V.HS_ASSET_TYPE_LABELS],
+      [V.PUWER_ASSESSMENT_OUTCOMES, V.PUWER_ASSESSMENT_OUTCOME_LABELS],
+      [V.HS_EXAMINATION_TYPES, V.HS_EXAMINATION_TYPE_LABELS],
+      [V.CONTRACTOR_APPROVAL_STATUSES, V.CONTRACTOR_APPROVAL_STATUS_LABELS],
+      [V.CONTRACTOR_RISK_RATINGS, V.CONTRACTOR_RISK_RATING_LABELS],
+      [V.CONTRACTOR_INSURANCE_TYPES, V.CONTRACTOR_INSURANCE_TYPE_LABELS],
+      [V.PERMIT_TYPES, V.PERMIT_TYPE_LABELS],
+      [V.PERMIT_STATUSES, V.PERMIT_STATUS_LABELS],
+      [V.ISOLATION_TYPES, V.ISOLATION_TYPE_LABELS],
+      [V.ISOLATION_STATUSES, V.ISOLATION_STATUS_LABELS],
+      [V.EMERGENCY_PLAN_TYPES, V.EMERGENCY_PLAN_TYPE_LABELS],
+      [V.EMERGENCY_PLAN_STATUSES, V.EMERGENCY_PLAN_STATUS_LABELS],
+      [V.EMERGENCY_DRILL_OUTCOMES, V.EMERGENCY_DRILL_OUTCOME_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

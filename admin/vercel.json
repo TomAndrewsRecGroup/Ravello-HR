@@ -50,6 +50,10 @@
     {
       "path": "/api/cron/monthly-value-reports",
       "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/workforce-refresh",
+      "schedule": "20 * * * *"
     }
   ]
 }

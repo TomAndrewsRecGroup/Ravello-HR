@@ -4,6 +4,9 @@
 import type {
   HsActivityType, HsAuditRating, HsCompletionOutcome, HsEquipmentInspectionOutcome, HsEquipmentStatus,
   HsIncidentSeverity, HsIncidentStatus, HsIncidentType, HsRecurrenceUnit,
+  ContractorApprovalStatus, ContractorRiskRating, ContractorInsuranceType,
+  PermitType, PermitStatus, IsolationType, IsolationStatus,
+  EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -207,5 +210,169 @@ export interface HsEquipmentInspection {
   next_due_on: string | null;
   notes: string | null;
   recorded_by_kind: string;
+  created_at: string;
+}
+
+// Phase 4, Group 13: admin UI row shapes for contractors (150),
+// permits (152), isolations (153) and emergency planning (154).
+
+export interface Contractor {
+  id: string;
+  company_id: string;
+  name: string;
+  registration_number: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  approval_status: ContractorApprovalStatus;
+  risk_rating: ContractorRiskRating | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractorInsurance {
+  id: string;
+  contractor_id: string;
+  company_id: string;
+  insurance_type: ContractorInsuranceType;
+  provider: string | null;
+  policy_number: string | null;
+  cover_amount: number | null;
+  expires_on: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PermitTemplate {
+  id: string;
+  company_id: string;
+  name: string;
+  permit_type: PermitType;
+  description: string | null;
+  required_authorisation_type_id: string | null;
+  default_validity_hours: number | null;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Permit {
+  id: string;
+  company_id: string;
+  permit_number: string | null;
+  template_id: string;
+  site_id: string;
+  asset_id: string | null;
+  scope_of_work: string;
+  status: PermitStatus;
+  issued_by: string | null;
+  issued_at: string | null;
+  authorised_person_id: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspended_reason: string | null;
+  revalidated_at: string | null;
+  revalidated_by: string | null;
+  closed_at: string | null;
+  closed_by: string | null;
+  closeout_notes: string | null;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  revoked_reason: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PermitPerson {
+  id: string;
+  permit_id: string;
+  company_id: string;
+  person_id: string;
+  added_at: string;
+}
+
+export interface Isolation {
+  id: string;
+  company_id: string;
+  asset_id: string;
+  permit_id: string | null;
+  isolation_type: IsolationType;
+  description: string | null;
+  status: IsolationStatus;
+  applied_by: string;
+  applied_at: string;
+  verified_by: string | null;
+  verified_at: string | null;
+  removed_by: string | null;
+  removed_at: string | null;
+  removal_verified_by: string | null;
+  removal_verified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IsolationLock {
+  id: string;
+  isolation_id: string;
+  company_id: string;
+  person_id: string;
+  lock_number: string | null;
+  applied_at: string;
+  removed_at: string | null;
+  removed_by: string | null;
+  override_reason: string | null;
+  override_authorised_by: string | null;
+}
+
+export interface EmergencyPlan {
+  id: string;
+  company_id: string;
+  site_id: string | null;
+  plan_type: EmergencyPlanType;
+  title: string;
+  description: string | null;
+  version: number;
+  review_due_at: string | null;
+  status: EmergencyPlanStatus;
+  supersedes_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmergencyPlanRole {
+  id: string;
+  plan_id: string;
+  authorisation_type_id: string;
+  min_count: number;
+  notes: string | null;
+}
+
+export interface EmergencyPlanEquipment {
+  id: string;
+  plan_id: string;
+  asset_id: string;
+  notes: string | null;
+}
+
+export interface EmergencyDrill {
+  id: string;
+  company_id: string;
+  plan_id: string;
+  site_id: string | null;
+  drill_date: string;
+  conducted_by: string | null;
+  evacuation_time_seconds: number | null;
+  outcome: EmergencyDrillOutcome;
+  findings: string | null;
+  created_by: string | null;
   created_at: string;
 }

@@ -4,6 +4,7 @@ import AdminTopbar from '@/components/layout/AdminTopbar';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import RequisitionPanel from './RequisitionPanel';
+import WorkforceRoleLink from './WorkforceRoleLink';
 import ReferralConfigPanel from '@/components/modules/ReferralConfigPanel';
 import InterviewSchedulePanel from './InterviewSchedulePanel';
 import { User, ExternalLink } from 'lucide-react';
@@ -70,7 +71,7 @@ export default async function RequisitionDetailPage(
       // editor from this row, so an unselected column reads as undefined,
       // the editor shows its default, and pressing Save writes that
       // default over a real stored value — GBP over USD, silently.
-      .select('id,company_id,title,department,seniority,stage,salary_range,salary_min,salary_max,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,location,employment_type,working_model,description,must_haves,nice_to_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,filled_at,companies(id,slug,name,manatal_client_id)')
+      .select('id,company_id,title,department,seniority,stage,salary_range,salary_min,salary_max,salary_currency,salary_period,salary_visible,headcount,manatal_industry_id,location,employment_type,working_model,description,must_haves,nice_to_haves,friction_score,friction_level,friction_recommendations,jd_text,ivylens_role_id,assigned_recruiter,manatal_job_id,manatal_published_at,created_at,filled_at,job_role_id,companies(id,slug,name,manatal_client_id)')
       .eq('id', params.id)
       .single(),
     supabase
@@ -102,6 +103,10 @@ export default async function RequisitionDetailPage(
   if (!req) notFound();
 
   const r        = req as any;
+  // Phase 3: the client's workforce job roles, for the hire → role link.
+  const { data: jobRoles } = await supabase.from('job_roles')
+    .select('id, title, active_status, safety_critical').eq('company_id', r.company_id).neq('active_status', 'inactive')
+    .order('title').limit(500);
   const company  = r.companies as any;
   const cands    = candidates ?? [];
   const days     = daysOpen(r.created_at);
@@ -419,6 +424,10 @@ export default async function RequisitionDetailPage(
           {/* ── Right: updater + friction ─────────────────── */}
           <div>
             <RequisitionPanel req={r} />
+            <div className="mt-5">
+              <WorkforceRoleLink requisitionId={r.id} current={r.job_role_id ?? null}
+                roles={(jobRoles ?? []) as { id: string; title: string; active_status: string; safety_critical: boolean }[]} />
+            </div>
           </div>
         </div>
       </main>

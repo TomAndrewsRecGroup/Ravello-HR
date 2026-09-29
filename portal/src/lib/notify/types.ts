@@ -62,6 +62,27 @@ export const NOTIFICATION_TYPES = [
   'hs_document_added',
   'hs_equipment_inspection_due',
   'hs_test_result',
+  // Core-OS 360 Phase 4 (145): the asset inspection engine.
+  'inspection_completed',
+  // Core-OS 360 Phase 4 (148): PUWER assessments.
+  'puwer_review_due',
+  // Core-OS 360 Phase 4 (149): LOLER immediate danger.
+  'loler_immediate_danger',
+  // Core-OS 360 Phase 4 (150): contractors.
+  'contractor_status_changed',
+  'contractor_insurance_expiring',
+  // Core-OS 360 Phase 4 (152): permit to work.
+  'permit_status_changed',
+  'permit_expiring',
+  // Core-OS 360 Phase 4 (153): isolation / LOTO.
+  'isolation_applied',
+  // Core-OS 360 Phase 4 (154): emergency planning.
+  'emergency_plan_review_due',
+  'emergency_drill_recorded',
+  'emergency_plan_added',
+  // Core-OS 360 Phase 4 Group 12 wiring sweep: PUWER had a trigger
+  // but no consuming rule beyond its review-cycle reminder.
+  'puwer_assessment_recorded',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -78,6 +99,11 @@ export const NOTIFICATION_TYPES = [
   'action_verification_requested',
   'action_verification_rejected',
   'action_overdue',
+  // Core-OS 360 Phase 3: workforce
+  'workforce_not_ready',
+  'workforce_evidence_expiring',
+  'workforce_exception_lapsing',
+  'occupational_health_review_due',
   // LEAD / HR flow
   'leave_requested',
   'role_filled',
@@ -166,7 +192,23 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   action_verification_requested: 'Action awaiting your verification',
   action_verification_rejected:  'Action not verified',
   action_overdue:                'Action overdue',
+  workforce_not_ready:            'No longer ready to deploy',
+  workforce_evidence_expiring:    'Workforce evidence expiring',
+  workforce_exception_lapsing:    'Deployment exception ending',
+  occupational_health_review_due: 'Occupational health review due',
   hs_equipment_inspection_due: 'Equipment inspection due',
+  inspection_completed:       'Asset inspection completed',
+  puwer_review_due:           'PUWER review due',
+  loler_immediate_danger:     'LOLER immediate danger recorded',
+  contractor_status_changed:    'Contractor status changed',
+  contractor_insurance_expiring: 'Contractor insurance expiring',
+  permit_status_changed:      'Permit status changed',
+  permit_expiring:            'Permit expiring',
+  isolation_applied:          'Isolation applied',
+  emergency_plan_review_due: 'Emergency plan review due',
+  emergency_drill_recorded:  'Emergency drill recorded',
+  emergency_plan_added:      'Emergency plan added',
+  puwer_assessment_recorded: 'PUWER assessment recorded',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

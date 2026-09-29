@@ -149,6 +149,8 @@ async function createKeyedAction(sb: SupabaseClient, c: Extract<Consequence, { k
     action_type: c.row.action_type, title: c.row.title.slice(0, 200), description: c.row.description ?? null,
     priority: c.row.priority, related_entity_type: c.row.related_entity_type ?? null, related_entity_id: c.row.related_entity_id ?? null,
     due_date: c.row.due_date ?? null, created_by_admin: c.row.created_by_admin ?? true,
+    severity: c.row.severity ?? null, source_type: c.row.source_type ?? null, source_id: c.row.source_id ?? null,
+    verification_required: c.row.verification_required ?? false,
   }, { onConflict: 'company_id,source_ref', ignoreDuplicates: true });
   if (error) throw new Error(`action upsert: ${error.message}`);
 }

@@ -21,7 +21,7 @@ export default async function TrainingRecordsPage() {
     </main>
   );
 
-  const [{ data: records }, { data: employees }] = await Promise.all([
+  const [{ data: records }, { data: employees }, capsRes] = await Promise.all([
     supabase.from('training_records')
       .select('id, employee_id, course_name, provider, completed_on, expires_on, notes')
       .eq('company_id', companyId)
@@ -31,11 +31,13 @@ export default async function TrainingRecordsPage() {
       .eq('company_id', companyId)
       .eq('status', 'active')
       .order('full_name', { ascending: true }),
+    supabase.rpc('my_capabilities'),
   ]);
+  const canManage = Array.isArray(capsRes.data) && (capsRes.data as string[]).includes('training.manage');
 
   return (
     <main className="portal-page flex-1">
-      <TrainingRecordsClient companyId={companyId} initialRecords={records ?? []} employees={employees ?? []} />
+      <TrainingRecordsClient companyId={companyId} initialRecords={records ?? []} employees={employees ?? []} canManage={canManage} />
     </main>
   );
 }

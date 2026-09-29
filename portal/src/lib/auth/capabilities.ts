@@ -33,6 +33,13 @@ export const CAPABILITIES = [
   'incident.read', 'incident.sensitive.read', 'incident.approve',
   'riddor.review',
   'templates.manage',
+  // Phase 3 (migration 132): workforce compliance and occupational health.
+  'workforce.read', 'workforce.manage', 'workforce.verify_safety_critical',
+  'training.verify', 'competency.assess', 'competency.verify',
+  'occupational_health.summary.read', 'occupational_health.clinical.read', 'occupational_health.manage',
+  'deployment.exception.approve',
+  // Phase 4 (migration 144): the asset register.
+  'asset.read', 'asset.manage', 'inspection.perform',
 ] as const;
 export type Capability = typeof CAPABILITIES[number];
 
@@ -40,7 +47,12 @@ export type Capability = typeof CAPABILITIES[number];
 export const SENSITIVE_CAPABILITIES: readonly Capability[] = [
   'hr.sensitive.read', 'hr.sensitive.write', 'billing.manage', 'consultancy.manage_access', 'audit.read',
   'incident.sensitive.read', 'riddor.review',
+  'occupational_health.summary.read', 'occupational_health.clinical.read', 'occupational_health.manage',
 ];
+
+/** Clinical occupational health is never implied by being staff: it needs
+ *  an explicit grant of this capability (SQL: has_explicit_capability). */
+export const EXPLICIT_ONLY_CAPABILITIES: readonly Capability[] = ['occupational_health.clinical.read'];
 
 export const ACCESS_ROLES = [
   'platform_super_admin', 'platform_staff',
@@ -48,6 +60,7 @@ export const ACCESS_ROLES = [
   'organisation_owner', 'organisation_admin', 'organisation_editor',
   'hse_manager', 'hse_advisor', 'site_manager', 'department_manager',
   'hr_manager', 'recruiter', 'employee', 'read_only',
+  'occupational_health_advisor',
 ] as const;
 export type AccessRole = typeof ACCESS_ROLES[number];
 
@@ -67,6 +80,7 @@ export const ACCESS_ROLE_LABELS: Record<AccessRole, string> = {
   recruiter:            'Recruiter',
   employee:             'Employee',
   read_only:            'Read Only',
+  occupational_health_advisor: 'Occupational Health Advisor',
 };
 
 /** Roles that may be GRANTED on an organisation (scope 'organisation'). */
@@ -84,7 +98,7 @@ const ORG_ADMIN: Capability[] = [
   'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
   'hr.sensitive.read', 'hr.sensitive.write', 'risk.read', 'risk.create', 'risk.approve', 'incident.create',
   'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage', 'training.manage',
-  'recruitment.manage', 'billing.read', 'audit.read',
+  'recruitment.manage', 'billing.read', 'audit.read', 'asset.read', 'asset.manage', 'inspection.perform',
 ];
 
 /** Every Phase 2 H&S capability — the roles that lead safety hold all of them. */
@@ -95,49 +109,72 @@ const HS_ALL: Capability[] = [
 /** Line managers: report, triage hazards, see incidents — no medical detail, no sign-off. */
 const HS_LINE: Capability[] = ['hazard.report', 'hazard.manage', 'incident.read'];
 
+/** Phase 3: those who run workforce compliance (roles, requirements,
+ *  verification, competence, time-limited exceptions). */
+const WF_LEAD: Capability[] = [
+  'workforce.read', 'workforce.manage', 'workforce.verify_safety_critical', 'training.verify',
+  'competency.assess', 'competency.verify', 'deployment.exception.approve',
+];
+/** Occupational health outcomes (no clinical detail) and recording them. */
+const OH_SUMMARY: Capability[] = ['occupational_health.summary.read', 'occupational_health.manage'];
+/** Phase 4 (migration 144): the asset register, same split as risk.read/risk.create.
+ *  'inspection.perform' (147) rides along on every role that already
+ *  holds asset.manage; 'employee' (147's other grantee) gets it on its
+ *  own below, since it holds neither asset.read nor asset.manage. */
+const ASSET_ALL: Capability[] = ['asset.read', 'asset.manage', 'inspection.perform'];
+const PLATFORM_ALL: Capability[] = CAPABILITIES.filter(c => !EXPLICIT_ONLY_CAPABILITIES.includes(c));
+
 export const ROLE_CAPABILITIES: Record<AccessRole, readonly Capability[]> = {
-  platform_super_admin: CAPABILITIES,
-  platform_staff:       CAPABILITIES.filter(c => c !== 'billing.manage'),
+  platform_super_admin: PLATFORM_ALL,
+  platform_staff:       PLATFORM_ALL.filter(c => c !== 'billing.manage'),
   consultancy_owner: [
     'organisation.read', 'organisation.manage', 'site.read', 'site.manage', 'people.read', 'people.write',
     'risk.read', 'risk.create', 'risk.approve', 'incident.create', 'incident.investigate', 'actions.assign',
     'contractors.manage', 'documents.manage', 'training.manage', 'billing.read', 'consultancy.client_access',
-    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL,
+    'consultancy.manage_access', 'broadcast.send', 'audit.read', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL,
   ],
   consultant: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', 'consultancy.client_access', ...HS_ALL,
+    'training.manage', 'consultancy.client_access', ...HS_ALL, ...WF_LEAD, ...ASSET_ALL,
   ],
-  organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL],
-  organisation_admin: [...ORG_ADMIN, ...HS_ALL],
+  organisation_owner: [...ORG_ADMIN, 'billing.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY],
+  organisation_admin: [...ORG_ADMIN, ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY],
   organisation_editor: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'risk.read', 'risk.create',
     'incident.create', 'actions.assign', 'documents.manage', 'training.manage', 'recruitment.manage',
-    ...HS_LINE,
+    ...HS_LINE, 'workforce.read', ...ASSET_ALL,
   ],
   hse_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create', 'risk.approve',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', 'documents.manage',
-    'training.manage', ...HS_ALL,
+    'training.manage', ...HS_ALL, ...WF_LEAD, ...OH_SUMMARY, ...ASSET_ALL,
   ],
   hse_advisor: [
     'organisation.read', 'site.read', 'people.read', 'risk.read', 'risk.create', 'incident.create',
     'incident.investigate', 'actions.assign', 'documents.manage', ...HS_LINE,
+    'workforce.read', 'training.verify', 'competency.assess', ...ASSET_ALL,
   ],
   site_manager: [
     'organisation.read', 'site.read', 'site.manage', 'people.read', 'risk.read', 'risk.create',
     'incident.create', 'incident.investigate', 'actions.assign', 'contractors.manage', ...HS_LINE,
+    'training.verify', 'competency.assess', ...ASSET_ALL,
   ],
-  department_manager: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.create', 'actions.assign', ...HS_LINE],
+  department_manager: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.create', 'actions.assign', ...HS_LINE,
+    'training.verify', 'competency.assess', 'asset.read'],
   hr_manager: [
     'organisation.read', 'site.read', 'people.read', 'people.write', 'hr.sensitive.read', 'hr.sensitive.write',
     'documents.manage', 'training.manage', 'actions.assign', 'audit.read',
     'hazard.report', 'incident.read', 'incident.sensitive.read',
+    'workforce.read', 'workforce.manage', 'training.verify', 'occupational_health.summary.read',
   ],
   recruiter: ['organisation.read', 'people.read', 'recruitment.manage', 'hazard.report'],
-  employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report'],
-  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read'],
+  employee:  ['organisation.read', 'site.read', 'incident.create', 'hazard.report', 'inspection.perform'],
+  read_only: ['organisation.read', 'site.read', 'people.read', 'risk.read', 'incident.read', 'workforce.read', 'asset.read'],
+  occupational_health_advisor: [
+    'organisation.read', 'site.read', 'people.read', 'hazard.report', 'workforce.read',
+    'occupational_health.summary.read', 'occupational_health.clinical.read', 'occupational_health.manage',
+  ],
 };
 
 /** The legacy user_role a person holds at HOME → catalogue role.

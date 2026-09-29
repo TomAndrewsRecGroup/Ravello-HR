@@ -7,6 +7,9 @@
 // working day, and offsets may be negative (before the last day).
 // assigned_to is copied from the template; before 099 it was captured
 // on the template and never reached the task anyone saw.
+// gate / gate_days (134) are copied for onboarding: an open gated task
+// blocks Safe to Deploy. They are sent ONLY when the template task has a
+// gate, because offboarding task rows have no such columns.
 
 export interface TemplateTaskLike {
   title: string;
@@ -15,6 +18,8 @@ export interface TemplateTaskLike {
   due_day_offset?: number | null;
   assigned_to?: string | null;
   sort_order?: number | null;
+  gate?: 'none' | 'before_start' | 'before_unsupervised' | 'within_days' | null;
+  gate_days?: number | null;
 }
 
 export interface TaskRow {
@@ -26,6 +31,8 @@ export interface TaskRow {
   assigned_to:      string | null;
   sort_order:       number;
   status:           'pending';
+  gate?:            'before_start' | 'before_unsupervised' | 'within_days';
+  gate_days?:       number | null;
 }
 
 export function addDaysIso(iso: string, days: number): string {
@@ -44,6 +51,9 @@ export function buildTaskRows(instanceId: string, anchorDate: string, tasks: Tem
       due_date:         addDaysIso(anchorDate, t.due_day_offset ?? 0),
       assigned_to:      t.assigned_to?.trim() || null,
       sort_order:       i,
-      status:           'pending',
+      status:           'pending' as const,
+      ...(t.gate && t.gate !== 'none'
+        ? { gate: t.gate, gate_days: t.gate === 'within_days' ? (t.gate_days ?? 0) : null }
+        : {}),
     }));
 }

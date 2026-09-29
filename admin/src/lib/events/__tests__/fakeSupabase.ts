@@ -56,7 +56,29 @@ export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () 
       lt(c: string, v: any) { filters.push(r => r[c] != null && r[c] < v); return q; },
       lte(c: string, v: any) { filters.push(r => r[c] != null && r[c] <= v); return q; },
       not(c: string, _op: string, v: unknown) { filters.push(r => !(v === null ? r[c] == null : r[c] === v)); return q; },
-      or(_expr: string) { return q; },
+      // The PostgREST forms the rules use: `col.op.value` joined by commas,
+      // op in eq | neq | is | gt | gte | lt | lte (`is.null` only).
+      or(expr: string) {
+        const parts = expr.split(',').map(p => {
+          const [c, op, ...rest] = p.split('.');
+          const v = rest.join('.');
+          return (r: Row) => {
+            const x = r[c];
+            switch (op) {
+              case 'is':  return v === 'null' ? x == null : String(x) === v;
+              case 'eq':  return x != null && String(x) === v;
+              case 'neq': return String(x) !== v;
+              case 'gt':  return x != null && String(x) > v;
+              case 'gte': return x != null && String(x) >= v;
+              case 'lt':  return x != null && String(x) < v;
+              case 'lte': return x != null && String(x) <= v;
+              default: throw new Error(`fakeSupabase.or: unsupported op ${op}`);
+            }
+          };
+        });
+        filters.push(r => parts.some(f => f(r)));
+        return q;
+      },
       order(col: string, o?: { ascending?: boolean }) { order = { col, asc: o?.ascending !== false }; return q; },
       limit(n: number) { limitN = n; return q; },
       range(from: number, to: number) { limitN = to - from + 1; (q as any)._from = from; return q; },

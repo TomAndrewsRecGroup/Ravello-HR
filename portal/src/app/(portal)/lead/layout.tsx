@@ -2,10 +2,11 @@ import Topbar from '@/components/layout/Topbar';
 import GroupedTabs from '@/components/layout/GroupedTabs';
 import { isRouteEnabled } from '@/lib/moduleAccess';
 import { currentModuleFlags } from '@/lib/auth/moduleFlags';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // Absence, employee documents, offboarding and the HR dashboard moved
 // here from PROTECT on 2026-09-24, when PROTECT became Health & Safety.
-const TAB_GROUPS = [
+const TAB_GROUPS: { label: string; tabs: { href: string; label: string; cap?: string }[] }[] = [
   {
     label: 'People',
     tabs: [
@@ -14,6 +15,20 @@ const TAB_GROUPS = [
       { href: '/lead/onboarding',       label: 'Onboarding' },
       { href: '/lead/offboarding',      label: 'Offboarding' },
       { href: '/lead/absence',          label: 'Absence' },
+    ],
+  },
+  {
+    // Core-OS 360 Phase 3: who is ready to deploy, and why.
+    label: 'Workforce',
+    tabs: [
+      { href: '/lead/workforce',            label: 'Safe to Deploy' },
+      { href: '/lead/workforce/matrix',     label: 'Matrix' },
+      { href: '/lead/workforce/roles',      label: 'Roles' },
+      { href: '/lead/workforce/catalogue',  label: 'Catalogue' },
+      { href: '/lead/workforce/sessions',   label: 'Sessions' },
+      // Only for those who may read health outcomes (135); the page refuses everyone else too.
+      { href: '/lead/workforce/occupational-health', label: 'Occupational Health', cap: 'occupational_health.summary.read' },
+      { href: '/lead/workforce/me',         label: 'My compliance' },
     ],
   },
   {
@@ -48,8 +63,16 @@ export default async function LeadLayout({ children }: { children: React.ReactNo
   // Hide tabs for modules this client does not have — the middleware
   // would only bounce the click back to the dashboard.
   const flags = await currentModuleFlags();
+  // A tab that needs a capability is offered only to those who hold it.
+  let caps = new Set<string>();
+  if (TAB_GROUPS.some(g => g.tabs.some(t => t.cap && isRouteEnabled(t.href, flags)))) {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.rpc('my_capabilities');
+    caps = new Set(Array.isArray(data) ? (data as string[]) : []);
+  }
   const groups = TAB_GROUPS
-    .map(g => ({ ...g, tabs: g.tabs.filter(t => isRouteEnabled(t.href, flags)) }))
+    .map(g => ({ ...g, tabs: g.tabs.filter(t => isRouteEnabled(t.href, flags) && (!t.cap || caps.has(t.cap)))
+                                   .map(({ href, label }) => ({ href, label })) }))
     .filter(g => g.tabs.length > 0);
   return (
     <>

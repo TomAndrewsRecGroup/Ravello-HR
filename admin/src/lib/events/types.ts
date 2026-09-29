@@ -52,6 +52,25 @@ export const TRIGGERED_ENTITIES = [
   'coshh_assessments',
   'substances',
   'incident_investigations',
+  // Core-OS 360 Phase 3 (137): a Safe to Deploy status change.
+  'deployment_status_log',
+  // Core-OS 360 Phase 4 (145): a checklist inspection against an asset.
+  'inspections',
+  // Core-OS 360 Phase 4 (148): a PUWER assessment against an asset.
+  'puwer_assessments',
+  // Core-OS 360 Phase 4 (149): equipment inspections/examinations,
+  // joined so an immediate-danger LOLER finding can be reacted to.
+  'hs_equipment_inspections',
+  // Core-OS 360 Phase 4 (150): a contractor's approval status change.
+  'contractors',
+  // Core-OS 360 Phase 4 (152): a permit to work status change.
+  'permits',
+  // Core-OS 360 Phase 4 (153): an isolation / LOTO status change.
+  'isolations',
+  // Core-OS 360 Phase 4 (154): an emergency plan added/superseded, and
+  // a drill recorded.
+  'emergency_plans',
+  'emergency_drills',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -81,6 +100,19 @@ export const REMINDER_ENTITIES = [
   'hs_incidents',
   'incident_investigations',
   'actions',
+  // Core-OS 360 Phase 3 (134-135): workforce evidence with an end date.
+  'person_credentials',
+  'person_authorisations',
+  'requirement_exceptions',
+  'person_health_outcomes',
+  // Core-OS 360 Phase 4 (148): PUWER assessment review cycle.
+  'puwer_assessments',
+  // Core-OS 360 Phase 4 (150): contractor insurance expiry.
+  'contractor_insurances',
+  // Core-OS 360 Phase 4 (152): an issued permit's own expiry.
+  'permits',
+  // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
+  'emergency_plans',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

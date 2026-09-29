@@ -54,6 +54,9 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/lead/skills':                 ['lead', 'skills_matrix'],
   '/lead/roadmap':                ['lead', 'roadmap'],
   '/lead/learning':               ['learning'],
+  // Core-OS 360 Phase 3. Every page under it, self-service included:
+  // a client without LEAD has no workforce model to show.
+  '/lead/workforce':              ['lead', 'workforce'],
 
   // PROTECT — Health & Safety
   '/protect':                     ['protect'],
@@ -68,6 +71,7 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/protect/investigations':      ['protect'],
   '/protect/analysis':            ['protect'],
   '/protect/equipment':           ['protect'],
+  '/protect/emergency-plans':     ['protect'],
   '/protect/tests':               ['protect'],
   '/protect/timeline':            ['protect'],
   '/protect/reports':             ['protect', 'protect_reports'],

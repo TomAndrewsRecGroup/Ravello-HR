@@ -70,10 +70,50 @@ export const REMINDERS: ReminderRule[] = [
     // the same way hsRules.ts's itemTitle() does, rather than an embed
     // here: slimRow() never lets an embed into the reminder payload.
     id: 'training_records', entity: 'training_records',
-    select: 'id, company_id, employee_id, course_name, expires_on',
-    query: (sb, from, to) => sb.from('training_records').select('id, company_id, employee_id, course_name, expires_on')
-      .not('expires_on', 'is', null).order('id').range(from, to),
+    // person_id since 134: a record added through the workforce pages may
+    // have no employee_records row behind it.
+    select: 'id, company_id, employee_id, person_id, course_id, course_name, expires_on',
+    query: (sb, from, to) => sb.from('training_records').select('id, company_id, employee_id, person_id, course_id, course_name, expires_on')
+      .not('expires_on', 'is', null).neq('verification_status', 'rejected').order('id').range(from, to),
     dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  // ── Core-OS 360 Phase 3: workforce evidence (134-135) ──
+  // Ids and dates only: the consuming rules (workforceRules.ts) look up
+  // names themselves and skip a row a newer one has replaced.
+  {
+    id: 'person_credentials', entity: 'person_credentials',
+    select: 'id, company_id, person_id, credential_type_id, expires_on',
+    query: (sb, from, to) => sb.from('person_credentials').select('id, company_id, person_id, credential_type_id, expires_on')
+      .not('expires_on', 'is', null).neq('verification_status', 'rejected').order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    id: 'person_authorisations', entity: 'person_authorisations',
+    select: 'id, company_id, person_id, authorisation_type_id, expires_on',
+    query: (sb, from, to) => sb.from('person_authorisations').select('id, company_id, person_id, authorisation_type_id, expires_on')
+      .eq('status', 'active').not('expires_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // A temporary exception lapsing puts the person back to NOT_READY.
+    id: 'requirement_exceptions', entity: 'requirement_exceptions',
+    select: 'id, company_id, person_id, requirement_type, kind, valid_until',
+    query: (sb, from, to) => sb.from('requirement_exceptions').select('id, company_id, person_id, requirement_type, kind, valid_until')
+      .is('revoked_at', null).order('id').range(from, to),
+    dueDateOf: r => str(r.valid_until),
+    buckets: ['due_7', 'due_0'],
+  },
+  {
+    // The outcome CATEGORY is not selected: a reminder says a review is
+    // due, never what the last one found.
+    id: 'person_health_outcomes', entity: 'person_health_outcomes',
+    select: 'id, company_id, person_id, requirement_id, review_date',
+    query: (sb, from, to) => sb.from('person_health_outcomes').select('id, company_id, person_id, requirement_id, review_date')
+      .not('review_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
@@ -167,6 +207,60 @@ export const REMINDERS: ReminderRule[] = [
       .eq('status', 'in_service').not('next_inspection_due', 'is', null).order('id').range(from, to),
     dueDateOf: r => str(r.next_inspection_due),
     buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 4 (148/148a): PUWER's own review cycle.
+    // puwer_assessments is INSERT-ONLY (a correction is a new
+    // assessment), so reading it directly would fire once per
+    // HISTORICAL row — every past assessment's review_due_on, not just
+    // the current one. 148a rolls the latest assessment's review date
+    // forward onto hs_equipment.puwer_review_due_on (the same pattern
+    // hs_equipment_inspections already uses for next_inspection_due),
+    // so this rule reads the ONE column that reflects the live state.
+    id: 'puwer_assessments', entity: 'puwer_assessments',
+    select: 'id, company_id, name, puwer_review_due_on',
+    query: (sb, from, to) => sb.from('hs_equipment').select('id, company_id, name, puwer_review_due_on')
+      .eq('puwer_applicable', true).not('puwer_review_due_on', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.puwer_review_due_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 4 (150): contractor insurance expiry. One row
+    // per (contractor, insurance_type) — a renewal updates it in place,
+    // so unlike the insert-only tables elsewhere in this file, reading
+    // it directly is already correct: there is only ever one row per
+    // type to be due. The consuming rule looks the contractor's name up
+    // itself, the same way every other reminder in this file does.
+    id: 'contractor_insurances', entity: 'contractor_insurances',
+    select: 'id, company_id, contractor_id, insurance_type, expires_on',
+    query: (sb, from, to) => sb.from('contractor_insurances').select('id, company_id, contractor_id, insurance_type, expires_on')
+      .order('id').range(from, to),
+    dueDateOf: r => str(r.expires_on),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle
+    // — the exact hs_documents shape, since it reuses that discipline.
+    id: 'emergency_plans', entity: 'emergency_plans',
+    select: 'id, company_id, title, plan_type, review_due_at, status',
+    query: (sb, from, to) => sb.from('emergency_plans').select('id, company_id, title, plan_type, review_due_at, status')
+      .eq('status', 'active').not('review_due_at', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.review_due_at),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 4 (152): an ISSUED permit approaching its own
+    // valid_until. Only 'issued' permits are read — a draft has no
+    // valid_until yet, and a suspended/closed/revoked one is no longer
+    // live, so reminding on it would be noise about something already
+    // handled. One row per permit (mutable, not insert-only), so
+    // reading it directly is already correct.
+    id: 'permits', entity: 'permits',
+    select: 'id, company_id, permit_number, valid_until, status',
+    query: (sb, from, to) => sb.from('permits').select('id, company_id, permit_number, valid_until, status')
+      .eq('status', 'issued').not('valid_until', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.valid_until),
+    buckets: ['due_0', 'overdue'],
   },
   {
     id: 'internal_tasks', entity: 'internal_tasks',

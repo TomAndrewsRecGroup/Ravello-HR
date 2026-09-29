@@ -12,6 +12,7 @@ import { leadRules } from './leadRules';
 import { supportRules } from './supportRules';
 import { hireRules } from './hireRules';
 import { safetyRules } from './safetyRules';
+import { workforceRules } from './workforceRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -43,6 +44,12 @@ export type ActionConsequence = {
   row: {
     action_type: string; title: string; description?: string | null; priority: 'low' | 'normal' | 'high' | 'urgent';
     related_entity_type?: string | null; related_entity_id?: string | null; due_date?: string | null; created_by_admin?: boolean;
+    /** Phase 4 Group 4: a defect needs its severity + verification gate set at
+     *  creation — 125's actions_lifecycle() refuses starting an action
+     *  already 'awaiting_verification'/'complete', so this is the only
+     *  point verification_required can be turned on for a fresh row. */
+    severity?: 'low' | 'medium' | 'high' | 'critical'; source_type?: string; source_id?: string;
+    verification_required?: boolean;
   };
 };
 export type Consequence = NotifyConsequence | EmailConsequence | RunConsequence | ActionConsequence;
@@ -268,9 +275,22 @@ const reminderRules: Rule[] = [
       const { bucket, due_date, row } = reminderPayload(event);
       const expired = bucket === 'overdue';
       const employeeId = s(row.employee_id);
+      const personId = s(row.person_id);
+      // A newer completion of the same course has replaced this record.
+      if (personId && row.course_id) {
+        const { data: newer } = await sb.from('training_records').select('id')
+          .eq('person_id', personId).eq('course_id', s(row.course_id)).neq('id', s(row.id))
+          .neq('verification_status', 'rejected').or(`expires_on.is.null,expires_on.gt.${s(row.expires_on)}`).limit(1);
+        if ((newer ?? []).length) return [];
+      }
       let employeeName = 'an employee';
       if (employeeId) {
         const { data } = await sb.from('employee_records').select('full_name').eq('id', employeeId).maybeSingle();
+        employeeName = (data as { full_name?: string } | null)?.full_name ?? employeeName;
+      } else if (personId) {
+        // 134: a record added through the workforce pages has a person
+        // and may have no employee record.
+        const { data } = await sb.from('people').select('full_name').eq('id', personId).maybeSingle();
         employeeName = (data as { full_name?: string } | null)?.full_name ?? employeeName;
       }
       return [notifyC({
@@ -291,6 +311,23 @@ const reminderRules: Rule[] = [
         audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'document_review_due',
         title: `Review of "${s(row.name, 'a document')}" is ${whenText(bucket, due_date)}`,
         link:  { admin: `/clients/${event.company_id}`, portal: '/lead/documents' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (154): an emergency plan's own review cycle.
+    // STAFF-ONLY for now, the same reasoning as every other Phase 4
+    // site-safety reminder without a portal page yet (Group 13 builds
+    // it) — widen to admins() once that page exists.
+    id: 'emergency_plan_review_reminder',
+    on: 'emergency_plans.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'emergency_plan_review_due',
+        title: `Review of "${s(row.title, 'an emergency plan')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
       })];
     },
   },
@@ -317,6 +354,68 @@ const reminderRules: Rule[] = [
         audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'hs_equipment_inspection_due',
         title: `Inspection of "${s(row.name, 'equipment')}" is ${whenText(bucket, due_date)}`,
         link:  { admin: `/health-safety/${event.company_id}/equipment`, portal: '/protect/equipment' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (148/148a): the PUWER review cycle, read from
+    // hs_equipment.puwer_review_due_on (the rolled-forward column — see
+    // 148a's own header comment for why this can't read
+    // puwer_assessments directly). Copy is deliberately neutral: "review
+    // due", never "compliance due" or "certification due" — a recorded
+    // assessment is not a legal certification (Phase 4's standing rule).
+    id: 'puwer_review_reminder',
+    on: 'puwer_assessments.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'puwer_review_due',
+        title: `PUWER review of "${s(row.name, 'equipment')}" is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/equipment`, portal: '/protect/equipment' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (150): a contractor insurance policy expiring
+    // or lapsed. The reminder row carries only contractor_id/insurance_
+    // type (contractor_insurances has no name of its own) — looked up
+    // here, the same "read once, don't embed" shape every other
+    // reminder rule in this file already uses.
+    // STAFF-ONLY for now: contractor management has no portal page yet
+    // (Group 13 builds admin+portal UI) — a client-facing notification
+    // with no page to link to is exactly the gap rules.test.ts's own
+    // "every client notification has a portal link" check exists to
+    // catch. Widen to admins() once that page exists.
+    id: 'contractor_insurance_reminder',
+    on: 'contractor_insurances.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const { data } = await sb.from('contractors').select('name').eq('id', s(row.contractor_id)).maybeSingle();
+      const name = (data as { name?: string } | null)?.name ?? 'a contractor';
+      const type = s(row.insurance_type).replace(/_/g, ' ');
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'contractor_insurance_expiring',
+        title: `${name}'s ${type} insurance is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (152): an issued permit approaching its own
+    // expiry. STAFF-ONLY for now, the same reasoning as
+    // contractor_insurance_reminder above — permits have no portal page
+    // yet (Group 13 builds it).
+    id: 'permit_reminder',
+    on: 'permits.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return b === 'due_0' || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      return [notifyC({
+        audiences: staffOnly, companyId: event.company_id, type: 'permit_expiring',
+        title: `Permit ${s(row.permit_number, '')} is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}` },
       })];
     },
   },
@@ -424,7 +523,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);

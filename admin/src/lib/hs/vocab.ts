@@ -96,12 +96,165 @@ export function incidentNextStatuses(from: HsIncidentStatus): HsIncidentStatus[]
 // mutable next_inspection_due a session updates directly), not
 // completion-shaped like hs_register_completions: there is no separate
 // "was it inspected" evidence trail here (MVP scope).
-export const HS_EQUIPMENT_STATUSES = ['in_service', 'out_of_service', 'decommissioned'] as const;
+// 'quarantined' added by 144 (Phase 4, Group 2: the asset register) —
+// ahead of Group 4 (defects), the status a safety-critical asset moves to
+// on a failed inspection/defect, before any hierarchy/permit/isolation
+// logic reads it.
+export const HS_EQUIPMENT_STATUSES = ['in_service', 'out_of_service', 'decommissioned', 'quarantined'] as const;
 export type HsEquipmentStatus = typeof HS_EQUIPMENT_STATUSES[number];
 export const HS_EQUIPMENT_STATUS_LABELS: Record<HsEquipmentStatus, string> = {
   in_service:     'In service',
   out_of_service: 'Out of service',
   decommissioned: 'Decommissioned',
+  quarantined:    'Quarantined',
+};
+
+// Asset type (144) — what kind of thing an asset is, for filtering and
+// reporting. A CHECKed vocabulary, not free text.
+export const HS_ASSET_TYPES = [
+  'plant', 'machinery', 'vehicle', 'tool', 'lifting_equipment', 'fixed_installation', 'ppe_equipment', 'other',
+] as const;
+export type HsAssetType = typeof HS_ASSET_TYPES[number];
+export const HS_ASSET_TYPE_LABELS: Record<HsAssetType, string> = {
+  plant:               'Plant',
+  machinery:           'Machinery',
+  vehicle:             'Vehicle',
+  tool:                'Tool',
+  lifting_equipment:   'Lifting equipment',
+  fixed_installation:  'Fixed installation',
+  ppe_equipment:       'PPE equipment',
+  other:               'Other',
+};
+
+// PUWER assessment outcomes (148) — a RECORDED outcome, never a legal
+// compliance certification (Phase 4's own standing rule: never assert
+// legal compliance). Every label here says what was found, not what the
+// law requires.
+export const PUWER_ASSESSMENT_OUTCOMES = ['compliant', 'non_compliant', 'compliant_with_actions'] as const;
+export type PuwerAssessmentOutcome = typeof PUWER_ASSESSMENT_OUTCOMES[number];
+export const PUWER_ASSESSMENT_OUTCOME_LABELS: Record<PuwerAssessmentOutcome, string> = {
+  compliant:               'Compliant',
+  non_compliant:           'Non-compliant',
+  compliant_with_actions:  'Compliant, with actions',
+};
+
+// Contractors (150). approval_status is the prequalification OUTCOME —
+// there is no separate score. risk_rating is optional (a contractor may
+// have no rating yet). insurance_type covers the two UK-standard
+// required policies plus a catch-all 'other'.
+export const CONTRACTOR_APPROVAL_STATUSES = ['pending', 'approved', 'suspended', 'rejected'] as const;
+export type ContractorApprovalStatus = typeof CONTRACTOR_APPROVAL_STATUSES[number];
+export const CONTRACTOR_APPROVAL_STATUS_LABELS: Record<ContractorApprovalStatus, string> = {
+  pending:   'Pending',
+  approved:  'Approved',
+  suspended: 'Suspended',
+  rejected:  'Rejected',
+};
+
+export const CONTRACTOR_RISK_RATINGS = ['low', 'medium', 'high'] as const;
+export type ContractorRiskRating = typeof CONTRACTOR_RISK_RATINGS[number];
+export const CONTRACTOR_RISK_RATING_LABELS: Record<ContractorRiskRating, string> = {
+  low:    'Low',
+  medium: 'Medium',
+  high:   'High',
+};
+
+export const CONTRACTOR_INSURANCE_TYPES = ['employers_liability', 'public_liability', 'professional_indemnity', 'other'] as const;
+export type ContractorInsuranceType = typeof CONTRACTOR_INSURANCE_TYPES[number];
+export const CONTRACTOR_INSURANCE_TYPE_LABELS: Record<ContractorInsuranceType, string> = {
+  employers_liability:     "Employers' liability",
+  public_liability:        'Public liability',
+  professional_indemnity:  'Professional indemnity',
+  other:                   'Other',
+};
+
+// Permit to work (152). permit_type names the hazard category a
+// template covers; status is the lifecycle
+// draft -> issued -> suspended -> closed/revoked, enforced by the
+// permits_lifecycle_guard() trigger, never by the UI alone.
+export const PERMIT_TYPES = ['hot_work', 'confined_space', 'working_at_height', 'electrical_isolation', 'excavation', 'other'] as const;
+export type PermitType = typeof PERMIT_TYPES[number];
+export const PERMIT_TYPE_LABELS: Record<PermitType, string> = {
+  hot_work:              'Hot work',
+  confined_space:        'Confined space',
+  working_at_height:     'Working at height',
+  electrical_isolation:  'Electrical isolation',
+  excavation:            'Excavation',
+  other:                 'Other',
+};
+
+export const PERMIT_STATUSES = ['draft', 'issued', 'suspended', 'closed', 'revoked'] as const;
+export type PermitStatus = typeof PERMIT_STATUSES[number];
+export const PERMIT_STATUS_LABELS: Record<PermitStatus, string> = {
+  draft:     'Draft',
+  issued:    'Issued',
+  suspended: 'Suspended',
+  closed:    'Closed',
+  revoked:   'Revoked',
+};
+
+// Isolation / LOTO (153). isolation_type is the energy source being
+// de-energised; status is the lifecycle applied -> verified -> removed,
+// enforced by isolations_lifecycle_guard() — verification and removal
+// each need a DIFFERENT person from whoever did the previous step.
+export const ISOLATION_TYPES = ['electrical', 'mechanical', 'hydraulic', 'pneumatic', 'thermal', 'chemical', 'other'] as const;
+export type IsolationType = typeof ISOLATION_TYPES[number];
+export const ISOLATION_TYPE_LABELS: Record<IsolationType, string> = {
+  electrical: 'Electrical',
+  mechanical: 'Mechanical',
+  hydraulic:  'Hydraulic',
+  pneumatic:  'Pneumatic',
+  thermal:    'Thermal',
+  chemical:   'Chemical',
+  other:      'Other',
+};
+
+export const ISOLATION_STATUSES = ['applied', 'verified', 'removed'] as const;
+export type IsolationStatus = typeof ISOLATION_STATUSES[number];
+export const ISOLATION_STATUS_LABELS: Record<IsolationStatus, string> = {
+  applied:  'Applied',
+  verified: 'Verified',
+  removed:  'Removed',
+};
+
+// Emergency planning (154). emergency_plans reuses hs_documents' own
+// versioning discipline (a new version is a new row); emergency_drills
+// is insert-only, the register's own "a correction is a new row" rule.
+export const EMERGENCY_PLAN_TYPES = ['fire', 'evacuation', 'medical', 'chemical_spill', 'severe_weather', 'security', 'other'] as const;
+export type EmergencyPlanType = typeof EMERGENCY_PLAN_TYPES[number];
+export const EMERGENCY_PLAN_TYPE_LABELS: Record<EmergencyPlanType, string> = {
+  fire:            'Fire',
+  evacuation:      'Evacuation',
+  medical:         'Medical',
+  chemical_spill:  'Chemical spill',
+  severe_weather:  'Severe weather',
+  security:        'Security',
+  other:           'Other',
+};
+
+export const EMERGENCY_PLAN_STATUSES = ['active', 'superseded'] as const;
+export type EmergencyPlanStatus = typeof EMERGENCY_PLAN_STATUSES[number];
+export const EMERGENCY_PLAN_STATUS_LABELS: Record<EmergencyPlanStatus, string> = {
+  active:     'Active',
+  superseded: 'Superseded',
+};
+
+export const EMERGENCY_DRILL_OUTCOMES = ['successful', 'issues_found', 'failed'] as const;
+export type EmergencyDrillOutcome = typeof EMERGENCY_DRILL_OUTCOMES[number];
+export const EMERGENCY_DRILL_OUTCOME_LABELS: Record<EmergencyDrillOutcome, string> = {
+  successful:   'Successful',
+  issues_found: 'Issues found',
+  failed:       'Failed',
+};
+
+// LOLER thorough examination type (149) — a single value today, framed
+// as a vocabulary because a generic "thorough examination" framework is
+// meant to grow (LOLER first, per the Phase 4 plan). NULL on a row means
+// a plain routine inspection, not a LOLER thorough examination.
+export const HS_EXAMINATION_TYPES = ['loler_thorough_examination'] as const;
+export type HsExaminationType = typeof HS_EXAMINATION_TYPES[number];
+export const HS_EXAMINATION_TYPE_LABELS: Record<HsExaminationType, string> = {
+  loler_thorough_examination: 'LOLER thorough examination',
 };
 
 // Equipment inspection outcomes (114) — insert-only evidence trail, the

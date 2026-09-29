@@ -27,7 +27,19 @@ const admins = (companyId: string): Audience[] => [{ kind: 'company_admins', com
 export const HS_FAILED_CHECK_ACTION_TYPE = 'hs_failed_check';
 export const HS_ACTIONS_RAISED_ACTION_TYPE = 'hs_actions_raised';
 export const HS_AUDIT_FINDING_ACTION_TYPE = 'hs_audit_finding';
+export const EMERGENCY_DRILL_FINDING_ACTION_TYPE = 'hs_emergency_drill_finding';
 export const FOLLOWUP_GATE = 0.8;
+
+async function assetName(sb: { from: (t: string) => any }, assetId: string): Promise<string> {
+  const { data } = await sb.from('hs_equipment').select('name').eq('id', assetId).maybeSingle();
+  return (data as { name?: string } | null)?.name ?? 'an asset';
+}
+
+async function planTitle(sb: { from: (t: string) => any }, planId: string): Promise<string> {
+  const { data } = await sb.from('emergency_plans').select('title').eq('id', planId).maybeSingle();
+  return (data as { title?: string } | null)?.title ?? 'Emergency plan';
+}
+
 
 async function itemTitle(ctx: { sb: { from: (t: string) => any } }, itemId: string): Promise<string> {
   const { data } = await ctx.sb.from('compliance_items').select('title').eq('id', itemId).maybeSingle();
@@ -278,9 +290,353 @@ export const hsRules: Rule[] = [
     on: 'hs_audits.created',
     then: auditSubmittedConsequences,
   },
+  {
+    // inspections is INSERT-only (145, Phase 4 Group 3) — every row is
+    // already a finished submission. Phase 4 Group 4 extends this rule:
+    // every FAILED response raises one keyed defect action (the same
+    // "one action per finding" shape auditSubmittedConsequences already
+    // uses) — never a second table (this file's own standing rule).
+    // A CRITICAL item's action gets severity='critical' and
+    // verification_required=true, which is what the database's own
+    // return-to-service guard (146) reads to decide whether the asset
+    // may leave 'quarantined' — the asset's own status is set
+    // server-side at submission time (hs_submit_inspection/
+    // hs_quarantine_asset, 146), never from here: this rule only
+    // reports what already happened, it never decides it.
+    id: 'inspection_completed',
+    on: 'inspections.created',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id || !event.entity_id) return [];
+      const { new: n } = rowPayload(event);
+      const failed = n.overall_outcome === 'fail';
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      const out: Consequence[] = [];
+
+      if (failed) {
+        const { data } = await sb.from('inspection_responses')
+          .select('id, prompt, comment, critical')
+          .eq('inspection_id', event.entity_id)
+          .eq('rating', 'fail');
+        const findings = (data ?? []) as { id: string; prompt: string; comment: string | null; critical: boolean }[];
+        for (const f of findings) {
+          out.push({
+            kind: 'action',
+            companyId: event.company_id,
+            sourceRef: `inspection_response:${f.id}`,
+            row: {
+              action_type: 'hs_inspection_defect',
+              priority: f.critical ? 'urgent' : 'normal',
+              severity: f.critical ? 'critical' : 'low',
+              verification_required: f.critical,
+              title: `Defect: ${f.prompt}`.slice(0, 200),
+              description: f.comment,
+              source_type: 'inspection', source_id: f.id,
+              related_entity_type: 'hs_equipment', related_entity_id: s(n.asset_id),
+              created_by_admin: true,
+            },
+          });
+        }
+      }
+
+      out.push({
+        kind: 'notify',
+        input: {
+          audiences: admins(event.company_id), companyId: event.company_id, type: 'inspection_completed', urgent: failed,
+          title: failed ? `Inspection failed: ${asset}` : `Inspection completed: ${asset}`,
+          body:  failed
+            ? n.has_critical_failure
+              ? 'A critical item failed. This asset has been quarantined and needs attention before further use.'
+              : 'One or more items failed. A defect has been added to your PROTECT actions.'
+            : 'All items passed.',
+          link:  { portal: failed ? '/protect/actions' : '/protect/timeline' },
+        },
+      });
+      if (failed) {
+        out.push({
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'inspection_completed',
+            title: `${company || 'A client'}: inspection failed — ${asset}`,
+            body:  n.has_critical_failure ? 'Critical item failed — asset quarantined.' : 'Non-critical failure(s).',
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        });
+      }
+      return out;
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (148): a PUWER assessment recorded a
+    // non-compliant or compliant-with-actions outcome — found by the
+    // Group 12 wiring sweep as a table with a trigger but no consuming
+    // rule (the only consequence was a reminder on the review cycle).
+    // Neutral wording throughout: this reports a RECORDED ASSESSMENT
+    // OUTCOME, never a legal compliance judgement (Phase 4's own
+    // standing rule) — the same discipline PUWER_ASSESSMENT_OUTCOME_LABELS
+    // already applies. Exactly ONE action per assessment, the same
+    // `hs_check_failed` shape.
+    id: 'puwer_non_compliant',
+    on: 'puwer_assessments.created',
+    when: e => rowPayload(e).new.outcome !== 'compliant',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      const nonCompliant = n.outcome === 'non_compliant';
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `puwer_assessment:${event.entity_id}`,
+          row: {
+            action_type: 'hs_puwer_finding', priority: nonCompliant ? 'high' : 'normal',
+            title: `PUWER assessment: ${asset}`,
+            description: `Recorded assessment outcome on ${s(n.assessed_on)}: ${nonCompliant ? 'non-compliant' : 'compliant, with actions'}. Review and address before the next assessment.`,
+            related_entity_type: 'hs_equipment', related_entity_id: s(n.asset_id) || null,
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'puwer_assessment_recorded',
+            title: `PUWER assessment recorded: ${asset}`,
+            body:  `Recorded ${s(n.assessed_on)} as ${nonCompliant ? 'non-compliant' : 'compliant, with actions'}. An action has been added to your PROTECT actions.`,
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'puwer_assessment_recorded',
+            title: `${company || 'A client'}: PUWER assessment recorded — ${asset}`,
+            link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (149): a LOLER thorough examination recorded
+    // 'immediate danger' (LOLER reg 8). The asset is ALREADY quarantined
+    // — synchronously, inside hs_equipment_inspection_roll(), before
+    // this event is even processed. This rule only reports what already
+    // happened and raises the follow-up defect action; it never decides
+    // anything and never reports to the HSE — the exact "flag, never
+    // decide" posture Phase 2's RIDDOR review already established for a
+    // different regulator.
+    id: 'loler_immediate_danger',
+    on: 'hs_equipment_inspections.created',
+    when: e => rowPayload(e).new.immediate_danger === true,
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id || !event.entity_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.equipment_id));
+      const company = await companyName();
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `hs_equipment_inspection:${event.entity_id}`,
+          row: {
+            action_type: 'hs_immediate_danger', priority: 'urgent', severity: 'critical', verification_required: true,
+            title: `Immediate danger recorded: ${asset}`.slice(0, 200),
+            source_type: 'equipment_inspection', source_id: String(event.entity_id),
+            related_entity_type: 'hs_equipment', related_entity_id: s(n.equipment_id),
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'loler_immediate_danger', urgent: true,
+            title: `Immediate danger recorded: ${asset}`,
+            body:  'A thorough examination recorded an immediate danger. This asset has been quarantined and must not be used until the defect is resolved and verified.',
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'loler_immediate_danger',
+            title: `${company || 'A client'}: immediate danger recorded — ${asset}`,
+            body:  'Asset quarantined. Review and follow up as required.',
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (150): a contractor's approval status
+    // changed. Only 'suspended'/'rejected' are worth a nudge — an
+    // approval or a return to pending is informational and not raised
+    // here.
+    // STAFF-ONLY for now: contractor management has no portal page yet
+    // (Group 13 builds admin+portal UI). A client-facing notification
+    // with no page to link to is exactly the gap rules.test.ts's own
+    // "every client notification has a portal link" check exists to
+    // catch — widen to admins() once that page exists, rather than
+    // inventing a link to a page that is not there yet.
+    id: 'contractor_status_changed',
+    on: 'contractors.updated',
+    when: e => changedTo(e, 'approval_status', ['suspended', 'rejected']),
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const name = s(n.name, 'A contractor');
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'contractor_status_changed',
+            title: `${company || 'A client'}: ${name} is now ${s(n.approval_status).replace('_', ' ')}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
   // Incident rules moved to safetyRules.ts (125): severity is
   // confirmed by a person later, RIDDOR is decided on the RIDDOR review,
   // and the outbox no longer carries the description at all.
+  {
+    // Core-OS 360 Phase 4 (152): a permit to work's status changed.
+    // Only the statuses that need a human's attention are worth a
+    // nudge — issue/revalidation and closure are the normal, expected
+    // path and are not raised here. STAFF-ONLY for now, the same
+    // reasoning as contractor_status_changed above: permits have no
+    // portal page yet (Group 13 builds admin+portal UI) — widen to
+    // admins() once that page exists, rather than inventing a link.
+    id: 'permit_status_changed',
+    on: 'permits.updated',
+    when: e => changedTo(e, 'status', ['suspended', 'revoked']),
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'permit_status_changed',
+            title: `${company || 'A client'}: permit ${s(n.permit_number, '')} is now ${s(n.status)}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (153): an isolation applied, taking an asset
+    // out of service. Only the CREATE is raised here (removal is the
+    // normal, expected end of the story and not worth a separate
+    // nudge — the register/equipment page already shows the asset back
+    // in service). STAFF-ONLY for now, the same reasoning as
+    // contractor/permit rules above: isolations have no portal page yet
+    // (Group 13 builds admin+portal UI).
+    id: 'isolation_applied',
+    on: 'isolations.created',
+    then: async ({ event, sb, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const asset = await assetName(sb, s(n.asset_id));
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'isolation_applied',
+            title: `${company || 'A client'}: ${asset} is out of service (isolation applied)`,
+            link:  { admin: `/health-safety/${event.company_id}/equipment` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (154): a new emergency plan added — found by
+    // the Group 12 wiring sweep as a table with a trigger but no
+    // consuming rule (only a review-cycle reminder existed). A
+    // supersede (a new version replacing an old one) raises nothing
+    // separately: the new version's own .created already covers it,
+    // the same reasoning hs_document_added (106) already established
+    // for the identical versioning shape. STAFF-ONLY for now, the same
+    // reasoning as every other Phase 4 site-safety table with no
+    // portal page yet (Group 13 builds it).
+    id: 'emergency_plan_added',
+    on: 'emergency_plans.created',
+    then: async ({ event, companyName }) => {
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const company = await companyName();
+      return [
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'emergency_plan_added',
+            title: `${company || 'A client'}: new emergency plan — ${s(n.title, 'Untitled plan')}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
+  {
+    // Core-OS 360 Phase 4 (154): a drill recorded against an emergency
+    // plan. DRILL FINDINGS ARE NEVER A SECOND TABLE — an outcome of
+    // 'issues_found'/'failed' raises exactly ONE row on the existing
+    // `actions` table (the same shape hs_check_failed already uses),
+    // never one per individual finding: the register's own
+    // "one platform_event per visit, not per answer" discipline (110).
+    // A 'successful' drill raises nothing — that is the normal,
+    // expected outcome, not something to nudge anyone about.
+    id: 'emergency_drill_recorded',
+    on: 'emergency_drills.created',
+    when: e => rowPayload(e).new.outcome !== 'successful',
+    then: async (ctx) => {
+      const { event, sb, companyName } = ctx;
+      if (!event.company_id) return [];
+      const { new: n } = rowPayload(event);
+      const plan = await planTitle(sb, s(n.plan_id));
+      const company = await companyName();
+      const failed = n.outcome === 'failed';
+      return [
+        {
+          kind: 'action',
+          companyId: event.company_id,
+          sourceRef: `emergency_drill:${event.entity_id}`,
+          row: {
+            action_type: EMERGENCY_DRILL_FINDING_ACTION_TYPE, priority: failed ? 'high' : 'normal',
+            title: `Drill finding: ${plan}`,
+            description: `${failed ? 'Failed' : 'Issues found'} on ${s(n.drill_date)}. Review and address before the next drill.`,
+            related_entity_type: 'emergency_plan', related_entity_id: s(n.plan_id) || null,
+            created_by_admin: true,
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'emergency_drill_recorded',
+            title: `${failed ? 'Failed' : 'Issues found in'} drill: ${plan}`,
+            body:  `Recorded ${s(n.drill_date)}. An action has been added to your PROTECT actions.`,
+            link:  { portal: '/protect/actions' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
+            audiences: staffOnly, companyId: event.company_id, type: 'emergency_drill_recorded',
+            title: `${company || 'A client'}: drill ${n.outcome === 'failed' ? 'failed' : 'found issues'} — ${plan}`,
+            link:  { admin: `/health-safety/${event.company_id}` },
+          },
+        },
+      ];
+    },
+  },
   {
     // Every hs_documents row is a finished, already-current version —
     // a replacement is a NEW row (the old one flips to 'superseded' via

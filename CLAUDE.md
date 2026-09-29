@@ -459,6 +459,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
 | 43 | **Foundations sweep** (migrations 079-080): the nine findings from the platform review — legacy RLS cleanup, paged reads, request validation, error visibility, CI, rate limiting, navigation correctness, breadcrumbs, accessibility. See the section below. |
 | C1 | **Core-OS 360 Phase 1** (migrations 117-121): organisations/consultancy relationships, capability catalogue, consultant grants + ONE active organisation, read-only write guard, immutable audit trail, sites/departments, people, universal actions, document versions, internal search. See the section at the end and `docs/CORE_OS_360_PHASE1_HANDOVER.md`. |
 | C2 | **Core-OS 360 Phase 2: operational H&S core** (migrations 122-129): hazards, risk assessments (matrix, controls, approval, versioning, templates), RAMS, COSHH + SDS versions, incidents/near misses, people + restricted injury detail, investigations, root cause / 5 Whys, RIDDOR decision support, corrective actions on the universal `actions` table with verification + effectiveness. See the section at the end and `docs/CORE_OS_360_PHASE2_HANDOVER.md`. |
+| C3 | **Core-OS 360 Phase 3: workforce & Safe to Deploy** (migrations 131-143): people lifecycle, job roles and assignments, versioned requirement rules (role / site / person), catalogues, training / competency / credential / induction / authorisation / PPE / pre-employment evidence with verification, occupational health (summary and clinical apart), the deterministic Safe to Deploy engine, recruitment and leaver integration, the portal `/lead/workforce` pages. See the section at the end and `docs/CORE_OS_360_PHASE3_HANDOVER.md`. |
+| C4 | **Core-OS 360 Phase 4: assets, inspections, PUWER, LOLER, contractors, permits, isolation/LOTO, emergency planning** (complete, migrations 144-155): the asset register (Group 2), the checklist inspection engine (Group 3), defects + a database-enforced return-to-service gate (Group 4), PUWER assessments (Group 5), LOLER thorough examinations + immediate danger (Group 6), contractor companies/insurance/prequalification (Group 7), contractor workers + a Safe-to-Deploy-aware access gate (Group 8, `contractor_worker_access()`), permit to work (Group 9, `permits_lifecycle_guard()` + the new `person_holds_authorisation()` helper), isolation/LOTO (Group 10, `isolations_lifecycle_guard()` + the multi-lock `isolation_locks` layer), emergency planning (Group 11, `emergency_plans` reusing `hs_documents`' versioning discipline, roles/equipment links, insert-only drills with findings raised as ordinary `actions` rows), the notifications/audit wiring sweep (Group 12), admin + portal UI for contractors/permits/isolations/emergency planning (Group 13), and a final regression/adversarial-security-review/handover pass (Group 14, gate: PASS WITH MINOR ISSUES — one Medium self-authorisation gap on permits found and fixed, migration 155). Delivered in 14 logical, independently-gated groups. See the section at the end and `docs/CORE_OS_360_PHASE4_HANDOVER.md`. |
 
 ---
 
@@ -4114,3 +4116,1129 @@ emergency contacts (proven live, rolled back). 0 live rows were exposed.
   `select('*', head)` count would fail and its `count ?? 0` self-seed
   would add a "Founder" row on every admin visit. Probe:
   `supabase/probes/131_employee_records_sensitive.sql` (24/24, rolled back).
+  **Applied 2026-09-28 13:54 UTC after PR #229 deployed; re-probed live
+  24/24.**
+
+---
+
+## Core-OS 360 Phase 3: workforce and Safe to Deploy (2026-09-28, migrations 131-143)
+
+Plan: `docs/CORE_OS_360_PHASE3_PLAN.md`. Handover + QA: `docs/CORE_OS_360_PHASE3_HANDOVER.md`.
+Probes: `supabase/probes/13[1-9]_*`, `14[0-3]_*`, `phase3_qa.sql`, `phase3_qa2.sql`, `phase3_perf.sql`.
+Portal pages: `/lead/workforce/*` (flags `lead` + `workforce`).
+
+### Rules
+
+- **Safe to Deploy is decided only by the database** (136 `_wf_deployment`).
+  TypeScript displays `status`, `reasons[]` and `requirements[]`; it never
+  computes or overrides a status. Read it with `person_deployment_status`,
+  `workforce_readiness` or `workforce_matrix` — all go through
+  `_wf_deployment_safe`, which turns ANY error into REVIEW_REQUIRED. Never
+  call the raw engine from a public read (workforceSql.test pins it).
+- **Never a stale READY.** The cache (`person_deployment_status`) is used
+  only when clean, in date and calculated today. Every table the engine
+  reads has a `workforce_mark_dirty` trigger; **a new input table needs one
+  too**, or a change to it will not invalidate the cache.
+- **One definition of safety-critical**: the rule's flag, the catalogue's
+  flag, or mandatory for a safety-critical role. The engine
+  (`_wf_requirements`) and verification (`workforce_item_safety_critical`,
+  139) must agree — they did not until 139 (QA 10, HIGH).
+- **Competence is never inferred from training or text.** The engine's
+  competency branch does not read `training_records`. No AI, no scores,
+  no prediction anywhere in the workforce model.
+- **Occupational health**: `person_health_outcomes` (category, dates,
+  restriction summary) for `occupational_health.summary.read` or the
+  person; `occupational_health_clinical` + bucket `oh-clinical` ONLY for an
+  EXPLICIT `occupational_health.clinical.read` grant (`has_explicit_capability`,
+  no staff shortcut). Add any new explicit-only capability to
+  `EXPLICIT_ONLY_CAPABILITIES` AND to 140's `my_capabilities` list — the
+  test fails otherwise. Restriction text and clinical content never go
+  into an audit whitelist, outbox payload, notification, CSV or the engine.
+- **Guards keyed on `current_user` are SECURITY INVOKER** (134a:
+  the DEFINER version skipped every session rule). Lookups they need are
+  small DEFINER helpers. `invokerGuards.test.ts` fails on a DEFINER one.
+  A DEFINER RPC that writes must check `session_can_write()` itself.
+- **Rules in force are immutable**: supersede → edit the draft → activate.
+  No rule starts in the past or ends retroactively (`requirement_rule_guard`).
+- **Evidence** is insert-mostly: self-submissions are always unverified;
+  verification only through `workforce_verify` (nobody verifies their
+  own; safety-critical needs `workforce.verify_safety_critical` and a
+  different verifier). Upload the file FIRST
+  (`portal/src/lib/workforce/evidence.ts`), then write the record naming
+  it — storage reads are granted by the record.
+- **Hire / leave** are database triggers on `employee_records` (137): a
+  requisition's `job_role_id` gives the hire one primary assignment and
+  the role's pre-employment checks; termination ends assignments and
+  revokes exceptions and authorisations, deleting nothing. Hiring never
+  makes anyone READY.
+- **Workforce lists include only** worker_type employee / contractor /
+  consultant / temporary_worker. `person_link_row` (141) promotes a hired
+  candidate OR athlete to employee — anything that creates employees by
+  another path must do the same.
+- **Tuples in `portal/src/lib/workforce/vocab.ts` mirror the CHECKs**;
+  `workforceVocab.test.ts` pins them both ways.
+- **Evidence never crosses an organisation (142, three CRITICAL from the
+  QA 42 security review).** A document linked to another client's worker
+  made that worker READY; an evidence or clinical row naming another
+  client's file made the file readable. So:
+  - every `_wf_judge` evidence read carries `company_id = org` (the
+    person's own organisation) — a new branch needs it too;
+  - `person_id` on `employee_records`, `candidates`, `athletes` and
+    `employee_documents` must be in the row's own organisation (triggers,
+    every writer). A new table with a `person_id` needs the same;
+  - an `evidence_path` must start `<company>/<kind>/<person>/` and a
+    clinical `document_path` `<company>/<person>/`, checked in the guard
+    after `person_id` is final; the storage read policies ALSO compare the
+    folders with the row. **A storage policy that grants a file because
+    "a row I can see names it" must check the row owns the path** — the
+    row is caller-written.
+  - a safety-critical or evidence-required **document** requirement counts
+    only a document with `filed_by_authorised` (stamped at write time:
+    the writer held `workforce.manage` and is not the worker). The engine
+    runs without a session, so authority must be recorded, not asked.
+  - a safety-critical item gets **no grace** once expired.
+- **A mandatory item always needs verified evidence (143, product decision
+  on QA 42 Medium 2).** `_wf_judge` gained `p_mandatory`; `need_verified`
+  is now true for ANY mandatory item, not only safety-critical or
+  evidence-required ones. A worker's own unverified, self-dated submission
+  never counts toward a mandatory requirement. An optional requirement is
+  unaffected. Note `role_requirements.mandatory` defaults to `true` — a
+  requirement inserted without naming it explicitly is mandatory, and now
+  needs a verifier too.
+
+### Operations
+
+- Hourly `/api/cron/workforce-refresh`: `workforce_daily_tick()` then
+  `workforce_refresh_due(5000)`. Nothing reads its output to decide
+  anything; a missed run makes pages slower, never wrong.
+- Measured (2,000 workers): warm lists ~0.4 s, a profile 10 ms, a cold
+  calculation ~6 ms a person. A rule change that dirties thousands of
+  people makes the lists calculate them live until the next refresh.
+
+---
+
+## Core-OS 360 Phase 4: assets, plant, equipment, inspections, PUWER,
+## LOLER, contractors, permits, emergency planning (in progress, from
+## 2026-09-28, migration 144 onward)
+
+Scope: `docs/CORE_OS_360_PHASE4_PLAN.md` (the operator's full spec).
+Delivered in **logical, independently-verified groups** — migration, live
+rolled-back probe, tests, all five CI guards, doc update, THEN the next
+group — specifically so a defect in one group cannot compound into the
+next, the same discipline the QA 42 security review (Phase 3) showed was
+missing when things moved too fast. **Explicitly forbidden anywhere in
+this phase**: predictive/AI safety scoring (machine failure prediction,
+accident probability, unsafe-worker prediction) and false certification
+language ("this machine is legally compliant" — say what was recorded,
+never assert legal compliance).
+
+### Pre-work: the existing-operations audit
+
+Before any Phase 4 code, a full audit of existing equipment/contractor/
+inspection/test/permit-adjacent functionality (task #20) produced the
+group boundaries below. Its central conclusions, each binding on later
+groups: `hs_equipment` (112) already IS the asset register and must be
+EXTENDED, never forked into a parallel `assets` table; `hs_audits` (110)
+is a genuinely different concept from routine/pre-use inspections and
+keeps its own name, but its proven mechanisms (client-generated ids,
+one atomic idempotent submit RPC, server-side scoring, offline
+localStorage runner, one platform_event per run) are the template new
+inspection tables should copy; contractor/permit/isolation/emergency
+functionality is entirely unbuilt (only the unenforced
+`contractors.manage` capability exists as a placeholder) and needs new
+tables built on the existing `people`/`person_authorisations`/`actions`/
+`hs_files` primitives, never second copies of them.
+
+### Group 2: the asset register (migration 144)
+
+`hs_equipment` extended in place (see the audit's own conclusion above),
+not replaced:
+
+- **`asset_ref`** (`AST-000123`, minted once via `next_record_number()`
+  on first insert, never re-minted on update — the same numbering
+  function permits will use in Group 9).
+- **`asset_type`** — a CHECKed vocabulary (`plant | machinery | vehicle |
+  tool | lifting_equipment | fixed_installation | ppe_equipment |
+  other`), not free text, mirrored as `HS_ASSET_TYPES` in
+  `lib/hs/vocab.ts` (shared-dupe pair).
+- **`parent_asset_id`** — sub-assembly hierarchy, self-referencing with a
+  bounded cycle guard (`hs_equipment_same_org_and_no_cycle()`, a 50-deep
+  walk, not a recursive CTE — a runaway recursive query is a worse
+  failure mode than an early exit on a hierarchy that is never actually
+  deep). A CHECK refuses a literal self-parent; the trigger refuses a
+  longer cycle and any cross-organisation parent/owner/area, reusing
+  118's `assert_same_org()` rather than a bespoke re-implementation.
+- **`operational_area_id`** → `departments(id)` — must be on the SAME
+  SITE as the asset, checked in the same trigger (an area on a different
+  site is refused, not silently accepted).
+- **`owner_person_id`** → `people(id)`, **`puwer_applicable`** /
+  **`loler_applicable`** (booleans, not a free-text "regime" tag — Groups
+  5/6 branch on these and a boolean can't be misspelled the way a tag
+  could), **`safety_critical`** (the ONE definition of safety-critical
+  an asset gets in this system, read by Groups 4/9/10 to decide whether
+  a failure quarantines the asset outright), **`archived_at`** (soft
+  retire — evidence, inspections and incidents already reference the
+  row).
+- **`status` gains `'quarantined'`** now, ahead of Group 4 (defects) —
+  rewriting a CHECK a second time to insert one more lifecycle value is
+  exactly the avoidable second pass "logical groups, no errors" exists
+  to prevent.
+- **Evidence**: `hs_scope_for_entity()`/`hs_entity_table()` never mapped
+  `'equipment'` despite `hs_equipment` already existing — a real gap the
+  audit flagged. Both latest-definition functions, plus
+  `hs_evidence_readable()`/`hs_evidence_writable()`/
+  `hs_files_entity_check()`, are re-created here (124's bodies, with only
+  an `'equipment'` branch added) gated on two new capabilities,
+  `asset.read`/`asset.manage`, seeded in 117's own 3-column shape and
+  granted to exactly the same roles as `risk.read`/`risk.create` — an
+  asset register usable immediately by the people who can already work
+  with risk assessments, not invisible until a manual grant.
+- **Audit trail**: `audit_row('asset', 'company_id', ...)`, a column
+  whitelist of identifying/classifying fields only — never `notes`.
+- **`assets`** is an optional `security_invoker` read view over
+  `hs_equipment`, the same alias pattern `organisations`/`sites` already
+  use — `hs_equipment` is still the table; FKs still point at it.
+
+**Live probe** (`supabase/probes/144_asset_register.sql`, rolled back):
+18 checks — asset_ref minting and uniqueness, cross-site operational
+area refused, cross-company owner/parent refused, a 2-node cycle
+refused, self-parent refused, `quarantined` accepted, evidence accepted
+same-company / refused cross-company, `hs_scope_for_entity`/
+`hs_entity_table`/`hs_entity_company` all resolve `'equipment'`
+correctly, both capabilities seeded and granted, the `assets` view reads
+through, the audit trail fires. All 18 passed.
+
+**A trap caught and fixed same-day**: the first version of the
+capability grant used a dynamic `SELECT role_key, 'asset.read' FROM
+access_role_capabilities WHERE capability_key = 'risk.read'` — correct
+data, but unparseable by `tenancySql.test.ts`'s regex-driven TS↔SQL
+parity check, which only recognises 117/122/132's `('capability',
+ARRAY[roles])` literal shape. Rewritten (migration `144a`, applied
+same day, `ON CONFLICT DO NOTHING` against identical rows already
+present) to match that shape exactly, with the role lists copied
+verbatim from `risk.read`/`risk.create` rather than computed — verified
+live afterward that the resulting grants are byte-identical to
+`risk.read`/`risk.create`'s own role sets.
+
+`tenancySql.test.ts` gained migration 144 to its capability-parity
+check (35 tests, was 34); `vocab.test.ts` gained an `asset types` case
+and a corrected `equipment statuses` anchor (the status CHECK moved
+from an inline `CREATE TABLE` clause to a named `ADD CONSTRAINT`, so the
+anchor now matches the constraint NAME rather than the old `DEFAULT
+'in_service' CHECK (` text — 13 tests, was 11). `capabilities.ts` and
+`hs/vocab.ts` (both shared-dupe pairs) updated in both apps in the same
+pass, byte-identical.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1108 admin, 600 portal), all five CI guards pass, both production
+builds compile (portal's pre-existing sandbox-only `/auth/reset-
+password` prerender failure — missing `NEXT_PUBLIC_SUPABASE_*` env
+vars in this container, not in Vercel — is unrelated to this change and
+touches no page this migration affects, same caveat recorded earlier in
+this file).
+
+### Group 3: the inspection engine (migration 145)
+
+A routine/pre-use **inspection** is a checklist run against ONE ASSET
+(a forklift's daily pre-use check, a machine guard check) — distinct
+from `hs_audits` (110, a facility-wide WALK-ROUND across many topics)
+and from `hs_equipment_inspections` (114, a single dated pass/fail
+statutory-examination record with NO checklist — that table is kept
+as-is; LOLER's thorough examinations in a later group extend it,
+since a thorough examination genuinely is a single dated event, not a
+checklist). New tables: `inspection_templates` / `inspection_template_
+items` (staff reference data, an `asset_type` filter, a `critical` flag
+per item — the one thing Group 4 reads to decide whether a failure
+quarantines the asset outright vs. raising a lower-priority defect) and
+`inspections` / `inspection_responses`.
+
+Copies `hs_audits`'/`hs_submit_audit()`'s proven shape verbatim, per
+the existing-operations audit's own recommendation, adapted from "one
+visit" to "one asset":
+
+- **Insert-only** — a correction is a new inspection, never an edit.
+- **Client-generated ids on BOTH the inspection and its responses from
+  day one** — 110 learned the response-id lesson the hard way in 113
+  (evidence photos need to be staged against a specific response
+  before the parent row exists); this table starts with it.
+- **One atomic `hs_submit_inspection()`** (SECURITY INVOKER — this
+  exists for the transaction, never to escalate privilege), insert-or-
+  return-existing on the client-supplied id, so a retried request after
+  a dropped connection cannot create a second inspection or double-
+  notify.
+- **The overall outcome is computed SERVER-SIDE from the responses**,
+  never trusted from the client — any response rated `fail` makes the
+  inspection `fail`; any `fail` on a `critical` item sets
+  `has_critical_failure`.
+- **Same-organisation + same-site guard** (`inspections_same_org()`):
+  the asset must be in the caller's own company, and if both the
+  inspection and the asset name a site, they must match.
+- **Evidence**: `hs_scope_for_entity`/`hs_entity_table`/
+  `hs_evidence_readable`/`hs_evidence_writable`/`hs_files_entity_check`
+  all gain an `'inspection'` branch, reusing the register scope and the
+  `asset.read`/`asset.manage` capabilities from Group 2 — no new
+  capability invented.
+- **Timeline**: one `hs_events` entry per inspection (never per
+  response), verb `completed` on a pass or `failed` on a fail.
+- **Outbox**: `inspections` added to `TRIGGERED_ENTITIES`, whitelist
+  `asset_id, site_id, template_id, conducted_on, overall_outcome,
+  has_critical_failure` — never a response's own comment text.
+- **Write guard**: `apply_write_guard()` applied to all four new
+  tables, insert-only or not — a read-only consultancy grant must not
+  be able to insert here either.
+- **RLS**: staff full access; any signed-in user with `asset.read` may
+  browse the template catalogue and see their own company's
+  inspections; anyone with `asset.manage` may record one.
+- **Consequence rule `inspection_completed`** (`hsRules.ts`) is
+  deliberately **notify-only** in this group — it tells the client
+  admins (urgent on a fail) and, on any fail, staff. It raises **no
+  action** and touches **no asset status**. Group 4 (defects +
+  return-to-service) extends this exact rule to also raise the defect
+  and, on a critical failure, quarantine the asset — reading the
+  `has_critical_failure`/`overall_outcome` this migration already
+  computes, never re-deriving them.
+- One starter template seeded (`Forklift pre-use check`, 8 items),
+  mirroring 106's sector packs / 110's starter audit template
+  reasoning: something to pick on day one.
+
+**Live probe** (`supabase/probes/145_inspection_engine.sql`, rolled
+back): 20 checks — submit computes fail/critical correctly, a retry
+with the same id is idempotent (no second row, no second responses,
+first submission's data wins), an all-pass submission is clean,
+cross-company asset refused, mismatched site refused, evidence vocab
+resolves, evidence accepted same-company/refused cross-company,
+immutability grants absent, Timeline verb distinguishes pass/fail, the
+outbox payload carries `overall_outcome`. All 20 passed.
+
+`platformEventsSql.test.ts` gained 145 to its `LATER` list and
+`'inspections'` to `TRIGGERED_ENTITIES`. A new notification type,
+`inspection_completed`, added to `notify/types.ts` (shared-dupe pair)
+and both bells' icon maps. `hsRules.test.ts` gained three cases for the
+new rule (critical fail tells both sides and raises nothing; a
+non-critical fail still tells both sides; an all-pass tells the client
+only).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1111 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+### Group 4: defects + return-to-service (migrations 146-147a)
+
+**"Never build a second action table"** (this file's own standing
+rule, already applied to H&S findings, incidents and corrective
+actions) — a defect is an `actions` row, not a new table.
+`actions.source_type` already allowed `'inspection'` (119/125's
+CHECK), so no CHECK change was needed at all: a defect raised from a
+failed inspection response is `source_type = 'inspection'`,
+`source_id = <inspection_response.id>`, `related_entity_type =
+'hs_equipment'`, `related_entity_id = <asset>`, keyed
+`inspection_response:<id>` (the same "one action per finding, keyed by
+sourceRef" shape `hs_audit_finding` already established).
+
+- **A CRITICAL item's failure** (the item was marked `critical` on the
+  template, Group 3) gets `severity = 'critical'`, `priority =
+  'urgent'`, `verification_required = true` — the exact mechanism
+  125's incident-severity escalation already uses for major/critical/
+  fatal incidents. A non-critical failure gets `severity = 'low'`,
+  `priority = 'normal'`, no verification requirement.
+- **"This defect is properly resolved" is exactly `status =
+  'complete'` — no separate flag needed.** Reaching `complete` on a
+  verification-required action is only possible via `'awaiting_
+  verification'` first (`actions_lifecycle()`, 125), which always
+  stamps `verified_at`, and nobody may verify their own submitted work
+  (`actions_party_guard()`, 126).
+- **Return-to-service is a DATABASE GUARD, not a UI convention**
+  (`hs_equipment_return_to_service_guard()`, a BEFORE UPDATE trigger on
+  `hs_equipment`): an asset may not leave `'quarantined'` while an open
+  critical defect (`source_type = 'inspection'`, `severity =
+  'critical'`, `status NOT IN ('complete','dismissed','cancelled')`)
+  still points at it. The guard applies to every session, staff
+  included — the same posture 125's own document/incident workflow
+  guards take ("workflow lives in BEFORE triggers, never only in the
+  UI"). A non-critical open defect never blocks return-to-service.
+- **Quarantining happens AT SUBMISSION**, inside `hs_submit_inspection`
+  (extended, not duplicated) — a critical failure needs the asset off
+  the floor the moment it is recorded, not on the next automation
+  cron tick five minutes later. Never touches a `'decommissioned'`
+  asset (a stronger, terminal state); never re-quarantines one already
+  quarantined.
+- **`hs_quarantine_asset()` is SECURITY DEFINER, and the reason is a
+  real gap found live while probing this group**: `hs_equipment` has
+  only a staff-`ALL` policy and a client-`SELECT` policy — 112 never
+  gave a client an UPDATE policy, and Group 2 did not widen that. But
+  recording a routine pre-use inspection is exactly a CLIENT action (an
+  operator's own forklift check), so a plain session UPDATE from inside
+  `hs_submit_inspection` (SECURITY INVOKER) would have been silently
+  no-op'd by RLS for anyone but staff — the asset would stay
+  `'in_service'` after a critical failure. The DEFINER helper re-derives
+  the caller's own organisation from `my_company_id()` (never trusts an
+  argument), so it can only ever quarantine an asset already known to
+  belong to the caller's own company.
+- **A second real gap found live, same probing session**: gating
+  `inspections`/`inspection_responses` INSERT on `asset.manage` (Group
+  3's own choice) locked out the actual front-line user this feature
+  exists for — a plain `client_user` maps (117's `legacy_role_map`) to
+  the catalogue role `employee`, which never held `asset.manage`.
+  Migration 147 adds a narrower `inspection.perform` capability
+  (granted to every `asset.manage` role plus `employee` — the one role
+  Group 2 deliberately left out), moves the INSERT/SELECT policies on
+  `inspections`/`inspection_responses` and the template-catalogue read
+  policies onto it, and moves the `hs_evidence_writable`/`readable`
+  branch for `'inspection'`/`'inspection_response'` onto it too — a
+  photo attached to an inspection's own answer is recording the
+  inspection, not managing the asset register, which stays
+  `asset.manage`-gated for the asset row and its own evidence.
+- **147a is the same "TS↔SQL parity regex can't parse a dynamic grant"
+  trap 144a already hit**: 147's first capability-grant INSERT used a
+  `SELECT role_key, 'inspection.perform' FROM (VALUES (role),...)`
+  shape; `tenancySql.test.ts` only recognises 117/122/132/144's
+  `('capability', ARRAY[roles])` literal shape. Rewritten in place (and
+  147a applied live, `ON CONFLICT DO NOTHING`, byte-identical resulting
+  grants) to match it.
+
+**Live probes**: `146_defects_return_to_service.sql` (rolled back, 6
+checks, run under a SIMULATED CLIENT SESSION via `set_config('request.
+jwt.claims',...)` + `SET LOCAL ROLE authenticated` — the same technique
+142's probe established — since `hs_quarantine_asset()`/
+`is_tps_staff()`/`my_company_id()` all key on a real session and a
+bare service-role probe has none): a client-submitted critical fail
+quarantines the asset; a non-critical fail does not; a decommissioned
+asset is never touched; return-to-service is refused while a critical
+defect is open; allowed once it reaches `complete`; a non-critical open
+defect never blocks it. All 6 passed, confirmed the client-vs-staff gap
+BEFORE 147 existed (first run failed check 1), then confirmed fixed.
+
+`hsRules.ts`'s `inspection_completed` rule now raises the defect
+action(s) (reading `inspection_responses` directly from the one event
+`inspections.created` fires, the same "read once from the row the
+event points at" shape `auditSubmittedConsequences` uses) and updates
+its client-facing copy ("quarantined... needs attention", link to
+`/protect/actions` instead of `/protect/timeline` on a failure). It
+never decides the asset's status itself — that already happened,
+synchronously, inside `hs_submit_inspection`/`hs_quarantine_asset` at
+submission time; the rule only reports what already happened.
+`ActionConsequence`'s `row` type and `createKeyedAction()`
+(`rules.ts`/`process.ts`) gained optional `severity`/`source_type`/
+`source_id`/`verification_required` fields — additive, every existing
+caller unaffected. `hsRules.test.ts`'s inspection cases rewritten for
+the new behaviour (one keyed defect action per critical/non-critical
+fail, correct severity/priority/verification_required, idempotent
+re-processing).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1111 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+### Group 5: PUWER assessments (migrations 148-148a)
+
+A PUWER assessment is a formal, periodic compliance review of one
+asset — distinct from a routine pre-use inspection (Group 3: frequent,
+pass/fail per item) and from a LOLER thorough examination (Group 6,
+next: a single dated pass/fail event). It produces a compliance
+OUTCOME and a review cycle, and may optionally be backed by a checklist
+run via `inspection_id` — **reusing Group 3's `inspections`/
+`inspection_responses` machinery, never a second checklist engine.**
+
+- **`hs_equipment.puwer_applicable` (144) gates it**: a trigger refuses
+  recording an assessment against an asset not flagged PUWER-applicable,
+  so the register can never silently apply the wrong regulation to the
+  wrong asset type. A linked `inspection_id` must belong to the SAME
+  asset (and organisation) or is refused.
+- **Never assert legal compliance — applied here first because it is
+  where a wrong word would matter most.** Every outcome label
+  (`compliant | non_compliant | compliant_with_actions`) and every
+  piece of Timeline/notification copy says "recorded assessment
+  outcome", never "this machine is legally compliant". A live probe
+  check (`8c`) asserts the Timeline summary text literally does not
+  contain "legally compliant".
+- **Insert-only** (a correction is a new assessment) — same "a
+  correction is a new row" discipline as the rest of the register's
+  evidence tables.
+- **A non-compliant or compliant-with-actions outcome does NOT
+  auto-quarantine the asset**, unlike a critical inspection failure
+  (Group 4) — a compliance finding needs correction by a review date,
+  not necessarily an immediate stop-use; that trade was made
+  deliberately, not left undecided. A finding still becomes an
+  `actions` row (never a second table): `'puwer_assessment'` joins
+  `actions_source_type_check`'s existing `'inspection'`/
+  `'equipment_inspection'` CHECK values.
+- **A real gap found live while wiring the reminder**: `puwer_
+  assessments` is insert-only, so a reminder rule reading it directly
+  would fire once per HISTORICAL row — every past assessment's
+  `review_due_on`, not just the current one. **148a** rolls the latest
+  assessment's review date forward onto `hs_equipment.puwer_review_
+  due_on` (the exact pattern `hs_equipment_inspections`/
+  `hs_equipment_inspection_roll()` (114) already established for
+  `next_inspection_due`, applied here rather than inventing a second
+  one), guarded by "only advance when this is the NEWEST assessment for
+  the asset" so a late-backfilled old assessment never moves a newer
+  one backwards. The reminder rule reads `hs_equipment`, not
+  `puwer_assessments`.
+- **Evidence, RLS, capability**: reuses `asset.read`/`asset.manage`
+  (Group 2) — recording a formal PUWER assessment is gated on
+  `asset.manage`, deliberately NOT the narrower `inspection.perform`
+  Group 4 introduced for routine checks (a compliance assessment is an
+  asset-management act, not a driver's daily tick-list).
+
+**Live probe** (`148_puwer_assessments.sql`, rolled back): 12 checks —
+recording against a PUWER-applicable asset succeeds; against a
+non-applicable asset refused; cross-company asset refused; a linked
+inspection belonging to a different asset refused, to the same asset
+accepted; evidence vocab resolves; the CHECK accepts the new
+`source_type`; immutability holds; the Timeline entry fires with
+neutral, non-"legally compliant" wording; the outbox payload carries
+`outcome`. All 12 passed.
+
+`TRIGGERED_ENTITIES`/`REMINDER_ENTITIES` gained `puwer_assessments`;
+`platformEventsSql.test.ts` gained 148 to its `LATER` list; a new
+`puwer_review_reminder` rule and `puwer_review_due` notification type
+(both bells). `PUWER_ASSESSMENT_OUTCOMES`/`_LABELS` added to
+`lib/hs/vocab.ts` (shared-dupe pair) — `vocab.test.ts`'s anchor regexes
+for BOTH the new tuple and 114's pre-existing "equipment inspection
+outcomes" tuple needed disambiguating on a preceding column, since the
+two tables' `outcome` CHECK clauses are textually identical and the
+test's "latest match wins" helper would otherwise have silently
+resolved both tuples to whichever migration is read last — caught
+because the first version of the new test failed, not assumed correct.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1112 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+### Group 6: LOLER thorough examinations + immediate danger (migration 149)
+
+A LOLER thorough examination is a single dated pass/fail event with a
+next-due date — exactly the shape `hs_equipment_inspections` (114)
+already has, and NOT a checklist (unlike Group 3's `inspections` or
+Group 5's PUWER assessments). Per the existing-operations audit's own
+recommendation, this **extends `hs_equipment_inspections` in place** —
+"a generic thorough-examination framework, LOLER first" — rather than
+a new table. `hs_equipment.loler_applicable` (144) gates it, mirroring
+Group 5's `puwer_applicable` guard exactly.
+
+- **Two new columns**: `examination_type` (nullable — NULL means a
+  plain routine inspection, unaffected by any of this; `'loler_
+  thorough_examination'` is the one value today, framed as a
+  vocabulary because the framework is meant to grow) and
+  `immediate_danger` (boolean, default false).
+- **A LOLER examination against a non-LOLER-applicable asset is
+  refused** (`hs_equipment_inspection_examination_guard()`), the same
+  shape as Group 5's PUWER-applicable check.
+- **Immediate danger (LOLER reg 8) quarantines the asset
+  UNCONDITIONALLY, regardless of what `outcome` says** — the examiner
+  should always record a fail alongside it, but the database does not
+  trust that to have happened correctly (the same defence-in-depth
+  Group 4's `hs_submit_inspection`/`hs_quarantine_asset` already
+  apply). Checked at the TOP of `hs_equipment_inspection_roll()`,
+  before the existing pass/fail branch, and reuses
+  `hs_quarantine_asset()` (146) rather than a second quarantine path.
+- **Flagged, never decided.** This follows the EXACT "RIDDOR is
+  decision support, never auto-decide, never submit to the HSE"
+  posture Phase 2 already established for a different regulator:
+  nothing here reports anything to the HSE or asserts a legal
+  conclusion. It raises one urgent, verification-required `actions` row
+  (`action_type = 'hs_immediate_danger'`, `severity = 'critical'`,
+  `source_type = 'equipment_inspection'` — already an allowed CHECK
+  value since 119/125, no CHECK change needed) and an urgent
+  notification to both the client and staff; a person reads it and
+  acts.
+- **`hs_equipment_inspections` joins `TRIGGERED_ENTITIES` for the first
+  time** — it never needed an outbox entry until immediate danger
+  needed one to react to. Whitelist: `equipment_id, outcome,
+  next_due_on, examination_type, immediate_danger` — never notes.
+
+**Live probe** (`149_loler_examinations.sql`, rolled back, under a
+simulated staff session for the same reason 146's probe needed one —
+`hs_quarantine_asset()` keys on a real session): 6 checks — a LOLER
+exam against a non-applicable asset refused; a passing LOLER exam
+rolls `next_inspection_due` forward as before; a plain routine
+inspection (no `examination_type`) is unaffected; `immediate_danger =
+true` quarantines even when `outcome = 'pass'`; the roll-forward date
+is untouched by the immediate-danger row; the outbox payload carries
+`immediate_danger`. All 6 passed.
+
+`hsRules.ts` gained `loler_immediate_danger` (raises the action + both
+notifications, idempotent on re-processing); a new `loler_immediate_
+danger` notification type (both bells); `HS_EXAMINATION_TYPES`/`_LABELS`
+added to `lib/hs/vocab.ts` (shared-dupe pair).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1115 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+### Group 7: contractor companies, insurance, prequalification (migration 150)
+
+A contractor is a company distinct from a worker (Group 8 links
+individual contractor WORKERS into the Phase 3 person model; this
+group is the company record they work for). **`contractors.manage`
+(117) has existed since Phase 1 and was unenforced until now** — the
+existing-operations audit's own recommendation was to decide whether
+to enforce or retire it. Enforced: it already sat on the right roles
+(consultancy/organisation owners and admins, `hse_manager`,
+`site_manager`, platform staff), so no capability grant change was
+needed, only RLS policies that finally read it.
+
+- **Prequalification is deliberately NOT a second checklist engine.**
+  Group 3's `inspections` is asset-scoped (`asset_id NOT NULL`) and
+  widening it to also cover contractors would blur what it means — a
+  contractor prequalification is a company-level compliance decision,
+  not a per-visit check. `approval_status` (`pending | approved |
+  suspended | rejected`) IS the prequalification outcome, decided by a
+  person reading the insurance/document evidence this migration
+  tracks. No numeric "prequalification score" table exists; that would
+  be new scope, not something this migration should invent to look
+  complete.
+- **`contractor_insurances` is MUTABLE, one row per (contractor,
+  insurance_type)** — a renewal UPDATEs the row in place. This is a
+  deliberate departure from the "a correction is a new row" discipline
+  the register's EVENT tables (inspections, PUWER assessments) use: an
+  insurance policy is ongoing STATE with one current expiry, not a
+  point-in-time event history.
+- **`contractor_is_current(contractor_id)`** is the one deterministic
+  "is this contractor OK to use" check — pure SQL, no scoring, no AI:
+  `approval_status = 'approved'` AND both UK-standard required
+  policies (`employers_liability`, `public_liability`) in date AND no
+  ON-FILE policy of ANY type past its expiry (a lapsed
+  `professional_indemnity`, though not required, still fails it).
+  Exposed now so Group 8's access gate never needs a second
+  implementation of the same fact.
+- **Performance reviews reuse the EXISTING `actions.source_type`
+  value `'contractor_review'`** (119/125's CHECK already allows it) —
+  never a second review table.
+- **A suspended/rejected contractor's notification is STAFF-ONLY for
+  now**, not sent to the client — contractor management has no portal
+  page yet (Group 13 builds it). A client-facing notification with
+  nowhere to link was exactly the gap `rules.test.ts`'s own "every
+  client notification has a portal link" check caught on the first
+  version of the insurance-expiry reminder (it had a `company_admins`
+  audience and only an admin link) — both new rules were narrowed to
+  `staffOnly` rather than inventing a link to a page that does not
+  exist, to be widened once Group 13 ships it.
+
+**Live probe** (`150_contractors.sql`, rolled back): 14 checks — a
+new pending contractor is never current; approved-but-uninsured is
+never current; missing either required policy is never current; both
+required policies in date makes it current; a renewal updates the same
+row (not a second one); an expired NON-required policy still fails
+currency; suspension overrides everything; insurance `company_id` is
+filled from the parent contractor, never trusted from the caller;
+evidence vocab resolves; the Timeline and outbox fire on an
+approval-status change; the generic audit trail fires. All 14 passed.
+
+`TRIGGERED_ENTITIES` gained `contractors`; `REMINDER_ENTITIES` gained
+`contractor_insurances`. `CONTRACTOR_APPROVAL_STATUSES`/`_RISK_
+RATINGS`/`_INSURANCE_TYPES` (+ labels) added to `lib/hs/vocab.ts`
+(shared-dupe pair).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1120 admin, 600 portal), all five CI guards pass, admin production
+build compiles.
+
+### Group 8: contractor workers + Safe-to-Deploy + access gate (migration 151)
+
+A contractor WORKER is a `people` row (Phase 3) with `worker_type =
+'contractor'` — that value has existed since 118, and
+`workforce_readiness()`/`workforce_matrix` already include it (Phase
+3's own rule: "Workforce lists include only worker_type employee /
+contractor / consultant / temporary_worker"). What was missing was the
+link to WHICH contractor company (Group 7) a worker belongs to, and one
+access-gate check combining that company's status with the worker's own
+Safe to Deploy status.
+
+- **`people.contractor_id`** is the one new column, guarded so it may
+  only be set when `worker_type = 'contractor'` AND the contractor
+  belongs to the SAME organisation.
+- **The access gate (`contractor_worker_access()`) never re-implements
+  Safe to Deploy or contractor currency** — it calls
+  `person_deployment_status()` (136, the ONE public read of the
+  cache-or-live engine — Phase 3's standing rule: "Never call the raw
+  engine from a public read") and `contractor_is_current()` (150) and
+  combines the two. It computes no new deterministic fact of its own
+  beyond "both of these are true" — no AI, no scoring.
+- **Induction and RAMS are deliberately NOT separate checks here.** An
+  induction requirement is modelled as an ordinary Phase 3
+  `role_requirement` (`requirement_type = 'induction'`), so it is
+  ALREADY inside the Safe to Deploy calculation for anyone it applies
+  to — a second check here would either duplicate it or silently
+  disagree. RAMS/permit-specific gating is Group 9's job (a permit's
+  own compliance re-check AT ISSUE) — this gate answers "may this
+  worker be on site at all", not "may they do this specific task".
+- **Refuses (never merely omits) a person the caller may not see** —
+  `person_visible()` is checked FIRST, before anything about the
+  person is touched, matching `person_deployment_status()`'s own
+  defensive order exactly.
+- **`people`'s `audit_row` whitelist was last redefined by 132, not
+  118** — checked, not assumed, per this codebase's own "latest
+  definition wins" rule for every re-created trigger. Re-emitted with
+  132's exact list plus `contractor_id`.
+
+**Live probe** (`151_contractor_workers_access_gate.sql`, rolled back,
+under a simulated staff session since `person_visible()` needs one): 7
+checks — a contractor worker may link to a same-org contractor;
+non-contractor `worker_type` with a `contractor_id` refused;
+cross-company contractor link refused; a contractor worker with no
+link is refused with a clear reason; an ordinary employee is refused
+via this contractor-specific gate; a linked worker whose contractor is
+current AND whose Safe to Deploy status is genuinely `READY` (an
+active role with zero requirements, added after the first run showed a
+person with NO role at all reads `REVIEW_REQUIRED` — the engine's own
+safe default, not a Group 8 fact) gets access GRANTED; suspending the
+contractor flips it back to refused, re-checked live rather than
+cached. All 7 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1120 admin, 600 portal, unchanged — this migration touched no TS),
+all five CI guards pass, admin production build compiles.
+
+### Group 9: permit to work (migration 152)
+
+A permit is issued for a scope of work at a SITE, optionally against a
+specific ASSET, covering one or more PEOPLE. `permit_templates` are
+**per-company**, unlike `inspection_templates`/`hs_audit_templates`
+(global staff reference data) — a template names a required
+`authorisation_type_id`, and `authorisation_types` (133) is itself
+per-organisation with no global seed, so a global permit template
+could never name a real authorisation type to check against.
+
+- **`person_holds_authorisation(person, type, site, as_of)` is a
+  genuinely new helper** — the Phase 3 handover's own "not yet done"
+  list named this exact gap. It checks `scope_site_id` only:
+  `authorisation_types` has no `scope_asset_id` column despite
+  `scope_kind` allowing `'plant'`/`'equipment'` — a real Phase 3 schema
+  gap, called out in the migration's own header rather than silently
+  assumed away, not fixed here.
+- **Numbering is `PTW-YYYY-NNNNNN`** via `next_record_number()` (122) —
+  six digits, matching every other numbered record in this codebase
+  (asset refs, Group 2), not the plan's own five-digit prose example.
+- **The live compliance re-check runs at ISSUE and again at
+  REVALIDATION, never skipped just because a suspension is being
+  lifted.** `permits_lifecycle_guard()` (BEFORE UPDATE) checks: the
+  asset (if any) is not quarantined; every person already added to the
+  permit (`permit_people`, editable only while `draft`) is Safe to
+  Deploy via `person_deployment_status()` (136) — never
+  re-implemented; the authorising person holds the template's required
+  authorisation at the permit's site, if one is named. A suspension may
+  have existed for exactly the reason this check would catch, so
+  revalidation runs the identical checks as a first issue, never a
+  bare flag flip — proven live: quarantining the asset blocks
+  revalidation exactly as it blocks a first issue.
+- **Validity is SERVER TIME throughout.** `valid_from`/`valid_until`
+  are `timestamptz`; `permit_is_currently_valid()` compares against
+  `now()`, never a client-supplied "still valid" flag.
+- **The lifecycle is a strict state machine, not a free status field**:
+  `draft → issued` (stamps `issued_by/at`, defaults `valid_until` from
+  the template's `default_validity_hours`, or 8h); `issued ⇄ suspended`
+  (requires a reason); `suspended → issued` (revalidation, re-runs the
+  full check, clears suspension fields); `issued/suspended → closed`
+  (requires closeout notes); any non-terminal status `→ revoked`
+  (requires a reason). Every other transition is refused. `permit_people`
+  can only be added while `draft` — once issued, who is covered is
+  frozen.
+- **RLS reuses `contractors.manage`** for all management access on
+  templates/permits/people/checklist responses, rather than inventing
+  `permits.manage` for one more variant of "may manage site safety
+  records" — a permit is issued FOR a contractor/employee's work, the
+  same management act as approving the contractor itself.
+- **Outbox + audit + notifications follow the Group 7 precedent
+  exactly**: `permits` joins `TRIGGERED_ENTITIES` (whitelist:
+  `permit_number, template_id, site_id, asset_id, status, valid_from,
+  valid_until` — never `scope_of_work`, `closeout_notes` or any reason
+  field) and `REMINDER_ENTITIES` (an issued permit approaching its own
+  `valid_until`, `due_0`/`overdue` only — a permit's whole point is a
+  short, bounded window, so a 30/7-day warning would be noise for most
+  permit types). Both new rules (`permit_status_changed` on
+  suspend/revoke, `permit_reminder` on expiry) are **STAFF-ONLY for
+  now**, the identical reasoning `contractor_status_changed`/
+  `contractor_insurance_reminder` already carry: permits have no portal
+  page yet (Group 13 builds it) — widen to `admins()` once that page
+  exists, rather than inventing a link to nowhere.
+
+**Live probe** (`152_permit_to_work.sql`, rolled back, the ENTIRE
+exercised sequence under one simulated staff session — not just around
+bare function calls: the lifecycle guard's `person_deployment_status()`/
+`person_visible()` calls need a real `auth.uid()` whenever the trigger
+fires from an ordinary UPDATE, which the first draft of this probe
+missed and caught as `42501 You cannot see this person` on a bare
+service-role UPDATE with no session). 22 checks: template numbering +
+same-org authorisation-type guard; permit number format; cross-org
+site refused; `permit_people` insertable while draft;
+`person_holds_authorisation` false with none on file, true once
+granted; issue refused without the authorising person's authorisation;
+issue refused with a non-`READY` person on the permit (a person with no
+role at all); issue succeeds once both blockers clear, stamping
+`valid_from`/`valid_until`; `permit_is_currently_valid` true right
+after issue; `permit_people` refused once issued; suspend refused
+without a reason, succeeds with one; `permit_is_currently_valid` false
+while suspended; revalidation refused with a quarantined asset (proving
+the SAME check runs, not a bare flag flip), succeeds once cleared and
+clears suspension fields; close refused without notes, succeeds with
+them; revoke refused from a closed (terminal) permit; revoke refused
+without a reason from draft, succeeds with one. All 22 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1124 admin — 1120 + 4 new: 2 `hsRules.test.ts` cases and 2
+`vocab.test.ts` cases pinning `PERMIT_TYPES`/`PERMIT_STATUSES`, plus the
+generic reminder/rule coverage tests picking up `permits` automatically
+with no new test count; 600 portal, unchanged — this group touched
+only the shared-dupe vocab/notify files, byte-identical to admin's),
+all five CI guards pass, both production builds compile.
+
+### Group 10: isolation / lockout-tag-out (migration 153)
+
+An isolation de-energises ONE energy source on an asset (electrical,
+mechanical, hydraulic, pneumatic, thermal, chemical, other). Optionally
+linked to a `permits` row (a permit to work often requires an isolation
+first) but not a hard dependency — `permit_id` is nullable.
+
+- **`isolation_locks` is the GROUP/multi-lock layer**: a single job may
+  need several workers each applying their own personal lock to the
+  same isolation point, and the asset may not be re-energised until
+  EVERY lock is cleared by its own owner — never by whoever happens to
+  be doing the paperwork. `UNIQUE (isolation_id, person_id)` — one lock
+  per worker per isolation.
+- **Removing someone else's lock needs a recorded, authorised
+  override** — a real LOTO scenario (a worker off site, unreachable),
+  never silent and never self-authorised: the override needs a reason
+  AND an authorising person who is NOT the one doing the removing.
+- **Verification by another person is a hard rule, twice over** — the
+  same "nobody approves their own work" posture Phase 2's guards
+  already apply: the person who verifies an isolation is effective
+  must not be the person who applied it, and the person who verifies
+  it is safe to remove must not be the person who removed it. Both
+  enforced by `isolations_lifecycle_guard()` (BEFORE UPDATE), not the
+  UI.
+- **Lifecycle is `applied → verified → removed`**, strict: removal is
+  refused while ANY personal lock is still open (checked with a live
+  `count(*)` against `isolation_locks`, not a cached flag), and any
+  other transition — including backwards — is refused outright.
+- **Asset availability is `out_of_service`, never `quarantined`.**
+  Quarantine (Group 4) is reserved for a safety DEFECT — a different
+  concern with a different meaning; isolation is a planned, controlled
+  unavailability. Applying an isolation moves an `in_service` asset to
+  `out_of_service`; removing the LAST open isolation on that asset
+  restores it — but ONLY from `out_of_service`, so a `quarantined` or
+  `decommissioned` asset is never silently reopened by an isolation
+  clearing. Proven live: with two isolations open on one asset,
+  clearing the first leaves it `out_of_service` (the second is still
+  open); clearing the second restores `in_service`.
+- **RLS reuses `contractors.manage`** — same "one more variant of
+  managing site safety records" reasoning as Group 9's permits, no new
+  capability invented.
+- **No REMINDER_ENTITIES entry.** An open isolation has no due date of
+  its own to remind against — unlike a permit's bounded `valid_until`,
+  an isolation is meant to be cleared promptly, not on a schedule.
+  Only `isolations` joins `TRIGGERED_ENTITIES`, for the one
+  `isolation_applied` notification (STAFF-ONLY, same reasoning as
+  Groups 7-9 — no portal page yet).
+
+**Live probe** (`153_isolation_loto.sql`, rolled back, the entire
+sequence under one simulated staff session, the same lesson 152's own
+probe learned): 16 checks — apply moves the asset to `out_of_service`;
+two personal locks added; self-verification refused, a different
+verifier succeeds; removal refused while locks are open; removing
+another's lock with no override refused, self-authorised override
+refused, a properly authorised override (different remover AND
+authoriser) succeeds; a worker's own self-removal succeeds; removal
+with the same remover/verifier refused, a different verifier succeeds
+and restores the asset to `in_service`; no lock addable after removal;
+a backwards transition refused; and the two-isolations-on-one-asset
+case — the asset stays `out_of_service` after the first clears (a
+probe bug initially left `iso2` from an earlier check open on the SAME
+asset, correctly blocking restoration — fixed by isolating that check
+to its own asset, not a migration defect) and is restored only once
+the LAST one clears. All 16 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1127 admin — 1124 + 3 new: 1 `hsRules.test.ts` case, 2 `vocab.test.ts`
+cases pinning `ISOLATION_TYPES`/`ISOLATION_STATUSES`; 600 portal,
+unchanged — this group touched only the shared-dupe vocab/notify
+files), all five CI guards pass, both production builds compile.
+
+### Group 11: emergency planning (migration 154)
+
+`emergency_plans` reuses `hs_documents`' own versioning DISCIPLINE
+(106), not the table itself: a plan needs structure `hs_documents` was
+never built for — required roles and linked equipment — so bolting
+those onto the generic document library would have widened its purpose
+past "metadata for a file". The discipline is copied verbatim: a new
+version is a new ROW (`emergency_plans_stamp`), never an edit; the old
+row flips to `'superseded'` via its own UPDATE, firing the Safety
+Timeline entry (`emergency_plans_event`, mirroring `hs_document_event`
+exactly).
+
+- **`emergency_plan_roles` links to the Phase 3 authorisation
+  catalogue** (e.g. "Fire Warden", "First Aider") with a minimum
+  headcount — never a duplicate competency system. Who currently holds
+  that authorisation is read LIVE from `person_authorisations` (the
+  same table Group 9's `person_holds_authorisation()` already reads),
+  never stored here.
+- **`emergency_plan_equipment` is a plain linking table** to
+  `hs_equipment` (fire extinguishers, muster-point kit,
+  defibrillators) — no new equipment concept.
+- **`emergency_drills` is insert-only**, the register's own "a
+  correction is a new row" discipline (`hs_register_completions`/
+  `hs_audits`). **Drill findings are NEVER a second table**: an
+  `outcome` of `'issues_found'` or `'failed'` raises exactly ONE row on
+  the EXISTING `actions` table (`hsRules.ts`'s `emergency_drill_recorded`
+  rule, the identical shape `hs_check_failed` already uses) — never one
+  action per individual finding, the same notification-storm avoidance
+  the on-site-audit engine (110) already established. A `'successful'`
+  drill raises nothing.
+- **RLS on every new table is staff-write / client-read-only** — the
+  exact `hs_activities`/`hs_register_completions` shape. Nothing about
+  emergency planning is self-certified by a client, matching the
+  standing H&S posture since Phase 1b.
+- **`emergency_drill_recorded` notifies the client via the PORTAL,
+  unlike Groups 7-10's staff-only notifications** — because unlike
+  contractors/permits/isolations, its consequence lands on `actions`,
+  and `/protect/actions` already exists as a real portal page. This is
+  the one Phase 4 Group 7+ rule that could safely use `admins()` from
+  day one.
+
+**Live probe** (`154_emergency_planning.sql`, rolled back, simulated
+staff session): 14 checks — plan v1 created at version 1; cross-org
+site refused; a required role links to the authorisation catalogue,
+cross-org authorisation type refused; linked equipment added, cross-org
+asset refused; a new version (v2) created referencing v1 via
+`supersedes_id`; flipping v1 to `'superseded'` succeeds and both
+`plan_added`/`plan_superseded` Safety Timeline entries exist; a drill
+recorded against the plan; the drill cannot be UPDATEd or DELETEd
+(insert-only); a drill against a DIFFERENT company's plan refused; and
+exactly ONE Safety Timeline entry for the drill (never one per
+finding). All 14 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1133 admin — 1127 + 6 new: 3 `hsRules.test.ts` cases and 3
+`vocab.test.ts` cases pinning `EMERGENCY_PLAN_TYPES`/
+`EMERGENCY_PLAN_STATUSES`/`EMERGENCY_DRILL_OUTCOMES`; 600 portal,
+unchanged — this group touched only the shared-dupe vocab/notify
+files), all five CI guards pass, both production builds compile.
+
+### Group 12: notifications / audit / platform_events wiring sweep
+
+A completeness pass across Groups 2-11, the same discipline as the
+2026-09-26 "sanity-check sweep" — auditing every `TRIGGERED_ENTITIES`
+table against `hsRules.ts`/`rules.ts` for a consuming rule, and every
+new `SECURITY DEFINER` function for its `REVOKE ALL` grant.
+
+**Two real gaps found and fixed** (a table had a trigger, but the only
+consequence was a reminder — no rule reacted to the row itself being
+created):
+
+- **`puwer_assessments.created` told nobody.** A non-compliant or
+  compliant-with-actions outcome sat silently until the NEXT scheduled
+  review reminder, sometimes months later. New rule
+  `puwer_non_compliant` raises exactly ONE action (`hs_puwer_finding`,
+  the identical `hs_check_failed` shape) and notifies the client via
+  the portal actions link (which already exists) plus staff. Neutral
+  wording throughout — "recorded assessment outcome", never a
+  compliance judgement, the same discipline `PUWER_ASSESSMENT_OUTCOME_LABELS`
+  already applies. A `'compliant'` outcome still raises nothing.
+- **`emergency_plans.created` told nobody.** A new plan (or a
+  superseding version) landed with no signal beyond the Safety Timeline
+  entry and the eventual review-due reminder. New rule
+  `emergency_plan_added` tells staff (no portal page yet, same
+  reasoning as every other Phase 4 Group 7+ table) — a supersede
+  raises nothing separately, since the new version's own `.created`
+  already covers it (the identical reasoning `hs_document_added`
+  already established for the same versioning shape).
+
+**Everything else audited clean**: every other Phase 4 `TRIGGERED_ENTITIES`
+table (`inspections`, `hs_equipment_inspections`, `contractors`,
+`permits`, `isolations`, `emergency_drills`) already had a consuming
+rule from its own group. Every new `SECURITY DEFINER` function across
+migrations 144-154 was checked live via `has_function_privilege()`
+against `anon`/`authenticated` — every trigger-only guard function
+correctly has NO execute grant to either role; the three functions
+meant to be called directly by a session (`contractor_is_current`,
+`contractor_worker_access`, `hs_quarantine_asset`, plus 152's
+`person_holds_authorisation`/`permit_is_currently_valid` verified in
+Group 9) correctly grant `authenticated` only, never `anon`.
+`contractor_insurances`/`permit_people`/`permit_templates`/
+`emergency_plan_roles`/`emergency_plan_equipment` deliberately have NO
+generic `audit_row` trigger of their own — confirmed against 150's own
+header comment: the audit trail lives on the PARENT record
+(`contractors`, `permits`, `emergency_plans`), the same "one Safety
+Timeline / audit line per meaningful record, not per sub-row" rule
+`hs_audit_responses` and `permit_checklist_responses` already
+established.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1137 admin — 1133 + 4 new `hsRules.test.ts` cases covering both new
+rules and their non-firing paths; 600 portal, unchanged — this sweep
+touched only the shared-dupe notify files), all five CI guards pass,
+both production builds compile.
+
+### Group 13: admin + portal UI (2026-09-28)
+
+The last built-out piece before Group 14's own regression/QA/handover
+pass: screens for the four Phase 4 groups that had shipped with a
+schema, RLS and consequence rules but no way for a person to actually
+use them — contractors (Group 7), permits to work (Group 9),
+isolation/LOTO (Group 10) and emergency planning (Group 11). Group 7's
+own migration comment had named the gap explicitly ("staff-only for
+now, no portal page yet") — this closes it for the one table that
+genuinely has a client-read policy.
+
+- **Every write attempts the UPDATE and shows whatever the trigger
+  refuses, never a client-side pre-check.** Permits' issue/suspend/
+  revalidate/close/revoke and isolations' verify/remove buttons call
+  the exact database guards documented under Groups 9 and 10
+  (`permits_lifecycle_guard`, `isolations_lifecycle_guard`,
+  `isolation_locks_guard`) with no UI-side validation duplicating
+  them — "the authorising person does not hold the required
+  authorisation" or "every personal lock must be removed by its own
+  owner" are the trigger's own Postgres error messages, surfaced as a
+  toast verbatim. This is the same posture every H&S workflow guard in
+  this file already takes: the database is the boundary, the page only
+  asks.
+- **Every status-changing UPDATE uses `COUNT_EXACT` + `judgeWrite()`
+  from the start** (contractor approval/risk, permit lifecycle,
+  isolation verify/remove, isolation-lock removal, emergency plan
+  supersession) — `check-blind-updates.sh`'s ratchet did not move
+  (102, unchanged) because every new write path was built counted, not
+  retrofitted after the guard caught it, the same discipline the
+  Documents-versioning UPDATE (Phase 2/H&S Phase 2) already established.
+- **Insurance renewal is an `upsert` on `(contractor_id,
+  insurance_type)`, not a `select`-then-`update`/`insert` branch** — the
+  UNIQUE constraint from Group 7's own migration is the thing that makes
+  "record or renew" a single form with no separate renewal flow to get
+  out of sync with the create flow.
+- **A new emergency plan version is two writes, in the documented
+  order**: insert the new row first (with `supersedes_id` pointing at
+  the old one), then update the old row to `superseded` — never the
+  reverse, which would leave a client's Register momentarily showing no
+  active plan of that type if the insert then failed. Mirrors
+  `hs_documents`' own versioning discipline exactly, as Group 11's
+  migration comment says to.
+- **Isolation locks and permit people are scoped by the parent's own
+  lifecycle, not by a separate check on the page.** People can only be
+  added to a permit while it is `draft` (the UI hides the add-person
+  form once issued, but the real refusal is `permit_people_guard`'s own
+  "still a draft" check); a lock's owner-vs-override distinction is
+  read straight off whether the picked "removed by" person differs from
+  the lock's own `person_id` — no separate "is this an override" toggle
+  to get out of sync with what the trigger will actually accept.
+- **Permit checklist responses (`permit_checklist_responses`) were
+  deliberately left out**, per the task's own scope note — the core
+  lifecycle (draft → issued → suspended → closed/revoked, people,
+  authorisation and asset-quarantine checks) is what the notifications
+  from Groups 9-11 needed a page to link to; a checklist sub-feature
+  with no consumer yet would have been scope invented to look complete,
+  the same trap Group 7's own migration comment warns against for a
+  numeric contractor "prequalification score."
+- **Contractors, permits and isolations stay admin-only.** None of the
+  three has a plain client-read RLS policy — only `contractors.manage`-
+  capability-gated management, which is a staff/consultancy act, not a
+  client one — so a portal page for any of them would either need a
+  capability-aware page (out of scope here) or would silently render
+  empty for every client without that capability. Emergency plans DO
+  have a genuine `..._client_read` policy on all four of its tables (Group
+  11's own design: "nothing about emergency planning is self-certified,"
+  read-only for the client by construction), so that one page is real,
+  reachable from `/protect`'s `SectionTabs`, and gated by `protect`
+  alone — the same posture Register/Documents/Audits/Equipment already
+  have.
+- **`admin/src/lib/hs/types.ts` picked up eleven new row-shape
+  interfaces** (`Contractor`, `ContractorInsurance`, `PermitTemplate`,
+  `Permit`, `PermitPerson`, `Isolation`, `IsolationLock`,
+  `EmergencyPlan`, `EmergencyPlanRole`, `EmergencyPlanEquipment`,
+  `EmergencyDrill`), mirrored byte-identical to the portal copy
+  immediately (`types.ts` is one of the shared-dupe pairs,
+  `scripts/check-shared-dupes.sh`) — `vocab.ts` needed no edit at all,
+  since every vocabulary tuple this group's forms use (`PERMIT_TYPES`,
+  `ISOLATION_TYPES`, `EMERGENCY_PLAN_TYPES`, `EMERGENCY_DRILL_OUTCOMES`,
+  `CONTRACTOR_APPROVAL_STATUSES`, …) had already been seeded by their
+  own migrations' groups.
+- **No new sidebar entry needed.** All four new admin routes nest under
+  the already-linked `/health-safety` top-level sidebar entry
+  (`check-admin-routes-linked.sh` matches on path prefix), the identical
+  precedent the `audits/[auditId]` detail page set in an earlier group —
+  they only needed a `HsCompanyTabs.tsx` tab each.
+- **A row-cap violation was caught and fixed by the guard doing its
+  job, not by review**: the first draft of the portal emergency-plans
+  page used `.limit(1000)` on two tables, which `check-row-cap.sh`
+  correctly flags as indistinguishable from an unbounded read at the
+  PostgREST cap boundary — lowered to 500, matching the page's other
+  reads. The admin equivalent read `emergency_plan_roles`/
+  `emergency_plan_equipment` with `readAllPages()` but with NO scoping
+  filter at all in the first draft — functionally safe only because
+  every other read on the page happened to filter by `plan_id` client-
+  side afterward, but wasteful and not the pattern this codebase uses
+  elsewhere; fixed to fetch plan ids first, then `.in('plan_id',
+  planIds)` for both, the same "fetch by id list, never blind" shape
+  the referral PATCH route and the H&S test-logging routes already
+  established.
+
+Verified: `tsc --noEmit` clean on both apps, full `vitest run` green
+(1138 admin, 111 test files; 602 portal, 39 test files — this group
+added no new test files, since it is pure UI over triggers/RLS already
+covered by each migration's own live probe), all five CI guards pass
+(`check-admin-routes-linked.sh`: 60 admin pages, all reachable;
+`check-blind-updates.sh`: 102 blind UPDATE chains, unchanged), both
+production builds compile, including all four new admin routes
+(`/health-safety/<companyId>/{contractors,permits,isolations,
+emergency-plans}`) and the new portal route (`/protect/emergency-plans`).
+
+### Group 14: final regression, security review, handover, gate (2026-09-28, migration 155)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE4_HANDOVER.md`.
+**Gate: PASS WITH MINOR ISSUES.**
+
+An independent adversarial security review (the same brief shape as
+Phase 3's QA 42) was run across every table and function created in
+migrations 144-154, plus the Group 13 UI, with every candidate finding
+required to be reproduced LIVE before being reported. It found one
+Medium and one Low:
+
+- **[Medium, fixed] A permit could be issued naming the ISSUING PERSON
+  as its own `authorised_person_id`.** `isolations_lifecycle_guard()`/
+  `isolation_locks_guard()` (153) both enforce "nobody approves their
+  own work"; `permits_lifecycle_guard()` (152) checked only that the
+  authorising person HELD the required authorisation, never that they
+  were not the acting session itself. Reproduced live: a permit
+  template with no required authorisation, `authorised_person_id` set
+  to a `people` row whose `user_id` matched the acting session, issued
+  cleanly with no exception. **Fixed by migration 155**: the issue/
+  revalidate branch now refuses when `authorised_person_id` resolves
+  (via `people.user_id`) to `auth.uid()` — fires only when the acting
+  session is itself linked to a `people` row, so staff administering
+  the record on a contractor's behalf are never blocked. Re-proved
+  refused live (`supabase/probes/155_*.sql`, 2/2): the self-authorised
+  case is refused with the exact message; a genuinely different
+  authorising person still issues normally.
+- **[Low, fixed same day] The portal's `/protect/emergency-plans` page
+  read `emergency_plan_roles`/`emergency_plan_equipment` with no
+  `company_id`/`plan_id` filter, relying entirely on RLS** — confirmed
+  live that RLS already scoped both correctly (no cross-tenant leak
+  existed), but every sibling query on the same page carries an
+  explicit filter and these two didn't. Fixed by fetching the
+  company's own `emergency_plans` first, then filtering both queries
+  with `.in('plan_id', planIds)` — the same "fetch an id list first"
+  shape `equipment/page.tsx` already uses for its inspection-evidence
+  join.
+
+**Everything else the review checked came back clean** (full list in
+the handover doc): RLS enabled and `authenticated`-only on every new
+table; the Group 4 `inspection.perform` capability fix confirmed live,
+not just on disk; `contractors.manage`'s reuse across contractors/
+permits/isolations reasoned through and judged a reasonable design
+choice given the trusted role population that actually holds it; every
+cross-organisation FK guarded, with a cross-org `isolations.applied_by`
+insert reproduced refused; no Phase 4 `SECURITY DEFINER` function
+executable by `anon`; the isolation self-verification checks correctly
+scoped; `emergency_drills`/`inspections`/`inspection_responses`
+insert-only enforcement confirmed live via `information_schema.
+table_privileges`, not just the migration's `REVOKE` text; every
+Group 13 `.update(` pairs `COUNT_EXACT` with `judgeWrite`.
+
+Verified after both fixes: `tsc --noEmit` clean both apps, full
+`vitest run` green (1138 admin, 602 portal — unchanged from Group 13,
+since the fixes touched a DB function and a portal page's query shape,
+not tested TypeScript logic), all five CI guards pass, both production
+builds compile. Migration 155 applied and verified live (function
+re-created, `REVOKE ALL` confirmed via `has_function_privilege`).
+
+**Phase 4 is complete. Phase 5 is not to begin** until this branch is
+merged and deployed, per the operator's instruction.
+
