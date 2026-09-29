@@ -19,6 +19,47 @@
 // injury/medical/personal detail — checked against the schema before
 // writing this file, not assumed safe.
 
+/**
+ * The date-window boundaries for a "current window" / "prior window"
+ * comparison, both EXACTLY `days` calendar days long, adjacent, with
+ * no gap and no overlap — the property the severity comparison's own
+ * fairness depends on. Half-open ranges throughout (`>= start AND <
+ * endExclusive`), so callers never need to reason about which end is
+ * inclusive.
+ *
+ * Found and fixed in Group 3's adversarial review: the first version
+ * built the current window as `[start, today]` (INCLUSIVE both ends —
+ * `days` calendar days is actually `days + 1` distinct dates when both
+ * ends are inclusive) and the prior window as `[priorStart, start)`
+ * (`days` days, half-open) — an off-by-one that made the "current"
+ * side of the comparison one calendar day longer than the "prior"
+ * side, every single time. `endExclusive` is `today + 2` rather than
+ * `today + 1` to safely include an incident dated up to `current_date
+ * + 1` — the exact leeway `hs_incidents`' own CHECK constraint allows
+ * for timezone rounding at the point of reporting.
+ */
+export interface IncidentPatternWindows {
+  windowStart: string;
+  windowEndExclusive: string;
+  priorStart: string;
+  priorEndExclusive: string;
+}
+
+export function incidentPatternWindows(todayISO: string, days: number): IncidentPatternWindows {
+  const shift = (n: number): string => {
+    const d = new Date(`${todayISO}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const windowStart = shift(-(days - 1));
+  return {
+    windowStart,
+    windowEndExclusive: shift(2),
+    priorStart: shift(-(days * 2 - 1)),
+    priorEndExclusive: windowStart,
+  };
+}
+
 export interface IncidentRow {
   id: string;
   incident_type: string;

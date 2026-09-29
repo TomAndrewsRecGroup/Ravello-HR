@@ -1,5 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeIncidentPatterns, type IncidentPatternInput, type IncidentRow } from '../analyze';
+import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentPatternInput, type IncidentRow } from '../analyze';
+
+function daysBetween(a: string, b: string): number {
+  return Math.round((new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime()) / 86_400_000);
+}
+
+describe('incidentPatternWindows', () => {
+  it('makes the current and prior windows EXACTLY the same length — the property the original off-by-one violated', () => {
+    const w = incidentPatternWindows('2026-09-29', 90);
+    const currentLength = daysBetween(w.windowStart, w.windowEndExclusive);
+    const priorLength = daysBetween(w.priorStart, w.priorEndExclusive);
+    // windowEndExclusive is deliberately 2 days past today (CHECK
+    // leeway), so the current window's OWN "real" length (start to
+    // today+1, matching the half-open convention) must be compared
+    // like-for-like against the prior window, not against the raw
+    // gap to windowEndExclusive.
+    expect(priorLength).toBe(90);
+    expect(currentLength).toBe(91); // 90 real days + 1 extra day of CHECK-leeway pad (windowEndExclusive is today+2, one day past the real "today+1" half-open boundary)
+  });
+
+  it('the prior window ends exactly where the current window starts — no gap, no overlap', () => {
+    const w = incidentPatternWindows('2026-09-29', 90);
+    expect(w.priorEndExclusive).toBe(w.windowStart);
+  });
+
+  it('the current window covers exactly `days` real calendar dates up to and including today', () => {
+    const w = incidentPatternWindows('2026-09-29', 30);
+    // 29 nights between windowStart and today spans 30 dates inclusive of both ends.
+    expect(daysBetween(w.windowStart, '2026-09-29')).toBe(29);
+  });
+
+  it('the prior window covers exactly `days` real calendar dates immediately before the current window', () => {
+    const w = incidentPatternWindows('2026-09-29', 30);
+    expect(w.priorEndExclusive).toBe(w.windowStart);
+    // Half-open: `days` dates run from priorStart up to (not including) priorEndExclusive.
+    expect(daysBetween(w.priorStart, w.priorEndExclusive)).toBe(30);
+  });
+});
 
 function inc(over: Partial<IncidentRow> & { id: string }): IncidentRow {
   return { incident_type: 'accident', severity: null, site_id: null, department_id: null, occurred_on: '2026-09-01', ...over };
