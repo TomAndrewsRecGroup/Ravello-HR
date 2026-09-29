@@ -317,6 +317,29 @@ export const REMINDERS: ReminderRule[] = [
     buckets: ['due_30', 'due_7', 'overdue'],
   },
   {
+    // Core-OS 360 Phase 5, Group 6 (161): an objective's own target
+    // date. Only OPEN objectives — an objective that already reached a
+    // terminal status (achieved/missed/abandoned) needs no further
+    // reminder about a date that no longer matters.
+    id: 'objectives', entity: 'objectives',
+    select: 'id, company_id, title, target_date, status',
+    query: (sb, from, to) => sb.from('objectives').select('id, company_id, title, target_date, status')
+      .in('status', ['draft', 'active', 'on_track', 'at_risk']).not('target_date', 'is', null).order('id').range(from, to),
+    dueDateOf: r => str(r.target_date),
+    buckets: ['due_30', 'due_7', 'overdue'],
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): a SCHEDULED management review's
+    // own review_date — once it moves to in_progress/completed/cancelled
+    // there is nothing left to remind anyone about.
+    id: 'management_reviews', entity: 'management_reviews',
+    select: 'id, company_id, review_date, status',
+    query: (sb, from, to) => sb.from('management_reviews').select('id, company_id, review_date, status')
+      .eq('status', 'scheduled').order('id').range(from, to),
+    dueDateOf: r => str(r.review_date),
+    buckets: ['due_30', 'due_7', 'due_0'],
+  },
+  {
     id: 'internal_tasks', entity: 'internal_tasks',
     select: 'id, company_id, title, due_date, status, assigned_to',
     query: (sb, from, to) => sb.from('internal_tasks').select('id, company_id, title, due_date, status, assigned_to')

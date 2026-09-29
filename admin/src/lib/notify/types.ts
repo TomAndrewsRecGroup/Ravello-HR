@@ -112,6 +112,14 @@ export const NOTIFICATION_TYPES = [
   'hs_document_submitted_for_approval',
   'hs_document_approved',
   'hs_document_withdrawn',
+  // Core-OS 360 Phase 5 Group 6 (161): Objectives & Targets, and
+  // Management Review. Never a compliance verdict — a factual progress
+  // status ('at_risk'/'missed') or a recorded review milestone.
+  'objective_at_risk',
+  'objective_missed',
+  'objective_achieved',
+  'management_review_due',
+  'management_review_completed',
   // PROTECT / operational safety core (Phase 2)
   'hazard_reported',
   'hazard_assigned',
@@ -254,6 +262,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   hs_document_submitted_for_approval: 'H&S document submitted for approval',
   hs_document_approved:               'H&S document approved',
   hs_document_withdrawn:              'H&S document withdrawn',
+  objective_at_risk:          'Objective at risk',
+  objective_missed:           'Objective missed',
+  objective_achieved:         'Objective achieved',
+  management_review_due:      'Management review due',
+  management_review_completed:'Management review completed',
   leave_requested:            'Leave requested',
   role_filled:                'Role filled',
   onboarding_started:         'Onboarding started',

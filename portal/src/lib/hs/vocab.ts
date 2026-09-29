@@ -599,3 +599,38 @@ export const HS_DOCUMENT_IMMUTABLE_STATUSES: readonly HsDocumentStatus[] = [
 export const HS_DOCUMENT_HISTORY_STATUSES: readonly HsDocumentStatus[] = [
   'superseded', 'withdrawn', 'archived',
 ];
+
+// Core-OS 360 Phase 5, Group 6 (migration 161): Objectives & Targets,
+// and Management Review. Factual progress states, never a compliance
+// verdict — objective_measurements_roll() (the database, not this UI)
+// computes the transition deterministically from the latest measurement
+// against target_value/target_direction.
+export const OBJECTIVE_STATUSES = [
+  'draft', 'active', 'on_track', 'at_risk', 'achieved', 'missed', 'abandoned',
+] as const;
+export type ObjectiveStatus = typeof OBJECTIVE_STATUSES[number];
+export const OBJECTIVE_STATUS_LABELS: Record<ObjectiveStatus, string> = {
+  draft:     'Draft',
+  active:    'Active',
+  on_track:  'On track',
+  at_risk:   'At risk',
+  achieved:  'Achieved',
+  missed:    'Missed',
+  abandoned: 'Abandoned',
+};
+
+export const OBJECTIVE_TARGET_DIRECTIONS = ['increase', 'decrease'] as const;
+export type ObjectiveTargetDirection = typeof OBJECTIVE_TARGET_DIRECTIONS[number];
+export const OBJECTIVE_TARGET_DIRECTION_LABELS: Record<ObjectiveTargetDirection, string> = {
+  increase: 'Higher is better (increase toward target)',
+  decrease: 'Lower is better (decrease toward target)',
+};
+
+export const MANAGEMENT_REVIEW_STATUSES = ['scheduled', 'in_progress', 'completed', 'cancelled'] as const;
+export type ManagementReviewStatus = typeof MANAGEMENT_REVIEW_STATUSES[number];
+export const MANAGEMENT_REVIEW_STATUS_LABELS: Record<ManagementReviewStatus, string> = {
+  scheduled:   'Scheduled',
+  in_progress: 'In progress',
+  completed:   'Completed',
+  cancelled:   'Cancelled',
+};

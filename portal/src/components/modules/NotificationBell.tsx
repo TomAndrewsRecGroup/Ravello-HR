@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles, GraduationCap } from 'lucide-react';
+import { Bell, Check, BarChart2, MessageSquare, AlertTriangle, Headphones, Users, CheckSquare, ShieldCheck, FileText, CalendarClock, HardHat, Sparkles, GraduationCap, Target } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
 
@@ -49,6 +49,11 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   hs_document_submitted_for_approval: { Icon: FileText, color: 'var(--amber)' },
   hs_document_approved:               { Icon: FileText, color: 'var(--teal)' },
   hs_document_withdrawn:              { Icon: FileText, color: 'var(--danger)' },
+  objective_at_risk:           { Icon: Target,        color: 'var(--amber)' },
+  objective_missed:            { Icon: Target,        color: 'var(--danger)' },
+  objective_achieved:          { Icon: Target,        color: 'var(--success)' },
+  management_review_due:       { Icon: CalendarClock, color: 'var(--amber)' },
+  management_review_completed: { Icon: Check,         color: 'var(--success)' },
   hs_test_result:             { Icon: GraduationCap,  color: 'var(--purple)' },
   hazard_reported:               { Icon: AlertTriangle,  color: 'var(--gold)' },
   hazard_assigned:               { Icon: CheckSquare,  color: 'var(--blue)' },

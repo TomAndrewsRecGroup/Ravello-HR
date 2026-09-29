@@ -44,7 +44,11 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   // 160 extends hs_documents' status CHECK to the formal author/
   // reviewer/approver lifecycle (a NAMED constraint, so its anchor
   // cannot collide with 106's original unnamed inline CHECK text).
-  + readFileSync(`${MIG}/160_document_control.sql`, 'utf8');
+  + readFileSync(`${MIG}/160_document_control.sql`, 'utf8')
+  // Core-OS 360 Phase 5, Group 6 (161): Objectives & Targets, and
+  // Management Review — objective status/target_direction, and
+  // management review status.
+  + readFileSync(`${MIG}/161_objectives_management_review.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -150,6 +154,16 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
     // original unnamed inline CHECK — that text never spells this name.
     ['H&S document statuses', V.HS_DOCUMENT_STATUSES,
       /hs_documents_status_check CHECK \(status IN \(/],
+    // Core-OS 360 Phase 5, Group 6 (161). objectives.status also
+    // defaults to 'draft' — the same phrase environmental_aspects (156)
+    // and permits (152) already use — so this is anchored on the
+    // preceding owner_person_id column, unique to objectives.
+    ['objective statuses', V.OBJECTIVE_STATUSES,
+      /owner_person_id\s+uuid REFERENCES public\.people\(id\) ON DELETE SET NULL,[\s\S]*?status\s+text NOT NULL DEFAULT 'draft' CHECK \(status IN \(/],
+    ['objective target directions', V.OBJECTIVE_TARGET_DIRECTIONS,
+      /target_direction\s+text NOT NULL DEFAULT 'increase' CHECK \(target_direction IN \(/],
+    ['management review statuses', V.MANAGEMENT_REVIEW_STATUSES,
+      /status\s+text NOT NULL DEFAULT 'scheduled' CHECK \(status IN \(/],
   ] as const)('%s', (_name, tuple, anchor) => {
     expect([...tuple].sort()).toEqual(listAfter(anchor).sort());
   });
@@ -193,6 +207,9 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.COMPLIANCE_EVALUATION_STATUSES, V.COMPLIANCE_EVALUATION_STATUS_LABELS],
       [V.LEGAL_RESEARCH_SOURCES, V.LEGAL_RESEARCH_SOURCE_LABELS],
       [V.HS_DOCUMENT_STATUSES, V.HS_DOCUMENT_STATUS_LABELS],
+      [V.OBJECTIVE_STATUSES, V.OBJECTIVE_STATUS_LABELS],
+      [V.OBJECTIVE_TARGET_DIRECTIONS, V.OBJECTIVE_TARGET_DIRECTION_LABELS],
+      [V.MANAGEMENT_REVIEW_STATUSES, V.MANAGEMENT_REVIEW_STATUS_LABELS],
     ];
     for (const [tuple, labels] of pairs) expect(Object.keys(labels).sort()).toEqual([...tuple].sort());
   });

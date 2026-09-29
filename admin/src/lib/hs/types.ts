@@ -12,6 +12,7 @@ import type {
   EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
   IsoStandardCode, StandardEvidenceEntityType,
   LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
+  ObjectiveStatus, ObjectiveTargetDirection, ManagementReviewStatus,
 } from './vocab';
 
 export interface HsRegisterItem {
@@ -630,6 +631,84 @@ export interface LegalRequirementResearchNote {
   reviewed_by: string | null;
   reviewed_at: string | null;
   action_taken: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+// Core-OS 360 Phase 5, Group 6 (migration 161): Objectives & Targets,
+// and Management Review.
+
+export interface Objective {
+  id: string;
+  company_id: string;
+  standard_id: string | null;
+  title: string;
+  description: string | null;
+  target_value: number | null;
+  target_unit: string | null;
+  baseline_value: number | null;
+  target_direction: ObjectiveTargetDirection;
+  target_date: string | null;
+  owner_person_id: string | null;
+  status: ObjectiveStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ObjectiveMeasurement {
+  id: string;
+  objective_id: string;
+  company_id: string;
+  measured_at: string;
+  value: number;
+  notes: string | null;
+  recorded_by: string | null;
+  created_at: string;
+}
+
+export interface ManagementReview {
+  id: string;
+  company_id: string;
+  review_date: string;
+  chaired_by: string | null;
+  status: ManagementReviewStatus;
+  completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ManagementReviewAttendee {
+  id: string;
+  review_id: string;
+  company_id: string;
+  person_id: string;
+  attended: boolean;
+  created_at: string;
+}
+
+/** A stored, reproducible snapshot of factual counts — never
+ *  recomputed live once generated. The shape of `data` is whatever
+ *  admin/src/lib/governance/dataPack.ts computed at generation time;
+ *  treat it as read-only, opaque JSON on the reading side. */
+export interface ManagementReviewDataPack {
+  id: string;
+  review_id: string;
+  company_id: string;
+  computed_at: string;
+  computed_by: string | null;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ManagementReviewDecision {
+  id: string;
+  review_id: string;
+  company_id: string;
+  topic: string;
+  decision_text: string;
+  resulting_action_id: string | null;
   created_by: string | null;
   created_at: string;
 }

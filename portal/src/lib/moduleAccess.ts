@@ -79,6 +79,8 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/protect/environmental-permits':    ['protect'],
   '/protect/iso-readiness':       ['protect'],
   '/protect/legal-register':      ['protect'],
+  '/protect/objectives':          ['protect'],
+  '/protect/management-review':   ['protect'],
   '/protect/tests':               ['protect'],
   '/protect/timeline':            ['protect'],
   '/protect/reports':             ['protect', 'protect_reports'],

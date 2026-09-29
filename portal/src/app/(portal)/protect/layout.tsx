@@ -28,6 +28,8 @@ const TABS = [
   { href: '/protect/environmental-permits', label: 'Env. Permits' },
   { href: '/protect/iso-readiness',    label: 'ISO Readiness' },
   { href: '/protect/legal-register',   label: 'Legal Register' },
+  { href: '/protect/objectives',       label: 'Objectives' },
+  { href: '/protect/management-review', label: 'Management Review' },
   { href: '/protect/documents',        label: 'Documents' },
   { href: '/protect/tests',            label: 'Tests' },
   { href: '/protect/timeline',         label: 'Timeline' },

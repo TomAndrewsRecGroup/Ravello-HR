@@ -5993,3 +5993,163 @@ fix, confirmed matching what the probe re-ran against).
 audit-engine enhancement, final QA) build on migration 160 onward and
 should read the governance map first.
 
+### Core-OS 360 Phase 5, Group 6: Objectives & Targets, and Management
+### Review (2026-09-29, migration 161)
+
+Builds on Groups 1-5 (156-160). ISO clauses 6.2 (objectives) and 9.3
+(management review), spanning every EHS pillar — an objective may be
+tied to ISO 45001 or 14001 via `standard_id`, or stand alone.
+
+- **No black-box AI progress judgement, absolute rule.** An objective's
+  status (`draft | active | on_track | at_risk | achieved | missed |
+  abandoned`) is rolled forward by `objective_measurements_roll()` — a
+  plain, inspectable comparison of the LATEST measurement against
+  `target_value`/`target_direction`, never a model call. `target_
+  direction` (`increase`/`decrease`) is the one column added beyond the
+  task brief's literal list: "is 40 above or below a target of 20"
+  cannot be answered without knowing which way the objective is meant
+  to move, the same kind of documented, necessary assumption
+  `environmental_monitoring`'s upper-bound-only `within_limit` (157)
+  already recorded rather than silently guessing.
+- **`objective_measurements` is insert-only** (`REVOKE UPDATE, DELETE,
+  TRUNCATE`) — a correction is a new measurement, never an edit, the
+  `hs_register_completions`/`compliance_evaluations` discipline. The
+  roll only ever advances from the NEWEST measurement (guarded `NOT
+  EXISTS` against a later `measured_at`) — the exact 148a/PUWER lesson:
+  reading an insert-only history table directly fires once per
+  historical row, not just the current one. It never overrides a human
+  `'abandoned'` decision, and does nothing at all when `target_value`
+  is null (a purely qualitative objective has nothing to compare).
+- **Never a second action table (rule 1).** An objective reaching
+  `at_risk`/`missed` raises exactly one `actions` row (`source_type =
+  'objective'`, keyed `objective:<id>:<status>` — a re-processed event
+  never raises two, and a genuine later episode after recovering to
+  `on_track` still gets its own fresh action). A management review
+  decision that needs follow-up is an ordinary `actions` row too
+  (`source_type = 'management_review'`) — created FIRST, then named on
+  the decision via `resulting_action_id`, so `management_review_
+  decisions` never needs an UPDATE to attach it after the fact. Two new
+  values added to the existing shared `actions_source_type_check`.
+- **A completed review's decisions are immutable, and finality means
+  something.** `management_review_decisions` is fully insert-only (a
+  correction is a new decision row, the `hs_documents`/`environmental_
+  aspects` "material change is a new row" discipline) AND
+  `management_review_decisions_guard()` refuses a new INSERT once the
+  parent review's `status = 'completed'` — a genuinely different
+  decision after that point needs a NEW `management_reviews` row (a
+  follow-up review), never an addition to a closed one.
+- **The data pack is a STORED SNAPSHOT, never recomputed after the
+  fact.** `admin/src/lib/governance/dataPack.ts`'s
+  `computeManagementReviewDataPack()` is pure counts/aggregates read
+  from existing tables at generation time (open actions, overdue
+  register items, incidents/environmental incidents/audits since the
+  previous completed review, audits scoring below a fixed 70%
+  threshold, objective status breakdown, legal obligation applicability
+  breakdown, legal evaluation EVENTS breakdown since the last review,
+  ISO readiness clause-with-evidence counts per standard, environmental
+  aspects confirmed significant) — never an AI-generated summary, never
+  a conclusion like "the organisation is performing well".
+  `management_review_data_pack` is insert-only
+  (`REVOKE UPDATE, DELETE, TRUNCATE`): generating a new pack for the
+  same review inserts a fresh row rather than overwriting the old one,
+  so a printed pack stays reproducible/auditable even after the
+  underlying counts have moved on — proved live in the probe (check 19:
+  inserting a new measurement after a pack was generated leaves the
+  stored snapshot byte-identical).
+- **RLS: staff MANAGE, client READ-ONLY, no client write path at all**
+  on every client-visible table — the exact `organisation_legal_
+  obligations`/`compliance_evaluations` (159) posture, reusing
+  `risk.read` (never a new capability, per the task brief and the
+  158/159 precedent: this spans H&S and Environmental alike, and every
+  `environmental.manage` role already holds `risk.create` too).
+  `management_review_data_pack` is STAFF-ONLY, not client-visible at
+  all — the internal analysis pack is not the same thing as the
+  decisions a review reaches, which the client DOES see.
+  `apply_write_guard()` on every client-readable table (objectives,
+  objective_measurements, management_reviews, management_review_
+  attendees, management_review_decisions), not on the staff-only data
+  pack — the 158/159 precedent.
+- **Same-organisation checks** guard `objectives.owner_person_id`,
+  `management_reviews.chaired_by` and `management_review_attendees.
+  person_id` (all via `assert_same_org()`), and a decision's
+  `resulting_action_id` must belong to the same organisation.
+- **Outbox + audit + reminders**: `objectives` (whitelist `title,
+  standard_id, status, target_date`) and `management_reviews`
+  (whitelist `review_date, chaired_by, status, completed_at`) join
+  `TRIGGERED_ENTITIES` — never `description`/`decision_text`/`notes`.
+  Both also join `REMINDER_ENTITIES`: an open objective's own
+  `target_date` (`due_30`/`due_7`/`overdue`, filtered to non-terminal
+  statuses) and a SCHEDULED review's own `review_date`
+  (`due_30`/`due_7`/`due_0`). `admin/src/lib/events/governanceRules.ts`
+  is its own file — spanning every EHS pillar, the same "genuinely
+  different content gets its own file" call `environmentalRules.ts`/
+  `legalRegisterRules.ts` already made.
+
+### Admin + portal UI
+
+Admin: a 14th/15th `HsCompanyTabs.tsx` tab pair,
+`/health-safety/<companyId>/objectives` (`ObjectivesClient.tsx` — add an
+objective, record a measurement, abandon one) and `/health-safety/
+<companyId>/management-review` (`ManagementReviewClient.tsx` — schedule
+a review, add attendees, generate the data pack, record decisions with
+an optional follow-up action, mark statuses, and a Print pack button
+that lazy-loads jsPDF + autotable and calls `admin/src/lib/governance/
+buildReviewPdf.ts` — the EXACT `lib/valueReport/buildReportPdf.ts`
+pattern: the PDF library is a parameter, never imported at the top of
+the builder module). No new sidebar entry needed — both nest under the
+already-linked `/health-safety` prefix. Portal: read-only `/protect/
+objectives` (shows the calculated status and recent measurements) and
+`/protect/management-review` (shows only COMPLETED reviews and their
+decisions — the internal data pack is deliberately not shown, since
+`management_review_data_pack` is staff-only RLS and the client's actual
+need is the outcome reached, not the working behind it), both gated by
+`protect` alone.
+
+### Live probe
+
+`supabase/probes/161_objectives_management_review.sql`, rolled back: 21
+checks — RLS enabled on all six tables; write guard present on the five
+client-readable tables; a cross-organisation owner refused; a plain
+objective insert defaults to `draft`; `objective_measurements` has no
+UPDATE/DELETE grant; a measurement reaching the target rolls the
+objective to `achieved`; a measurement short of target with a near
+deadline rolls to `at_risk`; the roll never overrides `abandoned`; a
+late-backfilled OLDER measurement never moves status backwards;
+`company_id` always derived from the objective; `actions_source_type_
+check` allows both new values; `completed_at` is stamped exactly once,
+the moment status reaches `completed`; a cross-organisation chair
+refused; a cross-organisation attendee refused; a decision inserts
+while not completed; a decision is refused once the review is
+completed; decisions have no UPDATE/DELETE grant; the data pack has no
+UPDATE/DELETE grant; the data pack snapshot is genuinely stored (a new
+measurement inserted after generation leaves it unchanged); no new
+`SECURITY DEFINER` function is anon-executable; a decision naming
+another company's action is refused. **All 21 passed.**
+
+### Verified
+
+`tsc --noEmit` clean both apps, full `vitest run` green (1257 admin —
+1228 + 29 new: `objectivesManagementReviewSql.test.ts` (19),
+`governanceRules.test.ts` (7), 3 new `vocab.test.ts` it.each entries
+(objective statuses, objective target directions, management review
+statuses) plus their label-map-coverage pairs; 620 portal — 616 + 4,
+`moduleAccess.test.ts`/`portalPagesLinked.test.ts` picking up the two
+new `/protect/objectives`/`/protect/management-review` routes
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 43 pairs, unchanged — `vocab.ts`/`types.ts`/
+`notify/types.ts` stayed byte-identical across both mirrors;
+`check-row-cap.sh`: clean, after lowering one `dataPack.ts` query from
+`.limit(1000)` to `.limit(500)` to match the guard's exact threshold;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+71 pages, all reachable; `check-blind-updates.sh`: 102, unchanged —
+the two new admin `.update()` writes (objective abandon, review status)
+were built with `COUNT_EXACT` + `judgeWrite()` from the start), both
+production builds compile, including the two new admin routes and the
+two new portal routes. Migration 161 applied live and verified (RLS on,
+write guard applied, both source_type values present on `actions`,
+evidence untouched by this group — no new evidence entity type was
+needed).
+
+**Later Phase 5 groups** (audit-engine enhancement, final QA) build on
+migration 161 onward and should read the governance map first.
+

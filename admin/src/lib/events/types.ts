@@ -85,6 +85,11 @@ export const TRIGGERED_ENTITIES = [
   // applicability decision changing, and a new compliance evaluation.
   'organisation_legal_obligations',
   'compliance_evaluations',
+  // Core-OS 360 Phase 5, Group 6 (161): Objectives & Targets, and
+  // Management Review — a status change (esp. reaching 'at_risk'/
+  // 'missed'/'achieved' on an objective, 'completed' on a review).
+  'objectives',
+  'management_reviews',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
@@ -137,6 +142,10 @@ export const REMINDER_ENTITIES = [
   // Core-OS 360 Phase 5, Group 4 (159): a legal obligation's own
   // next_review_due, rolled forward from the newest evaluation.
   'organisation_legal_obligations',
+  // Core-OS 360 Phase 5, Group 6 (161): an objective's own target_date,
+  // and a scheduled management review's own review_date.
+  'objectives',
+  'management_reviews',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

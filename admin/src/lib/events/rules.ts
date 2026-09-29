@@ -15,6 +15,7 @@ import { safetyRules } from './safetyRules';
 import { workforceRules } from './workforceRules';
 import { environmentalRules } from './environmentalRules';
 import { legalRegisterRules } from './legalRegisterRules';
+import { governanceRules } from './governanceRules';
 
 // THE rules registry: what happens after each thing that happens.
 //
@@ -428,6 +429,41 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Core-OS 360 Phase 5, Group 6 (161): an objective's own target_date
+    // approaching or passed. Only draft/active/on_track/at_risk
+    // objectives reach this reminder at all (the query already excludes
+    // achieved/missed/abandoned) — a factual date nudge, never a
+    // compliance verdict.
+    id: 'objective_target_date_reminder',
+    on: 'objectives.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: ({ event }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const overdue = bucket === 'overdue';
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id,
+        type: overdue ? 'objective_missed' : 'objective_at_risk',
+        title: `Objective "${s(row.title, 'An objective')}" target date is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/objectives`, portal: '/protect/objectives' },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Phase 5, Group 6 (161): a SCHEDULED management review's
+    // own review_date approaching.
+    id: 'management_review_date_reminder',
+    on: 'management_reviews.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'due_0'; },
+    then: ({ event }) => {
+      const { bucket, due_date } = reminderPayload(event);
+      return [notifyC({
+        audiences: [...admins(event.company_id ?? ''), ...staffOnly], companyId: event.company_id, type: 'management_review_due',
+        title: `Management review is ${whenText(bucket, due_date)}`,
+        link:  { admin: `/health-safety/${event.company_id}/management-review`, portal: '/protect/management-review' },
+      })];
+    },
+  },
+  {
     id: 'hs_equipment_reminder',
     on: 'hs_equipment.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
@@ -606,7 +642,7 @@ function checklistTask(event: PlatformEvent, portalPath: string, kind: string): 
   })];
 }
 
-export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules, ...environmentalRules, ...legalRegisterRules];
+export const RULES: Rule[] = [...rowRules, ...reminderRules, ...hsRules, ...leadRules, ...supportRules, ...hireRules, ...safetyRules, ...workforceRules, ...environmentalRules, ...legalRegisterRules, ...governanceRules];
 
 export function rulesFor(key: string, rules: Rule[] = RULES): Rule[] {
   return rules.filter(r => r.on === key);
