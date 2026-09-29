@@ -7974,3 +7974,57 @@ compile.
 **Phase 9 is complete. Phase 10 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 10: Incident Pattern Intelligence
+## (in progress, no migration so far)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-9 were in). Scope: `docs/CORE_OS_360_PHASE10_PLAN.md`.
+
+**The one absolute rule this phase must never cross**: this codebase's
+own standing rule since Phase 4 — "Explicitly forbidden anywhere in
+this phase: predictive/AI safety scoring — machine failure prediction,
+accident probability, unsafe-worker prediction." Every insight this
+phase produces reports what has ALREADY happened, past tense, with a
+real inspectable count behind it — never a risk level or a probability.
+No AI anywhere in this phase's own code.
+
+### Group 1 (no migration): the pure computation
+
+`lib/incidentPatterns/analyze.ts` — the first thing anywhere to
+aggregate incidents ACROSS records. `lib/hs/kpis.ts` already counts a
+trailing-12-month total as ONE number; nothing groups by type, site,
+department or root-cause category, and nothing compares one period
+against another.
+
+- **`incident_causes.category`** (125, a curated 13-value taxonomy —
+  people/plant_equipment/process/procedure/environment/management/
+  training/supervision/maintenance/communication/design/contractor/
+  organisational) IS the pattern data — a recurring root-cause category
+  across incidents is exactly what "Incident Pattern Intelligence"
+  promises, and the taxonomy already exists; nothing needed inventing.
+- **Only NON-SENSITIVE columns are read**: `hs_incidents`' own type/
+  severity/site/department/date, and `incident_causes.category` —
+  never `incident_person_sensitive`, never `incident_causes.
+  description` (free text) in any aggregate output. Checked against
+  the schema before writing this file, not assumed safe.
+- **A recurring root cause counts only CONFIRMED, `cause_level =
+  'root'` causes, and only when the underlying INCIDENT itself falls
+  inside the chosen window** — an investigation completed later for an
+  incident outside the window must not inflate this window's count;
+  an unconfirmed draft cause is not yet a recorded fact; an immediate
+  or underlying cause is a different thing from a root cause and never
+  counted as one.
+- **A site/department "cluster" is 2+ incidents in the window** —
+  reported as a plain count, explicitly never a risk rating.
+- **The severity comparison is period-over-period, never a trend
+  line or a forecast**: major/critical/fatal counts for the current
+  window vs. the immediately preceding window of the same length —
+  two real numbers, side by side, nothing extrapolated forward.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1481 admin — 11 new `analyze.test.ts` cases; 705 portal, unchanged
+  — this group is admin-only, pure functions with no page), all five
+  CI guards pass (unchanged across the board — no new table, no new
+  route, no new write path), admin production build compiles.
+
