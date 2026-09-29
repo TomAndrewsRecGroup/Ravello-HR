@@ -6685,3 +6685,375 @@ portal, unchanged), all five CI guards pass
 (`check-admin-routes-linked.sh`: 42 static routes, all reachable — the
 new, more precise count), both production builds compile.
 
+---
+
+## Core-OS 360 Phase 6: Laws Safety Consultant Command Centre (2026-09-29,
+## migrations 167-172)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE6_HANDOVER.md`.
+**Gate: PASS.** Delivered in 7 independently-verified, individually-merged
+groups (PRs #232-#238) — unlike earlier phases, every group's PR was
+merged into `main` as soon as it was green, per the operator's own
+"regular merges so you don't lose anything" instruction, rather than
+staying on one long-lived branch until the phase's own final pass.
+
+A consultancy (e.g. Laws Safety) needs to work across MANY client
+organisations without the one-client-at-a-time cost the rest of this
+platform assumes: switching into a client, doing one thing, switching
+out, over and over. The Command Centre is the portfolio-wide surface
+that removes that cost — read AND write, for the tables this phase
+owns — while never touching the single-tenant guarantees every other
+table in this codebase already relies on.
+
+### The one architectural fact every group built on
+
+**RLS cannot answer a cross-client question.** Every table's RLS
+resolves through single-valued `my_company_id()` — the currently
+ACTIVE organisation. Two patterns close this, chosen per read/write:
+
+- **Portfolio-wide RLS, for writes**: `consultancy_organisation_id =
+  (SELECT my_home_company_id()) AND has_capability(row's own
+  client_organisation_id, cap)`. `my_home_company_id()` is ALWAYS the
+  consultancy, whatever is currently active; `has_capability(p_org,
+  cap)` checks an ARBITRARY org parameter, never necessarily the
+  active one. This is what lets a consultant log a visit or a ledger
+  entry against a client WITHOUT EVER SWITCHING INTO THEM — the exact
+  bug Group 2's own live probe caught in its first draft
+  (`consultancy_organisation_id = my_company_id()` can only be true
+  while impossibly "active in your own consultancy home", the
+  one-client-at-a-time shape this whole phase exists to remove).
+- **Service-role-mediated bulk reads, for anything spanning many rows
+  across many organisations at once** (Attention Queue, Calendar,
+  portfolio health view): `portfolio_organisations()` (167, SECURITY
+  DEFINER, reads `auth.uid()` itself — MUST be called through the
+  user's own session, never the service role, which has no
+  `auth.uid()` and would see nothing) gives the caller's own
+  authorised org-id list; every bulk read then uses the SERVICE ROLE
+  scoped by `.in('company_id', authorisedIds)`. Never wider than RLS
+  would allow one query at a time — just all of them, in one batch,
+  because the id list itself came from the user's own valid grants.
+
+`portfolio_organisations()` is the ONE function every page, route and
+audit event in this phase traces its authorisation back to, directly
+or via `portalAccess.ts`'s `portfolioIncludes()`.
+
+### Group 1 (migration 167): the foundation
+
+`grant_relationship_current()` (checks a grant's underlying
+`organisation_relationships` row is still live — closes a real
+cascade gap: an unrevoked grant surviving a revoked/expired
+relationship); redefines `my_active_grant()`/`has_capability()`/
+`set_active_organisation()`/`my_organisations()` to call it;
+`portfolio_organisations()`; `access_scope_allows()` (Phase 1 debt
+H.2, finally enforced: a scoped grant — `health_safety`/`hr`/
+`recruitment`/`full` — narrows which capabilities it carries, never
+widens); seeds the new `consultancy.service_manage` capability,
+distinct from `consultancy.manage_access` (who HAS access) and
+`consultancy.client_access` (may READ a client's Command Centre data).
+
+### Group 2 (migration 168): service scope, visits, health snapshot
+
+`consultancy_service_scopes` (service type, dates, owner, included/
+excluded scope, review frequency, commercial reference — "not full
+contract management, but makes consultant responsibility clear," per
+the brief's own words) and `consultancy_visits`, **deliberately
+minimal** (date, type, status, who, where) — Phase 7 ("Consultant
+Visit Mode & Automated Site-Visit Reporting") explicitly OWNS the full
+workflow (pre-visit briefs, templates, mobile mode, the report
+builder) and EXTENDS this table, never replaces it, the same "reuse,
+never a parallel system" rule every phase since Phase 4's own
+existing-operations audit has followed. Both tables' write RLS uses
+the portfolio-wide pattern above; `consultancy_relationship_live()`
+checks the underlying (consultancy, client) relationship is still
+active — a scope or visit cannot be filed against a client whose
+contract has already ended, even by someone briefly still holding an
+unrevoked grant.
+
+`client_health_snapshots` gains 13 nullable/zero-defaulted columns —
+purely additive, the existing band/engagement-score logic in
+`lib/health/scoring.ts` completely untouched. Filled by
+`lib/health/portfolioCounts.ts`'s `computePortfolioCounts()`, a pure
+function wired into the EXISTING daily `/api/cron/health-snapshot`
+route as 13 more paged queries. **No new cron, no new table.**
+
+**This table's RLS is staff-only, deliberately, and stays that way.**
+Migration 168 added columns but never a consultancy-read policy —
+every Command Centre page reads it via the service role (pattern 2
+above), scoped by the authorised org-id list. An authorised
+consultant's own PLAIN session sees nothing here, for their own
+authorised clients OR anyone else's — proven live in Group 8's own
+tenant-isolation probe. This is not a gap; it is the architecture
+working as designed, and a future reader must not "fix" it by adding
+a consultancy-read policy without re-reading this note first.
+
+### Group 3 (migration 169): the Client Service Ledger
+
+The first full Service Ledger. "Ledger entries should originate from
+real platform events OR AUTHORISED MANUAL SERVICE ENTRIES" — the
+automated half shipped in this group (`lib/events/serviceLedgerRules.ts`,
+10 rules, one per `entry_type`: visit/audit/document/report/
+service_request_resolved/action_closed/broadcast/training/
+incident_support/management_review_support); the manual half's RLS
+was built here too (`consultancy_service_ledger_consultancy_manual_insert`
+— `entry_type` forced `'manual'`, `source_type`/`source_id` forced
+NULL, `created_by` forced to `auth.uid()`, all by the `WITH CHECK`,
+never trusted from the app) but had **no writer anywhere** until Group
+7 closed it — see below.
+
+**Idempotency is the `UNIQUE (consultancy_organisation_id,
+client_organisation_id, source_type, source_id)` constraint**, not the
+`ignoreDuplicates` flag — that flag only avoids a logged error on a
+re-processed event. A manual entry's forced-NULL `source_type`/
+`source_id` means it is EXEMPT from this constraint by ordinary
+Postgres NULL-inequality semantics — a consultant may log unlimited
+distinct manual notes, each a genuinely new row.
+
+**Every automated entry attributes by the EVENT'S OWN ACTOR, never by
+which client the row belongs to**: the actor's home organisation must
+be a consultancy AND hold a live relationship to the event's own
+company — a Core OS 360 STAFF action never logs here, since the
+ledger's whole purpose is proving THIRD-PARTY consultancy value.
+
+### Group 4 (portal only, no migration): Attention Queue, Client 360,
+### Consultant Workload
+
+`portal/src/lib/consultancy/attentionQueue.ts` — a pure aggregate over
+12 source categories (open critical actions, overdue legal
+evaluations, workers not ready, contractor expiries, major audit
+findings, …), each classified into a severity. **Never a duplicate
+action table** — the queue reads existing rows and labels them, the
+same "never build a second action table" doctrine this codebase has
+followed since Phase 2. `/consultancy/clients/[id]` (Client 360) is
+the per-client cockpit; `/consultancy/workload` reuses the existing
+action/service engines rather than a new task database, per the
+brief's own instruction.
+
+### Group 5 (migration 170 + portal): Cross-Client Calendar, Roadmap
+### Integration
+
+`portal/src/lib/consultancy/portfolioCalendar.ts` — a read-time
+aggregate over 8 already-dated source tables (visits, audits, legal
+reviews, management reviews, training, document reviews, roadmap
+milestones, material expiries) into 8 event types. No new scheduling
+table — the source rows remain the single source of truth, the same
+"TypeScript over one large SQL view" choice `governanceCalendarEvents()`
+(Phase 5) already made.
+
+`requirement_evidence_links.source_type` (Phase 5's evidence-link
+foundation) widens to include `'milestone'`; `hs_entity_table()` gains
+`'milestone' → 'milestones'`, every prior branch copied unchanged.
+`EvidenceLinksPanel.tsx` (the SAME component Phase 5 built for legal
+obligations/objectives/audit findings) is reused UNCHANGED, just with
+its `sourceType` union widened — no new UI component, since the
+existing one already does exactly what a milestone needs.
+
+### Group 6 (migration 171 + portal): Value Report extension,
+### Communication Timeline
+
+**The existing, LIVE monthly `computeValueReport()` is completely
+untouched** — real regression risk to the already-working monthly
+cron and page, avoided entirely. `computeQuarterlyValueReport()`/
+`quarterMonths()` compose the SAME function three times and merge
+field-by-field: FLOW fields (new roles, tickets raised, actions
+completed, …) SUMMED across the quarter; STOCK fields (active roles,
+MRR, ISO readiness, objectives on track, open audit findings, …) taken
+from the quarter's LAST month only — summing three snapshots of the
+same fact would triple-count it. `reviewsOverdue` is treated as stock
+for the identical reason ("overdue as of the quarter's close", the
+same "overdue is relative to the report period, not today" rule
+`leadMetrics.ts` already established for the monthly report).
+
+`ValueReportClient.tsx` gains a monthly/quarterly toggle, a quarter
+selector, a narrative textarea, and "Save to Client Reports" —
+renders the identical PDF Download produces, uploads it to the
+client's PRIVATE `documents` bucket (never `getPublicUrl` on a private
+bucket — the same discipline `ReportUploadForm.tsx` already
+established), inserts a `reports` row. Migration 171 adds the one
+nullable `reports.narrative` column this needs — additive, every
+existing reader/writer of `reports` unaffected (none select `'*'`
+blindly). `buildReportPdf.ts` renders an optional "CONSULTANT NOTES"
+section only when narrative is present.
+
+`portal/src/lib/consultancy/communicationTimeline.ts` merges
+`email_log`, Broadcast actions (`actions.created_by_admin`),
+`service_requests` (raised AND responded as two SEPARATE events — a
+request produces `client_originated` the moment it is raised, and only
+a SECOND, `shared_with_client` entry once `responded_at` is set),
+issued value reports, and manual `consultancy_service_ledger` notes
+(the one entry_type with no `source_type`/`source_id` — a note never
+itself communicated to anyone) into one chronological feed, tagging
+each entry `client_originated` / `shared_with_client` /
+`internal_consultancy`. "support tickets" in the brief means
+`service_requests` — `tickets`/`ticket_messages` were removed entirely
+in an earlier sweep (see "Support & BD in sync" above); nothing
+resurrects them here.
+
+### Group 7 (migration 172 + portal): Client Switcher hardening,
+### Events/Audit sweep, and two real spec gaps closed
+
+**The spec names five events verbatim**: `consultancy.client_accessed`,
+`service_scope.updated`, `client_roadmap.updated`,
+`value_report.generated`, `service_ledger.entry_created`.
+`service_scope.updated` had ALREADY fired since Group 2 — 168's own
+`audit_row('service_scope', 'client_organisation_id', ...)` trigger
+produces exactly that string via `audit_row()`'s own
+`<entity>.<created|updated|deleted>` convention. `client_roadmap.updated`
+closes the one remaining gap that fits the SAME convention: migration
+172 adds an `audit_row` trigger to `milestones` (whitelist `pillar,
+title, owner, due_date, status, quarter, sort_order` — never the
+free-text `description`), producing `client_roadmap.created/updated/
+deleted` for free. `value_report.generated` and
+`service_ledger.entry_created` do NOT match that convention (their
+verbs are the spec's own literal wording, not "created"/"updated"), so
+BOTH are explicit app-level `auditLog()` calls instead — a second,
+differently-worded event alongside a generic one would be confusing,
+not additive, the same reasoning migration 172's own header comment
+gives.
+
+- **`value_report.generated`** fires from `ValueReportClient.tsx`'s
+  `saveReport()`, via a NEW narrowly-scoped
+  `POST /api/admin/value-reports/audit` route — a client component
+  cannot call `admin/src/lib/audit.ts` directly, since that module
+  writes through the SERVICE-ROLE `audit_log()` RPC and the key must
+  never reach the browser. The route's action string is FIXED, never
+  taken from the request body, and the report/company ids are only
+  ever used as opaque identifiers — never a general-purpose audit
+  endpoint.
+- **`service_ledger.entry_created`** fires from BOTH ledger-write
+  paths: the automated consumer (`serviceLedgerRules.ts`) now checks
+  whether its `upsert(..., { ignoreDuplicates: true }).select('id')`
+  actually returned a row — empty on a skipped duplicate, by real
+  PostgREST `ON CONFLICT DO NOTHING RETURNING` semantics — before
+  firing, so a re-processed event never double-audits; and the new
+  manual-entry route (below), synchronously after a successful insert.
+- **`consultancy.client_accessed`** fires from the portal's Client 360
+  page on every view — inherently app-level, since a page view has no
+  row to trigger from. `portal/src/lib/audit.ts` is a NEW file
+  mirroring admin's own `audit.ts`, but NOT a shared-dupe pair — each
+  app's `AuditAction` union names only the events that app can
+  actually fire, the same reason the two files were never meant to be
+  byte-identical.
+
+**Two real spec gaps, found by re-reading the brief before this QA
+pass, not by an external report**: sections 5 (Service Scope) and 9
+(Service Ledger's own "or authorised manual service entries") both had
+full, correct RLS since Groups 2/3 — and NO WRITER ANYWHERE. A
+repo-wide grep confirmed zero `.insert(`/`.update(` call sites against
+either table outside the automated consumer. Closed in this group:
+two new validated portal routes (`POST /api/consultancy/clients/[id]/
+service-scope`, `.../ledger-entry`), both running under the CALLER'S
+OWN SESSION (never the service role) so RLS stays the real
+authorization boundary — the route's own job is only shaping/
+validating the request and surfacing a 42501 refusal as a clear 403,
+not re-implementing the capability check. `ClientActionForms.tsx` on
+Client 360 is the first write UI either table has ever had.
+
+**Client Switcher hardening (section 12) — what already existed vs.
+what was actually missing.** Phase 1's `readEffectiveCompany()` +
+`sessionIsStale()` (portal's `(portal)/layout.tsx`) ALREADY
+re-derives the active organisation from the database on EVERY server
+render and redirects a stale session cookie before anything renders —
+this protects every navigation and reload, the majority of the actual
+risk. The one gap: a tab that never reloads (a form left open while
+the organisation switches in a different tab). New
+`StaleOrganisationGuard.tsx` polls `GET /api/organisation/current` on
+focus/visibilitychange — DELIBERATELY never a timer, since those
+moments are exactly when a stale tab is actually being returned to —
+and shows a blocking banner on a mismatch. Mounted once in
+`PortalShell.tsx`, renders nothing for a single-organisation user
+(same guard `OrganisationBar` itself already applies — no switcher to
+leave stale). Its comparison logic is extracted as a pure,
+tested `isOrganisationStale()`.
+
+**Crucially, every Phase 6 Command Centre write is immune to the
+stale-tab class of bug BY CONSTRUCTION**: every write route takes its
+target organisation from the URL's own `[id]` param (checked against
+`portfolioIncludes()`), NEVER from "whichever organisation happens to
+be active" — so even a genuinely stale Command Centre tab's write
+still lands on the client the form was opened for. The guard exists
+for the CLASSIC single-tenant workspace ("Open full workspace"), where
+writes DO derive their target from the active session, and is the one
+place this specific risk is real.
+
+**`useUnsavedChangesWarning()`** (NEW shared-dupe pair,
+`components/ui/`) — native `beforeunload`, no custom dialog, since
+`window.location.assign()` (OrganisationBar's own switch action, and
+every full navigation in this codebase) triggers a REAL browser
+navigation that only the native event can intercept. Retrofitting
+every existing form was explicitly out of scope for one group — the
+hook is the reusable primitive; `ClientActionForms.tsx`'s two new
+forms are its first and, for now, only adopters.
+
+### Group 8: full regression, adversarial QA, handover
+
+**Gate: PASS** — a genuine contrast with Phase 5's own Group 10 (which
+found two real High concurrency bugs): every category the Senior QA
+command names came back clean on the FIRST pass here.
+
+- **Tenant isolation** (`supabase/probes/phase6_tenant_isolation.sql`,
+  live, rolled back, 6/6): a consultancy authorised for Clients A/B
+  but NOT C — `portfolio_organisations()` never leaks C;
+  `client_health_snapshots` correctly refuses even an authorised
+  session directly (confirms §the staff-only design above, not a
+  bug); `consultancy_service_ledger` shows exactly A/B; a manual
+  ledger write and a service-scope write against unauthorised C are
+  BOTH refused; a milestone genuinely owned by C stays invisible under
+  the consultant's own session — proving 172's new audit trigger
+  widened nothing about who may read or write `milestones`.
+- **Stale-tab mutation**: see Group 7's own section above — the
+  Command Centre's writes are immune by construction; the one real
+  risk surface (the classic workspace) already had a database guard
+  from Phase 1, now supplemented with a browser-level one.
+- **Service Ledger duplicate prevention**: re-confirmed via
+  `serviceLedgerRules.test.ts`'s existing re-processed-event case,
+  plus two NEW cases pinning `service_ledger.entry_created` fires
+  exactly once on a genuine insert and not at all on a duplicate skip.
+- **Value Report figure reconciliation**: `computeQuarterlyValueReport.test.ts`
+  (7 cases) pins the exact regression a naive sum-everything
+  implementation would produce (activeRoles 3× too high, reviewsOverdue
+  triple-counted) and proves the real implementation avoids both.
+- **Communication visibility classes**: `communicationTimeline.test.ts`
+  (6 cases), including the case most likely gotten backwards (a
+  service request's raise and its response are two SEPARATE, correctly
+  classified entries, never one ambiguous one).
+- **Performance at 500+ clients / 5,000+ sites**
+  (`supabase/probes/phase6_perf.sql`, live, rolled back): 120 client
+  organisations, 5,040 sites (the spec's own "5,000+" mark), measured
+  under a REAL consultant session with RLS applied, not bypassed.
+  `portfolio_organisations()` 5.8ms, `client_health_snapshots` bulk
+  read 5.9ms, `consultancy_visits` bulk read 58.6ms,
+  `consultancy_service_ledger` bulk read 50.4ms — extrapolated
+  linearly (every read is an indexed per-organisation lookup, the same
+  extrapolation Phase 3's own perf probe used) to ~24-244ms at the
+  spec's full 500-client scale. **The 5,040 seeded sites had zero
+  measurable effect on any Phase 6 read** — confirmed directly (a
+  site-count query under the consultant session returned 0, correctly
+  reflecting that NO Phase 6 page reads `hs_sites` at all — Client 360
+  shows H&S/workforce state via the pre-computed
+  `client_health_snapshots` aggregate, never raw site rows; sites are
+  only ever seen inside the classic single-tenant workspace, which
+  this phase never touches).
+- **Regression across Referrals, A2I, E-Learning, Broadcast, Billing,
+  HR, Recruitment and Phases 2-5**: the full test suites ARE the
+  regression suite — 1391 admin / 672 portal, all green, spot-checked
+  by name for the modules the Senior QA command specifically lists.
+
+**One Medium gap found and closed within this same phase** (not
+carried as debt): Service Scope / manual Service Ledger writer UI,
+covered under Group 7 above — a named, literal spec requirement that
+was schema-complete but functionally absent until this pass's own
+re-read of the brief caught it.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1391 admin — 850 baseline + every Phase 6 group's own tests; 672
+portal), all five CI guards pass (46 shared-dupe pairs, up from 43 at
+the end of Phase 5; row-cap clean; 44 unvalidated routes, unchanged;
+42 static admin routes, all reachable; 102 blind-update chains,
+unchanged), both production builds compile. Migrations 167-172
+applied and verified live throughout, each read back from the catalog
+rather than trusted from the apply call's own success response.
+
+**Phase 7 ("Consultant Visit Mode & Automated Site-Visit Reporting")
+may begin** — it explicitly EXTENDS `consultancy_visits` (168's own
+documented plan), never replaces it.
+
