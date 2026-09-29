@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { runCronJob } from '@/lib/automation/runs';
 import { readAllPages } from '@/lib/supabase/paged';
 import { computeBand, computeEngagementScore } from '@/lib/health/scoring';
+import { computePortfolioCounts } from '@/lib/health/portfolioCounts';
 
 // Daily (06:45 UTC, after reminders at 06:00 and before the weekly
 // summary window): one client_health_snapshots row per active company
@@ -25,6 +26,10 @@ async function run(req: NextRequest) {
     const [
       companiesRes, complianceRes, ticketsRes, stalledReqsRes,
       profilesPage, reqsPage, ticketsAllPage, docsRes,
+      actionsPage, legalObligationsPage, docsReviewDuePage, incidentsPage,
+      deploymentStatusPage, equipmentPage, auditFindingsPage, contractorsPage,
+      contractorInsurancesPage, environmentalPermitsPage, managementReviewsPage,
+      serviceRequestsPage, consultancyVisitsPage,
     ] = await Promise.all([
       sb.from('companies').select('id, active, last_portal_login, login_count_30d'),
       sb.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'complete'),
@@ -34,6 +39,36 @@ async function run(req: NextRequest) {
       readAllPages<{ company_id: string; stage: string; created_at: string }>((from, to) => sb.from('requisitions').select('company_id, stage, created_at').order('id').range(from, to)),
       readAllPages<{ company_id: string; status: string; created_at: string }>((from, to) => sb.from('tickets').select('company_id, status, created_at').order('id').range(from, to)),
       sb.from('documents').select('company_id'),
+      // Phase 6 section 2: the factual portfolio counts. Every one of
+      // these is paged (never a bare .select()) — a consultancy with a
+      // large portfolio is exactly the shape that would silently clip
+      // at PostgREST's 1,000-row cap otherwise.
+      readAllPages<{ company_id: string; status: string; severity: string | null }>(
+        (from, to) => sb.from('actions').select('company_id, status, severity').order('id').range(from, to)),
+      readAllPages<{ company_id: string; applicability_status: string; next_review_due: string | null }>(
+        (from, to) => sb.from('organisation_legal_obligations').select('company_id, applicability_status, next_review_due').order('id').range(from, to)),
+      readAllPages<{ company_id: string }>(
+        (from, to) => sb.from('hs_documents').select('company_id').eq('status', 'review_due').order('id').range(from, to)),
+      readAllPages<{ company_id: string; status: string; severity: string | null }>(
+        (from, to) => sb.from('hs_incidents').select('company_id, status, severity').order('id').range(from, to)),
+      readAllPages<{ company_id: string; status: string; result: any }>(
+        (from, to) => sb.from('person_deployment_status').select('company_id, status, result').order('person_id').range(from, to)),
+      readAllPages<{ company_id: string; status: string }>(
+        (from, to) => sb.from('hs_equipment').select('company_id, status').order('id').range(from, to)),
+      readAllPages<{ company_id: string; severity: string; closed_at: string | null }>(
+        (from, to) => sb.from('audit_findings').select('company_id, severity, closed_at').order('id').range(from, to)),
+      readAllPages<{ id: string; company_id: string; approval_status: string }>(
+        (from, to) => sb.from('contractors').select('id, company_id, approval_status').order('id').range(from, to)),
+      readAllPages<{ contractor_id: string; expires_on: string | null }>(
+        (from, to) => sb.from('contractor_insurances').select('contractor_id, expires_on').order('id').range(from, to)),
+      readAllPages<{ company_id: string; status: string; expires_on: string | null }>(
+        (from, to) => sb.from('environmental_permits').select('company_id, status, expires_on').order('id').range(from, to)),
+      readAllPages<{ company_id: string; status: string; review_date: string | null }>(
+        (from, to) => sb.from('management_reviews').select('company_id, status, review_date').order('id').range(from, to)),
+      readAllPages<{ company_id: string; status: string }>(
+        (from, to) => sb.from('service_requests').select('company_id, status').order('id').range(from, to)),
+      readAllPages<{ client_organisation_id: string; status: string; scheduled_date: string }>(
+        (from, to) => sb.from('consultancy_visits').select('client_organisation_id, status, scheduled_date').order('id').range(from, to)),
     ]);
 
     const companies = companiesRes.data ?? [];
@@ -61,6 +96,26 @@ async function run(req: NextRequest) {
     }
     const docCountMap = countBy((docsRes.data ?? []) as { company_id: string }[]);
 
+    const portfolioCounts = computePortfolioCounts(
+      companies.map((c: any) => c.id),
+      now,
+      {
+        actions: actionsPage.rows,
+        legalObligations: legalObligationsPage.rows,
+        documentsReviewDue: docsReviewDuePage.rows,
+        incidents: incidentsPage.rows,
+        deploymentStatus: deploymentStatusPage.rows,
+        equipment: equipmentPage.rows,
+        auditFindings: auditFindingsPage.rows,
+        contractors: contractorsPage.rows,
+        contractorInsurances: contractorInsurancesPage.rows,
+        environmentalPermits: environmentalPermitsPage.rows,
+        managementReviews: managementReviewsPage.rows,
+        serviceRequests: serviceRequestsPage.rows,
+        consultancyVisits: consultancyVisitsPage.rows,
+      },
+    );
+
     const rows = companies.map((c: any) => {
       const overdue_comp = overdueByCompany.get(c.id) ?? 0;
       const open_tickets = ticketsByCompany.get(c.id) ?? 0;
@@ -78,10 +133,13 @@ async function run(req: NextRequest) {
         loginCount30d: c.login_count_30d ?? 0,
       });
 
+      const portfolio = portfolioCounts.get(c.id)!;
+
       return {
         company_id: c.id, snapshot_date: today, band, engagement_score,
         overdue_comp, open_tickets, stalled_reqs,
         days_since_login: lastLogin > 0 ? daysSinceLogin : null,
+        ...portfolio,
       };
     });
 

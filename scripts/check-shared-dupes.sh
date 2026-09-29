@@ -61,6 +61,8 @@ PAIRS=(
   "admin/src/lib/support/sla.ts|portal/src/lib/support/sla.ts"
   "admin/src/lib/auth/policyAckTokens.ts|portal/src/lib/auth/policyAckTokens.ts"
   "admin/src/lib/auth/capabilities.ts|portal/src/lib/auth/capabilities.ts"
+  "admin/src/lib/consultancy/vocab.ts|portal/src/lib/consultancy/vocab.ts"
+  "admin/src/lib/consultancy/types.ts|portal/src/lib/consultancy/types.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
