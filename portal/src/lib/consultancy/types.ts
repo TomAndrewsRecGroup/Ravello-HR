@@ -1,7 +1,10 @@
 // Core-OS 360 Phase 6 row shapes. Shared-dupe pair with portal
 // (scripts/check-shared-dupes.sh).
 
-import type { ReviewFrequency, ServiceLedgerEntryType, ServiceScopeStatus, ServiceType, VisitStatus, VisitType } from './vocab';
+import type {
+  ReviewFrequency, ServiceLedgerEntryType, ServiceScopeStatus, ServiceType,
+  VisitStatus, VisitTemplateCategory, VisitType,
+} from './vocab';
 
 export interface ConsultancyServiceScope {
   id: string;
@@ -31,9 +34,39 @@ export interface ConsultancyVisit {
   scheduled_date: string;
   status: VisitStatus;
   notes: string | null;
+  // Core-OS 360 Phase 7, Group 1 (migration 173) — additive.
+  previous_visit_id: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  scope: string | null;
+  client_attendees: string[] | null;
+  internal_notes: string | null;
+  shared_summary: string | null;
+  template_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ConsultancyVisitTemplate {
+  id: string;
+  consultancy_organisation_id: string;
+  name: string;
+  category: VisitTemplateCategory;
+  version: number;
+  is_active: boolean;
+  supersedes_id: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ConsultancyVisitTemplateItem {
+  id: string;
+  template_id: string;
+  section: string;
+  question: string;
+  expects_evidence: boolean;
+  sort_order: number;
 }
 
 export interface ConsultancyServiceLedgerEntry {

@@ -13,16 +13,19 @@ describe('buildPortfolioCalendar', () => {
     expect(buildPortfolioCalendar(empty)).toEqual([]);
   });
 
-  it('includes a scheduled visit but not a cancelled one', () => {
+  it('includes a planned or confirmed visit but not a cancelled one', () => {
     const out = buildPortfolioCalendar({
       ...empty,
       visits: [
-        { id: 'v1', client_organisation_id: 'co-a', scheduled_date: '2026-11-04', visit_type: 'retained_visit', status: 'scheduled' },
+        { id: 'v1', client_organisation_id: 'co-a', scheduled_date: '2026-11-04', visit_type: 'retained_visit', status: 'planned' },
         { id: 'v2', client_organisation_id: 'co-a', scheduled_date: '2026-11-05', visit_type: 'audit_visit', status: 'cancelled' },
+        { id: 'v3', client_organisation_id: 'co-a', scheduled_date: '2026-11-06', visit_type: 'audit_visit', status: 'confirmed' },
+        { id: 'v4', client_organisation_id: 'co-a', scheduled_date: '2026-11-07', visit_type: 'audit_visit', status: 'closed' },
       ],
     });
-    expect(out).toHaveLength(1);
+    expect(out).toHaveLength(2);
     expect(out[0]).toMatchObject({ type: 'visit', date: '2026-11-04', clientName: 'ABC Manufacturing' });
+    expect(out[1]).toMatchObject({ type: 'visit', date: '2026-11-06', clientName: 'ABC Manufacturing' });
   });
 
   it('resolves an unknown org id to a safe fallback name', () => {
@@ -36,7 +39,7 @@ describe('buildPortfolioCalendar', () => {
   it('sorts every event type together by date, earliest first', () => {
     const out = buildPortfolioCalendar({
       ...empty,
-      visits: [{ id: 'v1', client_organisation_id: 'co-a', scheduled_date: '2026-12-01', visit_type: 'retained_visit', status: 'scheduled' }],
+      visits: [{ id: 'v1', client_organisation_id: 'co-a', scheduled_date: '2026-12-01', visit_type: 'retained_visit', status: 'planned' }],
       milestones: [{ id: 'm1', company_id: 'co-a', title: 'x', due_date: '2026-10-01' }],
       auditProgrammes: [{ id: 'a1', company_id: 'co-a', name: 'Fire audit', next_due_date: '2026-11-01', active: true }],
     });

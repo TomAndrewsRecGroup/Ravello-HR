@@ -45,7 +45,10 @@ export function buildPortfolioCalendar(input: PortfolioCalendarInput): Portfolio
   const events: PortfolioCalendarEvent[] = [];
 
   for (const v of input.visits) {
-    if (v.status !== 'scheduled') continue;
+    // Phase 7 (173) widened consultancy_visits.status to the full
+    // visit lifecycle — an "upcoming" calendar entry is one not yet
+    // under way: planned or confirmed.
+    if (v.status !== 'planned' && v.status !== 'confirmed') continue;
     const d = toDateOnly(v.scheduled_date); if (!d) continue;
     events.push({ type: 'visit', date: d, clientOrganisationId: v.client_organisation_id, clientName: name(v.client_organisation_id), title: `Consultant visit (${v.visit_type})`, link: '/dashboard' });
   }
