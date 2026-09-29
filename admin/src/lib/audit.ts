@@ -42,7 +42,19 @@ type AuditAction =
   | 'payment.checkout'
   | 'payment.refunded'
   | 'partner_key.used'
-  | 'broadcast.sent';
+  | 'broadcast.sent'
+  // Core-OS 360 Phase 6, Group 7 (section 13, Events and Audit).
+  // 'value_report.generated' fires when a staff member Saves a value
+  // report to a client's Reports (ValueReportClient.tsx) — the verb
+  // is deliberately "generated", not "created", matching the spec's
+  // own wording for the business action rather than the row insert.
+  | 'value_report.generated'
+  // 'service_ledger.entry_created' fires at BOTH points a
+  // consultancy_service_ledger row is written: the automated
+  // event-consumer path (lib/events/serviceLedgerRules.ts) and the
+  // portal's manual-entry form — same reasoning, "entry_created" is
+  // the spec's literal verb, not the generic audit_row() shape.
+  | 'service_ledger.entry_created';
 
 interface AuditEntry {
   action: AuditAction;

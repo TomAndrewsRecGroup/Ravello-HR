@@ -6,6 +6,7 @@ import { UserPreferencesProvider } from './UserPreferences';
 import { LockedFeatureProvider } from './LockedFeature';
 import { ToastProvider } from '@/components/modules/Toast';
 import OrganisationBar from './OrganisationBar';
+import StaleOrganisationGuard from './StaleOrganisationGuard';
 import type { OrganisationOption } from '@/lib/auth/activeOrganisation';
 
 interface Props {
@@ -40,6 +41,7 @@ export default function PortalShell({
                 style={{ marginLeft: 'var(--sidebar-w)' }}
               >
                 <OrganisationBar organisations={organisations} activeCompanyName={activeCompanyName} />
+                <StaleOrganisationGuard companyId={companyId} organisationCount={organisations.length} />
                 {children}
               </div>
             </div>
