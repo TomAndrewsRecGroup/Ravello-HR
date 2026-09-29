@@ -5,6 +5,8 @@ import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient
 import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyServiceLedgerEntry, ConsultancyServiceScope, ConsultancyVisit } from '@/lib/consultancy/types';
 import { buildCommunicationTimeline, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
+import ClientActionForms from './ClientActionForms';
+import { auditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +31,19 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
 
   const org = portfolio.organisations.find(o => o.organisation_id === id)!;
   const sb = createServiceSupabaseClient();
+
+  // Core-OS 360 Phase 6, Group 7 (section 13): consultancy.client_accessed
+  // fires once per Client 360 view — inherently app-level, since a page
+  // view is not a database write and has no audit_row trigger to ride.
+  // Fire-and-forget, per auditLog()'s own contract: never fail or slow
+  // down the page render it records.
+  auditLog({
+    action: 'consultancy.client_accessed',
+    actor_id: portfolio.session.userId,
+    target_id: id,
+    target_type: 'companies',
+    organisation_id: id,
+  });
 
   const [
     { data: company }, { data: snapshot }, { data: scopes }, { data: visits },
@@ -92,6 +107,8 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
         </div>
         <Link href={`/open-workspace?org=${id}&next=/dashboard`} className="btn-secondary btn-sm">Open full workspace</Link>
       </div>
+
+      <ClientActionForms clientId={id} />
 
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <section className="card p-4 space-y-2">

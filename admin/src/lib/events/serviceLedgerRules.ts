@@ -1,5 +1,6 @@
 import type { Consequence, Rule } from './rules';
 import { changedTo, rowPayload, type PlatformEvent } from './types';
+import { auditLog } from '../audit';
 
 // Core-OS 360 Phase 6, Group 3 (migration 169): the Client Service
 // Ledger (spec section 9). Its own file — spanning every module a
@@ -68,14 +69,37 @@ function ledgerEntry(event: PlatformEvent, input: LedgerEntryInput): Consequence
       // duplicate-key error being logged as a processing failure on a
       // re-processed event, the same "claim/ignoreDuplicates" shape
       // every other keyed write in this codebase already uses.
-      await rsb.from('consultancy_service_ledger').upsert({
+      //
+      // .select('id') + checking the response is what tells apart a
+      // genuine new row from a skipped duplicate: `ON CONFLICT DO
+      // NOTHING` (what ignoreDuplicates sends) never touches a row on
+      // a conflict, so RETURNING — and therefore .select() — comes
+      // back empty on a skip. That is what makes the audit call below
+      // safe to fire unconditionally on the "we inserted" branch: a
+      // re-processed event produces no row and therefore no second
+      // service_ledger.entry_created (section 13: a rule is written as
+      // if it might run twice).
+      const { data: inserted } = await rsb.from('consultancy_service_ledger').upsert({
         consultancy_organisation_id: consultancyId,
         client_organisation_id: event.company_id,
         entry_type: input.entryType,
         summary: input.summary,
         source_type: input.sourceType,
         source_id: input.sourceId,
-      }, { onConflict: 'consultancy_organisation_id,client_organisation_id,source_type,source_id', ignoreDuplicates: true });
+      }, { onConflict: 'consultancy_organisation_id,client_organisation_id,source_type,source_id', ignoreDuplicates: true })
+        .select('id');
+
+      const row = (inserted ?? [])[0] as { id?: string } | undefined;
+      if (row?.id) {
+        auditLog({
+          action: 'service_ledger.entry_created',
+          actor_id: event.actor_id ?? undefined,
+          target_id: row.id,
+          target_type: 'consultancy_service_ledger',
+          organisation_id: event.company_id,
+          metadata: { entry_type: input.entryType, source_type: input.sourceType, source_id: input.sourceId },
+        });
+      }
     },
   }];
 }

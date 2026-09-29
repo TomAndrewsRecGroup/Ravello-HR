@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeSupabase, eventRow, type FakeDb } from './fakeSupabase';
+
+const auditLogSpy = vi.fn();
+vi.mock('@/lib/audit', () => ({ auditLog: (...args: unknown[]) => auditLogSpy(...args) }));
 
 // Core-OS 360 Phase 6, Group 3 (migration 169): the Client Service
 // Ledger. Every entry must be attributed by the EVENT'S OWN ACTOR
@@ -13,6 +16,7 @@ const { RULES } = await import('../rules');
 
 let db: FakeDb;
 beforeEach(() => {
+  auditLogSpy.mockClear();
   db = fakeSupabase({
     profiles: [
       { id: 'staff-1', email: 'tom@example.com', role: 'tps_admin' },
@@ -143,5 +147,36 @@ describe('service ledger: consultancy audits/documents/actions', () => {
     ev.processed_at = null; ev.claimed_at = null;
     await processEvents(db.client, { rules: RULES });
     expect(db.tables.consultancy_service_ledger).toHaveLength(1);
+  });
+
+  it('a genuine new ledger entry fires service_ledger.entry_created (section 13)', async () => {
+    const ev = eventRow({
+      id: 11, entity_type: 'hs_audits', event_type: 'created', entity_id: 'audit-6',
+      company_id: 'co-client', actor_id: 'consultant-1', actor_kind: 'consultant',
+      payload: { new: { title: 'Audited for the audit trail' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(ev);
+    await processEvents(db.client, { rules: RULES });
+
+    expect(auditLogSpy).toHaveBeenCalledTimes(1);
+    expect(auditLogSpy).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'service_ledger.entry_created',
+      organisation_id: 'co-client',
+      target_type: 'consultancy_service_ledger',
+    }));
+  });
+
+  it('a re-processed (duplicate-skipped) event never fires a second service_ledger.entry_created', async () => {
+    const ev = eventRow({
+      id: 12, entity_type: 'hs_audits', event_type: 'created', entity_id: 'audit-7',
+      company_id: 'co-client', actor_id: 'consultant-1', actor_kind: 'consultant',
+      payload: { new: { title: 'Audited once, retried once' }, old: {}, changed: [] },
+    });
+    db.tables.platform_events.push(ev);
+    await processEvents(db.client, { rules: RULES });
+    ev.processed_at = null; ev.claimed_at = null;
+    await processEvents(db.client, { rules: RULES });
+
+    expect(auditLogSpy).toHaveBeenCalledTimes(1);
   });
 });

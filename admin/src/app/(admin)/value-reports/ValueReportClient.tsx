@@ -181,15 +181,26 @@ export default function ValueReportClient({
       const { data: { user } } = await supabase.auth.getUser();
       const title = `Value Report — ${report.period}`;
 
-      const { error: insertErr } = await supabase.from('reports').insert({
+      const { data: inserted, error: insertErr } = await supabase.from('reports').insert({
         company_id: selectedCompany,
         title,
         period: report.period,
         storage_path: path,
         generated_by: user?.id,
         narrative: narrative.trim() || null,
-      });
+      }).select('id').single();
       if (insertErr) { setSaveError(insertErr.message); setSaving(false); return; }
+
+      // Core-OS 360 Phase 6, Group 7 (section 13): records
+      // value_report.generated. Fire-and-forget — an audit write must
+      // never fail the save it records, so a failed request here is
+      // ignored, not surfaced to the user; the report itself already
+      // saved successfully above.
+      fetch('/api/admin/value-reports/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: selectedCompany, reportId: inserted.id, period: report.period }),
+      }).catch(() => {});
 
       setSaveSuccess(`Saved "${title}" to this client's Reports.`);
       setSaving(false);
