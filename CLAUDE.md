@@ -8429,3 +8429,143 @@ unchanged), all five CI guards pass, both production builds compile.
 **Phase 12 is complete. Phase 13 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 13: Board Assurance & Executive Reporting (2026-09-29, migration 178)
+
+No detailed operator brief exists in the repo for this phase either —
+the same situation Phases 8-12 were in. Scope: `docs/CORE_OS_360_
+PHASE13_PLAN.md`, derived from the phase's own name plus a careful
+audit of three things that already looked adjacent to "board
+assurance" and were read in full before deciding what was genuinely
+missing:
+
+1. **The Value Report** — a commercial/relationship document, not a
+   governance one.
+2. **Management Review** (`management_reviews`/`_decisions`/`_data_
+   pack`, Phase 5 Group 6) — the ISO clause 9.3 ritual: a working
+   document for one meeting, not a periodic distributed/signed-off
+   report.
+3. **`computePortfolioCounts()`** (`lib/health/portfolioCounts.ts`,
+   Phase 6) — already computes exactly the kind of assurance facts a
+   board would want (open critical actions, overdue legal reviews,
+   workers not ready, assets unavailable, major audit findings,
+   contractor insurance/environmental permits expiring, …), but it
+   feeds only the **staff-only** `client_health_snapshots` — "an
+   internal BD/account-management signal, never shown to a client"
+   (107's own words). The client's own board has never seen this.
+
+**The gap this phase closes**: nothing assembled the client's OWN
+board-relevant facts into one periodic, DISTRIBUTABLE, SIGN-OFF-ABLE
+document. Delivered in **3 groups**.
+
+### Group 1: schema + pure computation (migration 178)
+
+- **`board_assurance_reports`**: one row per company per (year,
+  quarter) — the SAME quarterly cadence the Value Report already
+  established. `report_data` is an IMMUTABLE JSONB SNAPSHOT, generated
+  once and never recomputed after the fact — the exact
+  `management_review_data_pack` precedent ("a stored snapshot, never
+  recomputed... generating a new pack inserts a fresh row rather than
+  overwriting the old one"). `board_assurance_reports_guard()`
+  (BEFORE INSERT OR UPDATE) enforces this for every session INCLUDING
+  staff: only `status` (and the `issued_at`/`issued_by` it stamps
+  together) may change after generation, and `status` may only move
+  `draft -> issued`, never back — proved live both ways in the probe.
+- **No new Digital Twin snapshot-history table.** The quarterly
+  cadence is coarse enough that the sequence of PAST STORED REPORTS
+  already is the trend history — `lib/boardAssurance/computeReport.ts`
+  compares THIS quarter's computed overall band against the
+  immediately prior stored report's own `report_data.overallBand`, a
+  documented, deliberate scope decision (not an oversight) recorded in
+  the plan doc, avoiding a near-duplicate of `client_health_snapshots`
+  (which stays exactly what it already is: internal, staff-only,
+  daily).
+- **`board_assurance_acknowledgements`**: insert-only — a board member
+  (a `client_admin`) reads an ISSUED report and acknowledges it.
+  `company_id`, `acknowledged_by` and `acknowledged_by_name` are ALL
+  derived from the parent report and the session inside
+  `board_assurance_acknowledgements_fill()` — never trusted from the
+  caller, the same "person_id filled from parent, never trusted"
+  discipline every H&S sub-record trigger already uses. The fill
+  trigger also refuses acknowledging a report that is not yet
+  `issued` — a real database gate, not a UI convention: proved live
+  that a client attempting to acknowledge a draft is refused even
+  though the RLS read policy alone would have hidden the draft from
+  them anyway (defence in depth, not redundancy — the acknowledgement
+  route is a DIFFERENT code path from the read page). `UNIQUE
+  (report_id, acknowledged_by)` is a duplicate-click guard, not a
+  "no corrections" statement — a genuinely different board member
+  acknowledges the SAME report independently, proved live.
+- **Capabilities REUSED, not invented**: `risk.read` (client SELECT on
+  issued reports and on acknowledgements) / `risk.create` (client
+  INSERT on acknowledgements) — both already existed and were already
+  granted to the relevant roles since Phase 1 (117); this migration
+  adds no capability-seeding block at all, unlike Groups 2 of Phase 4
+  and Group 1 of Phase 5, which both needed one for a genuinely new
+  capability.
+- **Outbox whitelist**: `year, quarter, status` only — never
+  `report_data`, which would put a large computed blob into the
+  outbox for no consumer that needs it (the consequence rule reads the
+  row directly instead). `board_assurance_acknowledgements` has
+  deliberately NO outbox entry of its own — one meaningful event per
+  REPORT (its own issue), not one per board member's sign-off, the
+  exact `hs_audit_responses`-is-not-a-source reasoning.
+- **`boardAssuranceRules.ts`** (own file — a periodic, cross-pillar
+  governance ARTEFACT, the same "genuinely different content gets its
+  own file" call `governanceRules.ts`/`legalRegisterRules.ts` already
+  made): `board_assurance_report_issued` tells staff
+  (`/health-safety/<id>/board-assurance`) and the client admins
+  (`/protect/board-assurance`) on the draft -> issued transition.
+  Nothing here decides anything — the transition already happened, as
+  a staff action taken directly on the row; this rule only reports it,
+  the same posture `management_review_completed` already established.
+- **Live probe** (`supabase/probes/178_board_assurance_reports.sql`,
+  19 checks, all passed): draft creation, report_data frozen even for
+  staff, a draft invisible to the client, the issue transition stamps
+  `issued_at`/`issued_by`, un-issuing refused, the issued report
+  visible to its own company and denied to a different one, a
+  cross-org acknowledgement attempt refused, the fill trigger's
+  derived fields proved never trusted from the caller, a duplicate
+  acknowledgement refused while a second board member's own
+  acknowledgement succeeds independently, acknowledging a draft
+  refused, RLS enabled on both tables, neither DEFINER function
+  anon-executable, the write guard's three RESTRICTIVE policies
+  present on the one client-writable table, and the outbox recording
+  both the created and issued events.
+  **A test-writing mistake, not a schema defect**: the probe's own
+  first draft checked `pg_trigger` for a `%write_guard%` name to
+  confirm the write guard was applied — `apply_write_guard()` actually
+  creates RESTRICTIVE POLICIES (`write_guard_ins`/`_upd`/`_del`), not a
+  trigger, confirmed by reading its own live `pg_get_functiondef()`
+  before trusting the assertion either way; the probe was corrected to
+  query `pg_policy` instead, and the same fix was carried into
+  `boardAssuranceReportsSql.test.ts`'s own equivalent assertion so it
+  was never wrong in the first place.
+- `boardAssuranceReportsSql.test.ts` (15 tests) pins the migration
+  text; `platformEventsSql.test.ts` gained 178 to its `LATER` list
+  (this migration adds a BRAND NEW trigger, the same "not just a
+  redefinition" precedent `169`/`174` already established for their
+  own new tables); `computeReport.test.ts` (7 tests) pins the pure
+  assembly function, including the trend-severity ordering (green
+  least severe, red most, amber between) in both directions.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1542 admin — up from 1518, +24 new; 712 portal, unchanged — this
+group touched only the shared-dupe `notify/types.ts` mirror plus each
+app's own separately-maintained `NotificationBell.tsx`, neither of
+which added a new portal test file), all five CI guards pass
+(`check-shared-dupes.sh`: 56 pairs, unchanged), both production builds
+compile. Migration 178 applied live and verified (both tables exist,
+19/19 probe checks pass).
+
+### Group 2 and Group 3
+
+Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+merged on its own branch first, per this codebase's standing "regular
+merges so you don't lose anything" discipline; the UI and the final
+regression/adversarial-QA/handover pass follow as their own PRs.
+
+**Phase 14 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+

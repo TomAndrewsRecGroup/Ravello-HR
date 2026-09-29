@@ -110,6 +110,11 @@ export const TRIGGERED_ENTITIES = [
   // INSERT time — this outbox entry is for an eventual notification
   // alongside that, never instead of it.
   'visit_observations',
+  // Core-OS 360 Phase 13, Group 1 (178): a board assurance report's own
+  // draft -> issued transition. board_assurance_acknowledgements has
+  // deliberately NO outbox entry of its own — one meaningful event per
+  // REPORT (its own issue), not one per board member's sign-off.
+  'board_assurance_reports',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 
