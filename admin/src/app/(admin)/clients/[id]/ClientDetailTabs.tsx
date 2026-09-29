@@ -10,6 +10,8 @@ import ClientNotesTimeline from '@/components/modules/ClientNotesTimeline';
 import ClientDangerZone from '@/components/modules/ClientDangerZone';
 import LogoUpload from '@/components/modules/LogoUpload';
 import EmailLogList from '@/components/modules/EmailLogList';
+import EvidenceLinksPanel from '@/components/hs/EvidenceLinksPanel';
+import type { RequirementEvidenceLink } from '@/lib/hs/types';
 import FrictionTab from './tabs/FrictionTab';
 import LeadTab from './tabs/LeadTab';
 import HrTab from './tabs/HrTab';
@@ -480,6 +482,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
 
   /* ── Roadmap state ── */
   const [milestones, setMilestones]   = useState<any[]>([]);
+  const [milestoneLinks, setMilestoneLinks] = useState<RequirementEvidenceLink[]>([]);
   const [showMSForm,  setShowMSForm]  = useState(false);
   const [msForm,      setMSForm]      = useState(emptyMilestoneForm);
   const [savingMS,    setSavingMS]    = useState(false);
@@ -495,6 +498,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
   }, [tabData['Documents']]);
   useEffect(() => {
     if (tabData['Roadmap']?.milestones) setMilestones(tabData['Roadmap'].milestones);
+    if (tabData['Roadmap']?.milestoneLinks) setMilestoneLinks(tabData['Roadmap'].milestoneLinks);
   }, [tabData['Roadmap']]);
   useEffect(() => {
     if (tabData['Actions']?.actions) setActions(tabData['Actions'].actions);
@@ -550,6 +554,16 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
       setMilestones(prev => prev.map(m => m.id === id ? { ...m, status } : m));
       revalidateAdminPath('/clients');
     }
+  }
+
+  // Phase 6 section 8: re-read just the links after
+  // EvidenceLinksPanel's own insert/delete — cheaper and simpler than
+  // fighting loadTabData's fetchedTabs guard for one row of state.
+  async function refreshMilestoneLinks() {
+    const { data } = await supabase.from('requirement_evidence_links')
+      .select('id,source_type,source_id,entity_type,entity_id,added_by,created_at')
+      .eq('company_id', company.id).eq('source_type', 'milestone');
+    setMilestoneLinks((data ?? []) as RequirementEvidenceLink[]);
   }
 
   return (
@@ -984,6 +998,15 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
                                       >
                                         {MILESTONE_STATUSES.map(s => <option key={s} value={s}>{MILESTONE_STATUS_LABELS[s]}</option>)}
                                       </select>
+                                    </div>
+                                    <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--line)' }}>
+                                      <EvidenceLinksPanel
+                                        companyId={company.id}
+                                        sourceType="milestone"
+                                        sourceId={m.id}
+                                        links={milestoneLinks}
+                                        onChange={refreshMilestoneLinks}
+                                      />
                                     </div>
                                   </div>
                                 ))}

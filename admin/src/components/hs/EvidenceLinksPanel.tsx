@@ -8,10 +8,11 @@ import { STANDARD_EVIDENCE_ENTITY_TYPES, STANDARD_EVIDENCE_ENTITY_TYPE_LABELS, t
 import type { RequirementEvidenceLink } from '@/lib/hs/types';
 
 // Core-OS 360 Phase 5, Group 8 (migration 163): the evidence-link
-// foundation's one UI — reused, unchanged, across the three source
-// pages (a legal obligation on /health-safety/<companyId>/legal, an
-// objective on .../objectives, an audit finding on the audit detail
-// page). Mirrors IsoClient.tsx's add/list/remove pattern for
+// foundation's one UI — reused, unchanged, across every source page (a
+// legal obligation on /health-safety/<companyId>/legal, an objective on
+// .../objectives, an audit finding on the audit detail page, and — Phase
+// 6, Group 5 (170) — a roadmap milestone in the client Roadmap tab).
+// Mirrors IsoClient.tsx's add/list/remove pattern for
 // standard_evidence_links exactly, generalised over a caller-supplied
 // sourceType/sourceId rather than a fixed clause_id — this is purely an
 // explicit human-made link, insert or delete, never an update (the
@@ -22,7 +23,7 @@ import type { RequirementEvidenceLink } from '@/lib/hs/types';
 
 interface Props {
   companyId: string;
-  sourceType: 'legal_obligation' | 'objective' | 'audit_finding';
+  sourceType: 'legal_obligation' | 'objective' | 'audit_finding' | 'milestone';
   sourceId: string;
   links: RequirementEvidenceLink[];
   onChange?: () => void;

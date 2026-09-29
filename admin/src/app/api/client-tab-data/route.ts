@@ -48,12 +48,23 @@ export async function GET(request: NextRequest) {
     }
 
     case 'Roadmap': {
-      const { data } = await supabase
-        .from('milestones')
-        .select('id,pillar,title,description,owner,status,quarter,due_date')
-        .eq('company_id', companyId)
-        .order('due_date', { ascending: true });
-      return NextResponse.json({ milestones: data ?? [] });
+      const [{ data }, { data: links }] = await Promise.all([
+        supabase
+          .from('milestones')
+          .select('id,pillar,title,description,owner,status,quarter,due_date')
+          .eq('company_id', companyId)
+          .order('due_date', { ascending: true }),
+        // Phase 6 section 8: milestones can link to audit findings,
+        // legal gaps, objectives, documents, training, site visits and
+        // actions — requirement_evidence_links (163), widened (170) to
+        // accept 'milestone' as a source_type.
+        supabase
+          .from('requirement_evidence_links')
+          .select('id,source_type,source_id,entity_type,entity_id,added_by,created_at')
+          .eq('company_id', companyId)
+          .eq('source_type', 'milestone'),
+      ]);
+      return NextResponse.json({ milestones: data ?? [], milestoneLinks: links ?? [] });
     }
 
     case 'Actions': {
