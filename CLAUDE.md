@@ -7818,3 +7818,62 @@ compile.
 **Phase 8 is complete. Phase 9 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 9: "What Changed?" Daily Operational Intelligence
+## (in progress, no migration so far)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phase 8 was in). Scope: `docs/CORE_OS_360_PHASE9_PLAN.md`,
+written before Group 1 began. **Deliberately scoped to STAFF (admin),
+not client-facing, for this first pass** — reads as an internal ops
+need, matching the existing internal-tooling precedent (`/automation`,
+`/health`, `/tasks`) more than a client-facing surface; `platform_
+events`' own RLS is staff-only SELECT, so a client-facing version
+would need a service-role-mediated read, real future work rather than
+silently built here.
+
+### Group 1 (no migration): the pure computation
+
+`platform_events` (096) has recorded every create/update/delete
+across 51+ tables since 2026-09-25, purely as automation fuel for the
+consequence-rule consumer — nothing anywhere has ever rendered it as a
+human-readable narrative. `lib/whatChanged/compute.ts` is that: pure,
+deterministic, computed at READ TIME from a day's already-fetched
+rows (the caller scopes the date range in SQL; the function only
+groups and labels what it is given) — no stored aggregate, no AI, the
+same posture every KPI/intelligence module in this codebase already
+takes.
+
+- **COUNTS ONLY, deliberately, not an itemised feed.** Each table's own
+  outbox trigger whitelists a DIFFERENT set of columns (hazards:
+  `reference`/`status`/`site_id`/…; actions: an entirely different
+  set) — there is no single field ("title", "name") reliably present
+  across entity types to build a per-item label from, and guessing one
+  per table would be exactly the "sniff a payload key and hope"
+  fragility this codebase's own standing rules reject elsewhere. A
+  categorised count ("3 hazards created, 1 updated") is a complete,
+  honest answer to "what changed" on its own.
+- **A curated label map for the ~20 most operationally interesting
+  entity types**, falling back to a humanised table name for anything
+  else — readable, never crashes on an unlisted table.
+- **The fallback deliberately does NOT attempt to singularise.** A
+  naive trailing-`'s'` strip turns "companies" into "companie", not
+  "company" — English pluralisation is irregular enough that getting
+  it wrong looks worse than leaving the table's own plural form as-is.
+  Every curated `LABELS` entry is already written in its own correct
+  plural form for exactly this reason; the fallback matches that
+  style. Caught by writing the test first and watching it fail against
+  the naive implementation, not assumed correct.
+- **`actor_kind` splits into system vs. human** (`'system'` vs.
+  anything else — `hs_actor_kind()`'s real vocabulary is `staff |
+  client | system`), a simple, useful signal for "how much of today
+  was automation vs. people doing things."
+- **Categories sort by total descending, entityType ascending as a
+  deterministic tiebreak** — never insertion-order-dependent.
+- Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+  (1469 admin — 8 new `compute.test.ts` cases; 705 portal, unchanged
+  — this group is admin-only, pure functions with no page), all five
+  CI guards pass (unchanged across the board — no new table, no new
+  route, no new write path), admin production build compiles.
+
