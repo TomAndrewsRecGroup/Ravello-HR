@@ -25,8 +25,11 @@ export default async function ConsultantWorkloadPage() {
   const [items, visitsPage, docsAwaitingReviewPage] = await Promise.all([
     loadAttentionQueue(portfolio),
     orgIds.length
+      // Phase 7 (173) widened consultancy_visits.status from
+      // scheduled/completed/cancelled to the full visit lifecycle —
+      // "due" now means not yet under way: planned or confirmed.
       ? readAllPages<any>((from, to) => sb.from('consultancy_visits').select('id, client_organisation_id, scheduled_date, visit_type, status')
-          .eq('status', 'scheduled').in('client_organisation_id', orgIds).order('scheduled_date', { ascending: true }).range(from, to))
+          .in('status', ['planned', 'confirmed']).in('client_organisation_id', orgIds).order('scheduled_date', { ascending: true }).range(from, to))
       : Promise.resolve({ rows: [], truncated: false }),
     orgIds.length
       ? readAllPages<any>((from, to) => sb.from('hs_documents').select('id, company_id, title, status')

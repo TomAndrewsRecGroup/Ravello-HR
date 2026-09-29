@@ -15,6 +15,11 @@ import {
 } from '../vocab';
 
 const sql = readFileSync(join(__dirname, '../../../../../supabase/migrations/168_consultancy_service_scope_visits_health.sql'), 'utf8');
+// consultancy_visits.status was replaced by migration 173 (Phase 7,
+// Group 1) — the status assertion below reads THAT file, not 168's own
+// now-superseded CHECK text, the same "latest definition wins"
+// principle tenancySql.test.ts/platformEventsSql.test.ts already use.
+const sql173 = readFileSync(join(__dirname, '../../../../../supabase/migrations/173_consultant_visit_workflow.sql'), 'utf8');
 
 function checkList(source: string, column: string): string[] {
   const re = new RegExp(`${column}\\s+text[^\\n]*CHECK \\([^)]*IN \\(([^)]*)\\)`);
@@ -31,10 +36,17 @@ describe('Service scope + consultancy visits (168)', () => {
     expect(checkList(sql, 'review_frequency').sort()).toEqual([...REVIEW_FREQUENCIES].sort());
   });
 
-  it('visit_type / status CHECKs match the TS vocabulary exactly', () => {
+  it('visit_type CHECK (168, unchanged) matches the TS vocabulary exactly', () => {
     const visitsTable = sql.slice(sql.indexOf('CREATE TABLE IF NOT EXISTS public.consultancy_visits'));
     expect(checkList(visitsTable, 'visit_type').sort()).toEqual([...VISIT_TYPES].sort());
-    expect(checkList(visitsTable, 'status').sort()).toEqual([...VISIT_STATUSES].sort());
+  });
+
+  it('status CHECK (superseded by 173) matches the TS vocabulary exactly — never 168\'s own now-stale 3-value list', () => {
+    const re = /ADD CONSTRAINT consultancy_visits_status_check\s+CHECK \(status IN \(([^)]*)\)\)/;
+    const m = sql173.match(re);
+    expect(m, 'status CHECK not found in 173').toBeTruthy();
+    const values = [...m![1].matchAll(/'([a-z_]+)'/g)].map(x => x[1]);
+    expect(values.sort()).toEqual([...VISIT_STATUSES].sort());
   });
 
   it('both tables refuse consultancy_organisation_id = client_organisation_id', () => {

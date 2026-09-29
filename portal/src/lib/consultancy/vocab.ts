@@ -36,9 +36,10 @@ export const REVIEW_FREQUENCY_LABELS: Record<ReviewFrequency, string> = {
   annual:    'Annual',
 };
 
-// consultancy_visits is deliberately minimal — Phase 7 (Consultant Visit
-// Mode & Automated Site-Visit Reporting) owns the full workflow and
-// EXTENDS this table; see migration 168's own header comment.
+// consultancy_visits started deliberately minimal (168's own header
+// comment) — Phase 7 (Consultant Visit Mode & Automated Site-Visit
+// Reporting) EXTENDS it in place (migration 173), never a parallel
+// table.
 export const VISIT_TYPES = [
   'retained_visit', 'audit_visit', 'incident_support', 'training_delivery', 'management_review_support', 'other',
 ] as const;
@@ -52,12 +53,37 @@ export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   other:                      'Other',
 };
 
-export const VISIT_STATUSES = ['scheduled', 'completed', 'cancelled'] as const;
+// Migration 173 (Phase 7, Group 1) replaced 168's original 3-value
+// status with the full visit lifecycle the spec names — 0 live rows
+// existed, so the CHECK was tightened directly rather than kept
+// permissive for values nothing ever wrote.
+export const VISIT_STATUSES = [
+  'planned', 'confirmed', 'in_progress', 'awaiting_report', 'report_draft', 'report_issued', 'closed', 'cancelled',
+] as const;
 export type VisitStatus = typeof VISIT_STATUSES[number];
 export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
-  scheduled: 'Scheduled',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
+  planned:         'Planned',
+  confirmed:       'Confirmed',
+  in_progress:     'In progress',
+  awaiting_report: 'Awaiting report',
+  report_draft:    'Report draft',
+  report_issued:   'Report issued',
+  closed:          'Closed',
+  cancelled:       'Cancelled',
+};
+
+// Migration 173: consultancy_visit_templates.category.
+export const VISIT_TEMPLATE_CATEGORIES = [
+  'general_hs', 'construction', 'manufacturing', 'iso', 'compliance', 'contractor_review',
+] as const;
+export type VisitTemplateCategory = typeof VISIT_TEMPLATE_CATEGORIES[number];
+export const VISIT_TEMPLATE_CATEGORY_LABELS: Record<VisitTemplateCategory, string> = {
+  general_hs:        'General H&S',
+  construction:      'Construction',
+  manufacturing:     'Manufacturing',
+  iso:               'ISO',
+  compliance:        'Compliance',
+  contractor_review: 'Contractor review',
 };
 
 // Migration 169 (Group 3): the Client Service Ledger's own entry
