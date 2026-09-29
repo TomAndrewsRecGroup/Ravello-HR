@@ -34,7 +34,7 @@ export default function PortalShell({
         <LockedFeatureProvider accountManagerName={accountManagerName} accountManagerEmail={accountManagerEmail}>
           <ToastProvider>
             <div className="flex min-h-screen">
-              <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} role={role} showBilling={showBilling} />
+              <Sidebar flags={flags} counts={counts} companyId={companyId} userId={userId} role={role} showBilling={showBilling} organisations={organisations} />
               <div
                 className="main-content flex-1 flex flex-col min-h-screen"
                 style={{ marginLeft: 'var(--sidebar-w)' }}

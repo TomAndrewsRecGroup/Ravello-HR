@@ -100,6 +100,11 @@ export const UNGATED_ROUTES: readonly string[] = [
   '/dev-plans',   // plans are assigned by TPS; no module owns them
   '/settings',
   '/billing',     // role-gated inside the page instead
+  // Core-OS 360 Phase 6: the consultancy Command Centre. Gated by
+  // CAPABILITY (portfolio access via 167's portfolio_organisations()),
+  // never a per-client feature flag — an ordinary single-org client
+  // simply has an empty portfolio and the pages render nothing to act on.
+  '/consultancy',
 ];
 
 function matches(pathname: string, prefix: string): boolean {

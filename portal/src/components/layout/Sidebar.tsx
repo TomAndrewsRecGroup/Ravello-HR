@@ -7,8 +7,9 @@ import {
   LayoutDashboard, Briefcase, BookOpen, HardHat,
   LifeBuoy, LogOut, Settings, Lock, X, CalendarDays,
   Eye, EyeOff, Pencil, Check,
-  ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard, ClipboardList,
+  ArrowUp, ArrowDown, Trophy, ExternalLink, CreditCard, ClipboardList, Building2,
 } from 'lucide-react';
+import type { OrganisationOption } from '@/lib/auth/activeOrganisation';
 import { useMobileMenu } from './MobileMenuContext';
 import { useUserPreferences } from './UserPreferences';
 import { useLockedFeature } from './LockedFeature';
@@ -39,6 +40,10 @@ interface NavItem {
 /* All possible nav items: order/visibility controlled by user prefs */
 const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/dashboard',            label: 'Dashboard',            icon: LayoutDashboard, flag: null,                    fixed: true  },
+  // Core-OS 360 Phase 6: the consultancy Command Centre — shown only
+  // to a user actually holding portfolio access (computed from
+  // `organisations` below), never gated by a per-client feature flag.
+  { href: '/consultancy',          label: 'Command Centre',       icon: Building2,       flag: null,                    fixed: false },
   { href: '/hire',                 label: 'HIRE',                 icon: Briefcase,       flag: 'hiring',                fixed: false },
   { href: '/lead',                 label: 'LEAD',                 icon: BookOpen,        flag: 'lead',                  fixed: false },
   { href: '/protect',              label: 'PROTECT · H&S',        icon: HardHat,          flag: 'protect',               fixed: false },
@@ -60,9 +65,17 @@ interface Props {
   role?: string;
   /** Hide the Billing nav entry when the company has nothing billable. */
   showBilling?: boolean;
+  /** Home + live grants (Core-OS 360 consultancy mode) — used only to
+   *  decide whether the Command Centre nav item shows. */
+  organisations?: OrganisationOption[];
 }
 
-export default function Sidebar({ flags = {}, counts = {}, companyId, userId, role = '', showBilling = true }: Props) {
+export default function Sidebar({ flags = {}, counts = {}, companyId, userId, role = '', showBilling = true, organisations = [] }: Props) {
+  // A genuine portfolio grant only — never the home row, and never the
+  // blanket "every company" set staff get from my_organisations(). The
+  // Command Centre is for grant-holding consultancy accounts; staff
+  // already have every other cross-client admin view in this codebase.
+  const hasPortfolioAccess = organisations.some(o => !o.is_home && o.role_key !== 'platform_super_admin');
   const path = usePathname();
   const { isOpen, close } = useMobileMenu();
   const { prefs, updatePrefs } = useUserPreferences();
@@ -83,6 +96,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
     const allowed = ALL_NAV_ITEMS.filter(item => {
       if (item.requireRole && !item.requireRole.includes(role)) return false;
       if (item.href === '/billing' && !showBilling) return false;
+      if (item.href === '/consultancy' && !hasPortfolioAccess) return false;
       return true;
     });
 
@@ -98,7 +112,7 @@ export default function Sidebar({ flags = {}, counts = {}, companyId, userId, ro
       hidden: hidden.has(item.href),
       disabled: item.flag !== null && flags[item.flag] === false,
     }));
-  }, [prefs, flags, role, showBilling]);
+  }, [prefs, flags, role, showBilling, hasPortfolioAccess]);
 
   // Show every nav item the user has either explicitly hidden via
   // their preferences AND every disabled (out-of-package) item — the
