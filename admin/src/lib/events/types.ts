@@ -169,6 +169,11 @@ export const REMINDER_ENTITIES = [
   // Core-OS 360 Phase 5, Group 7 (162): a planned audit's own
   // next_due_date.
   'audit_programmes',
+  // Core-OS 360 Phase 7, Group 6: a visit report's own next_
+  // visit_recommended_date — closing the loop Group 5 opened. The
+  // query itself filters out anything already followed up (see
+  // followUpDue.ts), so a row surfacing here genuinely still needs one.
+  'consultancy_visit_reports',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 
