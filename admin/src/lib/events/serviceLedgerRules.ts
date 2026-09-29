@@ -106,9 +106,18 @@ function ledgerEntry(event: PlatformEvent, input: LedgerEntryInput): Consequence
 
 export const serviceLedgerRules: Rule[] = [
   {
+    // 'completed' was 168's original (pre-Phase-7) status vocabulary
+    // ('scheduled'/'completed'/'cancelled') — migration 173 (Phase 7,
+    // Group 1) replaced it with the full 8-value lifecycle and this
+    // rule was never updated to match, so it had been dead code (no
+    // event this codebase emits could ever satisfy it) since the day
+    // 173 shipped. 'report_issued' is the correct terminal signal now:
+    // real, distributed value delivered, exactly what this rule exists
+    // to record — found and fixed while building the report-issuing
+    // path itself (176).
     id: 'ledger_visit_completed',
     on: 'consultancy_visits.updated',
-    when: (e: PlatformEvent) => changedTo(e, 'status', ['completed']),
+    when: (e: PlatformEvent) => changedTo(e, 'status', ['report_issued']),
     then: ({ event }) => {
       if (!event.entity_id) return [];
       const { new: n } = rowPayload(event);

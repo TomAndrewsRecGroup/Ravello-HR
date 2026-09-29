@@ -4,12 +4,19 @@ import { notFound, redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 import { loadPreVisitBrief } from '@/lib/consultancy/loadPreVisitBrief';
 import { loadVisitCapture } from '@/lib/consultancy/loadVisitCapture';
+import { loadVisitReport } from '@/lib/consultancy/loadVisitReport';
 import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS } from '@/lib/consultancy/vocab';
+import type { VisitStatus } from '@/lib/consultancy/vocab';
 import type { ConsultancyVisit } from '@/lib/consultancy/types';
 import VisitCaptureClient from './VisitCaptureClient';
 import PreviousActionVerify from './PreviousActionVerify';
+import ReportBuilderClient from './ReportBuilderClient';
 
 export const dynamic = 'force-dynamic';
+
+// Group 5's report-building phase — once capture is finished (or the
+// report has already been issued/closed out).
+const REPORT_PHASE_STATUSES = new Set<VisitStatus>(['awaiting_report', 'report_draft', 'report_issued', 'closed']);
 
 export async function generateMetadata({ params }: { params: Promise<{ visitId: string }> }): Promise<Metadata> {
   const { visitId } = await params;
@@ -38,9 +45,10 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
   const v = visit as ConsultancyVisit;
 
   const org = portfolio.organisations.find(o => o.organisation_id === id)!;
-  const [brief, capture] = await Promise.all([
+  const [brief, capture, report] = await Promise.all([
     loadPreVisitBrief(portfolio, id, visitId),
     loadVisitCapture(id, visitId, v.template_id),
+    loadVisitReport(visitId),
   ]);
 
   return (
@@ -56,6 +64,10 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
         </div>
         <Link href={`/consultancy/clients/${id}`} className="btn-secondary btn-sm">Back to Client 360</Link>
       </div>
+
+      {REPORT_PHASE_STATUSES.has(v.status) && (
+        <ReportBuilderClient visitId={visitId} clientOrganisationId={id} report={report} />
+      )}
 
       {v.status !== 'cancelled' && (
         <VisitCaptureClient
