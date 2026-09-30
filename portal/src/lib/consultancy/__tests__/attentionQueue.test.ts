@@ -3,12 +3,14 @@ import { buildAttentionQueue } from '../attentionQueue';
 
 const TODAY = new Date('2026-09-29T00:00:00Z');
 const orgNames = new Map([['co-a', 'ABC Manufacturing']]);
+const siteNames = new Map([['site-a', 'Leeds Depot']]);
 
 const empty = {
-  orgNames, today: TODAY,
+  orgNames, siteNames, today: TODAY,
   actions: [], legalObligations: [], documentsReviewDue: [], incidents: [],
   deploymentStatus: [], equipment: [], auditFindings: [], contractors: [],
   contractorInsurances: [], environmentalPermits: [], managementReviews: [], serviceRequests: [],
+  permits: [], isolations: [], environmentalMonitoring: [],
 };
 
 describe('buildAttentionQueue', () => {
@@ -86,6 +88,56 @@ describe('buildAttentionQueue', () => {
       ],
     });
     expect(out.map(i => i.key)).toEqual(['action:a2', 'action:a3', 'action:a1']);
+  });
+
+  it('a suspended/revoked permit carries the site it was issued for; an issued permit raises nothing', () => {
+    const out = buildAttentionQueue({
+      ...empty,
+      permits: [
+        { id: 'p1', company_id: 'co-a', status: 'suspended', permit_number: 'PTW-1', site_id: 'site-a', valid_until: null },
+        { id: 'p2', company_id: 'co-a', status: 'revoked', permit_number: 'PTW-2', site_id: 'site-a', valid_until: null },
+        { id: 'p3', company_id: 'co-a', status: 'issued', permit_number: 'PTW-3', site_id: 'site-a', valid_until: null },
+      ],
+    });
+    expect(out.map(i => i.key).sort()).toEqual(['permit:p1', 'permit:p2']);
+    expect(out.find(i => i.key === 'permit:p1')).toMatchObject({ siteId: 'site-a', siteName: 'Leeds Depot', severity: 'medium' });
+    expect(out.find(i => i.key === 'permit:p2')).toMatchObject({ severity: 'high' });
+  });
+
+  it('an isolation still applied (not yet verified) resolves its site through the asset; verified/removed raise nothing', () => {
+    const out = buildAttentionQueue({
+      ...empty,
+      equipment: [{ id: 'asset-1', company_id: 'co-a', status: 'out_of_service', name: 'Forklift 3', site_id: 'site-a' }],
+      isolations: [
+        { id: 'iso1', company_id: 'co-a', status: 'applied', asset_id: 'asset-1', isolation_type: 'electrical', applied_at: '2026-09-20T00:00:00Z' },
+        { id: 'iso2', company_id: 'co-a', status: 'verified', asset_id: 'asset-1', isolation_type: 'electrical', applied_at: '2026-09-20T00:00:00Z' },
+      ],
+    });
+    const iso = out.find(i => i.key === 'isolation:iso1')!;
+    expect(iso).toMatchObject({ siteId: 'site-a', siteName: 'Leeds Depot', state: 'electrical' });
+    expect(out.some(i => i.key === 'isolation:iso2')).toBe(false);
+  });
+
+  it('an environmental monitoring exceedance within the last 30 days is flagged; an older one or a within-limit reading is not', () => {
+    const out = buildAttentionQueue({
+      ...empty,
+      today: TODAY,
+      environmentalMonitoring: [
+        { id: 'm1', company_id: 'co-a', site_id: 'site-a', parameter: 'Noise', within_limit: false, recorded_at: '2026-09-25T00:00:00Z' },
+        { id: 'm2', company_id: 'co-a', site_id: 'site-a', parameter: 'Noise', within_limit: false, recorded_at: '2026-06-01T00:00:00Z' },
+        { id: 'm3', company_id: 'co-a', site_id: 'site-a', parameter: 'Noise', within_limit: true, recorded_at: '2026-09-25T00:00:00Z' },
+      ],
+    });
+    expect(out.map(i => i.key)).toEqual(['monitoring:m1']);
+    expect(out[0]).toMatchObject({ siteId: 'site-a', siteName: 'Leeds Depot', state: 'Noise' });
+  });
+
+  it('an approved/removed/unremarkable equipment carries no site; a quarantined asset does', () => {
+    const out = buildAttentionQueue({
+      ...empty,
+      equipment: [{ id: 'asset-1', company_id: 'co-a', status: 'quarantined', name: 'Press 2', site_id: 'site-a' }],
+    });
+    expect(out[0]).toMatchObject({ siteId: 'site-a', siteName: 'Leeds Depot' });
   });
 
   it('a service request severity follows priority, and an incident severity follows its own severity scale', () => {
