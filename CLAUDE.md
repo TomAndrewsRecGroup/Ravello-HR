@@ -12214,3 +12214,73 @@ paged query's `.order()` present), both production builds compile
 (portal's one prerender failure is the same long-documented
 sandbox-only missing-Supabase-env-var limitation).
 
+### Group 4: Core 360 Status UI (C13.8)
+
+`Core360StatusView.tsx` (new shared-dupe pair, 72 pairs up from 71),
+the exact `ComplianceTwinView.tsx`/`AssuranceTodayView.tsx` shape: an
+overall band banner plus a card per domain (band icon, reasons, a
+collapsible "Show inputs" panel), no interactivity beyond navigation
+links, server-renderable in both apps. Admin: a 31st `HsCompanyTabs.tsx`
+tab (`core-360-status`, after Board Assurance), no new sidebar entry
+(dynamic route, nests under the already-linked `/health-safety`
+prefix). Portal: `/protect/core-360-status`, gated by `protect` alone,
+added to `moduleAccess.ts` and the PROTECT layout's own tab list.
+
+- **Admin's `lib/core360Status/loadStatus.ts`** (admin-only, the
+  `loadComplianceTwinSnapshot.ts`/`loadPortfolioCounts.ts` precedent —
+  portal shares no server code and duplicates its own query logic)
+  composes `loadPortfolioCountsForCompany()` (Phase 13) with a fresh
+  Risk Graph read (the exact shape every other Risk Graph consumer in
+  this codebase already duplicates per caller, never factored out of
+  `loadComplianceTwinSnapshot` since Risk Graph was never exported from
+  it) plus the two new reads `assembleCore360Status()` needs. No new
+  query shape beyond those two.
+- **A real finding, checked live rather than assumed from an older
+  page's own comment**: the Phase 18 Assurance Today portal page's own
+  header says "contractors/permits/isolations/consultancy_visits do
+  not [have a client-read policy]" — true for permits/isolations, but
+  checked live against the actual migration text before writing this
+  group's own portal reads and found FALSE for contractors and
+  consultancy_visits. `contractors_manage`/`contractor_insurances_manage`
+  (150) already grant any session holding `contractors.manage` on its
+  own `company_id` — which `client_admin` has held via the
+  `organisation_admin` role mapping since Phase 4, confirmed live by
+  Phase 22's own contractors-portal-UI work — and
+  `consultancy_visits_client_read` (168, `client_organisation_id =
+  my_company_id()`) has existed since Phase 6 and was never dropped or
+  redefined. `environmental_permits`/`management_reviews`/
+  `service_requests` all already have real portal pages reading them
+  directly. Since the Contractors DOMAIN is exactly what this page's
+  Contractors card depends on, the portal reads here include
+  contractors/contractor_insurances/consultancy_visits/
+  environmental_permits/management_reviews/service_requests properly
+  under the client's own session — not passed as empty arrays the way
+  the older Phase 18 page does for its own, narrower purpose (that
+  page's own choice remains correct for what IT renders, since its
+  `items` list never surfaces `contractor_expiring` at all — this is a
+  finding about this page's own needs, not a defect to fix in Phase
+  18's unrelated page, which is out of this group's scope).
+- **Link targets**: People and Training have no admin-side page of
+  their own (workforce and training records are managed only through
+  the portal's LEAD workspace, staff included — the exact "Hazards and
+  risk assessments have no admin-side per-record page" precedent
+  Phase 8's own risk-graph page already established) — the admin page
+  links out to the portal (`portalUrl()`) for those two; Plant, Risk
+  Controls, Environmental and Contractors all have a real admin tab
+  already and link internally.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1820**, unchanged — this group is UI/route-glue only, the
+established "no component-level test" convention; portal **894** — up
+from 892: +2, the sweep tests picking up the new route automatically),
+all six CI guards pass with no regressions (**72 shared-dupe pairs**,
+up from 71; row-cap clean; 44 unvalidated routes, unchanged; 43 static
+admin routes, all reachable — the new admin route is dynamic, needing
+no literal-reference check; 102 blind-update chains, unchanged — this
+group writes nothing, both new surfaces are read-only; every paged
+query's `.order()` present), both production builds compile (portal's
+one prerender failure is the same long-documented sandbox-only
+missing-Supabase-env-var limitation), including
+`/health-safety/[companyId]/core-360-status` and
+`/protect/core-360-status`.
+
