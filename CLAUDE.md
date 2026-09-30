@@ -11476,6 +11476,55 @@ limitation, unrelated to this change — confirmed by the build
 compiling successfully before failing only on that one unrelated
 page's static export), admin production build compiles clean.
 
-**Later Phase 24 groups** (final regression/QA/handover) continue from
-here.
+### Group 6: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE24_HANDOVER.md`.
+
+A dedicated adversarial pass across all five prior groups found no
+Critical, High or Medium defect. Confirmed clean: `ReportBuilderClient
+.tsx`'s row_version propagates correctly after `router.refresh()`, so
+a second save always conditions on the current version, never a stale
+client-cached one; `/consultancy/access`'s colleagues picker
+deliberately does not pre-exclude the caller (the RPC's own self-grant
+refusal is the real guard, per the page's own "the database decides,
+not the page" design); the site drilldown's `hs_sites` query checks
+`id` AND `company_id` together, so a site belonging to a different
+client 404s rather than resolving wrong; a manually-crafted
+`?page=999` on the timeline produces an empty slice with no error,
+matching the established admin Candidates-table pagination idiom
+exactly (neither clamps to the real total). One documentation-only fix
+applied: `communicationTimeline.ts`'s header comment had a stale "one
+of the four kinds above" cross-reference, no longer accurate once this
+phase added a fifth `shared_with_client`-producing kind.
+
+**C1.12 stays correctly split, not silently widened or narrowed.**
+The Phase-24 slice (`consultancy_visit_reports`, the one genuinely
+unprotected concurrent-edit path) is fully closed; the rest — general
+optimistic-locking hardening across the app — remains assigned to
+Phase 28 per the matrix's own existing `24/28` split, updated in
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and
+`docs/core_os_360_completion_manifest.json` to record exactly that
+(`PARTIAL`, `closed_in_phase: 24`, `assigned_to_phase: 28`).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1724** — unchanged from the end of Group 2, since Groups 3-5
+touched portal only; portal **809** — 804 + 1 new
+`communicationTimeline.test.ts` case for the visit-report kind, plus
+the sweep tests picking up the two new routes from Groups 2-3
+automatically), all six CI guards pass with no regressions (66
+shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this phase added no
+admin route; 102 blind-update chains, unchanged — the one new counted
+UPDATE, `ReportBuilderClient.tsx`'s `saveDraft()`, was built with
+`COUNT_EXACT`/`judgeWrite()` from the start; every paged query's
+`.order()` present), both production builds compile (portal's one
+prerender failure is the same long-documented sandbox-only missing-
+Supabase-env-var limitation).
+
+**Phase 24 is complete. Phase 25 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction. Its
+scope should be read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s
+own gap ledger rather than assumed, following the same "repository
+reality beats handover narrative" discipline every phase since Phase 20
+has used.
 

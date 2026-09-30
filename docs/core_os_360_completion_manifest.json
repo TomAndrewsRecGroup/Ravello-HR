@@ -20,8 +20,9 @@
     {
       "id": "C1.9",
       "phase": "C1",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 24
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 24,
+      "note": "/consultancy/access, first caller of grant_organisation_access()/revoke_organisation_access() (117), Phase 24 Group 2"
     },
     {
       "id": "C1.10",
@@ -38,11 +39,10 @@
     {
       "id": "C1.12",
       "phase": "C1",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": [
-        24,
-        28
-      ]
+      "status": "PARTIAL",
+      "closed_in_phase": 24,
+      "assigned_to_phase": 28,
+      "note": "consultancy_visit_reports row_version closed Phase 24 Group 1 (migration 190); consultancy_service_scopes has no UPDATE writer, consultancy_visits already guarded by its own lifecycle state machine (185) \u2014 neither needed a lock; general hardening across the rest of the app remains assigned to Phase 28"
     },
     {
       "id": "C1.13",
@@ -135,20 +135,23 @@
     {
       "id": "C6.13",
       "phase": "C6",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 24
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 24,
+      "note": "/consultancy/clients/[id]/sites/[siteId], filters the same loadAttentionQueue() the Attention Queue page calls, Phase 24 Group 3"
     },
     {
       "id": "C6.14",
       "phase": "C6",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 24
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 24,
+      "note": "searchParams kind/visibility filters + Prev/Next pagination on Client 360, Phase 24 Group 4"
     },
     {
       "id": "C6.15",
       "phase": "C6",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 24
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 24,
+      "note": "communicationTimeline.ts gained visit_report_issued kind dated by issued_at, Phase 24 Group 5"
     },
     {
       "id": "C7.*",

@@ -45,7 +45,7 @@
 //                           record that was never itself communicated
 //                           to anyone. Every other ledger entry_type
 //                           traces back to something already covered
-//                           by one of the four kinds above.
+//                           by one of the kinds above.
 
 export type CommunicationVisibility = 'client_originated' | 'shared_with_client' | 'internal_consultancy';
 export type CommunicationKind =
