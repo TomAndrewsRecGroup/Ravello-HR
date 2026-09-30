@@ -88,6 +88,7 @@ PAIRS=(
   "admin/src/lib/whatChanged/clientScope.ts|portal/src/lib/whatChanged/clientScope.ts"
   "admin/src/lib/entityQr/qrTokens.ts|portal/src/lib/entityQr/qrTokens.ts"
   "admin/src/components/hs/EntityQrPanel.tsx|portal/src/components/hs/EntityQrPanel.tsx"
+  "admin/src/lib/core360Status/assemble.ts|portal/src/lib/core360Status/assemble.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

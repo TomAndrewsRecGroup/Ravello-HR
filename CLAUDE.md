@@ -12142,3 +12142,75 @@ new surfaces are read-only; every paged query's `.order()` present),
 both production builds compile (portal's one prerender failure is the
 same long-documented sandbox-only missing-Supabase-env-var limitation).
 
+### Group 3: Core 360 Status computation (C13.8)
+
+`lib/core360Status/assemble.ts` (new shared-dupe pair, 71 pairs up
+from 70): a PURE COMPOSITION, sibling to `complianceTwin/assemble.ts`/
+`assurance/today.ts` — computes no new raw fact beyond two small counts
+neither existing module already has (training-record expiry, open
+environmental spills / waste-movement non-conformances). Checked
+before building, not assumed: this is genuinely NOT a duplicate of the
+Digital Twin (Phase 12) or Assurance Today (Phase 18) — both are
+explicitly narrower predecessors (C18.4's own note: "Phase 18 was
+always scoped as 'today only'... Phase 27 supersedes/extends it").
+This is the first DOMAIN-scored, six-area-NAMED surface the Master
+Spec's own C13.8 wording asks for (People / Plant / Training / Risk
+Controls / Environmental / Contractors), reusing already-computed
+inputs (`PortfolioCounts`, `RiskGraphIntelligence`) rather than
+inventing new raw facts a third time.
+
+- **No AI anywhere in this file.** Every domain band (`ok | attention
+  | critical`) is a fixed, named-threshold `if`-chain over inspectable
+  counts — the same `complianceTwin/assemble.ts` posture, never a
+  formula or a score. `overallBand` is the worst of the six domains
+  (`worstBand()`), the exact `complianceTwin`/`assurance` precedent.
+- **People**: `safety_critical_gaps > 0` is Phase 3's own ONE
+  definition of safety-critical (`person_deployment_status`'s stored
+  summary) — any nonzero value is critical; an ordinary not-ready
+  worker with no safety-critical gap is only attention.
+- **Plant**: `assets_unavailable` (quarantined + out-of-service,
+  already merged by `PortfolioCounts`) — 1-2 is attention, 3+ is
+  critical (a documented, named threshold: a single asset off the
+  floor is routine maintenance, several at once is a pattern).
+- **Training**: `computeTrainingExpiry()` — the one genuinely new
+  count, reading `training_records.expires_on` directly. An expiry
+  EXACTLY TODAY counts as expired, not "expiring soon" (the reminders
+  framework's own `due_0`-is-already-due convention, applied here —
+  caught by a failing test during development, `<` corrected to `<=`).
+  Any expired record is critical; expiring-only (within 30 days,
+  matching `due_30`) is attention.
+- **Risk Controls**: reuses `RiskGraphIntelligence` (Phase 8) verbatim
+  — an ineffective SHARED control (relied on by 2+ assessments,
+  Phase 8's own definition of "shared") is critical; an uncovered
+  hazard alone is attention.
+- **Environmental**: `computeEnvironmentalOpen()` — the other
+  genuinely new count, reading `environmental_spills.status` and
+  `waste_movements.non_conformance` directly, the same two source
+  tables `environmentalRules.ts`'s own consequence rules already key
+  on. An open (not `closed`) spill is critical; a waste non-conformance
+  alone, or an environmental permit expiring within 30 days
+  (`PortfolioCounts.environmental_permits_expiring`), is attention.
+- **Contractors**: `PortfolioCounts.contractor_expiring` already
+  merges a non-approved status with an expiring/missing required
+  insurance policy (per its own doc comment) — no second, narrower read
+  exists to split the two apart, so this domain has no distinct
+  critical tier, a deliberate, documented simplification: any flagged
+  contractor is attention.
+- 18 new `assemble.test.ts` cases (mirrored byte-identical to admin):
+  an entirely clean input is `ok` across all six domains; each
+  domain's own attention/critical split independently; the training
+  expiry boundary at exactly today; overallBand as the worst of six;
+  a clean domain reports exactly one reason.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1820** — up from 1802 at the end of Group 1: +18 new,
+mirrored byte-identical to portal's own copy; portal **892** — up from
+874 at the end of Group 2: +18 new), all six CI guards pass with no
+regressions (**71 shared-dupe pairs**, up from 70 — `core360Status/
+assemble.ts` newly registered; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this group added no
+route, pure computation only; 102 blind-update chains, unchanged; every
+paged query's `.order()` present), both production builds compile
+(portal's one prerender failure is the same long-documented
+sandbox-only missing-Supabase-env-var limitation).
+
