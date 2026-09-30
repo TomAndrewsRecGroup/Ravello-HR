@@ -179,6 +179,12 @@ export const REMINDER_ENTITIES = [
   // query itself filters out anything already followed up (see
   // followUpDue.ts), so a row surfacing here genuinely still needs one.
   'consultancy_visit_reports',
+  // Core-OS 360 Completion Programme, Phase 26, Group 3 (C14.8): an
+  // open site_checkins row (checked_out_at still null) the morning
+  // after it was opened. site_checkins has no outbox entry of its own
+  // (179's own "attendance, not compliance" posture) — this is a
+  // reminder-only entity, the training_records precedent.
+  'site_checkins',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

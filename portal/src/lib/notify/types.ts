@@ -149,6 +149,9 @@ export const NOTIFICATION_TYPES = [
   'workforce_evidence_expiring',
   'workforce_exception_lapsing',
   'occupational_health_review_due',
+  // Core-OS 360 Completion Programme, Phase 26, Group 3 (C14.8): an
+  // open site_checkins row the morning after it was opened.
+  'site_checkin_stale',
   // LEAD / HR flow
   'leave_requested',
   'role_filled',
@@ -252,6 +255,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   workforce_evidence_expiring:    'Workforce evidence expiring',
   workforce_exception_lapsing:    'Deployment exception ending',
   occupational_health_review_due: 'Occupational health review due',
+  site_checkin_stale:             'Still checked in',
   hs_equipment_inspection_due: 'Equipment inspection due',
   inspection_completed:       'Asset inspection completed',
   puwer_review_due:           'PUWER review due',

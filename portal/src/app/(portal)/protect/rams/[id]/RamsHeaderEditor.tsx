@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { RAMS_SECTION_KEYS, RAMS_SECTION_LABELS, type RamsSectionKey } from '@/lib/hs/safetyVocab';
 import { RAMS_CONDITIONAL_SECTIONS } from '@/lib/hs/ramsSectionQuestions';
+import { formatRamsSuggestionProvenance, type RamsSuggestionProvenance } from '@/lib/hs/ramsSuggestionProvenance';
 
 export interface RamsHeader {
   id: string; row_version: number; title: string; project_name: string | null; description: string | null;
@@ -34,6 +35,10 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [suggested, setSuggested] = useState<RamsSectionKey[]>([]);
   const [suggesting, setSuggesting] = useState(false);
+  const [decisionId, setDecisionId] = useState<string | null>(null);
+  const [provenance, setProvenance] = useState<RamsSuggestionProvenance | null>(null);
+  const [provenanceOpen, setProvenanceOpen] = useState(false);
+  const [provenanceLoading, setProvenanceLoading] = useState(false);
   const set = <K extends keyof RamsHeader>(k: K, v: RamsHeader[K]) => setF(p => ({ ...p, [k]: v }));
   const t = (v: string | null) => (v ?? '').trim() || null;
 
@@ -70,21 +75,45 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
   async function suggestSections() {
     setSuggesting(true);
     setMsg(null);
+    setProvenance(null); setProvenanceOpen(false);
     try {
       const res = await fetch('/api/protect/jev/rams-section', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: f.title, project_name: f.project_name, scope_of_work: f.scope_of_work ?? '' }),
+        body: JSON.stringify({ title: f.title, project_name: f.project_name, scope_of_work: f.scope_of_work ?? '', site_id: f.site_id }),
       });
       const body = await res.json();
       if (!res.ok) { setMsg({ ok: false, text: body.error ?? 'Could not get a suggestion.' }); return; }
       const keys = (body.suggested_sections ?? []) as RamsSectionKey[];
       setSuggested(keys);
+      setDecisionId((body.decision_id ?? null) as string | null);
       setShown(s => RAMS_SECTION_KEYS.filter(k => s.includes(k) || keys.includes(k)));
       setMsg(keys.length > 0
         ? { ok: true, text: `Worth checking: ${keys.map(k => RAMS_SECTION_LABELS[k]).join(', ')}.` }
         : { ok: true, text: body.reason === 'unavailable' ? 'Suggestions are unavailable right now.' : 'No additional sections suggested.' });
     } finally {
       setSuggesting(false);
+    }
+  }
+
+  // Core-OS 360 Completion Programme, Phase 26 Group 7 (C15.6):
+  // jev_decisions (098) already recorded the suggestion in full the
+  // moment it was asked — this only reads that one row back, under the
+  // actor's own RLS policy (jev_decisions_actor_read: the person who
+  // asked may read their own decision). Never a second write.
+  async function toggleProvenance() {
+    if (provenanceOpen) { setProvenanceOpen(false); return; }
+    if (provenance || !decisionId) { setProvenanceOpen(true); return; }
+    setProvenanceLoading(true);
+    try {
+      const { data } = await createClient().from('jev_decisions')
+        .select('state, selected, model, created_at').eq('id', decisionId).maybeSingle();
+      setProvenance(formatRamsSuggestionProvenance(
+        (data?.state ?? null) as Record<string, unknown> | null, (data?.selected ?? null) as Record<string, unknown> | null,
+        data?.model ?? null, data?.created_at ?? null,
+      ));
+      setProvenanceOpen(true);
+    } finally {
+      setProvenanceLoading(false);
     }
   }
 
@@ -132,6 +161,36 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
           </button>
         </div>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Add only the sections this work needs. Empty sections are not saved.</p>
+        {decisionId && (
+          <div className="text-xs">
+            <button type="button" className="btn-ghost btn-sm" onClick={toggleProvenance} disabled={provenanceLoading}>
+              {provenanceLoading && <Loader2 size={12} className="animate-spin" />} {provenanceOpen ? 'Hide' : 'What informed this?'}
+            </button>
+            {provenanceOpen && provenance && (
+              <div className="mt-2 p-3 rounded space-y-2" style={{ background: 'var(--surface-soft)', color: 'var(--ink-soft)' }}>
+                {provenance.facts.length > 0 ? (
+                  <div>
+                    <p className="font-semibold" style={{ color: 'var(--ink)' }}>Verified facts used</p>
+                    <ul className="space-y-0.5">
+                      {provenance.facts.map(f => <li key={f.label}>{f.label}: <strong>{f.value}</strong></li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <p>No site was selected, so only the title/project/scope of work text was used.</p>
+                )}
+                {provenance.sections.length > 0 && (
+                  <div>
+                    <p className="font-semibold" style={{ color: 'var(--ink)' }}>Section likelihood</p>
+                    <ul className="space-y-0.5">
+                      {provenance.sections.map(s => <li key={s.key}>{s.label}: {Math.round(s.probability * 100)}%</li>)}
+                    </ul>
+                  </div>
+                )}
+                {provenance.model && <p className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>Model: {provenance.model}{provenance.askedAt ? ` · ${new Date(provenance.askedAt).toLocaleString()}` : ''}</p>}
+              </div>
+            )}
+          </div>
+        )}
         {shown.map(k => (
           <label key={k} className="block"><span className="label">{RAMS_SECTION_LABELS[k]}</span>
             {suggested.includes(k) && !(sections[k] ?? '').trim() && RAMS_CONDITIONAL_SECTIONS.includes(k) && (

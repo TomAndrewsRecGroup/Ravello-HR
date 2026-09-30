@@ -640,6 +640,24 @@ html, body { overflow-x: hidden; }
   a { color: inherit !important; text-decoration: none !important; }
 }
 
+/* ─── Print: a single widget takeover (Core-OS 360 Completion
+   Programme, Phase 26, Group 1 — worker QR badges). Unlike the
+   .print-area convention above, which only expects ONE dedicated
+   print page, a badge's raw QR only ever exists in a component's
+   ephemeral browser state (worker_qr_tokens never lets it be read
+   back), so there is no separate page to print from — printing has
+   to happen from inside the page the badge was minted on. Toggling
+   `badge-print-mode` on <body> right before window.print() hides
+   every OTHER direct child of the page's own .portal-page container,
+   leaving just the badge card (marked .badge-print-anchor) on the
+   printed page; the badge card's own no-print elements (buttons,
+   instructional copy) are still hidden by the ordinary .no-print rule
+   above. Never affects a normal, non-badge print of the same page. */
+@media print {
+  body.badge-print-mode .portal-page > *:not(.badge-print-anchor) { display: none !important; }
+  body.badge-print-mode .badge-print-anchor { border: none !important; box-shadow: none !important; }
+}
+
 /* ═══════════════════════════════════════════════════════════
    Development Plan document — Athletes to Industry house style.
    Navy/cream/gold editorial look (mirrors a2i-theme.css), used

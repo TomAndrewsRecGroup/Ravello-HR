@@ -11690,3 +11690,322 @@ throughout; all checks passed.
 
 **Phase 25 is complete.**
 
+---
+
+## Core-OS 360 Completion Programme: Phase 26 — Worker QR / Intelligent
+## RAMS / adoption completion (in progress)
+
+Scope read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own
+gap ledger at the start of this phase, not assumed from any prior
+handover: **C14.6, C14.7, C14.8, C14.9** (Worker QR System, Phase 14)
+and **C15.4, C15.5, C15.6** (Intelligent RAMS, Phase 15).
+
+### Group 1: printable worker QR badge + human-readable fallback ID (C14.6)
+
+`worker_qr_tokens` (179) never lets the raw token be read back once
+minted, so a dedicated print page has nothing to render from. "Print
+badge" instead toggles a `<body>` class the print stylesheet uses to
+hide every other section on the current page, leaving just the badge
+card (name, company, human-readable fallback ID, QR) for the browser's
+native Print/Save-as-PDF — the whole panel previously carried
+`no-print`, so the existing "print or save this now" instruction never
+actually worked. `humanBadgeId()` (new, tested) prints
+`people.employee_number` next to the QR, falling back to a short
+reference built from the person's own id for a worker with no
+`employee_records` row (contractors etc.) — a reader whose scanner
+can't read the code looks the person up manually through the existing,
+already-authenticated person search, never a new public lookup key of
+its own.
+
+### Group 2 (migration 195): site/kiosk manual check-in/out (C14.7)
+
+`site_checkins` (179) has always been badge-scan-only via the public
+`/api/w/[token]` routes, with `recorded_via` defaulting to `'qr_scan'`
+and a CHECK constraint refusing anything else — the on-site roster
+page's own header comment already flagged this as debt. A worker with
+no badge, a lost badge, or a site running a staffed kiosk had no way
+onto the roster at all.
+
+- `recorded_via` widens to `'qr_scan' | 'manual'`; a new
+  `site_checkins_client_manual_insert` RLS policy lets a session with
+  `workforce.manage` insert a `'manual'` row for their own company
+  only; `site_checkins_client_manual_update` lets that same capability
+  close out ANY open check-in (deliberately not restricted to
+  `recorded_via = 'manual'`, since a manager may complete a checkout
+  for a worker who self-scanned in too); a new
+  `site_checkins_manual_guard()` BEFORE UPDATE trigger — the allow-list
+  discipline this table never had — refuses a non-staff session
+  changing anything except `checked_out_at`. A service-role session
+  (`current_user = 'service_role'`) is exempt by construction, so the
+  two existing public scan routes are entirely unaffected.
+- Portal: `ManualCheckinForm.tsx` (person + EXPLICIT site picker, never
+  a guessed default) and `CheckoutButton.tsx`, both plain session
+  inserts/updates under the new RLS — no bespoke API route needed.
+  `CheckoutButton`'s UPDATE uses `COUNT_EXACT`/`judgeWrite()` from the
+  start, per this codebase's own blind-update discipline.
+- Live probe 7/7 checks passed, no trace left.
+
+### Group 3: stale check-in detection (C14.8)
+
+The reminders framework (date-granularity only — `dueDateOf` returns a
+date, no native "N hours stale" support) gains a `site_checkins` rule
+keyed off `checked_in_at`: an open check-in (`checked_out_at` still
+null) flags `overdue` the morning after it was opened — the earliest
+this daily cron can possibly say it — then weekly after that, the
+exact shape the existing `role_stale` (requisitions) rule already
+established. `site_checkins` gets no outbox entry of its own (179's
+own "attendance, not compliance" posture) — `REMINDER_ENTITIES` only,
+the `training_records` precedent.
+
+`workforceRules.ts` (the natural home: `workforce.manage` is the same
+capability `CheckoutButton` is gated on) gains the consuming rule:
+notifies `workforce.manage` holders by person and site name, links to
+the on-site roster, and re-checks the row live before notifying so a
+re-processed event for someone already checked out since is silent
+rather than a stale nag. New notification type `site_checkin_stale`
+(shared `notify/types.ts`, both bells) — this fires to the PORTAL bell
+(`workforce.manage` is a client-side capability), unlike some
+admin-only Phase 15/18 types.
+
+### Group 4 (migration 196): QR coverage beyond people (C14.9)
+
+Worker badges (179) only ever covered PERSONS. `entity_qr_tokens` is a
+new, genuinely polymorphic table covering the two other object kinds
+this codebase already tracks with a real coarse-status concept:
+machines/assets (`hs_equipment`) and COSHH assessments — mirroring
+`worker_qr_tokens`' exact shape (durable, SHA-256 hash only,
+RLS-on-no-policies, at-most-one-active-per-entity), but keyed on
+`(entity_type, entity_id)` instead of `person_id`. `entity_type` is
+validated against `hs_entity_company()`/`hs_entity_table()` — the
+platform's one polymorphic entity resolver — so `company_id` is always
+derived, never trusted from the caller, and an unknown `entity_id` is
+refused outright.
+
+**Deliberately, honestly scoped narrower than the gap-ledger's own
+five-item wording** ("machines/assets, work areas, COSHH, site
+entrance/induction, PPE"), documented in the migration's own header:
+no site-management UI exists anywhere in either app to host a mint
+action, so "work areas/site entrance" is left out rather than built
+half-finished; "induction" is already covered by the existing worker
+badge (a per-person Safe to Deploy requirement); "PPE" has no
+standalone catalogue/register table in this codebase at all.
+
+New shared-dupe pairs: `lib/entityQr/qrTokens.ts` (mint/revoke
+helpers) and `components/hs/EntityQrPanel.tsx` (the
+`WorkerBadgePanel.tsx` pattern generalised over an entity). Public scan
+surface: portal's `/e/[token]` + `/api/e/[token]` (added to
+`PUBLIC_ROUTES`, the `/w/[token]` precedent), reading
+`entity_qr_status()` under the service role. Mint/revoke: admin's
+`POST`/`DELETE /api/admin/hs/equipment/[id]/qr` (staff-only, wired
+into `EquipmentClient.tsx`'s expanded row) and portal's
+`POST`/`DELETE /api/protect/coshh/[id]/qr` (`risk.create` against the
+assessment's own organisation, wired into the COSHH detail page). Both
+routes derive their service-role read from the ENTITY's own
+organisation, never the caller's home company. Live probe 9/9 checks
+passed: a token resolves status-only fields for a real asset/COSHH
+assessment, an unknown `entity_id` is refused, a second active token
+for the same entity is refused, revoking then minting succeeds, an
+unrecognised `entity_type` is refused both by the fill trigger AND the
+CHECK constraint independently, an unknown token hash resolves
+`not_found` with no error.
+
+### Group 5: RAMS suggestion uses verified internal context (C15.4)
+
+The suggestion state (`lib/hs/ramsSectionQuestions.ts`'s
+`ramsSectionState()`) was `title`/`project_name`/`scope_of_work` text
+only — no read of the site's own hazard/plant/incident record. Jev
+still cannot draft free text (`lib/jev/types.ts`'s own header comment,
+unchanged by this group) — this only widens what real, VERIFIED facts
+the noul questions are asked against.
+
+- **The state now carries four extra named fields, only when a real
+  site has been selected**: `site_name`, `open_hazards_at_site`
+  (`hazards` not `closed`/`archived`), `lifting_or_plant_equipment_at_site`
+  (`hs_equipment` where `asset_type IN ('plant','machinery',
+  'lifting_equipment')` and not `decommissioned`), and
+  `incidents_at_site_last_12_months` (`hs_incidents` in a trailing
+  365-day window — the same "trailing 12 months" convention
+  `lib/hs/kpis.ts` already uses elsewhere). Every one is a plain count
+  or a name straight from the register, never free text a person
+  typed — there is nothing here for someone to phrase as an
+  instruction the way the scope-of-work field already could.
+- **The route (`/api/protect/jev/rams-section`) resolves the site
+  SERVER-SIDE**, scoped to the caller's own company
+  (`.eq('id', site_id).eq('company_id', companyId)`) — a `site_id`
+  belonging to a different company, or one that doesn't resolve at
+  all, is silently ignored (no error, no site fields), since this is
+  an enrichment signal, not a hard requirement; the suggestion already
+  worked fine with none of it before this group.
+  `RamsHeaderEditor.tsx`'s `suggestSections()` now sends the form's
+  own `site_id` alongside the existing three fields.
+- **Deliberately NOT included: people/competency/controls/documents.**
+  A RAMS has no "assigned people" column and no controls/evidence
+  linkage of its own to read honestly (checked live before deciding —
+  `method_statements` has `site_id`/`department_id` directly but
+  nothing naming assigned workers) — inventing one here would be
+  exactly the guessed-signal shortcut this codebase's standing
+  discipline rejects elsewhere (the referral gate's "absence of
+  evidence is a FAIL, not a pass"; the audit engine's "recorded
+  outcome, never a guessed one"). "People/competency" is the natural
+  subject of the NEXT group's own work (C15.5, hard warnings before
+  issue/approval), not this suggestion signal.
+- 9 new `ramsSectionQuestions.test.ts` cases (no-context state
+  unchanged, a real site context's four fields, clipping, the
+  "VERIFIED facts... never typed by the person" framing) and 4 new
+  `route.test.ts` cases (a resolving site, a cross-company site
+  silently ignored, an unknown site silently ignored, a malformed
+  `site_id` refused with 400 before the database is ever touched).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal **848** — up from 839 at the end of Group 4; admin unchanged
+at **1799**, since this group touched no admin file), all six CI
+guards pass with no regressions (70 shared-dupe pairs, unchanged; row-
+cap clean; 44 unvalidated routes, unchanged; 43 static admin routes,
+all reachable; 102 blind-update chains, unchanged — this group adds no
+new write path, only reads; every paged query's `.order()` present),
+both production builds compile (portal's one prerender failure is the
+same long-documented sandbox-only missing-Supabase-env-var
+limitation). No migration in this group — entirely TypeScript over the
+already-live schema.
+
+### Group 6: hard warnings before RAMS issue/approval for failing checks (C15.5)
+
+`ramsApprovalWarnings()` (new, pure, tested) is a plain deterministic
+check against facts the platform has ALREADY computed — never a guess,
+never AI. Two sources, both real:
+
+- **"Assigned equipment"** is whatever a RAMS is linked to via
+  `hs_links` — the only real equipment linkage a method statement has.
+  A linked asset that is `quarantined`, `decommissioned` or
+  `out_of_service`, or one that is `in_service` but past its own
+  `next_inspection_due`, produces a warning.
+- **"Assigned people"** means the two individuals a RAMS genuinely
+  names on the row itself — its `author_id` and `responsible_manager_id`
+  — resolved to a `people` row via `people.user_id`, then read through
+  `person_deployment_status()` (136), the ONE public Safe to Deploy
+  read. A `NOT_READY` or `REVIEW_REQUIRED` author/manager produces a
+  warning; `CONDITIONALLY_READY` deliberately does not (restrictions
+  recorded, not a failing requirement). A method statement has no
+  "assigned workforce" list of its own (Group 5's own finding,
+  unchanged here) — widening this to every acknowledging worker would
+  be inventing a linkage that doesn't exist.
+- **A UI-level gate, deliberately not a database one.** The shared
+  `hs_doc_guard()` (123) governs every controlled-document transition
+  for hazards, risk assessments, method statements AND COSHH
+  assessments alike; teaching it a RAMS-specific side-check would
+  entangle three other document kinds in a rule that only applies to
+  one. Instead: the page computes `approvalWarnings` server-side and
+  renders them in a `Notice tone="bad"` banner; `RamsCoshhWorkflow.tsx`
+  (shared with COSHH, which never passes the new optional
+  `approvalWarnings` prop and is therefore unaffected) requires an
+  explicit "I have reviewed the warnings and want to proceed anyway"
+  checkbox before Confirm is enabled, but only while moving to
+  `'approved'` or `'active'` — every other transition is unaffected.
+- **An RPC error for a given person is treated as "cannot determine",
+  never a false alarm.** `person_deployment_status()` can refuse a
+  caller who may not see the person (`person_visible()`); rather than
+  surface that as a scary warning on a transient/permission edge case,
+  that person's fact is simply omitted — a documented, deliberate
+  choice.
+- **Skipped entirely for an archived or superseded version** — a dead
+  record has nothing left to warn about before issue/approval, and
+  showing one there would only be noise.
+- 8 new `ramsApprovalWarnings.test.ts` cases (clean baseline, each
+  equipment status, overdue-vs-future-vs-no inspection date, the
+  NOT_READY/REVIEW_REQUIRED/CONDITIONALLY_READY split, combined
+  ordering). No component-level test for the page/workflow wiring
+  itself, consistent with this codebase's established convention.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal **856** — up from 848; admin unchanged at **1799**, since this
+group touched no admin file), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged — this group's new file
+is portal-only, no admin equivalent page exists for RAMS; row-cap
+clean; 44 unvalidated routes, unchanged; 43 static admin routes, all
+reachable; 102 blind-update chains, unchanged — this group adds no new
+write path, only reads; every paged query's `.order()` present), both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation). No
+migration in this group — entirely TypeScript over the already-live
+schema.
+
+### Group 7: RAMS suggestion provenance UI (C15.6)
+
+`jev_decisions` (098) has recorded EVERY Jev call in full since Phase
+9 of the original programme — state sent, questions asked, raw
+response, what was selected — but nothing RAMS-specific ever read one
+back. This group adds no new write: `askJev()` already inserts the row
+the moment a suggestion is asked for (Group 5); `jev_decisions_actor_
+read` (098's own RLS) already lets the person who asked read their own
+decision back. All that was missing was somewhere to look.
+
+- **`RamsHeaderEditor.tsx` keeps the `decision_id`** the suggest route
+  already returned and discarded before this group, and a new "What
+  informed this?" toggle (shown only once a real decision exists)
+  lazily fetches that one `jev_decisions` row — a plain client-side
+  `.select('state, selected, model, created_at').eq('id', decisionId)`
+  under the caller's own session, no new API route needed.
+- **`formatRamsSuggestionProvenance()`** (new, pure, tested) turns that
+  row into two lists: the SITE-DERIVED facts actually used (site name,
+  open hazard/lifting-plant/incident counts — Group 5's own new
+  signals) and each conditional section's probability, highest first.
+  **Deliberately excludes `title`/`project_name`/`scope_of_work`** —
+  the author just typed those on the same form a moment ago and can
+  already see them; echoing their own free text back as "provenance"
+  would be noise, not a new fact.
+- **Scoped to the same actor who asked, matching every other Jev
+  integration in this codebase** (`doc_type_suggest`, `hs_item_
+  classify`, …), none of which expose a cross-user "what informed a
+  past suggestion" panel either. Widening visibility to a DIFFERENT
+  viewer (e.g. a later approver) would need a new RLS policy or a
+  persisted reference column on `method_statements` — real future
+  scope, not silently built here, and more than every sibling Jev
+  feature already has.
+- A new suggestion clears any open provenance panel from the last one
+  — `decisionId`/`provenance` are reset at the start of
+  `suggestSections()`, so a stale panel can never be shown next to a
+  fresh set of suggested sections.
+- 6 new `ramsSuggestionProvenance.test.ts` cases (facts list excludes
+  the free-text fields, empty-state with no site context, a null state
+  handled without throwing, sections sorted highest-probability-first,
+  a non-conditional key never leaks through even if present in
+  `selected`, model/asked-at pass through unchanged). No component-
+  level test for the toggle/panel wiring, consistent with this
+  codebase's established convention.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal **862** — up from 856; admin unchanged at **1799**, since this
+group touched no admin file), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged — portal-only, no admin
+equivalent page exists for RAMS; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable; 102 blind-update
+chains, unchanged — this group writes nothing, only reads a row that
+already existed; every paged query's `.order()` present), both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation). No
+migration in this group — entirely TypeScript over the already-live
+schema.
+
+### Group 8: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE26_HANDOVER.md`. A dedicated
+adversarial review pass across all seven groups found no Critical,
+High or Medium defect — four accepted, documented, low-severity scope
+limitations (C14.9's narrower object coverage, C15.4's excluded
+signal types, C15.5's UI-level-only gate, C15.6's same-actor-only
+provenance) were confirmed correctly documented rather than silently
+narrowed. `docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated to close all seven
+gap-ledger rows (C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1799**, unchanged since Group 4; portal **862**, unchanged
+since Group 7), all six CI guards pass with no regressions (70
+shared-dupe pairs; row-cap clean; 44 unvalidated routes, unchanged; 43
+static admin routes, all reachable; 102 blind-update chains,
+unchanged; every paged query's `.order()` present), both production
+builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation).
+
+**Phase 26 is complete.**
+

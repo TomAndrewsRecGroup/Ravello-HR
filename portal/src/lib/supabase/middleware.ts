@@ -39,6 +39,12 @@ const PUBLIC_ROUTES = [
   // client (worker_qr_status(), service_role only).
   /^\/w\//,
   /^\/api\/w\//,
+  // Entity QR badge scan (Core-OS 360 Completion Programme, Phase 26,
+  // Group 4, 196) — a machine or COSHH cabinet label, the same
+  // reasoning as the worker badge above: whoever scans it may have no
+  // portal login at all.
+  /^\/e\//,
+  /^\/api\/e\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

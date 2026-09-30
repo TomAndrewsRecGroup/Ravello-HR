@@ -283,12 +283,12 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C14.3 | Leaver badge auto-revoke | IMPLEMENTED (fixed post-hoc) | 180, found+fixed in Phase 14 Group 3 |
 | C14.4 | Badge mint/revoke UI, QR rendered client-side | IMPLEMENTED | `WorkerBadgePanel.tsx` |
 | C14.5 | On-site roster page | IMPLEMENTED | `/lead/workforce/onsite` |
-| C14.6 | Printable/downloadable QR badges/labels with human-readable fallback ID | MISSING | Master Spec Phase 26 known-gap: "no printable badge/PDF" → assigned **Phase 26** |
-| C14.7 | Site/kiosk/manual check-in/out for authorised users, explicit site selection | MISSING | Master Spec Phase 26 known-gap: "no manual site picker/check-in" (v1 always uses the worker's own assigned site) → assigned **Phase 26** |
-| C14.8 | "Checked in but never checked out" / stale attendance detection | MISSING | Master Spec Phase 26 known-gap: "no stale check-in intelligence" → assigned **Phase 26** |
-| C14.9 | QR coverage beyond people: machines/assets, work areas, COSHH, site entrance/induction, PPE | MISSING | Only person badges exist; the original spec's broader object coverage was never built → assigned **Phase 26** |
+| C14.6 | Printable/downloadable QR badges/labels with human-readable fallback ID | IMPLEMENTED | Closed Phase 26 Group 1: `WorkerBadgePanel.tsx`'s "Print badge" toggles a `<body>` class the print stylesheet uses to hide every other section, leaving just the badge card for the browser's native Print/Save-as-PDF; `humanBadgeId()` prints `people.employee_number` next to the QR, falling back to a short id-derived reference for a worker with no `employee_records` row |
+| C14.7 | Site/kiosk/manual check-in/out for authorised users, explicit site selection | IMPLEMENTED | Closed Phase 26 Group 2, migration 195: `recorded_via` widens to `'qr_scan' \| 'manual'`; new client RLS (`workforce.manage`, own company only) + a column-restriction guard trigger (a non-staff session may only ever change `checked_out_at`); `ManualCheckinForm.tsx` (explicit site picker, never a guessed default) + `CheckoutButton.tsx` |
+| C14.8 | "Checked in but never checked out" / stale attendance detection | IMPLEMENTED | Closed Phase 26 Group 3: a new `site_checkins` reminder rule (`overdue` the morning after check-in, then weekly — the earliest a date-granularity daily cron can say it), notifying `workforce.manage` holders, re-checking the row live before notifying so an already-closed-out row is never a stale nag |
+| C14.9 | QR coverage beyond people: machines/assets, work areas, COSHH, site entrance/induction, PPE | IMPLEMENTED (narrower scope, documented) | Closed Phase 26 Group 4, migration 196: `entity_qr_tokens` covers machines/assets (`hs_equipment`) and COSHH assessments — the two other real, coarse-status object kinds this codebase tracks. "Work areas/site entrance" and "PPE" are deliberately left out (no site-management UI exists to host a mint action; PPE has no standalone catalogue table); "induction" is already covered by the existing per-person worker badge |
 
-**Gaps carried forward**: C14.6, C14.7, C14.8, C14.9 → **Phase 26** (headline scope).
+**Gaps carried forward**: none — C14.6, C14.7, C14.8, C14.9 closed in Phase 26 (see above).
 
 ---
 
@@ -299,11 +299,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C15.1 | Jev section-suggestion (6 conditional sections only, never free text) | IMPLEMENTED | `lib/hs/ramsSectionQuestions.ts` |
 | C15.2 | Never auto-write/approve RAMS content | IMPLEMENTED | UI-only reveal of empty sections, no write to `method_statements` |
 | C15.3 | Validation ceiling matches DB column (fixed post-hoc) | IMPLEMENTED | Group 3 fix, `longText(8000)` |
-| C15.4 | Use of verified internal context (site, task, hazards, plant, people, competency, controls, prior incidents, documents) | PARTIAL | Current suggestion state is `title`/`project_name`/`scope_of_work` text only — no read of hazards/plant/people/competency/prior-incident records → assigned **Phase 26** |
-| C15.5 | Hard warnings before issue/approval for assigned people/equipment failing deterministic requirements | MISSING | No pre-issue Safe-to-Deploy / quarantine / expired-evidence check wired to RAMS approval → assigned **Phase 26** |
-| C15.6 | Suggestion provenance recorded/inspectable | PARTIAL | `jev_decisions` rows exist generically; no RAMS-specific "what informed this" UI surface → assigned **Phase 26** |
+| C15.4 | Use of verified internal context (site, task, hazards, plant, people, competency, controls, prior incidents, documents) | IMPLEMENTED (narrower scope, documented) | Closed Phase 26 Group 5: the suggestion state gains `site_name`/`open_hazards_at_site`/`lifting_or_plant_equipment_at_site`/`incidents_at_site_last_12_months`, all real counts read server-side and scoped to the caller's own company, only when a site has been selected. Deliberately excludes people/competency/controls/documents — a RAMS has no "assigned people"/controls/evidence linkage of its own to read honestly; inventing one would be a guessed signal |
+| C15.5 | Hard warnings before issue/approval for assigned people/equipment failing deterministic requirements | IMPLEMENTED | Closed Phase 26 Group 6: `ramsApprovalWarnings()` — linked equipment that is quarantined/decommissioned/out-of-service or overdue its own inspection, and an author/responsible manager who is `NOT_READY`/`REVIEW_REQUIRED` via `person_deployment_status()` (136) — rendered as a `Notice` banner, with an explicit acknowledgement checkbox required before Approve/Make active can be confirmed. A UI-level gate, deliberately not a database one: the shared `hs_doc_guard()` (123) governs hazards/risk assessments/method statements/COSHH alike |
+| C15.6 | Suggestion provenance recorded/inspectable | IMPLEMENTED | Closed Phase 26 Group 7: `jev_decisions` already recorded every call in full; a new "What informed this?" toggle on `RamsHeaderEditor.tsx` reads that one row back under the actor's own RLS (`jev_decisions_actor_read`) and renders the site-derived facts used plus each conditional section's probability, highest first — no new write, no new route |
 
-**Gaps carried forward**: C15.4, C15.5, C15.6 → **Phase 26**.
+**Gaps carried forward**: none — C15.4, C15.5, C15.6 closed in Phase 26 (see above).
 
 ---
 
@@ -419,7 +419,7 @@ satisfied by this recorded resolution (resolve ≠ delete).
 | **23** (Risk Graph/Evidence Engine/Digital Twin completion) | *closed — C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE23_HANDOVER.md`* |
 | **24** (Consultant Command Centre/Ledger completion) | *closed — C1.9, C6.13, C6.14, C6.15 all IMPLEMENTED; C1.12 partially closed (the `consultancy_visit_reports` slice — the other two candidate tables were checked live and found to need no lock); rest of C1.12 stays with **Phase 28**, see `docs/CORE_OS_360_PHASE24_HANDOVER.md`* |
 | **25** (Operational intelligence/regulatory/Broadcast) | *closed — C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE25_HANDOVER.md`* |
-| **26** (Worker QR/Intelligent RAMS/adoption) | C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6 |
+| **26** (Worker QR/Intelligent RAMS/adoption) | *closed — C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6 all IMPLEMENTED (C14.9 and C15.4 with a narrower, documented scope), see `docs/CORE_OS_360_PHASE26_HANDOVER.md`* |
 | **27** (Board Assurance/Core 360 Status) | C13.6, C13.7, C13.8 |
 | **28** (UX/navigation/search/reporting/parity) | C1.13, C1.12 (shared w/24) |
 | **29** (Security/regression/certification) | C19.9, PL.1 (real automated preservation tests for A2I signup, Development Plans, E-Learning checkout/webhook, Billing/Invoicing — see `docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md`) |

@@ -510,6 +510,25 @@ REMINDERS.push({
   buckets: ['due_30', 'due_7', 'overdue'],
 });
 
+// Core-OS 360 Completion Programme, Phase 26, Group 3 (C14.8). This
+// framework is date-granularity only (dueDateOf returns a date, not a
+// timestamp), so "stale" here means the earliest this daily cron can
+// possibly say it: due the same calendar day a person checked in and
+// never checked out, first flagged ('overdue') the FOLLOWING morning
+// once that day has fully passed — never same-day, which would nag
+// someone still mid-shift. The `role_stale` shape (requisitions, HIRE)
+// is the precedent: 'overdue'/'overdue_weekly' only, no advance
+// due_30/due_7/due_0 warning, since there is nothing to warn about
+// ahead of time.
+REMINDERS.push({
+  id: 'site_checkins', entity: 'site_checkins',
+  select: 'id, company_id, person_id, site_id, checked_in_at',
+  query: (sb, from, to) => sb.from('site_checkins').select('id, company_id, person_id, site_id, checked_in_at')
+    .is('checked_out_at', null).order('id').range(from, to),
+  dueDateOf: r => str(r.checked_in_at),
+  buckets: ['overdue', 'overdue_weekly'],
+});
+
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;
   const one = Array.isArray(inst) ? inst[0] : inst;

@@ -8,11 +8,14 @@ import {
   docPath, humanise, incidentPath, type DocStatus, type GhsPictogram, type PersonsAtRisk,
 } from '@/lib/hs/safetyVocab';
 import { ACTION_STATUS_LABELS } from '@/lib/ui/statusMaps';
+import { createServiceSupabaseClient } from '@/lib/supabase/service';
+import { hasActiveEntityQrToken } from '@/lib/entityQr/qrTokens';
 import Pill, { toneFor } from '@/components/safety/Pill';
 import EvidencePanel, { type EvidenceFile } from '@/components/safety/EvidencePanel';
 import RaiseAction from '@/components/safety/RaiseAction';
 import RamsCoshhWorkflow from '@/components/safety/RamsCoshhWorkflow';
 import { DocStamps, Meta, Notice, Prose, VersionHistory, type VersionRow } from '@/components/safety/RamsCoshhDocMeta';
+import EntityQrPanel from '@/components/hs/EntityQrPanel';
 import CoshhEditor from './CoshhEditor';
 import CoshhControls, { type CoshhControlRow, type LibraryControl } from './CoshhControls';
 
@@ -35,7 +38,7 @@ export default async function CoshhDetailPage(props: { params: Promise<{ id: str
   const editable = (DOC_EDITABLE_STATUSES as readonly string[]).includes(status) && ctx.can('risk.create');
   const canRate = editable || (status === 'pending_review' && ctx.can('risk.approve'));
 
-  const [dir, { sites, departments }, sub, controls, library, versions, links, files, actions, tplUpdate, copiedFrom] = await Promise.all([
+  const [dir, { sites, departments }, sub, controls, library, versions, links, files, actions, tplUpdate, copiedFrom, company, hasActiveQr] = await Promise.all([
     orgDirectory(supabase),
     orgSitesAndDepartments(supabase, companyId),
     supabase.from('substances').select('id, reference, product_name, manufacturer, supplier, product_code, substance_type, sds_version, sds_date, hazard_statements, pictograms, pictograms_confirmed_at, storage_requirements, active_status').eq('id', c.substance_id).maybeSingle(),
@@ -47,6 +50,13 @@ export default async function CoshhDetailPage(props: { params: Promise<{ id: str
     supabase.from('actions').select('id, title, status, due_date, assigned_to').eq('source_type', 'coshh_assessment').eq('source_id', id).order('created_at').limit(200),
     c.template_id ? supabase.rpc('hs_template_update_available', { p_template: c.template_id, p_version: c.template_version ?? 0 }) : Promise.resolve({ data: false }),
     c.copied_from_id ? supabase.from('coshh_assessments').select('id, reference, version, title').eq('id', c.copied_from_id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase.from('companies').select('name').eq('id', companyId).maybeSingle(),
+    // Core-OS 360 Completion Programme, Phase 26, Group 4 (C14.9).
+    // entity_qr_tokens is RLS-on-no-policies (196) — service role only,
+    // the exact worker_qr_tokens precedent (people/[id]/page.tsx's own
+    // hasActiveWorkerQrToken() call). A plain session cannot read this
+    // table at all.
+    hasActiveEntityQrToken(createServiceSupabaseClient(), 'coshh_assessment', id),
   ]);
 
   const other = ((links.data ?? []) as { id: string; from_type: string; from_id: string; to_type: string; to_id: string }[])
@@ -112,6 +122,17 @@ export default async function CoshhDetailPage(props: { params: Promise<{ id: str
           </p>
         )}
         {c.template_id && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Started from a template (version {c.template_version}).</p>}
+      </section>
+
+      <section className="card p-5">
+        <EntityQrPanel
+          apiPath={`/api/protect/coshh/${id}/qr`}
+          hasActiveBadge={hasActiveQr}
+          canManage={ctx.can('risk.create')}
+          label={c.title as string}
+          subtitle={s ? s.product_name : null}
+          companyName={company.data?.name ?? 'This organisation'}
+        />
       </section>
 
       {s && (

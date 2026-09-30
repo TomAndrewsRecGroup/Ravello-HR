@@ -80,6 +80,7 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   workforce_evidence_expiring:    { Icon: CalendarClock,  color: 'var(--amber)' },
   workforce_exception_lapsing:    { Icon: CalendarClock,  color: 'var(--amber)' },
   occupational_health_review_due: { Icon: CalendarClock,  color: 'var(--amber)' },
+  site_checkin_stale:             { Icon: Users,          color: 'var(--amber)' },
   hs_equipment_inspection_due: { Icon: HardHat,       color: 'var(--gold)' },
   inspection_completed:       { Icon: HardHat,        color: 'var(--blue)' },
   puwer_review_due:           { Icon: HardHat,        color: 'var(--amber)' },

@@ -12,13 +12,16 @@ import {
 import { HS_EVIDENCE_ACCEPT, evidenceUrl, uploadEvidence } from '@/lib/hs/evidence';
 import { daysUntil } from '@/lib/hs/recurrence';
 import type { HsEquipment, HsEquipmentInspection, HsFile } from '@/lib/hs/types';
+import EntityQrPanel from './EntityQrPanel';
 
 interface Props {
   companyId: string;
+  companyName: string;
   canRecord: boolean;
   equipment: HsEquipment[];
   inspections: HsEquipmentInspection[];
   files: HsFile[];
+  activeQrEquipmentIds: Set<string>;
   loadError: string | null;
 }
 
@@ -34,7 +37,7 @@ function dueColour(due: string | null, status: HsEquipmentStatus): string {
   return 'var(--teal)';
 }
 
-export default function EquipmentClient({ companyId, canRecord, equipment, inspections, files, loadError }: Props) {
+export default function EquipmentClient({ companyId, companyName, canRecord, equipment, inspections, files, activeQrEquipmentIds, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -141,6 +144,15 @@ export default function EquipmentClient({ companyId, canRecord, equipment, inspe
                     )}
 
                     {canRecord && <InspectionForm companyId={companyId} equipmentId={item.id} />}
+
+                    <EntityQrPanel
+                      apiPath={`/api/admin/hs/equipment/${item.id}/qr`}
+                      hasActiveBadge={activeQrEquipmentIds.has(item.id)}
+                      canManage={canRecord}
+                      label={item.name}
+                      subtitle={item.category ?? item.serial_number ?? null}
+                      companyName={companyName}
+                    />
 
                     <div>
                       <h3 className="label">Inspection history</h3>

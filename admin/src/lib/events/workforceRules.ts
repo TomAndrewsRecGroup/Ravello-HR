@@ -37,6 +37,12 @@ async function titleOf(sb: SupabaseClient, table: string, id: unknown, fallback:
   return (data as { title?: string } | null)?.title ?? fallback;
 }
 
+async function siteNameOf(sb: SupabaseClient, id: unknown, fallback: string): Promise<string> {
+  if (!id) return fallback;
+  const { data } = await sb.from('hs_sites').select('name').eq('id', String(id)).maybeSingle();
+  return (data as { name?: string } | null)?.name ?? fallback;
+}
+
 const soonOrOverdue = (b: ReminderBucket) => b === 'due_30' || b === 'due_7' || b === 'due_0' || b === 'overdue';
 const whenText = (bucket: ReminderBucket, due: string) =>
   bucket === 'overdue' || bucket.startsWith('overdue_w') ? `expired on ${due}` : bucket === 'due_0' ? 'expires today' : `expires ${due}`;
@@ -145,6 +151,31 @@ export const workforceRules: Rule[] = [
         type: 'occupational_health_review_due',
         title: `Occupational health review for ${name} ${overdue ? `was due on ${due_date}` : `is due ${due_date}`}`,
         link: { portal: personPath(s(row.person_id)) },
+      })];
+    },
+  },
+  {
+    // Core-OS 360 Completion Programme, Phase 26, Group 3 (C14.8). A
+    // person still checked in (site_checkins.checked_out_at still
+    // null) the morning after they checked in — attendance, never Safe
+    // to Deploy: this never touches deployment status, only points a
+    // manager at the roster. Skipped if they have since been checked
+    // out (a re-processed event, or the cron catching up after this
+    // row's own closure).
+    id: 'workforce_stale_checkin',
+    on: 'site_checkins.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return b === 'overdue' || b.startsWith('overdue_w'); },
+    then: async ({ event, sb }) => {
+      const { due_date, row } = reminderPayload(event);
+      if (!event.company_id) return [];
+      const { data: current } = await sb.from('site_checkins').select('checked_out_at').eq('id', s(row.id)).maybeSingle();
+      if ((current as { checked_out_at?: string | null } | null)?.checked_out_at) return [];
+      const [name, siteName] = await Promise.all([personName(sb, row.person_id), siteNameOf(sb, row.site_id, 'a site')]);
+      return [notifyC({
+        audiences: [cap(event.company_id, 'workforce.manage')], companyId: event.company_id, type: 'site_checkin_stale',
+        title: `${name} checked in at ${siteName} on ${due_date} and has not checked out`,
+        body: 'Check them out on the on-site roster once confirmed, or look into it if this is unexpected.',
+        link: { portal: '/lead/workforce/onsite' },
       })];
     },
   },
