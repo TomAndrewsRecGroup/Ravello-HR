@@ -68,6 +68,27 @@ export async function POST(req: NextRequest, props: { params: Promise<{ slug: st
     return NextResponse.json({ error: 'A valid email address is required' }, { status: 400 });
   }
 
+  // Idempotent on (company, email): athletes has no unique constraint of
+  // its own (checked live — this table has multiple other writers, admin's
+  // manual add and the portal's own authenticated athletes route among
+  // them, so a hard DB constraint here would need a wider audit than this
+  // route alone), so a repeated public submission with the same email
+  // would otherwise insert a second row and send a second welcome email —
+  // this codebase's own referral pipeline already paid for exactly that
+  // class of bug once (see CLAUDE.md's "referral cron re-emailed 21
+  // people every hour"). A genuine re-submission (a typo fix, a fresh CV)
+  // still reaches this route — it is only the row-and-email duplication
+  // that is silently skipped, never surfaced as an error.
+  const { data: existing } = await supabase
+    .from('athletes')
+    .select('id')
+    .eq('company_id', company.id)
+    .ilike('email', email)
+    .limit(1);
+  if (existing && existing.length > 0) {
+    return NextResponse.json({ ok: true });
+  }
+
   const cvKindRaw = str(form.get('cv_kind'));
   const cvText = str(form.get('cv_text'));
   const patch = buildPatch({
