@@ -266,11 +266,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C13.3 | Admin generate/issue/PDF UI | IMPLEMENTED | reuses Digital Twin + portfolio-counts loaders |
 | C13.4 | Portal read + acknowledge | IMPLEMENTED | `BoardAssuranceAcknowledge.tsx` |
 | C13.5 | Management-review citation bounded to the report's own period (fixed post-hoc) | IMPLEMENTED | `quarterEndDate()`, Group 3 fix |
-| C13.6 | Cross-client consultant assurance dashboard (current/overdue/missing/deteriorating, drilldown) | MISSING | Master Spec Phase 27 known-gap: "staff-only Board Assurance limitations" → assigned **Phase 27** |
-| C13.7 | Draft report regenerate/refresh from current evidence before issue | MISSING | Current design generates once; no regenerate-a-draft flow → assigned **Phase 27** |
-| C13.8 | Core 360 Status view (People/Plant/Training/Risk Controls/Environmental/Contractors domains) | MISSING | Not built as a distinct assurance surface (Digital Twin/Assurance Today are the closest, narrower substitutes) → assigned **Phase 27** |
+| C13.6 | Cross-client consultant assurance dashboard (current/overdue/missing/deteriorating, drilldown) | IMPLEMENTED | `boardAssuranceStatus.ts`/`loadBoardAssuranceStatus.ts`, `/consultancy/board-assurance`, Client 360's own summary card — Phase 27 Group 2 |
+| C13.7 | Draft report regenerate/refresh from current evidence before issue | IMPLEMENTED | `POST .../generate`'s `regenerate: true` flag — conditional counted DELETE of the draft, an issued report always refused — Phase 27 Group 1 |
+| C13.8 | Core 360 Status view (People/Plant/Training/Risk Controls/Environmental/Contractors domains) | IMPLEMENTED | `lib/core360Status/assemble.ts` (shared-dupe pair), `Core360StatusView.tsx`, `/health-safety/<companyId>/core-360-status` + `/protect/core-360-status` — Phase 27 Groups 3-4 |
 
-**Gaps carried forward**: C13.6, C13.7, C13.8 → **Phase 27** (headline scope).
+**Gaps carried forward**: none. C13.6, C13.7, C13.8 closed in **Phase 27**.
 
 ---
 
@@ -420,7 +420,7 @@ satisfied by this recorded resolution (resolve ≠ delete).
 | **24** (Consultant Command Centre/Ledger completion) | *closed — C1.9, C6.13, C6.14, C6.15 all IMPLEMENTED; C1.12 partially closed (the `consultancy_visit_reports` slice — the other two candidate tables were checked live and found to need no lock); rest of C1.12 stays with **Phase 28**, see `docs/CORE_OS_360_PHASE24_HANDOVER.md`* |
 | **25** (Operational intelligence/regulatory/Broadcast) | *closed — C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE25_HANDOVER.md`* |
 | **26** (Worker QR/Intelligent RAMS/adoption) | *closed — C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6 all IMPLEMENTED (C14.9 and C15.4 with a narrower, documented scope), see `docs/CORE_OS_360_PHASE26_HANDOVER.md`* |
-| **27** (Board Assurance/Core 360 Status) | C13.6, C13.7, C13.8 |
+| **27** (Board Assurance/Core 360 Status) | *closed — C13.6, C13.7, C13.8 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE27_HANDOVER.md`* |
 | **28** (UX/navigation/search/reporting/parity) | C1.13, C1.12 (shared w/24) |
 | **29** (Security/regression/certification) | C19.9, PL.1 (real automated preservation tests for A2I signup, Development Plans, E-Learning checkout/webhook, Billing/Invoicing — see `docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md`) |
 

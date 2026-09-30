@@ -32,6 +32,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'assurance',  label: 'Assurance Today' },
   { seg: 'digital-twin', label: 'Digital Twin' },
   { seg: 'board-assurance', label: 'Board Assurance' },
+  { seg: 'core-360-status', label: 'Core 360 Status' },
   { seg: 'timeline',   label: 'Timeline' },
 ];
 

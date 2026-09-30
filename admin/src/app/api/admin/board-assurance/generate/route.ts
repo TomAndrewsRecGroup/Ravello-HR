@@ -14,6 +14,7 @@ const Schema = z.object({
   companyId: uuid,
   year: z.number().int().min(2020).max(2100),
   quarter: z.number().int().min(1).max(4),
+  regenerate: z.boolean().optional(),
 });
 
 function priorPeriod(year: number, quarter: number): { year: number; quarter: number } {
@@ -31,9 +32,38 @@ export async function POST(req: NextRequest) {
 
   const parsed = await parseBody(req, Schema);
   if (!parsed.ok) return parsed.response;
-  const { companyId, year, quarter } = parsed.data;
+  const { companyId, year, quarter, regenerate } = parsed.data;
 
   const supabase = await createServerSupabaseClient();
+
+  // Core-OS 360 Phase 27, Group 1 (gap-ledger row C13.7). report_data
+  // is immutable once inserted (board_assurance_reports_guard(), 178)
+  // — the ONLY way to refresh a draft from current evidence is to
+  // replace the row outright. An ISSUED report is never touched here:
+  // it is a distributed, signed-off document, the same "material
+  // change is a new row/new period" discipline every other document
+  // table in this codebase applies. The delete is conditional and
+  // counted so a race against a concurrent issue is refused rather
+  // than silently proceeding to insert a duplicate-period row.
+  if (regenerate) {
+    const { data: existingRows, error: existingErr } = await supabase
+      .from('board_assurance_reports').select('id, status')
+      .eq('company_id', companyId).eq('year', year).eq('quarter', quarter).limit(1);
+    if (existingErr) return NextResponse.json({ error: existingErr.message }, { status: 500 });
+    const existing = (existingRows ?? [])[0] as { id: string; status: string } | undefined;
+    if (existing) {
+      if (existing.status === 'issued') {
+        return NextResponse.json({ error: 'This report has already been issued and cannot be regenerated. Generate a later quarter instead.' }, { status: 409 });
+      }
+      const { count, error: delErr } = await supabase
+        .from('board_assurance_reports').delete({ count: 'exact' })
+        .eq('id', existing.id).eq('status', 'draft');
+      if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+      if (!count) {
+        return NextResponse.json({ error: 'This draft changed while regenerating — please try again.' }, { status: 409 });
+      }
+    }
+  }
 
   const [{ snapshot, loadError: twinError }, { counts, loadError: countsError }] = await Promise.all([
     loadComplianceTwinSnapshot(supabase, companyId),

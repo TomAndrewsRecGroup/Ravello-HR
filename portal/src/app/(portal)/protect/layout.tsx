@@ -45,6 +45,7 @@ const TABS = [
   { href: '/protect/assurance',        label: 'Assurance Today' },
   { href: '/protect/digital-twin',     label: 'Digital Twin' },
   { href: '/protect/board-assurance',  label: 'Board Assurance' },
+  { href: '/protect/core-360-status',  label: 'Core 360 Status' },
   { href: '/protect/lessons-learned',  label: 'Lessons Learned' },
   { href: '/protect/what-changed',     label: 'What Changed' },
   { href: '/protect/analysis',         label: 'Analysis' },

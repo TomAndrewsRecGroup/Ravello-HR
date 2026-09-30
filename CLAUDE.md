@@ -12009,3 +12009,332 @@ long-documented sandbox-only missing-Supabase-env-var limitation).
 
 **Phase 26 is complete.**
 
+---
+
+## Core-OS 360 Completion Programme: Phase 27 — Board Assurance
+## completion (in progress)
+
+Scope read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own
+gap ledger at the start of this phase: **C13.6** (cross-client
+consultant assurance dashboard), **C13.7** (draft report regenerate/
+refresh from current evidence), **C13.8** (Core 360 Status view —
+People/Plant/Training/Risk Controls/Environmental/Contractors). Plan:
+`docs/CORE_OS_360_PHASE27_PLAN.md`, written after checking the live
+`board_assurance_reports` guard, `PortfolioCounts`, `RiskGraphIntelligence`
+and the portfolio-wide consultancy read pattern before designing
+anything — no migration is expected anywhere in this phase, since every
+piece composes already-live schema.
+
+### Group 1: draft Board Assurance report regenerate (C13.7)
+
+`report_data` is an immutable JSONB snapshot once inserted
+(`board_assurance_reports_guard()`, 178, a `BEFORE INSERT OR UPDATE`
+trigger with no `AFTER DELETE` branch at all) — the ONLY way to refresh
+a draft from current evidence is to replace the row outright, and
+nothing in the product could do that: `POST /generate` always 409'd on
+the table's own `UNIQUE (company_id, year, quarter)` the moment ANY row
+already existed for that period, draft or issued, with no
+delete/regenerate control anywhere in the admin UI.
+
+- **`POST /api/admin/board-assurance/generate` gains an optional
+  `regenerate: true` flag.** When set and an existing row is found for
+  that (company, year, quarter): an `issued` row is refused outright
+  (409, "already issued... generate a later quarter instead") — a
+  distributed, signed-off document is never rewritten, the same
+  "material change is a new row/new period" discipline every other
+  document table in this codebase applies; a `draft` row is removed via
+  a **conditional, counted DELETE** (`.eq('id', existing.id).eq('status',
+  'draft')`, `{ count: 'exact' }`) before the normal insert proceeds —
+  a concurrent issue between the read and the delete leaves the count
+  at 0, refused with a fresh 409 rather than silently inserting a
+  second, duplicate-period row. Without `regenerate`, behaviour is
+  byte-for-byte unchanged (still a plain 23505-derived 409 on a
+  pre-existing row).
+- **`BoardAssuranceClient.tsx` gains a "Regenerate" button** next to
+  "Issue" on every `draft` row only — an issued report has no such
+  button, since the route itself would refuse the call anyway; the UI
+  simply never offers an action the database has already decided is
+  invalid, the same posture every H&S workflow guard in this codebase
+  takes.
+- 3 new `generate/route.test.ts` cases (a draft is replaced with a
+  fresh row — different id, new computed data; an issued report is
+  refused and left untouched; regenerating with no existing row behaves
+  like a plain generate). A fourth case (the lost-race/count-0 branch)
+  was NOT added — `fakeSupabase`'s delete is synchronous, so a genuine
+  concurrent-modification race cannot be reproduced without a second,
+  purpose-built fake; the branch is proven by construction (the same
+  conditional-count pattern this codebase already uses, tested
+  elsewhere, e.g. the referral pipeline's claim-before-send) rather than
+  by a dedicated test here.
+
+No migration in this group — `board_assurance_reports_staff_all` (178)
+is already `FOR ALL`, which already includes DELETE; the guard trigger
+only fires on INSERT/UPDATE, so a staff-session DELETE needed no new
+grant or guard at all.
+
+Verified: `tsc --noEmit` clean (portal untouched, this group is
+admin-only), full `vitest run` green (admin **1802** — up from 1799 at
+the end of Phase 26, +3 new), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+102 blind-update chains, unchanged — a DELETE is not an UPDATE and this
+guard does not track it; every paged query's `.order()` present),
+admin production build compiles.
+
+### Group 2: cross-client consultant assurance dashboard (C13.6)
+
+`board_assurance_reports` (178) had no consultancy surface anywhere —
+confirmed live before building anything: zero references in
+`portal/src/app/(portal)/consultancy/` or `portal/src/lib/consultancy/`.
+The table's own RLS is staff `FOR ALL` plus a client-read policy gated
+on `company_id = my_company_id()` (the ACTIVE org) — the same
+portfolio-wide gap every consultancy read has had to work around since
+Phase 6.
+
+- **`lib/consultancy/boardAssuranceStatus.ts`** (portal-only — no
+  admin-side cross-client consultancy reader exists to share this
+  with): `classifyBoardAssuranceStatus()`, pure, classifies every
+  authorised organisation into one of three buckets from its OWN
+  `board_assurance_reports` history — `missing` (no row of any status,
+  ever), `overdue` (no `issued` report for the CURRENT quarter, and the
+  quarter is at least `OVERDUE_GRACE_DAYS` (15) days old — a grace
+  window before flagging overdue, the same shape `lib/reminders/
+  rules.ts`'s own due-bucket scheme already uses elsewhere, applied to
+  a genuinely new quarterly cadence), `current` (everything else) —
+  plus an ORTHOGONAL `deteriorating` flag read straight from the most
+  recent ISSUED report's own already-computed `report_data.trend`
+  (Phase 13's `computeBoardAssuranceReport()`), never re-derived. A
+  `draft`-only row for the current quarter still counts toward
+  `everHadAnyReport` but never toward `currentPeriodIssued` or
+  `deteriorating` — only an issued report is ever "shown to the board".
+- **`lib/consultancy/loadBoardAssuranceStatus.ts`** reads with the
+  service role, scoped to `portfolioOrgIds()`, via `readAllPages()` —
+  one company's own history is small, but the PORTFOLIO'S combined
+  history across many clients and years could plausibly cross the
+  1,000-row PostgREST cap the exact way Phase 19's own sweep found
+  elsewhere, so this is bounded from the start rather than retrofitted.
+- **`/consultancy/board-assurance`**: three columns (Missing/Overdue/
+  Current), each client linking to Client 360, a `deteriorating` badge
+  shown independently of bucket. Linked from the Command Centre home's
+  own button row.
+- **Client 360 gains its own Board Assurance summary card**, reading
+  only that ONE client's rows directly (no `readAllPages` needed at
+  that scope) and calling the identical `classifyBoardAssuranceStatus()`
+  — the dashboard and the per-client card can never disagree about a
+  bucket, since both run the same pure function over rows shaped the
+  same way.
+- 10 new `boardAssuranceStatus.test.ts` cases: missing/current/overdue,
+  the exact grace-window boundary (`>=`, not `>`), a draft-only current-
+  quarter row still counting as overdue, deteriorating read from the
+  latest ISSUED row only (a newer draft never counts), `latestIssued`
+  picked by (year, quarter) rather than array order, and a different
+  company's rows never leaking into this one's classification.
+
+Verified: `tsc --noEmit` clean both apps (admin untouched), full
+`vitest run` green (portal **874** — up from 862 at the end of Phase
+26: +10 new `boardAssuranceStatus.test.ts` cases + 2 from the sweep
+tests picking up the new route automatically), all six CI guards pass
+with no regressions (70 shared-dupe pairs, unchanged — this group's
+new files are portal-only, no admin equivalent; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+102 blind-update chains, unchanged — this group writes nothing, both
+new surfaces are read-only; every paged query's `.order()` present),
+both production builds compile (portal's one prerender failure is the
+same long-documented sandbox-only missing-Supabase-env-var limitation).
+
+### Group 3: Core 360 Status computation (C13.8)
+
+`lib/core360Status/assemble.ts` (new shared-dupe pair, 71 pairs up
+from 70): a PURE COMPOSITION, sibling to `complianceTwin/assemble.ts`/
+`assurance/today.ts` — computes no new raw fact beyond two small counts
+neither existing module already has (training-record expiry, open
+environmental spills / waste-movement non-conformances). Checked
+before building, not assumed: this is genuinely NOT a duplicate of the
+Digital Twin (Phase 12) or Assurance Today (Phase 18) — both are
+explicitly narrower predecessors (C18.4's own note: "Phase 18 was
+always scoped as 'today only'... Phase 27 supersedes/extends it").
+This is the first DOMAIN-scored, six-area-NAMED surface the Master
+Spec's own C13.8 wording asks for (People / Plant / Training / Risk
+Controls / Environmental / Contractors), reusing already-computed
+inputs (`PortfolioCounts`, `RiskGraphIntelligence`) rather than
+inventing new raw facts a third time.
+
+- **No AI anywhere in this file.** Every domain band (`ok | attention
+  | critical`) is a fixed, named-threshold `if`-chain over inspectable
+  counts — the same `complianceTwin/assemble.ts` posture, never a
+  formula or a score. `overallBand` is the worst of the six domains
+  (`worstBand()`), the exact `complianceTwin`/`assurance` precedent.
+- **People**: `safety_critical_gaps > 0` is Phase 3's own ONE
+  definition of safety-critical (`person_deployment_status`'s stored
+  summary) — any nonzero value is critical; an ordinary not-ready
+  worker with no safety-critical gap is only attention.
+- **Plant**: `assets_unavailable` (quarantined + out-of-service,
+  already merged by `PortfolioCounts`) — 1-2 is attention, 3+ is
+  critical (a documented, named threshold: a single asset off the
+  floor is routine maintenance, several at once is a pattern).
+- **Training**: `computeTrainingExpiry()` — the one genuinely new
+  count, reading `training_records.expires_on` directly. An expiry
+  EXACTLY TODAY counts as expired, not "expiring soon" (the reminders
+  framework's own `due_0`-is-already-due convention, applied here —
+  caught by a failing test during development, `<` corrected to `<=`).
+  Any expired record is critical; expiring-only (within 30 days,
+  matching `due_30`) is attention.
+- **Risk Controls**: reuses `RiskGraphIntelligence` (Phase 8) verbatim
+  — an ineffective SHARED control (relied on by 2+ assessments,
+  Phase 8's own definition of "shared") is critical; an uncovered
+  hazard alone is attention.
+- **Environmental**: `computeEnvironmentalOpen()` — the other
+  genuinely new count, reading `environmental_spills.status` and
+  `waste_movements.non_conformance` directly, the same two source
+  tables `environmentalRules.ts`'s own consequence rules already key
+  on. An open (not `closed`) spill is critical; a waste non-conformance
+  alone, or an environmental permit expiring within 30 days
+  (`PortfolioCounts.environmental_permits_expiring`), is attention.
+- **Contractors**: `PortfolioCounts.contractor_expiring` already
+  merges a non-approved status with an expiring/missing required
+  insurance policy (per its own doc comment) — no second, narrower read
+  exists to split the two apart, so this domain has no distinct
+  critical tier, a deliberate, documented simplification: any flagged
+  contractor is attention.
+- 18 new `assemble.test.ts` cases (mirrored byte-identical to admin):
+  an entirely clean input is `ok` across all six domains; each
+  domain's own attention/critical split independently; the training
+  expiry boundary at exactly today; overallBand as the worst of six;
+  a clean domain reports exactly one reason.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1820** — up from 1802 at the end of Group 1: +18 new,
+mirrored byte-identical to portal's own copy; portal **892** — up from
+874 at the end of Group 2: +18 new), all six CI guards pass with no
+regressions (**71 shared-dupe pairs**, up from 70 — `core360Status/
+assemble.ts` newly registered; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this group added no
+route, pure computation only; 102 blind-update chains, unchanged; every
+paged query's `.order()` present), both production builds compile
+(portal's one prerender failure is the same long-documented
+sandbox-only missing-Supabase-env-var limitation).
+
+### Group 4: Core 360 Status UI (C13.8)
+
+`Core360StatusView.tsx` (new shared-dupe pair, 72 pairs up from 71),
+the exact `ComplianceTwinView.tsx`/`AssuranceTodayView.tsx` shape: an
+overall band banner plus a card per domain (band icon, reasons, a
+collapsible "Show inputs" panel), no interactivity beyond navigation
+links, server-renderable in both apps. Admin: a 31st `HsCompanyTabs.tsx`
+tab (`core-360-status`, after Board Assurance), no new sidebar entry
+(dynamic route, nests under the already-linked `/health-safety`
+prefix). Portal: `/protect/core-360-status`, gated by `protect` alone,
+added to `moduleAccess.ts` and the PROTECT layout's own tab list.
+
+- **Admin's `lib/core360Status/loadStatus.ts`** (admin-only, the
+  `loadComplianceTwinSnapshot.ts`/`loadPortfolioCounts.ts` precedent —
+  portal shares no server code and duplicates its own query logic)
+  composes `loadPortfolioCountsForCompany()` (Phase 13) with a fresh
+  Risk Graph read (the exact shape every other Risk Graph consumer in
+  this codebase already duplicates per caller, never factored out of
+  `loadComplianceTwinSnapshot` since Risk Graph was never exported from
+  it) plus the two new reads `assembleCore360Status()` needs. No new
+  query shape beyond those two.
+- **A real finding, checked live rather than assumed from an older
+  page's own comment**: the Phase 18 Assurance Today portal page's own
+  header says "contractors/permits/isolations/consultancy_visits do
+  not [have a client-read policy]" — true for permits/isolations, but
+  checked live against the actual migration text before writing this
+  group's own portal reads and found FALSE for contractors and
+  consultancy_visits. `contractors_manage`/`contractor_insurances_manage`
+  (150) already grant any session holding `contractors.manage` on its
+  own `company_id` — which `client_admin` has held via the
+  `organisation_admin` role mapping since Phase 4, confirmed live by
+  Phase 22's own contractors-portal-UI work — and
+  `consultancy_visits_client_read` (168, `client_organisation_id =
+  my_company_id()`) has existed since Phase 6 and was never dropped or
+  redefined. `environmental_permits`/`management_reviews`/
+  `service_requests` all already have real portal pages reading them
+  directly. Since the Contractors DOMAIN is exactly what this page's
+  Contractors card depends on, the portal reads here include
+  contractors/contractor_insurances/consultancy_visits/
+  environmental_permits/management_reviews/service_requests properly
+  under the client's own session — not passed as empty arrays the way
+  the older Phase 18 page does for its own, narrower purpose (that
+  page's own choice remains correct for what IT renders, since its
+  `items` list never surfaces `contractor_expiring` at all — this is a
+  finding about this page's own needs, not a defect to fix in Phase
+  18's unrelated page, which is out of this group's scope).
+- **Link targets**: People and Training have no admin-side page of
+  their own (workforce and training records are managed only through
+  the portal's LEAD workspace, staff included — the exact "Hazards and
+  risk assessments have no admin-side per-record page" precedent
+  Phase 8's own risk-graph page already established) — the admin page
+  links out to the portal (`portalUrl()`) for those two; Plant, Risk
+  Controls, Environmental and Contractors all have a real admin tab
+  already and link internally.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1820**, unchanged — this group is UI/route-glue only, the
+established "no component-level test" convention; portal **894** — up
+from 892: +2, the sweep tests picking up the new route automatically),
+all six CI guards pass with no regressions (**72 shared-dupe pairs**,
+up from 71; row-cap clean; 44 unvalidated routes, unchanged; 43 static
+admin routes, all reachable — the new admin route is dynamic, needing
+no literal-reference check; 102 blind-update chains, unchanged — this
+group writes nothing, both new surfaces are read-only; every paged
+query's `.order()` present), both production builds compile (portal's
+one prerender failure is the same long-documented sandbox-only
+missing-Supabase-env-var limitation), including
+`/health-safety/[companyId]/core-360-status` and
+`/protect/core-360-status`.
+
+### Group 5: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE27_HANDOVER.md`.
+
+A dedicated adversarial pass across all four groups found **one real
+Medium-severity defect and fixed it**: the People domain in
+`core360Status/assemble.ts` hid the broader `workers_not_ready` count
+behind the narrower `safety_critical_gaps` one — the EXACT bug class
+Phase 23's own Compliance Twin adversarial pass already found and
+fixed once (a red domain silently under-reporting a true amber-level
+fact), reintroduced here in a sibling module. The two counts are
+independently derived (`countBy()` runs two separate predicates over
+the same `person_deployment_status` rows, not a guaranteed subset
+relationship), so the original ternary could genuinely hide
+information a reader needed. Fixed to the same independent-`if`-push
+pattern the Training/Environmental domains in the same file already
+used correctly. **Mutation-tested**: a new test was confirmed to fail
+against the reverted (buggy) code, then the fix was restored and
+re-verified passing, re-mirrored byte-identical to admin.
+
+Also checked and found clean: every query in both
+`lib/core360Status/loadStatus.ts` (admin) and `/protect/
+core-360-status/page.tsx` (portal) carries an explicit company-scope
+filter except two deliberate, safe exceptions (`legal_requirements`,
+scoped upstream via an already-filtered id list; `contractor_
+insurances`, which has no `company_id` column of its own and is
+scoped via an already-filtered `contractor_id` list) — matters more in
+the admin loader, which runs as staff with no RLS backstop of its own,
+than the portal page, where RLS is a backstop regardless; the Group 1
+regenerate route's concurrent-request race is safe by construction
+(the loser's conditional DELETE matches zero rows, refused rather than
+proceeding to a duplicate insert); `requireStaff()` is unchanged on
+the one write route this phase touches.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1821** — 1820 + 1 new mutation-tested case; portal **895** —
+894 + 1), all six CI guards pass with no regressions (72 shared-dupe
+pairs, unchanged; row-cap clean; 44 unvalidated routes, unchanged; 43
+static admin routes, all reachable; 102 blind-update chains, unchanged
+— this phase's only write, Group 1's conditional DELETE, is not an
+UPDATE and this guard does not track it; every paged query's `.order()`
+present), both production builds compile (portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-
+env-var limitation). No migration anywhere in this phase — every
+group composes already-live schema, confirmed rather than assumed per
+the plan doc's own stated expectation.
+
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated: C13.6, C13.7, C13.8 all
+→ `IMPLEMENTED`, `closed_in_phase: 27`.
+
+**Phase 27 is complete. Phase 28 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
+

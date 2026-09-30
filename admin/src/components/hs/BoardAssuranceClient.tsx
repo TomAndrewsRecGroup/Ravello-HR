@@ -53,6 +53,23 @@ export default function BoardAssuranceClient({
     }
   }
 
+  async function regenerate(row: BoardAssuranceReportRow) {
+    setGenerating(true);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/admin/board-assurance/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId, year: row.year, quarter: row.quarter, regenerate: true }),
+      });
+      const body = await res.json();
+      if (!res.ok) { setActionError(body.error ?? 'Could not regenerate the report.'); return; }
+      router.refresh();
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   async function issue(id: string) {
     setActionError(null);
     const res = await fetch(`/api/admin/board-assurance/${id}`, {
@@ -135,6 +152,11 @@ export default function BoardAssuranceClient({
                   {expanded === r.id ? 'Hide detail' : 'View detail'}
                 </button>
                 <button className="btn-secondary btn-sm" onClick={() => printPdf(r)}>Print PDF</button>
+                {r.status === 'draft' && (
+                  <button className="btn-secondary btn-sm" disabled={generating} onClick={() => regenerate(r)}>
+                    Regenerate
+                  </button>
+                )}
                 {r.status === 'draft' && (
                   <button className="btn-cta btn-sm" onClick={() => issue(r.id)}>Issue</button>
                 )}
