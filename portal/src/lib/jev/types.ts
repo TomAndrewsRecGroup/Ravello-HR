@@ -48,6 +48,7 @@ export const DECISION_KINDS = [
   'bd_next_action',
   'candidate_feedback_reason',
   'latest_update_regulatory_change',
+  'rams_section_suggest',
 ] as const;
 export type DecisionKind = typeof DECISION_KINDS[number];
 

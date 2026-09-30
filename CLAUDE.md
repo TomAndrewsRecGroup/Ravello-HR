@@ -8974,3 +8974,75 @@ production builds compile. Migration 180 applied live and verified
 **Phase 14 is complete. Phase 15 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 15: Intelligent RAMS (in progress)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-14 were in). Scope: `docs/CORE_OS_360_PHASE15_PLAN.md`.
+
+RAMS (migration 124) is already a fully-built workflow with 20 fixed
+narrative section keys (`hs_rams_sections_valid()`). **Jev cannot draft
+free text** — it only answers `noul`/`choice`/`score` questions
+(`lib/jev/types.ts`'s own header comment) — so "Intelligent RAMS" is
+NOT "Jev writes the method statement". It is a narrow nudge: given a
+draft's `title`/`project_name`/`scope_of_work`, Jev flags which
+CONDITIONAL sections likely need real content for this specific job.
+
+### Group 1: pure computation + route
+
+- **Only the CONDITIONAL sections are asked about**: `lifting_
+  arrangements, isolations, environmental_controls, exclusion_zones,
+  waste_disposal, permits_required` — each tied to a recognisable
+  real-world condition. The other 14 of the 20 section keys apply to
+  virtually every method statement regardless of the work described
+  (purpose, scope, responsibilities, ppe, supervision, communication,
+  competency_requirements, emergency_arrangements, location, work_
+  sequence, materials, plant_equipment, access_egress, site_setup) —
+  asking Jev about them would be a near-constant "yes" that tells the
+  author nothing, a deliberate, documented scope decision.
+  `lib/hs/ramsSectionQuestions.ts` reuses `RAMS_SECTION_KEYS`/`RAMS_
+  SECTION_LABELS` (`lib/hs/safetyVocab.ts`) verbatim — never a parallel
+  vocabulary that could drift from the DB's own 20-key CHECK.
+- **No schema change at all.** `sections` already holds every field
+  this touches; a suggestion is UI-only (Group 2), recorded only in
+  the existing generic `jev_decisions` table via the existing
+  `askJev()`. `rams_section_suggest` added to `DecisionKind`
+  (shared-dupe `lib/jev/types.ts`), never to `AUTO_ACT_KINDS` — a RAMS
+  is a legally-relevant document; every suggestion is reviewed by the
+  human author before anything is saved.
+- **A lower gate than a classification decision** (0.6, vs. `doc_
+  type_suggest`'s 0.8) — a false positive here costs a glance at an
+  irrelevant section; a false positive on a CHOICE is a wrong answer
+  outright. `askJev()`'s own `gate`/`gated` mechanism does not apply
+  to an all-`noul` question set at all (`minConfidence()` skips `noul`
+  answers entirely, so `confidence` is always `null` and `gated` is
+  always `false`) — checked, not assumed, before relying on it; the
+  per-question probability threshold (`toRamsSectionSuggestions()`)
+  is the only gate that actually does anything here.
+- **`POST /api/protect/jev/rams-section`** mirrors `/api/lead/jev/
+  doc-type`'s exact shape (own session, company from the session, a
+  suggestion only — never writes `method_statements`). No dedicated
+  route test, matching that same route's own precedent (the pure-
+  function tests plus `askJev()`'s own tests already cover the
+  call shape).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1563
+admin, unchanged — this group touched only the shared-dupe `lib/jev/
+types.ts` mirror; 743 portal — 737 + 6 new `ramsSectionQuestions.test.ts`
+cases), all five CI guards pass (56 shared-dupe pairs, unchanged; row-cap
+clean; 44 unvalidated routes, unchanged — the new route reads a body but
+validates it with `parseBody`; 42 static admin routes, all reachable —
+this group touched no admin route; 102 blind-update chains, unchanged),
+both production builds compile, including `/api/protect/jev/rams-section`.
+
+### Group 2 and Group 3
+
+Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+merged on its own branch first, per this codebase's standing "regular
+merges so you don't lose anything" discipline; the UI and the final
+regression/adversarial-QA/handover pass follow as their own PRs.
+
+**Phase 16 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
