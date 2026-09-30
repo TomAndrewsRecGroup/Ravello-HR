@@ -10433,6 +10433,27 @@ verification pass sampled 31 of the matrix's `IMPLEMENTED` rows against
 the live code rather than trusting the matrix's own citations — see
 `docs/CORE_OS_360_PHASE20_HANDOVER.md` for the result.
 
-**Phase 20 gate status and the Phase 21 go-ahead are recorded in the
-handover doc once the independent QA sample completes.**
+**Gate: PASS.** An independent agent — given only "verify this matrix's
+claims against the live code, trust nothing it cites" — sampled 31
+`IMPLEMENTED` rows spanning all 19 phases, weighted toward the highest-
+risk claims (self-authorisation refusals, RLS/tenancy guards, post-hoc
+bug fixes) plus the two rows most likely to contain a subtle
+overstatement: C4.5 (LOLER immediate-danger quarantine really is
+unconditional on `outcome`, checked before the fail branch) and C10.3
+(the corrected window-asymmetry doc comment genuinely no longer claims
+equal-length windows). **31/31 CONFIRMED, 0 NOT-CONFIRMED** — every
+claim traced to the actual current migration SQL/trigger/TypeScript
+body, several against real post-hoc-fixed bugs, none merely a comment
+claiming a fix. One honest, structural limitation the agent itself
+flagged: this was static source verification with no live database
+access, so it confirms the logic is wired up correctly but does not
+re-prove production currently matches what's on disk — the same
+reason every schema-bearing phase ran its own live probe at ship time,
+which a documentation-reconciliation pass cannot retroactively redo
+for two dozen historical migrations. Full handover:
+`docs/CORE_OS_360_PHASE20_HANDOVER.md`.
+
+**Phase 21 (People, LMS, Competency & Safe-to-Deploy Closure) may
+begin** once this branch merges, per the Master Spec's own sequential-
+gate rule.
 

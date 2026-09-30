@@ -142,9 +142,43 @@ silently accepted.
 
 ## QA pass results
 
-See the independent verification pass below — this section is completed once
-that pass reports back (task in progress at the time this section was first
-drafted; updated with final results before this handover is committed).
+An independent agent — given no context beyond "verify this matrix's claims
+against the live code, do not trust the matrix's own citations" — sampled 31
+`IMPLEMENTED` rows spanning every one of the 19 Core-OS 360 phases (C1-C19),
+weighted toward the highest-risk claims: RLS/tenancy guards, self-authorisation
+refusals, post-hoc-fixed bugs, and the two rows most likely to contain a subtle
+overstatement:
+
+- **C4.5** (LOLER immediate-danger quarantine is unconditional regardless of
+  `outcome`) — confirmed genuinely unconditional: the guard checks
+  `immediate_danger` and calls `hs_quarantine_asset()` BEFORE it ever looks at
+  `outcome`.
+- **C10.3** (the incident-pattern window fix, and this matrix's own note that a
+  prior "equal-length" claim was corrected 2026-09-30 to accurately describe a
+  deliberate asymmetry) — confirmed: the current doc comment in
+  `incidentPatternWindows()` (both apps, byte-identical) explicitly states the
+  windows are NOT equal-length and explains why, no longer claiming equality.
+
+**Result: 31/31 CONFIRMED, 0 NOT-CONFIRMED, 0 unable to verify.** Every claim
+was checked against the actual current migration SQL, trigger/policy body, or
+TypeScript source — not merely "does a file with this name exist." Several
+sampled rows cite post-hoc fixes for real, previously-shipped bugs (permit
+self-authorisation, LOLER, the leaver-badge-revocation gap, duplicate-key
+detection by SQLSTATE, pagination ordering); in every case the agent traced the
+fix to the actual current function body, not a comment merely claiming it was
+fixed. Nothing concerning found — no row's `IMPLEMENTED` claim overstated what
+the code actually does.
+
+**One honest limitation, recorded by the QA agent itself**: verification was
+static (SQL/TypeScript source reading), not a live Supabase probe — the agent
+had no database access. This confirms the claimed logic exists and is wired up
+correctly; it does not re-prove the live production database currently matches
+what's on disk in `supabase/migrations/`. That is a standing, structural
+limitation of any code-only QA pass in this environment, not specific to this
+phase — the same reason every schema-bearing Core-OS 360 phase from C1 onward
+ran its OWN live rolled-back probe at ship time, which is a different kind of
+evidence than what a Phase 20 documentation-reconciliation pass can add
+after the fact without re-running two dozen historical probes.
 
 ## Known remaining issues, with severity
 
@@ -162,9 +196,8 @@ drafted; updated with final results before this handover is committed).
 
 ## Gate status
 
-**PASS** — pending the independent QA sample's final confirmation (updated
-below before commit). Rationale: the matrix, manifest and gap ledger exist and
-are cross-checked against the Master Spec's own independent findings; the
+**PASS.** Rationale: the matrix, manifest and gap ledger exist and are
+cross-checked against the Master Spec's own independent findings; the
 baseline (tsc, vitest, all six CI guards, admin production build) is clean;
 the portal production build fails ONLY on the long-documented sandbox-only
 missing-Supabase-env-var limitation (present since Phase 5, unrelated to this
@@ -172,4 +205,20 @@ phase's changes); no protected legacy production code was modified; a real,
 previously-undocumented documentation-accuracy defect was found and fixed as
 a direct result of doing this phase's own preservation-testing work, which is
 itself evidence the "repository reality beats handover narrative" discipline
-is being applied, not merely asserted.
+is being applied, not merely asserted; and an independent QA pass confirmed
+31/31 sampled `IMPLEMENTED` claims against live code with zero discrepancies,
+including the two claims most likely to have been overstated.
+
+No Critical or High defect is open. The matrix's Consolidated Gap Ledger
+(30+ rows across `MISSING`/`PARTIAL`/`DEFERRED-BUT-REQUIRED`) is not itself a
+gate failure — every row is either a genuinely later phase's own headline
+scope (per the Master Spec's own phase-to-scope mapping) or explicit tracked
+debt (`PL.1`, `C19.9`) with a target phase, exactly as Phase 20's own DoD
+requires ("every known deferred item is either assigned to Phase 21-29 or
+explicitly classified"). Nothing was marked complete without end-to-end
+evidence; nothing protected-legacy was broken; no destructive migration ran
+(none ran at all — Phase 20 added no migration); no false compliance/
+readiness result and no exposed secret were found.
+
+**Phase 21 (People, LMS, Competency & Safe-to-Deploy Closure) may begin**
+once this branch merges, per the Master Spec's own sequential-gate rule.
