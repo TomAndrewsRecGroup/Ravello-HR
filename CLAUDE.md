@@ -9315,13 +9315,78 @@ routes, all reachable; `check-blind-updates.sh`: 102, unchanged), both
 production builds compile, including `/health-safety/lessons-learned`
 and `/protect/lessons-learned`.
 
-### Group 3
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
-and merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE16_HANDOVER.md`.
 
-**Phase 17 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+**One real, Medium-severity defect found: the duplicate-distribution
+check matched the error's own message text, not Postgres's error
+code.** Group 2's first draft of `POST /api/admin/lessons-learned/
+[id]/publish` recognised "already distributed to this company" with
+`error.message.includes('duplicate key')` — a string match on
+Postgres's own, unversioned wording. Every other place in this
+codebase that needs to tell a unique-violation apart from a real
+failure checks the CODE instead (`reportIncident.ts`, `qrTokens.ts`,
+`feed-sources/route.ts`, `board-assurance/generate/route.ts`, both
+webhook routes — all check `error.code === '23505'`). Found by
+checking this exact established pattern rather than trusting a
+plausible-looking string match. **Fixed**: `error.code !== '23505'`.
+A related cleanup folded into the same fix: the route also passed
+`{ count: 'exact' }` to the INSERT, following the UPDATE/DELETE
+convention this codebase uses for a counted write — but an INSERT's
+own success/error already tells the whole story (a clean insert IS a
+new distribution; a duplicate always surfaces as an error, never a
+silent zero-row success), so the option was removed as unnecessary —
+the first, and now reverted, use of `{ count: 'exact' }` on an INSERT
+anywhere in this app. **Mutation-tested**: a new
+`publish/route.test.ts` (6 cases, a small hand-rolled fake rather than
+the shared `fakeSupabase` — that fixture's `uniqueKeys` only supports
+a single-column key, and this table's real constraint is the
+composite `UNIQUE (lesson_id, company_id)`, the same reason
+`pipelineIdempotency.test.ts` already uses its own narrow fake)
+reverting the fix to the original string match failed 2 of 6 cases
+(the duplicate-recognition case, whose fake error message deliberately
+differs from the route's original guess, and the add-more-recipients
+case) before being restored and re-verified green.
+
+**Everything else checked and found clean**: cross-tenant isolation
+(re-read against Group 1's own 17/17 live probe, unaffected by this
+group); the publish route's abort-vs-skip comment was corrected to
+match its actual behaviour (it aborts on a genuine per-company
+anomaly, which is the right call since the UI only ever offers real
+company ids — the code was right, the comment was wrong); race safety
+on a concurrent double-click publish (the table's own UNIQUE
+constraint is the real guard — the loser's insert fails with 23505 and
+skips `notify()` entirely, reasoned through rather than merely
+assumed); no client-identifying detail (`source_type`/`source_id`)
+appears in any client-facing read; the "suggest, add rather than
+replace" distribution-picker behaviour matches its own documented
+intent.
+
+**Design decisions documented rather than left to look like
+oversights**: staff-wide, not portfolio-scoped to a single third-party
+consultancy's own client book (Phase 6's model); no AI anywhere in
+this phase — a lesson's summary and recommended action are entirely
+staff-written, since Jev cannot generate free text at all and
+generating anonymised prose from a real incident risks leaking exactly
+the detail this feature exists to strip out; no "un-distribute" action
+(a notification, once sent, is a historical fact, the platform's
+general posture); the "drawn from" source id is a plain paste, not a
+record picker, matching the `standard_evidence_links`/
+`requirement_evidence_links` precedent exactly.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1593 admin — 1587 + 6 new `publish/route.test.ts` cases; 753 portal,
+unchanged — this group's finding and fix are admin-only), all five CI
+guards pass with no regressions (`check-shared-dupes.sh`: 57 pairs,
+unchanged; `check-row-cap.sh`: clean; `check-route-validation.sh`: 44,
+unchanged; `check-admin-routes-linked.sh`: 43 static admin routes, all
+reachable; `check-blind-updates.sh`: 102, unchanged — this group's fix
+REMOVED a `{ count: 'exact' }` from an INSERT rather than adding an
+unguarded UPDATE), both production builds compile. No migration in
+this group — the fix is entirely TypeScript over Group 1's already-
+probed, unchanged schema.
+
+**Phase 16 is complete. Phase 17 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
