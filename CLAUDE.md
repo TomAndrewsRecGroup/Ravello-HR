@@ -9594,3 +9594,86 @@ tested, unchanged code.
 **Phase 17 is complete. Phase 18 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 18: Core 360 Assurance — "Are we safe and
+## compliant today?" (in progress)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-17 were in). Scope: `docs/CORE_OS_360_PHASE18_PLAN.md`.
+
+**What already exists, and why it is not quite this.** The Compliance
+Digital Twin (Phase 12) already assembles five read-only modules into
+one snapshot with a per-area RAG band — but all five (safety,
+governance, risk graph, incident patterns, evidence coverage) are
+somewhat backward-looking or slow-moving measures. Nothing in it
+answers the literal, present-tense question this phase's name asks: is
+anyone not currently Safe to Deploy RIGHT NOW, is an asset quarantined
+RIGHT NOW, is a permit or isolation open RIGHT NOW.
+`lib/health/portfolioCounts.ts` (Phase 6) already computes exactly
+those "right now" facts — but it was built for, and used by, ONE
+thing: the staff-only, cross-portfolio daily health-snapshot cron, an
+internal BD signal never shown to a client. It is, itself, a genuinely
+pure function with no Supabase client — nothing about its own logic is
+staff-only; only its one existing caller and the table it writes to
+are.
+
+**The gap this phase closes**: putting those two together into a
+single, TODAY-dated view a client (and staff, about that client) can
+actually read — never a certification, only facts.
+
+### Group 1: assurance-today computation
+
+- **`lib/assurance/today.ts`** (`assembleAssuranceToday()`) is a pure
+  COMPOSITION, computing no new raw fact of its own — the identical
+  posture `complianceTwin/assemble.ts` itself already takes one layer
+  down. It takes an already-computed `PortfolioCounts` for ONE company
+  and an already-computed `ComplianceTwinSnapshot`, and combines them
+  into one `AssuranceTodaySnapshot`: a `band` (`clear`/`attention`/
+  `urgent`), a plain factual `headline`, and a sorted `items` list of
+  only the non-zero counts (high severity before medium, tie-broken
+  alphabetically by key for determinism).
+- **The absolute rule, inherited from every prior phase that touched
+  this ground: never assert "safe" or "compliant" as a verdict.** The
+  headline is a count, or the plain absence of one — "no items are
+  currently flagged" is a fact; "you are compliant" is a legal
+  conclusion this platform never makes. A twin band of `red`/`amber`
+  alone (even with every operational count at zero) still forces the
+  overall band to at least `urgent`/`attention` — the twin's own
+  slower-moving picture is never silently dropped just because
+  nothing is wrong RIGHT NOW.
+- **`lib/health/portfolioCounts.ts` is promoted to a shared-dupe pair**
+  (mirrored byte-identical to portal, 59 pairs up from 57) — it was
+  already genuinely pure (confirmed via its own header comment before
+  relying on that, not assumed), the identical reasoning that made
+  `hs/kpis.ts`/`governance/kpis.ts` shared-dupe pairs the moment
+  Phase 12's own portal page needed them too. `lib/assurance/today.ts`
+  is a new shared-dupe pair for the same reason — both apps need the
+  identical combining logic.
+- **A test bug caught by the test itself, not a defect in the source**:
+  the first draft of `today.test.ts` asserted the clean headline
+  never contains the substring `'safe'` — which also matches
+  `'safety'`, the domain noun the clean headline legitimately uses
+  ("...across safety, workforce, assets..."). Fixed to a word-boundary
+  regex (`/\bsafe\b/`) so the assertion actually tests what it means to
+  test: no standalone verdict word, not "never mentions the word
+  safety at all."
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1620 admin — 1610 + 10 new `today.test.ts` cases; 753 portal,
+unchanged — no new portal test file, the mirrored source needs none
+of its own per the `hs/kpis.ts` precedent), all five CI guards pass
+(59 shared-dupe pairs, up from 57; row-cap clean; 44 unvalidated
+routes, unchanged; 43 static admin routes, all reachable — this group
+added no route; 102 blind-update chains, unchanged), both production
+builds compile.
+
+### Group 2: Assurance Today UI
+
+Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+merged on its own branch first, per this codebase's standing "regular
+merges so you don't lose anything" discipline.
+
+**Phase 19 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
