@@ -12335,6 +12335,182 @@ the plan doc's own stated expectation.
 core_os_360_completion_manifest.json` updated: C13.6, C13.7, C13.8 all
 → `IMPLEMENTED`, `closed_in_phase: 27`.
 
-**Phase 27 is complete. Phase 28 is NOT to begin** until this branch
-is merged and deployed, per the operator's standing instruction.
+**Phase 27 is complete.**
+
+---
+
+## Core-OS 360 Completion Programme: Phase 28 — UX role-check
+## consolidation & optimistic locking completion (2026-09-30)
+
+Full handover: `docs/CORE_OS_360_PHASE28_HANDOVER.md`. Closes the two
+gap-ledger rows Phase 20 assigned here — **C1.12** ("optimistic
+locking on shared records" — the general hardening left over after
+Phase 24 Group 1 closed the `consultancy_visit_reports` slice) and
+**C1.13** ("UI still uses legacy role checks in places" — Phase 1
+handover §H, item 1) — read fresh from the completion matrix's own
+gap ledger, not assumed from any prior phase's handover. Full
+investigation: `docs/CORE_OS_360_PHASE28_PLAN.md`.
+
+### What the investigation found before any code was written
+
+- **The "42501 on a shown button" scenario §H worried about does not
+  reproduce.** `get_my_role()` is already grant-aware — a `read_only`
+  consultant's own grant resolves `legacy_role = 'client_user'`,
+  never `'client_admin'`, verified against the live function and
+  `access_roles.legacy_role`. Every one of the 8 surveyed pages'
+  backing tables is gated by `is_company_super_user()`, a predicate
+  the Phase 1 capability model never migrated onto — there is no
+  finer capability that actually governs these writes today, so
+  inventing one in the UI would have been a false abstraction. What
+  remained real was pure duplication-drift risk: the same
+  `role === 'client_admin' || <staff check>` spelled out
+  independently across many files.
+- **`employee_records` has no `row_version` column.**
+  `EmployeeRecordsClient.tsx`'s edit-form save was an unconditional
+  `.update(body).eq('id', editingId)` — the exact "last write wins"
+  scenario §H described.
+
+### Group 1: consolidate legacy role checks (C1.13)
+
+`portal/src/lib/auth/companyAdmin.ts` — `isCompanySuperUser({ role,
+isTpsStaff })`, mirroring `is_company_super_user() OR is_tps_staff()`
+exactly. `companySuperUserSql.test.ts` pins it against migration 117's
+own text (the only migration that ever defines
+`is_company_super_user()`) and a live-read SNAPSHOT of
+`is_tps_staff()` — no migration in this repo defines that function at
+all; it predates the migration history, created directly in the
+Supabase SQL editor, and its body was read live via `execute_sql` and
+embedded as documented history, never guessed.
+
+Converted: `employee-records`, `policy-acknowledgements`,
+`offboarding`, `onboarding`, `calendar`, `org-chart`'s general
+`canEdit` gate (its OWN, deliberately different self-seed check at a
+different line, gated on the bare `client_admin` role by design, is
+untouched), `billing` (the page AND its `portal-session` API route),
+and a genuine ninth site found only by grepping API routes, not just
+pages — `POST /api/portal/policy-acks/[id]/resend`. That route is
+`requireLiveSession()`-shaped, whose `role` can literally BE
+`'tps_admin'` (unlike `getSessionProfile()`'s always-legacy-mapped
+`role`, with `isTpsStaff` carried alongside it) —`isTpsStaff` is
+derived inline as `role === 'tps_admin'`, mutation-tested (reverted,
+watched the new staff-allowed test case fail with 403 instead of 200,
+restored).
+
+**Deliberately left alone**: `hire/internal/page.tsx`'s `isAdmin =
+role === 'client_admin' || isTpsStaff` already spells the correct
+predicate, just not through the named function — its own `isAdmin`
+prop conflates two DIFFERENT authorisations (`requisitions`,
+unrestricted by role, and `employee_records`, super-user only) under
+one flag, and splitting that is a product decision out of scope here.
+
+### Group 2: employee_records optimistic lock (C1.12)
+
+Migration 197: `row_version integer NOT NULL DEFAULT 1`, forced to 1
+on INSERT and `OLD.row_version + 1` on every UPDATE by a trigger pair
+regardless of caller input. **`SECURITY INVOKER`, not `DEFINER`** —
+matches this table's OWN existing trigger convention (`person_same_
+org_guard`/`person_sync_from_source`/`employee_records_sensitive_
+write_guard`, none of which are DEFINER), a deliberate departure from
+190's own DEFINER choice for `consultancy_visit_reports`, whose fill
+function needs a cross-table lookup this one does not. An additive
+`GRANT SELECT (row_version)` mirrors 131's own "a new column needs its
+own additive grant" discipline, never a rewrite of 131's whole column
+list.
+
+**A mid-implementation re-survey, not the plan doc's own first
+pass, found a second genuine race surface**: the plan doc's original
+C1.12 investigation claimed only one edit-form UPDATE site existed on
+this table. Re-running the same exhaustive grep immediately before
+writing the migration — per this codebase's own "repository reality
+beats handover narrative" discipline — found `OrgChartClient.tsx`'s
+drag-and-drop `persistChange()`: a SECOND, genuinely unconditional
+edit surface on the SAME rows (reassigning `line_manager` by dragging
+one person onto another). Guarding only the form's save would have
+left the race **half-closed** — a form save that wins its own
+conditional check could still be silently overwritten a moment later
+by the unguarded drag-and-drop write, or vice versa. Both are now
+guarded, each with a clear "someone else changed this" message on a
+lost race. The plan doc's own C1.12 section was corrected in place to
+record this rather than left to mislead a future reader.
+
+**Deliberately left unguarded**: the bulk CSV import inside the same
+`OrgChartClient.tsx` file (`ImportModal`'s per-row reconcile-with-CSV
+update) — a documented, already-accepted limitation from Phase 21
+Group 4 ("the by-name matching... left untouched as outside this
+phase's safe, minimal scope"), and a bulk "make this row match the
+CSV" reconciliation is a genuinely different act from two humans
+independently drafting changes to the same record, the actual risk
+§H names. Two leave-token rotation routes also write this table and
+are left unguarded too — a narrow, single-field security rotation, not
+a general HR edit; any concurrent write still correctly bumps
+`row_version`, so the edit form's own lock stays safe against them, it
+may simply refuse slightly more often than strictly necessary, the
+accepted cost of a whole-row version lock every `row_version`
+implementation in this codebase already carries.
+
+`row_version` is captured at `openEdit()` time in
+`EmployeeRecordsClient.tsx` (never re-read from `employees` state at
+save time, which a background `router.refresh()` could have already
+moved on without the open form knowing) and at drag time in
+`OrgChartClient.tsx`. Added to neither table's `audit_row()` nor
+`platform_event_row()` whitelist — bookkeeping, not a fact worth
+reporting, the identical choice 190 made for its own column.
+
+Live-probed in a rolled-back transaction, 5/5 checks: a fresh insert
+gets `row_version` 1; a caller-sent `row_version` is ignored, forced
+to `OLD + 1`; a stale conditional update affects 0 rows and the stale
+write never lands; a current-version conditional update succeeds and
+advances the version.
+
+### Adversarial review (this group)
+
+- **The resend route's existing 2-test suite never exercised the
+  staff-allowed path at all** — only `client_admin` (allowed) and
+  `client_user` (refused). Since this was the one site whose Group 1
+  conversion genuinely changed HOW staff are recognised (the inline
+  `role === 'tps_admin'` derivation, unique among the 9 converted
+  sites), it was the one site actually at risk of a silent
+  regression. A new test case was added and mutation-verified:
+  reverted the derivation, watched the new case fail (403 instead of
+  200), restored, re-verified green.
+- **Cross-tenant scoping on both new row_version UPDATE call sites**:
+  neither relies on the client-side filter alone — RLS (`company_id =
+  my_company_id() AND is_company_super_user() OR is_tps_staff()`) is
+  the real boundary, unchanged by this migration, both before and
+  after this fix.
+- **True concurrent transactions**: Postgres row-level locking
+  serialises a genuinely simultaneous pair of UPDATEs — the second
+  transaction blocks until the first commits, then evaluates `OLD`
+  fresh, so the forcing trigger's `OLD.row_version + 1` is correct
+  under real concurrency, the same reasoning this codebase already
+  relies on for 123/124/125/176/190.
+
+### Verified
+
+`tsc --noEmit` clean both apps throughout every group and after the
+adversarial additions. Final counts: portal vitest **912 passed / 65
+test files** (up from 903 at the start of the phase); admin vitest
+**1821 passed / 181 test files**, unchanged — this phase touched no
+admin file. All six CI guards pass: `check-shared-dupes.sh` — 72
+pairs, unchanged (every file this phase touched is portal-only);
+`check-row-cap.sh` — clean; `check-route-validation.sh` — 44
+unvalidated routes, unchanged; `check-admin-routes-linked.sh` — 43
+static admin routes, all reachable, unchanged; `check-blind-updates.sh`
+— **101, down from 102** (`OrgChartClient.tsx`'s drag-and-drop write is
+now counted; `EmployeeRecordsClient.tsx`'s was already recognised safe
+via its pre-existing `.select().single()`), baseline lowered in the
+same commit per the script's own instruction; `check-paged-order.sh`
+— clean. Both production builds compile (portal's one prerender
+failure is the long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated). Migration 197 applied and verified live
+(column, NOT NULL default, additive grant, both triggers, both
+functions' `SECURITY INVOKER` status all read back from
+`information_schema`/`pg_trigger`/`pg_proc`, never trusted from the
+apply call's own success response).
+
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated: C1.12, C1.13 both →
+`IMPLEMENTED`, `closed_in_phase: 28`.
+
+**Phase 28 is complete.**
 
