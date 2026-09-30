@@ -36,6 +36,10 @@ async function loadPrefill(sb: ReturnType<typeof adminClient>, updateId: string 
     title: `Regulatory update: ${update.title}`.slice(0, 200),
     description: update.description ?? '',
     companyIds,
+    // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7) —
+    // see broadcastPrefill.ts's own BroadcastPrefillResult comment.
+    sourceType: 'regulatory_update' as const,
+    sourceId: update.id,
   };
 }
 
@@ -76,7 +80,7 @@ export default async function BroadcastPage(props: { searchParams: Promise<{ upd
   const [companiesRes, actionsRes, updatePrefill, legalPrefill] = await Promise.all([
     sb.from('companies').select('id, slug, name, active').order('name'),
     sb.from('actions')
-      .select('id, title, description, action_type, priority, due_date, created_at, company_id, companies(id, slug, name)')
+      .select('id, title, description, action_type, priority, due_date, created_at, company_id, status, source_type, source_id, companies(id, slug, name)')
       .eq('created_by_admin', true)
       .gte('created_at', ninetyDaysAgo)
       .order('created_at', { ascending: false })

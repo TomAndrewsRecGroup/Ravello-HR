@@ -44,6 +44,7 @@ const inserted: any[] = [];
 // this codebase's own established "recognise a duplicate by CODE, never
 // by message text" rule (see CLAUDE.md, Phase 16 Group 3's own lesson).
 let claimedKeys: Set<string>;
+let claimedRows: any[];
 let actionsInsertShouldFail: boolean;
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -59,6 +60,7 @@ vi.mock('@/lib/supabase/server', () => ({
               return Promise.resolve({ error: { code: '23505', message: 'duplicate key value violates unique constraint' } });
             }
             claimedKeys.add(row.id);
+            claimedRows.push(row);
             return Promise.resolve({ error: null });
           },
           delete: () => ({
@@ -111,6 +113,7 @@ beforeEach(() => {
   sent.length = 0;
   auditCalls.length = 0;
   claimedKeys = new Set();
+  claimedRows = [];
   actionsInsertShouldFail = false;
 });
 
@@ -221,5 +224,49 @@ describe('POST /api/broadcast', () => {
     expect(retried.status).toBe(200);
     expect((await retried.json()).created).toBe(1);
     expect(inserted).toHaveLength(1);
+  });
+
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7).
+  const LEGAL_ID = 'cccccccc-3333-4333-8333-333333333333';
+
+  it('a broadcast carrying source_type/source_id records them on the claim row AND propagates source_type: regulatory_broadcast onto every created action, keyed by the broadcast_key', async () => {
+    const res = await POST(req({
+      company_ids: [COMPANY_A, COMPANY_B], title: 'Legal update', action_type: 'compliance', priority: 'high',
+      broadcast_key: KEY_1, source_type: 'legal_requirement', source_id: LEGAL_ID,
+    }));
+    expect(res.status).toBe(200);
+    expect(claimedRows[0]).toMatchObject({ source_type: 'legal_requirement', source_id: LEGAL_ID });
+    expect(inserted).toHaveLength(2);
+    expect(inserted.every(a => a.source_type === 'regulatory_broadcast' && a.source_id === KEY_1)).toBe(true);
+  });
+
+  it('an ordinary hand-typed broadcast (no source_type) leaves both the claim row and the created actions without a source_type — unchanged from before this group', async () => {
+    const res = await POST(req({
+      company_ids: [COMPANY_A], title: 'Hand typed', action_type: 'compliance', priority: 'normal', broadcast_key: KEY_1,
+    }));
+    expect(res.status).toBe(200);
+    expect(claimedRows[0].source_type).toBeNull();
+    expect(claimedRows[0].source_id).toBeNull();
+    expect(inserted[0].source_type).toBeUndefined();
+    expect(inserted[0].source_id).toBeUndefined();
+  });
+
+  it('refuses source_type without source_id (a half pair), before any claim or write', async () => {
+    const res = await POST(req({
+      company_ids: [COMPANY_A], title: 'X', action_type: 'compliance', priority: 'normal', broadcast_key: KEY_1,
+      source_type: 'legal_requirement',
+    }));
+    expect(res.status).toBe(400);
+    expect(claimedKeys.has(KEY_1)).toBe(false);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it('refuses an unrecognised source_type value', async () => {
+    const res = await POST(req({
+      company_ids: [COMPANY_A], title: 'X', action_type: 'compliance', priority: 'normal', broadcast_key: KEY_1,
+      source_type: 'bogus', source_id: LEGAL_ID,
+    }));
+    expect(res.status).toBe(400);
+    expect(inserted).toHaveLength(0);
   });
 });

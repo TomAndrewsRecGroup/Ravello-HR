@@ -1,47 +1,13 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Send, ChevronLeft, ChevronRight } from 'lucide-react';
-
-interface Action {
-  id:           string;
-  title:        string;
-  description:  string | null;
-  action_type:  string;
-  priority:     string;
-  due_date:     string | null;
-  created_at:   string;
-  company_id:   string;
-  // PostgREST embed shape varies — sometimes the typed client infers
-  // an array (many-to-one FK), sometimes a single object. Accept both
-  // and normalise when bucketing.
-  companies:    { id: string; slug: string | null; name: string } | { id: string; slug: string | null; name: string }[] | null;
-}
+import { Send, ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
+import { groupBroadcastActions, type BroadcastActionRow } from '@/lib/broadcast/rollup';
 
 // Groups individual action rows back into the broadcasts that created
-// them. A broadcast inserts one row per recipient company at the same
-// timestamp with identical title + description. We bucket by
-// (title|description|created_at-rounded-to-the-second) so 50 rows
-// from one send collapse to one display row showing the recipient
-// count.
-
-interface Bucket {
-  key:           string;
-  title:         string;
-  description:   string | null;
-  action_type:   string;
-  priority:      string;
-  due_date:      string | null;
-  created_at:    string;
-  companies:     { id: string; slug: string | null; name: string }[];
-}
-
-function bucketKey(a: Action): string {
-  // Round to the nearest second — broadcasts insert in a tight loop.
-  const ts = new Date(a.created_at);
-  ts.setMilliseconds(0);
-  return `${a.title}|${a.description ?? ''}|${ts.toISOString()}`;
-}
+// them — see lib/broadcast/rollup.ts for the grouping/completion logic
+// itself (source_id when present, the title|description|timestamp
+// heuristic otherwise).
 
 const PRIORITY_TONE: Record<string, { bg: string; fg: string; label: string }> = {
   urgent: { bg: 'rgba(217,68,68,0.10)',  fg: 'var(--red)',    label: 'Urgent' },
@@ -52,34 +18,10 @@ const PRIORITY_TONE: Record<string, { bg: string; fg: string; label: string }> =
 
 const PAGE_SIZE = 10;
 
-export default function RecentBroadcasts({ actions }: { actions: Action[] }) {
+export default function RecentBroadcasts({ actions }: { actions: BroadcastActionRow[] }) {
   const [page, setPage] = useState(1);
 
-  const buckets: Bucket[] = useMemo(() => {
-    const byKey = new Map<string, Bucket>();
-    for (const a of actions) {
-      const key = bucketKey(a);
-      let b = byKey.get(key);
-      if (!b) {
-        b = {
-          key,
-          title:        a.title,
-          description:  a.description,
-          action_type:  a.action_type,
-          priority:     a.priority,
-          due_date:     a.due_date,
-          created_at:   a.created_at,
-          companies:    [],
-        };
-        byKey.set(key, b);
-      }
-      // Normalise the embed: array (PostgREST one-to-many shape) or
-      // single object (one-to-one). Pick the first row either way.
-      const c = Array.isArray(a.companies) ? a.companies[0] : a.companies;
-      if (c) b.companies.push(c);
-    }
-    return Array.from(byKey.values());
-  }, [actions]);
+  const buckets = useMemo(() => groupBroadcastActions(actions), [actions]);
 
   const totalPages = Math.max(1, Math.ceil(buckets.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -112,6 +54,7 @@ export default function RecentBroadcasts({ actions }: { actions: Action[] }) {
                   <th>Due</th>
                   <th>Sent</th>
                   <th>Recipients</th>
+                  <th>Completion</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,7 +63,18 @@ export default function RecentBroadcasts({ actions }: { actions: Action[] }) {
                   return (
                     <tr key={b.key}>
                       <td>
-                        <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{b.title}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink)' }}>{b.title}</p>
+                          {b.regulatory && (
+                            <span
+                              className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                              style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
+                              title="Raised from a legal requirement or regulatory update — Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7)"
+                            >
+                              <ScrollText size={10} /> Regulatory
+                            </span>
+                          )}
+                        </div>
                         {b.description && (
                           <p className="text-[11px] mt-0.5 truncate max-w-[28ch]" style={{ color: 'var(--ink-faint)' }}>
                             {b.description}
@@ -160,6 +114,9 @@ export default function RecentBroadcasts({ actions }: { actions: Action[] }) {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="text-xs" style={{ color: b.complete === b.total ? 'var(--teal)' : 'var(--ink-faint)' }}>
+                        {b.complete} of {b.total} complete
                       </td>
                     </tr>
                   );

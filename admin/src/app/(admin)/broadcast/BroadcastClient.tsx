@@ -5,7 +5,13 @@ import type { CompanyRef } from '@/lib/supabase/types';
 
 import { ACTION_PRIORITIES, ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
-export interface BroadcastPrefill { title: string; description: string; companyIds: string[] }
+export interface BroadcastPrefill {
+  title: string; description: string; companyIds: string[];
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7) —
+  // see lib/governance/broadcastPrefill.ts's own comment.
+  sourceType?: 'legal_requirement' | 'regulatory_update';
+  sourceId?:   string;
+}
 interface Props { companies: CompanyRef[]; prefill?: BroadcastPrefill | null }
 
 // Sourced from the shared vocabularies rather than a local copy — this
@@ -41,6 +47,13 @@ export default function BroadcastClient({ companies, prefill }: Props) {
   // modal is cancelled outright — so a retry after a network error
   // dedupes server-side instead of creating a second broadcast.
   const [broadcastKey, setBroadcastKey] = useState<string | null>(null);
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7): the
+  // regulatory origin, fixed at mount from the prefill and preserved
+  // through any edits to title/description/recipients — those are
+  // staff refinements of the SAME send, not a new, unrelated one.
+  const [source] = useState<{ sourceType?: string; sourceId?: string }>({
+    sourceType: prefill?.sourceType, sourceId: prefill?.sourceId,
+  });
 
   function toggleAll() {
     if (selected.size === active.length) {
@@ -72,7 +85,10 @@ export default function BroadcastClient({ companies, prefill }: Props) {
       const res = await fetch('/api/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, company_ids: Array.from(selected), broadcast_key: broadcastKey }),
+        body: JSON.stringify({
+          ...form, company_ids: Array.from(selected), broadcast_key: broadcastKey,
+          ...(source.sourceType ? { source_type: source.sourceType, source_id: source.sourceId } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed');
