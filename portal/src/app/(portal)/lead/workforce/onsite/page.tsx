@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowLeft, Users, ShieldAlert } from 'lucide-react';
 import { getWorkforceContext } from '@/lib/workforce/context';
 import { WORKFORCE_BASE, workforcePersonPath } from '@/lib/workforce/vocab';
+import ManualCheckinForm from './ManualCheckinForm';
+import CheckoutButton from './CheckoutButton';
 
 export const metadata: Metadata = { title: 'On site' };
 export const dynamic = 'force-dynamic';
@@ -13,15 +15,24 @@ const fmt = (d: string) => new Date(d).toLocaleString('en-GB', { day: 'numeric',
 
 // Core-OS 360 Phase 14, Group 2. Attendance, not compliance — a
 // NOT_READY worker can still be checked in here (see site_checkins'
-// own header comment, migration 179). The only way a row appears or
-// disappears is the public /w/[token] scan page; there is no manual
-// check-in/out control here, deliberately (the plan doc's own flagged
-// debt) — this page is a live READ of who a badge scan says is
-// currently on site, nothing more.
+// own header comment, migration 179).
+//
+// Core-OS 360 Completion Programme, Phase 26, Group 2 (C14.7). Until
+// now the only way a row appeared or disappeared was the public
+// /w/[token] scan page — deliberately flagged debt in the original
+// plan doc. A worker with no badge, a lost badge, or a staffed kiosk
+// had no way onto the roster at all. `ManualCheckinForm`/
+// `CheckoutButton` close that, gated on workforce.manage: migration
+// 195's own RLS policies and its new site_checkins_manual_guard()
+// trigger are the real gate (own company, an EXPLICIT site, never a
+// guessed default, and a non-staff session may only ever change
+// checked_out_at once a row exists) — these components are a plain
+// session insert/update under that RLS, never a bespoke API route.
 export default async function OnSitePage() {
   const ctx = await getWorkforceContext();
   const { supabase, companyId } = ctx;
   if (!companyId || !ctx.can('workforce.read')) return <CannotSee />;
+  const canManage = ctx.can('workforce.manage');
 
   const { data: checkinsRaw, error } = await supabase
     .from('site_checkins')
@@ -35,12 +46,18 @@ export default async function OnSitePage() {
   const personIds = [...new Set(checkins.map(c => c.person_id))];
   const siteIds = [...new Set(checkins.map(c => c.site_id).filter((v): v is string => !!v))];
 
-  const [{ data: peopleRaw }, { data: sitesRaw }] = await Promise.all([
+  const [{ data: peopleRaw }, { data: sitesRaw }, { data: allPeopleRaw }, { data: allSitesRaw }] = await Promise.all([
     personIds.length > 0
       ? supabase.from('people').select('id, full_name').in('id', personIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
     siteIds.length > 0
       ? supabase.from('hs_sites').select('id, name').in('id', siteIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    canManage
+      ? supabase.from('people').select('id, full_name').eq('company_id', companyId).eq('active_status', 'active').order('full_name').limit(500)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+    canManage
+      ? supabase.from('hs_sites').select('id, name').eq('company_id', companyId).eq('active', true).order('name').limit(500)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
 
@@ -63,8 +80,15 @@ export default async function OnSitePage() {
 
       <div className="card p-4 text-sm" style={{ color: 'var(--ink-soft)' }}>
         Who a worker QR badge scan has checked in and not yet checked out — attendance only, this never reflects
-        Safe to Deploy status. Check-in and check-out both happen by scanning the worker&rsquo;s own badge.
+        Safe to Deploy status. Check-in and check-out happen by scanning the worker&rsquo;s own badge{canManage ? ', or manually below' : '.'}
       </div>
+
+      {canManage && (
+        <ManualCheckinForm
+          people={(allPeopleRaw ?? []) as { id: string; full_name: string }[]}
+          sites={(allSitesRaw ?? []) as { id: string; name: string }[]}
+        />
+      )}
 
       {error && (
         <p className="card p-3 text-sm" role="alert" style={{ color: 'var(--red)' }}>
@@ -89,11 +113,14 @@ export default async function OnSitePage() {
               </h2>
               <ul className="space-y-1">
                 {rows.map(c => (
-                  <li key={c.id} className="flex items-center justify-between text-sm">
+                  <li key={c.id} className="flex items-center justify-between text-sm gap-2">
                     <Link href={workforcePersonPath(c.person_id)} style={{ color: 'var(--ink)' }}>
                       {nameByPerson.get(c.person_id) ?? 'Unknown person'}
                     </Link>
-                    <span style={{ color: 'var(--ink-faint)' }}>Since {fmt(c.checked_in_at)}</span>
+                    <span className="flex items-center gap-2">
+                      <span style={{ color: 'var(--ink-faint)' }}>Since {fmt(c.checked_in_at)}</span>
+                      {canManage && <CheckoutButton checkinId={c.id} />}
+                    </span>
                   </li>
                 ))}
               </ul>
