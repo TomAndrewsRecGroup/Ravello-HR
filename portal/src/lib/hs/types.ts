@@ -318,6 +318,26 @@ export interface PermitPerson {
   added_at: string;
 }
 
+export interface PermitTemplateItem {
+  id: string;
+  template_id: string;
+  prompt: string;
+  guidance: string | null;
+  sort_order: number;
+}
+
+export interface PermitChecklistResponse {
+  id: string;
+  permit_id: string;
+  company_id: string;
+  template_item_id: string | null;
+  prompt: string;
+  rating: 'confirmed' | 'not_applicable';
+  comment: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Isolation {
   id: string;
   company_id: string;
