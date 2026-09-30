@@ -20,7 +20,7 @@ export default async function HealthSafetyManagementReviewPage(props: { params: 
       .select('id, company_id, review_date, chaired_by, status, completed_at, created_by, created_at, updated_at')
       .eq('company_id', params.companyId).order('review_date', { ascending: false }),
     readAllPages<{ id: string; full_name: string }>((from, to) =>
-      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').range(from, to)),
+      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').order('id').range(from, to)),
     supabase.from('companies').select('name').eq('id', params.companyId).maybeSingle(),
   ]);
 

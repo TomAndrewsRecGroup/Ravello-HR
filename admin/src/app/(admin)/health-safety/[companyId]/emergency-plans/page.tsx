@@ -26,13 +26,13 @@ export default async function HealthSafetyEmergencyPlansPage(props: { params: Pr
         .select('id, company_id, plan_id, site_id, drill_date, conducted_by, evacuation_time_seconds, outcome, findings, created_by, created_at')
         .eq('company_id', params.companyId).order('drill_date', { ascending: false }).order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
-      supabase.from('hs_sites').select('id, name').eq('company_id', params.companyId).eq('active', true).order('name').range(from, to)),
+      supabase.from('hs_sites').select('id, name').eq('company_id', params.companyId).eq('active', true).order('name').order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
-      supabase.from('hs_equipment').select('id, name').eq('company_id', params.companyId).order('name').range(from, to)),
+      supabase.from('hs_equipment').select('id, name').eq('company_id', params.companyId).order('name').order('id').range(from, to)),
     readAllPages<{ id: string; full_name: string }>((from, to) =>
-      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').range(from, to)),
+      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
-      supabase.from('authorisation_types').select('id, title').eq('company_id', params.companyId).order('title').range(from, to)),
+      supabase.from('authorisation_types').select('id, title').eq('company_id', params.companyId).order('title').order('id').range(from, to)),
   ]);
 
   // Roles and linked equipment are scoped to THIS company's own plans —

@@ -20,14 +20,14 @@ export default async function HealthSafetyEnvironmentalWastePage(props: { params
     readAllPages<WasteStream>((from, to) =>
       supabase.from('waste_streams')
         .select('id, company_id, name, waste_code, hazardous, typical_disposal_route, created_by, created_at')
-        .eq('company_id', params.companyId).order('name').range(from, to)),
+        .eq('company_id', params.companyId).order('name').order('id').range(from, to)),
     readAllPages<WasteMovement>((from, to) =>
       supabase.from('waste_movements')
         .select('id, company_id, waste_stream_id, site_id, moved_at, quantity, unit, carrier_contractor_id, disposal_site_contractor_id, consignment_note_reference, non_conformance, notes, created_by, created_at, updated_at')
-        .eq('company_id', params.companyId).order('moved_at', { ascending: false }).range(from, to)),
+        .eq('company_id', params.companyId).order('moved_at', { ascending: false }).order('id').range(from, to)),
     readAllPages<Contractor>((from, to) =>
       supabase.from('contractors').select('id, company_id, name, registration_number, contact_name, contact_email, contact_phone, approval_status, risk_rating, notes, created_by, created_at, updated_at')
-        .eq('company_id', params.companyId).order('name').range(from, to)),
+        .eq('company_id', params.companyId).order('name').order('id').range(from, to)),
   ]);
 
   return (
