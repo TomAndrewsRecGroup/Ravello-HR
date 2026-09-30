@@ -182,6 +182,9 @@ export const NOTIFICATION_TYPES = [
   // draft to issued — the client's own board can now read and
   // acknowledge it.
   'board_assurance_report_issued',
+  // Core-OS 360 Phase 16, Group 2: a staff-curated, anonymised lesson
+  // learned at another client was shared with this one.
+  'lesson_learned_published',
 ] as const;
 
 export type NotificationType = typeof NOTIFICATION_TYPES[number];
@@ -314,6 +317,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   referral_scan_failed:       'Referral scan failed',
   consultancy_followup_due:   'Follow-up visit due',
   board_assurance_report_issued: 'Board assurance report issued',
+  lesson_learned_published:   'New lesson learned shared with you',
 };
 
 export function isNotificationType(v: string): v is NotificationType {

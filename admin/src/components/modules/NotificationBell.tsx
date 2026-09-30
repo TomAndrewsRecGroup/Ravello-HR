@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Bell, Briefcase, LifeBuoy, ShieldCheck, Users,
-  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock, HardHat, Sparkles, GraduationCap, Target,
+  FileText, AlertTriangle, CheckCircle2, CheckSquare, CalendarClock, HardHat, Sparkles, GraduationCap, Target, Lightbulb,
 } from 'lucide-react';
 import { isNotificationType, type NotificationType } from '@/lib/notify/types';
 import { createClient } from '@/lib/supabase/client';
@@ -148,6 +148,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   referral_scan_failed:       { icon: AlertTriangle, color: 'var(--red)' },
   consultancy_followup_due:   { icon: CalendarClock, color: 'var(--purple)' },
   board_assurance_report_issued: { icon: CheckCircle2, color: 'var(--success)' },
+  lesson_learned_published: { icon: Lightbulb, color: 'var(--gold)' },
 };
 
 export const BELL_TYPE_KEYS = Object.keys(TYPE_CONFIG);

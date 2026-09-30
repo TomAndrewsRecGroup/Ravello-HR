@@ -9237,3 +9237,91 @@ route; 102 blind-update chains, unchanged), admin production build
 compiles. Migration 181 applied live and verified (all three tables
 exist, 17/17 probe checks pass).
 
+### Group 2: admin authoring UI, portal read UI, publish + notify
+
+- **Admin**: a 30th `HsCompanyTabs`-adjacent cross-client page,
+  `/health-safety/lessons-learned` (linked from `AdminSidebar.tsx`'s
+  PROTECT group, the same pattern `legal-register`/`iso-readiness`/
+  `governance-calendar` already use — `lessons_learned` has no
+  `company_id`, so this is a cross-client staff catalogue page, not a
+  per-`HsCompanyTabs` tab). `LessonsLearnedClient.tsx`: draft/edit a
+  lesson (title, category, anonymised summary, optional recommended
+  action, an optional "drawn from" source type + a plain pasted record
+  id — the same "the id field is a plain paste" precedent
+  `IsoClient.tsx`'s own `standard_evidence_links` UI already
+  established, never a record picker), then Publish, which opens a
+  distribution picker: a "suggest by sector similarity to…" reference
+  company dropdown recomputes `suggestDistributionTargets()` and ADDS
+  its result to the checked list (never replaces a staff member's own
+  prior selection) — a checkbox list of every active company, staff
+  confirms before anything sends. Already-distributed companies show
+  disabled/checked and cannot be removed from here.
+- **`POST /api/admin/lessons-learned/[id]/publish`** is the ONE place
+  a lesson is ever told to a client — `requireStaff()`, a conditional
+  counted UPDATE moves a draft to `published`, then one
+  `lesson_learned_distributions` insert per chosen company (a
+  duplicate-key error, meaning already shared, is silently skipped —
+  this route is also how staff adds MORE recipients to an
+  already-published lesson) followed by a direct, SYNCHRONOUS
+  `notify()` call to that company's admins — the same `lib/bd/
+  score.ts`/H&S Tests precedent for a route that already holds the
+  data a consequence rule would otherwise have to re-derive from an
+  outbox event with no single `company_id` to key on at all
+  (`lessons_learned` has none). `dedupeKey:
+  lesson_learned_published:<lessonId>:<companyId>` — a re-run for the
+  same pair notifies nobody twice.
+- **New notification type `lesson_learned_published`** in the shared
+  `notify/types.ts` (57 shared-dupe pairs, up from 56 — this pair was
+  already tracked; the new TYPE entry itself needed no new pair), both
+  bells' icon maps (`Lightbulb`/gold — a genuinely new signal, not a
+  Jev suggestion, so not the `Sparkles`/purple styling those use).
+- **Portal**: read-only `/protect/lessons-learned`, gated by `protect`
+  alone. Follows the exact `legal-register` precedent (159/D.4):
+  `lessons_learned` is staff-only RLS with no client policy at all, so
+  the page reads the caller's OWN `lesson_learned_distributions` rows
+  first (RLS-protected, own company only), then fetches ONLY those
+  lessons' content with the SERVICE ROLE, filtered again to `status =
+  'published'` as defence in depth — `source_type`/`source_id` is
+  never selected in this read at all. `MarkLessonRead.tsx` inserts into
+  `lesson_learned_reads` naming only the lesson id; `company_id`/
+  `read_by`/`read_by_name` are entirely derived server-side by the
+  migration's own fill trigger, so there is nothing else for the
+  client to send.
+- **`lib/lessonsLearned/types.ts` is now a shared-dupe pair** (mirrored
+  byte-identical to portal, added to `check-shared-dupes.sh`) — the
+  vocab/interfaces are pure and needed on both sides; `suggestDistribution.ts`
+  stays admin-only, since only the authoring UI ever picks a
+  distribution list.
+- **Two CI-guard findings from this group's own first draft, both
+  fixed before this shipped**: `check-row-cap.sh` caught three
+  `.limit(1000)` reads in the admin page (converted to `readAllPages()`
+  with a stable `id` tie-break sort, per the standing pagination rule);
+  `check-blind-updates.sh` caught the publish route's status-flip
+  UPDATE and the editor's own edit-save UPDATE, both fixed with
+  `{ count: 'exact' }` + `judgeWrite()`/an explicit count check before
+  this was committed — built counted from the start is the discipline,
+  catching it here is the guard doing its job.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1587 admin, unchanged — this group is UI-only over Group 1's already-
+tested logic, the established "no component-level test" convention;
+753 portal — 750 + 3, `portalPagesLinked.test.ts`/
+`clientServerBoundary.test.ts` picking up the new route and components
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 57 pairs, up from 56; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged — the publish route
+validates with `parseBody`; `check-admin-routes-linked.sh`: 43 static
+routes, all reachable; `check-blind-updates.sh`: 102, unchanged), both
+production builds compile, including `/health-safety/lessons-learned`
+and `/protect/lessons-learned`.
+
+### Group 3
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
+and merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
+
+**Phase 17 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
