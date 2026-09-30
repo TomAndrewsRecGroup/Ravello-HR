@@ -57,4 +57,23 @@ describe('POST /api/admin/hs/tests', () => {
     }));
     expect(res.status).toBe(400);
   });
+
+  // Phase 21 (Core-OS 360 Completion Programme, C3.9): a test may
+  // optionally name the training_courses row a pass satisfies. The
+  // database's own hs_tests_course_guard (183) is what actually refuses
+  // a non-global course — this only pins the route's own passthrough.
+  it('passes course_id through to the insert when set', async () => {
+    const res = await POST(req({
+      title: 'Fire Warden Refresher', source_type: 'manual', certifies_training: true,
+      course_id: '22222222-2222-4222-8222-222222222222',
+    }));
+    expect(res.status).toBe(200);
+    expect(db.tables.hs_tests[0]).toMatchObject({ course_id: '22222222-2222-4222-8222-222222222222' });
+  });
+
+  it('course_id defaults to null when not set', async () => {
+    const res = await POST(req({ title: 'Untitled quiz', source_type: 'manual' }));
+    expect(res.status).toBe(200);
+    expect(db.tables.hs_tests[0]).toMatchObject({ course_id: null });
+  });
 });

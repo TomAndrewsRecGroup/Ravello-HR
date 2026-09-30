@@ -4,7 +4,7 @@ import path from 'node:path';
 import {
   ruleState, groupRules, countInForce, suggestReplaced, replaceableRules, earliestEndDate, addDaysIso,
   validateRuleForm, buildRuleInsert, EMPTY_RULE_FORM, optionsForType, referenceTitle, catalogueFor,
-  DELIVERY_METHODS, OH_REQUIREMENT_CATEGORIES, CATALOGUE_CONFIG, buildCatalogueRow, emptyValues, rowToValues,
+  DELIVERY_METHODS, OH_REQUIREMENT_CATEGORIES, CATALOGUE_CONFIG, buildCatalogueRow, emptyValues, rowToValues, cellText,
   validateSession, attendanceSummary, RULE_SCOPE_COLUMN, roleFields, EMPTY_ROLE, SESSION_STATUS_LABELS, dbMessage, type RuleRow, type CatalogueOption,
 } from '../requirements';
 
@@ -163,6 +163,37 @@ describe('buildCatalogueRow', () => {
     const v = rowToValues('health', { title: 'Audiometry', category: 'audiometry', frequency_months: 12, safety_critical: false });
     expect(v).toEqual({ title: 'Audiometry', category: 'audiometry', frequency_months: '12', safety_critical: false });
     expect(Object.keys(CATALOGUE_CONFIG)).toHaveLength(8);
+  });
+  // Phase 21 (Core-OS 360 Completion Programme, C3.8): a course may
+  // optionally name which published E-Learning marketplace item
+  // delivers it, purely a reference link — never required, never
+  // validated against a live table here (the FK does that).
+  it('courses config carries an optional learning_content_id field', () => {
+    const field = CATALOGUE_CONFIG.courses.fields.find(f => f.name === 'learning_content_id');
+    expect(field).toMatchObject({ kind: 'learning_content', column: true });
+    expect(field?.required).toBeFalsy();
+    expect(CATALOGUE_CONFIG.courses.select).toContain('learning_content_id');
+  });
+});
+
+describe('cellText', () => {
+  const siteName = (id: string) => (id === 's1' ? 'Head Office' : '—');
+  const learningContentTitle = (id: string) => (id === 'lc1' ? 'Manual Handling Video' : '—');
+  it('resolves a site id to its name', () => {
+    const field = CATALOGUE_CONFIG.inductions.fields.find(f => f.kind === 'site')!;
+    expect(cellText(field, 's1', siteName)).toBe('Head Office');
+  });
+  it('resolves a learning_content id to its title, given the lookup', () => {
+    const field = { name: 'learning_content_id', label: 'E-Learning content', kind: 'learning_content' as const };
+    expect(cellText(field, 'lc1', siteName, learningContentTitle)).toBe('Manual Handling Video');
+  });
+  it('shows a dash for a learning_content value with no lookup supplied', () => {
+    const field = { name: 'learning_content_id', label: 'E-Learning content', kind: 'learning_content' as const };
+    expect(cellText(field, 'lc1', siteName)).toBe('—');
+  });
+  it('shows a dash for an unset value regardless of kind', () => {
+    const field = { name: 'learning_content_id', label: 'E-Learning content', kind: 'learning_content' as const };
+    expect(cellText(field, null, siteName, learningContentTitle)).toBe('—');
   });
 });
 

@@ -8,6 +8,7 @@ import FileLink from '@/components/modules/FileLink';
 interface EmpDoc {
   id: string;
   employee_name: string;
+  employee_id: string | null;
   employee_email: string | null;
   department: string | null;
   doc_type: string;
@@ -16,11 +17,12 @@ interface EmpDoc {
   file_url: string | null;
   expiry_date: string | null;
   status: string;
+  filed_by_authorised: boolean;
   notes: string | null;
   created_at: string;
 }
 
-interface Props { companyId: string; userId: string; initialDocs: EmpDoc[]; }
+interface Props { companyId: string; userId: string; initialDocs: EmpDoc[]; employeeRecords: { id: string; full_name: string }[]; }
 
 const DOC_TYPES = [
   'contract', 'right_to_work', 'dbs_check', 'visa', 'offer_letter',
@@ -49,7 +51,7 @@ function fmtDate(d: string | null): string {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function EmployeeDocsClient({ companyId, userId, initialDocs }: Props) {
+export default function EmployeeDocsClient({ companyId, userId, initialDocs, employeeRecords }: Props) {
   const supabase = createClient();
   const [docs, setDocs] = useState<EmpDoc[]>(initialDocs);
   const [showForm, setShowForm] = useState(false);
@@ -57,7 +59,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
   const [filterType, setFilterType] = useState('all');
   const [filterEmployee, setFilterEmployee] = useState('all');
   const [form, setForm] = useState({
-    employee_name: '', employee_email: '', department: '',
+    employee_id: '', employee_name: '', employee_email: '', department: '',
     doc_type: 'contract', title: '', file_url: '',
     expiry_date: '', notes: '',
   });
@@ -104,6 +106,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
       company_id:     companyId,
       uploaded_by:    userId,
       employee_name:  form.employee_name,
+      employee_id:    form.employee_id || null,
       employee_email: form.employee_email || null,
       department:     form.department || null,
       doc_type:       form.doc_type,
@@ -116,7 +119,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
     if (!error && data) {
       setDocs(prev => [...prev, data as EmpDoc].sort((a, b) => a.employee_name.localeCompare(b.employee_name)));
       setShowForm(false);
-      setForm({ employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
+      setForm({ employee_id: '', employee_name: '', employee_email: '', department: '', doc_type: 'contract', title: '', file_url: '', expiry_date: '', notes: '' });
       setSuggestion(null); setSuggestNote('');
       revalidatePortalPath('/lead/employee-docs');
     }
@@ -203,9 +206,25 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
         <div className="card p-5 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Add Employee Document</p>
           <div className="grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="label">Employee record (recommended)</label>
+              <select className="input" value={form.employee_id}
+                onChange={e => {
+                  const id = e.target.value;
+                  const emp = employeeRecords.find(x => x.id === id);
+                  setForm(f => ({ ...f, employee_id: id, employee_name: emp ? emp.full_name : f.employee_name }));
+                }}>
+                <option value="">Not linked to an employee record — type a name below</option>
+                {employeeRecords.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+              </select>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+                Linking to a record is what lets this document count toward that person's training/compliance status
+                elsewhere in the platform. An unlinked document is stored but invisible to that engine.
+              </p>
+            </div>
             <div>
               <label className="label">Employee Name *</label>
-              <input className="input" placeholder="e.g. Sarah Jones" value={form.employee_name} onChange={e => set('employee_name', e.target.value)} />
+              <input className="input" placeholder="e.g. Sarah Jones" value={form.employee_name} onChange={e => set('employee_name', e.target.value)} disabled={!!form.employee_id} />
             </div>
             <div>
               <label className="label">Employee Email</label>
@@ -289,6 +308,7 @@ export default function EmployeeDocsClient({ companyId, userId, initialDocs }: P
                     <td>
                       <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
                       {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
+                      {!d.employee_id && <p className="text-xs" style={{ color: 'var(--rose)' }}>Not linked to an employee record</p>}
                     </td>
                     <td className="text-sm">{DOC_TYPE_LABELS[d.doc_type] ?? d.doc_type}</td>
                     <td className="text-sm max-w-[200px] truncate">{d.title}</td>

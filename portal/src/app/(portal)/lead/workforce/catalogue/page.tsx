@@ -84,20 +84,26 @@ export default async function CataloguePage(props: { searchParams: Promise<Recor
     const cfg = CATALOGUE_CONFIG[tab];
     let q = supabase.from(cfg.table).select(cfg.select);
     q = cfg.hasGlobal ? q.or(`company_id.is.null,company_id.eq.${companyId}`) : q.eq('company_id', companyId);
-    const [{ data, error }, levelsRes] = await Promise.all([
+    const [{ data, error }, levelsRes, learningContentRes] = await Promise.all([
       q.order('title').limit(LIMIT),
       tab === 'competencies'
         ? supabase.from('competency_levels').select('id, company_id, key, label, rank, description')
             .or(`company_id.is.null,company_id.eq.${companyId}`).order('rank').limit(100)
         : Promise.resolve({ data: null, error: null }),
+      // Only the courses tab's learning_content_id picker needs this;
+      // fetched unconditionally on every tab is not worth branching for
+      // — it is one small, cheap, already-indexed (is_published) read.
+      supabase.from('learning_content').select('id, title').eq('is_published', true).order('title').limit(LIMIT),
     ]);
     const rows = ((data ?? []) as unknown as Row[])
       .sort((a, b) => Number(a.active_status !== 'active') - Number(b.active_status !== 'active'));
     const levels = (levelsRes.data ?? []) as { id: string; company_id: string | null; key: string; label: string; rank: number; description: string | null }[];
+    const learningContent = ((learningContentRes.data ?? []) as { id: string; title: string }[])
+      .map(c => ({ id: c.id, name: c.title }));
     body = (
       <div className="space-y-4">
         {error && <p role="alert" className="card p-3 text-sm" style={{ color: 'var(--red)' }}>This catalogue could not be loaded. Refresh to try again.</p>}
-        <CatalogueClient tab={tab} rows={rows} companyId={companyId} canManage={manage} sites={sites} />
+        <CatalogueClient tab={tab} rows={rows} companyId={companyId} canManage={manage} sites={sites} learningContent={learningContent} />
         {tab === 'competencies' && (
           <section className="card p-5 space-y-2" aria-labelledby="levels-h">
             <h2 id="levels-h" className="font-semibold" style={{ color: 'var(--ink)' }}>Competency levels</h2>

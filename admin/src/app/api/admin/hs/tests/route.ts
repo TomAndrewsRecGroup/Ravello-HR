@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { parseBody } from '@/lib/validation/parseBody';
-import { z, uuid, shortText, optionalShortText, optionalLongText, optionalHttpsUrl, percentage, enumOf } from '@/lib/validation/primitives';
+import { z, uuid, shortText, optionalShortText, optionalLongText, optionalHttpsUrl, percentage, enumOf, optionalUuid } from '@/lib/validation/primitives';
 import { HS_TEST_SOURCE_TYPES } from '@/lib/hs/vocab';
 
 // POST /api/admin/hs/tests — create a test in the bank. Only 'built_in'
@@ -28,6 +28,7 @@ const Body = z.object({
   questions:          z.array(QuestionInput).max(100).optional().nullable(),
   certifies_training: z.boolean().default(false),
   recert_months:      z.number().int().min(1).max(120).optional().nullable(),
+  course_id:          optionalUuid,
 }).refine(b => b.source_type !== 'built_in' || (b.pass_mark != null && !!b.questions?.length), {
   message: 'A built-in test needs a pass mark and at least one question', path: ['questions'],
 }).refine(b => b.source_type === 'built_in' || !!b.external_url || b.source_type === 'manual', {
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
     pass_mark: b.source_type === 'built_in' ? b.pass_mark : null,
     questions: b.source_type === 'built_in' ? b.questions : null,
     certifies_training: b.certifies_training, recert_months: b.recert_months,
+    course_id: b.course_id,
     created_by: auth.userId,
   }).select('id').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

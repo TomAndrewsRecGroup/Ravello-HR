@@ -11,6 +11,7 @@ interface EmployeeRef { id: string; company_id: string; full_name: string }
 
 interface Props {
   test: HsTest;
+  courseTitle: string | null;
   companies: CompanyRef[];
   employees: EmployeeRef[];
   sessions: HsTestSession[];
@@ -18,7 +19,7 @@ interface Props {
   submissions: HsTestSubmission[];
 }
 
-export default function TestDetailClient({ test, companies, employees, sessions, assignments, submissions }: Props) {
+export default function TestDetailClient({ test, courseTitle, companies, employees, sessions, assignments, submissions }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -82,7 +83,11 @@ export default function TestDetailClient({ test, companies, employees, sessions,
             <span className="badge">{HS_TEST_SOURCE_TYPE_LABELS[test.source_type]}</span>
             {test.category && <span className="badge">{test.category}</span>}
             {test.source_type === 'built_in' && <span className="badge">Pass mark {test.pass_mark}%</span>}
-            {test.certifies_training && <span className="badge">Logs training record{test.recert_months ? ` · ${test.recert_months}mo` : ''}</span>}
+            {test.certifies_training && (
+              <span className="badge">
+                Logs training record{test.recert_months ? ` · ${test.recert_months}mo` : ''}{courseTitle ? ` · satisfies "${courseTitle}"` : ''}
+              </span>
+            )}
           </div>
         </div>
         <button className="btn-cta btn-sm flex items-center gap-1.5" onClick={() => setSessionOpen(true)}>

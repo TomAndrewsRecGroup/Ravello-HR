@@ -16,6 +16,11 @@ export interface HsTest {
   questions: HsTestQuestion[] | null;
   certifies_training: boolean;
   recert_months: number | null;
+  // Optional: which training_courses row a PASS of this test satisfies
+  // (migration 183). Always a standard/global course (company_id NULL)
+  // — hs_tests are assigned across many client companies, and the
+  // database itself refuses any other kind (hs_tests_course_guard).
+  course_id: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;

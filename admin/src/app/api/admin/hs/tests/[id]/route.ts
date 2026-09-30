@@ -21,6 +21,13 @@ const Body = z.object({
   pass_mark:          percentage.optional().nullable(),
   certifies_training: z.boolean().optional(),
   recert_months:      z.number().int().min(1).max(120).optional().nullable(),
+  // course_id is set only at creation (POST) — deliberately not editable
+  // here. optionalUuid's `.transform(v => v || null)` runs even when the
+  // key is absent from the request body (unlike the plain
+  // .optional().nullable() fields above, which correctly omit
+  // themselves), which would silently NULL an existing mapping on
+  // every unrelated PATCH (e.g. editing just the title) if it were
+  // added to this partial-update schema.
   active:             z.boolean().optional(),
 });
 

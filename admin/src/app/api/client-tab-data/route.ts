@@ -94,11 +94,16 @@ export async function GET(request: NextRequest) {
     }
 
     case 'HR': {
-      const [{ data: absenceRecords }, { data: empDocs }] = await Promise.all([
+      const [{ data: absenceRecords }, { data: empDocs }, { data: employees }] = await Promise.all([
         supabase.from('absence_records').select('id,employee_name,absence_type,start_date,end_date,status,days,created_at').eq('company_id', companyId).order('start_date', { ascending: false }),
-        supabase.from('employee_documents').select('id,employee_name,doc_type,title,file_storage_path,file_url,expiry_date,status,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('employee_documents').select('id,employee_name,employee_id,doc_type,title,file_storage_path,file_url,expiry_date,status,filed_by_authorised,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
+        // For the upload form's "Link to employee record" picker (C3.7:
+        // documents are otherwise never linked to a person, so the
+        // Safe-to-Deploy engine and the person's own compliance view
+        // never see them).
+        supabase.from('employee_records').select('id, full_name').eq('company_id', companyId).eq('status', 'active').order('full_name').limit(500),
       ]);
-      return NextResponse.json({ absenceRecords: absenceRecords ?? [], empDocs: empDocs ?? [] });
+      return NextResponse.json({ absenceRecords: absenceRecords ?? [], empDocs: empDocs ?? [], employees: employees ?? [] });
     }
 
     case 'Services': {
