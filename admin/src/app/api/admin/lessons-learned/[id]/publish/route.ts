@@ -44,26 +44,37 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
   const companyIds = [...new Set(parsed.data.companyIds)];
   let distributed = 0;
   for (const companyId of companyIds) {
-    const { error, count } = await supabase.from('lesson_learned_distributions')
-      .insert({ lesson_id: lesson.id, company_id: companyId }, { count: 'exact' });
+    // No { count: 'exact' } here — an INSERT's own success/error already
+    // says everything needed: a clean insert IS a genuinely new
+    // distribution (nothing else can make lesson_learned_distributions_fill()
+    // succeed twice for the same pair, the table's UNIQUE constraint
+    // sees to that), and a duplicate always surfaces as an error, never
+    // a silent zero-row success the way an UPDATE/DELETE can.
+    const { error } = await supabase.from('lesson_learned_distributions')
+      .insert({ lesson_id: lesson.id, company_id: companyId });
     if (error) {
       // A duplicate (already distributed to this company) is expected
-      // and silently skipped; any other error is reported per-company
-      // rather than aborting the whole batch.
-      if (!error.message.includes('duplicate key')) {
+      // and silently skipped — checked by Postgres's own unique-
+      // violation code (23505), the established precedent
+      // (reportIncident.ts, qrTokens.ts, the webhook routes), never a
+      // string match on the error's own message text. Anything else
+      // (e.g. a companyId with no matching row at all) aborts the
+      // whole request rather than silently publishing to a partial
+      // list — the UI only ever offers real, live company ids, so this
+      // is a genuine anomaly worth failing loudly on, not a per-company
+      // condition to swallow and keep going past.
+      if (error.code !== '23505') {
         return NextResponse.json({ error: `Could not share with one client: ${error.message}` }, { status: 500 });
       }
       continue;
     }
-    if ((count ?? 0) > 0) {
-      distributed += 1;
-      await notify(supabase, {
-        audiences: [{ kind: 'company_admins', companyId }], companyId, type: 'lesson_learned_published',
-        title: `A new lesson learned has been shared with you: ${lesson.title}`,
-        link: { portal: '/protect/lessons-learned' },
-        dedupeKey: `lesson_learned_published:${lesson.id}:${companyId}`,
-      });
-    }
+    distributed += 1;
+    await notify(supabase, {
+      audiences: [{ kind: 'company_admins', companyId }], companyId, type: 'lesson_learned_published',
+      title: `A new lesson learned has been shared with you: ${lesson.title}`,
+      link: { portal: '/protect/lessons-learned' },
+      dedupeKey: `lesson_learned_published:${lesson.id}:${companyId}`,
+    });
   }
 
   return NextResponse.json({ ok: true, distributed });
