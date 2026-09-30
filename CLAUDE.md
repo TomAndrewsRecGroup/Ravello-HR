@@ -8916,13 +8916,61 @@ production builds compile, including `/api/workforce/people/[id]/badge`,
 `/lead/workforce/onsite`, `/w/[token]` and `/api/w/[token]/{,checkin,
 checkout}`.
 
-### Group 3
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
-merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE14_HANDOVER.md`.
 
-**Phase 15 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+One real Medium-severity defect was found and fixed:
+
+- **A leaver's badge was never revoked, and stayed scannable
+  indefinitely.** Phase 3's own leaver trigger
+  (`workforce_employee_sync()`, migration 137) already ends role
+  assignments and revokes exceptions/authorisations the instant
+  `employee_records.status` reaches `'terminated'` — but `worker_qr_
+  tokens` (179) postdates that migration and was never added to it.
+  Reproduced live before fixing: terminating a person left their
+  badge's `revoked_at` `NULL` — a former employee's physical badge
+  remained scannable for ever, still showing their name, job title and
+  employer to whoever held it. **Fixed** (migration 180) by extending
+  the SAME "leaving" branch — never a second trigger reacting to the
+  same event — with one more `UPDATE worker_qr_tokens SET revoked_at =
+  now(), revoked_by = NULL WHERE ... revoked_at IS NULL`, the live
+  function body read with `pg_get_functiondef()` immediately before
+  writing the migration and reproduced verbatim plus the one new line.
+  Mutation-tested live: reverted to the pre-180 body, the probe re-run
+  and confirmed the badge stayed active after termination (the original
+  bug reproduced), then the fix restored and re-verified passing.
+
+Everything else checked and found clean: the raw token can never be
+read back once minted (no session policy on `worker_qr_tokens` at all,
+and no code path selects it back to a caller); cross-organisation site
+check-in is refused by the fill trigger and — defence in depth — the
+check-in route never accepts a caller-supplied site at all; the
+capability-gated badge routes correctly refuse a session whose grant
+doesn't cover the person's own organisation; a double-click
+"Regenerate" race is safe by construction (the DB's own partial unique
+index lets only one insert succeed) — the losing request's raw
+Postgres error string is real but low-severity UX debt, not a security
+or correctness issue, so it's documented rather than fixed here; a
+worker gaming their own displayed check-in site has no safety
+consequence, per `site_checkins`' own documented "attendance, not
+compliance" posture; the profile page's parallel badge-status fetch
+never leaks its result to an unauthorised viewer (discarded before the
+response is built whenever `person_visible()` says no); rate limiting
+mirrors the `/api/test/[token]` precedent exactly; and no sensitive
+column, nor the engine's own `reasons[]`/`requirements[]`, ever reaches
+a public response.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1563
+admin — 1561 + 2 new leaver-revoke SQL-shape test cases; 737 portal,
+unchanged — this group's fix is entirely SQL/admin-test-side), all five
+CI guards pass with no regressions (56 shared-dupe pairs, unchanged;
+row-cap clean; 44 unvalidated routes, unchanged; 42 static admin
+routes, all reachable; 102 blind-update chains, unchanged), both
+production builds compile. Migration 180 applied live and verified
+(live-probed and mutation-tested against the real database function,
+`supabase/probes/180_worker_qr_leaver_revoke.sql`).
+
+**Phase 14 is complete. Phase 15 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 
