@@ -10217,3 +10217,137 @@ the new script and the CI workflow), full `vitest run` unchanged (1620
 admin / 755 portal), all six CI guards pass — including the new one,
 clean against the current codebase — both production builds compile.
 
+---
+
+## A deeper security/tenant-isolation adversarial pass across Phase 6-19
+## (2026-09-30, migration 182)
+
+Requested directly by the operator, distinct from and harder than the
+earlier re-verification pass (which checked that CLAUDE.md's own
+narrative matched the actual code across all of Phase 6-19 and found
+one documentation-accuracy defect, PR #286). This pass instead tried to
+BREACH the live production database — real, simulated hostile sessions
+inside rolled-back transactions, attempting actual cross-tenant reads
+and writes, never trusting a policy's *definition* as proof it works.
+
+### Method
+
+A single comprehensive `BEGIN; ... ROLLBACK;` probe (never committed —
+each intermediate failure while building it was independently confirmed
+to have left no trace live, including of the fabricated "Client B"
+company itself) against the two real live companies (Andrews
+Recruitment Group as the consultancy, Old Albanians Rugby as the
+authorised client) plus one fabricated, unauthorised "Client B",
+exercising real simulated sessions
+(`set_config('request.jwt.claims', ...)` + `SET LOCAL ROLE
+authenticated`, the codebase's own established probe technique) for:
+a real ARG consultant granted access to Client A ONLY, and Old
+Albanians' own real `client_admin`. Every refusal was checked for the
+REAL reason (an SQLSTATE and message, or — critically — an actual
+`ROW_COUNT` after an UPDATE that raised no exception, never just "no
+exception was thrown").
+
+### Everything else came back clean
+
+Portfolio-wide consultancy RLS (`consultancy_service_scopes`,
+`consultancy_visits`, `consultancy_service_ledger`, `actions`) correctly
+scoped every write and read to Client A only, refusing all of it against
+the unauthorised fabricated Client B — INSERT, UPDATE, and SELECT
+filtering alike. `visit_observations` correctly refused a
+`linked_source_id` naming another client's record (the exact
+`visit_observation_fill()` guard, 42501) and correctly hid a
+`client_visible = false` row from the client's own session. Board
+Assurance correctly hid a draft report and a cross-company report (even
+issued) from the client, correctly refused a cross-company
+acknowledgement attempt, and correctly refused an "un-issue" attempt by
+a client — verified was a genuine 0-row RLS-filtered no-op (confirmed
+by reading the row back afterward, still `issued`), not merely "no
+exception," since an unqualified "no exception" check would have been
+exactly this file's own recorded lesson about testing the wrong thing.
+Lessons Learned correctly hid the whole staff-only catalogue from any
+client session and — a real adversarial attempt, not an assumption —
+correctly REFUSED (`23514`, "This lesson has not been shared with your
+organisation") a client marking an UNdistributed lesson as read,
+confirming the distribution-check trigger genuinely exists and works as
+documented. The Legal Register and its Tavily research notes stayed
+invisible to every client session. `hs_links` refused a cross-
+organisation edge unconditionally at the trigger level, for any caller.
+`worker_qr_status()` was unreachable by any signed-in session at all
+(`permission denied for function`, confirmed both via
+`information_schema.routine_privileges` and a live RPC attempt), and
+`worker_qr_tokens` itself was unreadable by ANY session — a table-level
+`permission denied`, a stronger guarantee than the RLS-with-no-policies
+design already documented.
+
+### The one real, confirmed defect: `site_checkins` was unreadable by ANY session (migration 182)
+
+The very first live attempt to read `site_checkins` under a real
+session — the exact query `/lead/workforce/onsite` (portal) makes —
+returned `permission denied for table site_checkins`, not an
+RLS-filtered result. Root cause read directly out of 179's own text:
+the site_checkins block sits immediately under the worker_qr_tokens
+block, and its `REVOKE ALL ON public.site_checkins FROM PUBLIC, anon,
+authenticated` line was copied verbatim from worker_qr_tokens' own
+(correct, deliberate) revoke immediately above it — but unlike
+worker_qr_tokens, site_checkins defines two real session-facing RLS
+policies right after (`site_checkins_staff_all` FOR ALL,
+`site_checkins_client_read` FOR SELECT). Postgres checks the
+table-level GRANT before RLS is ever evaluated, so those two policies
+were dead code from the day 179 shipped — unreachable by any session,
+staff or client. **Fails closed**: no cross-tenant leak was ever
+possible (nobody could read anyone's rows, not even their own), but
+`/lead/workforce/onsite` returned "The on-site roster could not be
+loaded" for every real user, always, in production — confirmed by
+tracing the page's own code to `getWorkforceContext()` →
+`getSafetyContext()` → `createServerSupabaseClient()`, the ordinary
+session client, never the service role.
+
+A systematic sweep of every `public` table for "has a client-facing RLS
+policy but no `authenticated` table grant at all" found exactly one
+other match, `record_sequences` (a much older, Phase 1-era table behind
+`next_record_number()`, staff-read-only, never queried directly by any
+session in either app's code — confirmed by grep — so its own missing
+grant is dead weight, not a live defect, and is left untouched here as
+out of this pass's Phase 6-19 scope).
+
+**Fix** (migration 182): `GRANT SELECT, INSERT, UPDATE, DELETE ON
+public.site_checkins TO authenticated;` — restoring exactly what the
+table's own two policies need, matching the standard pattern this
+codebase already uses everywhere else for a session-facing table (e.g.
+`visit_observations`, 174: no REVOKE at all, RLS alone is the gate).
+179 itself is a historical migration and is not edited; 182 is
+additive. Applied live and verified twice: the live grant list now
+shows exactly `SELECT, INSERT, UPDATE, DELETE` for `authenticated` (never
+`anon` — nothing anonymous ever touches this table), and the ORIGINAL
+failing read, re-run live under Old Albanians' own real session inside
+a rolled-back probe, now succeeds (`0` rows — correctly RLS-filtered,
+no error).
+
+**Why the existing test suite never caught this**: 179's own SQL-shape
+test (`workerQrSql.test.ts`) correctly pinned that the two RLS policies
+exist with the right `USING` clauses — but a text-pattern match against
+a migration file cannot reason about the INTERACTION between a
+table-level `REVOKE` statement and the policies below it; that
+interaction is only observable against a live database, under a real
+role. The live probe this migration's own header comment says to run
+before trusting a table's grants ("check with `has_function_privilege`/
+`information_schema`, never the apply call's own success response") was
+run for `worker_qr_status()`'s EXECUTE grant but never extended to
+`site_checkins`' own base table grant. `workerQrSql.test.ts` gained
+three new cases pinning: 179 really does carry the over-broad REVOKE
+(so a future edit can't silently "fix" it by deleting the historical
+line, breaking the paper trail); 182 grants exactly what the two
+policies need; 182 never widens `worker_qr_tokens` (checked against
+the GRANT statements only, not the file's own explanatory prose, which
+legitimately mentions that table by name for context).
+
+Verified: `tsc --noEmit` clean, full admin `vitest run` green (1623 —
+1620 + 3 new), all six CI guards pass with no regressions (60
+shared-dupe pairs; row-cap clean; 44 unvalidated routes, unchanged; 43
+static admin routes, all reachable; 102 blind-update chains, unchanged
+— this fix touched no application code, only a migration and a test
+file; every-`.range()`-has-`.order()` clean). Portal untouched (no
+source file in that app was touched by this fix). Migration 182 applied
+live and verified via `information_schema.role_table_grants` and a live
+rolled-back re-run of the originally-failing session read.
+

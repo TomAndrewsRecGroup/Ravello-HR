@@ -1,0 +1,31 @@
+-- Fix: site_checkins was unreadable by any session at all, breaking
+-- portal's /lead/workforce/onsite for every real user (found by an
+-- adversarial security/tenant-isolation pass over Phase 6-19, not a
+-- reported bug).
+--
+-- 179 revoked ALL table privileges from `authenticated` on
+-- site_checkins (line "REVOKE ALL ON public.site_checkins FROM PUBLIC,
+-- anon, authenticated;"), copied verbatim from the worker_qr_tokens
+-- block immediately above it in the same migration. That revoke is
+-- correct for worker_qr_tokens, which is deliberately
+-- RLS-on-with-zero-session-policies (service role only, no session may
+-- ever read a raw badge token). It is wrong for site_checkins, which
+-- defines two real session-facing RLS policies right after the revoke
+-- (site_checkins_staff_all FOR ALL, site_checkins_client_read FOR
+-- SELECT) — policies that can never fire, because Postgres checks the
+-- table-level GRANT before RLS is ever evaluated. The result: every
+-- `supabase.from('site_checkins')` call from a real signed-in session
+-- (portal's on-site roster page, staff and client alike) got
+-- "permission denied for table site_checkins" instead of an
+-- RLS-filtered result — fails closed, so no cross-tenant leak was ever
+-- possible, but the feature was completely unusable in production
+-- from the day 179 shipped.
+--
+-- Standard pattern elsewhere in this codebase (e.g. visit_observations,
+-- 174) is no REVOKE at all for a table with real session policies —
+-- RLS alone is the gate. Restoring the table-level floor here rather
+-- than removing this table's own trigger/RLS/REVOKE block wholesale,
+-- since worker_qr_tokens' adjacent, deliberate REVOKE must stay
+-- untouched.
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_checkins TO authenticated;
