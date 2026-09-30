@@ -9390,3 +9390,83 @@ probed, unchanged schema.
 **Phase 16 is complete. Phase 17 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 17: Regulatory Intelligence → Action (Tavily)
+## (in progress)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-16 were in). Scope: `docs/CORE_OS_360_PHASE17_PLAN.md`.
+
+**This phase completes infrastructure the codebase already, explicitly,
+reserved for it.** Tavily was named "the external search provider for
+later phases" since Phase 1; migration 159 (Legal Register, Phase 5)
+built `legal_requirement_research_notes` as "an inert foundation for a
+LATER Tavily-based external legal research feature — no live API call
+anywhere in this migration... A LATER group wires the real call and
+populates it." Columns already existed for exactly this workflow
+(`source`, `query_used`, `raw_result_summary`, `reviewed_by`,
+`reviewed_at`, `action_taken`); `LEGAL_RESEARCH_SOURCES` vocab already
+existed in both apps' `hs/vocab.ts`. The action side was already built
+too: `actions.source_type` already allows `'legal_requirement'`, and
+Broadcast already has a `/broadcast?legal=<id>` prefill path.
+
+**The one absolute rule, inherited directly from 159's own header:
+Tavily never decides anything.** It is a search API returning text
+snippets — no more authority than a paralegal's own Google search.
+Nothing it returns is ever written to `applicability_status` or
+`compliance_evaluations.status`, is never summarised by an LLM into a
+verdict, and never triggers an action or a broadcast on its own. A
+human reads the raw result and decides.
+
+### Group 1: Tavily client + search route
+
+- **`lib/tavily/client.ts`** is the ONE place Tavily is ever called —
+  server-only, `TAVILY_API_KEY` never reaches the client. Reuses
+  `lib/http/resilient.ts` (the same `ivylens.ts` precedent: bounded
+  retry, per-vendor circuit breaker, a search is safe to retry even
+  though Tavily's own API carries the query over POST, since it has no
+  side effects). `summariseResults()` is a VERBATIM join of Tavily's
+  own titles/urls/content snippets, clipped to `raw_result_summary`'s
+  own 4000-char DB limit — never an AI-generated paraphrase; there is
+  no Jev involvement anywhere in this phase, since a legal summary is
+  exactly the kind of authored content this platform never lets a
+  model write.
+- **`POST /api/admin/legal-register/[id]/research`** — `requireStaff()`,
+  rate-limited (`limiters.vendor`), validates `query` with
+  `optionalShortText(500)` matching `query_used`'s own DB CHECK
+  exactly (the Phase 15 B.1 lesson, applied from the start this time).
+  Builds a default query from the requirement's own title/jurisdiction
+  when staff doesn't supply one (`defaultQueryFor()`). Inserts exactly
+  one `legal_requirement_research_notes` row per call, `source:
+  'tavily'` — nothing else. On-demand only, per the plan doc's own
+  scope decision: no scheduled cron, since each call has a real cost
+  and quota, the same caution this codebase already applies to
+  IvyLens's own `dry_run` default.
+- **A real test-design trap, caught before it shipped**: `client.ts`
+  reads `TAVILY_API_KEY` into a module-scope `const` at import time —
+  the same pattern `ivylens.ts` already uses — so a test's `beforeEach`
+  setting the env var AFTER the module's own dynamic import has
+  already run has no effect on the already-captured constant. The
+  first draft of `client.test.ts` set the env var in `beforeEach` and
+  five of its cases failed for the wrong reason (every call reported
+  "not configured", masking every other assertion). Fixed by setting
+  the env var BEFORE the top-level import, and — for the one test that
+  needs to prove the "unset" branch — `vi.resetModules()` plus a
+  scoped re-import, leaving every other test's own `tavilySearch`
+  reference untouched.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1610 admin — 1593 + 17 new: `tavily/client.test.ts` (11),
+`legal-register/[id]/research/route.test.ts` (6); 753 portal,
+unchanged — this group is admin-only), all five CI guards pass (57
+shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated routes,
+unchanged — the new route validates with `parseBody`; 43 static admin
+routes, all reachable — this group added no admin PAGE route, only an
+API route; 102 blind-update chains, unchanged), admin production build
+compiles. No migration in this group — it wires the real call into
+migration 159's already-reserved schema.
+
+**Phase 18 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
