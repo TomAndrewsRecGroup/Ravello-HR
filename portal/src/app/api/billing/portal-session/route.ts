@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { createBillingPortalSession, stripeConfigured } from '@/lib/stripe';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +12,7 @@ export const runtime = 'nodejs';
 // handles card updates, invoice list, receipt download, etc., and
 // returns the user back to /billing afterwards.
 //
-// Auth: super-user only (role === 'client_admin'). Editors and viewers
+// Auth: super-user only (isCompanySuperUser()). Editors and viewers
 // don't get a portal session — they can't change payment state.
 
 export async function POST(request: NextRequest) {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
-  if (!isTpsStaff && role !== 'client_admin') {
+  if (!isCompanySuperUser({ role, isTpsStaff })) {
     return NextResponse.json(
       { error: 'Only the company Admin can manage billing.' },
       { status: 403 },

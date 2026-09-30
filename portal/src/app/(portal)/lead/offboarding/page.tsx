@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 import OffboardingClient from './OffboardingClient';
 
 export const metadata: Metadata = { title: 'Offboarding' };
@@ -8,7 +9,7 @@ export const revalidate = 60;
 
 export default async function OffboardingPage() {
   const supabase = await createServerSupabaseClient();
-  const { user, companyId, role } = await getSessionProfile();
+  const { user, companyId, role, isTpsStaff } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (
     <main className="portal-page flex-1">
@@ -21,7 +22,7 @@ export default async function OffboardingPage() {
     </main>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin';
+  const isAdmin = isCompanySuperUser({ role, isTpsStaff });
 
   const [templatesRes, instancesRes, employeesRes] = await Promise.all([
     supabase

@@ -4,13 +4,14 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import EmployeeRecordsClient from './EmployeeRecordsClient';
 import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 import { EMPLOYEE_SAFE_COLUMNS, readEmployeePrivate, withPrivate } from '@/lib/lead/employeePrivate';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 
 export const metadata: Metadata = { title: 'Employee Records' };
 export const revalidate = 30;
 
 export default async function EmployeeRecordsPage() {
   const supabase = await createServerSupabaseClient();
-  const { user, companyId, role } = await getSessionProfile();
+  const { user, companyId, role, isTpsStaff } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (
     <main className="portal-page flex-1">
@@ -23,9 +24,13 @@ export default async function EmployeeRecordsPage() {
     </main>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin';
+  const isAdmin = isCompanySuperUser({ role, isTpsStaff });
   // Admin AND Editor can manage leave links — both can approve/deny
   // leave per the role spec, so both should be able to share the link.
+  // Deliberately not part of the isCompanySuperUser() consolidation:
+  // absence_records' own RLS has no role restriction at all beyond
+  // company membership, so this UI gate is already narrower than the
+  // database needs, not a mirror of a specific predicate.
   const canManageLeave = isAdmin || role === 'client_editor';
 
   // Salary, NI, DOB, diversity, address, emergency contacts, notes and the

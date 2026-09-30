@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 import CalendarClient from './CalendarClient';
 import { normaliseAbsenceRows } from '@/lib/leaveCalculations';
 
@@ -10,7 +11,7 @@ export const revalidate = 30;
 
 export default async function CalendarPage() {
   const supabase = await createServerSupabaseClient();
-  const { user, companyId, role } = await getSessionProfile();
+  const { user, companyId, role, isTpsStaff } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (
     <>
@@ -26,7 +27,7 @@ export default async function CalendarPage() {
     </>
   );
 
-  const isAdmin = role === 'client_admin' || role === 'tps_admin';
+  const isAdmin = isCompanySuperUser({ role, isTpsStaff });
 
   // Fetch calendar events and leave records for the current view range
   // (client will fetch more as user navigates months)

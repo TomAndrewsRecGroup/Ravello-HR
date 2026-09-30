@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 import OrgChartClient from './OrgChartClient';
 
 export const metadata: Metadata = { title: 'Organisation Chart' };
@@ -8,7 +9,7 @@ export const revalidate = 0;
 
 export default async function OrgChartPage() {
   const supabase = await createServerSupabaseClient();
-  const { user, companyId, role } = await getSessionProfile();
+  const { user, companyId, role, isTpsStaff } = await getSessionProfile();
   if (!user) redirect('/auth/login');
   if (!companyId) return (
     <main className="portal-page flex-1">
@@ -64,7 +65,7 @@ export default async function OrgChartPage() {
     <main className="portal-page flex-1">
       <OrgChartClient
         employees={employees ?? []}
-        canEdit={role === 'client_admin'}
+        canEdit={isCompanySuperUser({ role, isTpsStaff })}
         companyId={companyId}
       />
     </main>
