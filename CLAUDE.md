@@ -8722,3 +8722,127 @@ unchanged), both production builds compile.
 **Phase 13 is complete. Phase 14 is NOT to begin** until this branch is
 merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 14: Worker QR System (in progress, migration 179)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-13 were in). Scope: `docs/CORE_OS_360_PHASE14_PLAN.md`,
+derived from the phase's own name plus a careful audit of what the
+codebase already has.
+
+Phase 3 built the whole Safe to Deploy engine and a rich per-person
+profile — but reaching either needs a platform login and a search. On
+an actual site, the person who needs "is this worker cleared to be here
+right now" is often a security guard, a site manager, or another
+contractor's supervisor — someone who may have no Core OS 360 login at
+all. This phase adds a durable, revocable QR code per worker that opens
+a no-login page showing a COARSE Safe to Deploy status, plus an
+optional site check-in/out so "who is currently on site" becomes a
+real, live fact — directly useful for Phase 4's Emergency Planning (a
+muster-point roster) without building a second attendance system.
+
+### Group 1 (migration 179): schema + pure computation
+
+- **The public page shows STATUS ONLY, never reasons or requirements.**
+  `person_deployment_status()`'s `reasons[]`/`requirements[]` name
+  exactly which mandatory item is missing (e.g. "induction expired") —
+  precise enough to be an HR/compliance detail nobody intended to be
+  readable by anyone who photographs or shares a badge. New
+  `worker_qr_status(p_token_hash)` (SECURITY DEFINER) returns only the
+  raw four-value `status` string plus name/job title/employer/site —
+  nothing else, and never occupational health, salary, NI, DOB, or
+  address.
+- **Never `person_deployment_status()`/`person_visible()` for this
+  route.** Both require a real, visible-to-the-caller session — an
+  anonymous badge scan has none of that. Authorisation here is the
+  TOKEN itself, the exact model `hs_test_tokens`/`policy_ack_tokens`
+  already established for a different no-login artefact.
+  `worker_qr_status()` is SECURITY DEFINER so it may call the
+  otherwise-locked-down `_wf_deployment_safe()` the same way
+  `person_deployment_status()`/`workforce_readiness()` already do (all
+  three are owned by the same privileged role, which is why the call
+  succeeds despite `_wf_deployment_safe()`'s own blanket `REVOKE ALL
+  ... FROM PUBLIC, anon, authenticated`) — granted to `service_role`
+  only, never `anon`/`authenticated`, matching the `org_user_ids_with_
+  capability`/`audit_log`/`prune_latest_updates` precedent for a
+  service-role-only helper.
+- **The token is DURABLE, not single-use — the one deliberate departure
+  from every other token table in this codebase**
+  (`profile_access_tokens`/091, `policy_ack_tokens`/103, `hs_test_
+  tokens`/116 are all single-use, burned on redemption). A badge must
+  be re-scannable indefinitely. What stays the same: SHA-256 hash only
+  stored in `worker_qr_tokens`, RLS on with NO session policies at all
+  (service role only), and at most one ACTIVE token per person,
+  enforced by a partial unique index — a lost badge is REVOKED, never
+  deleted (so the audit trail still shows it existed), and a fresh one
+  minted. `company_id` is derived from the person by a BEFORE INSERT
+  trigger, never trusted from the caller.
+- **The raw token exists only at mint time, in the mint response —
+  there is no "look the badge back up" path**, the same reason a real
+  ID card is reissued rather than reprinted from a stored copy.
+  `portal/src/lib/workforce/qrTokens.ts`'s `mintWorkerQrToken()` revokes
+  any existing active badge first (also enforced by the DB's own
+  partial unique index regardless), `revokeWorkerQrToken()` is
+  idempotent, and `hasActiveWorkerQrToken()` reports only whether one
+  exists, never what it is.
+- **`site_checkins` is attendance, not compliance.** It records
+  presence only and never feeds, or is fed by, the Safe to Deploy
+  engine — a NOT_READY worker can still be checked in; this system
+  reports facts, it does not gate access (`contractor_worker_access()`,
+  Phase 4, already does that, for contractors specifically, untouched
+  here). Its `site_checkins_fill()` trigger refuses a site belonging to
+  a different organisation than the person, and at most one OPEN
+  check-in per person is enforced by a partial unique index — a
+  repeated scan while still on site is a no-op, never a second open
+  row.
+- **RLS on `site_checkins`: staff ALL, client SELECT (`workforce.read`)
+  — deliberately NO client write policy at all.** Check-in/out happens
+  ONLY through the public, token-gated scan route (service role,
+  bypassing RLS), never a hand-typed portal action; flagged as debt in
+  the plan doc, not built here.
+- **No outbox entry for either table, deliberately.** A badge mint/
+  revoke and a check-in/out are both audited (`audit_row()` — never the
+  token hash itself in the whitelist), but nothing here has a
+  consequence worth an async notification in this first pass; a future
+  phase could add a "checked in but never checked out" reminder,
+  flagged as debt.
+
+### Live probe
+
+`supabase/probes` run inline (not a separate file this group — a
+single rolled-back `DO $$ ... $$` block), 14 checks: an unknown token
+hash resolves `not_found`; a minted token resolves `ok:true` with name/
+job title/employer/site and a valid four-value status, with NEITHER
+`reasons` NOR `requirements` present in the response; `company_id` is
+derived from the person; a second active token for the same person is
+refused by the partial unique index; revoking then re-minting succeeds;
+a revoked token resolves `not_found`; a cross-organisation site
+check-in is refused; a same-organisation one succeeds with `company_id`
+derived; a second open check-in for the same person is refused; closing
+it then allows a new one; RLS is enabled on both tables;
+`worker_qr_tokens` has zero session policies; `site_checkins` has
+exactly two (staff ALL, client SELECT), no client write policy;
+`worker_qr_status()` is executable by `service_role` only, never `anon`
+or `authenticated`. All 14 passed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1561
+admin — 1547 + 14 new `workerQrSql.test.ts` cases; 722 portal — 715 + 7
+new `qrTokens.test.ts` cases), all five CI guards pass (56 shared-dupe
+pairs, unchanged; row-cap clean; 44 unvalidated routes, unchanged; 42
+static admin routes, all reachable; 102 blind-update chains, unchanged
+— the one new write path, `mintWorkerQrToken()`'s revoke-old-token
+step, was built with `{ count: 'exact' }` from the start), both
+production builds compile. Migration 179 applied live and verified (14/
+14 probe checks pass).
+
+### Group 2 and Group 3
+
+Not yet built as of this CLAUDE.md entry — Group 1 is committed and
+merged on its own branch first, per this codebase's standing "regular
+merges so you don't lose anything" discipline; the UI and the final
+regression/adversarial-QA/handover pass follow as their own PRs.
+
+**Phase 15 is NOT to begin** until this phase is fully merged and
+deployed, per the operator's standing instruction.
+
