@@ -16,10 +16,16 @@ import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimi
 
 export const runtime = 'nodejs';
 
+// scope_of_work is validated to 8000 chars — method_statements.scope_of_work's
+// own CHECK (124), never a narrower ceiling invented here. A draft RAMS
+// with a genuinely long scope of work (the DB allows up to 8000) must
+// not be refused a suggestion outright; ramsSectionState() separately
+// clips what actually reaches Jev to a smaller size, which is a
+// different, independent decision from what the field may VALIDLY hold.
 const Body = z.object({
   title: shortText(200),
   project_name: optionalShortText(200),
-  scope_of_work: longText(4000),
+  scope_of_work: longText(8000),
 });
 
 export async function POST(req: NextRequest) {
