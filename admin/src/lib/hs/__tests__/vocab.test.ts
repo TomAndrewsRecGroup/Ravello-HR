@@ -51,7 +51,10 @@ const sql = readFileSync(`${MIG}/094_hs_providers_access.sql`, 'utf8')
   + readFileSync(`${MIG}/161_objectives_management_review.sql`, 'utf8')
   // Core-OS 360 Phase 5, Group 7 (162): audit finding severity, audit
   // programme frequency, consultation method, complaint source.
-  + readFileSync(`${MIG}/162_audit_enhancement_calendar_consultation.sql`, 'utf8');
+  + readFileSync(`${MIG}/162_audit_enhancement_calendar_consultation.sql`, 'utf8')
+  // Completion Programme Phase 22 (186): environmental_monitoring
+  // limit_direction (upper/lower/range).
+  + readFileSync(`${MIG}/186_environmental_monitoring_limit_direction.sql`, 'utf8');
 
 /** The quoted values in the IN (...) or ARRAY[...] after the LAST match of `anchor`. */
 function listAfter(anchor: RegExp): string[] {
@@ -134,6 +137,8 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       /status\s+text NOT NULL DEFAULT 'reported' CHECK \(status IN \(/],
     ['environmental monitoring categories', V.ENVIRONMENTAL_MONITORING_CATEGORIES,
       /category\s+text NOT NULL DEFAULT 'other' CHECK \(category IN \(/],
+    ['environmental monitoring limit directions', V.ENVIRONMENTAL_MONITORING_LIMIT_DIRECTIONS,
+      /limit_direction text NOT NULL DEFAULT 'upper'\s*\n\s*CHECK \(limit_direction IN \(/],
     // Anchored through the preceding issued_on/expires_on columns,
     // unique to environmental_permits — emergency_plans (154) also
     // defaults its own status to 'active'.
@@ -219,6 +224,7 @@ describe('H&S vocabularies match the SQL CHECKs', () => {
       [V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENTS, V.ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS],
       [V.ENVIRONMENTAL_SPILL_STATUSES, V.ENVIRONMENTAL_SPILL_STATUS_LABELS],
       [V.ENVIRONMENTAL_MONITORING_CATEGORIES, V.ENVIRONMENTAL_MONITORING_CATEGORY_LABELS],
+      [V.ENVIRONMENTAL_MONITORING_LIMIT_DIRECTIONS, V.ENVIRONMENTAL_MONITORING_LIMIT_DIRECTION_LABELS],
       [V.ENVIRONMENTAL_PERMIT_STATUSES, V.ENVIRONMENTAL_PERMIT_STATUS_LABELS],
       [V.PERMIT_CONDITION_STATUSES, V.PERMIT_CONDITION_STATUS_LABELS],
       [V.ISO_STANDARD_CODES, V.ISO_STANDARD_CODE_LABELS],

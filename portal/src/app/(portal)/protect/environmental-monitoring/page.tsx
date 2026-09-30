@@ -9,6 +9,14 @@ export const dynamic = 'force-dynamic';
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
+function limitCell(r: EnvironmentalMonitoringReading): string {
+  if (r.recorded_limit === null) return '—';
+  if (r.limit_direction === 'range') {
+    return r.recorded_limit_upper === null ? `≥ ${r.recorded_limit}` : `${r.recorded_limit}–${r.recorded_limit_upper}`;
+  }
+  return r.limit_direction === 'lower' ? `min ${r.recorded_limit}` : `max ${r.recorded_limit}`;
+}
+
 // Read-only. within_limit is never computed here — it comes straight
 // off the database's own GENERATED column, NULL until a limit is on
 // file, never defaulted true or false.
@@ -17,7 +25,7 @@ export default async function ProtectEnvironmentalMonitoringPage() {
   const { companyId } = await getSessionProfile();
 
   const { data, error } = await supabase.from('environmental_monitoring')
-    .select('id, company_id, site_id, category, parameter, value, unit, recorded_limit, within_limit, recorded_at, recorded_by, created_at')
+    .select('id, company_id, site_id, category, parameter, value, unit, recorded_limit, limit_direction, recorded_limit_upper, within_limit, recorded_at, recorded_by, created_at')
     .eq('company_id', companyId).order('recorded_at', { ascending: false }).limit(500);
   const rows = (data ?? []) as EnvironmentalMonitoringReading[];
 
@@ -36,7 +44,7 @@ export default async function ProtectEnvironmentalMonitoringPage() {
                 <td>{ENVIRONMENTAL_MONITORING_CATEGORY_LABELS[r.category]}</td>
                 <td>{r.parameter}</td>
                 <td>{r.value} {r.unit}</td>
-                <td>{r.recorded_limit ?? '—'}</td>
+                <td>{limitCell(r)}</td>
                 <td>
                   {r.within_limit === null ? <span style={{ color: 'var(--ink-faint)' }}>No limit on file</span>
                     : r.within_limit ? <span style={{ color: 'var(--teal)' }}>Within limit</span>

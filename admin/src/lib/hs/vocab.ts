@@ -434,6 +434,18 @@ export const ENVIRONMENTAL_MONITORING_CATEGORY_LABELS: Record<EnvironmentalMonit
   other:     'Other',
 };
 
+// Which way a recorded_limit is compared against the value (186).
+// 'upper' is the default and the only direction every reading recorded
+// before this migration ever used — a lower-bound or range reading
+// must be set explicitly.
+export const ENVIRONMENTAL_MONITORING_LIMIT_DIRECTIONS = ['upper', 'lower', 'range'] as const;
+export type EnvironmentalMonitoringLimitDirection = typeof ENVIRONMENTAL_MONITORING_LIMIT_DIRECTIONS[number];
+export const ENVIRONMENTAL_MONITORING_LIMIT_DIRECTION_LABELS: Record<EnvironmentalMonitoringLimitDirection, string> = {
+  upper: 'Maximum (upper bound)',
+  lower: 'Minimum (lower bound)',
+  range: 'Range (both bounds)',
+};
+
 // A lifecycle fact about the permit itself, never a compliance verdict.
 export const ENVIRONMENTAL_PERMIT_STATUSES = ['active', 'expired', 'surrendered', 'revoked'] as const;
 export type EnvironmentalPermitStatus = typeof ENVIRONMENTAL_PERMIT_STATUSES[number];

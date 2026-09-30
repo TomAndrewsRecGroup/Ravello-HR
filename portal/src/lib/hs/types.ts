@@ -9,7 +9,7 @@ import type {
   EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
   EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
   EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
-  EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
+  EnvironmentalMonitoringCategory, EnvironmentalMonitoringLimitDirection, EnvironmentalPermitStatus, PermitConditionStatus,
   IsoStandardCode, StandardEvidenceEntityType,
   LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
   ObjectiveStatus, ObjectiveTargetDirection, ManagementReviewStatus,
@@ -523,6 +523,8 @@ export interface EnvironmentalMonitoringReading {
   value: number;
   unit: string;
   recorded_limit: number | null;
+  limit_direction: EnvironmentalMonitoringLimitDirection;
+  recorded_limit_upper: number | null;
   within_limit: boolean | null;
   recorded_at: string;
   recorded_by: string | null;
