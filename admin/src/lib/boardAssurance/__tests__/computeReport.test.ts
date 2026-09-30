@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeBoardAssuranceReport, type BoardAssuranceReportInput } from '../computeReport';
+import { computeBoardAssuranceReport, quarterEndDate, type BoardAssuranceReportInput } from '../computeReport';
 import type { ComplianceTwinSnapshot } from '@/lib/complianceTwin/assemble';
 import type { PortfolioCounts } from '@/lib/health/portfolioCounts';
 
@@ -112,5 +112,22 @@ describe('computeBoardAssuranceReport', () => {
     expect(computeBoardAssuranceReport(baseInput({
       complianceTwin: AMBER_TWIN, priorReport: { year: 2026, quarter: 2, overallBand: 'red' },
     })).trend).toBe('improved');
+  });
+});
+
+describe('quarterEndDate', () => {
+  it('returns the last calendar day of each quarter', () => {
+    expect(quarterEndDate(2026, 1)).toBe('2026-03-31');
+    expect(quarterEndDate(2026, 2)).toBe('2026-06-30');
+    expect(quarterEndDate(2026, 3)).toBe('2026-09-30');
+  });
+
+  it('rolls Q4 into 31 December of the SAME year, not January of the next', () => {
+    expect(quarterEndDate(2026, 4)).toBe('2026-12-31');
+  });
+
+  it('accounts for a leap year February inside Q1', () => {
+    expect(quarterEndDate(2028, 1)).toBe('2028-03-31'); // 2028 is a leap year; Q1 still ends 31 Mar
+    expect(quarterEndDate(2027, 1)).toBe('2027-03-31'); // 2027 is not; result is unaffected either way
   });
 });

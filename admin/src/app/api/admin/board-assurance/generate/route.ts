@@ -6,7 +6,7 @@ import { parseBody } from '@/lib/validation/parseBody';
 import { uuid } from '@/lib/validation/primitives';
 import { loadComplianceTwinSnapshot } from '@/lib/complianceTwin/loadSnapshot';
 import { loadPortfolioCountsForCompany } from '@/lib/boardAssurance/loadPortfolioCounts';
-import { computeBoardAssuranceReport, type LatestManagementReview, type PriorBoardAssuranceReport } from '@/lib/boardAssurance/computeReport';
+import { computeBoardAssuranceReport, quarterEndDate, type LatestManagementReview, type PriorBoardAssuranceReport } from '@/lib/boardAssurance/computeReport';
 
 export const runtime = 'nodejs';
 
@@ -42,9 +42,14 @@ export async function POST(req: NextRequest) {
   const loadError = twinError ?? countsError;
   if (loadError) return NextResponse.json({ error: loadError }, { status: 500 });
 
+  // Bounded to the period being reported — see quarterEndDate()'s own
+  // comment. Without this, backfilling an OLDER quarter's report after
+  // a LATER review has already completed would attach a review that
+  // chronologically postdates the period this report claims to cover.
   const { data: reviewRows, error: reviewErr } = await supabase
     .from('management_reviews').select('id, review_date')
     .eq('company_id', companyId).eq('status', 'completed')
+    .lte('review_date', quarterEndDate(year, quarter as 1 | 2 | 3 | 4))
     .order('review_date', { ascending: false }).limit(1);
   if (reviewErr) return NextResponse.json({ error: reviewErr.message }, { status: 500 });
 

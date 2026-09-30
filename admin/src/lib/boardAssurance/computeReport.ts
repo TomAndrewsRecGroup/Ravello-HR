@@ -63,6 +63,19 @@ export interface BoardAssuranceReportData {
   priorPeriod: { year: number; quarter: 1 | 2 | 3 | 4 } | null;
 }
 
+// The calendar date a (year, quarter) period ends on, inclusive
+// (YYYY-MM-DD, UTC). Exists so the "latest completed management
+// review" lookup (the generate route) can be bounded to reviews
+// completed ON OR BEFORE the period being reported — the same
+// "overdue is relative to the REPORT period, not today" discipline
+// leadMetrics.ts/computeQuarterlyValueReport.ts already established.
+// Without this bound, generating a PAST quarter's report after a LATER
+// review has already completed would attach a review that, read
+// chronologically, comes after the period the report claims to cover.
+export function quarterEndDate(year: number, quarter: 1 | 2 | 3 | 4): string {
+  return new Date(Date.UTC(year, quarter * 3, 0)).toISOString().slice(0, 10);
+}
+
 const BAND_SEVERITY: Record<ComplianceTwinBand, number> = { green: 0, amber: 1, red: 2 };
 
 function deriveTrend(current: ComplianceTwinBand, prior: ComplianceTwinBand): BoardAssuranceTrend {
