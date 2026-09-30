@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
   const { data: note, error } = await supabase.from('legal_requirement_research_notes').insert({
     legal_requirement_id: requirement.id, source: 'tavily', query_used: query,
     raw_result_summary: summariseResults(outcome.results),
-  }).select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at').single();
+  }).select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at, row_version').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ note });

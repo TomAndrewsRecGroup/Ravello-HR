@@ -34,6 +34,13 @@ export default function BroadcastClient({ companies, prefill }: Props) {
   // (creates a row in every client's actions table), so a typed confirm
   // step prevents accidental mass sends.
   const [confirming, setConfirming] = useState(false);
+  // Core-OS 360 Completion Programme, Phase 25, Group 1 (C1.11): minted
+  // ONCE per confirm-modal open, sent unchanged on every retry of the
+  // SAME send (the confirm button stays the same key across a failed
+  // attempt), and reset only once a send genuinely succeeds or the
+  // modal is cancelled outright — so a retry after a network error
+  // dedupes server-side instead of creating a second broadcast.
+  const [broadcastKey, setBroadcastKey] = useState<string | null>(null);
 
   function toggleAll() {
     if (selected.size === active.length) {
@@ -55,6 +62,7 @@ export default function BroadcastClient({ companies, prefill }: Props) {
   function openConfirm() {
     if (!selected.size || !form.title || !form.action_type) return;
     setError('');
+    setBroadcastKey(k => k ?? crypto.randomUUID());
     setConfirming(true);
   }
 
@@ -64,7 +72,7 @@ export default function BroadcastClient({ companies, prefill }: Props) {
       const res = await fetch('/api/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, company_ids: Array.from(selected) }),
+        body: JSON.stringify({ ...form, company_ids: Array.from(selected), broadcast_key: broadcastKey }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed');
@@ -72,6 +80,7 @@ export default function BroadcastClient({ companies, prefill }: Props) {
       setSelected(new Set());
       setForm({ title: '', description: '', action_type: 'compliance_update', priority: 'normal', due_date: '' });
       setConfirming(false);
+      setBroadcastKey(null);
     } catch (e: any) {
       setError(e.message);
     } finally {
