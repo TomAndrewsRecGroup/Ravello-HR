@@ -54,7 +54,7 @@ export default async function PersonProfilePage(props: {
   const asOf = parseAsOf(param(sp, 'as_of'), today);
 
   const canManageBadge = ctx.can('workforce.manage');
-  const [data, { sites, departments }, hasBadge] = await Promise.all([
+  const [data, { sites, departments }, hasBadge, companyRow] = await Promise.all([
     loadProfile(supabase, companyId, id, asOf, {
       health: tabs.includes('occupational_health') ? 'full' : false,
       incidents: tabs.includes('safety'),
@@ -66,6 +66,7 @@ export default async function PersonProfilePage(props: {
     // this read never touches the token itself, only whether an active
     // one exists.
     hasActiveWorkerQrToken(createServiceSupabaseClient(), id),
+    supabase.from('companies').select('name').eq('id', companyId).maybeSingle(),
   ]);
   if (data.cannotSee || !data.person) return <CannotSee />;
   const p = data.person;
@@ -106,7 +107,10 @@ export default async function PersonProfilePage(props: {
         </p>
       </section>
 
-      <WorkerBadgePanel personId={p.id} hasActiveBadge={hasBadge} canManage={canManageBadge} />
+      <WorkerBadgePanel
+        personId={p.id} hasActiveBadge={hasBadge} canManage={canManageBadge}
+        fullName={display} employeeNumber={p.employee_number ?? null} companyName={companyRow.data?.name ?? ''}
+      />
 
       <nav aria-label="Profile sections" className="flex flex-wrap gap-1 no-print">
         {tabs.map(t => (
