@@ -122,12 +122,21 @@ export function assembleCore360Status(input: Core360StatusInput): Core360StatusS
   // safety-critical (person_deployment_status's own stored summary),
   // so any nonzero value is the domain's critical signal; an ordinary
   // not-ready worker with no safety-critical gap is only attention.
+  // The two counts are independently derived over the same rows (not a
+  // guaranteed subset relationship at the type level — countBy() runs
+  // two separate predicates), so both facts are reported when both
+  // apply, never hiding the broader not-ready count behind the
+  // narrower safety-critical one — the same "a red domain still
+  // reports every true amber-level fact" discipline this file's own
+  // Training/Environmental domains already use, and the exact bug
+  // class Phase 23's own Compliance Twin adversarial pass found and
+  // fixed once already.
+  const peopleReasons: string[] = [];
+  if (pc.safety_critical_gaps > 0) peopleReasons.push(`${pc.safety_critical_gaps} safety-critical Safe to Deploy gap${pc.safety_critical_gaps === 1 ? '' : 's'}.`);
+  if (pc.workers_not_ready > 0) peopleReasons.push(`${pc.workers_not_ready} worker${pc.workers_not_ready === 1 ? '' : 's'} not currently Safe to Deploy.`);
+  if (peopleReasons.length === 0) peopleReasons.push('No workers currently flagged not-ready.');
   const people = buildDomain('people', 'People', pc.safety_critical_gaps > 0 ? 'critical' : pc.workers_not_ready > 0 ? 'attention' : 'ok',
-    pc.safety_critical_gaps > 0
-      ? [`${pc.safety_critical_gaps} safety-critical Safe to Deploy gap${pc.safety_critical_gaps === 1 ? '' : 's'}.`]
-      : pc.workers_not_ready > 0
-        ? [`${pc.workers_not_ready} worker${pc.workers_not_ready === 1 ? '' : 's'} not currently Safe to Deploy.`]
-        : ['No workers currently flagged not-ready.'],
+    peopleReasons,
     { workers_not_ready: pc.workers_not_ready, safety_critical_gaps: pc.safety_critical_gaps });
 
   // Plant — assets_unavailable already merges quarantined and

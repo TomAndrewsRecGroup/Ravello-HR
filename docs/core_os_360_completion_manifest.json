@@ -253,20 +253,23 @@
     {
       "id": "C13.6",
       "phase": "C13",
-      "status": "MISSING",
-      "assigned_to_phase": 27
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 27,
+      "note": "boardAssuranceStatus.ts/loadBoardAssuranceStatus.ts, /consultancy/board-assurance, Client 360's own summary card — Phase 27 Group 2"
     },
     {
       "id": "C13.7",
       "phase": "C13",
-      "status": "MISSING",
-      "assigned_to_phase": 27
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 27,
+      "note": "POST .../generate's regenerate:true flag — conditional counted DELETE of the draft, an issued report always refused — Phase 27 Group 1"
     },
     {
       "id": "C13.8",
       "phase": "C13",
-      "status": "MISSING",
-      "assigned_to_phase": 27
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 27,
+      "note": "lib/core360Status/assemble.ts (shared-dupe pair), Core360StatusView.tsx, /health-safety/<companyId>/core-360-status + /protect/core-360-status — Phase 27 Groups 3-4"
     },
     {
       "id": "C14.6",

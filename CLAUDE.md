@@ -12284,3 +12284,57 @@ missing-Supabase-env-var limitation), including
 `/health-safety/[companyId]/core-360-status` and
 `/protect/core-360-status`.
 
+### Group 5: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE27_HANDOVER.md`.
+
+A dedicated adversarial pass across all four groups found **one real
+Medium-severity defect and fixed it**: the People domain in
+`core360Status/assemble.ts` hid the broader `workers_not_ready` count
+behind the narrower `safety_critical_gaps` one — the EXACT bug class
+Phase 23's own Compliance Twin adversarial pass already found and
+fixed once (a red domain silently under-reporting a true amber-level
+fact), reintroduced here in a sibling module. The two counts are
+independently derived (`countBy()` runs two separate predicates over
+the same `person_deployment_status` rows, not a guaranteed subset
+relationship), so the original ternary could genuinely hide
+information a reader needed. Fixed to the same independent-`if`-push
+pattern the Training/Environmental domains in the same file already
+used correctly. **Mutation-tested**: a new test was confirmed to fail
+against the reverted (buggy) code, then the fix was restored and
+re-verified passing, re-mirrored byte-identical to admin.
+
+Also checked and found clean: every query in both
+`lib/core360Status/loadStatus.ts` (admin) and `/protect/
+core-360-status/page.tsx` (portal) carries an explicit company-scope
+filter except two deliberate, safe exceptions (`legal_requirements`,
+scoped upstream via an already-filtered id list; `contractor_
+insurances`, which has no `company_id` column of its own and is
+scoped via an already-filtered `contractor_id` list) — matters more in
+the admin loader, which runs as staff with no RLS backstop of its own,
+than the portal page, where RLS is a backstop regardless; the Group 1
+regenerate route's concurrent-request race is safe by construction
+(the loser's conditional DELETE matches zero rows, refused rather than
+proceeding to a duplicate insert); `requireStaff()` is unchanged on
+the one write route this phase touches.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1821** — 1820 + 1 new mutation-tested case; portal **895** —
+894 + 1), all six CI guards pass with no regressions (72 shared-dupe
+pairs, unchanged; row-cap clean; 44 unvalidated routes, unchanged; 43
+static admin routes, all reachable; 102 blind-update chains, unchanged
+— this phase's only write, Group 1's conditional DELETE, is not an
+UPDATE and this guard does not track it; every paged query's `.order()`
+present), both production builds compile (portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-
+env-var limitation). No migration anywhere in this phase — every
+group composes already-live schema, confirmed rather than assumed per
+the plan doc's own stated expectation.
+
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated: C13.6, C13.7, C13.8 all
+→ `IMPLEMENTED`, `closed_in_phase: 27`.
+
+**Phase 27 is complete. Phase 28 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
+

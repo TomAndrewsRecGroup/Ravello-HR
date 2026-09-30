@@ -75,6 +75,15 @@ describe('assembleCore360Status', () => {
     expect(people.band).toBe('critical');
   });
 
+  it('a critical People domain still reports the broader not-ready count too, never hiding it behind the narrower safety-critical one', () => {
+    const snap = assembleCore360Status(baseInput({ portfolioCounts: { ...CLEAN_COUNTS, workers_not_ready: 5, safety_critical_gaps: 1 } }));
+    const people = snap.domains.find(d => d.domain === 'people')!;
+    expect(people.band).toBe('critical');
+    expect(people.reasons).toHaveLength(2);
+    expect(people.reasons.some(r => r.includes('safety-critical'))).toBe(true);
+    expect(people.reasons.some(r => r.includes('not currently Safe to Deploy'))).toBe(true);
+  });
+
   it('a not-ready worker with NO safety-critical gap is only attention', () => {
     const snap = assembleCore360Status(baseInput({ portfolioCounts: { ...CLEAN_COUNTS, workers_not_ready: 2, safety_critical_gaps: 0 } }));
     const people = snap.domains.find(d => d.domain === 'people')!;
