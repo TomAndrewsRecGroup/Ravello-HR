@@ -90,6 +90,7 @@ PAIRS=(
   "admin/src/components/hs/EntityQrPanel.tsx|portal/src/components/hs/EntityQrPanel.tsx"
   "admin/src/lib/core360Status/assemble.ts|portal/src/lib/core360Status/assemble.ts"
   "admin/src/components/hs/Core360StatusView.tsx|portal/src/components/hs/Core360StatusView.tsx"
+  "admin/src/lib/devPlan.ts|portal/src/lib/devPlan.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
