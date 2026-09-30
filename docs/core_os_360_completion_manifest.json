@@ -225,20 +225,23 @@
     {
       "id": "C12.4",
       "phase": "C12",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 188, compliance_twin_snapshots, Phase 23 Group 4"
     },
     {
       "id": "C12.5",
       "phase": "C12",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 189, compliance_twin_thresholds, Phase 23 Group 5"
     },
     {
       "id": "C12.6",
       "phase": "C12",
-      "status": "PARTIAL",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "ComplianceTwinArea.inputs, Phase 23 Group 6"
     },
     {
       "id": "C13.6",

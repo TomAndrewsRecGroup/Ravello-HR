@@ -275,3 +275,106 @@ describe('adversarial: no redundant reasons within one area', () => {
     expect(a.reasons).toHaveLength(1);
   });
 });
+
+// Core-OS 360 Completion Programme, Phase 23, Group 5 (closes
+// gap-ledger row C12.5): thresholds is an OPTIONAL second parameter —
+// undefined/null/unset always falls back to the documented default,
+// never silently guessed.
+describe('assembleComplianceTwin: per-company threshold overrides', () => {
+  it('with no thresholds argument, behaves identically to the pre-Group-5 defaults', () => {
+    const input = baseInput(); // lastAuditScore: 85, default threshold 70 -> clean
+    const snap = assembleComplianceTwin(input);
+    expect(areaOf(snap, 'safety').band).toBe('green');
+  });
+
+  it('a stricter audit-score override can turn a previously-clean area amber', () => {
+    const input = baseInput(); // lastAuditScore: 85
+    const snap = assembleComplianceTwin(input, { auditScoreLowThreshold: 90 });
+    const a = areaOf(snap, 'safety');
+    expect(a.band).toBe('amber');
+    expect(a.reasons[0]).toContain('below the 90% threshold');
+  });
+
+  it('a null override falls back to the default, never treated as an explicit 0', () => {
+    const input = baseInput();
+    const snap = assembleComplianceTwin(input, { auditScoreLowThreshold: null });
+    expect(areaOf(snap, 'safety').band).toBe('green'); // 85 is not < the default 70
+  });
+
+  it('overrides the evidence red/amber pair independently of governance/objectives thresholds', () => {
+    const input = baseInput();
+    input.evidence.coveragePercent = 60; // above the default 50% red, below default 90% amber
+    const defaultSnap = assembleComplianceTwin(input);
+    expect(areaOf(defaultSnap, 'evidence').band).toBe('amber');
+
+    const strictSnap = assembleComplianceTwin(input, { evidenceRedThreshold: 70 });
+    expect(areaOf(strictSnap, 'evidence').band).toBe('red');
+  });
+
+  it('a looser objectives-on-track threshold can turn a previously-amber area green', () => {
+    const input = baseInput();
+    input.governanceKpis.objectivesOnTrackPercent = 40; // below the default 50% amber threshold
+    const defaultSnap = assembleComplianceTwin(input);
+    expect(areaOf(defaultSnap, 'governance').band).toBe('amber');
+
+    const looseSnap = assembleComplianceTwin(input, { objectivesOnTrackAmberThreshold: 30 });
+    expect(areaOf(looseSnap, 'governance').band).toBe('green');
+  });
+
+  it('a stricter waste-non-conformance threshold can turn a previously-clean area amber', () => {
+    const input = baseInput();
+    input.governanceKpis.wasteNonConformancePercent = 8; // below the default 10% amber threshold
+    const defaultSnap = assembleComplianceTwin(input);
+    expect(areaOf(defaultSnap, 'governance').band).toBe('green');
+
+    const strictSnap = assembleComplianceTwin(input, { wasteNonConformanceAmberThreshold: 5 });
+    expect(areaOf(strictSnap, 'governance').band).toBe('amber');
+  });
+});
+
+// Core-OS 360 Completion Programme, Phase 23, Group 6 (closes
+// gap-ledger row C12.6): every area exposes `inputs`, the exact raw
+// values its own checks read — never a re-derivation, so this must
+// track the SAME numbers already driving `reasons`.
+describe('assembleComplianceTwin: inputs (C12.6)', () => {
+  it('safety.inputs carries the raw values and the threshold ACTUALLY used, post-override', () => {
+    const input = baseInput(); // lastAuditScore: 85
+    const snap = assembleComplianceTwin(input, { auditScoreLowThreshold: 90 });
+    const a = areaOf(snap, 'safety');
+    expect(a.inputs).toEqual({
+      riddorLast12Months: 0,
+      equipmentOverdueCount: 0,
+      equipmentDueSoonCount: 0,
+      lastAuditScore: 85,
+      auditScoreLowThreshold: 90, // the override, not the default 70
+    });
+  });
+
+  it('evidence.inputs reflects the default thresholds when no override is given', () => {
+    const snap = assembleComplianceTwin(baseInput());
+    const a = areaOf(snap, 'evidence');
+    expect(a.inputs).toEqual({
+      coveragePercent: 100,
+      evidenceRedThreshold: 50,
+      evidenceAmberThreshold: 90,
+    });
+  });
+
+  it('risk_graph.inputs carries plain counts — this area has no threshold of its own', () => {
+    const snap = assembleComplianceTwin(baseInput());
+    const a = areaOf(snap, 'risk_graph');
+    expect(a.inputs).toEqual({
+      assessmentsWithIneffectiveControlsCount: 0,
+      uncoveredHazardsCount: 0,
+      ineffectiveSharedControlsCount: 0,
+      unlinkedApplicableObligationsCount: 0,
+    });
+  });
+
+  it('every area carries a non-empty inputs object, even when entirely clean', () => {
+    const snap = assembleComplianceTwin(baseInput());
+    for (const a of snap.areas) {
+      expect(Object.keys(a.inputs).length, a.area).toBeGreaterThan(0);
+    }
+  });
+});

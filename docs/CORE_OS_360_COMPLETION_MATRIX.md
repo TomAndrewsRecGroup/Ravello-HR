@@ -249,11 +249,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C12.1 | Composition of 5 existing modules into per-area RAG bands | IMPLEMENTED | `lib/complianceTwin/assemble.ts` |
 | C12.2 | Named-threshold bands, never a formula/score | IMPLEMENTED | fixed-constant `if`-chains |
 | C12.3 | Red-still-reports-amber-reasons; null-vs-zero handling | IMPLEMENTED (fixed post-hoc) | Group 3 adversarial pass fixed 2 real Medium defects |
-| C12.4 | Stored snapshot/history for posture trend | MISSING | Master Spec Phase 23 known-gap: "no stored snapshot" → assigned **Phase 23** |
-| C12.5 | Configurable thresholds/weighting at org/sector level, safe defaults, audited | MISSING | Master Spec Phase 23 known-gap: "hardcoded/non-configurable areas/thresholds" → assigned **Phase 23** |
-| C12.6 | Every score exposes inputs, missing evidence, rationale | PARTIAL | reasons are exposed; a structured "what's missing" breakdown per area is not a separate first-class surface → assigned **Phase 23** |
+| C12.4 | Stored snapshot/history for posture trend | IMPLEMENTED | **Phase 23 Group 4**: migration 188, `compliance_twin_snapshots` (staff-only RLS, UNIQUE(company_id, snapshot_date) upserts), "Save today's snapshot" + a 30-day trend list, admin Digital Twin page only |
+| C12.5 | Configurable thresholds/weighting at org/sector level, safe defaults, audited | IMPLEMENTED | **Phase 23 Group 5**: migration 189, `compliance_twin_thresholds` (staff-only RLS, audited), `assembleComplianceTwin()` gains an optional `thresholds` param — null/unset always falls back to the documented default; a staff-only edit form on the admin Digital Twin page |
+| C12.6 | Every score exposes inputs, missing evidence, rationale | IMPLEMENTED | **Phase 23 Group 6**: `ComplianceTwinArea` gains `inputs` — the exact raw values and the threshold actually used (post-override), a collapsible "Show inputs" per area in `ComplianceTwinView.tsx` |
 
-**Gaps carried forward**: C12.4, C12.5, C12.6 → **Phase 23**.
+**Gaps closed by Phase 23 Group 4-6**: C12.4, C12.5, C12.6.
 
 ---
 

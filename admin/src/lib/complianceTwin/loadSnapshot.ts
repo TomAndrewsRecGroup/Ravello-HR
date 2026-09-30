@@ -5,7 +5,7 @@ import { computeGovernanceKpis } from '@/lib/governance/kpis';
 import { computeRiskGraphIntelligence, type RiskGraphLink } from '@/lib/riskGraph/intelligence';
 import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
 import { analyzeEvidenceCoverage, type RegisterCompletionRow, type ComplianceItemRow, type EvidenceFileRow } from '@/lib/evidenceEngine/analyze';
-import { assembleComplianceTwin, type ComplianceTwinSnapshot } from './assemble';
+import { assembleComplianceTwin, type ComplianceTwinSnapshot, type ComplianceTwinThresholds } from './assemble';
 
 const INCIDENT_PATTERN_WINDOW_DAYS = 90;
 
@@ -21,10 +21,18 @@ const INCIDENT_PATTERN_WINDOW_DAYS = 90;
  * more than just the company-id source (the legal_requirements lookup
  * needs the service role there, never here).
  */
+export interface ComplianceTwinThresholdsRow {
+  audit_score_low_threshold: number | null;
+  evidence_red_threshold: number | null;
+  evidence_amber_threshold: number | null;
+  objectives_on_track_amber_threshold: number | null;
+  waste_non_conformance_amber_threshold: number | null;
+}
+
 export async function loadComplianceTwinSnapshot(
   supabase: SupabaseClient,
   companyId: string,
-): Promise<{ snapshot: ComplianceTwinSnapshot; loadError: string | null }> {
+): Promise<{ snapshot: ComplianceTwinSnapshot; loadError: string | null; thresholdsRow: ComplianceTwinThresholdsRow | null }> {
   const today = new Date().toISOString().slice(0, 10);
 
   const [incidents12mo, activities, { data: audits }, equipment] = await Promise.all([
@@ -148,6 +156,21 @@ export async function loadComplianceTwinSnapshot(
     files: (filesRes.data ?? []) as EvidenceFileRow[],
   });
 
+  // Core-OS 360 Completion Programme, Phase 23, Group 5 (closes C12.5):
+  // the company's own threshold override row, if staff have set one —
+  // never trusted to exist; a missing row (the common case) means
+  // assembleComplianceTwin()'s own documented defaults apply.
+  const { data: thresholdsRow } = await supabase.from('compliance_twin_thresholds')
+    .select('audit_score_low_threshold, evidence_red_threshold, evidence_amber_threshold, objectives_on_track_amber_threshold, waste_non_conformance_amber_threshold')
+    .eq('company_id', companyId).maybeSingle();
+  const thresholds: ComplianceTwinThresholds | undefined = thresholdsRow ? {
+    auditScoreLowThreshold: thresholdsRow.audit_score_low_threshold,
+    evidenceRedThreshold: thresholdsRow.evidence_red_threshold,
+    evidenceAmberThreshold: thresholdsRow.evidence_amber_threshold,
+    objectivesOnTrackAmberThreshold: thresholdsRow.objectives_on_track_amber_threshold,
+    wasteNonConformanceAmberThreshold: thresholdsRow.waste_non_conformance_amber_threshold,
+  } : undefined;
+
   const loadError =
     incidents12mo.error ?? activities.error ?? equipment.error ??
     wasteMovements.error ?? objectives.error ?? legalObligations.error ?? activeEmployeeCountRes.error?.message ??
@@ -161,7 +184,7 @@ export async function loadComplianceTwinSnapshot(
     riskGraph,
     incidentPatterns,
     evidence,
-  });
+  }, thresholds);
 
-  return { snapshot, loadError };
+  return { snapshot, loadError, thresholdsRow: (thresholdsRow ?? null) as ComplianceTwinThresholdsRow | null };
 }

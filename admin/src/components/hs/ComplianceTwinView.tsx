@@ -30,6 +30,15 @@ const BAND_LABEL: Record<ComplianceTwinBand, string> = {
   green: 'On track',
 };
 
+// Core-OS 360 Completion Programme, Phase 23, Group 6 (closes
+// gap-ledger row C12.6): a plain camelCase -> "Title Case" label for
+// each input key, since the object's own key names are already the
+// only vocabulary this needs (no separate label map to drift out of
+// step with assemble.ts's own field names).
+function humaniseKey(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+}
+
 function BandIcon({ band, size = 20 }: { band: ComplianceTwinBand; size?: number }) {
   const colour = BAND_COLOUR[band];
   if (band === 'red') return <XCircle size={size} style={{ color: colour, flexShrink: 0 }} />;
@@ -90,6 +99,19 @@ export default function ComplianceTwinView({
                     </li>
                   ))}
                 </ul>
+                {Object.keys(area.inputs).length > 0 && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer select-none" style={{ color: 'var(--ink-faint)' }}>Show inputs</summary>
+                    <ul className="mt-1 space-y-0.5">
+                      {Object.entries(area.inputs).map(([k, v]) => (
+                        <li key={k} className="flex justify-between gap-2" style={{ color: 'var(--ink-faint)' }}>
+                          <span>{humaniseKey(k)}</span>
+                          <span className="font-mono">{v === null ? '—' : String(v)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </section>
             ))}
           </div>

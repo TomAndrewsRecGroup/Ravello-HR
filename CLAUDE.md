@@ -11071,3 +11071,135 @@ call), both production builds compile (portal's one prerender failure
 is the same long-documented sandbox-only missing-Supabase-env-var
 limitation, unrelated to this change).
 
+### Group 4 (migration 188): stored Digital Twin snapshot / history (C12.4)
+
+**Explicit, human-triggered capture — never a blind daily per-company
+loop.** Checked before deciding: the existing daily
+`/api/cron/health-snapshot` computes `computePortfolioCounts()` via
+WHOLE-PORTFOLIO batched reads — cheap regardless of company count. The
+Digital Twin's `loadComplianceTwinSnapshot()` is the opposite shape:
+~15 PER-COMPANY-SCOPED queries. Looping it over every active company
+inside the existing cron would multiply that cost by company count.
+Board Assurance (Phase 13) already solved "posture trend" for a
+structurally identical problem with an EXPLICIT, human-triggered
+generate-then-store action — the same precedent applies here.
+
+- **`compliance_twin_snapshots`** — `company_id, snapshot_date,
+  overall_band, areas jsonb`, `UNIQUE (company_id, snapshot_date)` so
+  a same-day re-save upserts rather than duplicating. Staff-only RLS,
+  the exact `management_review_data_pack` (161) shape — an internal
+  artefact of a staff action, never client-facing. No
+  `apply_write_guard()`: that guard protects a read-only CONSULTANCY
+  grant from writing to a CLIENT-readable table; this table has no
+  client policy at all, the same "staff-only tables don't get the
+  write guard" precedent 158's own `management_system_standards`/
+  `standard_clauses` already established. Audit trail whitelists
+  `overall_band`/`snapshot_date` only, never the `areas` jsonb blob.
+- **"Save today's snapshot"** (`SaveSnapshotButton.tsx`) inserts the
+  ALREADY-COMPUTED, ALREADY-RENDERED snapshot the page just built —
+  zero extra query cost. A staff session writes directly under RLS
+  (`compliance_twin_snapshots_staff_all`), the same "session
+  insert/upsert under RLS" pattern `DocumentsClient.tsx`/
+  `ContractorsClient.tsx` already use — no API route needed.
+- **`SnapshotTrend.tsx`** — a plain dot-per-day trend, last 30 stored
+  snapshots, newest last. Admin only: `compliance_twin_snapshots` is
+  staff-only RLS, so there is no client-facing equivalent to mirror
+  this into.
+
+**Live probe** (`supabase/probes/188_compliance_twin_snapshots.sql`,
+rolled back): 6 checks — staff insert; same-day re-save upserts (one
+row, updated band); a client (non-staff) session can neither read nor
+write; RLS enabled; the audit trigger fires. **All 6 passed.**
+
+### Group 5 (migration 189): configurable thresholds, safe defaults, audited (C12.5)
+
+- **`compliance_twin_thresholds`** — `company_id` UNIQUE, five
+  nullable override columns matching `assemble.ts`'s five named
+  constants. Staff-only RLS + `audit_row()` whitelisting the five
+  threshold columns only. Deciding these thresholds decides what a
+  CLIENT sees as red/amber/green on their own compliance posture, so
+  — matching the H&S register's standing "nothing here is
+  self-certified" posture — a client never gets a write path to
+  loosen their own thresholds.
+- **`assembleComplianceTwin()` gains an optional second
+  `thresholds` param.** Every named constant is renamed
+  `DEFAULT_X` and each area function now reads `thresholds?.X ??
+  DEFAULT_X` — null/unset ALWAYS falls back to the documented
+  default, never silently guessed. `riskGraphArea()`/
+  `incidentPatternsArea()` take no threshold at all — neither area
+  ever had one.
+- **`loadComplianceTwinSnapshot()` reads the company's own threshold
+  row (or none) and passes it through** — the ONE place all three
+  admin callers (Digital Twin page, Board Assurance's `generate`
+  route, Assurance Today) go through, so wiring it there once avoids
+  three separate reads that could drift, the same "one calculation,
+  not two" discipline this codebase holds to throughout.
+- **A deliberate, documented scope decision**: portal's own
+  digital-twin/assurance pages (which duplicate their own query logic
+  rather than importing admin's loader — Phase 12's own established
+  reason: the two apps share no server code) are UNCHANGED and
+  continue to use the documented defaults always, never a per-client
+  override. `assembleComplianceTwin()`'s `thresholds` param is
+  optional specifically so this needed zero code changes on the
+  portal side — only the three named admin callers were in scope. A
+  possible admin/portal reporting asymmetry for an overridden client
+  is an accepted, documented consequence of this scope, not an
+  oversight.
+- **`ThresholdsForm.tsx`** (admin-only, on the Digital Twin page): a
+  collapsible form, five number inputs, blank means "use the default"
+  (shown as placeholder text, never pre-filled as a guessed number). A
+  staff session upserts directly under RLS
+  (`onConflict: 'company_id'`).
+
+**Live probe** (`supabase/probes/189_compliance_twin_thresholds.sql`,
+rolled back): 7 checks — staff insert/update; `UNIQUE(company_id)`
+refuses a second row for the same company; a client session can
+neither read nor write; RLS enabled; the audit trigger fires. **All 7
+passed.**
+
+### Group 6: every score exposes its inputs (C12.6)
+
+- **`ComplianceTwinArea` gains `inputs: Record<string, number |
+  string | null>`** — the exact raw values that area's own red/amber
+  checks read (e.g. `riddorLast12Months`, `lastAuditScore`), PLUS the
+  threshold actually used (post-Group-5-override) alongside the value
+  it was compared against — never a re-derivation, the same numbers
+  already driving `reasons`, just also exposed structurally.
+  `buildArea()` takes `inputs` as a new required parameter; every one
+  of the five area functions passes its own. `risk_graph` carries
+  plain counts only — that area has no threshold of its own.
+- **`ComplianceTwinView.tsx` gains a collapsible "Show inputs" per
+  area** — a native `<details>`/`<summary>` element, needing no
+  JavaScript and no `'use client'` conversion, keeping this
+  server-renderable component exactly as it was. `humaniseKey()`
+  turns each camelCase field name into a plain label — the object's
+  own key names are already the only vocabulary needed, no separate
+  label map to drift out of step with `assemble.ts`'s own field
+  names.
+- Every pre-existing test fixture literal-constructing a
+  `ComplianceTwinArea` (`board-assurance/generate/route.test.ts`,
+  `assurance/today.test.ts`, `boardAssurance/computeReport.test.ts`)
+  needed a trivial `inputs: {}` addition — caught immediately by
+  `tsc`, not by review.
+
+Verified (Groups 4-6 together): `tsc --noEmit` clean both apps, full
+`vitest run` green (1709 admin — 1686 + 23 new: 6
+`complianceTwinSnapshotsSql.test.ts` + 5
+`complianceTwinThresholdsSql.test.ts` + 12 new `assemble.test.ts`
+cases across Groups 5-6; 804 portal, unchanged — this work touched
+only the shared-dupe `assemble.ts`/`ComplianceTwinView.tsx` mirrors,
+byte-identical, no new portal test file needed, matching Phase 12's
+own established admin-only-test asymmetry for this module), all six
+CI guards pass (`check-shared-dupes.sh`: 66 pairs, unchanged —
+`assemble.ts`/`ComplianceTwinView.tsx` were already registered pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 43 static routes, all reachable — no
+new admin route, only new sections on the existing Digital Twin page;
+`check-blind-updates.sh`: 102, unchanged — every new write is an
+upsert (never a blind conditional UPDATE) or an insert;
+`check-paged-order.sh`: clean), both production builds compile
+(portal's one prerender failure is the same long-documented
+sandbox-only missing-Supabase-env-var limitation, unrelated to this
+change). Migrations 188 and 189 applied live and verified (13 live
+probe checks total across both, all passing).
+
