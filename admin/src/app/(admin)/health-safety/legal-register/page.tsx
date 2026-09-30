@@ -19,7 +19,7 @@ export default async function LegalRegisterCataloguePage() {
   const requirements = await readAllPages<LegalRequirement>((from, to) =>
     supabase.from('legal_requirements')
       .select('id, title, category, jurisdiction, summary, source_url, created_by, created_at, updated_at')
-      .order('category').order('title').range(from, to));
+      .order('category').order('title').order('id').range(from, to));
 
   return (
     <>

@@ -24,24 +24,28 @@ export default async function RiskGraphPage(props: { params: Promise<{ companyId
 
   const [hazards, riskAssessments, raItems, controlLinks, obligations] = await Promise.all([
     readAllPages<{ id: string; title: string; status: string }>((from, to) =>
-      supabase.from('hazards').select('id, title, status').eq('company_id', params.companyId).range(from, to)),
+      supabase.from('hazards').select('id, title, status').eq('company_id', params.companyId).order('id').range(from, to)),
     readAllPages<{ id: string; title: string; status: string }>((from, to) =>
-      supabase.from('risk_assessments').select('id, title, status').eq('company_id', params.companyId).range(from, to)),
+      supabase.from('risk_assessments').select('id, title, status').eq('company_id', params.companyId).order('id').range(from, to)),
     readAllPages<{ id: string; risk_assessment_id: string; hazard_id: string | null }>((from, to) =>
-      supabase.from('risk_assessment_items').select('id, risk_assessment_id, hazard_id').eq('company_id', params.companyId).range(from, to)),
+      supabase.from('risk_assessment_items').select('id, risk_assessment_id, hazard_id').eq('company_id', params.companyId).order('id').range(from, to)),
     readAllPages<{ risk_assessment_item_id: string; control_id: string; control_title: string; effectiveness: string }>((from, to) =>
-      supabase.from('risk_item_controls').select('risk_assessment_item_id, control_id, control_title, effectiveness').eq('company_id', params.companyId).range(from, to)),
+      supabase.from('risk_item_controls').select('id, risk_assessment_item_id, control_id, control_title, effectiveness').eq('company_id', params.companyId).order('id').range(from, to)),
     readAllPages<{ id: string; legal_requirement_id: string; applicability_status: string }>((from, to) =>
-      supabase.from('organisation_legal_obligations').select('id, legal_requirement_id, applicability_status').eq('company_id', params.companyId).range(from, to)),
+      supabase.from('organisation_legal_obligations').select('id, legal_requirement_id, applicability_status').eq('company_id', params.companyId).order('id').range(from, to)),
   ]);
 
   const requirementIds = [...new Set(obligations.rows.map(o => o.legal_requirement_id))];
-  const [{ data: requirements }, { data: legalLinksA }, { data: legalLinksB }] = await Promise.all([
+  const [{ data: requirements }, legalLinksA, legalLinksB] = await Promise.all([
     requirementIds.length > 0
       ? supabase.from('legal_requirements').select('id, title').in('id', requirementIds)
       : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-    supabase.from('hs_links').select('from_type, from_id, to_type, to_id').eq('company_id', params.companyId).eq('from_type', 'legal_obligation'),
-    supabase.from('hs_links').select('from_type, from_id, to_type, to_id').eq('company_id', params.companyId).eq('to_type', 'legal_obligation'),
+    readAllPages<RiskGraphLink>((from, to) =>
+      supabase.from('hs_links').select('id, from_type, from_id, to_type, to_id')
+        .eq('company_id', params.companyId).eq('from_type', 'legal_obligation').order('id').range(from, to)),
+    readAllPages<RiskGraphLink>((from, to) =>
+      supabase.from('hs_links').select('id, from_type, from_id, to_type, to_id')
+        .eq('company_id', params.companyId).eq('to_type', 'legal_obligation').order('id').range(from, to)),
   ]);
 
   const titleByRequirement = new Map((requirements ?? []).map(r => [r.id, r.title]));
@@ -50,7 +54,7 @@ export default async function RiskGraphPage(props: { params: Promise<{ companyId
     title: titleByRequirement.get(o.legal_requirement_id) ?? 'Untitled requirement',
     applicability_status: o.applicability_status,
   }));
-  const legalObligationLinks: RiskGraphLink[] = [...(legalLinksA ?? []), ...(legalLinksB ?? [])];
+  const legalObligationLinks: RiskGraphLink[] = [...legalLinksA.rows, ...legalLinksB.rows];
 
   const intelligence = computeRiskGraphIntelligence({
     hazards: hazards.rows,

@@ -38,14 +38,14 @@ export default async function ProtectIncidentPatternsPage(props: { searchParams:
   const [incidents, priorIncidents, investigations, causes, sitesRes, deptsRes] = await Promise.all([
     readAllPages<IncidentRow>((from, to) =>
       supabase.from('hs_incidents').select('id, incident_type, severity, site_id, department_id, occurred_on')
-        .eq('company_id', companyId).gte('occurred_on', windowStart).lt('occurred_on', windowEndExclusive).range(from, to)),
+        .eq('company_id', companyId).gte('occurred_on', windowStart).lt('occurred_on', windowEndExclusive).order('id').range(from, to)),
     readAllPages<IncidentRow>((from, to) =>
       supabase.from('hs_incidents').select('id, incident_type, severity, site_id, department_id, occurred_on')
-        .eq('company_id', companyId).gte('occurred_on', priorStart).lt('occurred_on', priorEndExclusive).range(from, to)),
+        .eq('company_id', companyId).gte('occurred_on', priorStart).lt('occurred_on', priorEndExclusive).order('id').range(from, to)),
     readAllPages<IncidentInvestigationRow>((from, to) =>
-      supabase.from('incident_investigations').select('id, incident_id').eq('company_id', companyId).range(from, to)),
+      supabase.from('incident_investigations').select('id, incident_id').eq('company_id', companyId).order('id').range(from, to)),
     readAllPages<IncidentCauseRow>((from, to) =>
-      supabase.from('incident_causes').select('investigation_id, cause_level, category, confirmed_at').eq('company_id', companyId).range(from, to)),
+      supabase.from('incident_causes').select('id, investigation_id, cause_level, category, confirmed_at').eq('company_id', companyId).order('id').range(from, to)),
     supabase.from('hs_sites').select('id, name').eq('company_id', companyId),
     supabase.from('departments').select('id, name').eq('company_id', companyId),
   ]);

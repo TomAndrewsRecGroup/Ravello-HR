@@ -29,9 +29,9 @@ export default async function HealthSafetyIsolationsPage(props: { params: Promis
         .select('id, isolation_id, company_id, person_id, lock_number, applied_at, removed_at, removed_by, override_reason, override_authorised_by')
         .eq('company_id', params.companyId).order('applied_at').order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
-      supabase.from('hs_equipment').select('id, name').eq('company_id', params.companyId).order('name').range(from, to)),
+      supabase.from('hs_equipment').select('id, name').eq('company_id', params.companyId).order('name').order('id').range(from, to)),
     readAllPages<PersonRow>((from, to) =>
-      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').range(from, to)),
+      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').order('id').range(from, to)),
   ]);
 
   const loadError = [isolations, locks, equipment, people].map(r => r.error).find(Boolean) ?? null;

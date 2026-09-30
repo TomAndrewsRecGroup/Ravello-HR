@@ -22,7 +22,7 @@ export default async function HealthSafetyObjectivesPage(props: { params: Promis
       .eq('company_id', params.companyId).order('created_at', { ascending: false }),
     supabase.from('management_system_standards').select('id, code, name, created_at').order('code'),
     readAllPages<{ id: string; full_name: string }>((from, to) =>
-      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').range(from, to)),
+      supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').order('id').range(from, to)),
   ]);
 
   const objectiveRows = (objectives ?? []) as Objective[];

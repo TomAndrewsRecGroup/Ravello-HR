@@ -17,15 +17,15 @@ export default async function HealthSafetyKpisPage(props: { params: Promise<{ co
 
   const [incidents, activities, { data: audits }, equipment] = await Promise.all([
     readAllPages<{ severity: string; riddor_reportable: boolean; occurred_on: string }>((from, to) =>
-      supabase.from('hs_incidents').select('severity, riddor_reportable, occurred_on')
-        .eq('company_id', params.companyId).range(from, to)),
+      supabase.from('hs_incidents').select('id, severity, riddor_reportable, occurred_on')
+        .eq('company_id', params.companyId).order('id').range(from, to)),
     readAllPages<{ activity_type: string; occurred_on: string }>((from, to) =>
-      supabase.from('hs_activities').select('activity_type, occurred_on')
-        .eq('company_id', params.companyId).range(from, to)),
+      supabase.from('hs_activities').select('id, activity_type, occurred_on')
+        .eq('company_id', params.companyId).order('id').range(from, to)),
     supabase.from('hs_audits').select('score, conducted_on').eq('company_id', params.companyId).order('conducted_on', { ascending: false }).limit(2),
     readAllPages<{ status: string; next_inspection_due: string | null }>((from, to) =>
-      supabase.from('hs_equipment').select('status, next_inspection_due')
-        .eq('company_id', params.companyId).range(from, to)),
+      supabase.from('hs_equipment').select('id, status, next_inspection_due')
+        .eq('company_id', params.companyId).order('id').range(from, to)),
   ]);
 
   const kpis = computeHsKpis({

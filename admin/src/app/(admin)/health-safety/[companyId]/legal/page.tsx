@@ -23,7 +23,7 @@ export default async function HealthSafetyLegalRegisterPage(props: { params: Pro
     readAllPages<OrganisationLegalObligation>((from, to) =>
       supabase.from('organisation_legal_obligations')
         .select('id, company_id, legal_requirement_id, applicability_status, assessed_by, assessed_at, assessment_rationale, next_review_due, created_by, created_at, updated_at')
-        .eq('company_id', params.companyId).order('created_at').range(from, to)),
+        .eq('company_id', params.companyId).order('created_at').order('id').range(from, to)),
   ]);
 
   const obligationIds = obligations.rows.map(o => o.id);
