@@ -1,15 +1,29 @@
 // One referral scan, however it was triggered.
 //
-// This was the body of the hourly cron route. It moved here when the
-// cron turned out never to have existed: Vercel's Cron Jobs tab for the
-// admin project is EMPTY, so `admin/vercel.json` has never been read
-// and none of its four schedules have ever fired. `latest_updates` is
-// empty for the same reason — this was not a referral-pipeline problem.
+// This was the body of the hourly cron route. It moved here on
+// 2026-09-04 during the SAME investigation that found the cron
+// 307-redirect bug (see CLAUDE.md, "Every cron and the Stripe webhook
+// were 307-redirected to login") — at that moment Vercel's own Cron
+// Jobs dashboard for the admin project showed no history for these
+// schedules, which briefly looked like `admin/vercel.json` had never
+// been read at all. It had: the requests were firing and hitting the
+// middleware's login redirect before ever reaching this code, which is
+// exactly what a hosting-level cron log cannot distinguish from "never
+// scheduled". **This turned out to be the wrong diagnosis** — corrected
+// here 2026-09-30 (Phase 20 audit) after the schedules' own subsequent
+// history (the duplicate-email incident and everything since) proved
+// the crons have run on schedule since the actual fix landed the same
+// day. Left uncorrected for 26 days, this comment would have told the
+// next reader the opposite of what the rest of this file's own
+// operational history shows.
 //
-// A pipeline whose only trigger is a schedule that does not exist has
-// no way to be run, and no way to be tested. Now there are two callers
-// of ONE implementation: the cron (for when the schedule is fixed) and
-// an operator-triggered route (for now, and for re-running on demand).
+// The extraction itself was still the right call, for a reason that
+// has nothing to do with the misdiagnosis above: a pipeline whose only
+// trigger was a schedule nobody could directly invoke had no way to be
+// re-run on demand or tested by hand. There are now two callers of ONE
+// implementation: the cron, and an operator-triggered route
+// (`api/admin/requisitions/[id]/scan-applicants`) for re-running a
+// single role on demand.
 //
 // Deliberately ONE implementation. A second copy of the gating loop is
 // the copy nobody re-checks when a skip reason changes, and every

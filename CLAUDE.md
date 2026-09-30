@@ -10351,3 +10351,109 @@ source file in that app was touched by this fix). Migration 182 applied
 live and verified via `information_schema.role_table_grants` and a live
 rolled-back re-run of the originally-failing session read.
 
+---
+
+## Core-OS 360 Completion Programme: Phase 20 — Specification
+## Reconciliation & Legacy Preservation (in progress, no migration)
+
+`Core-OS 360_Remaining-Phases_Claude-Code_Master-Spec.docx` (uploaded
+2026-09-30) opens a second programme, Phases 20-29, that closes the
+real gaps Phases 6-19's own handovers already documented as deferred/
+staff-only/UI-only — comparable in scope to the whole Phase 6-19
+initiative, worked the same way: one phase at a time, small verified
+groups, never batched. Phase 20 is its own explicit prerequisite:
+"one authoritative truth set" before any further feature work. Full
+handover: `docs/CORE_OS_360_PHASE20_HANDOVER.md`.
+
+- **`docs/CORE_OS_360_COMPLETION_MATRIX.md`** — one table per Core-OS
+  360 phase (C1-C19), every requirement cluster marked `IMPLEMENTED`/
+  `PARTIAL`/`MISSING`/`DEFERRED-BUT-REQUIRED`/
+  `ACCEPTED-NONREQUIREMENT`, cross-checked against the Master Spec's
+  own "Known repository evidence / starting gaps" lists for Phases
+  21-29 — which independently reproduce findings already on THIS
+  file's own record, a cross-confirmation rather than a contradiction.
+  A Consolidated Gap Ledger maps every open row to its target phase.
+  `docs/core_os_360_completion_manifest.json` mirrors the ledger for a
+  later phase's own gate to check programmatically.
+- **A genuine, previously-undocumented finding, caught by doing the
+  preservation-testing work rather than only reading past handovers**:
+  `admin/src/lib/referral/runScan.ts`'s own header comment (dated
+  2026-09-04, the same day as the cron-307-redirect fix above) claimed
+  Vercel's Cron Jobs dashboard had never fired the referral schedule at
+  all — "the cron turned out never to have existed." This directly
+  contradicts this file's OWN subsequent, extensively-documented
+  operational history: the 2026-09-21→24 duplicate-email incident
+  required real hourly cron executions over MULTIPLE DAYS to happen at
+  all. The original 2026-09-04 diagnosis was wrong — the requests were
+  firing and hitting the unrelated 307-redirect bug before ever
+  reaching this code, which a hosting-level cron log cannot tell apart
+  from "never scheduled." Corrected in place (comment only, no logic
+  change) rather than left to mislead the next reader for another 26
+  days. The extraction into one shared function was still the right
+  call, for a reason that survives the corrected diagnosis: a schedule
+  nobody could invoke by hand had no way to be re-run or tested.
+- **Preservation tests, before any Phase 21+ code change touches these
+  systems** (the DoD's own ordering rule): `admin/src/app/api/cron/
+  referral-scan/__tests__/route.test.ts` (5 cases — the cron's actual
+  entry point had ZERO coverage of any kind before this; auth,
+  per-outcome `referral_scan_runs` recording, and the first genuinely
+  unmocked pass through the real pipeline, since "no enabled roles"
+  needs no Manatal/IvyLens/email stub at all) and `admin/src/app/api/
+  broadcast/__tests__/route.test.ts` (4 cases — a real send end to
+  end: one action per company, `client_admin`-only email,
+  all-or-nothing on an invalid company id, staff-auth refusal).
+  `docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md` covers the four
+  protected systems (A2I public signup, Development Plans, E-Learning
+  checkout/webhook, Billing/Invoicing) that did NOT get automated
+  coverage built in this phase — honestly recorded as the DoD's
+  permitted manual-script fallback, not a claim automation is
+  impossible for them; real coverage is carried forward to Phase 29 as
+  tracked debt (`PL.1`), not silently dropped.
+- **A dedicated read-only audit agent** (never trusting this file's own
+  narrative) found the actual protected-legacy test-coverage picture
+  BEFORE any of the above was written: Referrals PARTIAL-WORKFLOW
+  (fragmented, mock-heavy — `gate.test.ts`, `pipelineIdempotency.
+  test.ts`, `approve.test.ts`, the referrals `[id]` route test — but
+  the cron/config/send-qualified/test-email routes fully untested at
+  the time); A2I and Broadcast UNIT-ONLY (template/prefill pure
+  functions only); Development Plans, E-Learning and Billing/
+  Invoicing NONE (zero test files of any kind, anywhere).
+- **No speculative feature work** — per the phase's own rule, and
+  unlike every Core-OS 360 Phase 1-19 group, this phase added no
+  migration and changed no application behaviour beyond the one stale-
+  comment correction above.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1632 admin — 1623 + 9 new; 755 portal, unchanged — this phase touched
+admin only), all six CI guards pass with no regressions, admin
+production build compiles, portal production build fails ONLY on the
+long-documented sandbox-only missing-Supabase-env-var limitation
+(present since Phase 5, unrelated to this phase). An independent
+verification pass sampled 31 of the matrix's `IMPLEMENTED` rows against
+the live code rather than trusting the matrix's own citations — see
+`docs/CORE_OS_360_PHASE20_HANDOVER.md` for the result.
+
+**Gate: PASS.** An independent agent — given only "verify this matrix's
+claims against the live code, trust nothing it cites" — sampled 31
+`IMPLEMENTED` rows spanning all 19 phases, weighted toward the highest-
+risk claims (self-authorisation refusals, RLS/tenancy guards, post-hoc
+bug fixes) plus the two rows most likely to contain a subtle
+overstatement: C4.5 (LOLER immediate-danger quarantine really is
+unconditional on `outcome`, checked before the fail branch) and C10.3
+(the corrected window-asymmetry doc comment genuinely no longer claims
+equal-length windows). **31/31 CONFIRMED, 0 NOT-CONFIRMED** — every
+claim traced to the actual current migration SQL/trigger/TypeScript
+body, several against real post-hoc-fixed bugs, none merely a comment
+claiming a fix. One honest, structural limitation the agent itself
+flagged: this was static source verification with no live database
+access, so it confirms the logic is wired up correctly but does not
+re-prove production currently matches what's on disk — the same
+reason every schema-bearing phase ran its own live probe at ship time,
+which a documentation-reconciliation pass cannot retroactively redo
+for two dozen historical migrations. Full handover:
+`docs/CORE_OS_360_PHASE20_HANDOVER.md`.
+
+**Phase 21 (People, LMS, Competency & Safe-to-Deploy Closure) may
+begin** once this branch merges, per the Master Spec's own sequential-
+gate rule.
+
