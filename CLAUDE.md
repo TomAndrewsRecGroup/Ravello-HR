@@ -9719,13 +9719,80 @@ is dynamic (`[companyId]`), so it needed no literal-reference check;
 pages are read-only), both production builds compile, including
 `/health-safety/<companyId>/assurance` and `/protect/assurance`.
 
-### Group 3: regression, adversarial QA, handover
+### Group 3: regression, adversarial QA, handover (2026-09-30)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
-and merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE18_HANDOVER.md`.
+**Gate: PASS.**
 
-**Phase 19 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+**No Critical, High or Medium defect was found in this pass** — a
+genuinely thorough review, not a formulaic one:
+
+- **The absolute "never a verdict" rule was checked against the actual
+  rendered text, not just the intent.** Grepping every new file
+  (`today.ts`, `AssuranceTodayView.tsx`, both pages) for the standalone
+  words "safe"/"compliant"/"unsafe"/"non-compliant" found only: code
+  comments (never rendered); the copy paragraph's own META-statement
+  ("...it never says 'safe' or 'compliant' on this organisation's
+  behalf" — describing the policy, not violating it); and the item
+  label `'Workers not currently Safe to Deploy'`, which cites Phase 3's
+  own established, capitalised system name for its engine's output
+  (`READY`/`NOT_READY`/`REVIEW_REQUIRED`) — a reference to another
+  system's own vocabulary, not this phase asserting a verdict of its
+  own, the same distinction already drawn for "Digital Twin"/"Board
+  Assurance" as named features.
+- **`computePortfolioCounts([companyId], ...).get(companyId)!` is never
+  actually unsafe** despite the non-null assertion — the function's own
+  body unconditionally seeds a zero-defaulted entry for every id in the
+  `companyIds` array it is given, regardless of whether any row
+  references that company. A brand-new client with zero of everything
+  gets `0` counts, not `undefined`.
+- **Portal's new RLS assumptions were re-verified against the actual
+  live policies, not merely restated from memory**: `hs_documents_
+  client_read` (106), `audit_findings_client_read` (162),
+  `person_deployment_status_read` gated by `person_visible()` (136) —
+  each grepped directly out of its migration file before relying on it.
+- **`loadError` aggregation in the portal page was diffed against the
+  Digital Twin portal page's own chain** to confirm the seven new
+  queries' errors were APPENDED, not substituted for any of the
+  original eighteen — none dropped.
+- **The admin `HsCompanyTabs.tsx` tab's generated href was traced
+  against the actual page's route** rather than assumed to match by
+  naming convention alone.
+- **The triple-read of `organisation_legal_obligations` on the portal
+  page** (once for governance KPIs, once for the risk graph, once for
+  PortfolioCounts, each with a different column selection) is real,
+  acknowledged redundancy — already documented in the page's own header
+  comment as a deliberate tradeoff (clarity of separately-shaped reads
+  over cross-consumer column-merging), not silently reintroduced debt.
+
+**One real process gap, already caught and fixed the same day it was
+introduced** — recorded for history, not carried into this pass as a
+new finding: `AssuranceTodayView.tsx` went unregistered in `check-
+shared-dupes.sh`'s own pairs list during Group 2's first draft, caught
+by the guard's own reported count staying at 59 instead of the expected
+60, and fixed before Group 2's PR was opened.
+
+Every design decision that might otherwise look like an oversight is
+explicitly documented rather than silently made: composition over a
+sixth intelligence module, the `portfolioCounts.ts` shared-dupe
+promotion, portal's separately-shaped queries (the two apps have no
+shared server code), and the empty-array fields for `PortfolioCounts`
+columns with no client-read policy — none of which
+`assembleAssuranceToday()` ever reads, so nothing the page shows is
+under-reported.
+
+Verified: `tsc --noEmit` clean both apps (no code changed in this
+pass — it is review and documentation only), full `vitest run` green
+(1620 admin / 755 portal, unchanged from the end of Group 2), all five
+CI guards pass (`check-shared-dupes.sh`: 60 pairs; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged; `check-admin-
+routes-linked.sh`: 43 static admin routes, all reachable; `check-
+blind-updates.sh`: 102, unchanged — this phase writes nothing anywhere,
+both pages are entirely read-only), both production builds compile
+(verified in Group 2; unaffected by this pass since no source file
+changed). No migration exists for this phase, so nothing shared (a
+table, a trigger, an RLS policy) could have drifted.
+
+**Phase 18 is complete. Phase 19 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
