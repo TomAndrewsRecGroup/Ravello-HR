@@ -40,6 +40,7 @@ const TABS = [
   { href: '/protect/incident-patterns', label: 'Incident Patterns' },
   { href: '/protect/evidence',         label: 'Evidence' },
   { href: '/protect/digital-twin',     label: 'Digital Twin' },
+  { href: '/protect/board-assurance',  label: 'Board Assurance' },
   { href: '/protect/analysis',         label: 'Analysis' },
   { href: '/protect/reports',          label: 'Reports' },
 ];

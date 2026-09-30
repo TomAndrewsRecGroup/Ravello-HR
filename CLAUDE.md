@@ -8559,12 +8559,115 @@ which added a new portal test file), all five CI guards pass
 compile. Migration 178 applied live and verified (both tables exist,
 19/19 probe checks pass).
 
-### Group 2 and Group 3
+### Group 2: admin generate/issue/PDF UI, portal read + acknowledge
 
-Not yet built as of this CLAUDE.md entry — Group 1 is committed and
-merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline; the UI and the final
-regression/adversarial-QA/handover pass follow as their own PRs.
+- **`admin/src/lib/complianceTwin/loadSnapshot.ts`** extracts the
+  Digital Twin admin page's own ~20-query assembly (Phase 12, Group 2)
+  into `loadComplianceTwinSnapshot(supabase, companyId)`, so the new
+  "Generate" action calls the IDENTICAL assembly rather than a second,
+  potentially-drifting copy — the same "one calculation, not two" rule
+  `computeValueReport()`/`computeGovernanceMetrics()` already established.
+  `/health-safety/<companyId>/digital-twin/page.tsx` was rewritten to
+  call this extracted function instead of inlining the logic; its
+  rendering and portal's own Digital Twin page are both unchanged
+  (portal reads session-scoped company id and a service-role
+  `legal_requirements` lookup that has nothing to do with the
+  generate action, which is staff-only anyway).
+- **`admin/src/lib/boardAssurance/loadPortfolioCounts.ts`**'s
+  `loadPortfolioCountsForCompany(supabase, companyId)` mirrors the
+  EXACT per-table column selections `/api/cron/health-snapshot/route.ts`
+  already uses for `computePortfolioCounts()` (Phase 6), scoped to one
+  company via `.eq('company_id', companyId)` (or
+  `.eq('client_organisation_id', companyId)` for `consultancy_visits`)
+  instead of the whole portfolio — never a re-derived counting formula,
+  only a narrower WHERE clause. `contractor_insurances` has no direct
+  `company_id`; it is scoped by first reading the company's own
+  `contractors` then `.in('contractor_id', contractorIds)`.
+- **`POST /api/admin/board-assurance/generate`** (`requireStaff()`):
+  reads the Digital Twin snapshot and the scoped portfolio counts in
+  parallel, the most recently COMPLETED `management_reviews` row (and
+  its decisions), and any existing prior-period `board_assurance_reports`
+  row (for `computeBoardAssuranceReport()`'s own trend comparison — see
+  Group 1: null when none exists, never guessed) — then inserts. A
+  `23505` (an existing report for that company/year/quarter) is
+  reported as a 409, never silently overwritten.
+- **`PATCH /api/admin/board-assurance/[id]`** (`requireStaff()`): the
+  ONLY session-side transition the table's own guard allows after
+  generation — `{ action: 'issue' }` → a conditional `.update({
+  status: 'issued' }, { count: 'exact' })`. No pre-validation of the
+  transition here at all: the database's `board_assurance_reports_guard()`
+  (migration 178) decides, this route only asks and surfaces its
+  refusal (404 on no match — a draft the guard already reset, or a row
+  that does not exist) — the same posture every H&S workflow guard in
+  this codebase already takes.
+- **`admin/src/lib/boardAssurance/buildReportPdf.ts`** mirrors
+  `lib/valueReport/buildReportPdf.ts`'s exact parameterised-builder
+  pattern (jsPDF/autoTable passed in, never imported at the module's
+  own top) — title/period/overall band/trend, an areas table, a
+  portfolio-counts table, and the latest completed management review's
+  decisions.
+- **`/health-safety/<companyId>/board-assurance`** (admin): lists every
+  report for the company regardless of status (staff review drafts
+  before issuing them — the whole point of this page), a "Generate a
+  new report" form (year/quarter → POST `/generate`), per-report
+  expand/collapse detail, "Print PDF" (lazy `import('jspdf')`/
+  `import('jspdf-autotable')`, keeping the page bundle small — the
+  Value Report's own precedent), and an "Issue" button on drafts only.
+  A 27th `HsCompanyTabs.tsx` tab, no new sidebar entry needed (nests
+  under the already-linked `/health-safety` prefix).
+- **Portal gets a read-only `/protect/board-assurance`**, gated by
+  `protect` alone — added to `moduleAccess.ts`'s `ROUTE_FLAGS` and the
+  PROTECT `layout.tsx`'s own `TABS` list. Its own `.eq('status',
+  'issued')` is defence in depth: `board_assurance_reports_client_read`
+  (178) already refuses a draft to a client session, the same
+  belt-and-braces `/protect/documents`' `effective_from` filter already
+  applies to an RLS rule that already enforces the same thing.
+  **`BoardAssuranceReportData` is declared LOCALLY and narrowly**
+  (`board-assurance/types.ts`) — only `overallBand`/`trend`/
+  `complianceTwin` (the three fields this read-only page actually
+  renders), not admin's full type (which also carries
+  `portfolioCounts`/`latestManagementReview`/`companyId`/`generatedAt`,
+  none of which this page shows) — the exact "declare a narrow local
+  interface naming only the fields this file reads" precedent Group 1's
+  own Digital Twin work already established for its two admin-only KPI
+  inputs. `ComplianceTwinSnapshot` itself IS imported directly from the
+  shared-dupe `lib/complianceTwin/assemble.ts`, since that type is
+  genuinely identical in both apps.
+- **`BoardAssuranceAcknowledge.tsx`** is the exact `RamsAcknowledge.tsx`
+  pattern: `'use client'`, a plain browser `createClient().from(
+  'board_assurance_acknowledgements').insert({ report_id, comment })`
+  under the signed-in session — `company_id`/`acknowledged_by`/
+  `acknowledged_by_name`/`acknowledged_at` are ALL derived server-side
+  by `board_assurance_acknowledgements_fill()` (178), never sent from
+  the browser. **No pre-check for an existing acknowledgement** — a
+  duplicate click is refused by the table's own `UNIQUE (report_id,
+  acknowledged_by)`, surfaced as `error.code === '23505'` → "You have
+  already acknowledged this report." rather than a client-side guess at
+  the database's own rule that could drift out of step with it.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1542
+admin, unchanged — this group's admin work is UI/routes with no new
+admin test file, consistent with this codebase's established "no
+component-level test" convention for presentational/route-glue code;
+715 portal — 712 + 3, `portalPagesLinked.test.ts`/
+`clientServerBoundary.test.ts` picking up the new page/component
+automatically), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 56 pairs, unchanged — `types.ts` is portal-only,
+not a shared-dupe candidate; `check-row-cap.sh`: clean; `check-route-
+validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`: 42
+static routes, all reachable — the new admin route nests under the
+already-linked `/health-safety` prefix; `check-blind-updates.sh`: 102,
+unchanged — the one new admin `.update()` (issue) was built with
+`{ count: 'exact' }` from the start), both production builds compile,
+including `/health-safety/<companyId>/board-assurance` and
+`/protect/board-assurance`.
+
+### Group 3
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
+merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
 
 **Phase 14 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.
