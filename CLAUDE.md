@@ -11364,8 +11364,48 @@ Supabase-env-var limitation, unrelated to this change — confirmed by
 "Compiled successfully" completing cleanly before that unrelated
 page's static-export step).
 
-**Later Phase 24 groups** (C6.13 site-level drilldown, C6.14
-Communication Timeline pagination/filtering, C6.15 visit reports as a
-Communication Timeline source, final regression/QA/handover) continue
-from here.
+### Group 3: site-level Command Centre drilldown (C6.13)
+
+**No new migration.** The Attention Queue's own `siteId`/`siteName`
+(Phase 22, Group 6) already labelled each item; nothing let a
+consultant actually CLICK a site and see everything open there —
+confirmed live before building anything: the Site column rendered as
+plain text with no link. `hs_sites` was already read cross-client
+under the portfolio session (`loadAttentionQueue.ts`'s own `sites`
+query, scoped `.in('company_id', orgIds)`), so no new read pattern was
+needed either.
+
+- **`/consultancy/clients/[id]/sites/[siteId]`** (new portal page):
+  the exact Client 360 access-gating shape
+  (`requirePortfolioSession()` + `portfolioIncludes()` → `notFound()`)
+  plus a same-organisation check on the site itself
+  (`.eq('id', siteId).eq('company_id', id)` — refuses a site id that
+  belongs to a DIFFERENT client, `notFound()` either way). It never
+  re-derives the queue — it calls the SAME `loadAttentionQueue()` the
+  `/consultancy/attention-queue` page uses and filters client-side to
+  `(clientOrganisationId, siteId)`, so the two views can never
+  disagree about what counts as an open issue at that site.
+- **The Attention Queue's own Site column is now a link** (to this
+  new page) whenever `item.siteId` is set, plain text otherwise
+  (contractors and every pre-Phase-22 category still have no site of
+  their own, unchanged).
+- **Client 360 deliberately gained no "Sites" section of its own** —
+  the drilldown chain this gap actually asks for (portfolio issue →
+  site → responsible record) is now complete via the Attention
+  Queue's own link and the new page's own "Open" links out to each
+  record; a redundant per-site grouping on Client 360 too would have
+  been scope invented beyond the gap's literal wording, the same
+  "documented, bounded scope decision" discipline this codebase
+  applies throughout the Completion Programme.
+
+Verified: `tsc --noEmit` clean (portal only — this group touched no
+admin file), full `vitest run` green (portal 808 — 807 + 1, the sweep
+tests picking up the new dynamic route automatically; admin unchanged
+at 1724), all six CI guards pass with no regressions, portal
+production build compiles (the same long-documented sandbox-only
+missing-Supabase-env-var limitation, unrelated to this change).
+
+**Later Phase 24 groups** (C6.14 Communication Timeline pagination/
+filtering, C6.15 visit reports as a Communication Timeline source,
+final regression/QA/handover) continue from here.
 
