@@ -9,7 +9,7 @@ import type {
   EmergencyPlanType, EmergencyPlanStatus, EmergencyDrillOutcome,
   EnvironmentalAspectType, EnvironmentalAspectCondition, EnvironmentalAspectStatus,
   EnvironmentalSpillReceivingEnvironment, EnvironmentalSpillStatus,
-  EnvironmentalMonitoringCategory, EnvironmentalPermitStatus, PermitConditionStatus,
+  EnvironmentalMonitoringCategory, EnvironmentalMonitoringLimitDirection, EnvironmentalPermitStatus, PermitConditionStatus,
   IsoStandardCode, StandardEvidenceEntityType,
   LegalApplicabilityStatus, ComplianceEvaluationStatus, LegalRequirementCategory, LegalResearchSource,
   ObjectiveStatus, ObjectiveTargetDirection, ManagementReviewStatus,
@@ -318,6 +318,26 @@ export interface PermitPerson {
   added_at: string;
 }
 
+export interface PermitTemplateItem {
+  id: string;
+  template_id: string;
+  prompt: string;
+  guidance: string | null;
+  sort_order: number;
+}
+
+export interface PermitChecklistResponse {
+  id: string;
+  permit_id: string;
+  company_id: string;
+  template_item_id: string | null;
+  prompt: string;
+  rating: 'confirmed' | 'not_applicable';
+  comment: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Isolation {
   id: string;
   company_id: string;
@@ -503,6 +523,8 @@ export interface EnvironmentalMonitoringReading {
   value: number;
   unit: string;
   recorded_limit: number | null;
+  limit_direction: EnvironmentalMonitoringLimitDirection;
+  recorded_limit_upper: number | null;
   within_limit: boolean | null;
   recorded_at: string;
   recorded_by: string | null;

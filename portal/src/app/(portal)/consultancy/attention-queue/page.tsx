@@ -37,7 +37,7 @@ export default async function AttentionQueuePage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Severity</th><th>Client</th><th>Module</th><th>Issue</th><th>State</th><th>Due / age</th><th></th>
+                <th>Severity</th><th>Client</th><th>Site</th><th>Module</th><th>Issue</th><th>State</th><th>Due / age</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -45,6 +45,7 @@ export default async function AttentionQueuePage() {
                 <tr key={item.key}>
                   <td><span className="badge" style={{ background: SEVERITY_COLOR[item.severity], color: '#fff' }}>{item.severity}</span></td>
                   <td>{item.clientName}</td>
+                  <td>{item.siteName ?? '—'}</td>
                   <td>{item.sourceModule}</td>
                   <td>{item.issueType}</td>
                   <td>{item.state}</td>

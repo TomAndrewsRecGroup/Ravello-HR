@@ -555,12 +555,10 @@ export const hsRules: Rule[] = [
     // changed. Only 'suspended'/'rejected' are worth a nudge — an
     // approval or a return to pending is informational and not raised
     // here.
-    // STAFF-ONLY for now: contractor management has no portal page yet
-    // (Group 13 builds admin+portal UI). A client-facing notification
-    // with no page to link to is exactly the gap rules.test.ts's own
-    // "every client notification has a portal link" check exists to
-    // catch — widen to admins() once that page exists, rather than
-    // inventing a link to a page that is not there yet.
+    // Widened to also tell the client's own admins (Completion
+    // Programme Phase 22, Group 2/6) now that /protect/contractors
+    // exists — the exact "widen once that page exists" this rule's
+    // own comment already called for.
     id: 'contractor_status_changed',
     on: 'contractors.updated',
     when: e => changedTo(e, 'approval_status', ['suspended', 'rejected']),
@@ -573,9 +571,17 @@ export const hsRules: Rule[] = [
         {
           kind: 'notify',
           input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'contractor_status_changed',
+            title: `${name} is now ${s(n.approval_status).replace('_', ' ')}`,
+            link:  { portal: '/protect/contractors' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
             audiences: staffOnly, companyId: event.company_id, type: 'contractor_status_changed',
             title: `${company || 'A client'}: ${name} is now ${s(n.approval_status).replace('_', ' ')}`,
-            link:  { admin: `/health-safety/${event.company_id}` },
+            link:  { admin: `/health-safety/${event.company_id}/contractors` },
           },
         },
       ];
@@ -588,10 +594,9 @@ export const hsRules: Rule[] = [
     // Core-OS 360 Phase 4 (152): a permit to work's status changed.
     // Only the statuses that need a human's attention are worth a
     // nudge — issue/revalidation and closure are the normal, expected
-    // path and are not raised here. STAFF-ONLY for now, the same
-    // reasoning as contractor_status_changed above: permits have no
-    // portal page yet (Group 13 builds admin+portal UI) — widen to
-    // admins() once that page exists, rather than inventing a link.
+    // path and are not raised here. Widened to also tell the client's
+    // own admins (Completion Programme Phase 22, Group 2/6) now that
+    // /protect/permits exists.
     id: 'permit_status_changed',
     on: 'permits.updated',
     when: e => changedTo(e, 'status', ['suspended', 'revoked']),
@@ -603,9 +608,17 @@ export const hsRules: Rule[] = [
         {
           kind: 'notify',
           input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'permit_status_changed',
+            title: `Permit ${s(n.permit_number, '')} is now ${s(n.status)}`,
+            link:  { portal: '/protect/permits' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
             audiences: staffOnly, companyId: event.company_id, type: 'permit_status_changed',
             title: `${company || 'A client'}: permit ${s(n.permit_number, '')} is now ${s(n.status)}`,
-            link:  { admin: `/health-safety/${event.company_id}` },
+            link:  { admin: `/health-safety/${event.company_id}/permits` },
           },
         },
       ];
@@ -616,9 +629,9 @@ export const hsRules: Rule[] = [
     // out of service. Only the CREATE is raised here (removal is the
     // normal, expected end of the story and not worth a separate
     // nudge — the register/equipment page already shows the asset back
-    // in service). STAFF-ONLY for now, the same reasoning as
-    // contractor/permit rules above: isolations have no portal page yet
-    // (Group 13 builds admin+portal UI).
+    // in service). Widened to also tell the client's own admins
+    // (Completion Programme Phase 22, Group 2/6) now that
+    // /protect/isolations exists.
     id: 'isolation_applied',
     on: 'isolations.created',
     then: async ({ event, sb, companyName }) => {
@@ -630,9 +643,17 @@ export const hsRules: Rule[] = [
         {
           kind: 'notify',
           input: {
+            audiences: admins(event.company_id), companyId: event.company_id, type: 'isolation_applied',
+            title: `${asset} is out of service (isolation applied)`,
+            link:  { portal: '/protect/isolations' },
+          },
+        },
+        {
+          kind: 'notify',
+          input: {
             audiences: staffOnly, companyId: event.company_id, type: 'isolation_applied',
             title: `${company || 'A client'}: ${asset} is out of service (isolation applied)`,
-            link:  { admin: `/health-safety/${event.company_id}/equipment` },
+            link:  { admin: `/health-safety/${event.company_id}/isolations` },
           },
         },
       ];

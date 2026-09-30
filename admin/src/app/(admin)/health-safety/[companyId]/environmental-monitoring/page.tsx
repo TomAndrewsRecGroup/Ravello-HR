@@ -16,7 +16,7 @@ export default async function HealthSafetyEnvironmentalMonitoringPage(props: { p
 
   const readings = await readAllPages<EnvironmentalMonitoringReading>((from, to) =>
     supabase.from('environmental_monitoring')
-      .select('id, company_id, site_id, category, parameter, value, unit, recorded_limit, within_limit, recorded_at, recorded_by, created_at')
+      .select('id, company_id, site_id, category, parameter, value, unit, recorded_limit, limit_direction, recorded_limit_upper, within_limit, recorded_at, recorded_by, created_at')
       .eq('company_id', params.companyId)
       .order('recorded_at', { ascending: false }).order('id')
       .range(from, to));

@@ -5,6 +5,7 @@ import type { AttentionQueueItem } from '../attentionQueue';
 const item = (clientOrganisationId: string, key: string): AttentionQueueItem => ({
   key, clientOrganisationId, clientName: 'x', sourceModule: 'm', sourceType: 't', sourceId: '1',
   issueType: 'i', severity: 'medium', owner: null, dueDate: null, ageDays: null, state: 's', link: '/x',
+  siteId: null, siteName: null,
 });
 
 describe('buildPreVisitBrief', () => {
