@@ -8613,7 +8613,7 @@ compile. Migration 178 applied live and verified (both tables exist,
   expand/collapse detail, "Print PDF" (lazy `import('jspdf')`/
   `import('jspdf-autotable')`, keeping the page bundle small — the
   Value Report's own precedent), and an "Issue" button on drafts only.
-  A 27th `HsCompanyTabs.tsx` tab, no new sidebar entry needed (nests
+  A 28th `HsCompanyTabs.tsx` tab, no new sidebar entry needed (nests
   under the already-linked `/health-safety` prefix).
 - **Portal gets a read-only `/protect/board-assurance`**, gated by
   `protect` alone — added to `moduleAccess.ts`'s `ROUTE_FLAGS` and the
@@ -8662,13 +8662,63 @@ unchanged — the one new admin `.update()` (issue) was built with
 including `/health-safety/<companyId>/board-assurance` and
 `/protect/board-assurance`.
 
-### Group 3
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
-merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE13_HANDOVER.md`.
 
-**Phase 14 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+One real Medium-severity defect was found and fixed:
+
+- **The "latest completed management review" attached to a report had no
+  date bound relative to the report's own (year, quarter) period.**
+  `POST /generate`'s query picked the GLOBALLY most recent completed
+  `management_reviews` row, regardless of which period was being
+  generated — nothing stops staff generating an OLDER quarter's report
+  AFTER a LATER review has already completed (backfilling a missed
+  quarter is a genuine, plausible workflow), in which case the older
+  report would cite a review that, read chronologically, comes AFTER the
+  period the report itself claims to cover. Exactly the class of bug
+  `leadMetrics.ts`'s own "Overdue is relative to the REPORT month, not
+  today" rule and `computeQuarterlyValueReport.ts`'s stock/flow field
+  split both exist to prevent elsewhere in this codebase — this one field
+  had inherited none of that discipline. Fixed with `quarterEndDate(year,
+  quarter)` (`lib/boardAssurance/computeReport.ts`) and a
+  `.lte('review_date', quarterEndDate(...))` bound on the route's query,
+  so a Q1 2026 report can only ever cite a review completed on or before
+  31 March 2026, however many later reviews have since completed.
+  Mutation-tested live: removing the bound was reintroduced and watched
+  fail both new `generate/route.test.ts` cases, then restored and
+  re-verified green. Three new `quarterEndDate` unit tests pin the
+  boundary itself, including the Q4→31 December rollover and a leap-year
+  February inside Q1.
+
+Everything else checked and found clean: a cross-tenant acknowledgement
+attempt is refused (the fill trigger derives the REAL owning company from
+the report via a SECURITY DEFINER lookup that bypasses RLS, and Postgres
+evaluates `WITH CHECK` against that DERIVED value, after `BEFORE INSERT`
+triggers run — a caller's own claimed values are irrelevant); acknowledging
+a draft is independently refused by the same trigger; two concurrent
+"Issue" clicks on the same report are safe by construction (the second,
+later call's `OLD.status` is already `'issued'`, so the guard's own
+re-stamp branch does not fire, and the outbox only records a `status`
+change when the value actually differs — no duplicate notification); a
+staff-session (not service-role) read across all 13 tables
+`loadPortfolioCountsForCompany()` touches was spot-checked against the
+ACTUAL live RLS policy text for each one, and every table carries a
+blanket staff ALL/SELECT policy, so no silent under-count; the scoped
+reads are column-for-column identical to the reference cron's
+portfolio-wide reads, narrowed only by an added `company_id` filter; and
+no sensitive free text (`comment`, `report_data`'s full snapshot) reaches
+the outbox, a notification, or an audit-trail whitelist.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1547
+admin — 1542 + 5 new: 3 `quarterEndDate` unit tests + 2
+`generate/route.test.ts` cases; 715 portal, unchanged — this group's fix
+is admin-only), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 56 pairs, unchanged; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+42 static routes, all reachable; `check-blind-updates.sh`: 102,
+unchanged), both production builds compile.
+
+**Phase 13 is complete. Phase 14 is NOT to begin** until this branch is
+merged and deployed, per the operator's standing instruction.
 
