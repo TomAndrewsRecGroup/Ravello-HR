@@ -11002,3 +11002,72 @@ completing before that unrelated page's static-export step). Migration
 187 applied live and verified (`pg_policies`: all six policies present
 with the exact `USING` clause).
 
+### Group 3: Evidence Engine filters + current-vs-historical + cross-reference navigation (C11.3, C11.4, C11.5)
+
+No migration — entirely TypeScript over the already-shared Phase 11
+schema and shared-dupe files.
+
+- **`analyzeEvidenceCoverage()` gains `currentGaps: EvidenceGap[]`**
+  (closes C11.4) — the subset of `gaps` restricted to, per item, only
+  its NEWEST completion (by `completed_on`, ties broken by id for
+  determinism), mirroring the "only the newest row decides current
+  state" rule `hs_equipment_inspection_roll()`/148a's PUWER review-date
+  roll already established. A genuinely different, correct computation
+  from "every gap ever", proven by a test pinning the exact scenario
+  the rule exists for: an item whose OLDER completion lacked evidence
+  but whose NEWEST one has it is excluded from `currentGaps` while
+  still counted in `gaps`. `EvidenceGap` gains `category` (closes half
+  of C11.3) — already resolvable via the existing `itemById` lookup,
+  just not carried onto the row before this.
+- **`crossReferenceComplianceItems()`** (closes C11.5) — given a
+  compliance item id, how many OTHER records already point at it as
+  evidence, broken down by SOURCE kind (ISO clause via
+  `standard_evidence_links`, legal obligation/objective/audit finding
+  via `requirement_evidence_links`). Deliberately COUNTS ONLY, never a
+  per-link title resolution — the same "reporting a fact, never
+  re-deriving a label chain that already lives on its own page"
+  economy Phase 8's own explorer scope note already accepted for
+  uncurated neighbours. An item with zero cross-references is excluded
+  entirely from the result, never a zero-count row.
+- **`EvidenceEngineClient.tsx` gains client-side filters** (closes the
+  other half of C11.3): current/history toggle (switches the gaps
+  table between `coverage.currentGaps` and `coverage.gaps` — two
+  genuinely different pre-computed lists, never a UI filter
+  recomputing the same thing `analyze.ts` already decided), category,
+  outcome, and a from/to date range on the gaps table, plus an
+  entity-type filter on the Evidence Library files table — all running
+  over the already-bounded, already-fetched arrays (200/500-row caps,
+  well under PostgREST's ceiling), no new query shape, the same "the
+  data is already loaded, filter it in the browser" posture this
+  codebase already uses for bounded browsing lists. A new "Compliance
+  items referenced elsewhere" section renders `crossReferences`,
+  linking each non-zero count to the relevant CATALOGUE page — admin's
+  own `/health-safety/<companyId>/{iso,legal,objectives,audits}`,
+  portal's `/protect/{iso-readiness,legal-register,objectives,audits}`
+  — via a small internal `catalogueHref()` helper (there is no separate
+  "audit findings" catalogue page, since a finding lives on its own
+  audit, so that count links to the audits list instead).
+- **Both page.tsx files** (admin's `/health-safety/<companyId>/
+  evidence`, portal's `/protect/evidence`) gained two new parallel
+  reads (`standard_evidence_links`/`requirement_evidence_links`,
+  filtered to `entity_type = 'compliance_item'`, capped at 500 —
+  matching the file's own existing cap) and now pass `items`,
+  `crossReferences`, `role`, `companyId` to the shared component.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1686 admin — 1679 + 9 new `analyze.test.ts` cases (5→14) + 1 fixture
+fix in `complianceTwin/assemble.test.ts` (a missing `currentGaps` field
+TypeScript itself caught, not a behaviour change); 804 portal — 790 +
+14, `analyze.test.ts` mirrored byte-identical, its first portal copy —
+no new portal page/component test needed since `EvidenceEngineClient.
+tsx` stayed a shared-dupe pair), all six CI guards pass
+(`check-shared-dupes.sh`: 66 pairs, unchanged; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged; `check-admin-
+routes-linked.sh`: 43 static routes, all reachable — no admin route
+changed shape; `check-blind-updates.sh`: 102, unchanged — this group
+adds no write path, purely additive reads and client-side filtering;
+`check-paged-order.sh`: clean — this group added no `readAllPages()`
+call), both production builds compile (portal's one prerender failure
+is the same long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated to this change).
+

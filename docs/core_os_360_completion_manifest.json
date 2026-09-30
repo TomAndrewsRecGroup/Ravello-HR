@@ -204,20 +204,23 @@
     {
       "id": "C11.3",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "EvidenceEngineClient.tsx client-side filters, Phase 23 Group 3"
     },
     {
       "id": "C11.4",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "analyzeEvidenceCoverage() gains currentGaps, Phase 23 Group 3"
     },
     {
       "id": "C11.5",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "crossReferenceComplianceItems(), Phase 23 Group 3"
     },
     {
       "id": "C12.4",

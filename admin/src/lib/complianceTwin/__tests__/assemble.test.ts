@@ -51,6 +51,7 @@ const CLEAN_EVIDENCE: EvidenceCoverageSummary = {
   completionsWithEvidenceCount: 10,
   coveragePercent: 100,
   gaps: [],
+  currentGaps: [],
   byCategory: [],
 };
 

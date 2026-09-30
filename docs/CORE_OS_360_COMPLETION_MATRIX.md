@@ -234,11 +234,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 |---|---|---|---|
 | C11.1 | Register-completion evidence-coverage computation | IMPLEMENTED | `lib/evidenceEngine/analyze.ts` |
 | C11.2 | Evidence Library (browsing list, signed-on-demand URLs) | IMPLEMENTED | 200-row cap, session-signed |
-| C11.3 | Entity type / category / outcome / date-range / current-vs-historical filters | MISSING | Master Spec Phase 23 known-gap: "no category/outcome/date filters" → assigned **Phase 23** |
-| C11.4 | Current-outstanding-gap view (latest completion) vs. audit-history view | MISSING | Master Spec Phase 23 known-gap: "no current-outstanding view" → assigned **Phase 23** |
-| C11.5 | Combined cross-reference navigation with `requirement_evidence_links`/ISO/legal evidence | MISSING | Master Spec Phase 23 known-gap: "no combined evidence cross-reference" → assigned **Phase 23** |
+| C11.3 | Entity type / category / outcome / date-range / current-vs-historical filters | IMPLEMENTED | **Phase 23 Group 3**: `EvidenceEngineClient.tsx` gains client-side filters over the already-fetched, row-capped arrays — no new query shape |
+| C11.4 | Current-outstanding-gap view (latest completion) vs. audit-history view | IMPLEMENTED | **Phase 23 Group 3**: `analyzeEvidenceCoverage()` gains `currentGaps` — a genuinely different computation (only the NEWEST completion per item), not a UI filter over `gaps` |
+| C11.5 | Combined cross-reference navigation with `requirement_evidence_links`/ISO/legal evidence | IMPLEMENTED | **Phase 23 Group 3**: `crossReferenceComplianceItems()` — counts-only, per source kind (ISO clause/legal obligation/objective/audit finding), linking to the relevant catalogue page |
 
-**Gaps carried forward**: C11.3, C11.4, C11.5 → **Phase 23**.
+**Gaps closed by Phase 23 Group 3**: C11.3, C11.4, C11.5.
 
 ---
 
