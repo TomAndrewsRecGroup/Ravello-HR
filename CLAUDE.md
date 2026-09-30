@@ -405,7 +405,22 @@ MANATAL_API_URL=              # Phase 29: defaults to https://api.manatal.com/op
 STRIPE_SECRET_KEY=            # Phase 18: e-learning purchases
 STRIPE_WEBHOOK_SECRET=        # Phase 18
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
+
+# Admin only: Tavily regulatory research (Core-OS 360 Phase 17)
+TAVILY_API_KEY=                # set in Vercel env vars — without it every
+                                # "Run Tavily search" call on the Legal
+                                # Register page returns "not configured"
+TAVILY_API_URL=                # defaults to https://api.tavily.com/search
 ```
+
+This list is not exhaustive for every phase after 29 — several later
+phases' own env vars (`JEV_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`,
+the referral pipeline's `REFERRAL_EMAIL_FROM` and friends) are
+documented only in their own phase sections further down this file,
+not backfilled here. Noted as a real, pre-existing gap by the Phase 17
+Group 3 adversarial review rather than silently left — a genuine
+audit-and-consolidate pass is its own piece of work, in scope for
+Phase 19's platform-hardening sweep, not invented here.
 
 ---
 
@@ -9516,13 +9531,66 @@ routes, all reachable — no new admin route in this group; 102
 blind-update chains, unchanged — the new "Mark reviewed" update is
 counted and judged from the start), both production builds compile.
 
-### Group 3: regression, adversarial QA, handover
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
-and merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE17_HANDOVER.md`.
 
-**Phase 18 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+**One real, Low-severity defect found: the phase's own two new
+environment variables were never added to this file's Environment
+Variables section.** `TAVILY_API_KEY`/`TAVILY_API_URL` are read by
+`lib/tavily/client.ts` but were missing from the top-of-file summary
+this codebase maintains for exactly this purpose (where
+`IVYLENS_API_URL`/`MANATAL_API_KEY`/the Stripe keys already live).
+Without it, whoever deploys this phase has no signal a new secret
+needs setting in Vercel — every "Run Tavily search" click would fail
+with a correctly-reported but avoidable "not configured" error. Found
+by checking this codebase's own established documentation convention
+(every prior external-API phase added its vars here; Phase 17 skipped
+it). **Fixed**: both vars added. A WIDER, pre-existing gap was found
+while confirming this one and deliberately NOT fixed here: this
+section has not been kept current since roughly Phase 29 — several
+later phases' own env vars are documented only in their own sections
+further down this file. Flagged as real debt for Phase 19's
+platform-hardening sweep, not expanded into scope here.
+
+**Everything else checked and found clean**: the Tavily API key never
+reaches the client (grepped — imported from exactly one file, the
+server-only route); neither the research route nor "Mark reviewed"
+ever writes `applicability_status`/`compliance_evaluations.status` —
+re-read every write path this phase adds to confirm; RLS on
+`legal_requirement_research_notes` is untouched and staff-only, with
+no migration in this phase to have drifted it; rate limiting reuses
+the same shared `limiters.vendor` bucket every other vendor-calling
+route already uses; validation ceilings match their DB columns
+exactly (`query` at `optionalShortText(500)`, matching `query_used`'s
+own CHECK); `defaultQueryFor()`'s output can never exceed 500 chars
+regardless of input, since `title`/`jurisdiction` are themselves
+capped at 200/100 by their own DB CHECKs; the "a fresh search could
+drop unfetched older notes" scenario initially suspected is not
+actually reachable, since the search button only renders inside a
+panel that has already loaded existing notes by the time it appears.
+
+**Design decisions documented rather than left to look like
+oversights**: on-demand only, never a scheduled cron (each Tavily call
+has a real cost); no AI summarisation anywhere in this phase —
+`raw_result_summary` is Tavily's own verbatim snippets, never an LLM
+paraphrase; the "→ Action" loop reuses the existing Broadcast prefill
+link rather than inventing a bespoke per-client action-raising flow;
+a concurrent "two staff members reviewing the same note at once"
+scenario is an accepted, low-stakes limitation (this table has no
+`row_version` column the way frequently-co-edited records elsewhere
+do), not a defect fixed here.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1610 admin / 753 portal, both unchanged — this group's fix is
+documentation-only), all five CI guards pass with no regressions
+(`check-shared-dupes.sh`: 57 pairs; `check-row-cap.sh`: clean;
+`check-route-validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`:
+43 static admin routes, all reachable; `check-blind-updates.sh`: 102,
+unchanged), both production builds compile. No migration in this
+group — the fix is entirely documentation over Groups 1-2's already-
+tested, unchanged code.
+
+**Phase 17 is complete. Phase 18 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
