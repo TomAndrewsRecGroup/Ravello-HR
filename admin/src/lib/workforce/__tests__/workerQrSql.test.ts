@@ -99,6 +99,39 @@ describe('site_checkins (179)', () => {
   });
 });
 
+describe('site_checkins grant fix (182)', () => {
+  // 179's site_checkins block was written directly under the
+  // worker_qr_tokens block and copied its "REVOKE ALL ON public.<table>
+  // FROM PUBLIC, anon, authenticated" line verbatim. That REVOKE is
+  // correct for worker_qr_tokens (deliberately no session may ever read
+  // it, service role only) but wrong for site_checkins, which defines
+  // two real session-facing RLS policies right after it
+  // (site_checkins_staff_all, site_checkins_client_read) — policies
+  // Postgres can never reach, because the table-level GRANT is checked
+  // BEFORE RLS. Found live by an adversarial tenant-isolation pass: a
+  // real signed-in session got "permission denied for table
+  // site_checkins" on every read, so portal's /lead/workforce/onsite
+  // was broken for every user from the day 179 shipped — fails closed
+  // (no cross-tenant leak was ever possible), but the whole feature was
+  // unusable. 179 is a historical migration and is not edited; 182
+  // restores exactly the privilege its own policies need.
+  const sql182 = readFileSync(join(__dirname, '../../../../../supabase/migrations/182_fix_site_checkins_grant.sql'), 'utf8');
+
+  it('179 really does carry the over-broad REVOKE this fix corrects for', () => {
+    expect(sql).toMatch(/REVOKE ALL ON public\.site_checkins FROM PUBLIC, anon, authenticated/);
+  });
+
+  it('182 grants authenticated exactly what site_checkins_staff_all/site_checkins_client_read need', () => {
+    expect(sql182).toMatch(/GRANT SELECT, INSERT, UPDATE, DELETE ON public\.site_checkins TO authenticated/);
+  });
+
+  it('182 never widens worker_qr_tokens — that table stays service-role-only', () => {
+    const grantStatements = sql182.match(/^GRANT[\s\S]*?;$/gm) ?? [];
+    expect(grantStatements.length).toBeGreaterThan(0);
+    for (const stmt of grantStatements) expect(stmt).not.toMatch(/worker_qr_tokens/);
+  });
+});
+
 describe('workforce_employee_sync() leaver revoke (180)', () => {
   const sql180 = readFileSync(join(__dirname, '../../../../../supabase/migrations/180_worker_qr_leaver_revoke.sql'), 'utf8');
 
