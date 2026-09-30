@@ -9062,13 +9062,84 @@ admin, unchanged; 743 portal, unchanged — this group is UI-only), all
 five CI guards pass with no regressions, both production builds
 compile.
 
-### Group 3
+### Group 3: regression, adversarial QA, handover (gate: PASS WITH MINOR ISSUES)
 
-Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
-merged on their own branches first, per this codebase's standing
-"regular merges so you don't lose anything" discipline; the final
-regression/adversarial-QA/handover pass follows as its own PR.
+Full handover + QA report: `docs/CORE_OS_360_PHASE15_HANDOVER.md`.
 
-**Phase 16 is NOT to begin** until this phase is fully merged and
-deployed, per the operator's standing instruction.
+**One real, Medium-severity defect found: the suggestion route's own
+validation ceiling was narrower than the database column it reads.**
+`method_statements.scope_of_work` has always allowed up to 8000
+characters (`CHECK (length(scope_of_work) <= 8000)`, migration 124).
+Group 1's `POST /api/protect/jev/rams-section` validated it with
+`longText(4000)` — a ceiling invented for this route alone with no
+relationship to the actual field. Any RAMS whose author had typed a
+genuinely long, valid scope of work (4001-8000 characters) would have
+the "Suggest sections to check" button fail outright with a 400 the
+moment Group 2's UI called it — a real, reproducible failure for a
+real subset of legitimate RAMS records, found by the same discipline
+this codebase applies everywhere else: check a route's validation
+ceiling against the COLUMN's own CHECK, never against a round number
+that feels reasonable. `title`'s `shortText(200)` and `project_name`'s
+`optionalShortText(200)` were already correct; only `scope_of_work`
+had drifted. **Fixed**: raised to `longText(8000)`, matching the
+column exactly — `ramsSectionState()`'s own separate `.slice(0, 4000)`
+clip (what actually reaches Jev) is untouched, since that is a
+different decision (Jev does not need the full 8000 characters to
+judge) from what the route is willing to validate. **Mutation-tested**:
+a new route test file (`rams-section/route.test.ts`, 7 cases — Group 1
+shipped with none, matching `/api/lead/jev/doc-type`'s own precedent,
+but this finding justified adding one here) pins an 8000-character
+scope of work succeeding and 8001 refused; reverting to `longText(4000)`
+was reintroduced and watched fail the 8000-character case (400 instead
+of 200) before being restored and re-verified green.
+
+**Everything else checked and found clean**: every question's
+`instructions` frames the state as data to classify, never as an
+instruction to follow (pinned by both the Group 1 pure-function tests
+and this group's own route test); `askJev()`'s `gate`/`gated`
+mechanism does nothing at all for an all-`noul` question set
+(`minConfidence()` skips `noul` answers, so `confidence` is always
+`null` and `gated` always `false`) — checked directly against
+`lib/jev/client.ts`'s own source, confirming the per-question
+probability threshold (`RAMS_SECTION_SUGGEST_GATE`) is the only gate
+that does anything here; the editor UI never writes section content
+and never auto-saves (`suggestSections()` only touches local component
+state; the existing Save button and its row-version-conditional
+update are byte-for-byte unchanged); a flagged-but-still-empty
+section's note clears itself the moment the author types anything,
+with no separate dismiss action needed; capability gating matches the
+existing `doc_type_suggest` precedent (any signed-in company user may
+call it — it reads nothing beyond what the caller typed and writes
+nothing); rate limiting (`limiters.vendor`) matches every other
+Jev-calling route.
+
+**Design decisions documented rather than left to look like
+oversights**: only 6 of the 20 section keys are ever asked about (the
+other 14 are near-universal and would produce a constant "yes" that
+tells the author nothing); the suggestion gate (0.6) is deliberately
+lower than a classification decision's gate (0.8) since a false
+positive here only costs a glance at an irrelevant section, not a
+wrong answer; there is no "dismiss this suggestion" action and no
+persisted accept/override/ignore outcome (unlike the H&S register's
+own model) — a suggestion here only ever reveals an empty section, and
+the existing save-time `cleanSections` logic (an empty section is
+never persisted) already answers implicitly whether the author acted
+on it.
+
+Verified: `tsc --noEmit` clean both apps throughout every group and
+after the B.1 fix, full `vitest run` green (1563 admin, unchanged —
+this group's fix is portal-only; 750 portal — 743 + 7 new
+`rams-section/route.test.ts` cases), all five CI guards pass with no
+regressions (`check-shared-dupes.sh`: 56 pairs, unchanged; `check-row-
+cap.sh`: clean; `check-route-validation.sh`: 44, unchanged — the route
+validates with `parseBody` and was never on the ratchet list;
+`check-admin-routes-linked.sh`: 42 static admin routes, all reachable
+— this phase touched no admin route; `check-blind-updates.sh`: 102,
+unchanged — this phase adds no new `.update()` call site at all), both
+production builds compile, including `/api/protect/jev/rams-section`
+and the editor UI change. No migration exists for this phase, so no
+shared table, trigger or RLS policy was touched anywhere in it.
+
+**Phase 15 is complete. Phase 16 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction.
 
