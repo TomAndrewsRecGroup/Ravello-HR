@@ -362,15 +362,16 @@
     {
       "id": "C19.9",
       "phase": "C19",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 29
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 29,
+      "note": "scripts/check-unbounded-reads.sh + scripts/lib/scan-unbounded-reads.mjs, the seventh CI guard — a real method-chain walker flagging any select() chain with no range()/limit()/single()/maybeSingle(). 302 pre-existing instances ratcheted (BASELINE=302, the check-blind-updates.sh precedent) rather than fixed in one unreviewed pass. Mutation-tested."
     },
     {
       "id": "PL.1",
       "phase": "protected-legacy",
-      "status": "PARTIAL",
-      "assigned_to_phase": 29,
-      "note": "real automated preservation tests still needed for A2I signup, Development Plans, E-Learning checkout/webhook, Billing/Invoicing (manual scripts exist as interim baseline: docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md)"
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 29,
+      "note": "Real automated preservation tests added for all four remaining protected legacy systems: A2I signup (route.test.ts, 11 cases, incl. a real dedup defect found and fixed) + the admin resend route (8 cases, found uncovered by this phase's own adversarial pass); Development Plans (devPlan.test.ts x2 + devPlansSql.test.ts, 30 cases total, SQL-shape pinning since no dedicated route exists); E-Learning checkout+webhook (23 cases, webhook signature verification exercised for real); Billing retainer+raise-invoice+stripe-webhook (49 cases, webhook signed with the real Stripe SDK helper). See docs/CORE_OS_360_PHASE29_HANDOVER.md."
     }
   ],
   "gap_ledger_by_target_phase": {
@@ -430,5 +431,10 @@
       "C2.8",
       "C4.14"
     ]
+  },
+  "completion_programme_status": {
+    "gate": "PASSED",
+    "closed_as_of_phase": 29,
+    "note": "Every requirement above with a numeric target phase (21-29) now has status IMPLEMENTED. Only the three unassigned_operational rows remain open, each explicitly DEFERRED-BUT-REQUIRED with no phase assignment because each needs real-world verification (a live post-deployment environment for C2.7; device/browser hardware for C2.8/C4.14) that no code change in this sandbox can supply — recorded as a permanent, documented exception at the phase that found it (22), not newly discovered debt at this gate."
   }
 }

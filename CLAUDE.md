@@ -12514,3 +12514,152 @@ core_os_360_completion_manifest.json` updated: C1.12, C1.13 both →
 
 **Phase 28 is complete.**
 
+---
+
+## Core-OS 360 Completion Programme: Phase 29 — Security, Regression &
+## Production Certification (the final gate) (2026-09-30)
+
+Full handover: `docs/CORE_OS_360_PHASE29_HANDOVER.md`. Closes the two
+gap-ledger rows the completion matrix assigned here — **C19.9** and
+**PL.1** — read fresh from the matrix's own gap ledger, per the
+"repository reality beats handover narrative" discipline every phase
+since Phase 20 has used. This is the Completion Programme's own
+closing gate, per the matrix's own words: "Every row in this ledger
+must close... before Phase 29's final gate."
+
+### Group 1: C19.9 — the seventh CI guard
+
+```
+bash scripts/check-unbounded-reads.sh   # every select() chain has SOME bound
+```
+
+`check-row-cap.sh` catches an author-specified `.limit(N>1000)`;
+`check-paged-order.sh` catches a paged builder's `.range(from, to)`
+with no preceding `.order(...)`. Neither catches the WORSE shape this
+codebase has hit twice before (`lib/complianceTwin/loadSnapshot.ts`'s
+and the original Phase 8 risk-graph page's `hs_links` reads): a
+`.select(...)` chain with NO bound at all, relying entirely on
+PostgREST's own silent 1,000-row default. `scripts/lib/scan-unbounded-
+reads.mjs` is a real method-chain walker (the `scan-blind-updates.mjs`
+precedent) flagging exactly that shape, excluding a head-only count
+(`{ count: 'exact', head: true }`, which returns zero rows regardless).
+**302 pre-existing matches**, hand-sampled and confirmed real but too
+many to fix without per-table risk analysis this guard cannot do —
+per this codebase's own established discipline for exactly this
+situation, a **ratchet** (`BASELINE=302`): a PR may never raise the
+count, and a lowered count is celebrated, not merely tolerated.
+Mutation-tested: a throwaway unbounded chain was confirmed to fail the
+guard before removal.
+
+### Groups 2-5: PL.1 — the four Protected Legacy systems get real tests
+
+Each of `docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md`'s four
+manual-only systems (Phase 20's own audit: A2I `UNIT-ONLY`, Development
+Plans `NONE`, E-Learning `NONE`, Billing/Invoicing `NONE`) now has real,
+route-level, fake-Supabase-client automated coverage — the same pattern
+this codebase already uses for every other route test. **A genuine
+defect found while writing a test is fixed in place, the same as every
+phase before this one.**
+
+- **A2I public signup** (`portal/.../r/athlete/[slug]/route.ts`, 11
+  cases): **a real, previously unfixed duplicate-submission defect,
+  found and fixed.** A repeated public submission with the same
+  company + email inserted a SECOND athlete row and sent a SECOND
+  welcome email — this codebase's own referral pipeline already paid
+  for exactly this class of bug once ("the referral cron re-emailed 21
+  people every hour", above). Fixed with an app-level check
+  (`.eq('company_id', ...).ilike('email', email).limit(1)`) immediately
+  before the insert, deliberately NOT a DB-level UNIQUE constraint —
+  `athletes` has other writers (admin's manual add, the portal's own
+  authenticated route) a hard constraint would need a wider audit of
+  than this route alone; checked live first and confirmed no existing
+  duplicate rows. The welcome email's A2I navy/gold shell is exercised
+  for real (`buildAthleteWelcomeEmail` left unmocked).
+- **Development Plans** (athlete + employee, 30 cases across both
+  apps): no dedicated API route exists (direct client-side writes
+  under RLS), so this slice pins the content model
+  (`devPlan.test.ts`, proving the shared model round-trips exactly
+  through `JSON.stringify`/`parse` — the same semantics the JSONB
+  columns apply) and the LIVE RLS shape (`devPlansSql.test.ts`: 117
+  superseded 066's client-select policy with a `my_company_id()`-scoped
+  one, mutation-tested by dropping 117 from the pinned files and
+  watching 3 of 10 assertions correctly fail). Pins that the "athlete"
+  and "employee" use cases share ONE nullable `athlete_id` column with
+  no second identity for content to leak into — there is no
+  `employee_id` column anywhere in this schema at all. `lib/devPlan.ts`
+  was already a byte-identical shared-dupe pair per its own header
+  comment but had never been registered in `check-shared-dupes.sh` —
+  fixed as part of this slice.
+- **E-Learning** (`checkout`/`webhook`, 23 cases): the webhook's
+  signature verification is exercised for REAL, node's own `crypto`,
+  not mocked — mutation-tested by signing with the wrong secret and
+  watching 9 of 13 cases correctly fail. Idempotent replay via the
+  `stripe_events` unique-key collision. `checkout.session.completed`
+  sets `access_expires_at` from `LEARNING_ACCESS_DAYS` (default 7, 14
+  also tested).
+- **Billing/Invoicing** (`retainer`/`raise-invoice`/`stripe/webhook`,
+  49 cases): `raise-invoice`'s own explicit `requireStaff()` refusal is
+  pinned directly, per the route's own header comment naming why it
+  matters most — it was "the one admin API with none" until the
+  role-cookie fix. The `stripe/webhook`'s signature verification uses
+  the Stripe SDK's own `webhooks.generateTestHeaderString()` against
+  `webhooks.constructEvent()` — never a mocked verifier. `invoice.paid`'s
+  "only flip if not already active" optimisation is proven by an actual
+  write-COUNT assertion, not merely an unchanged end value — mutation-
+  tested by removing the route's own `.neq('subscription_status',
+  'active')` guard and watching the discriminating test correctly fail
+  (a naive "still says active" assertion could not have caught this).
+
+### Group 6: adversarial QA finds one real gap, closes it
+
+Re-reading the plan doc's own PL.1 scope against what Groups 2-5
+shipped found the A2I slice named THREE things — the welcome shell,
+duplicate-submission throttling, and **"the admin resend route sends
+the same shell"** — and only the first two were covered, via the
+PUBLIC signup route. The admin STAFF resend route (`POST /api/admin/
+athletes/[id]/welcome-email`) had zero coverage, the exact named item
+left uncovered. Fixed: 8 new cases proving it sends the SAME A2I shell,
+explicitly allows a re-send (the route's own documented behaviour),
+stamps the sender from the staff session, and updates nothing on a
+failed send.
+
+Every mutation test from Groups 2-5 was independently RE-broken and
+re-confirmed in this pass, not merely trusted from its own group's
+report. No fake Supabase client in this phase shares the chain-order
+bug Group 5's own billing webhook test caught mid-flight (`.eq()`
+executing before a later `.neq()` was ever applied).
+
+### Verified
+
+`tsc --noEmit` clean both apps at every group boundary. Full `vitest
+run`: **admin 187 passed / 187 test files** (up from 181 at the start
+of the phase), **portal 69 passed / 69 test files**, both fully green
+— every addition is new coverage, nothing pre-existing was weakened.
+All seven CI guards pass: `check-shared-dupes.sh` — **73 pairs, up
+from 72** (`devPlan.ts` newly registered); `check-row-cap.sh` — clean;
+`check-route-validation.sh` — 44, unchanged; `check-admin-routes-
+linked.sh` — 43 static routes, all reachable; `check-blind-updates.sh`
+— 101, unchanged (every new/changed write this phase carries an
+explicit count/condition check from the start); `check-paged-order.sh`
+— clean; `check-unbounded-reads.sh` — the new guard's own 302
+baseline, unchanged. Both production builds compile clean.
+
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated: C19.9, PL.1 both →
+`IMPLEMENTED`, `closed_in_phase: 29`.
+
+**Phase 29 is complete.**
+
+## The Core-OS 360 Completion Programme (Phases 20-29) is complete.
+
+Every requirement the completion matrix assigned to a numbered phase
+(21 through 29) is now `IMPLEMENTED`. Three rows remain permanently
+open — **C2.7** (live notifications proven after deployment), **C2.8**
+and **C4.14** (mobile/tablet field verification) — each explicitly
+`DEFERRED-BUT-REQUIRED` with no further phase assignment, recorded as
+an environment-limited exception at the phase that found it (22): each
+needs a real post-deployment environment or real device/browser
+hardware that no code change in any sandbox can supply. This is the
+documented exception the matrix's own closing rule anticipates, not
+debt discovered only at this final gate.
+
