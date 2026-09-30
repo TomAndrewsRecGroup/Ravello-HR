@@ -49,13 +49,13 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C1.6 | People model derivative RLS (visible via linked employee/candidate/athlete row) | IMPLEMENTED | `person_link_row`, 118 |
 | C1.7 | Internal search (`search_records()`), SECURITY INVOKER | IMPLEMENTED | 119, extended by every later phase that adds a searchable entity |
 | C1.8 | `access_scope` (health_safety/hr/recruitment/full) enforcement | DEFERRED-BUT-REQUIRED | Phase 1 handover §H: "not enforced" — closed by Phase 6 Group 1 (167, `access_scope_allows()`) — **already resolved**, see C6.3 |
-| C1.9 | Portal UI for consultancy owners to grant access | DEFERRED-BUT-REQUIRED | Phase 1 handover §H: "RPC ready, no UI" → assigned **Phase 24** (Consultant Command Centre completion) |
+| C1.9 | Portal UI for consultancy owners to grant access | IMPLEMENTED | Closed Phase 24 Group 2: `/consultancy/access`, the first caller of `grant_organisation_access()`/`revoke_organisation_access()` (117) — no new migration, the RPCs' own existing guards are the whole security boundary |
 | C1.10 | People synced back from source rows (candidate/athlete/employee edits reflected on `people`) | IMPLEMENTED | Closed Phase 21 Group 3, migration 184: `person_sync_from_source()`, an AFTER UPDATE trigger on all three identity tables. Live-probed 8/8 |
 | C1.11 | Broadcast idempotency key | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 25** (Broadcast completion) |
-| C1.12 | Optimistic locking on shared records | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 24/28** (concurrency hardening, general) |
+| C1.12 | Optimistic locking on shared records | PARTIAL | Closed for `consultancy_visit_reports` Phase 24 Group 1, migration 190: `row_version`, forced by trigger regardless of caller input, client conditionally updates on it, a lost race surfaces as a clear message. The other two candidate tables were checked live and found to need no `row_version`: `consultancy_service_scopes` has no UPDATE writer anywhere (insert-only), and `consultancy_visits`' status transitions already refuse a race via its own state-machine guard (`consultancy_visits_lifecycle_guard()`, 185) — a double-click's second call finds `OLD.status` no longer matching an allowed source state. General optimistic-locking hardening across the rest of the app → still assigned **Phase 28** |
 | C1.13 | UI still uses legacy role checks in places | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 28** (UX/navigation closure) |
 
-**Gaps carried forward**: C1.9→24, C1.10 closed Phase 21, C1.11→25, C1.12→24/28, C1.13→28.
+**Gaps carried forward**: C1.9 closed Phase 24, C1.10 closed Phase 21, C1.11→25, C1.12 partially closed Phase 24 (rest→28), C1.13→28.
 
 ---
 
@@ -160,11 +160,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C6.10 | Client Switcher hardening (stale-tab guard) | IMPLEMENTED | `StaleOrganisationGuard.tsx`, database-level guard from Phase 1 covers navigations |
 | C6.11 | Events/audit sweep (`consultancy.client_accessed`, `service_scope.updated`, `client_roadmap.updated`, `value_report.generated`, `service_ledger.entry_created`) | IMPLEMENTED | 172 |
 | C6.12 | Manual Service Scope / Service Ledger entry writer UI | IMPLEMENTED (closed same phase) | Group 7 found the RLS existed with **no writer anywhere**; built `ClientActionForms.tsx` + two routes before Phase 6 shipped |
-| C6.13 | Site-level drilldown so a portfolio issue resolves to the responsible client/site/record | DEFERRED-BUT-REQUIRED | Master Spec Phase 24 known-gap: "no site-level Command Centre detail" → assigned **Phase 24** |
-| C6.14 | Communication Timeline pagination/filtering | DEFERRED-BUT-REQUIRED | Master Spec Phase 24 known-gap → assigned **Phase 24** |
-| C6.15 | Visit reports as a Communication Timeline source | DEFERRED-BUT-REQUIRED | Master Spec notes this was "a natural future communication source" at ship time (Phase 7 postdated Phase 6) — check current wiring in Phase 20 QA pass; likely still open → assigned **Phase 24** |
+| C6.13 | Site-level drilldown so a portfolio issue resolves to the responsible client/site/record | IMPLEMENTED | Closed Phase 24 Group 3: `/consultancy/clients/[id]/sites/[siteId]`, filters the SAME `loadAttentionQueue()` the Attention Queue page already calls so the two can never disagree; Attention Queue's own Site column now links to it |
+| C6.14 | Communication Timeline pagination/filtering | IMPLEMENTED | Closed Phase 24 Group 4: `searchParams`-based kind/visibility filters (`FilterForm`, reused unchanged) + Prev/Next pagination, replacing the old hard `.slice(0, 30)` |
+| C6.15 | Visit reports as a Communication Timeline source | IMPLEMENTED | Closed Phase 24 Group 5: `communicationTimeline.ts` gained a `visit_report_issued` kind, dated by `issued_at` not `created_at` — only `status = 'issued'` rows are ever passed in, a draft is never a communication event |
 
-**Gaps carried forward**: C6.13, C6.14, C6.15 → **Phase 24** (headline scope of that phase).
+**Gaps carried forward**: C6.13, C6.14, C6.15 all closed Phase 24.
 
 ---
 
@@ -416,8 +416,8 @@ satisfied by this recorded resolution (resolve ≠ delete).
 |---|---|
 | **21** (People/LMS/Safe-to-Deploy closure) | *closed — C1.10, C3.7, C3.8, C3.9, C3.10 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE21_HANDOVER.md`* |
 | **22** (Operational H&S/client workflow closure) | *mostly closed — C4.11, C4.12, C4.13, C5.3 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE22_HANDOVER.md`; C2.7/C2.8/C4.14 remain open (no device/browser testing capability in this environment)* |
-| **23** (Risk Graph/Evidence Engine/Digital Twin completion) | C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 |
-| **24** (Consultant Command Centre/Ledger completion) | C1.9, C1.12 (shared w/28), C6.13, C6.14, C6.15 |
+| **23** (Risk Graph/Evidence Engine/Digital Twin completion) | *closed — C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE23_HANDOVER.md`* |
+| **24** (Consultant Command Centre/Ledger completion) | *closed — C1.9, C6.13, C6.14, C6.15 all IMPLEMENTED; C1.12 partially closed (the `consultancy_visit_reports` slice — the other two candidate tables were checked live and found to need no lock); rest of C1.12 stays with **Phase 28**, see `docs/CORE_OS_360_PHASE24_HANDOVER.md`* |
 | **25** (Operational intelligence/regulatory/Broadcast) | C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 |
 | **26** (Worker QR/Intelligent RAMS/adoption) | C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6 |
 | **27** (Board Assurance/Core 360 Status) | C13.6, C13.7, C13.8 |

@@ -106,6 +106,7 @@ export interface ConsultancyVisitReport {
   consultancy_organisation_id: string;
   client_organisation_id: string;
   version: number;
+  row_version: number;
   status: VisitReportStatus;
   supersedes_id: string | null;
   summary: string | null;

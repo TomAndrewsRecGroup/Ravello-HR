@@ -145,3 +145,16 @@ export const VISIT_REPORT_STATUS_LABELS: Record<VisitReportStatus, string> = {
   issued:     'Issued',
   superseded: 'Superseded',
 };
+
+// Migration 117 (Phase 1): user_organisation_access.access_scope. Not
+// a Phase 6 concept, but the grant form (Phase 24, Group 2) is the
+// first UI anywhere to let a person actually pick one — mirrors the
+// CHECK exactly, pinned by accessGrantSql.test.ts.
+export const ACCESS_SCOPES = ['full', 'health_safety', 'hr', 'recruitment'] as const;
+export type AccessScope = typeof ACCESS_SCOPES[number];
+export const ACCESS_SCOPE_LABELS: Record<AccessScope, string> = {
+  full:          'Full access',
+  health_safety: 'Health & Safety only',
+  hr:            'HR only',
+  recruitment:   'Recruitment only',
+};

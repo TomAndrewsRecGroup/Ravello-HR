@@ -45,7 +45,11 @@ export default async function AttentionQueuePage() {
                 <tr key={item.key}>
                   <td><span className="badge" style={{ background: SEVERITY_COLOR[item.severity], color: '#fff' }}>{item.severity}</span></td>
                   <td>{item.clientName}</td>
-                  <td>{item.siteName ?? '—'}</td>
+                  <td>
+                    {item.siteId
+                      ? <Link className="hover:underline" href={`/consultancy/clients/${item.clientOrganisationId}/sites/${item.siteId}`}>{item.siteName ?? '—'}</Link>
+                      : (item.siteName ?? '—')}
+                  </td>
                   <td>{item.sourceModule}</td>
                   <td>{item.issueType}</td>
                   <td>{item.state}</td>

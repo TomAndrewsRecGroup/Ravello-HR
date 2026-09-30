@@ -11230,9 +11230,301 @@ code change was the `ThresholdsForm.tsx` hardening, which added no new
 test), all six CI guards pass with no regressions, both production
 builds compile.
 
-**Phase 23 is complete. Phase 24 may begin** once this branch merges,
-per the Master Spec's own sequential-gate rule — its scope should be
-read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own gap
-ledger, the same "repository reality beats handover narrative"
-discipline every phase since Phase 20 has used.
+**Phase 23 is complete.**
+
+---
+
+## Core-OS 360 Completion Programme: Phase 24 — Consultant Command
+## Centre / Ledger completion (in progress)
+
+Scope read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own
+gap ledger (the "repository reality beats handover narrative"
+discipline every phase since Phase 20 has used), not assumed from any
+prior handover: gap-ledger rows **C1.9, C1.12 (the Phase-24 slice —
+shared with 28), C6.13, C6.14, C6.15**.
+
+### Group 1 (migration 190): row_version optimistic lock on
+### `consultancy_visit_reports` (the Phase-24 slice of C1.12)
+
+Checked live before writing anything, not assumed from the gap-
+ledger's own one-line description of C1.12: `consultancy_service_
+scopes` has NO update writer anywhere in either app (`POST /api/
+consultancy/clients/[id]/service-scope` is insert-only) — there is no
+concurrent-edit path to protect, so it is deliberately left untouched.
+`consultancy_visits`' status transitions already have a real guard
+(`consultancy_visits_lifecycle_guard()`, 185, Phase 22 Group 1): a
+double-click race is already refused, because the second call's
+`OLD.status` no longer matches an allowed source state — no
+`row_version` needed on top of a state machine that already rejects
+the race.
+
+The one genuine gap: `consultancy_visit_reports`' DRAFT SAVE
+(`ReportBuilderClient.tsx`'s `saveDraft()`, Phase 7 Group 5) is
+free-text narrative (summary/recommendations/next-visit-date) with no
+state machine protecting it at all — two consultants editing the same
+draft would have the second save silently overwrite the first's text
+with zero detection.
+
+- Same pattern this codebase already uses throughout (123's hazard/RA
+  guards, 124's RAMS/COSHH guards, 125's incident guard): `row_version`
+  forced to 1 on INSERT and to `OLD.row_version + 1` on every UPDATE
+  **regardless of whatever the caller sent** — the trigger's own
+  overwrite is what makes a client's `.eq('row_version', ...)`
+  conditional update an honest optimistic-lock check, not a value a
+  caller could game by sending a higher number.
+  `consultancy_visit_report_fill()`/`_touch()` (176) extended in
+  place, not duplicated.
+- `ReportBuilderClient.tsx`'s save is now `.eq('id', report.id)
+  .eq('row_version', report.row_version)`; a lost race (0 rows, no
+  error) surfaces as "Someone else changed this draft since you opened
+  it. Refresh to see their change." — the exact `RamsHeaderEditor.tsx`
+  precedent.
+- **Live probe** (`supabase/probes/190_visit_report_optimistic_
+  locking.sql`, rolled back, using two real live companies with a
+  fabricated, rolled-back `consultancy_client` relationship — no live
+  `organisation_relationships` rows exist at rest, confirmed before
+  writing the probe): 6 checks — row_version starts at 1; a normal save
+  succeeds and increments to 2; a stale-tab save using the ORIGINAL
+  row_version is a silent no-op (0 rows); the content is proven
+  unchanged; the trigger ignores a caller-sent `row_version = 999` and
+  still advances to exactly `OLD + 1`; `visit_id` stays immutable.
+  **All 6 passed.**
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1716 admin — 1709 + 7 new `visitReportOptimisticLockingSql.test.ts`;
+804 portal, unchanged — `ReportBuilderClient.tsx` has no component
+test, the established convention), all six CI guards pass with no
+regressions. Migration 190 applied live and verified.
+
+### Group 2: portal UI for consultancy owners to grant access (C1.9)
+
+Phase 1's own handover (§H) left this as "RPC ready, no UI":
+`grant_organisation_access()`/`revoke_organisation_access()` (117)
+have existed, fully guarded, since the very first Core-OS 360
+migration — this is the first caller either has ever had. **No new
+migration** — every write runs through the existing RPCs, under the
+caller's own session; the RPCs are their own security boundary
+(self-grant refused, only your own colleagues, only a role marked
+`consultancy_grantable`, only a client you hold a LIVE
+`consultancy_client` relationship with) — this page pre-filters the
+pickers to plausible choices as a convenience, the database decides,
+not the page.
+
+- **`/consultancy/access`** (new portal page, linked from the Command
+  Centre home): gated by `requirePortfolioSession()` (the same base
+  gate every `/consultancy/*` page uses) plus a live
+  `has_capability(home, 'consultancy.manage_access')` RPC check — a
+  portfolio user without that capability sees a plain "you do not
+  manage access grants" state rather than a redirect, since a
+  legitimate Command Centre user may simply lack this one capability.
+- **Reads under RLS, not the service role** — `profiles` (own
+  colleagues, `company_id = home`), `organisation_relationships`
+  (live `consultancy_client` rows — the party-read policy since 117
+  already scopes this to "my own home organisation's relationships"),
+  `access_roles` (`consultancy_grantable = true`), and
+  `user_organisation_access` (RLS's own "a consultancy manager sees
+  the grants of their own people" clause, 117, already answers this
+  with no new policy). Org/person NAMES for the picker lists AND for
+  already-existing grants (which may reference a colleague or
+  organisation outside the "currently offerable" sets — e.g. a stale
+  grant against a lapsed relationship) are resolved by a second,
+  by-id-list fetch — the standing "fetch by id list, never a chained
+  embed" rule this codebase has followed since the referral PATCH
+  route's own PGRST200 lesson.
+- **`ACCESS_SCOPES`** (`full | health_safety | hr | recruitment`,
+  `lib/consultancy/vocab.ts`, shared-dupe pair) is the first TS
+  vocabulary tuple pinned against a Phase 1 (117) CHECK rather than a
+  Phase 6+ one — the grant form is the first UI anywhere to let a
+  person actually pick a scope. Pinned by the new
+  `accessGrantSql.test.ts` (admin), following this codebase's own
+  established "each migration's own SQL-shape test pins ITS tuple"
+  discipline rather than one central vocab test file.
+- **`AccessGrantClient.tsx`**: a grant form (person / client / role /
+  scope / optional expiry) calling `grant_organisation_access` via
+  `supabase.rpc(...)`, and a Revoke button per current grant calling
+  `revoke_organisation_access`. Every RPC error surfaces verbatim —
+  no client-side pre-validation duplicating what the RPC already
+  checks, the same posture every H&S/Command-Centre workflow guard in
+  this codebase already takes.
+- **`accessGrantSql.test.ts`** pins, against the LIVE 117 migration
+  text: both RPCs' exact parameter names/order (what the client
+  component calls by name), the `GRANT EXECUTE .. TO authenticated`/
+  `REVOKE .. FROM PUBLIC, anon` pair, the self-grant refusal, the
+  `consultancy_grantable` role check, the live-relationship date-range
+  check, the `ACCESS_SCOPES` tuple against the CHECK, and the
+  colleague-scoped read policy — so a future edit to any of these
+  cannot silently break this page without a test failing first.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1724 admin — 1716 + 8 new; 807 portal — 804 + 3, the sweep tests
+picking up `/consultancy/access` automatically), all six CI guards
+pass with no regressions, both production builds compile (portal's
+one prerender failure is the long-documented sandbox-only missing-
+Supabase-env-var limitation, unrelated to this change — confirmed by
+"Compiled successfully" completing cleanly before that unrelated
+page's static-export step).
+
+### Group 3: site-level Command Centre drilldown (C6.13)
+
+**No new migration.** The Attention Queue's own `siteId`/`siteName`
+(Phase 22, Group 6) already labelled each item; nothing let a
+consultant actually CLICK a site and see everything open there —
+confirmed live before building anything: the Site column rendered as
+plain text with no link. `hs_sites` was already read cross-client
+under the portfolio session (`loadAttentionQueue.ts`'s own `sites`
+query, scoped `.in('company_id', orgIds)`), so no new read pattern was
+needed either.
+
+- **`/consultancy/clients/[id]/sites/[siteId]`** (new portal page):
+  the exact Client 360 access-gating shape
+  (`requirePortfolioSession()` + `portfolioIncludes()` → `notFound()`)
+  plus a same-organisation check on the site itself
+  (`.eq('id', siteId).eq('company_id', id)` — refuses a site id that
+  belongs to a DIFFERENT client, `notFound()` either way). It never
+  re-derives the queue — it calls the SAME `loadAttentionQueue()` the
+  `/consultancy/attention-queue` page uses and filters client-side to
+  `(clientOrganisationId, siteId)`, so the two views can never
+  disagree about what counts as an open issue at that site.
+- **The Attention Queue's own Site column is now a link** (to this
+  new page) whenever `item.siteId` is set, plain text otherwise
+  (contractors and every pre-Phase-22 category still have no site of
+  their own, unchanged).
+- **Client 360 deliberately gained no "Sites" section of its own** —
+  the drilldown chain this gap actually asks for (portfolio issue →
+  site → responsible record) is now complete via the Attention
+  Queue's own link and the new page's own "Open" links out to each
+  record; a redundant per-site grouping on Client 360 too would have
+  been scope invented beyond the gap's literal wording, the same
+  "documented, bounded scope decision" discipline this codebase
+  applies throughout the Completion Programme.
+
+Verified: `tsc --noEmit` clean (portal only — this group touched no
+admin file), full `vitest run` green (portal 808 — 807 + 1, the sweep
+tests picking up the new dynamic route automatically; admin unchanged
+at 1724), all six CI guards pass with no regressions, portal
+production build compiles (the same long-documented sandbox-only
+missing-Supabase-env-var limitation, unrelated to this change).
+
+### Group 5: visit reports as a Communication Timeline source (C6.15)
+
+Checked before Group 4: `communicationTimeline.ts` had no
+`VisitReportRow` input of any kind — a genuinely separate gap from the
+value-report `reports` table it already covered (Phase 6, Group 6).
+Closed first so Group 4's own filtering/pagination work automatically
+covers the new source too, rather than needing a second pass.
+
+- **`VisitReportIssuedRow { id, version, issued_at }`** and a new
+  `'visit_report_issued'` `CommunicationKind`. `buildCommunicationTimeline()`
+  gains one more loop, always `visibility: 'shared_with_client'` — a
+  visit report (Phase 7, migration 176) is only ever passed into this
+  function once `status = 'issued'`; a draft is never a communication
+  event and this file needs no status check of its own to enforce
+  that, since the caller (Client 360) only ever queries issued rows.
+- **Dated by `issued_at`, never `created_at`.** A report can sit in
+  `draft` for days before it is ever shared with the client — only the
+  issue itself, not the drafting, is the event this timeline records.
+- Client 360's new query: `consultancy_visit_reports` filtered to
+  `client_organisation_id = id AND status = 'issued'`, capped at 20,
+  ordered `issued_at desc` — matching every other source query on the
+  page already.
+
+### Group 4: Communication Timeline pagination/filtering (C6.14)
+
+The timeline section had always hard-truncated to `.slice(0, 30)` with
+no way to see anything older, and no way to narrow it by kind or
+visibility — the actual gap-ledger wording.
+
+- **Filtering runs over the already-bounded, already-fetched array —
+  no second query.** Every source query on the page is individually
+  capped at 10-20 rows, so the combined, merged timeline is already
+  small; `ClientCockpitPage` filters and paginates it server-side
+  (this page has no `'use client'` component of its own to filter in,
+  unlike the Evidence Engine's own client-side filters from Phase 23,
+  Group 3 — the same posture, applied server-side here since that's
+  what this page already is).
+- **`searchParams: Promise<{ kind?: string; visibility?: string; page?:
+  string }>`** added to `ClientCockpitPage`'s signature, the standing
+  Next 15 async-props convention. `FilterForm`
+  (`components/safety/FilterForm.tsx`, already a generic, reusable
+  plain-GET-form component — reused unchanged, no new component
+  needed) renders the kind/visibility `<select>`s; submitting resets
+  to page 1 by simply not carrying a `page` param forward, the same
+  "a plain GET form, filters live in the URL" shape that component's
+  own header comment already documents.
+  **Pagination copies the admin Candidates-table idiom verbatim**
+  (`hiring/[id]/page.tsx`, 2026-09-04): a disabled Prev/Next is a
+  `<span>`, never a `<Link>` with `pointerEvents: none` — the same
+  accessibility discipline recorded there.
+- `TIMELINE_PAGE_SIZE = 20`. The page count/empty-state copy
+  distinguishes "no communications recorded yet" (nothing at all) from
+  "no communications match this filter" (a real filter with zero
+  results) — the same distinction the Digital Twin's own null-vs-zero
+  handling already established for a different kind of count.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal 809 — 808 + 1 new `communicationTimeline.test.ts` case for the
+visit-report kind; admin unchanged at 1724 — this pair of groups
+touched no admin file beyond nothing at all), all six CI guards pass
+with no regressions (66 shared-dupe pairs, unchanged —
+`communicationTimeline.ts` is portal-only, not a shared-dupe pair, per
+its own header comment; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this pair of groups
+touched no admin route; 102 blind-update chains, unchanged; every
+paged query's `.order()` present), portal production build compiles
+(the same long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated to this change — confirmed by the build
+compiling successfully before failing only on that one unrelated
+page's static export), admin production build compiles clean.
+
+### Group 6: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE24_HANDOVER.md`.
+
+A dedicated adversarial pass across all five prior groups found no
+Critical, High or Medium defect. Confirmed clean: `ReportBuilderClient
+.tsx`'s row_version propagates correctly after `router.refresh()`, so
+a second save always conditions on the current version, never a stale
+client-cached one; `/consultancy/access`'s colleagues picker
+deliberately does not pre-exclude the caller (the RPC's own self-grant
+refusal is the real guard, per the page's own "the database decides,
+not the page" design); the site drilldown's `hs_sites` query checks
+`id` AND `company_id` together, so a site belonging to a different
+client 404s rather than resolving wrong; a manually-crafted
+`?page=999` on the timeline produces an empty slice with no error,
+matching the established admin Candidates-table pagination idiom
+exactly (neither clamps to the real total). One documentation-only fix
+applied: `communicationTimeline.ts`'s header comment had a stale "one
+of the four kinds above" cross-reference, no longer accurate once this
+phase added a fifth `shared_with_client`-producing kind.
+
+**C1.12 stays correctly split, not silently widened or narrowed.**
+The Phase-24 slice (`consultancy_visit_reports`, the one genuinely
+unprotected concurrent-edit path) is fully closed; the rest — general
+optimistic-locking hardening across the app — remains assigned to
+Phase 28 per the matrix's own existing `24/28` split, updated in
+`docs/CORE_OS_360_COMPLETION_MATRIX.md` and
+`docs/core_os_360_completion_manifest.json` to record exactly that
+(`PARTIAL`, `closed_in_phase: 24`, `assigned_to_phase: 28`).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1724** — unchanged from the end of Group 2, since Groups 3-5
+touched portal only; portal **809** — 804 + 1 new
+`communicationTimeline.test.ts` case for the visit-report kind, plus
+the sweep tests picking up the two new routes from Groups 2-3
+automatically), all six CI guards pass with no regressions (66
+shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this phase added no
+admin route; 102 blind-update chains, unchanged — the one new counted
+UPDATE, `ReportBuilderClient.tsx`'s `saveDraft()`, was built with
+`COUNT_EXACT`/`judgeWrite()` from the start; every paged query's
+`.order()` present), both production builds compile (portal's one
+prerender failure is the same long-documented sandbox-only missing-
+Supabase-env-var limitation).
+
+**Phase 24 is complete. Phase 25 is NOT to begin** until this branch
+is merged and deployed, per the operator's standing instruction. Its
+scope should be read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s
+own gap ledger rather than assumed, following the same "repository
+reality beats handover narrative" discipline every phase since Phase 20
+has used.
 
