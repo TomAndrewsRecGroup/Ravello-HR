@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/se
 import Topbar from '@/components/layout/Topbar';
 import BillingClient from './BillingClient';
 import { getOpenInvoiceUrl, stripeConfigured } from '@/lib/stripe';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 
 export const metadata: Metadata = { title: 'Billing' };
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,7 @@ export default async function BillingPage() {
   // Billing is super-user only. Editors and viewers don't see the menu
   // entry, but a direct URL also bounces them so RLS-light pages stay
   // honest.
-  if (!isTpsStaff && role !== 'client_admin') redirect('/dashboard');
+  if (!isCompanySuperUser({ role, isTpsStaff })) redirect('/dashboard');
 
   // TPS staff can land here without a companyId (browsing the portal as
   // staff with no client picked). Avoid the empty .eq('id', '') query —

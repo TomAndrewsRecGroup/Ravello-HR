@@ -4,6 +4,7 @@ import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { emitEvent } from '@/lib/events/emit';
 import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { uuid } from '@/lib/validation/primitives';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 
 // POST /api/portal/policy-acks/[id]/resend
 //
@@ -19,7 +20,13 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
   const params = await props.params;
   const session = await requireLiveSession();
   if (!session) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-  if (session.role !== 'client_admin' && session.role !== 'tps_admin') return NextResponse.json({ error: 'You don\'t have permission to resend sign-off links.' }, { status: 403 });
+  // LiveSession has no separate isTpsStaff flag — its role IS
+  // get_my_role()'s raw value, so 'tps_admin' can appear there
+  // directly (unlike getSessionProfile()'s role, always legacy-mapped,
+  // with isTpsStaff carried alongside it instead).
+  if (!isCompanySuperUser({ role: session.role, isTpsStaff: session.role === 'tps_admin' })) {
+    return NextResponse.json({ error: 'You don\'t have permission to resend sign-off links.' }, { status: 403 });
+  }
   if (!session.companyId) return NextResponse.json({ error: 'No company' }, { status: 403 });
   if (!uuid.safeParse(params.id).success) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 

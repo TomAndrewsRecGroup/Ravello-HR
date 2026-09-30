@@ -10,10 +10,21 @@ import {
 // the TypeScript lists to the SQL both ways and scan the portal for any
 // read that would name a revoked column (a permission error at runtime,
 // invisible to tsc).
+//
+// 131's own REVOKE + full re-GRANT is the baseline; 197 (Phase 28, the
+// row_version optimistic lock) is one additive GRANT SELECT on top of
+// it, the same "a new column needs its own additive grant, not a
+// rewrite of 131's whole list" discipline 131's own header comment
+// establishes for future columns — so `granted` is the UNION of both
+// files' own grant lists, not 131's alone.
 const root = resolve(__dirname, '../../../../..');
 const sql = readFileSync(join(root, 'supabase/migrations/131_employee_records_sensitive_columns.sql'), 'utf8');
-const granted = sql.match(/GRANT SELECT \(([\s\S]*?)\) ON public\.employee_records TO authenticated/)![1]
+const sql197 = readFileSync(join(root, 'supabase/migrations/197_employee_records_row_version.sql'), 'utf8');
+const granted131 = sql.match(/GRANT SELECT \(([\s\S]*?)\) ON public\.employee_records TO authenticated/)![1]
   .split(',').map(c => c.trim()).filter(Boolean);
+const granted197 = [...sql197.matchAll(/GRANT SELECT \(([\s\S]*?)\) ON public\.employee_records TO authenticated/g)]
+  .flatMap(m => m[1].split(',').map(c => c.trim()).filter(Boolean));
+const granted = [...granted131, ...granted197];
 const fnReturns = sql.match(/employee_private_fields\(p_company uuid, p_ids uuid\[\] DEFAULT NULL\)\s*RETURNS TABLE \(([\s\S]*?)\)\s*LANGUAGE/)![1]
   .split(',').map(c => c.trim().split(/\s+/)[0]);
 const SENSITIVE = [...EMPLOYEE_HR_FIELDS, 'leave_token'];

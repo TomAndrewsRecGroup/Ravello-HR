@@ -29,6 +29,17 @@ describe('POST /api/portal/policy-acks/[id]/resend', () => {
     expect(res.status).toBe(200);
     expect(emitted).toEqual([{ companyId: 'co-1', entityType: 'policy_ack_resend', entityId: ID, eventType: 'created', actorId: 'u-1', actorKind: 'client', payload: { employee_id: 'emp-1', document_id: 'doc-1' } }]);
   });
+  it('also allows tps_admin staff — LiveSession.role can BE that value directly, unlike getSessionProfile()\'s isTpsStaff-carrying shape', async () => {
+    // Phase 28 Group 1 (C1.13): this route now derives isCompanySuperUser's
+    // isTpsStaff from `role === 'tps_admin'` inline, since LiveSession has
+    // no separate flag. Pinning this directly, not assumed from the
+    // client_admin case above.
+    session = { userId: 'u-1', role: 'tps_admin', companyId: 'co-1' };
+    const res = await call();
+    expect(res.status).toBe(200);
+    expect(emitted).toHaveLength(1);
+  });
+
   it('refuses another company\'s row, a signed row, a viewer and a signed-out caller', async () => {
     ack = { ...ack!, company_id: 'co-2' };
     expect((await call()).status).toBe(404);

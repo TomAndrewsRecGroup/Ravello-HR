@@ -44,6 +44,7 @@ interface Employee {
   leave_year_type: string;
   leave_token: string | null;
   created_at: string;
+  row_version: number;
 }
 
 interface Props {
@@ -90,6 +91,11 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
   const [deptFilter, setDeptFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Captured at openEdit(), from the row the drawer was populated from —
+  // never re-read from `employees` state at save time, which a background
+  // router.refresh() could have already moved on without the open form
+  // knowing, silently defeating the lock.
+  const [editingVersion, setEditingVersion] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Leave-link modal: shows the public /leave/{token} URL for an
@@ -223,6 +229,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
   function openNew() {
     setForm(emptyForm);
     setEditingId(null);
+    setEditingVersion(null);
     setShowForm(true);
   }
 
@@ -264,6 +271,7 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
       address: (emp as any).address ?? '',
     });
     setEditingId(emp.id);
+    setEditingVersion(emp.row_version);
     setShowForm(true);
   }
 
@@ -322,14 +330,26 @@ export default function EmployeeRecordsClient({ companyId, userId, isAdmin, canM
       withPrivate([{ id }], await readEmployeePrivate(supabase, companyId, [id]))[0];
 
     if (editingId) {
-      const { data, error } = await supabase
+      // Conditional on the version the drawer was opened against: a
+      // no-op zero-row result (not an error — the row exists, it just
+      // no longer matches row_version) means someone else saved this
+      // employee since this form was opened. row_version is forced
+      // OLD+1 by the database trigger regardless of what is sent, so
+      // this check cannot be gamed by sending a higher number.
+      let query = supabase
         .from('employee_records')
-        .update(body)
-        .eq('id', editingId)
-        .select(EMPLOYEE_SAFE_COLUMNS)
-        .single();
-      if (!error && data) {
-        const row = { ...(data as unknown as Employee), ...(await reread(editingId)) } as Employee;
+        .update(body, { count: 'exact' })
+        .eq('id', editingId);
+      if (editingVersion !== null) query = query.eq('row_version', editingVersion);
+      const { data, error, count } = await query.select(EMPLOYEE_SAFE_COLUMNS);
+      if (error) {
+        // Pre-existing behaviour: no error UI here beyond the button
+        // no longer spinning (see `finally` below) — unrelated to this
+        // fix, left as-is.
+      } else if (count === 0) {
+        window.alert('Someone else saved changes to this employee while you had this form open. Refresh the page to see their changes, then make yours again.');
+      } else if (data && data[0]) {
+        const row = { ...(data[0] as unknown as Employee), ...(await reread(editingId)) } as Employee;
         setEmployees(prev => prev.map(e => e.id === editingId ? row : e));
         setShowForm(false);
         revalidatePortalPath('/lead/employee-records');
