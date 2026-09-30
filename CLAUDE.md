@@ -10064,3 +10064,96 @@ row-cap clean, 44 unvalidated routes unchanged, 43 static admin routes
 all reachable, 102 blind-update chains unchanged), both production
 builds compile.
 
+### Group 3: regression, adversarial QA, handover — a widespread
+### missing-order() defect found and fixed (2026-09-30)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE19_HANDOVER.md`.
+**Gate: PASS.**
+
+**An adversarial self-review of Group 2's own row-cap fix found a real
+bug in that same fix, which grew into a much larger finding once
+followed up.** `complianceTwin/loadSnapshot.ts`'s two new `hs_links`
+reads (Group 2's fix for the row-cap gap) used `readAllPages()` with a
+bare `.range(from, to)` and NO `.order(...)` at all —
+`paged.ts`'s own header comment states this as an absolute rule: "A
+paged read MUST carry a stable, unique sort key... without a
+deterministic total order Postgres may order two pages differently —
+silently dropping or duplicating rows across the boundary." Fixed
+immediately, but the fact that a fix written specifically to correct a
+row-cap defect could itself violate the discipline that makes
+row-cap-safe pagination sound was reason to dig further, not to declare
+Group 2 done.
+
+- **A follow-up research-agent audit of every `readAllPages()` call
+  site in both apps found the same pattern copy-pasted across 8 files,
+  ~70 call sites**, since Phase 8 (Risk Graph), Phase 12 (Compliance
+  Digital Twin) and Phase 18 (Assurance Today) — each phase's own admin
+  page was later mirrored into a portal read-only twin, propagating the
+  gap with every copy.
+- **A worse variant in the ORIGINAL Phase 8 admin risk-graph page**:
+  two `hs_links` reads there were never wrapped in `readAllPages()` at
+  all — no `.range()`, no `.limit()`, a genuinely unbounded read at the
+  exact row-cap class of bug this codebase has hit before (the
+  referral-cron incident this file's own history already records).
+  Group 2's row-cap fix addressed the SAME table's SAME shape of read
+  in a DIFFERENT file without anyone checking whether the page it was
+  mirrored from had the identical gap — it did.
+- **17 further "soft risk" call sites** with an `.order()` present but
+  on a non-unique column alone (`name`/`full_name`/`title`/
+  `created_at`) — small per-company reference/lookup lists (site,
+  equipment, people, authorisation-type pickers on the permits/
+  isolations/emergency-plans/management-review/objectives pages, plus
+  one `consultancy_visits` read).
+
+**All of it fixed in one pass, 17 files total**: every affected query
+now selects the table's real primary key (`id`, or `person_id` for
+`person_deployment_status`, whose PK is genuinely `person_id` —
+verified against the live migration before assuming otherwise) and
+orders by it, either alone or as a tie-break appended after an existing
+business-meaningful `.order()`. No new query shape invented anywhere —
+every fix matches the file's own established pattern.
+
+**Why this matters, and why it hasn't necessarily bitten anyone yet**:
+every affected table is scoped to ONE company; the failure only
+manifests once a single client's row count for one of these tables
+crosses the 1,000-row PostgREST page boundary — unlikely for a small
+reference list (people/authorisation-type pickers), more plausible for
+a transactional one (`hs_incidents`, `waste_movements`, `hs_links`) on
+a long-lived, heavily-used client. Real and reachable, but the exact
+"compiles, renders, reports success" class of defect this codebase's
+own Foundations Sweep and the referral-cron incident already recorded
+as a standing lesson — invisible until a client crosses the threshold.
+
+**Everything else checked and found clean**: every Group 2 fix
+re-verified against current code (field names, control-flow placement);
+the two orphaned routes remain flagged, not deleted, with no new
+evidence in this pass to change that judgment call; full regression
+(tsc clean both apps, 1620 admin / 755 portal unchanged throughout every
+group, all five CI guards, both production builds) green at every group
+boundary, not only at the end.
+
+**Technical debt, recorded rather than silently carried**: the two
+orphaned API routes (admin `manatal/matches` pair, portal
+`attention-queue`) still await a human keep-or-delete decision;
+CLAUDE.md's Environment Variables section will drift again unless
+future phases update it directly rather than only documenting a new var
+in their own narrative section; no automated guard yet catches a
+`readAllPages()` call with no `.order(...)` in the same statement — the
+natural next CI check to add, following this codebase's own standing
+practice of turning a hand-found defect class into a permanent guard
+once understood (the same path `check-row-cap.sh` itself took).
+
+Verified: `tsc --noEmit` clean both apps at every step (not only at the
+end), full `vitest run` unchanged throughout (1620 admin / 755 portal —
+no fix in this phase changed any function's observable behaviour under
+test), all five CI guards pass with no regression at any point (60
+shared-dupe pairs; row-cap clean — this phase's own fixes are what keep
+it that way; 44 unvalidated routes unchanged; 43 static admin routes,
+all reachable; 102 blind-update chains, unchanged), both production
+builds compile at every group.
+
+**Phase 19 is complete. The Core-OS 360 Phase 6-19 initiative is
+complete**, per the operator's original instruction to work through
+Phases 6-19 sequentially, completing each in full before the next, with
+regular merges along the way.
+
