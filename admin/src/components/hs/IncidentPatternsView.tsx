@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AlertTriangle, Building2, Network, TrendingUp } from 'lucide-react';
 import type { IncidentPatternSummary } from '@/lib/incidentPatterns/analyze';
+import { MIN_WINDOW_DAYS, MAX_WINDOW_DAYS } from '@/lib/incidentPatterns/analyze';
 
 // Core-OS 360 Phase 10, Group 2 (shared-dupe pair: admin and portal —
 // both read the identical, already-computed summary; only the base
@@ -32,7 +33,7 @@ export default function IncidentPatternsView({
         rating.
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {windows.map(w => (
           <Link
             key={w}
@@ -42,7 +43,29 @@ export default function IncidentPatternsView({
             {w === 365 ? '1 year' : `${w} days`}
           </Link>
         ))}
+        {/* Core-OS 360 Completion Programme, Phase 25, Group 3 (C10.4):
+            a plain GET form — no JavaScript needed, the same native-
+            navigation discipline every preset link above already uses.
+            The page itself clamps to [MIN_WINDOW_DAYS, MAX_WINDOW_DAYS]
+            regardless of what this sends, so this is a convenience, not
+            the real bound. */}
+        <form method="get" action={basePath} className="flex items-center gap-1.5">
+          <input
+            type="number"
+            name="days"
+            min={MIN_WINDOW_DAYS}
+            max={MAX_WINDOW_DAYS}
+            defaultValue={windowDays}
+            aria-label={`Custom window, ${MIN_WINDOW_DAYS} to ${MAX_WINDOW_DAYS} days`}
+            className="input btn-sm"
+            style={{ width: 90 }}
+          />
+          <button type="submit" className="btn-secondary btn-sm">Apply</button>
+        </form>
       </div>
+      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+        Custom window: {MIN_WINDOW_DAYS}&ndash;{MAX_WINDOW_DAYS} days.
+      </p>
 
       {loadError && <p className="card p-4 text-sm" style={{ color: 'var(--red)' }}>Could not load incident data: {loadError}</p>}
 

@@ -17,10 +17,20 @@ export interface BroadcastPrefillResult {
   title: string;
   description: string;
   companyIds: string[];
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7): the
+  // research/regulatory origin this broadcast was raised from — carried
+  // through to broadcast_sends (migration 194) and, from there, onto
+  // every action it raises (source_type 'regulatory_broadcast'), so the
+  // completion of a broadcast's actions can be traced back to the
+  // research that prompted it. Only set when the prefill genuinely came
+  // from one of the two traced origins — never invented for a hand-typed
+  // broadcast.
+  sourceType?: 'legal_requirement' | 'regulatory_update';
+  sourceId?:   string;
 }
 
 export function buildLegalPrefill(
-  requirement: { title: string } | null,
+  requirement: { id: string; title: string } | null,
   applicableCompanyIds: string[],
 ): BroadcastPrefillResult | null {
   if (!requirement) return null;
@@ -28,5 +38,7 @@ export function buildLegalPrefill(
     title: `Legal update: ${requirement.title}`.slice(0, 200),
     description: '',
     companyIds: [...new Set(applicableCompanyIds)],
+    sourceType: 'legal_requirement',
+    sourceId: requirement.id,
   };
 }

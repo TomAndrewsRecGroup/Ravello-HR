@@ -656,6 +656,11 @@ export interface LegalRequirementResearchNote {
   action_taken: string | null;
   created_by: string | null;
   created_at: string;
+  // Core-OS 360 Completion Programme, Phase 25, Group 2 (C17.6):
+  // optimistic-lock version, forced by the DB (migration 192) — never
+  // trust a value read from here for anything but an .eq() check on
+  // the next write.
+  row_version: number;
 }
 
 // Core-OS 360 Phase 5, Group 6 (migration 161): Objectives & Targets,

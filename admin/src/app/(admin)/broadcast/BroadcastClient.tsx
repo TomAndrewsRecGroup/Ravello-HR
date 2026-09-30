@@ -5,7 +5,13 @@ import type { CompanyRef } from '@/lib/supabase/types';
 
 import { ACTION_PRIORITIES, ACTION_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 
-export interface BroadcastPrefill { title: string; description: string; companyIds: string[] }
+export interface BroadcastPrefill {
+  title: string; description: string; companyIds: string[];
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7) —
+  // see lib/governance/broadcastPrefill.ts's own comment.
+  sourceType?: 'legal_requirement' | 'regulatory_update';
+  sourceId?:   string;
+}
 interface Props { companies: CompanyRef[]; prefill?: BroadcastPrefill | null }
 
 // Sourced from the shared vocabularies rather than a local copy — this
@@ -34,6 +40,20 @@ export default function BroadcastClient({ companies, prefill }: Props) {
   // (creates a row in every client's actions table), so a typed confirm
   // step prevents accidental mass sends.
   const [confirming, setConfirming] = useState(false);
+  // Core-OS 360 Completion Programme, Phase 25, Group 1 (C1.11): minted
+  // ONCE per confirm-modal open, sent unchanged on every retry of the
+  // SAME send (the confirm button stays the same key across a failed
+  // attempt), and reset only once a send genuinely succeeds or the
+  // modal is cancelled outright — so a retry after a network error
+  // dedupes server-side instead of creating a second broadcast.
+  const [broadcastKey, setBroadcastKey] = useState<string | null>(null);
+  // Core-OS 360 Completion Programme, Phase 25, Group 6 (C17.7): the
+  // regulatory origin, fixed at mount from the prefill and preserved
+  // through any edits to title/description/recipients — those are
+  // staff refinements of the SAME send, not a new, unrelated one.
+  const [source] = useState<{ sourceType?: string; sourceId?: string }>({
+    sourceType: prefill?.sourceType, sourceId: prefill?.sourceId,
+  });
 
   function toggleAll() {
     if (selected.size === active.length) {
@@ -55,6 +75,7 @@ export default function BroadcastClient({ companies, prefill }: Props) {
   function openConfirm() {
     if (!selected.size || !form.title || !form.action_type) return;
     setError('');
+    setBroadcastKey(k => k ?? crypto.randomUUID());
     setConfirming(true);
   }
 
@@ -64,7 +85,10 @@ export default function BroadcastClient({ companies, prefill }: Props) {
       const res = await fetch('/api/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, company_ids: Array.from(selected) }),
+        body: JSON.stringify({
+          ...form, company_ids: Array.from(selected), broadcast_key: broadcastKey,
+          ...(source.sourceType ? { source_type: source.sourceType, source_id: source.sourceId } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed');
@@ -72,6 +96,7 @@ export default function BroadcastClient({ companies, prefill }: Props) {
       setSelected(new Set());
       setForm({ title: '', description: '', action_type: 'compliance_update', priority: 'normal', due_date: '' });
       setConfirming(false);
+      setBroadcastKey(null);
     } catch (e: any) {
       setError(e.message);
     } finally {

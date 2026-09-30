@@ -57,6 +57,33 @@ export interface IncidentPatternWindows {
   priorEndExclusive: string;
 }
 
+// Core-OS 360 Completion Programme, Phase 25, Group 3 (closes gap-ledger
+// row C10.4 — "configurable analysis window within bounded safe ranges,
+// fair equal-length comparisons preserved"). The 30/90/365-day picker
+// was fixed; a real analysis sometimes needs a genuinely different
+// window (e.g. 14 days after a specific incident, or 3 years for a
+// board-level trend). `incidentPatternWindows()` above already takes
+// `days` as a plain parameter and was ALWAYS generic — the fair,
+// equal-length (modulo the documented one-day forward pad) comparison
+// this module's own header already guarantees is preserved for ANY
+// `days` value within these bounds, not just the three presets.
+//
+// Bounds are round, documented numbers, never tuned to a specific
+// client's data: below the floor a "window" stops being a meaningful
+// sample size (a 1-day window makes "recurring" and "clusters"
+// meaningless — CLUSTER_THRESHOLD is 2); above the ceiling the
+// "current vs. prior" comparison starts spanning several years each
+// side and loses its point as a recent-trend signal.
+export const MIN_WINDOW_DAYS = 7;
+export const MAX_WINDOW_DAYS = 730;
+
+/** Clamps a requested day count into the bounded safe range, falling
+ *  back to the 90-day default for anything not a finite number. */
+export function clampWindowDays(requested: number): number {
+  if (!Number.isFinite(requested)) return 90;
+  return Math.min(MAX_WINDOW_DAYS, Math.max(MIN_WINDOW_DAYS, Math.trunc(requested)));
+}
+
 export function incidentPatternWindows(todayISO: string, days: number): IncidentPatternWindows {
   const shift = (n: number): string => {
     const d = new Date(`${todayISO}T00:00:00.000Z`);

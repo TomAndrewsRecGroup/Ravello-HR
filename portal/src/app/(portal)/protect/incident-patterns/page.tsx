@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
+import { analyzeIncidentPatterns, incidentPatternWindows, clampWindowDays, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
 import IncidentPatternsView from '@/components/hs/IncidentPatternsView';
 
 export const metadata: Metadata = { title: 'Incident Patterns' };
 export const dynamic = 'force-dynamic';
 
+// Quick-pick presets only — NOT the validity check any more. Any value
+// within [MIN_WINDOW_DAYS, MAX_WINDOW_DAYS] is accepted via
+// clampWindowDays() (Core-OS 360 Completion Programme, Phase 25,
+// Group 3, C10.4): the custom window input on the page below.
 const WINDOWS = [30, 90, 365] as const;
-type Window = typeof WINDOWS[number];
 
-function isWindow(n: number): n is Window {
-  return (WINDOWS as readonly number[]).includes(n);
-}
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
@@ -27,8 +27,7 @@ function toISODate(d: Date): string {
 // under their own existing policies.
 export default async function ProtectIncidentPatternsPage(props: { searchParams: Promise<{ days?: string }> }) {
   const searchParams = await props.searchParams;
-  const requested = Number.parseInt(searchParams.days ?? '90', 10);
-  const windowDays: Window = isWindow(requested) ? requested : 90;
+  const windowDays = clampWindowDays(Number.parseInt(searchParams.days ?? '90', 10));
 
   const supabase = await createServerSupabaseClient();
   const { companyId } = await getSessionProfile();

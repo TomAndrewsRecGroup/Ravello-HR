@@ -2,7 +2,7 @@
 import { useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Scale, Megaphone, Search, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Plus, Scale, Megaphone, Search, ChevronDown, ChevronUp, Loader2, PenLine } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { useToast } from '@/components/modules/Toast';
@@ -46,6 +46,16 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
   const [searching, setSearching] = useState<string | null>(null);
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, string>>({});
   const [savingReview, setSavingReview] = useState<string | null>(null);
+  // Core-OS 360 Completion Programme, Phase 25, Group 2 (C17.5): a
+  // manual-entry form alongside the Tavily search — for research done
+  // outside this platform (a phone call to a regulator, a read of a
+  // trade-body circular) that still belongs on the same timeline,
+  // visibly marked source: 'manual' so it is never confused with a
+  // Tavily result (the badge on each note already shows which).
+  const [manualOpenFor, setManualOpenFor] = useState<string | null>(null);
+  const [manualNote, setManualNote] = useState('');
+  const [manualWhatWasChecked, setManualWhatWasChecked] = useState('');
+  const [savingManual, setSavingManual] = useState(false);
 
   async function toggleExpand(requirementId: string) {
     if (expandedId === requirementId) { setExpandedId(null); return; }
@@ -54,7 +64,7 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
     if (!notesById[requirementId]) {
       setLoadingNotes(requirementId);
       const { data, error } = await createClient().from('legal_requirement_research_notes')
-        .select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at')
+        .select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at, row_version')
         .eq('legal_requirement_id', requirementId).order('created_at', { ascending: false }).limit(50);
       setLoadingNotes(null);
       if (error) { toast(error.message, 'error'); return; }
@@ -80,19 +90,52 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
     setSavingReview(note.id);
     const sb = createClient();
     const { data: { user } } = await sb.auth.getUser();
+    // Core-OS 360 Completion Programme, Phase 25, Group 2 (C17.6):
+    // conditional on the row_version this note was loaded with — the
+    // migration 192 trigger always advances it, so a 0-row match means
+    // someone else already reviewed (or otherwise updated) this exact
+    // note since it was fetched, never a silent overwrite of their work.
     const res = await sb.from('legal_requirement_research_notes').update({
       reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(),
       action_taken: (reviewDrafts[note.id] ?? '').trim() || null,
-    }, COUNT_EXACT).eq('id', note.id);
+    }, COUNT_EXACT).eq('id', note.id).eq('row_version', note.row_version);
     setSavingReview(null);
     const out = judgeWrite({ error: res.error, count: res.count }, 'The research note');
-    if (!out.ok) { toast(out.message!, 'error'); return; }
+    if (!out.ok) {
+      toast(res.error ? out.message! : 'Someone else already reviewed this note. Refresh to see their update.', 'error');
+      return;
+    }
     setNotesById(prev => ({
       ...prev,
       [note.legal_requirement_id]: (prev[note.legal_requirement_id] ?? []).map(n =>
-        n.id === note.id ? { ...n, reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(), action_taken: (reviewDrafts[note.id] ?? '').trim() || null } : n),
+        n.id === note.id
+          ? { ...n, reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(), action_taken: (reviewDrafts[note.id] ?? '').trim() || null, row_version: n.row_version + 1 }
+          : n),
     }));
     toast('Marked reviewed', 'success');
+  }
+
+  // Core-OS 360 Completion Programme, Phase 25, Group 2 (C17.5): a
+  // research note that did not come from Tavily — a phone call with a
+  // regulator, a trade-body circular, a manual check of legislation.gov.uk.
+  // Inserted directly under staff RLS, the exact "Add legal requirement"
+  // form above already uses for the same table-level posture. source is
+  // always 'manual' — never hand-typed by the form, so it can never be
+  // confused with an automated Tavily result.
+  async function addManualNote(requirementId: string) {
+    const summary = manualNote.trim();
+    if (!summary) return;
+    setSavingManual(true);
+    const { data, error } = await createClient().from('legal_requirement_research_notes').insert({
+      legal_requirement_id: requirementId, source: 'manual',
+      query_used: manualWhatWasChecked.trim() || null,
+      raw_result_summary: summary,
+    }).select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at, row_version').single();
+    setSavingManual(false);
+    if (error) { toast(error.message, 'error'); return; }
+    setNotesById(prev => ({ ...prev, [requirementId]: [data as LegalRequirementResearchNote, ...(prev[requirementId] ?? [])] }));
+    setManualNote(''); setManualWhatWasChecked(''); setManualOpenFor(null);
+    toast('Manual note recorded', 'success');
   }
 
   async function submit(e: React.FormEvent) {
@@ -203,7 +246,33 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
                           <button type="button" className="btn-cta btn-sm flex items-center gap-1.5" disabled={searching === r.id} onClick={() => runSearch(r.id)}>
                             {searching === r.id ? <Loader2 size={14} className="animate-spin" /> : <Search size={13} />} Run Tavily search
                           </button>
+                          <button type="button" className="btn-secondary btn-sm flex items-center gap-1.5"
+                            onClick={() => setManualOpenFor(o => o === r.id ? null : r.id)}>
+                            <PenLine size={13} /> Add manual note
+                          </button>
                         </div>
+                        {manualOpenFor === r.id && (
+                          <div className="rounded-md p-3 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}>
+                            <label className="block">
+                              <span className="label">What was checked (optional)</span>
+                              <input className="input" maxLength={500} value={manualWhatWasChecked}
+                                onChange={e => setManualWhatWasChecked(e.target.value)}
+                                placeholder="e.g. Phone call with HSE, 24 Sept 2026" />
+                            </label>
+                            <label className="block">
+                              <span className="label">What was found</span>
+                              <textarea className="input" rows={3} maxLength={4000} value={manualNote}
+                                onChange={e => setManualNote(e.target.value)}
+                                placeholder="A plain record of what was found — never an AI paraphrase, the same discipline Tavily's own results follow." />
+                            </label>
+                            <div className="flex justify-end gap-2">
+                              <button type="button" className="btn-ghost btn-sm" onClick={() => { setManualOpenFor(null); setManualNote(''); setManualWhatWasChecked(''); }}>Cancel</button>
+                              <button type="button" className="btn-cta btn-sm" disabled={savingManual || !manualNote.trim()} onClick={() => addManualNote(r.id)}>
+                                {savingManual ? 'Saving…' : 'Save note'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         {loadingNotes === r.id ? (
                           <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>Loading past research…</p>
                         ) : (notesById[r.id]?.length ?? 0) === 0 ? (

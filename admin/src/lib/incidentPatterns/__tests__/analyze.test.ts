@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentPatternInput, type IncidentRow } from '../analyze';
+import { analyzeIncidentPatterns, incidentPatternWindows, clampWindowDays, MIN_WINDOW_DAYS, MAX_WINDOW_DAYS, type IncidentPatternInput, type IncidentRow } from '../analyze';
 
 function daysBetween(a: string, b: string): number {
   return Math.round((new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime()) / 86_400_000);
@@ -35,6 +35,43 @@ describe('incidentPatternWindows', () => {
     expect(w.priorEndExclusive).toBe(w.windowStart);
     // Half-open: `days` dates run from priorStart up to (not including) priorEndExclusive.
     expect(daysBetween(w.priorStart, w.priorEndExclusive)).toBe(30);
+  });
+});
+
+// Core-OS 360 Completion Programme, Phase 25, Group 3 (C10.4).
+describe('clampWindowDays', () => {
+  it('passes a value already inside the bounded safe range through unchanged', () => {
+    expect(clampWindowDays(14)).toBe(14);
+    expect(clampWindowDays(365)).toBe(365);
+  });
+
+  it('clamps below the floor up to MIN_WINDOW_DAYS', () => {
+    expect(clampWindowDays(0)).toBe(MIN_WINDOW_DAYS);
+    expect(clampWindowDays(-100)).toBe(MIN_WINDOW_DAYS);
+    expect(clampWindowDays(1)).toBe(MIN_WINDOW_DAYS);
+  });
+
+  it('clamps above the ceiling down to MAX_WINDOW_DAYS', () => {
+    expect(clampWindowDays(10_000)).toBe(MAX_WINDOW_DAYS);
+    expect(clampWindowDays(MAX_WINDOW_DAYS + 1)).toBe(MAX_WINDOW_DAYS);
+  });
+
+  it('falls back to the 90-day default for anything not a finite number', () => {
+    expect(clampWindowDays(NaN)).toBe(90);
+    expect(clampWindowDays(Infinity)).toBe(90);
+    expect(clampWindowDays(-Infinity)).toBe(90);
+  });
+
+  it('truncates a fractional value rather than rounding', () => {
+    expect(clampWindowDays(90.9)).toBe(90);
+  });
+
+  it('never returns a value outside the bounded range, across a spread of inputs', () => {
+    for (const n of [-50, 0, 1, 6, 7, 8, 90, 729, 730, 731, 5000]) {
+      const c = clampWindowDays(n);
+      expect(c).toBeGreaterThanOrEqual(MIN_WINDOW_DAYS);
+      expect(c).toBeLessThanOrEqual(MAX_WINDOW_DAYS);
+    }
   });
 });
 

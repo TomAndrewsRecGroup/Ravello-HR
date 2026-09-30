@@ -33,8 +33,9 @@
     {
       "id": "C1.11",
       "phase": "C1",
-      "status": "DEFERRED-BUT-REQUIRED",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "broadcast_sends (migration 191), client-generated key as PRIMARY KEY, claimed before any action/email work and reverted on failure — Phase 25 Group 1"
     },
     {
       "id": "C1.12",
@@ -183,20 +184,23 @@
     {
       "id": "C9.4",
       "phase": "C9",
-      "status": "MISSING",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "/protect/what-changed, service-role-mediated scoped read of platform_events via effectiveCompanyId(), lib/whatChanged/clientScope.ts curates entity types pinned against TRIGGERED_ENTITIES — Phase 25 Group 4"
     },
     {
       "id": "C9.5",
       "phase": "C9",
-      "status": "MISSING",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "migration 193, notification_preferences.what_changed_digest (default 'off'), /api/cron/what-changed-digest via sendKeyedEmail claim-before-send — Phase 25 Group 5"
     },
     {
       "id": "C10.4",
       "phase": "C10",
-      "status": "PARTIAL",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "clampWindowDays() bounds a user-supplied custom window server-side, preserving incidentPatternWindows()'s existing fairness guarantee — Phase 25 Group 3"
     },
     {
       "id": "C10.5",
@@ -315,20 +319,23 @@
     {
       "id": "C17.5",
       "phase": "C17",
-      "status": "MISSING",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "manual-entry research-note form alongside Tavily notes, same provenance badge — Phase 25 Group 2"
     },
     {
       "id": "C17.6",
       "phase": "C17",
-      "status": "MISSING",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "migration 192, row_version on legal_requirement_research_notes, content immutable after creation, conditional update on Mark reviewed — Phase 25 Group 2"
     },
     {
       "id": "C17.7",
       "phase": "C17",
-      "status": "PARTIAL",
-      "assigned_to_phase": 25
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 25,
+      "note": "migration 194, broadcast_sends.source_type/source_id traces a send to its origin, actions.source_type='regulatory_broadcast' traces a raised action to the send, lib/broadcast/rollup.ts + RecentBroadcasts.tsx close the completion tracking loop — Phase 25 Group 6"
     },
     {
       "id": "C18.4",

@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
-import { analyzeIncidentPatterns, incidentPatternWindows, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
+import { analyzeIncidentPatterns, incidentPatternWindows, clampWindowDays, type IncidentRow, type IncidentCauseRow, type IncidentInvestigationRow } from '@/lib/incidentPatterns/analyze';
 import IncidentPatternsView from '@/components/hs/IncidentPatternsView';
 
 export const metadata: Metadata = { title: 'Incident Patterns' };
 export const dynamic = 'force-dynamic';
 
+// Quick-pick presets only — NOT the validity check any more. Any value
+// within [MIN_WINDOW_DAYS, MAX_WINDOW_DAYS] is accepted via
+// clampWindowDays() (Core-OS 360 Completion Programme, Phase 25,
+// Group 3, C10.4): the custom window input on the page below.
 const WINDOWS = [30, 90, 365] as const;
-type Window = typeof WINDOWS[number];
-
-function isWindow(n: number): n is Window {
-  return (WINDOWS as readonly number[]).includes(n);
-}
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -20,17 +19,15 @@ function toISODate(d: Date): string {
 
 // Core-OS 360 Phase 10, Group 2. Historical, factual pattern surfacing
 // only — never a prediction or a risk score (see lib/incidentPatterns/
-// analyze.ts's own header). A window picker (30/90/365 days) drives a
-// plain searchParams re-render, the exact pattern the Safety Timeline
-// page already uses — no client-side fetch needed for a filter this
-// simple.
+// analyze.ts's own header). A window picker drives a plain searchParams
+// re-render, the exact pattern the Safety Timeline page already uses —
+// no client-side fetch needed for a filter this simple.
 export default async function IncidentPatternsPage(
   props: { params: Promise<{ companyId: string }>; searchParams: Promise<{ days?: string }> }
 ) {
   const params = await props.params;
   const searchParams = await props.searchParams;
-  const requested = Number.parseInt(searchParams.days ?? '90', 10);
-  const windowDays: Window = isWindow(requested) ? requested : 90;
+  const windowDays = clampWindowDays(Number.parseInt(searchParams.days ?? '90', 10));
 
   const supabase = await createServerSupabaseClient();
   const today = toISODate(new Date());

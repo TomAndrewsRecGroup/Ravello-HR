@@ -46,6 +46,7 @@ const TABS = [
   { href: '/protect/digital-twin',     label: 'Digital Twin' },
   { href: '/protect/board-assurance',  label: 'Board Assurance' },
   { href: '/protect/lessons-learned',  label: 'Lessons Learned' },
+  { href: '/protect/what-changed',     label: 'What Changed' },
   { href: '/protect/analysis',         label: 'Analysis' },
   { href: '/protect/reports',          label: 'Reports' },
 ];

@@ -44,6 +44,10 @@
       "schedule": "0 7 * * 1"
     },
     {
+      "path": "/api/cron/what-changed-digest",
+      "schedule": "10 7 * * *"
+    },
+    {
       "path": "/api/cron/bd-score",
       "schedule": "0 6 * * 0"
     },

@@ -35,7 +35,7 @@ export default async function SettingsPage() {
       .order('full_name'),
     supabase
       .from('notification_preferences')
-      .select('email_mode, muted_types, weekly_summary')
+      .select('email_mode, muted_types, weekly_summary, what_changed_digest')
       .eq('user_id', user?.id ?? '')
       .maybeSingle(),
   ]);
@@ -87,10 +87,12 @@ export default async function SettingsPage() {
           <NotificationPrefsForm
             userId={user?.id ?? ''}
             initial={{
-              email_mode:     (prefs as any)?.email_mode ?? 'immediate',
-              muted_types:    (prefs as any)?.muted_types ?? [],
-              weekly_summary: (prefs as any)?.weekly_summary ?? true,
+              email_mode:          (prefs as any)?.email_mode ?? 'immediate',
+              muted_types:         (prefs as any)?.muted_types ?? [],
+              weekly_summary:      (prefs as any)?.weekly_summary ?? true,
+              what_changed_digest: (prefs as any)?.what_changed_digest ?? 'off',
             }}
+            showWhatChangedDigest
           />
         </div>
 
