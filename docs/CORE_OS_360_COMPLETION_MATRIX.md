@@ -51,11 +51,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C1.8 | `access_scope` (health_safety/hr/recruitment/full) enforcement | DEFERRED-BUT-REQUIRED | Phase 1 handover §H: "not enforced" — closed by Phase 6 Group 1 (167, `access_scope_allows()`) — **already resolved**, see C6.3 |
 | C1.9 | Portal UI for consultancy owners to grant access | IMPLEMENTED | Closed Phase 24 Group 2: `/consultancy/access`, the first caller of `grant_organisation_access()`/`revoke_organisation_access()` (117) — no new migration, the RPCs' own existing guards are the whole security boundary |
 | C1.10 | People synced back from source rows (candidate/athlete/employee edits reflected on `people`) | IMPLEMENTED | Closed Phase 21 Group 3, migration 184: `person_sync_from_source()`, an AFTER UPDATE trigger on all three identity tables. Live-probed 8/8 |
-| C1.11 | Broadcast idempotency key | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 25** (Broadcast completion) |
+| C1.11 | Broadcast idempotency key | IMPLEMENTED | Closed Phase 25 Group 1, migration 191: `broadcast_sends` (client-generated key as PRIMARY KEY), claimed before any action/email work, reverted on failure so a genuine retry can still proceed. A double-click/timed-out-retry/direct replay creates nothing twice — reported as `{ created: 0, duplicate: true }` |
 | C1.12 | Optimistic locking on shared records | PARTIAL | Closed for `consultancy_visit_reports` Phase 24 Group 1, migration 190: `row_version`, forced by trigger regardless of caller input, client conditionally updates on it, a lost race surfaces as a clear message. The other two candidate tables were checked live and found to need no `row_version`: `consultancy_service_scopes` has no UPDATE writer anywhere (insert-only), and `consultancy_visits`' status transitions already refuse a race via its own state-machine guard (`consultancy_visits_lifecycle_guard()`, 185) — a double-click's second call finds `OLD.status` no longer matching an allowed source state. General optimistic-locking hardening across the rest of the app → still assigned **Phase 28** |
 | C1.13 | UI still uses legacy role checks in places | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 28** (UX/navigation closure) |
 
-**Gaps carried forward**: C1.9 closed Phase 24, C1.10 closed Phase 21, C1.11→25, C1.12 partially closed Phase 24 (rest→28), C1.13→28.
+**Gaps carried forward**: C1.9 closed Phase 24, C1.10 closed Phase 21, C1.11 closed Phase 25, C1.12 partially closed Phase 24 (rest→28), C1.13→28.
 
 ---
 
@@ -207,10 +207,10 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C9.1 | Pure computation, counts-only, curated label map | IMPLEMENTED | `lib/whatChanged/compute.ts` |
 | C9.2 | Admin `WhatChangedTab` on client detail | IMPLEMENTED | client-side fetch under staff RLS |
 | C9.3 | `event_type='reminder'` correctly counted (post-hoc fix) | IMPLEMENTED | Group 3 adversarial fix |
-| C9.4 | Client-facing, safely-scoped version for their own organisation | MISSING | Master Spec Phase 25 known-gap: "staff-only, no emailed digest" → assigned **Phase 25** |
-| C9.5 | Scheduled daily/period digest with preference/role controls + dedup | MISSING | same → assigned **Phase 25** |
+| C9.4 | Client-facing, safely-scoped version for their own organisation | IMPLEMENTED | Closed Phase 25 Group 4: `/protect/what-changed` reuses `computeWhatChanged()` (promoted to a shared-dupe pair) via a service-role-mediated read of `platform_events` (no client SELECT policy exists), scoped by a live `effectiveCompanyId()` lookup. `lib/whatChanged/clientScope.ts` curates which entity types are client-appropriate, pinned against the real `TRIGGERED_ENTITIES` array so a new entity type can neither silently disappear nor silently leak in |
+| C9.5 | Scheduled daily/period digest with preference/role controls + dedup | IMPLEMENTED | Closed Phase 25 Group 5, migration 193: `notification_preferences.what_changed_digest` ('off'\|'daily'\|'weekly', default 'off' — explicit opt-in). New `/api/cron/what-changed-digest` (07:10 UTC daily; weekly recipients processed only on a Monday) computes each opted-in client_admin's own company summary and sends via `sendKeyedEmail`'s claim-before-send pattern — a re-run sends nothing twice, and a recipient with nothing to report gets no email |
 
-**Gaps carried forward**: C9.4, C9.5 → **Phase 25**.
+**Gaps carried forward**: C9.4, C9.5 both closed Phase 25.
 
 ---
 
@@ -221,10 +221,10 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C10.1 | Pure computation from non-sensitive columns only | IMPLEMENTED | `lib/incidentPatterns/analyze.ts` |
 | C10.2 | Root-cause clustering, site/department clustering | IMPLEMENTED | uses `incident_causes.category` taxonomy |
 | C10.3 | Period-over-period severity comparison, equal-length windows | IMPLEMENTED (fixed post-hoc, then documented) | `incidentPatternWindows()`; 2026-09-30 independent audit corrected the doc claim of "equal-length" to accurately describe the deliberate 1-day forward pad |
-| C10.4 | Configurable analysis window within bounded safe ranges, fair equal-length comparisons preserved | PARTIAL | Fixed 30/90/365-day picker exists; not user-configurable within bounds → assigned **Phase 25** |
+| C10.4 | Configurable analysis window within bounded safe ranges, fair equal-length comparisons preserved | IMPLEMENTED | Closed Phase 25 Group 3: `incidentPatternWindows()`'s existing `days` parameter was already fully generic — only the UI/route layer artificially restricted it to 30/90/365. New `clampWindowDays()` (`MIN_WINDOW_DAYS`/`MAX_WINDOW_DAYS`, shared-dupe pair) bounds a user-supplied `?days=` to a safe range server-side before it ever reaches the window-fairness computation, so the equal-length guarantee is preserved regardless of what a caller requests. Both apps' `IncidentPatternsView.tsx` gained a custom-window input alongside the existing presets |
 | C10.5 | No cross-client incident benchmarking without explicit consent/anonymisation | ACCEPTED-NONREQUIREMENT | Master Spec itself: "Do not add... unless a separate explicit consent/anonymisation model is implemented and approved" — correctly never built |
 
-**Gaps carried forward**: C10.4 → **Phase 25**.
+**Gaps carried forward**: none — all C10 rows closed.
 
 ---
 
@@ -329,12 +329,12 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C17.2 | Verbatim snippet summarisation, no AI paraphrase | IMPLEMENTED | `summariseResults()` |
 | C17.3 | On-demand only, rate-limited | IMPLEMENTED | `limiters.vendor` |
 | C17.4 | Human "Mark reviewed" — never an automatic verdict | IMPLEMENTED | `action_taken` free text, human-set |
-| C17.5 | Manual-entry UI for research notes alongside Tavily notes, provenance marked | MISSING | Master Spec Phase 25 known-gap: "no manual-entry UI" → assigned **Phase 25** |
-| C17.6 | Concurrent review/update handling (no silent overwrite) | MISSING | Master Spec Phase 25 known-gap: "accepted concurrent-review limitation" (Phase 17's own doc: "no `row_version` column") → assigned **Phase 25** |
-| C17.7 | Full flow: research → human-reviewed regulatory change → affected clients/sites/documents/risks identified → reviewed Broadcast → actions → acknowledgement/evidence → completion | PARTIAL | Research→Broadcast prefill exists (C5.16); the "affected clients/sites/documents/risks identified" step and the acknowledgement/evidence/completion tracking loop are not built as one traced flow → assigned **Phase 25** |
+| C17.5 | Manual-entry UI for research notes alongside Tavily notes, provenance marked | IMPLEMENTED | Closed Phase 25 Group 2: `LegalRequirementsCatalogueClient.tsx` gained a manual-entry form inserting a `legal_requirement_research_notes` row with `source: 'manual'`, rendered alongside Tavily's own `source: 'tavily'` notes with the same provenance badge |
+| C17.6 | Concurrent review/update handling (no silent overwrite) | IMPLEMENTED | Closed Phase 25 Group 2, migration 192: `row_version` added to `legal_requirement_research_notes` (fill/touch triggers force the counter regardless of caller input, the established pattern). A new rule closes a gap the prior precedents never needed: content (`raw_result_summary`/`query_used`/`source`) is immutable once created — only the review fields (`reviewed_by`/`reviewed_at`/`action_taken`) may change, and "Mark reviewed" is a conditional `.eq('row_version', ...)` update surfacing a stale-write message on a lost race |
+| C17.7 | Full flow: research → human-reviewed regulatory change → affected clients/sites/documents/risks identified → reviewed Broadcast → actions → acknowledgement/evidence → completion | IMPLEMENTED | Closed Phase 25 Group 6, migration 194: `broadcast_sends.source_type`/`source_id` trace a send back to its `legal_requirements`/`latest_updates` origin; raised `actions` rows carry `source_type: 'regulatory_broadcast'`/`source_id: <broadcast key>` (a documented two-hop trace: action → send → origin, not action → origin directly, avoiding a semantic collision with `legalRegisterRules.ts`'s own pre-existing, differently-scoped use of `'legal_requirement'`). `lib/broadcast/rollup.ts`'s `groupBroadcastActions()` re-assembles the per-company action rows back into one bucket per send (keyed by `source_id` when present, a title/description/timestamp heuristic otherwise for hand-typed broadcasts), and `RecentBroadcasts.tsx` renders a Completion column (N of M actions complete) plus a "Regulatory" badge — closing the acknowledgement/evidence/completion tracking loop the prior PARTIAL status was missing |
 | C17.8 | Env vars documented in CLAUDE.md (fixed post-hoc) | IMPLEMENTED | Group 3 fix |
 
-**Gaps carried forward**: C17.5, C17.6, C17.7 → **Phase 25**.
+**Gaps carried forward**: none — all C17 rows closed.
 
 ---
 
@@ -418,7 +418,7 @@ satisfied by this recorded resolution (resolve ≠ delete).
 | **22** (Operational H&S/client workflow closure) | *mostly closed — C4.11, C4.12, C4.13, C5.3 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE22_HANDOVER.md`; C2.7/C2.8/C4.14 remain open (no device/browser testing capability in this environment)* |
 | **23** (Risk Graph/Evidence Engine/Digital Twin completion) | *closed — C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE23_HANDOVER.md`* |
 | **24** (Consultant Command Centre/Ledger completion) | *closed — C1.9, C6.13, C6.14, C6.15 all IMPLEMENTED; C1.12 partially closed (the `consultancy_visit_reports` slice — the other two candidate tables were checked live and found to need no lock); rest of C1.12 stays with **Phase 28**, see `docs/CORE_OS_360_PHASE24_HANDOVER.md`* |
-| **25** (Operational intelligence/regulatory/Broadcast) | C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 |
+| **25** (Operational intelligence/regulatory/Broadcast) | *closed — C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE25_HANDOVER.md`* |
 | **26** (Worker QR/Intelligent RAMS/adoption) | C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6 |
 | **27** (Board Assurance/Core 360 Status) | C13.6, C13.7, C13.8 |
 | **28** (UX/navigation/search/reporting/parity) | C1.13, C1.12 (shared w/24) |

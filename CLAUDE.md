@@ -11521,10 +11521,172 @@ UPDATE, `ReportBuilderClient.tsx`'s `saveDraft()`, was built with
 prerender failure is the same long-documented sandbox-only missing-
 Supabase-env-var limitation).
 
-**Phase 24 is complete. Phase 25 is NOT to begin** until this branch
-is merged and deployed, per the operator's standing instruction. Its
-scope should be read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s
-own gap ledger rather than assumed, following the same "repository
-reality beats handover narrative" discipline every phase since Phase 20
-has used.
+**Phase 24 is complete.**
+
+---
+
+## Core-OS 360 Completion Programme: Phase 25 — Operational
+## Intelligence / Regulatory / Broadcast completion (2026-09-30)
+
+Full handover: `docs/CORE_OS_360_PHASE25_HANDOVER.md`. Closes all
+seven gap-ledger rows Phase 20 assigned here — **C1.11, C9.4, C9.5,
+C10.4, C17.5, C17.6, C17.7** — read fresh from the completion matrix's
+own gap ledger at the start of this phase, not assumed from any prior
+handover.
+
+### What was found before any code was written
+
+- **C1.11 (Broadcast idempotency) had no precedent to copy
+  directly.** The `sendKeyedEmail`/visit-report-issue-route
+  claim-first patterns both claim against an EXISTING row tied to a
+  different primary action; Broadcast has no such row, so a fresh
+  `broadcast_sends` table keyed by a client-generated retry-safe id
+  was the right shape.
+- **C17.6 (concurrent review handling) needed a genuinely new rule.**
+  Every prior `row_version` precedent (123/124/125/176/190) protects a
+  table whose CONTENT keeps changing. `legal_requirement_research_notes`
+  is different: the search RESULT must never change once recorded,
+  only the human REVIEW of it may — so content columns are made
+  immutable by trigger, and `row_version` locks only the review
+  fields.
+- **C9.4's obvious fix (a client RLS policy on `platform_events`) was
+  rejected** — that table carries staff-internal outbox payloads a
+  client must never see. The established service-role-mediated
+  scoped-read pattern (Board Assurance, Digital Twin) was reused
+  instead, with a NEW curated allowlist (`lib/whatChanged/
+  clientScope.ts`) deciding what a client may see, pinned against the
+  real `TRIGGERED_ENTITIES` array.
+- **C17.7's vocabulary was already anticipated.**
+  `actions.source_type`'s CHECK already listed `'regulatory_broadcast'`
+  with no writer. Checked `legalRegisterRules.ts` for a collision
+  before choosing it — confirmed `'legal_requirement'` was already
+  used there with a DIFFERENT id-space meaning, so the unused value
+  was the correct pick, avoiding a silent id-space merge.
+
+### Group 1 (migration 191): Broadcast idempotency (C1.11)
+
+`broadcast_sends` — a client-generated key as PRIMARY KEY, claimed
+FIRST (before any action/email work), reverted on failure so a
+genuine retry can still proceed. `POST /api/broadcast` reports
+`{ created: 0, duplicate: true }` on a duplicate key with zero new
+actions or emails. Staff-only RLS; no write guard (nothing client-
+writable to guard); no `audit_row()` (an internal idempotency
+artefact, already covered by the `actions` rows it gates).
+`broadcastIdempotencySql.test.ts` + 5 new `route.test.ts` cases (claim
+precedes work, duplicate short-circuits, failed claim releases,
+released claim allows retry).
+
+### Group 2 (migration 192): Legal Register research notes — row_version + manual entry (C17.5, C17.6)
+
+`row_version` on `legal_requirement_research_notes`, forced by
+fill/touch triggers regardless of caller input — the established
+pattern, plus a new rule: content columns
+(`raw_result_summary`/`query_used`/`source`) are refused on any UPDATE
+that changes them; only `reviewed_by`/`reviewed_at`/`action_taken` may
+move. "Mark reviewed" is a conditional `.eq('row_version', ...)`
+update; a lost race surfaces the established "someone else reviewed
+this" message. A manual-entry form inserts `source: 'manual'` notes
+alongside Tavily's `source: 'tavily'` ones, same provenance badge, no
+separate UI section or vocabulary.
+`legalResearchNotesRowVersionSql.test.ts` pins both the version
+forcing and the content-immutability rule.
+
+### Group 3: configurable incident-pattern analysis window (C10.4)
+
+`incidentPatternWindows()` was already fully generic — only the
+UI/route layer artificially restricted `days` to 30/90/365. New
+`clampWindowDays()` (shared-dupe pair, `MIN_WINDOW_DAYS`/
+`MAX_WINDOW_DAYS`) bounds a user-supplied `?days=` server-side before
+it reaches the window-fairness computation, preserving the existing
+equal-length guarantee regardless of what a caller requests. Both
+apps' `IncidentPatternsView.tsx` gained a custom-window input; both
+`page.tsx` files switched to `clampWindowDays()`. 6 new
+`analyze.test.ts` cases (below/above/at bounds, NaN fallback).
+
+### Group 4: client-facing What Changed? (C9.4)
+
+`/protect/what-changed` reuses `computeWhatChanged()` (promoted to a
+shared-dupe pair) via a service-role-mediated read of
+`platform_events`, scoped by a LIVE `effectiveCompanyId()` lookup —
+never the cached-cookie company. New `lib/whatChanged/clientScope.ts`
+(shared-dupe pair) curates which entity types are client-appropriate,
+pinned against the real `TRIGGERED_ENTITIES` array so a new entity
+type can neither silently disappear from the client view nor silently
+leak a staff-internal one into it. `clientScope.test.ts`, 5 cases.
+
+### Group 5 (migration 193): scheduled digest with preferences + dedup (C9.5)
+
+`notification_preferences.what_changed_digest`
+(`'off'|'daily'|'weekly'`, default `'off'` — explicit opt-in, matching
+the IvyLens `ai_assist`/referral `dry_run` caution precedent).
+`/api/cron/what-changed-digest` (07:10 UTC daily; weekly recipients
+processed only on a Monday — ONE cron merging both cadences,
+deliberately deviating from `weeklySummary.ts`'s separate-schedule
+precedent given how much query/render logic the two cadences share).
+Sends via `sendKeyedEmail`'s claim-before-send pattern (dedupe key
+includes recipient + date + mode) — a re-run sends nothing twice, and
+a recipient with nothing to report gets no email. `digest.test.ts` (7
+cases, two purpose-built fixtures — a Tuesday-run proving daily
+aggregation, a Monday-run proving genuine weekly aggregation with an
+event inside the weekly window but outside the daily one),
+`route.test.ts` (3 cases), `whatChangedDigestPreferenceSql.test.ts`
+(2 cases).
+
+### Group 6 (migration 194): full regulatory-change flow tracing (C17.7)
+
+`broadcast_sends.source_type`/`source_id` (nullable, CHECK-restricted
+to `'legal_requirement' | 'regulatory_update'`, must be set together)
+trace a send back to its origin — the Legal Register's existing
+"Broadcast" link and the regulatory-classification flow both now pass
+this through. Raised `actions` rows carry
+`source_type: 'regulatory_broadcast'` / `source_id: <broadcast_sends
+key>` — a documented TWO-HOP trace (action → send → origin), avoiding
+the `'legal_requirement'` collision found in reconnaissance.
+`lib/broadcast/rollup.ts`'s `groupBroadcastActions()` re-assembles the
+per-company `actions` rows one send produced back into one bucket per
+send (keyed by `source_id`, falling back to a title/description/
+timestamp heuristic for hand-typed broadcasts with no `source_id`;
+proven to never merge two DIFFERENT sends sharing a title).
+`RecentBroadcasts.tsx` rewritten to render per-bucket, adding a
+Completion column and a "Regulatory" badge — closing the
+acknowledgement/evidence/completion tracking loop. `rollup.test.ts`
+(6 cases), `broadcastRegulatoryOriginSql.test.ts` (3 cases), 4 more
+`route.test.ts` cases for the widened schema.
+
+### Group 7: regression, adversarial QA, handover (gate: PASS)
+
+A dedicated adversarial pass across all six groups found no Critical,
+High or Medium defect. Confirmed clean: the Broadcast claim/revert
+race is genuinely closed by the unique-key insert, never a window
+where two concurrent tabs both succeed; a lost Legal Register
+`row_version` race matches exactly zero rows, never a partial write;
+`clampWindowDays()`'s bound is enforced server-side, not merely in the
+UI; `/protect/what-changed`'s scoping uses a LIVE session-derived
+company id, re-checked on every render; the digest's dedupe key
+includes both recipient and date/week, so no duplicate send is
+possible even hypothetically. One accepted, documented, low-severity
+scope limitation: `broadcast_sends.source_id` is an unvalidated
+uuid with no FK constraint (it points at one of two different tables
+depending on `source_type`) — staff-only internal tooling, matching
+the established "plain paste id" precedent (`standard_evidence_links`,
+`requirement_evidence_links`, `lessons_learned`'s "drawn from" field),
+not a new pattern invented carelessly for this phase.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1775** — up from 1724 at the start of this phase; portal
+**811** — up from 804), all six CI guards pass with no regressions
+(**68 shared-dupe pairs**, up from 66 — `lib/whatChanged/clientScope.ts`
++ `lib/whatChanged/compute.ts`, Group 4; row-cap clean; 44 unvalidated
+routes, unchanged; 43 static admin routes, all reachable — this
+phase's one new page, `/protect/what-changed`, is portal-only; 102
+blind-update chains, unchanged — every new/changed write (the
+Broadcast claim/revert, the Legal Register "Mark reviewed") carries an
+explicit count check from the start; every paged query's `.order()`
+present), both production builds compile (portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-
+env-var limitation, unrelated to this phase). Four migrations (191,
+192, 193, 194) applied and live-probed in rolled-back transactions
+throughout; all checks passed.
+
+**Phase 25 is complete.**
 
