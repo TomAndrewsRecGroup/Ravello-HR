@@ -39,6 +39,7 @@ const TABS = [
   { href: '/protect/risk-graph',       label: 'Risk Graph' },
   { href: '/protect/incident-patterns', label: 'Incident Patterns' },
   { href: '/protect/evidence',         label: 'Evidence' },
+  { href: '/protect/assurance',        label: 'Assurance Today' },
   { href: '/protect/digital-twin',     label: 'Digital Twin' },
   { href: '/protect/board-assurance',  label: 'Board Assurance' },
   { href: '/protect/lessons-learned',  label: 'Lessons Learned' },

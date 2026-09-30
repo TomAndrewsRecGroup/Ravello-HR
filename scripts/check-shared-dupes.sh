@@ -77,6 +77,7 @@ PAIRS=(
   "admin/src/lib/lessonsLearned/types.ts|portal/src/lib/lessonsLearned/types.ts"
   "admin/src/lib/health/portfolioCounts.ts|portal/src/lib/health/portfolioCounts.ts"
   "admin/src/lib/assurance/today.ts|portal/src/lib/assurance/today.ts"
+  "admin/src/components/hs/AssuranceTodayView.tsx|portal/src/components/hs/AssuranceTodayView.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

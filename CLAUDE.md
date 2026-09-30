@@ -9670,9 +9670,61 @@ builds compile.
 
 ### Group 2: Assurance Today UI
 
-Not yet built as of this CLAUDE.md entry — Group 1 is committed and
-merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline.
+- **`AssuranceTodayView.tsx`** (a new shared-dupe pair, the exact
+  `ComplianceTwinView.tsx` precedent: identical already-assembled
+  snapshot, only per-area link targets differ by caller) renders the
+  headline band, a "flagged today" table of only the non-zero items,
+  and then embeds the EXISTING `ComplianceTwinView` component unchanged
+  underneath it for the five-area picture — never a duplicate rendering
+  of that view's own logic.
+- **Admin**: a 31st `HsCompanyTabs.tsx` tab, "Assurance Today"
+  (`/health-safety/<companyId>/assurance`), placed next to the existing
+  "Digital Twin" tab. The page itself needed **zero new query code** —
+  it composes two loaders that already existed for exactly this shape
+  of read: `loadPortfolioCountsForCompany()` (Phase 13, built for Board
+  Assurance's own per-company report generation) and
+  `loadComplianceTwinSnapshot()` (Phase 12), then calls
+  `assembleAssuranceToday()` (Group 1).
+- **Portal**: read-only `/protect/assurance`, gated by `protect` alone.
+  Since admin and portal are separately deployed apps with no shared
+  server code, portal cannot import admin's loaders directly — its
+  page copies the Digital Twin portal page's own query logic VERBATIM
+  for the twin half (the established precedent: portal's Digital Twin
+  page already duplicates its own reads rather than calling admin's
+  loader), then adds seven NEW, narrowly-scoped queries for exactly the
+  `PortfolioCounts` fields `assembleAssuranceToday()` actually reads —
+  checked live against RLS before writing a line of this page:
+  `actions`, `organisation_legal_obligations`, `hs_documents`,
+  `hs_incidents`, `person_deployment_status`, `hs_equipment` and
+  `audit_findings` all have a client-read policy; `contractors`/
+  permits/isolations/`consultancy_visits` do not, so those
+  `PortfolioCounts` fields are passed as empty arrays — never among the
+  ones this phase's own `items` list reads, so nothing is
+  under-reported on the page a client actually sees.
+- **A real gap caught by the CI guard itself, not by review**: the
+  first draft of this group forgot to register `AssuranceTodayView.tsx`
+  in `check-shared-dupes.sh`'s pairs list — the guard's own count
+  stayed at 59 (Group 1's number) instead of the expected 60, which is
+  what surfaced the omission before this shipped, not after.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1620 admin, unchanged — this group is UI-only over Group 1's already-
+tested logic; 755 portal — 753 + 2, the sweep tests picking up the new
+`/protect/assurance` route automatically), all five CI guards pass
+(`check-shared-dupes.sh`: 60 pairs, up from 59 once the missed
+registration was fixed; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — the new admin route
+is dynamic (`[companyId]`), so it needed no literal-reference check;
+102 blind-update chains, unchanged — this group writes nothing, both
+pages are read-only), both production builds compile, including
+`/health-safety/<companyId>/assurance` and `/protect/assurance`.
+
+### Group 3: regression, adversarial QA, handover
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
+and merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
 
 **Phase 19 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.
