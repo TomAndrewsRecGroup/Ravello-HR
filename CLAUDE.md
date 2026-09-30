@@ -12009,3 +12009,75 @@ long-documented sandbox-only missing-Supabase-env-var limitation).
 
 **Phase 26 is complete.**
 
+---
+
+## Core-OS 360 Completion Programme: Phase 27 — Board Assurance
+## completion (in progress)
+
+Scope read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own
+gap ledger at the start of this phase: **C13.6** (cross-client
+consultant assurance dashboard), **C13.7** (draft report regenerate/
+refresh from current evidence), **C13.8** (Core 360 Status view —
+People/Plant/Training/Risk Controls/Environmental/Contractors). Plan:
+`docs/CORE_OS_360_PHASE27_PLAN.md`, written after checking the live
+`board_assurance_reports` guard, `PortfolioCounts`, `RiskGraphIntelligence`
+and the portfolio-wide consultancy read pattern before designing
+anything — no migration is expected anywhere in this phase, since every
+piece composes already-live schema.
+
+### Group 1: draft Board Assurance report regenerate (C13.7)
+
+`report_data` is an immutable JSONB snapshot once inserted
+(`board_assurance_reports_guard()`, 178, a `BEFORE INSERT OR UPDATE`
+trigger with no `AFTER DELETE` branch at all) — the ONLY way to refresh
+a draft from current evidence is to replace the row outright, and
+nothing in the product could do that: `POST /generate` always 409'd on
+the table's own `UNIQUE (company_id, year, quarter)` the moment ANY row
+already existed for that period, draft or issued, with no
+delete/regenerate control anywhere in the admin UI.
+
+- **`POST /api/admin/board-assurance/generate` gains an optional
+  `regenerate: true` flag.** When set and an existing row is found for
+  that (company, year, quarter): an `issued` row is refused outright
+  (409, "already issued... generate a later quarter instead") — a
+  distributed, signed-off document is never rewritten, the same
+  "material change is a new row/new period" discipline every other
+  document table in this codebase applies; a `draft` row is removed via
+  a **conditional, counted DELETE** (`.eq('id', existing.id).eq('status',
+  'draft')`, `{ count: 'exact' }`) before the normal insert proceeds —
+  a concurrent issue between the read and the delete leaves the count
+  at 0, refused with a fresh 409 rather than silently inserting a
+  second, duplicate-period row. Without `regenerate`, behaviour is
+  byte-for-byte unchanged (still a plain 23505-derived 409 on a
+  pre-existing row).
+- **`BoardAssuranceClient.tsx` gains a "Regenerate" button** next to
+  "Issue" on every `draft` row only — an issued report has no such
+  button, since the route itself would refuse the call anyway; the UI
+  simply never offers an action the database has already decided is
+  invalid, the same posture every H&S workflow guard in this codebase
+  takes.
+- 3 new `generate/route.test.ts` cases (a draft is replaced with a
+  fresh row — different id, new computed data; an issued report is
+  refused and left untouched; regenerating with no existing row behaves
+  like a plain generate). A fourth case (the lost-race/count-0 branch)
+  was NOT added — `fakeSupabase`'s delete is synchronous, so a genuine
+  concurrent-modification race cannot be reproduced without a second,
+  purpose-built fake; the branch is proven by construction (the same
+  conditional-count pattern this codebase already uses, tested
+  elsewhere, e.g. the referral pipeline's claim-before-send) rather than
+  by a dedicated test here.
+
+No migration in this group — `board_assurance_reports_staff_all` (178)
+is already `FOR ALL`, which already includes DELETE; the guard trigger
+only fires on INSERT/UPDATE, so a staff-session DELETE needed no new
+grant or guard at all.
+
+Verified: `tsc --noEmit` clean (portal untouched, this group is
+admin-only), full `vitest run` green (admin **1802** — up from 1799 at
+the end of Phase 26, +3 new), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+102 blind-update chains, unchanged — a DELETE is not an UPDATE and this
+guard does not track it; every paged query's `.order()` present),
+admin production build compiles.
+

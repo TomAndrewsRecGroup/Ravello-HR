@@ -82,4 +82,39 @@ describe('POST /api/admin/board-assurance/generate', () => {
     expect(res.status).toBe(200);
     expect(db.tables.board_assurance_reports[0].report_data.latestManagementReview).toBeNull();
   });
+
+  // Core-OS 360 Phase 27, Group 1 (C13.7).
+  describe('regenerate', () => {
+    it('replaces an existing DRAFT with a fresh row (new id, fresh generated_at)', async () => {
+      db.tables.board_assurance_reports.push({
+        id: 'old-draft', company_id: COMPANY, year: 2026, quarter: 1, status: 'draft',
+        report_data: { overallBand: 'red' }, generated_at: '2026-01-01T00:00:00Z',
+      });
+
+      const res = await POST(req({ companyId: COMPANY, year: 2026, quarter: 1, regenerate: true }));
+      expect(res.status).toBe(200);
+      expect(db.tables.board_assurance_reports).toHaveLength(1);
+      expect(db.tables.board_assurance_reports[0].id).not.toBe('old-draft');
+      expect(db.tables.board_assurance_reports[0].report_data.overallBand).toBe('green');
+    });
+
+    it('refuses to regenerate an ISSUED report and leaves it untouched', async () => {
+      db.tables.board_assurance_reports.push({
+        id: 'issued-1', company_id: COMPANY, year: 2026, quarter: 1, status: 'issued',
+        report_data: { overallBand: 'red' }, generated_at: '2026-01-01T00:00:00Z',
+      });
+
+      const res = await POST(req({ companyId: COMPANY, year: 2026, quarter: 1, regenerate: true }));
+      expect(res.status).toBe(409);
+      expect(db.tables.board_assurance_reports).toHaveLength(1);
+      expect(db.tables.board_assurance_reports[0].id).toBe('issued-1');
+      expect(db.tables.board_assurance_reports[0].status).toBe('issued');
+    });
+
+    it('with no existing row, regenerate behaves like a plain generate', async () => {
+      const res = await POST(req({ companyId: COMPANY, year: 2026, quarter: 1, regenerate: true }));
+      expect(res.status).toBe(200);
+      expect(db.tables.board_assurance_reports).toHaveLength(1);
+    });
+  });
 });
