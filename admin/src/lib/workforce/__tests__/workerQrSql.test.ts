@@ -98,3 +98,18 @@ describe('site_checkins (179)', () => {
     expect(sql).not.toMatch(/platform_event_row/);
   });
 });
+
+describe('workforce_employee_sync() leaver revoke (180)', () => {
+  const sql180 = readFileSync(join(__dirname, '../../../../../supabase/migrations/180_worker_qr_leaver_revoke.sql'), 'utf8');
+
+  it('revokes any active worker_qr_tokens row inside the SAME "leaving" branch that already ends assignments', () => {
+    const leavingBranch = sql180.match(/IF NEW\.status::text = 'terminated'[\s\S]*?END IF;/)?.[0] ?? '';
+    expect(leavingBranch).toMatch(/UPDATE worker_qr_tokens SET revoked_at = now\(\), revoked_by = NULL/);
+    expect(leavingBranch).toMatch(/WHERE person_id = NEW\.person_id AND company_id = NEW\.company_id AND revoked_at IS NULL/);
+  });
+
+  it('extends the EXISTING workforce_employee_sync() function rather than adding a new trigger', () => {
+    expect(sql180).toMatch(/CREATE OR REPLACE FUNCTION public\.workforce_employee_sync\(\)/);
+    expect(sql180).not.toMatch(/CREATE TRIGGER/);
+  });
+});
