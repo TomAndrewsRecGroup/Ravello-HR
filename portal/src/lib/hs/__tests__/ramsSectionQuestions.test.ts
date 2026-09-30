@@ -34,6 +34,39 @@ describe('RAMS section suggestion', () => {
     expect(ramsSectionState('x', null, 'y')).toEqual({ title: 'x', project_name: null, scope_of_work: 'y' });
   });
 
+  it('with no site context, the state is unchanged (the pre-Group-5 shape)', () => {
+    expect(ramsSectionState('x', null, 'y', null)).toEqual({ title: 'x', project_name: null, scope_of_work: 'y' });
+    expect(ramsSectionState('x', null, 'y', undefined)).toEqual({ title: 'x', project_name: null, scope_of_work: 'y' });
+  });
+
+  it('a verified site context adds four named, non-free-text fields — never people/competency/controls/documents', () => {
+    const state = ramsSectionState('x', null, 'y', {
+      siteName: '  Leeds Depot  ', openHazardsCount: 3, liftingPlantCount: 1, recentIncidentsCount: 0,
+    });
+    expect(state).toEqual({
+      title: 'x', project_name: null, scope_of_work: 'y',
+      site_name: 'Leeds Depot', open_hazards_at_site: 3, lifting_or_plant_equipment_at_site: 1, incidents_at_site_last_12_months: 0,
+    });
+    for (const forbidden of ['people', 'competency', 'controls', 'documents', 'assigned_to']) {
+      expect(Object.keys(state)).not.toContain(forbidden);
+    }
+  });
+
+  it('the site name is clipped the same way the title/project name are', () => {
+    const state = ramsSectionState('x', null, 'y', {
+      siteName: 'A'.repeat(300), openHazardsCount: 0, liftingPlantCount: 0, recentIncidentsCount: 0,
+    });
+    expect((state.site_name as string).length).toBe(200);
+  });
+
+  it('the site-context question frame names the site facts as verified, read-only data — never an instruction', () => {
+    const qs = ramsSectionQuestions();
+    for (const q of Object.values(qs)) {
+      expect(q.instructions).toMatch(/VERIFIED facts/);
+      expect(q.instructions).toMatch(/never typed by the person/);
+    }
+  });
+
   it('only sections at or above the gate are suggested', () => {
     const answers: Record<string, number> = Object.fromEntries(RAMS_CONDITIONAL_SECTIONS.map(k => [k, 0]));
     answers.lifting_arrangements = RAMS_SECTION_SUGGEST_GATE;

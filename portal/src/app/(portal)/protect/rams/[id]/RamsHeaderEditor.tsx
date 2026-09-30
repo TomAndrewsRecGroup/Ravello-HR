@@ -73,7 +73,7 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
     try {
       const res = await fetch('/api/protect/jev/rams-section', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: f.title, project_name: f.project_name, scope_of_work: f.scope_of_work ?? '' }),
+        body: JSON.stringify({ title: f.title, project_name: f.project_name, scope_of_work: f.scope_of_work ?? '', site_id: f.site_id }),
       });
       const body = await res.json();
       if (!res.ok) { setMsg({ ok: false, text: body.error ?? 'Could not get a suggestion.' }); return; }
