@@ -11868,3 +11868,64 @@ same long-documented sandbox-only missing-Supabase-env-var
 limitation). No migration in this group — entirely TypeScript over the
 already-live schema.
 
+### Group 6: hard warnings before RAMS issue/approval for failing checks (C15.5)
+
+`ramsApprovalWarnings()` (new, pure, tested) is a plain deterministic
+check against facts the platform has ALREADY computed — never a guess,
+never AI. Two sources, both real:
+
+- **"Assigned equipment"** is whatever a RAMS is linked to via
+  `hs_links` — the only real equipment linkage a method statement has.
+  A linked asset that is `quarantined`, `decommissioned` or
+  `out_of_service`, or one that is `in_service` but past its own
+  `next_inspection_due`, produces a warning.
+- **"Assigned people"** means the two individuals a RAMS genuinely
+  names on the row itself — its `author_id` and `responsible_manager_id`
+  — resolved to a `people` row via `people.user_id`, then read through
+  `person_deployment_status()` (136), the ONE public Safe to Deploy
+  read. A `NOT_READY` or `REVIEW_REQUIRED` author/manager produces a
+  warning; `CONDITIONALLY_READY` deliberately does not (restrictions
+  recorded, not a failing requirement). A method statement has no
+  "assigned workforce" list of its own (Group 5's own finding,
+  unchanged here) — widening this to every acknowledging worker would
+  be inventing a linkage that doesn't exist.
+- **A UI-level gate, deliberately not a database one.** The shared
+  `hs_doc_guard()` (123) governs every controlled-document transition
+  for hazards, risk assessments, method statements AND COSHH
+  assessments alike; teaching it a RAMS-specific side-check would
+  entangle three other document kinds in a rule that only applies to
+  one. Instead: the page computes `approvalWarnings` server-side and
+  renders them in a `Notice tone="bad"` banner; `RamsCoshhWorkflow.tsx`
+  (shared with COSHH, which never passes the new optional
+  `approvalWarnings` prop and is therefore unaffected) requires an
+  explicit "I have reviewed the warnings and want to proceed anyway"
+  checkbox before Confirm is enabled, but only while moving to
+  `'approved'` or `'active'` — every other transition is unaffected.
+- **An RPC error for a given person is treated as "cannot determine",
+  never a false alarm.** `person_deployment_status()` can refuse a
+  caller who may not see the person (`person_visible()`); rather than
+  surface that as a scary warning on a transient/permission edge case,
+  that person's fact is simply omitted — a documented, deliberate
+  choice.
+- **Skipped entirely for an archived or superseded version** — a dead
+  record has nothing left to warn about before issue/approval, and
+  showing one there would only be noise.
+- 8 new `ramsApprovalWarnings.test.ts` cases (clean baseline, each
+  equipment status, overdue-vs-future-vs-no inspection date, the
+  NOT_READY/REVIEW_REQUIRED/CONDITIONALLY_READY split, combined
+  ordering). No component-level test for the page/workflow wiring
+  itself, consistent with this codebase's established convention.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal **856** — up from 848; admin unchanged at **1799**, since this
+group touched no admin file), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged — this group's new file
+is portal-only, no admin equivalent page exists for RAMS; row-cap
+clean; 44 unvalidated routes, unchanged; 43 static admin routes, all
+reachable; 102 blind-update chains, unchanged — this group adds no new
+write path, only reads; every paged query's `.order()` present), both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation). No
+migration in this group — entirely TypeScript over the already-live
+schema.
+

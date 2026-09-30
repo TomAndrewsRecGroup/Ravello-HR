@@ -23,13 +23,24 @@ const VERB: Partial<Record<DocStatus, string>> = {
 // allow; hs_doc_guard (123) is the gate — it stamps who/when, refuses
 // self-approval and locks decided versions, and its messages are shown
 // as written. Every write is conditional on the rendered row_version.
-export default function RamsCoshhWorkflow({ kind, doc, canCreate, canApprove, isLatest, sites }: {
+//
+// Core-OS 360 Completion Programme, Phase 26 Group 6 (C15.5):
+// `approvalWarnings` — RAMS only, COSHH's own page never passes it —
+// is a plain, deterministic list computed by the page
+// (lib/hs/ramsApprovalWarnings.ts), never recalculated here. While any
+// stand, moving to 'approved' or 'active' needs an explicit
+// acknowledgement checkbox before Confirm is enabled — a UI-level
+// "hard" gate, deliberately not a database one: hs_doc_guard is shared
+// by hazards/risk assessments/method statements/COSHH alike, and a
+// RAMS-specific side-check does not belong inside it.
+export default function RamsCoshhWorkflow({ kind, doc, canCreate, canApprove, isLatest, sites, approvalWarnings = [] }: {
   kind: Kind;
   doc: { id: string; status: DocStatus; row_version: number; review_date: string | null; title: string; site_id: string | null };
   canCreate: boolean; canApprove: boolean;
   /** No newer version of this reference exists. */
   isLatest: boolean;
   sites: { id: string; name: string }[];
+  approvalWarnings?: string[];
 }) {
   const router = useRouter();
   const [target, setTarget] = useState<DocStatus | null>(null);
@@ -42,6 +53,8 @@ export default function RamsCoshhWorkflow({ kind, doc, canCreate, canApprove, is
   const [cloneSite, setCloneSite] = useState(doc.site_id ?? '');
   const [cloneTitle, setCloneTitle] = useState(`${doc.title} (copy)`.slice(0, 200));
   const [reschedule, setReschedule] = useState(false);
+  const [warningsAck, setWarningsAck] = useState(false);
+  const needsWarningsAck = approvalWarnings.length > 0 && (target === 'approved' || target === 'active');
 
   const allowed = (to: DocStatus) => {
     switch (to) {
@@ -115,7 +128,7 @@ export default function RamsCoshhWorkflow({ kind, doc, canCreate, canApprove, is
         <h2 className="font-semibold mr-2" style={{ color: 'var(--ink)' }}>Workflow</h2>
         {next.map(s => (
           <button key={s} type="button" className={s === 'approved' || s === 'pending_review' ? 'btn-cta btn-sm' : 'btn-secondary btn-sm'}
-            style={{ minHeight: 40 }} onClick={() => { setTarget(s); setMsg(null); }} disabled={busy}>
+            style={{ minHeight: 40 }} onClick={() => { setTarget(s); setMsg(null); setWarningsAck(false); }} disabled={busy}>
             {s === 'active' && doc.status === 'review_due' ? 'Confirm review' : VERB[s] ?? DOC_STATUS_LABELS[s]}
           </button>
         ))}
@@ -166,12 +179,18 @@ export default function RamsCoshhWorkflow({ kind, doc, canCreate, canApprove, is
           {target === 'archived' && (
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Archived versions stay on record but are no longer in use.</p>
           )}
+          {needsWarningsAck && (
+            <label className="flex items-start gap-2 text-sm" style={{ color: 'var(--red)' }}>
+              <input type="checkbox" className="mt-0.5" checked={warningsAck} onChange={e => setWarningsAck(e.target.checked)} />
+              I have reviewed the warning{approvalWarnings.length > 1 ? 's' : ''} above and want to proceed anyway.
+            </label>
+          )}
           <div className="flex gap-2">
             <button type="button" className="btn-cta btn-sm" onClick={move}
-              disabled={busy || (target === 'changes_requested' && !comments.trim()) || (target === 'active' && doc.status === 'review_due' && !nextReview)}>
+              disabled={busy || (target === 'changes_requested' && !comments.trim()) || (target === 'active' && doc.status === 'review_due' && !nextReview) || (needsWarningsAck && !warningsAck)}>
               {busy && <Loader2 size={14} className="animate-spin" />} Confirm: {DOC_STATUS_LABELS[target]}
             </button>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => setTarget(null)}>Cancel</button>
+            <button type="button" className="btn-ghost btn-sm" onClick={() => { setTarget(null); setWarningsAck(false); }}>Cancel</button>
           </div>
         </div>
       )}

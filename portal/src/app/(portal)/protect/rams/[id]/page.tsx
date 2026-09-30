@@ -8,6 +8,9 @@ import {
   type DocStatus, type RamsSectionKey,
 } from '@/lib/hs/safetyVocab';
 import { ACTION_STATUS_LABELS } from '@/lib/ui/statusMaps';
+import { ramsApprovalWarnings, type RamsAssignedPersonFact, type RamsLinkedEquipmentFact } from '@/lib/hs/ramsApprovalWarnings';
+import type { HsEquipmentStatus } from '@/lib/hs/vocab';
+import type { DeploymentResult } from '@/lib/workforce/types';
 import Pill, { toneFor } from '@/components/safety/Pill';
 import EvidencePanel, { type EvidenceFile } from '@/components/safety/EvidencePanel';
 import RaiseAction from '@/components/safety/RaiseAction';
@@ -70,14 +73,24 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const stepIds = stepRows.map(s => s.id);
   const ackPersonIds = [...new Set(ackRows.map(a => a.person_id))];
 
-  const [ras, coshhs, hzs, eqs, incs, stepFiles, ackPeople] = await Promise.all([
+  // Core-OS 360 Completion Programme, Phase 26 Group 6 (C15.5): the
+  // author/responsible manager's Safe to Deploy status is only worth
+  // checking while this version is actually live or on its way there —
+  // an archived/superseded version is done, and a stale warning on it
+  // would be noise, not a signal.
+  const needsWarnings = status !== 'archived' && status !== 'superseded';
+  const authMgrUserIds = needsWarnings
+    ? [...new Set([ms.author_id, ms.responsible_manager_id].filter((v): v is string => Boolean(v)))] : [];
+
+  const [ras, coshhs, hzs, eqs, incs, stepFiles, ackPeople, authMgrPeople] = await Promise.all([
     idsOf('risk_assessment').length ? supabase.from('risk_assessments').select('id, reference, version, title, status').in('id', idsOf('risk_assessment')).limit(500) : Promise.resolve(empty),
     idsOf('coshh_assessment').length ? supabase.from('coshh_assessments').select('id, reference, version, title, status').in('id', idsOf('coshh_assessment')).limit(500) : Promise.resolve(empty),
     idsOf('hazard').length ? supabase.from('hazards').select('id, reference, title, status').in('id', idsOf('hazard')).limit(500) : Promise.resolve(empty),
-    idsOf('equipment').length ? supabase.from('hs_equipment').select('id, name, serial_number').in('id', idsOf('equipment')).limit(500) : Promise.resolve(empty),
+    idsOf('equipment').length ? supabase.from('hs_equipment').select('id, name, serial_number, status, next_inspection_due').in('id', idsOf('equipment')).limit(500) : Promise.resolve(empty),
     idsOf('incident').length ? supabase.from('hs_incidents').select('id, incident_number, incident_type, status').in('id', idsOf('incident')).limit(500) : Promise.resolve(empty),
     stepIds.length ? supabase.from('hs_files').select('id, entity_id, storage_path, file_name, evidence_type, description').eq('entity_type', 'method_statement_step').in('entity_id', stepIds).order('created_at').limit(500) : Promise.resolve(empty),
     ackPersonIds.length ? supabase.from('people').select('id, full_name').in('id', ackPersonIds).limit(500) : Promise.resolve(empty),
+    authMgrUserIds.length ? supabase.from('people').select('id, user_id').eq('company_id', companyId).in('user_id', authMgrUserIds).limit(10) : Promise.resolve(empty),
   ]);
 
   const docLabel = (r: Record<string, unknown>) => `${r.reference as string} v${r.version as number} — ${r.title as string}`;
@@ -116,6 +129,36 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
   const today = todayIso();
   const live = status === 'approved' || status === 'active';
   const cf = copiedFrom.data as { id: string; reference: string; version: number; title: string } | null;
+
+  // Core-OS 360 Completion Programme, Phase 26 Group 6 (C15.5): a plain
+  // deterministic check, never AI — see lib/hs/ramsApprovalWarnings.ts's
+  // own header comment for exactly what counts as "assigned" here and
+  // why. An RPC error for a given person (e.g. person_visible() refuses
+  // them) is treated as "cannot determine" and silently produces no
+  // warning for that person, rather than a false alarm on a transient
+  // failure — a documented, deliberate choice, not an oversight.
+  const personIdByUserId = new Map(((authMgrPeople.data ?? []) as { id: string; user_id: string }[]).map(p => [p.user_id, p.id]));
+  const uniquePersonIds = [...new Set([...personIdByUserId.values()])];
+  const deploymentResults = uniquePersonIds.length
+    ? await Promise.all(uniquePersonIds.map(pid => supabase.rpc('person_deployment_status', { p_person: pid, p_as_of: null })))
+    : [];
+  const statusByPersonId = new Map<string, DeploymentResult['status']>();
+  uniquePersonIds.forEach((pid, i) => {
+    const r = deploymentResults[i];
+    if (!r.error && r.data) statusByPersonId.set(pid, (r.data as DeploymentResult).status);
+  });
+  const personFacts: RamsAssignedPersonFact[] = [];
+  for (const [role, userId] of [['Author', ms.author_id], ['Responsible manager', ms.responsible_manager_id]] as const) {
+    if (!userId) continue;
+    const pid = personIdByUserId.get(userId);
+    const st = pid ? statusByPersonId.get(pid) : undefined;
+    if (st) personFacts.push({ role, name: nameOf(dir, userId), status: st });
+  }
+  const equipmentFacts: RamsLinkedEquipmentFact[] = idsOf('equipment')
+    .map(eid => eqMap.get(eid))
+    .filter((r): r is Record<string, unknown> => Boolean(r))
+    .map(r => ({ name: equipmentLabel(r), status: r.status as HsEquipmentStatus, nextInspectionDue: (r.next_inspection_due as string | null) ?? null }));
+  const approvalWarnings = needsWarnings ? ramsApprovalWarnings(equipmentFacts, personFacts, today) : [];
 
   return (
     <main className="portal-page flex-1 space-y-4">
@@ -163,9 +206,17 @@ export default async function RamsDetailPage(props: { params: Promise<{ id: stri
       {status === 'changes_requested' && ms.review_comments && (
         <Notice tone="bad"><strong>Changes requested:</strong> <span className="whitespace-pre-wrap">{ms.review_comments}</span></Notice>
       )}
+      {approvalWarnings.length > 0 && (
+        <Notice tone="bad">
+          <strong>Before you approve or make this active:</strong>
+          <ul className="list-disc pl-5 mt-1">
+            {approvalWarnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+        </Notice>
+      )}
 
       <RamsCoshhWorkflow kind="method_statement" sites={sites} isLatest={isLatest}
-        canCreate={ctx.can('risk.create')} canApprove={ctx.can('risk.approve')}
+        canCreate={ctx.can('risk.create')} canApprove={ctx.can('risk.approve')} approvalWarnings={approvalWarnings}
         doc={{ id, status, row_version: ms.row_version, review_date: ms.review_date, title: ms.title, site_id: ms.site_id }} />
 
       {editable && (
