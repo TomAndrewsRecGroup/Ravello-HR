@@ -5,6 +5,7 @@ import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient
 import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS, VISIT_STATUS_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyServiceLedgerEntry, ConsultancyServiceScope, ConsultancyVisit } from '@/lib/consultancy/types';
 import { buildCommunicationTimeline, type CommunicationKind, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
+import { classifyBoardAssuranceStatus, type BoardAssuranceBucket, type BoardAssuranceReportSummaryRow } from '@/lib/consultancy/boardAssuranceStatus';
 import FilterForm from '@/components/safety/FilterForm';
 import ClientActionForms from './ClientActionForms';
 import { auditLog } from '@/lib/audit';
@@ -56,6 +57,7 @@ export default async function ClientCockpitPage({ params, searchParams }: {
     { data: company }, { data: snapshot }, { data: scopes }, { data: visits },
     { data: ledger }, { data: milestones }, { data: serviceRequests }, { data: documents },
     { data: valueReports }, { data: emails }, { data: broadcasts }, { data: visitReports },
+    { data: boardAssuranceRows },
   ] = await Promise.all([
     sb.from('companies').select('id, name, sector, contact_email, active').eq('id', id).maybeSingle(),
     sb.from('client_health_snapshots').select('*').eq('company_id', id).order('snapshot_date', { ascending: false }).limit(1).maybeSingle(),
@@ -80,9 +82,22 @@ export default async function ClientCockpitPage({ params, searchParams }: {
     // ISSUED visit reports are a communication event — a draft sitting
     // unpublished is not something the client has been told about yet.
     sb.from('consultancy_visit_reports').select('id, version, issued_at').eq('client_organisation_id', id).eq('status', 'issued').order('issued_at', { ascending: false }).limit(20),
+    // Core-OS 360 Completion Programme, Phase 27, Group 2 (C13.6). One
+    // company's own history is always small (quarterly cadence) — no
+    // readAllPages needed here the way the cross-client dashboard's
+    // own loader needs it for the whole portfolio at once.
+    sb.from('board_assurance_reports').select('company_id, year, quarter, status, issued_at, report_data').eq('company_id', id).limit(200),
   ]);
 
   const s = snapshot as any;
+
+  const boardAssuranceInput: BoardAssuranceReportSummaryRow[] = ((boardAssuranceRows ?? []) as any[]).map(r => ({
+    company_id: r.company_id, year: r.year, quarter: r.quarter, status: r.status, issued_at: r.issued_at,
+    overall_band: r.report_data?.overallBand ?? 'green', trend: r.report_data?.trend ?? null,
+  }));
+  const [boardAssurance] = classifyBoardAssuranceStatus([{ organisation_id: id, name: org.name }], boardAssuranceInput, new Date());
+  const BUCKET_LABEL: Record<BoardAssuranceBucket, string> = { current: 'Current', overdue: 'Overdue', missing: 'Missing' };
+  const BUCKET_COLOR: Record<BoardAssuranceBucket, string> = { current: 'var(--teal)', overdue: 'var(--gold)', missing: 'var(--red)' };
 
   // The manual ledger entries feed the timeline too — reusing the
   // already-fetched `ledger` rows rather than a second query.
@@ -180,6 +195,24 @@ export default async function ClientCockpitPage({ params, searchParams }: {
               <li>Management reviews due: <strong>{s.management_reviews_due}</strong></li>
             </ul>
           ) : <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No snapshot yet.</p>}
+        </section>
+
+        <section className="card p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Board Assurance</h2>
+            <Link href={`/consultancy/board-assurance`} className="text-xs underline" style={{ color: 'var(--ink-faint)' }}>Portfolio view</Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="badge" style={{ background: BUCKET_COLOR[boardAssurance.bucket], color: 'white' }}>{BUCKET_LABEL[boardAssurance.bucket]}</span>
+            {boardAssurance.deteriorating && <span className="text-xs" style={{ color: 'var(--red)' }}>deteriorating</span>}
+          </div>
+          {boardAssurance.latestIssued ? (
+            <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
+              Last issued Q{boardAssurance.latestIssued.quarter} {boardAssurance.latestIssued.year} ({fmt(boardAssurance.latestIssued.issuedAt)}), band: {boardAssurance.latestIssued.overallBand}
+            </p>
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No board assurance report has ever been issued for this client.</p>
+          )}
         </section>
 
         <section className="card p-4 space-y-2">

@@ -12081,3 +12081,64 @@ unvalidated routes, unchanged; 43 static admin routes, all reachable;
 guard does not track it; every paged query's `.order()` present),
 admin production build compiles.
 
+### Group 2: cross-client consultant assurance dashboard (C13.6)
+
+`board_assurance_reports` (178) had no consultancy surface anywhere —
+confirmed live before building anything: zero references in
+`portal/src/app/(portal)/consultancy/` or `portal/src/lib/consultancy/`.
+The table's own RLS is staff `FOR ALL` plus a client-read policy gated
+on `company_id = my_company_id()` (the ACTIVE org) — the same
+portfolio-wide gap every consultancy read has had to work around since
+Phase 6.
+
+- **`lib/consultancy/boardAssuranceStatus.ts`** (portal-only — no
+  admin-side cross-client consultancy reader exists to share this
+  with): `classifyBoardAssuranceStatus()`, pure, classifies every
+  authorised organisation into one of three buckets from its OWN
+  `board_assurance_reports` history — `missing` (no row of any status,
+  ever), `overdue` (no `issued` report for the CURRENT quarter, and the
+  quarter is at least `OVERDUE_GRACE_DAYS` (15) days old — a grace
+  window before flagging overdue, the same shape `lib/reminders/
+  rules.ts`'s own due-bucket scheme already uses elsewhere, applied to
+  a genuinely new quarterly cadence), `current` (everything else) —
+  plus an ORTHOGONAL `deteriorating` flag read straight from the most
+  recent ISSUED report's own already-computed `report_data.trend`
+  (Phase 13's `computeBoardAssuranceReport()`), never re-derived. A
+  `draft`-only row for the current quarter still counts toward
+  `everHadAnyReport` but never toward `currentPeriodIssued` or
+  `deteriorating` — only an issued report is ever "shown to the board".
+- **`lib/consultancy/loadBoardAssuranceStatus.ts`** reads with the
+  service role, scoped to `portfolioOrgIds()`, via `readAllPages()` —
+  one company's own history is small, but the PORTFOLIO'S combined
+  history across many clients and years could plausibly cross the
+  1,000-row PostgREST cap the exact way Phase 19's own sweep found
+  elsewhere, so this is bounded from the start rather than retrofitted.
+- **`/consultancy/board-assurance`**: three columns (Missing/Overdue/
+  Current), each client linking to Client 360, a `deteriorating` badge
+  shown independently of bucket. Linked from the Command Centre home's
+  own button row.
+- **Client 360 gains its own Board Assurance summary card**, reading
+  only that ONE client's rows directly (no `readAllPages` needed at
+  that scope) and calling the identical `classifyBoardAssuranceStatus()`
+  — the dashboard and the per-client card can never disagree about a
+  bucket, since both run the same pure function over rows shaped the
+  same way.
+- 10 new `boardAssuranceStatus.test.ts` cases: missing/current/overdue,
+  the exact grace-window boundary (`>=`, not `>`), a draft-only current-
+  quarter row still counting as overdue, deteriorating read from the
+  latest ISSUED row only (a newer draft never counts), `latestIssued`
+  picked by (year, quarter) rather than array order, and a different
+  company's rows never leaking into this one's classification.
+
+Verified: `tsc --noEmit` clean both apps (admin untouched), full
+`vitest run` green (portal **874** — up from 862 at the end of Phase
+26: +10 new `boardAssuranceStatus.test.ts` cases + 2 from the sweep
+tests picking up the new route automatically), all six CI guards pass
+with no regressions (70 shared-dupe pairs, unchanged — this group's
+new files are portal-only, no admin equivalent; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+102 blind-update chains, unchanged — this group writes nothing, both
+new surfaces are read-only; every paged query's `.order()` present),
+both production builds compile (portal's one prerender failure is the
+same long-documented sandbox-only missing-Supabase-env-var limitation).
+

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart3, Building2, CalendarDays, ClipboardList, ListChecks, ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, Building2, CalendarDays, ClipboardCheck, ClipboardList, ListChecks, ShieldCheck, Users } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioOrgIds, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 
@@ -58,6 +58,7 @@ export default async function ConsultancyPortfolioPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/consultancy/attention-queue" className="btn-secondary btn-sm"><ListChecks size={16} /> Attention Queue</Link>
+          <Link href="/consultancy/board-assurance" className="btn-secondary btn-sm"><ClipboardCheck size={16} /> Board Assurance</Link>
           <Link href="/consultancy/calendar" className="btn-secondary btn-sm"><CalendarDays size={16} /> Calendar</Link>
           <Link href="/consultancy/workload" className="btn-secondary btn-sm"><Users size={16} /> Workload</Link>
           <Link href="/consultancy/templates" className="btn-secondary btn-sm"><ClipboardList size={16} /> Visit Templates</Link>
