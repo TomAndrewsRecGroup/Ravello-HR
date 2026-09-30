@@ -92,6 +92,7 @@ const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: st
   workforce_evidence_expiring:    { icon: CalendarClock, color: 'var(--amber)' },
   workforce_exception_lapsing:    { icon: CalendarClock, color: 'var(--amber)' },
   occupational_health_review_due: { icon: CalendarClock, color: 'var(--amber)' },
+  site_checkin_stale:             { icon: Users,         color: 'var(--amber)' },
   hs_equipment_inspection_due: { icon: HardHat,      color: 'var(--amber)' },
   inspection_completed:       { icon: HardHat,       color: 'var(--blue)' },
   puwer_review_due:           { icon: HardHat,       color: 'var(--amber)' },

@@ -38,6 +38,8 @@ beforeEach(() => {
     person_credentials: [],
     person_health_outcomes: [],
     training_records: [],
+    hs_sites: [{ id: 'site-1', company_id: 'co-1', name: 'Head Office' }],
+    site_checkins: [],
     notification_preferences: [], platform_events: [], notifications: [], email_log: [], actions: [], internal_tasks: [],
   });
 });
@@ -131,6 +133,39 @@ describe('workforce reminders', () => {
     db.tables.training_records.push(tr);
     await run(reminder('training_records', 'due_30', '2026-10-20', tr));
     expect(db.tables.notifications.map(n => n.title)[0]).toBe('Forklift for Sam Driver expires 2026-10-20');
+  });
+
+  describe('stale site check-in (C14.8)', () => {
+    const openCheckin = { id: 'sc-1', company_id: 'co-1', person_id: 'p-1', site_id: 'site-1', checked_in_at: '2026-09-29' };
+
+    it('an open check-in still open the morning after tells workforce.manage holders, by person and site', async () => {
+      db.tables.site_checkins.push(openCheckin);
+      await run(reminder('site_checkins', 'overdue', '2026-09-29', openCheckin));
+      expect(who()).toEqual(['manager']);
+      const n = db.tables.notifications[0];
+      expect(n.type).toBe('site_checkin_stale');
+      expect(n.title).toBe('Sam Driver checked in at Head Office on 2026-09-29 and has not checked out');
+      expect(n.link).toBe('/lead/workforce/onsite');
+    });
+
+    it('is silent on the due_0 bucket — only overdue/overdue_weekly, matching the role_stale precedent', async () => {
+      db.tables.site_checkins.push(openCheckin);
+      await run(reminder('site_checkins', 'due_0', '2026-09-29', openCheckin));
+      expect(db.tables.notifications).toHaveLength(0);
+    });
+
+    it('a re-processed event for a row already checked out since is skipped', async () => {
+      db.tables.site_checkins.push({ ...openCheckin, checked_out_at: '2026-09-30T08:00:00Z' });
+      await run(reminder('site_checkins', 'overdue', '2026-09-29', openCheckin));
+      expect(db.tables.notifications).toHaveLength(0);
+    });
+
+    it('with no site recorded, falls back to "a site" rather than a blank', async () => {
+      const noSite = { ...openCheckin, id: 'sc-2', site_id: null };
+      db.tables.site_checkins.push(noSite);
+      await run(reminder('site_checkins', 'overdue', '2026-09-29', noSite));
+      expect(db.tables.notifications[0].title).toBe('Sam Driver checked in at a site on 2026-09-29 and has not checked out');
+    });
   });
 });
 
