@@ -9036,12 +9036,38 @@ validates it with `parseBody`; 42 static admin routes, all reachable —
 this group touched no admin route; 102 blind-update chains, unchanged),
 both production builds compile, including `/api/protect/jev/rams-section`.
 
-### Group 2 and Group 3
+### Group 2: RAMS editor UI
 
-Not yet built as of this CLAUDE.md entry — Group 1 is committed and
-merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline; the UI and the final
-regression/adversarial-QA/handover pass follow as their own PRs.
+- **`RamsHeaderEditor.tsx`** gains a "Suggest sections to check" button
+  next to the existing "Sections" heading — calls `POST /api/protect/
+  jev/rams-section` with the CURRENT (unsaved) title/project_name/
+  scope_of_work, then reuses the EXISTING `shown`/`remaining` mechanism
+  (built for the hand-typed "Add section" dropdown) to reveal any
+  flagged, not-yet-shown section — never a new UI panel, never
+  pre-filled content. A flagged section that is still empty gets a
+  small "Worth checking for this scope of work" note under its label,
+  cleared automatically the moment the author types anything into it
+  (the note's own condition already checks `!sections[k].trim()`).
+- **Nothing is written to `method_statements` by this action.** The
+  button only changes local component state (`shown`, a `suggested`
+  list for the note) — the existing `Save` button, and its existing
+  row-version-conditional update, are completely untouched.
+- **No new test file** — a UI-only wiring change with no new pure
+  logic, consistent with this codebase's established "no component-
+  level test" convention; the pure logic it calls (`lib/hs/
+  ramsSectionQuestions.ts`) was already tested in Group 1.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1563
+admin, unchanged; 743 portal, unchanged — this group is UI-only), all
+five CI guards pass with no regressions, both production builds
+compile.
+
+### Group 3
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
+merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
 
 **Phase 16 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.
