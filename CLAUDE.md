@@ -10157,3 +10157,46 @@ complete**, per the operator's original instruction to work through
 Phases 6-19 sequentially, completing each in full before the next, with
 regular merges along the way.
 
+---
+
+## The sixth CI guard: `check-paged-order.sh` (2026-09-30)
+
+Phase 19 Group 3's own handover doc named the natural next step in its
+own words: "no automated guard yet catches a `readAllPages()` call with
+no `.order(...)` in the same statement — the natural next CI check to
+add, following this codebase's own standing practice of turning a
+hand-found defect class into a permanent guard once understood (the
+same path `check-row-cap.sh` itself took)." Built as the direct
+follow-on to that finding, not a new phase.
+
+```
+bash scripts/check-paged-order.sh   # every .range(from, to) is preceded by .order(...)
+```
+
+- **Heuristic, not a parser** — the same nature every other guard here
+  already has (`check-row-cap.sh` itself "cannot see [an unbounded
+  `.in()`/`.eq()`]... invisible to a script that only catches a literal
+  `.limit(N>1000)`", per its own Phase 19 Group 2 entry above). It looks
+  at the text immediately before each literal `.range(from, to)` — the
+  fixed shape every `PageQueryBuilder` callback produces, regardless of
+  its arrow-function's own parameter list or type arguments — and
+  refuses one with no `.order(` in that span.
+- **Deliberately does NOT try to also catch the "never wrapped in
+  `readAllPages()` at all" variant** (the worse bug the same Group 3
+  pass found in the ORIGINAL Phase 8 risk-graph page: two `hs_links`
+  reads with no `.range()`/`.limit()` whatsoever). That class is a
+  DIFFERENT shape (no `.range(from, to)` string to anchor on at all) and
+  is exactly `check-row-cap.sh`'s own already-documented blind spot —
+  recorded here as remaining debt, not silently claimed as covered by
+  this guard.
+- **Mutation-tested before being trusted**: reverting one already-fixed
+  `readAllPages()` call in `loadSnapshot.ts` back to no `.order(...)`
+  was reintroduced and watched fail this script, then restored and
+  re-verified clean.
+- Wired into `.github/workflows/ci.yml` alongside the existing five.
+
+Verified: `tsc --noEmit` clean both apps (no source file touched, only
+the new script and the CI workflow), full `vitest run` unchanged (1620
+admin / 755 portal), all six CI guards pass — including the new one,
+clean against the current codebase — both production builds compile.
+
