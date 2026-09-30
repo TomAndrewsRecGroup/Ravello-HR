@@ -74,6 +74,7 @@ PAIRS=(
   "admin/src/components/hs/ComplianceTwinView.tsx|portal/src/components/hs/ComplianceTwinView.tsx"
   "admin/src/lib/hs/kpis.ts|portal/src/lib/hs/kpis.ts"
   "admin/src/lib/governance/kpis.ts|portal/src/lib/governance/kpis.ts"
+  "admin/src/lib/lessonsLearned/types.ts|portal/src/lib/lessonsLearned/types.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

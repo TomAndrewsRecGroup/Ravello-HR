@@ -91,6 +91,7 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/protect/evidence':            ['protect'],
   '/protect/digital-twin':        ['protect'],
   '/protect/board-assurance':     ['protect'],
+  '/protect/lessons-learned':     ['protect'],
   '/protect/reports':             ['protect', 'protect_reports'],
 
   // Everything else that is a module

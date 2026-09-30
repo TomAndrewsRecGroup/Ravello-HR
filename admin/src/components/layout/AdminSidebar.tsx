@@ -31,6 +31,7 @@ import {
   Inbox,
   LayoutDashboard,
   LifeBuoy,
+  Lightbulb,
   LogOut,
   Mail,
   Newspaper,
@@ -113,6 +114,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/health-safety/legal-register',      label: 'Legal Register', icon: Scale },
       { href: '/health-safety/iso-readiness',       label: 'ISO Readiness',  icon: Award },
       { href: '/health-safety/governance-calendar', label: 'Governance Calendar', icon: CalendarClock },
+      { href: '/health-safety/lessons-learned',     label: 'Lessons Learned', icon: Lightbulb },
     ],
   },
   {
