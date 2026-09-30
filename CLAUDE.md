@@ -10457,3 +10457,189 @@ for two dozen historical migrations. Full handover:
 begin** once this branch merges, per the Master Spec's own sequential-
 gate rule.
 
+---
+
+## Core-OS 360 Completion Programme: Phase 21 — People, LMS,
+## Competency & Safe-to-Deploy Closure (2026-09-30)
+
+Full handover: `docs/CORE_OS_360_PHASE21_HANDOVER.md`. Closes Phase
+20's own five-row gap ledger for this phase (C1.10, C3.7, C3.8, C3.9,
+C3.10). Delivered in 6 groups, each independently verified.
+
+### Group 1: hs_tests course mapping, E-Learning course link,
+### employee-document person linkage (migration 183)
+
+- **`hs_tests.course_id`** (nullable, must reference a **standard/
+  global** `training_courses` row) closes the gap where a passed
+  `hs_tests` submission wrote a `training_records` row
+  (`hs_test_submission_after()`, 116) that was structurally invisible
+  to the Safe-to-Deploy engine's `'training'` branch (`_wf_judge`,
+  142: `t.course_id = p_ref`) — nothing had ever set it.
+  `hs_tests_course_guard()` refuses a company-scoped course outright:
+  `hs_tests` has no `company_id` of its own (a staff-global test bank,
+  same posture as `hs_audit_templates`/`hs_sector_packs`) and is
+  assigned across many client companies — a company-specific course
+  would fail `assert_catalogue()` the moment any OTHER company's pass
+  tried to log it. `hs_test_submission_after()` now carries
+  `course_id` onto the insert and stamps `source = 'hs_test'` (a value
+  `training_records_source_check`, 134, already allowed but nothing
+  ever set).
+- **The E-Learning `learning_content_id` FK on `training_courses`**
+  (133) had been completely orphaned since it was added — no UI ever
+  read or wrote it. The workforce Courses catalogue tab gained a
+  `learning_content` field kind (a picker over published
+  `learning_content`), following the exact `'site'` field-kind pattern
+  already established for `induction`'s `site_id` picker.
+- **Employee documents never linked to a person.** Both `employee_
+  documents.person_id` and `.employee_id` (099, 134) existed, and
+  `employee_document_person_guard()` (142) already derived `person_id`
+  from `employee_id` with a same-organisation check — nothing in
+  either app's upload form ever populated `employee_id`. Both the
+  admin HR-tab upload form and the portal's Employee Documents page
+  gained an "Employee record" picker. A staff upload (the admin route
+  uses the service role) is auto-marked `filed_by_authorised = true`
+  the instant `person_id` is set — this is the guard's own existing
+  `ELSIF TG_OP = 'INSERT' THEN ... NEW.filed_by_authorised :=
+  NEW.person_id IS NOT NULL` branch, not new code; the picker was the
+  only thing missing.
+- **A Zod trap found and NOT repeated**: `optionalUuid`
+  (`.optional().nullable().transform(v => v || null)`) materialises the
+  field with value `null` even when the caller's request body never
+  mentions the key — safe on an INSERT body (every column gets an
+  explicit value regardless), a silent field-wipe on a PARTIAL PATCH
+  (`Object.keys(parsed.data)` would include the key, defeating both the
+  "nothing to update" check and overwriting an existing mapping on
+  every unrelated edit). Verified with a throwaway Node/Zod script
+  before deciding, not assumed. `course_id` is therefore set only at
+  creation (POST); deliberately never added to the PATCH schema.
+- Live-probed (`supabase/probes/183_hs_tests_course_mapping.sql`), 7/7.
+
+### Group 2: one-click "Assign learning" from an unmet requirement
+
+Closes the DoD's "requirement → gap → recommended/assigned learning"
+step. `AssignLearningButton` on the person profile's requirement table
+inserts a `development_items` row (`source_type: 'competency_gap'`,
+`linked_course_id`/`linked_competency_id` from the requirement's own
+`reference_id`) — the exact insert shape `AddDevelopmentForm` already
+used, pre-filled from the row instead of hand-typed. Shown only for a
+genuinely `unmet` training/competency requirement (the two types
+`development_items` can link to), gated on `training.manage`, hidden
+on a historical (`?as_of=`) view. Document verification needed no
+separate UI — Group 1's picker already closes it structurally.
+
+### Group 3: people synced back from source rows (migration 184,
+### closes C1.10)
+
+Phase 1's own handover (§H) recorded this as explicit debt:
+`person_link_row()` (118) is BEFORE INSERT ONLY on `candidates`/
+`athletes`/`employee_records` — it links or creates the `people` row
+once, at creation, and never runs again. `person_sync_from_source()`
+is a new AFTER UPDATE trigger on all three tables:
+
+- `full_name`/`email` always overwrite (both NOT NULL on every source
+  table — a corrected typo must always win).
+- `phone`/`job_title`/`employee_number`/`department_id`/`site_id` only
+  fill a gap via `COALESCE`, mirroring `person_link_row()`'s own
+  INSERT-time behaviour exactly (`job_title = COALESCE(NEW.job_title,
+  job_title)`) — a field genuinely cleared on the source row does not
+  blank a `people` row that may still be the more complete record.
+- Never raises (the same discipline `person_link_row()`/`person_
+  employee_status()` already use) — an edit to the source row must
+  always succeed even if the people-row update fails for any reason.
+- Fires only AFTER `person_same_org_guard()`'s own BEFORE trigger
+  (142) has already refused a cross-organisation `person_id` — proven
+  by trigger execution order, not merely asserted.
+
+Live-probed (`supabase/probes/184_people_sync_back.sql`), 8/8.
+
+### Group 4: correction — bulk people CSV import already existed
+### (closes C3.10)
+
+Checked before building anything, per the Master Spec's own rule.
+Both halves of Phase 20's own C3.10 claim were wrong:
+`portal/src/lib/workforce/importCsv.ts` already covers training,
+competency AND credential (all three `IMPORT_KINDS`), not "training
+only"; `portal/src/app/(portal)/lead/org-chart/OrgChartClient.tsx`
+already has a working bulk people-creation CSV import (add new +
+update existing, matched by name) — missed by Phase 20's search,
+which looked in `lib/workforce/`/`lib/lead/` and never checked the Org
+Chart page. Rather than build a duplicate importer, made one small,
+safe fix to the existing one: a row with no name was silently dropped
+with zero indication; it is now reported by line number, the same
+"fix the file first" pattern the existing missing-column warning
+already used. The by-name matching (a real, accepted limitation — two
+same-named people would collide) is left untouched as outside this
+phase's safe, minimal scope.
+
+### Group 5: reports/exports + Person Compliance PDF — verified
+### already built, no code change
+
+Traced every one of the DoD's eight named report categories to an
+existing, filterable CSV export: `lead/workforce/page.tsx`'s
+`safe-to-deploy.csv` (name, status, role, site, department,
+required/met/unmet/review/expiring, **`safety_critical_gap`**,
+reasons); `lead/workforce/matrix/page.tsx`'s `workforce-matrix.csv`
+— ONE export spanning every `REQUIREMENT_TYPE` (training/competency/
+qualification/certification/licence/card/permit/induction/…),
+filtered server-side by the page's own `FilterForm` (site/department/
+role/manager/worker type/**requirement type**/expiring/unmet/
+safety-critical) BEFORE the CSV rows are built, so selecting
+"Requirement type: Training" then downloading is genuinely a
+training-only report with no separate export needed; `lead/workforce/
+occupational-health/page.tsx`'s `health-surveillance.csv` ("Clinical
+detail is never shown here"). Building eight narrower, separate CSVs
+over the same underlying data would have been the exact "second
+source of the same fact" anti-pattern this codebase avoids everywhere
+else (the Digital Twin, every KPI module, the governance report all
+cite this same discipline).
+
+**Person Compliance PDF** already exists:
+`lead/workforce/people/[id]/print/page.tsx` — its own header comment:
+"The printable person compliance record (spec 103). Structured HTML,
+the browser's 'Save as PDF' makes the PDF... nothing clinical is ever
+fetched." Satisfies the DoD's own qualifier ("where existing reporting
+tooling supports it") — a jsPDF rebuild of an already-correct,
+already-clinical-safe document would have been redundant and
+higher-risk, not what was asked for.
+
+An earlier Explore-agent audit had reported both as "NOT BUILT" — its
+search matched specific names (`buildPersonCompliancePdf`, API routes
+containing `csv`) this implementation never used, since these exports
+are client-side downloads inside page components (not API routes) and
+the PDF is a browser-print page (not a file named `pdf` or `export`).
+Corrected on direct inspection before writing a line of new code —
+the same "repository reality beats handover narrative" discipline
+Phase 20 itself modelled for the stale `runScan.ts` comment.
+
+### Group 6: regression, security review, handover (gate: PASS)
+
+No new Critical/High defect. Both write paths this phase adds UI for
+(`employee_documents.employee_id`, `hs_tests.course_id`) route through
+pre-existing, already-adversarially-reviewed guards from the Phase 3
+QA 42 security pass (`person_same_org_guard()`, `employee_document_
+person_guard()`) — neither guard was modified, only finally given a
+UI caller. The one genuinely new tenancy question this phase raised —
+could a company-scoped `hs_tests.course_id` leak or misfire across
+companies — was closed by `hs_tests_course_guard()` and live-probed
+(check 2: refused with `23514`). An hs_test-sourced training record
+always lands `verification_status = 'unverified'` (probe check 4) —
+rule 143 ("a mandatory item always needs verified evidence") is
+unaffected; nothing in this phase auto-verifies anything.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(**1640 admin** — 1632 + 8 new: 2 `hs/tests` route-test cases, 6
+`peopleSyncBackSql.test.ts` cases; **760 portal** — 755 + 5 new:
+`requirements.test.ts`'s `learning_content` field-kind/`cellText`
+cases), all six CI guards pass (60 shared-dupe pairs; row-cap clean;
+44 unvalidated routes, unchanged; 43 static admin routes, all
+reachable; 102 blind-update chains, unchanged; every paged query's
+`.order()` present), both production builds compile (portal's one
+prerender failure is the long-documented sandbox-only missing-
+Supabase-env-var limitation, unrelated to this phase). Migrations 183
+and 184 applied and live-probed in rolled-back transactions, 15/15
+checks total.
+
+**Phase 22 (Operational H&S & Client Workflow Closure) may begin**
+once this branch merges, per the Master Spec's own sequential-gate
+rule.
+
