@@ -10887,3 +10887,118 @@ guardless-by-design shape `RaLinks.tsx`/`EvidenceLinksPanel.tsx`
 already use; `check-paged-order.sh`: clean — this group added no
 `readAllPages()` call), both production builds compile.
 
+### Group 2 (migration 187): portfolio-safe consultant Risk Graph view (C8.5)
+
+Phase 8's own migration (177) deliberately added no portfolio-wide
+RLS: "nothing about 'Risk Graph & Connected Compliance Intelligence'
+as a phase name implies a cross-client capability." Phase 23's own
+gap ledger disagrees, explicitly — this closes it.
+
+- **Six new, narrowly-scoped, ADDITIVE, SELECT-ONLY policies**, the
+  exact `actions_consultancy_select` shape migration 175 already
+  established: `USING ((SELECT public.has_capability(company_id,
+  'consultancy.service_manage')))` on `hazards`, `risk_assessments`,
+  `risk_assessment_items`, `risk_item_controls`,
+  `organisation_legal_obligations` (all five feed
+  `computeRiskGraphIntelligence()`) and `hs_links` (which had the
+  identical gap). No new capability — reuses the one every Phase 6/7
+  consultancy write already keys on. RLS ORs permissive policies, so
+  none of the six existing policies on these tables were touched.
+- **SELECT-only, deliberately**: this closes a READ gap ("view the
+  risk graph across my portfolio"), not a write one — a consultant
+  creating hazards/risk assessments on behalf of a client they have
+  not switched into is a separate, bigger feature this group's own
+  scope note does not ask for.
+- **Because `risk_graph_neighbors()` (177) is `SECURITY INVOKER`,
+  opening `hs_links` here alone makes the EXPLORER portfolio-safe with
+  NO code change**: a consultant calling it for a genuine record in an
+  authorised client now succeeds regardless of which organisation is
+  "active" in their session — the walk can never cross companies
+  anyway (`hs_links_check()`'s own same-organisation guard, untouched
+  by this migration). Proved live (checks 5/5b): the explorer finds an
+  authorised client's linked hazard and sees nothing of an
+  unauthorised one's graph.
+- **`RiskGraphClient.tsx` (admin's own Phase 8 dashboard+explorer
+  component) is promoted to a shared-dupe pair** (66 pairs, up from
+  65) — the exact `ComplianceTwinView.tsx`/`AssuranceTodayView.tsx`
+  precedent: an identical already-assembled snapshot, only per-link
+  routing differs by caller. `role`/`portalBase` are now explicit
+  params (never the imported, admin-only `portalUrl()` helper it used
+  before), and every href is resolved through `hrefForEntity()`
+  (Group 1) instead of hand-built strings — the same de-duplication
+  Group 1's own component already modelled.
+- **New portal page `/consultancy/clients/[id]/risk-graph`** — the
+  exact Client 360 sub-page shape (168/Group 4):
+  `requirePortfolioSession()` + `portfolioIncludes()` gate the id
+  first, then a SERVICE-ROLE-scoped read (`.eq('company_id', id)`,
+  copied verbatim from admin's own risk-graph page query shape) feeds
+  the identical `computeRiskGraphIntelligence()` and the same
+  `RiskGraphClient` component with `role="portal"`. Linked from Client
+  360's own header alongside "Open full workspace".
+- **A fixture-schema gap found live while writing the probe, not
+  assumed from a per-column CHECK scan**: `hazards` carries a
+  table-level `hazards_check` CHECK (`site_id IS NOT NULL OR
+  linked_location IS NOT NULL`) invisible from the individual
+  per-column CHECKs alone — a fixture hazard needs one of the two.
+  Found by reading `pg_get_constraintdef()` directly after the first
+  probe attempt failed with `23514`, not by re-reading the migration
+  file (which never defined this constraint — it predates Phase 4's
+  own asset-register work). Also hit
+  `organisation_legal_obligations_stamp()`'s own 159-era guard
+  ("An applicability decision must be confirmed by a named
+  assessor") — the probe's fixture obligations now set
+  `assessed_by`/`assessed_at` together, matching 159's own rule.
+- **`pg_policies.qual` renders a USING clause's column TABLE-QUALIFIED**
+  (`risk_assessments.company_id`, not bare `company_id`) — found live
+  when the first structural check (comparing against an unqualified
+  pattern) failed on all three of `risk_assessments`/
+  `risk_assessment_items`/`risk_item_controls` despite the policies
+  being correctly applied (confirmed separately by reading `qual` back
+  directly). The probe's LIKE patterns were corrected to match the
+  real, qualified rendering rather than the schema-agnostic string
+  originally guessed.
+
+**Live probe** (`supabase/probes/187_risk_graph_portfolio_read.sql`,
+rolled back, the Phase 7 Group 7 consolidated-proof style: one
+consultant session, authorised for Client A only, a genuinely SEPARATE
+consultancy owning Client B's relationship): 8 checks — `hazards`
+(Client A visible, Client B invisible), SELECT-only (an INSERT for the
+AUTHORISED client still refused), `organisation_legal_obligations` (A
+visible, B invisible), `hs_links` (A visible, B invisible),
+`risk_graph_neighbors()` finds Client A's linked hazard and sees
+nothing of Client B's graph, and `risk_assessments`/
+`risk_assessment_items`/`risk_item_controls` proven structurally via
+`pg_policies` (the exact USING clause, not merely that a policy with
+this name exists — the disproportionate fixture cost of a valid
+`risk_assessments` row, which needs a `risk_matrices` row, was judged
+not worth a full live round-trip for three tables whose policy shape
+is byte-identical to the three already proven live). **All 8 passed.**
+No trace left live (confirmed via a post-rollback count query).
+
+`riskGraphPortfolioReadSql.test.ts` (5 tests, the `riskGraphFoundationSql
+.test.ts` precedent) pins the migration text: exactly six policies, one
+per table; every one gated on `has_capability(company_id,
+'consultancy.service_manage')`, never `my_company_id()`; SELECT-only
+(no `WITH CHECK`/`FOR ALL`/`FOR INSERT`/`FOR UPDATE`/`FOR DELETE`
+anywhere); no new table/trigger/function/DEFINER; no `DROP POLICY`/
+`ALTER POLICY` (additive only).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1679 admin — 1674 + 5 new `riskGraphPortfolioReadSql.test.ts` cases;
+790 portal — 788 + 2, `portalPagesLinked.test.ts`/
+`clientServerBoundary.test.ts` picking up the new page/component
+reference automatically), all six CI guards pass (`check-shared-dupes
+.sh`: 66 pairs, up from 65; `check-row-cap.sh`: clean; `check-route-
+validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`: 43
+static routes, all reachable — no admin route changed shape;
+`check-blind-updates.sh`: 102, unchanged — this group writes nothing
+new, purely additive RLS + a read-only portal page; `check-paged-order
+.sh`: clean — every new `readAllPages()` call in the portal page
+carries `.order('id')`, copied from admin's own query shape), both
+production builds compile (portal's one prerender failure is the
+long-documented sandbox-only missing-Supabase-env-var limitation,
+unrelated to this change and confirmed by `tsc`'s own clean pass
+completing before that unrelated page's static-export step). Migration
+187 applied live and verified (`pg_policies`: all six policies present
+with the exact `USING` clause).
+

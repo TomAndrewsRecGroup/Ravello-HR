@@ -192,11 +192,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 |---|---|---|---|
 | C8.1 | `risk_graph_neighbors()`, SECURITY INVOKER, depth-capped | IMPLEMENTED | 177 |
 | C8.2 | Connected Compliance Intelligence (uncovered hazards, ineffective shared controls, unlinked obligations) | IMPLEMENTED | `lib/riskGraph/intelligence.ts`, fixed post-hoc for the coverage-type bug (Group 4) |
-| C8.3 | Reusable Connections panel on relevant record pages | MISSING | Master Spec Phase 23 known-gap: "no reusable Connections panel and no portfolio-wide consultancy version" — Phase 8 built ONE combined explorer+dashboard page, not a per-record panel → assigned **Phase 23** |
-| C8.4 | Neighbour label resolution beyond hazards/RAs/legal obligations | PARTIAL | Phase 8's own scope note: "a known, disclosed scope limit... labelling every one of the ~35 `hs_entity_table()` branches would need a query per branch" → assigned **Phase 23** |
-| C8.5 | Portfolio-safe consultant Risk Graph view | MISSING | Phase 8's own scope decision: "no portfolio-wide (consultancy) RLS was added" → assigned **Phase 23** |
+| C8.3 | Reusable Connections panel on relevant record pages | IMPLEMENTED | **Phase 23 Group 1**: `ConnectionsPanel.tsx` (shared-dupe pair), wired into admin's audit detail page and portal's incident detail page (additive alongside the bespoke `IncidentLinks.tsx`) |
+| C8.4 | Neighbour label resolution beyond hazards/RAs/legal obligations | IMPLEMENTED | **Phase 23 Group 1**: `lib/riskGraph/entityLabels.ts` (shared-dupe pair), a curated label map for 14 entity types + incident, falling back to a humanised type + truncated id for anything uncurated |
+| C8.5 | Portfolio-safe consultant Risk Graph view | IMPLEMENTED | **Phase 23 Group 2**: migration 187 (six additive consultancy-read RLS policies on `hazards`/`risk_assessments`/`risk_assessment_items`/`risk_item_controls`/`organisation_legal_obligations`/`hs_links`), `RiskGraphClient.tsx` promoted to a shared-dupe pair, new portal page `/consultancy/clients/[id]/risk-graph`. Live-probed (8/8 checks): authorised Client A visible, unauthorised Client B invisible, SELECT-only, and `risk_graph_neighbors()` proven portfolio-safe with zero code change |
 
-**Gaps carried forward**: C8.3, C8.4, C8.5 → **Phase 23** (headline scope).
+**Gaps closed by Phase 23 Group 1-2**: C8.3, C8.4, C8.5.
 
 ---
 

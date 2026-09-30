@@ -67,6 +67,7 @@ PAIRS=(
   "admin/src/components/ui/useUnsavedChangesWarning.ts|portal/src/components/ui/useUnsavedChangesWarning.ts"
   "admin/src/lib/riskGraph/intelligence.ts|portal/src/lib/riskGraph/intelligence.ts"
   "admin/src/lib/riskGraph/entityLabels.ts|portal/src/lib/riskGraph/entityLabels.ts"
+  "admin/src/components/hs/RiskGraphClient.tsx|portal/src/components/hs/RiskGraphClient.tsx"
   "admin/src/components/hs/ConnectionsPanel.tsx|portal/src/components/hs/ConnectionsPanel.tsx"
   "admin/src/lib/incidentPatterns/analyze.ts|portal/src/lib/incidentPatterns/analyze.ts"
   "admin/src/components/hs/IncidentPatternsView.tsx|portal/src/components/hs/IncidentPatternsView.tsx"

@@ -159,20 +159,23 @@
     {
       "id": "C8.3",
       "phase": "C8",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "ConnectionsPanel.tsx shared-dupe pair, Phase 23 Group 1"
     },
     {
       "id": "C8.4",
       "phase": "C8",
-      "status": "PARTIAL",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "lib/riskGraph/entityLabels.ts shared-dupe pair, Phase 23 Group 1"
     },
     {
       "id": "C8.5",
       "phase": "C8",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 187, six consultancy-read RLS policies, Phase 23 Group 2, live-probed 8/8"
     },
     {
       "id": "C9.4",
