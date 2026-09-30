@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 import { buildVisitReportPdf } from '@/lib/consultancy/buildVisitReportPdf';
 import { sendEmail } from '@/lib/email';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import type { ConsultancyVisit, ConsultancyVisitReport, VisitObservation } from '@/lib/consultancy/types';
 
 // This route lives IN the portal app, but the link still needs to be
@@ -53,13 +54,16 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 //
 // Findings are read fresh here, client_visible = true only — never
 // duplicated onto the report row itself (migration 176's own rule).
-export async function POST(_req: NextRequest, props: { params: Promise<{ id: string; visitId: string }> }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string; visitId: string }> }) {
   const { id, visitId } = await props.params;
   if (!UUID_RE.test(id) || !UUID_RE.test(visitId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const portfolio = await requirePortfolioSession();
   if (!portfolio) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!portfolioIncludes(portfolio.organisations, id)) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const rl = limiters.email.check(getUserRateLimitKey(req, portfolio.session.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const sb = createServiceSupabaseClient();
 

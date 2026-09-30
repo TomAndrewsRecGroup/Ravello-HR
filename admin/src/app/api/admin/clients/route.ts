@@ -7,6 +7,7 @@ import { stripeConfigured, createCustomer, createPrice, createSubscription } fro
 import { hasPaidFlag } from '@/lib/featureFlags';
 import { sendEmail, clientWelcomeEmail } from '@/lib/email';
 import { isManatalConfigured, createManatalOrganization, lastManatalError } from '@/lib/manatal';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 const DEFAULT_FLAGS = {
   hiring: true, documents: true, reports: false, support: true,
@@ -43,6 +44,9 @@ interface CreateClientResult {
 export async function POST(request: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  const rl = limiters.vendor.check(getUserRateLimitKey(request, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const supabase = await createServerSupabaseClient();
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { buildPatch } from '@/lib/athletes/validate';
 import { sendEmail, buildAthleteWelcomeEmail, nextBusinessSendAt, lastEmailError } from '@/lib/email';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   if (!companyId) {
     return NextResponse.json({ error: 'no company assigned to profile' }, { status: 403 });
   }
+
+  const rl = limiters.email.check(getUserRateLimitKey(req, user.id));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   let body: PostBody;
   try { body = await req.json(); } catch {

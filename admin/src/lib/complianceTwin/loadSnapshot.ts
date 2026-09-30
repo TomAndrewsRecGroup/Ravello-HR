@@ -82,12 +82,16 @@ export async function loadComplianceTwinSnapshot(
   ]);
 
   const requirementIds = [...new Set(obligationsRaw.rows.map(o => o.legal_requirement_id))];
-  const [{ data: requirements }, { data: legalLinksA }, { data: legalLinksB }] = await Promise.all([
+  const [{ data: requirements }, legalLinksA, legalLinksB] = await Promise.all([
     requirementIds.length > 0
       ? supabase.from('legal_requirements').select('id, title').in('id', requirementIds)
       : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-    supabase.from('hs_links').select('from_type, from_id, to_type, to_id').eq('company_id', companyId).eq('from_type', 'legal_obligation'),
-    supabase.from('hs_links').select('from_type, from_id, to_type, to_id').eq('company_id', companyId).eq('to_type', 'legal_obligation'),
+    readAllPages<RiskGraphLink>((from, to) =>
+      supabase.from('hs_links').select('from_type, from_id, to_type, to_id')
+        .eq('company_id', companyId).eq('from_type', 'legal_obligation').range(from, to)),
+    readAllPages<RiskGraphLink>((from, to) =>
+      supabase.from('hs_links').select('from_type, from_id, to_type, to_id')
+        .eq('company_id', companyId).eq('to_type', 'legal_obligation').range(from, to)),
   ]);
 
   const titleByRequirement = new Map((requirements ?? []).map(r => [r.id, r.title]));
@@ -96,7 +100,7 @@ export async function loadComplianceTwinSnapshot(
     title: titleByRequirement.get(o.legal_requirement_id) ?? 'Untitled requirement',
     applicability_status: o.applicability_status,
   }));
-  const legalObligationLinks: RiskGraphLink[] = [...(legalLinksA ?? []), ...(legalLinksB ?? [])];
+  const legalObligationLinks: RiskGraphLink[] = [...legalLinksA.rows, ...legalLinksB.rows];
 
   const riskGraph = computeRiskGraphIntelligence({
     hazards: hazards.rows,

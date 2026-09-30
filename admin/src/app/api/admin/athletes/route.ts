@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { buildPatch } from '@/lib/athletes/validate';
 import { sendEmail, athleteWelcomeEmail, nextBusinessSendAt } from '@/lib/email';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -23,6 +24,9 @@ interface PostBody {
 export async function POST(req: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  const rl = limiters.email.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   let body: PostBody;
   try { body = await req.json(); } catch {
