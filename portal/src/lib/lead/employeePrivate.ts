@@ -14,7 +14,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Every column a session may read. Use this instead of `*`. */
 // One string literal: supabase-js infers the row type from the literal.
-export const EMPLOYEE_SAFE_COLUMNS = 'id,company_id,full_name,email,phone,employee_number,job_title,department,employment_type,status,start_date,end_date,probation_end,line_manager,work_location,contract_hours,annual_leave_allowance,sick_day_allowance,leave_year_type,leave_year_start_month,leave_year_start_day,data_consent_at,sensitive_data_redacted,created_at,updated_at,source_candidate_id,person_id,department_id,site_id';
+// row_version (Phase 28, migration 197) is an additive grant on top of
+// 131's own full re-GRANT — the optimistic-lock column an edit form
+// conditions its UPDATE on.
+export const EMPLOYEE_SAFE_COLUMNS = 'id,company_id,full_name,email,phone,employee_number,job_title,department,employment_type,status,start_date,end_date,probation_end,line_manager,work_location,contract_hours,annual_leave_allowance,sick_day_allowance,leave_year_type,leave_year_start_month,leave_year_start_day,data_consent_at,sensitive_data_redacted,created_at,updated_at,source_candidate_id,person_id,department_id,site_id,row_version';
 
 /** HR-sensitive fields: readable and writable only with hr.sensitive.*. */
 export const EMPLOYEE_HR_FIELDS = [

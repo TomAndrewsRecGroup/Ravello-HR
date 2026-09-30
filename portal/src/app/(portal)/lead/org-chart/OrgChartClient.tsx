@@ -16,6 +16,7 @@ interface Employee {
   line_manager:     string | null;
   status:           string;
   employment_type:  string;
+  row_version:      number;
 }
 
 interface TreeNode { employee: Employee; children: TreeNode[]; }
@@ -446,16 +447,29 @@ export default function OrgChartClient({ employees: initial, canEdit, companyId 
   }
 
   async function persistChange(id: string, patch: Partial<Employee>) {
+    // The version the row was on when the drag started — read from
+    // state, never sent by the caller, so a stale drag (this row was
+    // edited elsewhere, e.g. the Employee Records form, since this
+    // page last loaded it) is refused rather than silently winning.
+    const current = employees.find((e) => e.id === id);
+    const expectedVersion = current?.row_version;
+
     // Optimistic update
     setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-    const { error } = await supabase
+
+    let query = supabase
       .from('employee_records')
-      .update(patch)
+      .update(patch, { count: 'exact' })
       .eq('id', id)
       .eq('company_id', companyId);
+    if (expectedVersion !== undefined) query = query.eq('row_version', expectedVersion);
+    const { error, count } = await query;
+
     if (error) {
       showToast('err', `Could not save: ${error.message}`);
-      // Roll back by re-fetching
+      router.refresh();
+    } else if (count === 0) {
+      showToast('err', 'Someone else changed this person since the page loaded. Refresh to see their change.');
       router.refresh();
     } else {
       showToast('ok', 'Saved');

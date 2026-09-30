@@ -117,18 +117,44 @@ Phase 1 §H's own item 9 names the next candidate explicitly: "two
 people editing the same employee means the last write wins."
 
 Checked live: `employee_records` has no `row_version` column.
-`EmployeeRecordsClient.tsx`'s save handler (the only real edit-form
-UPDATE site on this table — the other two `.update()` call sites
-across both apps are the offboarding-start route's `end_date` stamp
-and the reminders cron's automated `employee_terminated` write,
-neither a concurrent-edit risk) is an unconditional
+`EmployeeRecordsClient.tsx`'s save handler is an unconditional
 `.update(body).eq('id', editingId)` with no version check at all —
 confirmed, not assumed: the exact "last write wins" scenario Phase 1
-described. This is the one genuine, live gap. Closed in Group 2 with
-the established 123/190 pattern: `row_version` forced by a BEFORE
-INSERT OR UPDATE trigger regardless of caller input, a conditional
-`.eq('row_version', ...)` client update, a clear message on a lost
-race.
+described.
+
+**Correction, made while implementing Group 2, not assumed correct
+from this section's own first draft**: the claim above that the only
+other `.update()` sites are the offboarding-start route's `end_date`
+stamp and the reminders cron's `employee_terminated` write was
+INCOMPLETE — a fresh, exhaustive grep for every `.update(`/`.insert(`
+against `employee_records` across both apps (run again before writing
+migration 197, per this codebase's own "repository reality beats
+handover narrative" discipline) found `OrgChartClient.tsx`'s own drag-
+and-drop `persistChange()` (reassigning `line_manager` by dragging one
+person onto another) — a SECOND, genuinely unconditional edit surface
+on the SAME rows the Employee Records form edits. Guarding only one of
+the two would have left the race half-closed: a form save that wins
+its own conditional check could still be silently overwritten a moment
+later by an unguarded drag-and-drop write, or vice versa. Both are now
+guarded. The bulk CSV import inside the same `OrgChartClient.tsx` file
+(`ImportModal`'s per-row reconcile-with-CSV update) is deliberately
+LEFT unguarded — a documented, already-accepted limitation (Phase 21
+Group 4: "the by-name matching... left untouched as outside this
+phase's safe, minimal scope"), and a bulk "make this row match the
+CSV" reconciliation is a different act from two humans independently
+drafting changes to the same record, the actual risk Phase 1 §H names.
+Two leave-token rotation routes (a narrow, single-field security
+rotation, not a general HR edit) also touch this table and are left
+unguarded — any concurrent write still correctly bumps `row_version`,
+so the edit form's own lock still behaves safely against them, just
+possibly refusing slightly more often than strictly necessary, the
+accepted cost of a whole-row version lock every `row_version`
+implementation in this codebase already carries.
+
+Closed in Group 2 with the established 123/190 pattern: `row_version`
+forced by a BEFORE INSERT/UPDATE trigger pair regardless of caller
+input, a conditional `.eq('row_version', ...)` client update on BOTH
+guarded call sites, a clear message on a lost race.
 
 No other table surveyed (the 8 pages' backing tables above, all
 super-user-single-editor in practice) showed the same multi-editor

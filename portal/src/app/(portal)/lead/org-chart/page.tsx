@@ -56,7 +56,7 @@ export default async function OrgChartPage() {
 
   const { data: employees } = await supabase
     .from('employee_records')
-    .select('id, full_name, job_title, department, line_manager, status, employment_type')
+    .select('id, full_name, job_title, department, line_manager, status, employment_type, row_version')
     .eq('company_id', companyId)
     .neq('status', 'terminated')
     .order('full_name');
