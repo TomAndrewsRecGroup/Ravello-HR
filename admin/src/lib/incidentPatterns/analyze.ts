@@ -21,11 +21,9 @@
 
 /**
  * The date-window boundaries for a "current window" / "prior window"
- * comparison, both EXACTLY `days` calendar days long, adjacent, with
- * no gap and no overlap — the property the severity comparison's own
- * fairness depends on. Half-open ranges throughout (`>= start AND <
- * endExclusive`), so callers never need to reason about which end is
- * inclusive.
+ * comparison, adjacent, with no gap and no overlap. Half-open ranges
+ * throughout (`>= start AND < endExclusive`), so callers never need to
+ * reason about which end is inclusive.
  *
  * Found and fixed in Group 3's adversarial review: the first version
  * built the current window as `[start, today]` (INCLUSIVE both ends —
@@ -33,10 +31,24 @@
  * ends are inclusive) and the prior window as `[priorStart, start)`
  * (`days` days, half-open) — an off-by-one that made the "current"
  * side of the comparison one calendar day longer than the "prior"
- * side, every single time. `endExclusive` is `today + 2` rather than
- * `today + 1` to safely include an incident dated up to `current_date
- * + 1` — the exact leeway `hs_incidents`' own CHECK constraint allows
- * for timezone rounding at the point of reporting.
+ * side, every single time, with NO stated reason for the asymmetry.
+ *
+ * NOT literally equal-length after this fix, and deliberately so:
+ * `windowEndExclusive` is `today + 2` rather than `today + 1`, to
+ * safely include an incident dated up to `current_date + 1` — the
+ * exact leeway `hs_incidents`' own CHECK constraint allows for
+ * timezone rounding at the point of reporting. That makes the current
+ * window `days + 1` real dates against the prior window's exact
+ * `days` — one day wider, on the FUTURE end only. The prior window
+ * gets no matching pad because it is already safely in the past: no
+ * incident genuinely belonging to that period could ever be
+ * date-stamped ahead of it. So the asymmetry here is a one-day
+ * forward safety margin against undercounting today's own incidents,
+ * not the unexplained, unequal-for-no-reason gap the original bug
+ * was — a real, disclosed and load-bearing difference, not the
+ * "provably equal-length" property a caller might otherwise assume
+ * from the two windows' equal `days` parameter alone. See the test's
+ * own `currentLength`/`priorLength` cases for the exact numbers.
  */
 export interface IncidentPatternWindows {
   windowStart: string;
