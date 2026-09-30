@@ -11929,3 +11929,60 @@ long-documented sandbox-only missing-Supabase-env-var limitation). No
 migration in this group — entirely TypeScript over the already-live
 schema.
 
+### Group 7: RAMS suggestion provenance UI (C15.6)
+
+`jev_decisions` (098) has recorded EVERY Jev call in full since Phase
+9 of the original programme — state sent, questions asked, raw
+response, what was selected — but nothing RAMS-specific ever read one
+back. This group adds no new write: `askJev()` already inserts the row
+the moment a suggestion is asked for (Group 5); `jev_decisions_actor_
+read` (098's own RLS) already lets the person who asked read their own
+decision back. All that was missing was somewhere to look.
+
+- **`RamsHeaderEditor.tsx` keeps the `decision_id`** the suggest route
+  already returned and discarded before this group, and a new "What
+  informed this?" toggle (shown only once a real decision exists)
+  lazily fetches that one `jev_decisions` row — a plain client-side
+  `.select('state, selected, model, created_at').eq('id', decisionId)`
+  under the caller's own session, no new API route needed.
+- **`formatRamsSuggestionProvenance()`** (new, pure, tested) turns that
+  row into two lists: the SITE-DERIVED facts actually used (site name,
+  open hazard/lifting-plant/incident counts — Group 5's own new
+  signals) and each conditional section's probability, highest first.
+  **Deliberately excludes `title`/`project_name`/`scope_of_work`** —
+  the author just typed those on the same form a moment ago and can
+  already see them; echoing their own free text back as "provenance"
+  would be noise, not a new fact.
+- **Scoped to the same actor who asked, matching every other Jev
+  integration in this codebase** (`doc_type_suggest`, `hs_item_
+  classify`, …), none of which expose a cross-user "what informed a
+  past suggestion" panel either. Widening visibility to a DIFFERENT
+  viewer (e.g. a later approver) would need a new RLS policy or a
+  persisted reference column on `method_statements` — real future
+  scope, not silently built here, and more than every sibling Jev
+  feature already has.
+- A new suggestion clears any open provenance panel from the last one
+  — `decisionId`/`provenance` are reset at the start of
+  `suggestSections()`, so a stale panel can never be shown next to a
+  fresh set of suggested sections.
+- 6 new `ramsSuggestionProvenance.test.ts` cases (facts list excludes
+  the free-text fields, empty-state with no site context, a null state
+  handled without throwing, sections sorted highest-probability-first,
+  a non-conditional key never leaks through even if present in
+  `selected`, model/asked-at pass through unchanged). No component-
+  level test for the toggle/panel wiring, consistent with this
+  codebase's established convention.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal **862** — up from 856; admin unchanged at **1799**, since this
+group touched no admin file), all six CI guards pass with no
+regressions (70 shared-dupe pairs, unchanged — portal-only, no admin
+equivalent page exists for RAMS; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable; 102 blind-update
+chains, unchanged — this group writes nothing, only reads a row that
+already existed; every paged query's `.order()` present), both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation). No
+migration in this group — entirely TypeScript over the already-live
+schema.
+
