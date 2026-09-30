@@ -11230,9 +11230,142 @@ code change was the `ThresholdsForm.tsx` hardening, which added no new
 test), all six CI guards pass with no regressions, both production
 builds compile.
 
-**Phase 23 is complete. Phase 24 may begin** once this branch merges,
-per the Master Spec's own sequential-gate rule — its scope should be
-read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own gap
-ledger, the same "repository reality beats handover narrative"
-discipline every phase since Phase 20 has used.
+**Phase 23 is complete.**
+
+---
+
+## Core-OS 360 Completion Programme: Phase 24 — Consultant Command
+## Centre / Ledger completion (in progress)
+
+Scope read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own
+gap ledger (the "repository reality beats handover narrative"
+discipline every phase since Phase 20 has used), not assumed from any
+prior handover: gap-ledger rows **C1.9, C1.12 (the Phase-24 slice —
+shared with 28), C6.13, C6.14, C6.15**.
+
+### Group 1 (migration 190): row_version optimistic lock on
+### `consultancy_visit_reports` (the Phase-24 slice of C1.12)
+
+Checked live before writing anything, not assumed from the gap-
+ledger's own one-line description of C1.12: `consultancy_service_
+scopes` has NO update writer anywhere in either app (`POST /api/
+consultancy/clients/[id]/service-scope` is insert-only) — there is no
+concurrent-edit path to protect, so it is deliberately left untouched.
+`consultancy_visits`' status transitions already have a real guard
+(`consultancy_visits_lifecycle_guard()`, 185, Phase 22 Group 1): a
+double-click race is already refused, because the second call's
+`OLD.status` no longer matches an allowed source state — no
+`row_version` needed on top of a state machine that already rejects
+the race.
+
+The one genuine gap: `consultancy_visit_reports`' DRAFT SAVE
+(`ReportBuilderClient.tsx`'s `saveDraft()`, Phase 7 Group 5) is
+free-text narrative (summary/recommendations/next-visit-date) with no
+state machine protecting it at all — two consultants editing the same
+draft would have the second save silently overwrite the first's text
+with zero detection.
+
+- Same pattern this codebase already uses throughout (123's hazard/RA
+  guards, 124's RAMS/COSHH guards, 125's incident guard): `row_version`
+  forced to 1 on INSERT and to `OLD.row_version + 1` on every UPDATE
+  **regardless of whatever the caller sent** — the trigger's own
+  overwrite is what makes a client's `.eq('row_version', ...)`
+  conditional update an honest optimistic-lock check, not a value a
+  caller could game by sending a higher number.
+  `consultancy_visit_report_fill()`/`_touch()` (176) extended in
+  place, not duplicated.
+- `ReportBuilderClient.tsx`'s save is now `.eq('id', report.id)
+  .eq('row_version', report.row_version)`; a lost race (0 rows, no
+  error) surfaces as "Someone else changed this draft since you opened
+  it. Refresh to see their change." — the exact `RamsHeaderEditor.tsx`
+  precedent.
+- **Live probe** (`supabase/probes/190_visit_report_optimistic_
+  locking.sql`, rolled back, using two real live companies with a
+  fabricated, rolled-back `consultancy_client` relationship — no live
+  `organisation_relationships` rows exist at rest, confirmed before
+  writing the probe): 6 checks — row_version starts at 1; a normal save
+  succeeds and increments to 2; a stale-tab save using the ORIGINAL
+  row_version is a silent no-op (0 rows); the content is proven
+  unchanged; the trigger ignores a caller-sent `row_version = 999` and
+  still advances to exactly `OLD + 1`; `visit_id` stays immutable.
+  **All 6 passed.**
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1716 admin — 1709 + 7 new `visitReportOptimisticLockingSql.test.ts`;
+804 portal, unchanged — `ReportBuilderClient.tsx` has no component
+test, the established convention), all six CI guards pass with no
+regressions. Migration 190 applied live and verified.
+
+### Group 2: portal UI for consultancy owners to grant access (C1.9)
+
+Phase 1's own handover (§H) left this as "RPC ready, no UI":
+`grant_organisation_access()`/`revoke_organisation_access()` (117)
+have existed, fully guarded, since the very first Core-OS 360
+migration — this is the first caller either has ever had. **No new
+migration** — every write runs through the existing RPCs, under the
+caller's own session; the RPCs are their own security boundary
+(self-grant refused, only your own colleagues, only a role marked
+`consultancy_grantable`, only a client you hold a LIVE
+`consultancy_client` relationship with) — this page pre-filters the
+pickers to plausible choices as a convenience, the database decides,
+not the page.
+
+- **`/consultancy/access`** (new portal page, linked from the Command
+  Centre home): gated by `requirePortfolioSession()` (the same base
+  gate every `/consultancy/*` page uses) plus a live
+  `has_capability(home, 'consultancy.manage_access')` RPC check — a
+  portfolio user without that capability sees a plain "you do not
+  manage access grants" state rather than a redirect, since a
+  legitimate Command Centre user may simply lack this one capability.
+- **Reads under RLS, not the service role** — `profiles` (own
+  colleagues, `company_id = home`), `organisation_relationships`
+  (live `consultancy_client` rows — the party-read policy since 117
+  already scopes this to "my own home organisation's relationships"),
+  `access_roles` (`consultancy_grantable = true`), and
+  `user_organisation_access` (RLS's own "a consultancy manager sees
+  the grants of their own people" clause, 117, already answers this
+  with no new policy). Org/person NAMES for the picker lists AND for
+  already-existing grants (which may reference a colleague or
+  organisation outside the "currently offerable" sets — e.g. a stale
+  grant against a lapsed relationship) are resolved by a second,
+  by-id-list fetch — the standing "fetch by id list, never a chained
+  embed" rule this codebase has followed since the referral PATCH
+  route's own PGRST200 lesson.
+- **`ACCESS_SCOPES`** (`full | health_safety | hr | recruitment`,
+  `lib/consultancy/vocab.ts`, shared-dupe pair) is the first TS
+  vocabulary tuple pinned against a Phase 1 (117) CHECK rather than a
+  Phase 6+ one — the grant form is the first UI anywhere to let a
+  person actually pick a scope. Pinned by the new
+  `accessGrantSql.test.ts` (admin), following this codebase's own
+  established "each migration's own SQL-shape test pins ITS tuple"
+  discipline rather than one central vocab test file.
+- **`AccessGrantClient.tsx`**: a grant form (person / client / role /
+  scope / optional expiry) calling `grant_organisation_access` via
+  `supabase.rpc(...)`, and a Revoke button per current grant calling
+  `revoke_organisation_access`. Every RPC error surfaces verbatim —
+  no client-side pre-validation duplicating what the RPC already
+  checks, the same posture every H&S/Command-Centre workflow guard in
+  this codebase already takes.
+- **`accessGrantSql.test.ts`** pins, against the LIVE 117 migration
+  text: both RPCs' exact parameter names/order (what the client
+  component calls by name), the `GRANT EXECUTE .. TO authenticated`/
+  `REVOKE .. FROM PUBLIC, anon` pair, the self-grant refusal, the
+  `consultancy_grantable` role check, the live-relationship date-range
+  check, the `ACCESS_SCOPES` tuple against the CHECK, and the
+  colleague-scoped read policy — so a future edit to any of these
+  cannot silently break this page without a test failing first.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1724 admin — 1716 + 8 new; 807 portal — 804 + 3, the sweep tests
+picking up `/consultancy/access` automatically), all six CI guards
+pass with no regressions, both production builds compile (portal's
+one prerender failure is the long-documented sandbox-only missing-
+Supabase-env-var limitation, unrelated to this change — confirmed by
+"Compiled successfully" completing cleanly before that unrelated
+page's static-export step).
+
+**Later Phase 24 groups** (C6.13 site-level drilldown, C6.14
+Communication Timeline pagination/filtering, C6.15 visit reports as a
+Communication Timeline source, final regression/QA/handover) continue
+from here.
 

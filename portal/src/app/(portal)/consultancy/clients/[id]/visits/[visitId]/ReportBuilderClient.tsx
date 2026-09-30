@@ -51,10 +51,16 @@ export default function ReportBuilderClient({ visitId, clientOrganisationId, rep
     const supabase = createClient();
     const payload = { summary: summary.trim() || null, recommendations: recommendations.trim() || null, next_visit_recommended_date: nextVisitDate || null };
     if (report && report.status === 'draft') {
-      const res = await supabase.from('consultancy_visit_reports').update(payload, COUNT_EXACT).eq('id', report.id);
+      const res = await supabase.from('consultancy_visit_reports').update(payload, COUNT_EXACT)
+        .eq('id', report.id).eq('row_version', report.row_version);
       setSaving(false);
       const outcome = judgeWrite({ error: res.error, count: res.count });
-      if (!outcome.ok) { setError(outcome.message ?? 'Could not save the draft'); return; }
+      if (!outcome.ok) {
+        setError(res.count === 0 && !res.error
+          ? 'Someone else changed this draft since you opened it. Refresh to see their change.'
+          : outcome.message ?? 'Could not save the draft');
+        return;
+      }
     } else {
       const { error: err } = await supabase.from('consultancy_visit_reports').insert({ visit_id: visitId, ...payload });
       setSaving(false);
