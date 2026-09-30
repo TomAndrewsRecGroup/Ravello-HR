@@ -386,41 +386,131 @@ Exists in both apps: `admin/src/lib/frictionLens.ts` and `portal/src/lib/frictio
 
 ## Environment Variables
 
+**Consolidated 2026-09-30 (Core-OS 360 Phase 19, Group 1)** — the list
+below was rebuilt from every live `process.env.X` reference in both
+apps' source (a plain `grep`, not memory of earlier phase notes), the
+gap the Phase 17 Group 3 adversarial review flagged and deliberately
+left for this pass rather than fixing piecemeal. It replaces the old
+partial list, which stopped tracking new vars after Phase 29 and had
+drifted (it named `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, which no code
+in either app actually reads — Stripe Checkout here is server-side
+only, via `stripe.checkout.sessions.create()`, so no publishable key is
+ever needed client-side; removed rather than carried forward as a
+phantom requirement).
+
 ```
-# Both apps
+# Both apps — Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_URL=                  # server-only fallback some routes check
+                                # ahead of NEXT_PUBLIC_SUPABASE_URL
 
-# Admin only
-SUPABASE_SERVICE_ROLE_KEY=    # for auth admin operations
+# Admin only — Supabase
+SUPABASE_SERVICE_ROLE_KEY=     # auth admin operations, service-role writes
 
-# Portal only: IvyLens Friction Lens
-IVYLENS_API_URL=              # Phase 21: e.g. https://ivylens.yourdomain.com
+# Both apps — session signing (security-critical: 088/093's cached-role
+# cookie and the portal's own session cookie are both HMAC-signed with
+# these; unset means every request re-checks via RPC instead of trusting
+# a signed cookie — slower, never open, per the "A failed role check is
+# not a 'no'" rule elsewhere in this file)
+ADMIN_SESSION_SECRET=          # admin only
+PORTAL_SESSION_SECRET=         # portal only
 
-# Portal only: Manatal ATS integration
-MANATAL_API_KEY=              # Phase 29: set in Vercel env vars
-MANATAL_API_URL=              # Phase 29: defaults to https://api.manatal.com/open/v1
+# Both apps — cross-app links (each app's own adminUrl.ts/portalUrl.ts
+# falls back to a hardcoded production URL if unset)
+NEXT_PUBLIC_ADMIN_URL=
+NEXT_PUBLIC_PORTAL_URL=
 
-# Portal only: Stripe (e-learning payments)
-STRIPE_SECRET_KEY=            # Phase 18: e-learning purchases
-STRIPE_WEBHOOK_SECRET=        # Phase 18
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=  # Phase 18
+# Both apps — outbound email (Resend)
+RESEND_API_KEY=
+EMAIL_FROM=                    # defaults to noreply@portal.thepeoplesystem.co.uk
+EMAIL_REPLY_TO=                # defaults to hello@thepeoplesystem.co.uk
+EMAIL_BCC_INTERNAL=            # comma-separated; blank sends no BCC
+
+# Admin only — cron auth (every /api/cron/* route checks this; unset
+# CRON_SECRET was the untouched blocker in the 2026-09-04 cron-307 outage
+# above — this is the SECOND, always-checked gate, not the same bug)
+CRON_SECRET=
+
+# Admin only — automation kill switch (Phase 43's "everything has
+# consequences" sweep). Unset or any value besides '1'/'true' runs normally.
+AUTOMATION_DISABLED=
+
+# Both apps: Manatal ATS integration (Phase 29) — portal reads the
+# pipeline (its own proxy routes), admin publishes/matches/hydrates
+MANATAL_API_KEY=
+MANATAL_API_URL=                    # defaults to https://api.manatal.com/open/v1
+MANATAL_HYDRATION_BUDGET_MS=        # admin only; defaults to 20000
+MANATAL_ORG_INDUSTRY_FIELD=         # admin only; defaults to 'industry'
+MANATAL_ORG_INDUSTRY=               # admin only; defaults to 'TPS' — see
+                                     # "Deliberately NOT renamed" in the
+                                     # rebrand section: a Manatal lookup
+                                     # key, not a display label
+
+# Admin + portal: IvyLens Friction Lens / referral scoring
+IVYLENS_API_KEY=               # needed on BOTH apps since the referral
+                                # pipeline moved scanning into admin (Phase 41)
+IVYLENS_API_URL=
+
+# Admin + portal: Jev (TypeSafe AI) — every caller no-ops without a key
+JEV_API_KEY=
+JEV_API_URL=                    # defaults to https://api.typesafe.ai/v1/systemone
+JEV_MODEL=                      # pin one in production
+JEV_DISABLED=                   # any value disables every Jev call
 
 # Admin only: Tavily regulatory research (Core-OS 360 Phase 17)
-TAVILY_API_KEY=                # set in Vercel env vars — without it every
-                                # "Run Tavily search" call on the Legal
-                                # Register page returns "not configured"
-TAVILY_API_URL=                # defaults to https://api.tavily.com/search
+TAVILY_API_KEY=                 # without it every "Run Tavily search" call
+                                 # on the Legal Register page returns "not configured"
+TAVILY_API_URL=                 # defaults to https://api.tavily.com/search
+
+# Both apps — Stripe, but for TWO SEPARATE integrations, each with its
+# own Stripe key/webhook secret configured on that app's own Vercel
+# project: admin's is client retainer/invoice billing
+# (lib/stripe.ts, api/stripe/webhook — see the Tech Stack section
+# above); portal's is e-learning checkout (Phase 18, the phase-
+# numbering kind, not Core-OS 360 Phase 18 — see the numbering note
+# below). Same variable NAMES, deliberately unrelated values.
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+LEARNING_ACCESS_DAYS=           # portal only; defaults to 7; access-window
+                                 # length after an e-learning purchase
+
+# Admin only: referral pipeline branding/sending (all optional, all
+# no-ops until set — see the "Referral pipeline" section for the
+# 403-on-unverified-domain reasoning)
+REFERRAL_EMAIL_FROM=
+REFERRAL_EMAIL_REPLY_TO=
+ARG_EMAIL_LOGO_URL=
+ARG_WEBSITE_URL=
+
+# Both apps: Athletes To Industry welcome-email logo (each app sends its
+# own A2I email — admin's manual add/resend, portal's live public
+# signup route — see "Athletes To Industry emails moved to their own
+# identity" above)
+A2I_EMAIL_LOGO_URL=
+
+# Portal only
+A2I_PARTNER_NOTIFY_EMAIL=       # defaults to tom@andrews-recruitment.com
+
+# Portal only: debug-session route guard. In production this route 404s
+# unless this is exactly 'true' — never set it in a real deployment.
+ENABLE_DEBUG_SESSION=
+
+# Set automatically by Vercel, never by hand
+VERCEL_ENV=
+VERCEL_GIT_COMMIT_SHA=
+VERCEL_GIT_COMMIT_MESSAGE=
+NODE_ENV=
 ```
 
-This list is not exhaustive for every phase after 29 — several later
-phases' own env vars (`JEV_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`,
-the referral pipeline's `REFERRAL_EMAIL_FROM` and friends) are
-documented only in their own phase sections further down this file,
-not backfilled here. Noted as a real, pre-existing gap by the Phase 17
-Group 3 adversarial review rather than silently left — a genuine
-audit-and-consolidate pass is its own piece of work, in scope for
-Phase 19's platform-hardening sweep, not invented here.
+**A phase number collides on purpose.** "Phase 18" above (e-learning)
+is this repo's ORIGINAL sequential phase numbering (1-43-ish, the early
+build phases at the top of this file); "Phase 18" everywhere else in
+this document (Core 360 Assurance) is the SEPARATE Core-OS 360
+initiative's own Phase 6-19 numbering, restarted from a different base.
+Both numbering schemes coexist in this file's history; check the
+section heading's own wording ("Core-OS 360 Phase N" vs. a bare
+"Phase N") to tell them apart, never the number alone.
 
 ---
 
@@ -9795,4 +9885,77 @@ table, a trigger, an RLS policy) could have drifted.
 
 **Phase 18 is complete. Phase 19 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
+
+---
+
+## Core-OS 360 Phase 19: Full Platform Hardening, Regression, Security,
+## Accessibility, Performance & Production Readiness (in progress,
+## from 2026-09-30)
+
+The final phase of the Phase 6-19 initiative. No detailed operator
+brief exists in the repo for this phase either (the same situation
+Phases 8-18 were in) — unlike those, this phase is not a new module: its
+own name is the scope statement. Scope: `docs/CORE_OS_360_PHASE19_PLAN.md`,
+derived from an Explore-agent survey across six angles (accessibility
+regressions in newer components, rate-limiting coverage gaps, row-cap/
+pagination discipline gaps, orphaned/dead code, stray console logging,
+unresolved TODO/FIXME markers) before any group's own work began, so
+the group boundaries below are grounded in real, verified findings
+rather than the phase name alone.
+
+### Group 1: Environment Variable documentation consolidation
+
+CLAUDE.md's own "Environment Variables" section was flagged as stale by
+the Phase 17 Group 3 adversarial review ("this list is not exhaustive
+for every phase after 29... a genuine audit-and-consolidate pass is its
+own piece of work, in scope for Phase 19") and deliberately left rather
+than fixed then. This closes it.
+
+- **Rebuilt from a plain `grep` of every live `process.env.X` reference
+  in both apps, not from memory of earlier phase notes.** 33 distinct
+  variables found; the old list named 10 (many post-29 vars — `JEV_*`,
+  `RESEND_API_KEY`, `CRON_SECRET`, `ADMIN_SESSION_SECRET`,
+  `PORTAL_SESSION_SECRET`, `AUTOMATION_DISABLED`, the referral pipeline's
+  branding vars — existed only in their own phase's narrative section
+  further down the file, never surfaced here where an operator setting
+  up a fresh deployment would look first).
+- **A genuinely dead documented var, found and removed rather than
+  carried forward.** `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` was in the old
+  list but is referenced by NO code in either app — Stripe Checkout
+  here is entirely server-side (`stripe.checkout.sessions.create()`),
+  so no publishable key is ever read client-side. Documenting a var
+  nothing reads is as real a drift as omitting one that something does.
+- **A real ambiguity resolved by reading the actual call sites, not
+  assumed from the variable name alone**: `STRIPE_SECRET_KEY`/
+  `STRIPE_WEBHOOK_SECRET` are used by BOTH apps, but for two entirely
+  separate Stripe integrations with their own Vercel-configured values
+  — admin's client retainer/invoice billing (`lib/stripe.ts`,
+  `api/stripe/webhook`) and portal's e-learning checkout — same
+  variable names, deliberately unrelated values, documented as such so
+  nobody assumes setting one app's key also covers the other.
+- **Every var's actual app scope was verified by `grep`, not guessed
+  from which section of this file first mentioned it** — this caught
+  `MANATAL_API_KEY`/`MANATAL_API_URL` as genuinely BOTH-apps (portal
+  reads the ATS pipeline; admin publishes/matches/hydrates) where the
+  old list had filed them portal-only, and `A2I_EMAIL_LOGO_URL` as
+  genuinely both-apps (each app sends its own Athletes To Industry
+  welcome email) where a first draft of this section had it filed
+  portal-only alongside its sibling referral-branding vars.
+- **A phase-numbering collision flagged explicitly, not left for a
+  future reader to trip over**: "Phase 18" in the Stripe section above
+  is this repo's ORIGINAL sequential numbering (e-learning, an early
+  build phase); "Phase 18" everywhere else in this document is the
+  separate Core-OS 360 initiative's own restarted numbering (Core 360
+  Assurance). Both schemes coexist in this file's history; the section
+  heading's own wording is what tells them apart, never the bare number.
+
+No code changed in this group — it is a documentation-accuracy pass
+only, mirroring the discipline the Tech Stack section's own 2026-09-25
+"not yet integrated... corrected during a documentation-accuracy pass"
+entry already established for exactly this class of drift.
+
+Verified: `tsc --noEmit` clean both apps (no source file touched), full
+`vitest run` unchanged (1620 admin / 755 portal), all five CI guards
+pass unchanged, both production builds compile (unaffected — no source
+file touched).
 
