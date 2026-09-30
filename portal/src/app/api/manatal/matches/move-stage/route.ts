@@ -4,6 +4,7 @@ import { getManatalMatches, getManatalStages, updateMatchStage, isManatalConfigu
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { emitEvent } from '@/lib/events/emit';
 import { effectiveCompanyId } from '@/lib/auth/activeOrganisation';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 // POST /api/manatal/matches/move-stage
 // Moves a candidate to a new pipeline stage in Manatal and emits a
@@ -19,6 +20,9 @@ export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const rl = limiters.vendor.check(getUserRateLimitKey(req, user.id));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   // The ACTIVE organisation, not the home one — see activeOrganisation.ts.
   const [activeCompanyId, { data: profile }] = await Promise.all([

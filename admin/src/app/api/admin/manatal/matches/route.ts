@@ -62,6 +62,7 @@ import {
   manatalRefId,
 } from '@/lib/manatal';
 import { buildPipelineRows, type NamedCandidate } from '@/lib/manatalPipeline';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -129,6 +130,9 @@ async function hydrateNames(ids: string[], deadline: number): Promise<Map<string
 export async function GET(req: NextRequest) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  const rl = limiters.vendor.check(getUserRateLimitKey(req, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   const requisitionId = req.nextUrl.searchParams.get('requisition_id') ?? '';
   if (!UUID_RE.test(requisitionId)) {

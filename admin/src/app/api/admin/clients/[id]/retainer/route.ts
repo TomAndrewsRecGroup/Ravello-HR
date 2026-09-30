@@ -12,6 +12,7 @@ import {
   updateSubscriptionPrice,
 } from '@/lib/stripe';
 import { sendEmail, billingSetupEmail } from '@/lib/email';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,6 +43,9 @@ export async function PATCH(request: NextRequest, props: Ctx) {
   const params = await props.params;
   const auth = await requireStaff();
   if (!auth.ok) return auth.response;
+
+  const rl = limiters.vendor.check(getUserRateLimitKey(request, auth.userId));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   if (!UUID_RE.test(params.id)) {
     return NextResponse.json({ error: 'Invalid client id' }, { status: 400 });

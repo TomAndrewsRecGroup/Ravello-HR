@@ -9959,3 +9959,108 @@ Verified: `tsc --noEmit` clean both apps (no source file touched), full
 pass unchanged, both production builds compile (unaffected — no source
 file touched).
 
+### Group 2: security hardening — rate-limit gaps + a row-cap gap
+
+Grounded in a six-angle Explore-agent survey run before this group
+began (see the plan doc): the agent's report is the evidence base for
+what follows, not a re-derivation of it.
+
+- **Rate limiting: eight authenticated routes that call a metered
+  vendor or send email had NO limiter at all**, inconsistent with
+  sibling routes in the same feature areas that already do — the exact
+  risk `rateLimit.ts`'s own header comment names ("An authenticated
+  user, or a loop in a broken client, could exhaust a metered quota or
+  spend money with no ceiling"). Each was given the same bucket a
+  comparable existing route already uses, per the established
+  `limiters.vendor`/`.email` precedent survey (`manatal-sync`,
+  `requisitions/[id]/analyze` etc. → `vendor`; `service-requests/[id]/
+  respond`, `broadcast` etc. → `email`):
+  - `admin/src/app/api/admin/clients/route.ts` (POST) — creates a
+    Stripe customer/price/subscription AND a Manatal organisation on
+    every call. `limiters.vendor`.
+  - `admin/src/app/api/admin/clients/[id]/retainer/route.ts` (PATCH) —
+    same Stripe-mutation shape as the create route above, previously
+    completely unguarded. `limiters.vendor`.
+  - `admin/src/app/api/admin/athletes/route.ts` (POST) — sends a
+    scheduled welcome email on every athlete creation; its own sibling
+    resend route already had a limiter, this one didn't. `limiters.email`.
+  - `admin/src/app/api/admin/manatal/matches/route.ts` (GET) — hits
+    Manatal in a loop hydrating up to hundreds of candidate names (see
+    the route's own `NAME_FALLBACK_LIMIT`/`NAME_CONCURRENCY` comments).
+    `limiters.vendor`.
+  - `admin/src/app/api/manatal/diag/route.ts` — its `?test=1` path
+    fires a REAL, live `POST /organizations/` against Manatal on every
+    call (the route's own comment: "Use sparingly — it creates a real
+    org in Manatal that you'll want to delete manually"). Only that
+    branch is limited (`limiters.vendor`); the plain status-check
+    branch has no vendor cost and stays unlimited.
+  - `portal/src/app/api/athletes/route.ts` (POST) — the portal's own
+    equivalent of the admin athletes route, same gap, same fix
+    (`limiters.email`).
+  - `portal/src/app/api/manatal/matches/route.ts` (GET) and
+    `.../move-stage/route.ts` (POST) — authenticated Manatal reads/
+    writes with no limiter at all. `limiters.vendor` on both.
+  - `portal/.../consultancy/clients/[id]/visits/[visitId]/report/
+    issue/route.ts` (POST) — sends the client an email on every issue;
+    its existing claim-first UPDATE (Phase 7 Group 8) already prevents
+    a DOUBLE-send for the SAME report, but nothing capped a caller from
+    issuing many DIFFERENT reports in a burst. `limiters.email`, keyed
+    on `portfolio.session.userId` (the same session the route's own
+    claim already authenticates against).
+  - `admin/src/app/api/admin/manatal/matches/move-stage/route.ts` was
+    already correctly limited — checked, not assumed, before deciding
+    it needed nothing.
+- **Row-cap: two `hs_links` reads in `complianceTwin/loadSnapshot.ts`
+  had no `.range()`/`.limit()` at all**, unlike every other query in
+  the same file (all `readAllPages()`) — exactly the row-cap guard's
+  own documented blind spot ("an unbounded `.in()`/`.eq()` that could
+  grow past 1000 rows" is invisible to a script that only catches a
+  literal `.limit(N>1000)`). `hs_links` accumulates continuously per
+  company across every H&S/governance/consultancy subsystem that links
+  through it, so a large client's legal-obligation linkage could
+  silently truncate, understating risk-graph coverage in both the
+  Digital Twin and, downstream, the Board Assurance report generator
+  that reads the identical snapshot. Fixed with `readAllPages()`,
+  matching the file's own established pattern exactly — no new query
+  shape invented.
+- **Accessibility: two icon-only close buttons in
+  `InviteUserPanel.tsx` had no `aria-label`**, the one inconsistent
+  pair against ~20+ other close/dismiss controls surveyed across both
+  apps that all correctly carry one. Fixed (`"Dismiss"`/`"Close"`) to
+  match the established convention. The wider "disabled Link with
+  `pointerEvents: none`" anti-pattern the F8/F9 sweep exists to catch
+  was checked repo-wide and NOT reintroduced anywhere in Phases 6-18.
+- **Checked and found clean, not carried into scope here**:
+  console.log/console.error usage (all intentional error-path or
+  structured cron-observability logging, nothing leaks a secret value,
+  only presence/length); every TODO/FIXME/XXX marker (zero matches —
+  this codebase's convention of plan-doc-referenced debt comments holds
+  through Phase 18).
+- **Two genuinely orphaned API routes found, deliberately NOT
+  deleted in this pass** — a documented scope decision, not an
+  oversight: `admin/src/app/api/admin/manatal/matches/route.ts` +
+  its `move-stage` sibling (a fully-built applicant-pipeline viewer
+  with its own incident-driven engineering history, dated 2026-09-02,
+  but no caller anywhere in `admin/src` today — `RequisitionPanel.tsx`
+  only calls `manatal-publish`) and
+  `portal/src/app/api/consultancy/attention-queue/route.ts` (superseded
+  when its own page was converted to a server component calling
+  `loadAttentionQueue()` directly, per the route's own now-stale
+  comment). Both were still given their rate-limit fix above (defence
+  in depth costs nothing and the admin pair is reachable by direct
+  URL/curl regardless of UI wiring) rather than left both orphaned AND
+  unguarded. Deleting live, deployed route code on the strength of a
+  static-analysis survey alone — with no caller found in-app, but no
+  certainty an external tool, bookmark or manual workflow doesn't hit
+  it directly — was judged the wrong call to make unilaterally in a
+  hardening pass; flagged here for a human decision instead.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` unchanged
+(1620 admin / 755 portal — this group added no new test, since every
+fix is either a rate-limit call, a pagination helper swap, or an
+`aria-label` string, none of which changed any function's observable
+behaviour under test), all five CI guards pass (60 shared-dupe pairs,
+row-cap clean, 44 unvalidated routes unchanged, 43 static admin routes
+all reachable, 102 blind-update chains unchanged), both production
+builds compile.
+

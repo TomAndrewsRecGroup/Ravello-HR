@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/auth/requireStaff';
 import { isManatalConfigured, lastManatalError, createManatalOrganization } from '@/lib/manatal';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,14 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const doTest = url.searchParams.get('test') === '1';
+
+  // Only the live-write path (?test=1) needs a ceiling — it creates a
+  // real org in Manatal per call. The plain status check has no vendor
+  // cost and stays unlimited.
+  if (doTest) {
+    const rl = limiters.vendor.check(getUserRateLimitKey(req, auth.userId));
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt);
+  }
 
   const base = {
     ok:                  true,

@@ -98,7 +98,7 @@ export default function InviteUserPanel({ companyId }: Props) {
         <button onClick={() => { setSuccess(false); setOpen(true); }} className="text-xs font-medium" style={{ color: 'var(--emerald)' }}>
           Invite another
         </button>
-        <button onClick={reset} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /></button>
+        <button onClick={reset} aria-label="Dismiss" className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /></button>
       </div>
     );
   }
@@ -112,7 +112,7 @@ export default function InviteUserPanel({ companyId }: Props) {
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>
           Invite New User
         </p>
-        <button onClick={reset} className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /></button>
+        <button onClick={reset} aria-label="Close" className="btn-ghost btn-sm flex items-center gap-1"><X size={12} /></button>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">

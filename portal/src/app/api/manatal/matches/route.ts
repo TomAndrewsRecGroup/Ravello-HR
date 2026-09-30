@@ -6,6 +6,7 @@ import {
   getManatalStages,
   isManatalConfigured,
 } from '@/lib/manatal';
+import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 // GET /api/manatal/matches
 // Returns all candidate-job matches from Manatal for the authenticated client,
@@ -15,7 +16,7 @@ import {
 // cached for 60s by manatalFetch's revalidate config.
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!isManatalConfigured()) {
     return NextResponse.json({ matches: [], stages: [], configured: false });
   }
@@ -23,6 +24,9 @@ export async function GET(_req: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const rl = limiters.vendor.check(getUserRateLimitKey(req, user.id));
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   // The ACTIVE organisation, not the home one — see activeOrganisation.ts.
   const companyId = await effectiveCompanyId(supabase);
