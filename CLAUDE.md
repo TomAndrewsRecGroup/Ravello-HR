@@ -11203,3 +11203,36 @@ sandbox-only missing-Supabase-env-var limitation, unrelated to this
 change). Migrations 188 and 189 applied live and verified (13 live
 probe checks total across both, all passing).
 
+### Group 7: regression, adversarial QA, handover (gate: PASS)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE23_HANDOVER.md`.
+
+No Critical, High or Medium defect found in a dedicated adversarial
+pass across all six groups. One hardening applied:
+`ThresholdsForm.tsx`'s number parsing now explicitly checks
+`raw === '' || Number.isNaN(n)` rather than relying on
+`JSON.stringify(NaN)` happening to serialise to `null` — the original
+behaviour was already safe, just implicit rather than explicit.
+Confirmed clean: `ConnectionsPanel.tsx`'s "Add a connection" cannot
+create a cross-organisation link (`hs_links_check()`, 122, enforces
+this at the trigger level regardless of what the form sends);
+`resolveEntityLabels()` relies entirely on each target table's own
+RLS with no filter of its own, and can only ever be asked to resolve
+an id that arrived via an already-same-organisation `hs_links` row;
+migration 187's consultancy policies are proven SELECT-only against a
+real INSERT attempt, not merely named that way; migrations 188/189
+are proven staff-only against a genuine non-staff session, not merely
+a policy definition read back.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1709 admin / 804 portal, unchanged from Groups 4-6 — this pass's only
+code change was the `ThresholdsForm.tsx` hardening, which added no new
+test), all six CI guards pass with no regressions, both production
+builds compile.
+
+**Phase 23 is complete. Phase 24 may begin** once this branch merges,
+per the Master Spec's own sequential-gate rule — its scope should be
+read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own gap
+ledger, the same "repository reality beats handover narrative"
+discipline every phase since Phase 20 has used.
+

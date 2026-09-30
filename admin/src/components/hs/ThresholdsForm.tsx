@@ -59,7 +59,11 @@ export default function ThresholdsForm({ companyId, existing }: {
     setBusy(true);
     const { data: auth } = await createClient().auth.getUser();
     const payload: Record<string, unknown> = { company_id: companyId, updated_by: auth.user?.id ?? null };
-    for (const f of FIELDS) payload[f.key] = values[f.key].trim() === '' ? null : Number(values[f.key]);
+    for (const f of FIELDS) {
+      const raw = values[f.key].trim();
+      const n = Number(raw);
+      payload[f.key] = raw === '' || Number.isNaN(n) ? null : n;
+    }
     const { error } = await createClient().from('compliance_twin_thresholds').upsert(payload, { onConflict: 'company_id' });
     setBusy(false);
     if (error) { toast(error.message, 'error'); return; }
