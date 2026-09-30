@@ -30,6 +30,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'environmental-complaints', label: 'Complaints' },
   { seg: 'kpis',       label: 'KPIs' },
   { seg: 'digital-twin', label: 'Digital Twin' },
+  { seg: 'board-assurance', label: 'Board Assurance' },
   { seg: 'timeline',   label: 'Timeline' },
 ];
 
