@@ -621,8 +621,8 @@ export interface ComplianceEvaluation {
   created_at: string;
 }
 
-// Inert Tavily-research foundation — no live API call anywhere in this
-// codebase yet; a later group wires one.
+// Core-OS 360 Phase 17: the real Tavily call is wired in
+// lib/tavily/client.ts / api/admin/legal-register/[id]/research.
 export interface LegalRequirementResearchNote {
   id: string;
   legal_requirement_id: string;

@@ -1,17 +1,20 @@
 'use client';
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Scale, Megaphone } from 'lucide-react';
+import { Plus, Scale, Megaphone, Search, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { useToast } from '@/components/modules/Toast';
 import { LEGAL_REQUIREMENT_CATEGORIES, LEGAL_REQUIREMENT_CATEGORY_LABELS, type LegalRequirementCategory } from '@/lib/hs/vocab';
-import type { LegalRequirement } from '@/lib/hs/types';
+import type { LegalRequirement, LegalRequirementResearchNote } from '@/lib/hs/types';
 
 interface Props {
   requirements: LegalRequirement[];
   loadError: string | null;
 }
+
+const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 
 // Staff-only reference catalogue — a title, category, jurisdiction and
 // a short internal summary staff write themselves, never the actual
@@ -27,6 +30,70 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
   const [jurisdiction, setJurisdiction] = useState('UK');
   const [summary, setSummary] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
+
+  // Core-OS 360 Phase 17: Regulatory Intelligence → Action. A research
+  // panel per requirement — notes are loaded lazily on first expand
+  // (a direct client-side read; this table is staff FOR ALL RLS, the
+  // same posture every other staff-authored catalogue read here
+  // already uses). Running a search calls the ONE route that ever
+  // talks to Tavily; nothing here ever writes an applicability or
+  // compliance verdict — "Mark reviewed" only ever records what a
+  // HUMAN decided, in action_taken, a plain text field.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [notesById, setNotesById] = useState<Record<string, LegalRequirementResearchNote[]>>({});
+  const [loadingNotes, setLoadingNotes] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState<string | null>(null);
+  const [reviewDrafts, setReviewDrafts] = useState<Record<string, string>>({});
+  const [savingReview, setSavingReview] = useState<string | null>(null);
+
+  async function toggleExpand(requirementId: string) {
+    if (expandedId === requirementId) { setExpandedId(null); return; }
+    setExpandedId(requirementId);
+    setSearchQuery('');
+    if (!notesById[requirementId]) {
+      setLoadingNotes(requirementId);
+      const { data, error } = await createClient().from('legal_requirement_research_notes')
+        .select('id, legal_requirement_id, source, query_used, raw_result_summary, reviewed_by, reviewed_at, action_taken, created_by, created_at')
+        .eq('legal_requirement_id', requirementId).order('created_at', { ascending: false }).limit(50);
+      setLoadingNotes(null);
+      if (error) { toast(error.message, 'error'); return; }
+      setNotesById(prev => ({ ...prev, [requirementId]: (data ?? []) as LegalRequirementResearchNote[] }));
+    }
+  }
+
+  async function runSearch(requirementId: string) {
+    setSearching(requirementId);
+    const res = await fetch(`/api/admin/legal-register/${requirementId}/research`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: searchQuery.trim() || undefined }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setSearching(null);
+    if (!res.ok) { toast(body.error ?? 'The search could not be completed.', 'error'); return; }
+    setNotesById(prev => ({ ...prev, [requirementId]: [body.note as LegalRequirementResearchNote, ...(prev[requirementId] ?? [])] }));
+    setSearchQuery('');
+    toast('Search recorded', 'success');
+  }
+
+  async function markReviewed(note: LegalRequirementResearchNote) {
+    setSavingReview(note.id);
+    const sb = createClient();
+    const { data: { user } } = await sb.auth.getUser();
+    const res = await sb.from('legal_requirement_research_notes').update({
+      reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(),
+      action_taken: (reviewDrafts[note.id] ?? '').trim() || null,
+    }, COUNT_EXACT).eq('id', note.id);
+    setSavingReview(null);
+    const out = judgeWrite({ error: res.error, count: res.count }, 'The research note');
+    if (!out.ok) { toast(out.message!, 'error'); return; }
+    setNotesById(prev => ({
+      ...prev,
+      [note.legal_requirement_id]: (prev[note.legal_requirement_id] ?? []).map(n =>
+        n.id === note.id ? { ...n, reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString(), action_taken: (reviewDrafts[note.id] ?? '').trim() || null } : n),
+    }));
+    toast('Marked reviewed', 'success');
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,7 +153,8 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
             <thead><tr><th>Title</th><th>Category</th><th>Jurisdiction</th><th>Source</th><th></th></tr></thead>
             <tbody>
               {requirements.map(r => (
-                <tr key={r.id}>
+                <Fragment key={r.id}>
+                <tr>
                   <td>
                     <strong>{r.title}</strong>
                     {r.summary && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{r.summary}</p>}
@@ -99,19 +167,85 @@ export default function LegalRequirementsCatalogueClient({ requirements, loadErr
                       : <span style={{ color: 'var(--ink-faint)' }}>—</span>}
                   </td>
                   <td>
-                    {/* Prefills the Broadcast compose form and pre-selects every
-                        client whose own register already holds this requirement
-                        as 'applicable' — the same reviewed-before-sending confirm
-                        modal as any other broadcast; nothing sends automatically. */}
-                    <Link
-                      href={`/broadcast?legal=${r.id}`}
-                      className="btn-ghost btn-sm flex items-center gap-1.5 whitespace-nowrap"
-                      title="Broadcast an update about this requirement to affected clients"
-                    >
-                      <Megaphone size={13} /> Broadcast
-                    </Link>
+                    <div className="flex gap-1.5 justify-end">
+                      <button type="button" className="btn-ghost btn-sm flex items-center gap-1.5 whitespace-nowrap" onClick={() => toggleExpand(r.id)}>
+                        <Search size={13} /> Research {expandedId === r.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      </button>
+                      {/* Prefills the Broadcast compose form and pre-selects every
+                          client whose own register already holds this requirement
+                          as 'applicable' — the same reviewed-before-sending confirm
+                          modal as any other broadcast; nothing sends automatically. */}
+                      <Link
+                        href={`/broadcast?legal=${r.id}`}
+                        className="btn-ghost btn-sm flex items-center gap-1.5 whitespace-nowrap"
+                        title="Broadcast an update about this requirement to affected clients"
+                      >
+                        <Megaphone size={13} /> Broadcast
+                      </Link>
+                    </div>
                   </td>
                 </tr>
+                {expandedId === r.id && (
+                  <tr>
+                    <td colSpan={5}>
+                      {/* Core-OS 360 Phase 17. Tavily is a plain web search — it
+                          decides nothing here. raw_result_summary is Tavily's own
+                          verbatim titles/urls/content, never an AI paraphrase; only
+                          a human, via "Mark reviewed", records what (if anything)
+                          was actually done about it. */}
+                      <div className="rounded-md p-4 space-y-3" style={{ background: 'var(--surface-soft)' }}>
+                        <div className="flex flex-wrap items-end gap-2">
+                          <label className="block flex-1 min-w-[200px]">
+                            <span className="label">Search query (optional — defaults to this requirement&apos;s title + jurisdiction)</span>
+                            <input className="input" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} maxLength={500}
+                              placeholder={`${r.title} ${r.jurisdiction} recent changes updates`} />
+                          </label>
+                          <button type="button" className="btn-cta btn-sm flex items-center gap-1.5" disabled={searching === r.id} onClick={() => runSearch(r.id)}>
+                            {searching === r.id ? <Loader2 size={14} className="animate-spin" /> : <Search size={13} />} Run Tavily search
+                          </button>
+                        </div>
+                        {loadingNotes === r.id ? (
+                          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>Loading past research…</p>
+                        ) : (notesById[r.id]?.length ?? 0) === 0 ? (
+                          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No research recorded for this requirement yet.</p>
+                        ) : (
+                          <ul className="space-y-2">
+                            {(notesById[r.id] ?? []).map(note => (
+                              <li key={note.id} className="card p-3 space-y-2">
+                                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
+                                  <span className="badge">{note.source}</span>
+                                  {note.query_used && <span>&ldquo;{note.query_used}&rdquo;</span>}
+                                  <span className="ml-auto">{fmt(note.created_at)}</span>
+                                </div>
+                                {note.raw_result_summary && (
+                                  <pre className="text-xs whitespace-pre-wrap" style={{ color: 'var(--ink-soft)', fontFamily: 'inherit' }}>{note.raw_result_summary}</pre>
+                                )}
+                                {note.reviewed_at ? (
+                                  <p className="text-xs" style={{ color: 'var(--teal)' }}>
+                                    Reviewed {fmt(note.reviewed_at)}{note.action_taken ? ` — ${note.action_taken}` : ' — no action needed'}
+                                  </p>
+                                ) : (
+                                  <div className="flex flex-wrap items-end gap-2">
+                                    <label className="block flex-1 min-w-[200px]">
+                                      <span className="label">Action taken (optional)</span>
+                                      <input className="input" maxLength={2000} value={reviewDrafts[note.id] ?? ''}
+                                        onChange={e => setReviewDrafts(p => ({ ...p, [note.id]: e.target.value }))}
+                                        placeholder="e.g. No material change found / Broadcasted an update to affected clients" />
+                                    </label>
+                                    <button type="button" className="btn-secondary btn-sm" disabled={savingReview === note.id} onClick={() => markReviewed(note)}>
+                                      {savingReview === note.id ? 'Saving…' : 'Mark reviewed'}
+                                    </button>
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

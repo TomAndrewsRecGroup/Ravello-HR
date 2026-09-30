@@ -9467,6 +9467,62 @@ API route; 102 blind-update chains, unchanged), admin production build
 compiles. No migration in this group — it wires the real call into
 migration 159's already-reserved schema.
 
+### Group 2: Regulatory Intelligence admin UI
+
+- **`LegalRequirementsCatalogueClient.tsx`** (the staff-only cross-
+  client catalogue page) gains a per-requirement, lazily-loaded
+  "Research" panel — expanding it reads
+  `legal_requirement_research_notes` directly (this table is staff
+  `FOR ALL` RLS, the same posture every other staff-authored catalogue
+  read in this codebase already uses; no dedicated GET route needed).
+  A "Run Tavily search" button calls the ONE route that ever talks to
+  Tavily (Group 1), with an optional query override defaulting to the
+  requirement's own title + jurisdiction placeholder text; the returned
+  note is prepended to the local list without a second round trip.
+- **"Mark reviewed" is the ONLY write this UI makes beyond the
+  search itself** — an inline `action_taken` text field plus a button
+  that sets `reviewed_by`/`reviewed_at`/`action_taken` via a counted,
+  `judgeWrite()`-checked update. It records what a HUMAN decided
+  (`"No material change found"`, `"Broadcasted an update to affected
+  clients"`, …) — never a verdict the platform reached on its own.
+  `reviewed_by` is the ACTING staff member's own id, read client-side
+  via `auth.getUser()` (no DB trigger derives it — this table's only
+  trigger is the existing `BEFORE INSERT` one stamping `created_by`;
+  adding a second, `BEFORE UPDATE` one for a single client-side read
+  was judged unnecessary complexity for a staff-only, RLS-`FOR ALL`
+  table with no cross-tenant boundary to protect here).
+- **The action-raising side of "→ Action" needed NO new mechanism at
+  all** — the catalogue row's existing `/broadcast?legal=<id>` link
+  (Phase 5, Group 8) was already sitting right there, already doing
+  exactly what a research finding might warrant acting on: picking
+  affected clients, composing a message, sending through the existing
+  reviewed-before-sending confirm modal. `action_taken`'s own free text
+  is where staff records that a broadcast (or nothing) is what came of
+  a given piece of research.
+- A stray JSX-structure trap from the two-row-per-requirement layout
+  (a plain row plus a conditional expanded row) was caught by `tsc`
+  itself before it ever ran: `.map()` returning two sibling `<tr>`
+  elements needs an explicit `<Fragment key={r.id}>` wrapper, since the
+  JSX shorthand `<>...</>` cannot carry a `key` prop.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1610 admin, unchanged — this group is UI-only over Group 1's already-
+tested route, the established "no component-level test" convention;
+753 portal, unchanged — this group's only portal-side touch is the
+shared-dupe `hs/types.ts` comment update, byte-identical, no behaviour
+change), all five CI guards pass with no regressions (57 shared-dupe
+pairs; row-cap clean; 44 unvalidated routes, unchanged; 43 static admin
+routes, all reachable — no new admin route in this group; 102
+blind-update chains, unchanged — the new "Mark reviewed" update is
+counted and judged from the start), both production builds compile.
+
+### Group 3: regression, adversarial QA, handover
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed
+and merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
+
 **Phase 18 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.
 
