@@ -448,6 +448,50 @@ export function AddDevelopmentForm({ companyId, personId, courses, competencies 
   );
 }
 
+// One click from an unmet training/competency requirement row straight
+// to a development_items row naming the SAME course/competency the
+// engine already flagged — closing the DoD's own "role/site requirement
+// -> gap -> recommended/assigned learning" step without first sending
+// staff to a separate, unrelated "add a development item" form to
+// retype what the requirement table already shows. Only training and
+// competency requirements have a development_items link column to
+// point at (linked_course_id / linked_competency_id); every other
+// requirement type (credential, induction, PPE, …) has no learning
+// concept to assign here.
+export function AssignLearningButton({ companyId, personId, kind, referenceId, requirementName }: {
+  companyId: string; personId: string; kind: 'training' | 'competency'; referenceId: string; requirementName: string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<Msg>(null);
+  const [done, setDone] = useState(false);
+
+  async function assign() {
+    setBusy(true); setMsg(null);
+    const { error } = await createClient().from('development_items').insert({
+      company_id: companyId, person_id: personId,
+      title: `Complete: ${requirementName}`,
+      source_type: 'competency_gap',
+      linked_course_id: kind === 'training' ? referenceId : null,
+      linked_competency_id: kind === 'competency' ? referenceId : null,
+    });
+    setBusy(false);
+    if (error) { setMsg({ ok: false, text: error.message }); return; }
+    setDone(true);
+    router.refresh();
+  }
+
+  if (done) return <span className="text-xs" style={{ color: 'var(--teal)' }}>Assigned</span>;
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <button type="button" className="btn-ghost btn-sm no-print" disabled={busy} onClick={assign}>
+        {busy ? <Loader2 size={12} className="animate-spin" /> : null} Assign learning
+      </button>
+      {msg && !msg.ok && <span className="text-xs" style={{ color: 'var(--red)' }}>{msg.text}</span>}
+    </div>
+  );
+}
+
 // ─── Role assignments ───────────────────────────────────────────────
 
 export function AssignRoleForm({ companyId, personId, roles, sites, departments }: {

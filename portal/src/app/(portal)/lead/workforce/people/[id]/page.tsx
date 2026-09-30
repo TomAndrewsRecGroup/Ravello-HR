@@ -22,8 +22,8 @@ import { loadProfile, titles, type ProfileData } from './loadProfile';
 import RpcAction from './RpcAction';
 import RolePreview from './RolePreview';
 import {
-  AddCredentialForm, AddDevelopmentForm, AssignRoleForm, EndAssignmentButton, IssueAuthorisationForm, RecordCompetencyForm,
-  RecordTrainingForm,
+  AddCredentialForm, AddDevelopmentForm, AssignLearningButton, AssignRoleForm, EndAssignmentButton, IssueAuthorisationForm,
+  RecordCompetencyForm, RecordTrainingForm,
 } from './ProfileForms';
 import type { SiteOption, DepartmentOption } from './rows';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
@@ -117,7 +117,10 @@ export default async function PersonProfilePage(props: {
         ))}
       </nav>
 
-      {tab === 'overview' && <Overview data={data} asOf={asOf} today={today} names={names} canDup={ctx.can('workforce.read') || ctx.can('people.write')} />}
+      {tab === 'overview' && (
+        <Overview data={data} asOf={asOf} today={today} names={names} companyId={companyId}
+          canDup={ctx.can('workforce.read') || ctx.can('people.write')} canAssign={ctx.can('training.manage')} />
+      )}
       {tab === 'employment' && <Employment data={data} names={names} />}
       {tab === 'roles' && (
         <RolesTab data={data} names={names} companyId={companyId} manage={ctx.can('workforce.manage')}
@@ -234,7 +237,9 @@ function evidencePathsFor(tab: ProfileTab, d: ProfileData): string[] {
 
 // ─── Overview ───────────────────────────────────────────────────────
 
-function Overview({ data, asOf, today, names, canDup }: { data: ProfileData; asOf: string | null; today: string; names: Names; canDup: boolean }) {
+function Overview({ data, asOf, today, names, companyId, canDup, canAssign }: {
+  data: ProfileData; asOf: string | null; today: string; names: Names; companyId: string; canDup: boolean; canAssign: boolean;
+}) {
   const dep = data.deployment;
   const p = data.person!;
   const refName = (type: string, id: string | null, key: string | null) => {
@@ -294,7 +299,8 @@ function Overview({ data, asOf, today, names, canDup }: { data: ProfileData; asO
             ) : dep.status === 'READY' ? (
               <Empty>Every mandatory requirement is met.</Empty>
             ) : null}
-            <RequirementTable reqs={dep.requirements} names={names} />
+            <RequirementTable reqs={dep.requirements} names={names} companyId={companyId} personId={p.id}
+              canAssign={canAssign && !asOf} />
           </>
         )}
       </Card>
@@ -366,9 +372,18 @@ function Overview({ data, asOf, today, names, canDup }: { data: ProfileData; asO
   );
 }
 
-function RequirementTable({ reqs, names }: { reqs: DeploymentRequirement[] | null | undefined; names: Names }) {
+function RequirementTable({ reqs, names, companyId, personId, canAssign }: {
+  reqs: DeploymentRequirement[] | null | undefined; names: Names; companyId: string; personId: string; canAssign: boolean;
+}) {
   if (!reqs || reqs.length === 0) return <Empty>No requirements apply. Assign a role, or add requirements to the person’s role or site.</Empty>;
   const groups = groupRequirements(reqs);
+  // "Assign learning" only makes sense for the two requirement types
+  // development_items can actually link to (linked_course_id /
+  // linked_competency_id), and only once the engine has said the
+  // requirement is genuinely unmet — a met or awaiting-verification one
+  // needs no new development item.
+  const assignable = (r: DeploymentRequirement) =>
+    canAssign && r.status === 'unmet' && !!r.reference_id && (r.type === 'training' || r.type === 'competency');
   return (
     <div className="table-wrapper">
       <table className="table">
@@ -376,11 +391,12 @@ function RequirementTable({ reqs, names }: { reqs: DeploymentRequirement[] | nul
           <tr>
             <th scope="col">Requirement</th><th scope="col">Mandatory</th><th scope="col">Safety-critical</th><th scope="col">Status</th>
             <th scope="col">Detail</th><th scope="col">Evidence date</th><th scope="col">Expires</th><th scope="col">Required by</th><th scope="col">Comes from</th>
+            {canAssign && <th scope="col"><span className="sr-only">Actions</span></th>}
           </tr>
         </thead>
         {groups.map(g => (
           <tbody key={g.type}>
-            <tr><th scope="colgroup" colSpan={9} style={{ background: 'var(--surface-soft)', color: 'var(--ink-soft)' }}>{g.label}</th></tr>
+            <tr><th scope="colgroup" colSpan={canAssign ? 10 : 9} style={{ background: 'var(--surface-soft)', color: 'var(--ink-soft)' }}>{g.label}</th></tr>
             {g.items.map((r, i) => (
               <tr key={`${r.reference_id ?? r.reference_key}-${i}`}>
                 <th scope="row" style={{ fontWeight: 500 }}>{r.name ?? '—'}</th>
@@ -392,6 +408,14 @@ function RequirementTable({ reqs, names }: { reqs: DeploymentRequirement[] | nul
                 <td>{fmtDate(r.expires_on)}</td>
                 <td>{fmtDate(r.required_by)}</td>
                 <td className="text-sm">{sourcesText(r, names)}</td>
+                {canAssign && (
+                  <td>
+                    {assignable(r) && (
+                      <AssignLearningButton companyId={companyId} personId={personId}
+                        kind={r.type as 'training' | 'competency'} referenceId={r.reference_id!} requirementName={r.name ?? 'requirement'} />
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
