@@ -86,6 +86,8 @@ PAIRS=(
   "admin/src/components/hs/IsolationsClient.tsx|portal/src/components/hs/IsolationsClient.tsx"
   "admin/src/lib/whatChanged/compute.ts|portal/src/lib/whatChanged/compute.ts"
   "admin/src/lib/whatChanged/clientScope.ts|portal/src/lib/whatChanged/clientScope.ts"
+  "admin/src/lib/entityQr/qrTokens.ts|portal/src/lib/entityQr/qrTokens.ts"
+  "admin/src/components/hs/EntityQrPanel.tsx|portal/src/components/hs/EntityQrPanel.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

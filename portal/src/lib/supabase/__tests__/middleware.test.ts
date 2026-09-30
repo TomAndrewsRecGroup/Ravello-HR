@@ -125,6 +125,16 @@ describe('employee leave link is reachable without a login', () => {
     const res = await updateSession(req('/workspace-admin'));
     expect(location(res)).toContain('/auth/login');
   });
+
+  it.each([`/e/${'11111111-2222-4333-8444-555555555555'}`, `/api/e/${'11111111-2222-4333-8444-555555555555'}`])('the entity QR badge link %s is not redirected either', async (p) => {
+    const res = await updateSession(req(p));
+    expect(location(res)).toBeNull();
+  });
+
+  it('the entity badge-link exemption is scoped to the /e/ path, not a lookalike', async () => {
+    const res = await updateSession(req('/equipment'));
+    expect(location(res)).toContain('/auth/login');
+  });
 });
 
 describe('module flags are enforced on the page, not just the menu', () => {
