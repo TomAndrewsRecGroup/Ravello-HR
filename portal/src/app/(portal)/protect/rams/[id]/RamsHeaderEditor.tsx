@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { RAMS_SECTION_KEYS, RAMS_SECTION_LABELS, type RamsSectionKey } from '@/lib/hs/safetyVocab';
+import { RAMS_CONDITIONAL_SECTIONS } from '@/lib/hs/ramsSectionQuestions';
 
 export interface RamsHeader {
   id: string; row_version: number; title: string; project_name: string | null; description: string | null;
@@ -31,6 +32,8 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
   const [adding, setAdding] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [suggested, setSuggested] = useState<RamsSectionKey[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
   const set = <K extends keyof RamsHeader>(k: K, v: RamsHeader[K]) => setF(p => ({ ...p, [k]: v }));
   const t = (v: string | null) => (v ?? '').trim() || null;
 
@@ -55,6 +58,34 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
     }
     setMsg({ ok: true, text: 'Saved.' });
     router.refresh();
+  }
+
+  // Core-OS 360 Phase 15: Intelligent RAMS. Never writes section
+  // CONTENT — Jev cannot draft free text, only flag which of the six
+  // conditional sections (lib/hs/ramsSectionQuestions.ts) likely need
+  // real content for THIS scope of work. A flagged section is simply
+  // revealed (its empty textarea shown, exactly like clicking "Add
+  // section" by hand) with a small note until the author types
+  // something into it; nothing is pre-filled.
+  async function suggestSections() {
+    setSuggesting(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/protect/jev/rams-section', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: f.title, project_name: f.project_name, scope_of_work: f.scope_of_work ?? '' }),
+      });
+      const body = await res.json();
+      if (!res.ok) { setMsg({ ok: false, text: body.error ?? 'Could not get a suggestion.' }); return; }
+      const keys = (body.suggested_sections ?? []) as RamsSectionKey[];
+      setSuggested(keys);
+      setShown(s => RAMS_SECTION_KEYS.filter(k => s.includes(k) || keys.includes(k)));
+      setMsg(keys.length > 0
+        ? { ok: true, text: `Worth checking: ${keys.map(k => RAMS_SECTION_LABELS[k]).join(', ')}.` }
+        : { ok: true, text: body.reason === 'unavailable' ? 'Suggestions are unavailable right now.' : 'No additional sections suggested.' });
+    } finally {
+      setSuggesting(false);
+    }
   }
 
   const remaining = RAMS_SECTION_KEYS.filter(k => !shown.includes(k));
@@ -94,10 +125,18 @@ export default function RamsHeaderEditor({ ms, people, sites, departments }: {
         <textarea className="input" rows={3} value={f.scope_of_work ?? ''} onChange={e => set('scope_of_work', e.target.value)} maxLength={8000} /></label>
 
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-soft)' }}>Sections</h3>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-soft)' }}>Sections</h3>
+          <button type="button" className="btn-secondary btn-sm" disabled={suggesting || !f.title.trim()} onClick={suggestSections}>
+            {suggesting && <Loader2 size={14} className="animate-spin" />} Suggest sections to check
+          </button>
+        </div>
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Add only the sections this work needs. Empty sections are not saved.</p>
         {shown.map(k => (
           <label key={k} className="block"><span className="label">{RAMS_SECTION_LABELS[k]}</span>
+            {suggested.includes(k) && !(sections[k] ?? '').trim() && RAMS_CONDITIONAL_SECTIONS.includes(k) && (
+              <span className="block text-xs mb-1" style={{ color: 'var(--gold)' }}>Worth checking for this scope of work.</span>
+            )}
             <textarea className="input" rows={3} value={sections[k] ?? ''} maxLength={8000}
               onChange={e => setSections(p => ({ ...p, [k]: e.target.value }))} />
           </label>
