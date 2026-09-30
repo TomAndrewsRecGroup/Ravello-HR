@@ -9143,3 +9143,97 @@ shared table, trigger or RLS policy was touched anywhere in it.
 **Phase 15 is complete. Phase 16 is NOT to begin** until this branch
 is merged and deployed, per the operator's standing instruction.
 
+---
+
+## Core-OS 360 Phase 16: Cross-Client Lessons Learned Network
+## (in progress, migration 181)
+
+No detailed operator brief exists in the repo for this phase (the same
+situation Phases 8-15 were in). Scope: `docs/CORE_OS_360_PHASE16_PLAN.md`.
+
+**The gap**: nothing anywhere takes what was learned at ONE client's
+real incident/audit finding and puts a GENERALISED version of it in
+front of OTHER clients — every incident/finding table is strictly
+per-company RLS, by design, and the closest existing precedents
+(`hs_sector_packs`/`hs_audit_templates`) are seeded once as generic
+reference material, never derived from a specific client's real
+record. This is a staff-curated, never-automatic feature: the raw
+source record stays exactly where it is, private to its own client; a
+human writes a NEW, deliberately anonymised summary, and only that
+summary is ever shown to anyone else.
+
+### Group 1 (migration 181): schema + pure computation
+
+- **Three tables.** `lessons_learned` is the staff-authored content
+  itself — **no `company_id` column at all**, the exact
+  `legal_requirements` (159) shape: staff-only RLS, no client SELECT
+  policy of any kind. A client only ever sees a lesson's content via
+  the portal's own service-role-mediated read (Group 2), scoped to
+  exactly the ids their own RLS-protected read of
+  `lesson_learned_distributions` returns — the identical Legal
+  Register precedent. `lesson_learned_distributions` records which
+  companies a PUBLISHED lesson was shared with (staff write, client
+  read own company only). `lesson_learned_reads` is a per-user "I have
+  seen this" receipt — insert-only, the ONE client-writable table in
+  this migration, so it alone gets `apply_write_guard()`.
+- **`source_type`/`source_id` on `lessons_learned` is STAFF-ONLY
+  traceability** back to the real incident/audit finding/inspection a
+  lesson was drawn from — validated via the SHARED
+  `hs_entity_table()`/`hs_entity_company()` resolver (already resolves
+  `'incident'`/`'audit_finding'`/`'inspection'`, no new branches
+  needed), never a bespoke lookup. It is never selected in any
+  client-facing read anywhere in this feature — there is no RLS on
+  `lessons_learned` a client could reach in the first place, so this
+  is enforced by there being no client code path to it, not by a
+  policy.
+- **No AI anywhere in this migration.** Distribution targeting
+  (`lib/lessonsLearned/suggestDistribution.ts`) is a plain,
+  deterministic sector match — "which clients share this client's
+  sector" is a fact, not a judgement call. The source client itself
+  and inactive companies are excluded from the suggestion; a
+  manually-authored lesson with no source, or a source with no
+  recorded sector, suggests nothing (staff picks manually). This is a
+  pre-selection convenience only — Group 2's UI never auto-publishes
+  based on it.
+- **`published_at`/`published_by` are stamped once**, the first time
+  `status` reaches `'published'`, and never reset by a later
+  archive/republish cycle — the same "a stored fact, never
+  silently re-derived" discipline `board_assurance_reports`' own
+  first-issue timestamp already established.
+- **A lesson may only be distributed once it is actually published** —
+  enforced by `lesson_learned_distributions_fill()` reading the
+  parent's own `status`, never by a UI-side check alone.
+- **A read receipt derives `company_id`/`read_by`/`read_by_name` from
+  the caller's own session, never trusts the request body**, and is
+  refused outright unless the lesson has genuinely been distributed to
+  the caller's own company — proved live, not just asserted.
+- **No `apply_write_guard()` on `lessons_learned` or
+  `lesson_learned_distributions`** — neither has a client-writable
+  policy to guard, the exact `hs_documents` precedent (a table only
+  staff can write needs no read-only-grant guard).
+
+**Live probe** (`supabase/probes/181_lessons_learned_network.sql`,
+rolled back, staff/Client A/Client B simulated sessions): 17 checks —
+a plain draft lesson inserts and defaults to `draft`; an unknown
+`source_type` refused; a nonexistent `source_id` refused; a real
+incident source resolves; publishing stamps `published_at` once and
+republishing never resets it; distributing a draft lesson refused,
+a published one succeeds; no new DEFINER function is anon-executable;
+a client can never read `lessons_learned` directly even for a
+published lesson distributed to them; a client sees their own
+distribution row; a read receipt ignores caller-supplied
+`company_id`/`read_by`/`read_by_name`; a second client sees no
+distribution row and is refused marking a not-distributed lesson as
+read; RLS is enabled on all three tables; the write guard is present
+on exactly the one client-writable table. **All 17 passed.**
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1587 admin — 1563 + 24 new: `lessonsLearnedSql.test.ts` (17),
+`suggestDistribution.test.ts` (7); 750 portal, unchanged — this group
+is admin/database only), all five CI guards pass (56 shared-dupe
+pairs, unchanged; row-cap clean; 44 unvalidated routes, unchanged; 42
+static admin routes, all reachable — this group touched no admin
+route; 102 blind-update chains, unchanged), admin production build
+compiles. Migration 181 applied live and verified (all three tables
+exist, 17/17 probe checks pass).
+
