@@ -8187,11 +8187,28 @@ trusting that "N days ago to today" and "2N days ago to N days ago"
 were obviously symmetric — they look right at a glance and are wrong
 by exactly one day. Fixed by extracting `incidentPatternWindows()`, a
 new shared, testable pure function in `analyze.ts` producing two
-provably equal-length half-open windows, replacing the duplicated
+half-open windows with no gap and no overlap, replacing the duplicated
 (and duplicately wrong) inline date math in both `page.tsx` files.
 **Mutation-tested live in this session** — the fix was reverted to
 the original inclusive-both-ends formula, 3 of 4 new tests failed,
 then restored.
+
+**Correction, 2026-09-30, found by an independent adversarial audit
+Tom requested (not this phase's own pass):** this entry, and
+`incidentPatternWindows()`'s own doc comment, originally overstated
+the fix as producing two "provably equal-length" windows. They are
+not — `windowEndExclusive` is deliberately `today + 2`, not
+`today + 1`, to include an incident dated up to `current_date + 1`
+(the exact leeway `hs_incidents`' own CHECK constraint allows for
+timezone rounding), which makes the current window `days + 1` real
+dates against the prior window's exact `days`. That one-day forward
+pad is correct and intentional — removing it to force strict equality
+would risk undercounting a same-day incident recorded in a timezone
+ahead of UTC — but calling the result "equal-length" was simply wrong,
+contradicted by the function's own test file
+(`currentLength`/`priorLength`, 91 vs 90 for `days=90`). The doc
+comment in `analyze.ts` (shared-dupe pair, both apps) is corrected to
+state the asymmetry and why it exists, rather than deny it.
 
 **Everything else audited clean**:
 
