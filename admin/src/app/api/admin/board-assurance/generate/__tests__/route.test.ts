@@ -11,11 +11,11 @@ vi.mock('@/lib/auth/requireStaff', () => ({
 const GREEN_TWIN: ComplianceTwinSnapshot = {
   overallBand: 'green',
   areas: [
-    { area: 'safety', label: 'Safety (H&S)', band: 'green', reasons: ['clean'] },
-    { area: 'governance', label: 'Governance & Environmental', band: 'green', reasons: ['clean'] },
-    { area: 'risk_graph', label: 'Risk Graph', band: 'green', reasons: ['clean'] },
-    { area: 'incident_patterns', label: 'Incident Patterns', band: 'green', reasons: ['clean'] },
-    { area: 'evidence', label: 'Evidence Coverage', band: 'green', reasons: ['clean'] },
+    { area: 'safety', label: 'Safety (H&S)', band: 'green', reasons: ['clean'], inputs: {} },
+    { area: 'governance', label: 'Governance & Environmental', band: 'green', reasons: ['clean'], inputs: {} },
+    { area: 'risk_graph', label: 'Risk Graph', band: 'green', reasons: ['clean'], inputs: {} },
+    { area: 'incident_patterns', label: 'Incident Patterns', band: 'green', reasons: ['clean'], inputs: {} },
+    { area: 'evidence', label: 'Evidence Coverage', band: 'green', reasons: ['clean'], inputs: {} },
   ],
 };
 

@@ -10787,3 +10787,452 @@ assigned is closed with live evidence.
 begin** once this branch merges, per the Master Spec's own
 sequential-gate rule.
 
+---
+
+## Core-OS 360 Completion Programme: Phase 23 — Risk Graph / Evidence
+## Engine / Digital Twin completion (in progress)
+
+No detailed operator brief exists for this phase either. Scope: the
+nine gap-ledger rows Phase 20 assigned here — `docs/
+CORE_OS_360_COMPLETION_MATRIX.md` rows C8.3, C8.4, C8.5, C11.3, C11.4,
+C11.5, C12.4, C12.5, C12.6. Plan: `docs/CORE_OS_360_PHASE23_PLAN.md`,
+written after checking the live code (`intelligence.ts`,
+`RiskGraphClient.tsx`, `evidenceEngine/analyze.ts`,
+`EvidenceEngineClient.tsx`, `complianceTwin/assemble.ts`,
+`loadSnapshot.ts`, and `hs_links`'/`hazards`'/`risk_assessments`'
+current RLS — none had a consultancy-read policy except `actions`) —
+the session's own "repository reality beats handover narrative" rule.
+
+### Group 1: reusable Connections panel + broader label resolution
+### (closes C8.3, C8.4)
+
+- **`lib/riskGraph/entityLabels.ts`** (new shared-dupe pair): a
+  curated `{ table, column }` map for 14 entity types whose
+  title/name column was verified against its own migration file
+  before being added — never guessed from a table name. Types that
+  looked like good candidates but have no single clean title column
+  (isolations, consultation records, environmental complaints,
+  management reviews) are deliberately left uncurated rather than
+  guessing one; `legal_obligation` (no title column — resolved via
+  its `legal_requirement_id` join, the existing `intelligence.ts`
+  precedent) and `incident` (`${type} — ${occurred_on}`, since
+  `hs_incidents` has no title column at all) are special-cased.
+  `resolveEntityLabels()` batches ONE query per DISTINCT type actually
+  present in a result set — `risk_graph_neighbors()`'s own 500-row/
+  3-hop cap already bounds how many distinct types can ever appear at
+  once, closing Phase 8's own "would need a query per branch" concern
+  without inventing a heavier mechanism. Never throws — a failed
+  lookup for one type falls back to a humanised type + truncated id
+  for just that type's rows, the same posture GlobalSearch/WhatChanged
+  label resolution already takes.
+- **`hrefForEntity()` takes an explicit `{ role, companyId?, portalBase?
+  }`, never an imported `portalUrl()`** — this file must stay a true
+  byte-identical shared-dupe pair, and admin's `portalUrl()` helper (to
+  link OUT) has no portal-side equivalent (linking to itself would be
+  self-referential). The admin caller passes `portalUrl()`'s own
+  resolved string; the portal caller passes nothing (defaults to `''`),
+  so a "portal-only" type (hazard/risk_assessment/method_statement/
+  coshh_assessment/substance — all portal-only pages, per Phase 8's own
+  established note) resolves to a plain relative path when the page
+  itself IS the portal. The exact `ComplianceTwinView.tsx` precedent
+  (Phase 12, Group 2): "each page supplies its own correct hrefs"
+  rather than this file guessing a shared routing suffix. Every other
+  curated type resolves to a real per-company admin tab
+  (`HsCompanyTabs.tsx`'s own segment list, checked live before writing
+  this) when `role: 'admin'`, or a portal list/record page when
+  `role: 'portal'`; an uncurated type gets no link at all rather than a
+  guessed one.
+- **`ConnectionsPanel.tsx`** (new shared-dupe component): the GENERIC
+  version of `RaLinks.tsx`/`IncidentLinks.tsx`/`RamsCoshhLinks.tsx` —
+  those three stay exactly as they are (bespoke, two link types each,
+  genuinely useful), this is additive for every OTHER connection a
+  record might have. Queries `hs_links` DIRECTLY at depth 1 (never the
+  multi-hop `risk_graph_neighbors()` RPC, which does not return the
+  underlying `hs_links` row id — a per-record panel needs that id to
+  support removal, the exact reason `RaLinks.tsx` already queries
+  `hs_links` directly rather than the RPC). "Add a connection" is a
+  plain-paste target id, the established `EvidenceLinksPanel.tsx`/
+  `LessonsLearnedClient.tsx` precedent for a generic link tool with no
+  per-type options list to fetch.
+- **Wired into two reference pages, one per app** — a documented,
+  bounded scope decision, not an exhaustive rollout (the same
+  "adopted in its first two forms, not retrofitted everywhere"
+  precedent Phase 6 Group 7's `useUnsavedChangesWarning` already set):
+  admin's audit detail page (`/health-safety/<companyId>/audits/
+  <auditId>` — no link mechanism of any kind existed there before) and
+  portal's incident detail page, ADDITIVE alongside the existing
+  `IncidentLinks.tsx` (which only covers hazard/RA links —
+  `ConnectionsPanel` now covers every other kind: a contractor, a
+  permit, an action).
+- A TypeScript type-checking trap caught by `tsc`, not review: a
+  template-literal `.select(\`id, ${cfg.column}\`)` call made
+  supabase-js's generic type inference produce a `ParserError` type for
+  the response rows — the exact "`.select()` must stay ONE string
+  literal" footgun this file's own history already recorded once for a
+  different reason (splitting with `+`); fixed by casting through
+  `unknown` first, since the column name is genuinely dynamic here by
+  design (one resolver serving 14 different tables/columns).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1674 admin — 1660 + 14 new `entityLabels.test.ts` cases; 788 portal —
+773 + 15, 14 mirrored `entityLabels.test.ts` cases + the sweep tests
+picking up the new component/page reference automatically), all six
+CI guards pass (`check-shared-dupes.sh`: 65 pairs, up from 63;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 43 static routes, all reachable — the
+touched admin route is dynamic (`[auditId]`), so it needed no literal-
+reference check; `check-blind-updates.sh`: 102, unchanged — this
+group's only writes are `hs_links` inserts/deletes, the same
+guardless-by-design shape `RaLinks.tsx`/`EvidenceLinksPanel.tsx`
+already use; `check-paged-order.sh`: clean — this group added no
+`readAllPages()` call), both production builds compile.
+
+### Group 2 (migration 187): portfolio-safe consultant Risk Graph view (C8.5)
+
+Phase 8's own migration (177) deliberately added no portfolio-wide
+RLS: "nothing about 'Risk Graph & Connected Compliance Intelligence'
+as a phase name implies a cross-client capability." Phase 23's own
+gap ledger disagrees, explicitly — this closes it.
+
+- **Six new, narrowly-scoped, ADDITIVE, SELECT-ONLY policies**, the
+  exact `actions_consultancy_select` shape migration 175 already
+  established: `USING ((SELECT public.has_capability(company_id,
+  'consultancy.service_manage')))` on `hazards`, `risk_assessments`,
+  `risk_assessment_items`, `risk_item_controls`,
+  `organisation_legal_obligations` (all five feed
+  `computeRiskGraphIntelligence()`) and `hs_links` (which had the
+  identical gap). No new capability — reuses the one every Phase 6/7
+  consultancy write already keys on. RLS ORs permissive policies, so
+  none of the six existing policies on these tables were touched.
+- **SELECT-only, deliberately**: this closes a READ gap ("view the
+  risk graph across my portfolio"), not a write one — a consultant
+  creating hazards/risk assessments on behalf of a client they have
+  not switched into is a separate, bigger feature this group's own
+  scope note does not ask for.
+- **Because `risk_graph_neighbors()` (177) is `SECURITY INVOKER`,
+  opening `hs_links` here alone makes the EXPLORER portfolio-safe with
+  NO code change**: a consultant calling it for a genuine record in an
+  authorised client now succeeds regardless of which organisation is
+  "active" in their session — the walk can never cross companies
+  anyway (`hs_links_check()`'s own same-organisation guard, untouched
+  by this migration). Proved live (checks 5/5b): the explorer finds an
+  authorised client's linked hazard and sees nothing of an
+  unauthorised one's graph.
+- **`RiskGraphClient.tsx` (admin's own Phase 8 dashboard+explorer
+  component) is promoted to a shared-dupe pair** (66 pairs, up from
+  65) — the exact `ComplianceTwinView.tsx`/`AssuranceTodayView.tsx`
+  precedent: an identical already-assembled snapshot, only per-link
+  routing differs by caller. `role`/`portalBase` are now explicit
+  params (never the imported, admin-only `portalUrl()` helper it used
+  before), and every href is resolved through `hrefForEntity()`
+  (Group 1) instead of hand-built strings — the same de-duplication
+  Group 1's own component already modelled.
+- **New portal page `/consultancy/clients/[id]/risk-graph`** — the
+  exact Client 360 sub-page shape (168/Group 4):
+  `requirePortfolioSession()` + `portfolioIncludes()` gate the id
+  first, then a SERVICE-ROLE-scoped read (`.eq('company_id', id)`,
+  copied verbatim from admin's own risk-graph page query shape) feeds
+  the identical `computeRiskGraphIntelligence()` and the same
+  `RiskGraphClient` component with `role="portal"`. Linked from Client
+  360's own header alongside "Open full workspace".
+- **A fixture-schema gap found live while writing the probe, not
+  assumed from a per-column CHECK scan**: `hazards` carries a
+  table-level `hazards_check` CHECK (`site_id IS NOT NULL OR
+  linked_location IS NOT NULL`) invisible from the individual
+  per-column CHECKs alone — a fixture hazard needs one of the two.
+  Found by reading `pg_get_constraintdef()` directly after the first
+  probe attempt failed with `23514`, not by re-reading the migration
+  file (which never defined this constraint — it predates Phase 4's
+  own asset-register work). Also hit
+  `organisation_legal_obligations_stamp()`'s own 159-era guard
+  ("An applicability decision must be confirmed by a named
+  assessor") — the probe's fixture obligations now set
+  `assessed_by`/`assessed_at` together, matching 159's own rule.
+- **`pg_policies.qual` renders a USING clause's column TABLE-QUALIFIED**
+  (`risk_assessments.company_id`, not bare `company_id`) — found live
+  when the first structural check (comparing against an unqualified
+  pattern) failed on all three of `risk_assessments`/
+  `risk_assessment_items`/`risk_item_controls` despite the policies
+  being correctly applied (confirmed separately by reading `qual` back
+  directly). The probe's LIKE patterns were corrected to match the
+  real, qualified rendering rather than the schema-agnostic string
+  originally guessed.
+
+**Live probe** (`supabase/probes/187_risk_graph_portfolio_read.sql`,
+rolled back, the Phase 7 Group 7 consolidated-proof style: one
+consultant session, authorised for Client A only, a genuinely SEPARATE
+consultancy owning Client B's relationship): 8 checks — `hazards`
+(Client A visible, Client B invisible), SELECT-only (an INSERT for the
+AUTHORISED client still refused), `organisation_legal_obligations` (A
+visible, B invisible), `hs_links` (A visible, B invisible),
+`risk_graph_neighbors()` finds Client A's linked hazard and sees
+nothing of Client B's graph, and `risk_assessments`/
+`risk_assessment_items`/`risk_item_controls` proven structurally via
+`pg_policies` (the exact USING clause, not merely that a policy with
+this name exists — the disproportionate fixture cost of a valid
+`risk_assessments` row, which needs a `risk_matrices` row, was judged
+not worth a full live round-trip for three tables whose policy shape
+is byte-identical to the three already proven live). **All 8 passed.**
+No trace left live (confirmed via a post-rollback count query).
+
+`riskGraphPortfolioReadSql.test.ts` (5 tests, the `riskGraphFoundationSql
+.test.ts` precedent) pins the migration text: exactly six policies, one
+per table; every one gated on `has_capability(company_id,
+'consultancy.service_manage')`, never `my_company_id()`; SELECT-only
+(no `WITH CHECK`/`FOR ALL`/`FOR INSERT`/`FOR UPDATE`/`FOR DELETE`
+anywhere); no new table/trigger/function/DEFINER; no `DROP POLICY`/
+`ALTER POLICY` (additive only).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1679 admin — 1674 + 5 new `riskGraphPortfolioReadSql.test.ts` cases;
+790 portal — 788 + 2, `portalPagesLinked.test.ts`/
+`clientServerBoundary.test.ts` picking up the new page/component
+reference automatically), all six CI guards pass (`check-shared-dupes
+.sh`: 66 pairs, up from 65; `check-row-cap.sh`: clean; `check-route-
+validation.sh`: 44, unchanged; `check-admin-routes-linked.sh`: 43
+static routes, all reachable — no admin route changed shape;
+`check-blind-updates.sh`: 102, unchanged — this group writes nothing
+new, purely additive RLS + a read-only portal page; `check-paged-order
+.sh`: clean — every new `readAllPages()` call in the portal page
+carries `.order('id')`, copied from admin's own query shape), both
+production builds compile (portal's one prerender failure is the
+long-documented sandbox-only missing-Supabase-env-var limitation,
+unrelated to this change and confirmed by `tsc`'s own clean pass
+completing before that unrelated page's static-export step). Migration
+187 applied live and verified (`pg_policies`: all six policies present
+with the exact `USING` clause).
+
+### Group 3: Evidence Engine filters + current-vs-historical + cross-reference navigation (C11.3, C11.4, C11.5)
+
+No migration — entirely TypeScript over the already-shared Phase 11
+schema and shared-dupe files.
+
+- **`analyzeEvidenceCoverage()` gains `currentGaps: EvidenceGap[]`**
+  (closes C11.4) — the subset of `gaps` restricted to, per item, only
+  its NEWEST completion (by `completed_on`, ties broken by id for
+  determinism), mirroring the "only the newest row decides current
+  state" rule `hs_equipment_inspection_roll()`/148a's PUWER review-date
+  roll already established. A genuinely different, correct computation
+  from "every gap ever", proven by a test pinning the exact scenario
+  the rule exists for: an item whose OLDER completion lacked evidence
+  but whose NEWEST one has it is excluded from `currentGaps` while
+  still counted in `gaps`. `EvidenceGap` gains `category` (closes half
+  of C11.3) — already resolvable via the existing `itemById` lookup,
+  just not carried onto the row before this.
+- **`crossReferenceComplianceItems()`** (closes C11.5) — given a
+  compliance item id, how many OTHER records already point at it as
+  evidence, broken down by SOURCE kind (ISO clause via
+  `standard_evidence_links`, legal obligation/objective/audit finding
+  via `requirement_evidence_links`). Deliberately COUNTS ONLY, never a
+  per-link title resolution — the same "reporting a fact, never
+  re-deriving a label chain that already lives on its own page"
+  economy Phase 8's own explorer scope note already accepted for
+  uncurated neighbours. An item with zero cross-references is excluded
+  entirely from the result, never a zero-count row.
+- **`EvidenceEngineClient.tsx` gains client-side filters** (closes the
+  other half of C11.3): current/history toggle (switches the gaps
+  table between `coverage.currentGaps` and `coverage.gaps` — two
+  genuinely different pre-computed lists, never a UI filter
+  recomputing the same thing `analyze.ts` already decided), category,
+  outcome, and a from/to date range on the gaps table, plus an
+  entity-type filter on the Evidence Library files table — all running
+  over the already-bounded, already-fetched arrays (200/500-row caps,
+  well under PostgREST's ceiling), no new query shape, the same "the
+  data is already loaded, filter it in the browser" posture this
+  codebase already uses for bounded browsing lists. A new "Compliance
+  items referenced elsewhere" section renders `crossReferences`,
+  linking each non-zero count to the relevant CATALOGUE page — admin's
+  own `/health-safety/<companyId>/{iso,legal,objectives,audits}`,
+  portal's `/protect/{iso-readiness,legal-register,objectives,audits}`
+  — via a small internal `catalogueHref()` helper (there is no separate
+  "audit findings" catalogue page, since a finding lives on its own
+  audit, so that count links to the audits list instead).
+- **Both page.tsx files** (admin's `/health-safety/<companyId>/
+  evidence`, portal's `/protect/evidence`) gained two new parallel
+  reads (`standard_evidence_links`/`requirement_evidence_links`,
+  filtered to `entity_type = 'compliance_item'`, capped at 500 —
+  matching the file's own existing cap) and now pass `items`,
+  `crossReferences`, `role`, `companyId` to the shared component.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1686 admin — 1679 + 9 new `analyze.test.ts` cases (5→14) + 1 fixture
+fix in `complianceTwin/assemble.test.ts` (a missing `currentGaps` field
+TypeScript itself caught, not a behaviour change); 804 portal — 790 +
+14, `analyze.test.ts` mirrored byte-identical, its first portal copy —
+no new portal page/component test needed since `EvidenceEngineClient.
+tsx` stayed a shared-dupe pair), all six CI guards pass
+(`check-shared-dupes.sh`: 66 pairs, unchanged; `check-row-cap.sh`:
+clean; `check-route-validation.sh`: 44, unchanged; `check-admin-
+routes-linked.sh`: 43 static routes, all reachable — no admin route
+changed shape; `check-blind-updates.sh`: 102, unchanged — this group
+adds no write path, purely additive reads and client-side filtering;
+`check-paged-order.sh`: clean — this group added no `readAllPages()`
+call), both production builds compile (portal's one prerender failure
+is the same long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated to this change).
+
+### Group 4 (migration 188): stored Digital Twin snapshot / history (C12.4)
+
+**Explicit, human-triggered capture — never a blind daily per-company
+loop.** Checked before deciding: the existing daily
+`/api/cron/health-snapshot` computes `computePortfolioCounts()` via
+WHOLE-PORTFOLIO batched reads — cheap regardless of company count. The
+Digital Twin's `loadComplianceTwinSnapshot()` is the opposite shape:
+~15 PER-COMPANY-SCOPED queries. Looping it over every active company
+inside the existing cron would multiply that cost by company count.
+Board Assurance (Phase 13) already solved "posture trend" for a
+structurally identical problem with an EXPLICIT, human-triggered
+generate-then-store action — the same precedent applies here.
+
+- **`compliance_twin_snapshots`** — `company_id, snapshot_date,
+  overall_band, areas jsonb`, `UNIQUE (company_id, snapshot_date)` so
+  a same-day re-save upserts rather than duplicating. Staff-only RLS,
+  the exact `management_review_data_pack` (161) shape — an internal
+  artefact of a staff action, never client-facing. No
+  `apply_write_guard()`: that guard protects a read-only CONSULTANCY
+  grant from writing to a CLIENT-readable table; this table has no
+  client policy at all, the same "staff-only tables don't get the
+  write guard" precedent 158's own `management_system_standards`/
+  `standard_clauses` already established. Audit trail whitelists
+  `overall_band`/`snapshot_date` only, never the `areas` jsonb blob.
+- **"Save today's snapshot"** (`SaveSnapshotButton.tsx`) inserts the
+  ALREADY-COMPUTED, ALREADY-RENDERED snapshot the page just built —
+  zero extra query cost. A staff session writes directly under RLS
+  (`compliance_twin_snapshots_staff_all`), the same "session
+  insert/upsert under RLS" pattern `DocumentsClient.tsx`/
+  `ContractorsClient.tsx` already use — no API route needed.
+- **`SnapshotTrend.tsx`** — a plain dot-per-day trend, last 30 stored
+  snapshots, newest last. Admin only: `compliance_twin_snapshots` is
+  staff-only RLS, so there is no client-facing equivalent to mirror
+  this into.
+
+**Live probe** (`supabase/probes/188_compliance_twin_snapshots.sql`,
+rolled back): 6 checks — staff insert; same-day re-save upserts (one
+row, updated band); a client (non-staff) session can neither read nor
+write; RLS enabled; the audit trigger fires. **All 6 passed.**
+
+### Group 5 (migration 189): configurable thresholds, safe defaults, audited (C12.5)
+
+- **`compliance_twin_thresholds`** — `company_id` UNIQUE, five
+  nullable override columns matching `assemble.ts`'s five named
+  constants. Staff-only RLS + `audit_row()` whitelisting the five
+  threshold columns only. Deciding these thresholds decides what a
+  CLIENT sees as red/amber/green on their own compliance posture, so
+  — matching the H&S register's standing "nothing here is
+  self-certified" posture — a client never gets a write path to
+  loosen their own thresholds.
+- **`assembleComplianceTwin()` gains an optional second
+  `thresholds` param.** Every named constant is renamed
+  `DEFAULT_X` and each area function now reads `thresholds?.X ??
+  DEFAULT_X` — null/unset ALWAYS falls back to the documented
+  default, never silently guessed. `riskGraphArea()`/
+  `incidentPatternsArea()` take no threshold at all — neither area
+  ever had one.
+- **`loadComplianceTwinSnapshot()` reads the company's own threshold
+  row (or none) and passes it through** — the ONE place all three
+  admin callers (Digital Twin page, Board Assurance's `generate`
+  route, Assurance Today) go through, so wiring it there once avoids
+  three separate reads that could drift, the same "one calculation,
+  not two" discipline this codebase holds to throughout.
+- **A deliberate, documented scope decision**: portal's own
+  digital-twin/assurance pages (which duplicate their own query logic
+  rather than importing admin's loader — Phase 12's own established
+  reason: the two apps share no server code) are UNCHANGED and
+  continue to use the documented defaults always, never a per-client
+  override. `assembleComplianceTwin()`'s `thresholds` param is
+  optional specifically so this needed zero code changes on the
+  portal side — only the three named admin callers were in scope. A
+  possible admin/portal reporting asymmetry for an overridden client
+  is an accepted, documented consequence of this scope, not an
+  oversight.
+- **`ThresholdsForm.tsx`** (admin-only, on the Digital Twin page): a
+  collapsible form, five number inputs, blank means "use the default"
+  (shown as placeholder text, never pre-filled as a guessed number). A
+  staff session upserts directly under RLS
+  (`onConflict: 'company_id'`).
+
+**Live probe** (`supabase/probes/189_compliance_twin_thresholds.sql`,
+rolled back): 7 checks — staff insert/update; `UNIQUE(company_id)`
+refuses a second row for the same company; a client session can
+neither read nor write; RLS enabled; the audit trigger fires. **All 7
+passed.**
+
+### Group 6: every score exposes its inputs (C12.6)
+
+- **`ComplianceTwinArea` gains `inputs: Record<string, number |
+  string | null>`** — the exact raw values that area's own red/amber
+  checks read (e.g. `riddorLast12Months`, `lastAuditScore`), PLUS the
+  threshold actually used (post-Group-5-override) alongside the value
+  it was compared against — never a re-derivation, the same numbers
+  already driving `reasons`, just also exposed structurally.
+  `buildArea()` takes `inputs` as a new required parameter; every one
+  of the five area functions passes its own. `risk_graph` carries
+  plain counts only — that area has no threshold of its own.
+- **`ComplianceTwinView.tsx` gains a collapsible "Show inputs" per
+  area** — a native `<details>`/`<summary>` element, needing no
+  JavaScript and no `'use client'` conversion, keeping this
+  server-renderable component exactly as it was. `humaniseKey()`
+  turns each camelCase field name into a plain label — the object's
+  own key names are already the only vocabulary needed, no separate
+  label map to drift out of step with `assemble.ts`'s own field
+  names.
+- Every pre-existing test fixture literal-constructing a
+  `ComplianceTwinArea` (`board-assurance/generate/route.test.ts`,
+  `assurance/today.test.ts`, `boardAssurance/computeReport.test.ts`)
+  needed a trivial `inputs: {}` addition — caught immediately by
+  `tsc`, not by review.
+
+Verified (Groups 4-6 together): `tsc --noEmit` clean both apps, full
+`vitest run` green (1709 admin — 1686 + 23 new: 6
+`complianceTwinSnapshotsSql.test.ts` + 5
+`complianceTwinThresholdsSql.test.ts` + 12 new `assemble.test.ts`
+cases across Groups 5-6; 804 portal, unchanged — this work touched
+only the shared-dupe `assemble.ts`/`ComplianceTwinView.tsx` mirrors,
+byte-identical, no new portal test file needed, matching Phase 12's
+own established admin-only-test asymmetry for this module), all six
+CI guards pass (`check-shared-dupes.sh`: 66 pairs, unchanged —
+`assemble.ts`/`ComplianceTwinView.tsx` were already registered pairs;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 43 static routes, all reachable — no
+new admin route, only new sections on the existing Digital Twin page;
+`check-blind-updates.sh`: 102, unchanged — every new write is an
+upsert (never a blind conditional UPDATE) or an insert;
+`check-paged-order.sh`: clean), both production builds compile
+(portal's one prerender failure is the same long-documented
+sandbox-only missing-Supabase-env-var limitation, unrelated to this
+change). Migrations 188 and 189 applied live and verified (13 live
+probe checks total across both, all passing).
+
+### Group 7: regression, adversarial QA, handover (gate: PASS)
+
+Full handover + QA report: `docs/CORE_OS_360_PHASE23_HANDOVER.md`.
+
+No Critical, High or Medium defect found in a dedicated adversarial
+pass across all six groups. One hardening applied:
+`ThresholdsForm.tsx`'s number parsing now explicitly checks
+`raw === '' || Number.isNaN(n)` rather than relying on
+`JSON.stringify(NaN)` happening to serialise to `null` — the original
+behaviour was already safe, just implicit rather than explicit.
+Confirmed clean: `ConnectionsPanel.tsx`'s "Add a connection" cannot
+create a cross-organisation link (`hs_links_check()`, 122, enforces
+this at the trigger level regardless of what the form sends);
+`resolveEntityLabels()` relies entirely on each target table's own
+RLS with no filter of its own, and can only ever be asked to resolve
+an id that arrived via an already-same-organisation `hs_links` row;
+migration 187's consultancy policies are proven SELECT-only against a
+real INSERT attempt, not merely named that way; migrations 188/189
+are proven staff-only against a genuine non-staff session, not merely
+a policy definition read back.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1709 admin / 804 portal, unchanged from Groups 4-6 — this pass's only
+code change was the `ThresholdsForm.tsx` hardening, which added no new
+test), all six CI guards pass with no regressions, both production
+builds compile.
+
+**Phase 23 is complete. Phase 24 may begin** once this branch merges,
+per the Master Spec's own sequential-gate rule — its scope should be
+read fresh from `docs/CORE_OS_360_COMPLETION_MATRIX.md`'s own gap
+ledger, the same "repository reality beats handover narrative"
+discipline every phase since Phase 20 has used.
+

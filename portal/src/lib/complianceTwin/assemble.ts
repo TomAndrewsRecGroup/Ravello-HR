@@ -48,6 +48,15 @@ export interface ComplianceTwinArea {
   band: ComplianceTwinBand;
   /** Plain sentences built from the underlying numbers — never AI-generated. */
   reasons: string[];
+  /**
+   * Core-OS 360 Completion Programme, Phase 23, Group 6 (closes
+   * gap-ledger row C12.6): the exact raw values this area's own
+   * red/amber checks read — never a re-derivation, the same numbers
+   * already driving `reasons`, just also exposed structurally. Any
+   * threshold actually used (post-override, Group 5) is included
+   * alongside the value it was compared against.
+   */
+  inputs: Record<string, number | string | null>;
 }
 
 export interface ComplianceTwinSnapshot {
@@ -63,13 +72,32 @@ export interface ComplianceTwinInput {
   evidence: EvidenceCoverageSummary;
 }
 
-// Thresholds. Named and documented rather than inlined, and reused from
-// an existing precedent where one already exists in this codebase.
-const AUDIT_SCORE_LOW_THRESHOLD = 70; // Phase 5 Group 6's management-review data pack already uses "audits scoring below 70%"
-const EVIDENCE_RED_THRESHOLD = 50;
-const EVIDENCE_AMBER_THRESHOLD = 90;
-const OBJECTIVES_ON_TRACK_AMBER_THRESHOLD = 50;
-const WASTE_NON_CONFORMANCE_AMBER_THRESHOLD = 10; // percent
+/**
+ * Core-OS 360 Completion Programme, Phase 23, Group 5 (closes
+ * gap-ledger row C12.5): a nullable per-company override for each
+ * named threshold below. `null`/`undefined` always falls back to the
+ * documented default, never silently guessed — deciding these
+ * thresholds decides what a CLIENT sees as red/amber/green on their
+ * own posture, so an override is only ever staff-set
+ * (compliance_twin_thresholds, migration 189, staff-only RLS), never
+ * client-writable.
+ */
+export interface ComplianceTwinThresholds {
+  auditScoreLowThreshold?: number | null;
+  evidenceRedThreshold?: number | null;
+  evidenceAmberThreshold?: number | null;
+  objectivesOnTrackAmberThreshold?: number | null;
+  wasteNonConformanceAmberThreshold?: number | null;
+}
+
+// Default thresholds. Named and documented rather than inlined, and
+// reused from an existing precedent where one already exists in this
+// codebase. Each may be overridden per company via ComplianceTwinThresholds.
+const DEFAULT_AUDIT_SCORE_LOW_THRESHOLD = 70; // Phase 5 Group 6's management-review data pack already uses "audits scoring below 70%"
+const DEFAULT_EVIDENCE_RED_THRESHOLD = 50;
+const DEFAULT_EVIDENCE_AMBER_THRESHOLD = 90;
+const DEFAULT_OBJECTIVES_ON_TRACK_AMBER_THRESHOLD = 50;
+const DEFAULT_WASTE_NON_CONFORMANCE_AMBER_THRESHOLD = 10; // percent
 
 const BAND_SEVERITY: Record<ComplianceTwinBand, number> = { green: 0, amber: 1, red: 2 };
 
@@ -93,6 +121,7 @@ function buildArea(
   redReasons: string[],
   amberReasons: string[],
   cleanReason: string,
+  inputs: Record<string, number | string | null>,
 ): ComplianceTwinArea {
   const band = worstBand([
     ...redReasons.map(() => 'red' as const),
@@ -100,10 +129,11 @@ function buildArea(
   ]);
   const reasons =
     band === 'red' ? [...redReasons, ...amberReasons] : band === 'amber' ? amberReasons : [cleanReason];
-  return { area, label, band, reasons };
+  return { area, label, band, reasons, inputs };
 }
 
-function safetyArea(k: HsKpis): ComplianceTwinArea {
+function safetyArea(k: HsKpis, thresholds?: ComplianceTwinThresholds): ComplianceTwinArea {
+  const auditScoreLowThreshold = thresholds?.auditScoreLowThreshold ?? DEFAULT_AUDIT_SCORE_LOW_THRESHOLD;
   const red: string[] = [];
   const amber: string[] = [];
 
@@ -116,14 +146,14 @@ function safetyArea(k: HsKpis): ComplianceTwinArea {
   if (k.equipmentDueSoonCount > 0) {
     amber.push(`${k.equipmentDueSoonCount} equipment item(s) due for inspection within 30 days`);
   }
-  if (k.lastAuditScore != null && k.lastAuditScore < AUDIT_SCORE_LOW_THRESHOLD) {
+  if (k.lastAuditScore != null && k.lastAuditScore < auditScoreLowThreshold) {
     // hs_audits.score is always an integer today (hs_submit_audit()
     // rounds it, and that RPC is the table's only writer — checked
     // before deciding this needed no Math.round of its own). Rounded
     // here anyway for the same defensive consistency every other
     // percentage in this file already has, in case a future writer
     // ever stores a fractional score.
-    amber.push(`Last audit scored ${Math.round(k.lastAuditScore)}%, below the ${AUDIT_SCORE_LOW_THRESHOLD}% threshold`);
+    amber.push(`Last audit scored ${Math.round(k.lastAuditScore)}%, below the ${auditScoreLowThreshold}% threshold`);
   }
 
   return buildArea(
@@ -132,22 +162,31 @@ function safetyArea(k: HsKpis): ComplianceTwinArea {
     red,
     amber,
     'No RIDDOR incidents, no overdue or soon-due equipment inspections, and the last audit score (if any) is at or above threshold',
+    {
+      riddorLast12Months: k.riddorLast12Months,
+      equipmentOverdueCount: k.equipmentOverdueCount,
+      equipmentDueSoonCount: k.equipmentDueSoonCount,
+      lastAuditScore: k.lastAuditScore,
+      auditScoreLowThreshold,
+    },
   );
 }
 
-function governanceArea(k: GovernanceKpis): ComplianceTwinArea {
+function governanceArea(k: GovernanceKpis, thresholds?: ComplianceTwinThresholds): ComplianceTwinArea {
+  const objectivesOnTrackAmberThreshold = thresholds?.objectivesOnTrackAmberThreshold ?? DEFAULT_OBJECTIVES_ON_TRACK_AMBER_THRESHOLD;
+  const wasteNonConformanceAmberThreshold = thresholds?.wasteNonConformanceAmberThreshold ?? DEFAULT_WASTE_NON_CONFORMANCE_AMBER_THRESHOLD;
   const red: string[] = [];
   const amber: string[] = [];
 
   if (k.overdueLegalEvaluationsCount > 0) {
     red.push(`${k.overdueLegalEvaluationsCount} applicable legal obligation(s) with an overdue review`);
   }
-  if (k.objectivesOnTrackPercent != null && k.objectivesOnTrackPercent < OBJECTIVES_ON_TRACK_AMBER_THRESHOLD) {
+  if (k.objectivesOnTrackPercent != null && k.objectivesOnTrackPercent < objectivesOnTrackAmberThreshold) {
     amber.push(`Only ${Math.round(k.objectivesOnTrackPercent)}% of active objectives are on track or achieved`);
   }
   if (
     k.wasteNonConformancePercent != null &&
-    k.wasteNonConformancePercent > WASTE_NON_CONFORMANCE_AMBER_THRESHOLD
+    k.wasteNonConformancePercent > wasteNonConformanceAmberThreshold
   ) {
     amber.push(`${Math.round(k.wasteNonConformancePercent)}% of recorded waste movements were flagged non-conformant`);
   }
@@ -172,6 +211,13 @@ function governanceArea(k: GovernanceKpis): ComplianceTwinArea {
     // confirmed good state, matching this codebase's standing rule that
     // absence of evidence is not evidence of a positive finding.
     'No overdue legal obligation reviews on record, and no evidence of objectives falling behind or elevated waste non-conformance',
+    {
+      overdueLegalEvaluationsCount: k.overdueLegalEvaluationsCount,
+      objectivesOnTrackPercent: k.objectivesOnTrackPercent,
+      objectivesOnTrackAmberThreshold,
+      wasteNonConformancePercent: k.wasteNonConformancePercent,
+      wasteNonConformanceAmberThreshold,
+    },
   );
 }
 
@@ -204,6 +250,12 @@ function riskGraphArea(g: RiskGraphIntelligence): ComplianceTwinArea {
     red,
     amber,
     'Every hazard is covered, no ineffective controls, and every applicable legal obligation is linked',
+    {
+      assessmentsWithIneffectiveControlsCount: g.assessmentsWithIneffectiveControls.length,
+      uncoveredHazardsCount: g.uncoveredHazards.length,
+      ineffectiveSharedControlsCount: g.ineffectiveSharedControls.length,
+      unlinkedApplicableObligationsCount: g.unlinkedApplicableObligations.length,
+    },
   );
 }
 
@@ -238,16 +290,27 @@ function incidentPatternsArea(p: IncidentPatternSummary): ComplianceTwinArea {
     red,
     amber,
     'No fatal or critical incidents, no recurring root causes or location clusters, and major-severity incidents are not worsening',
+    {
+      fatalCurrentWindow: p.severityComparison.currentWindow.fatal,
+      criticalCurrentWindow: p.severityComparison.currentWindow.critical,
+      majorCurrentWindow: p.severityComparison.currentWindow.major,
+      majorPriorWindow: p.severityComparison.priorWindow.major,
+      recurringRootCausesCount: p.recurringRootCauses.length,
+      siteClustersCount: p.siteClusters.length,
+      departmentClustersCount: p.departmentClusters.length,
+    },
   );
 }
 
-function evidenceArea(e: EvidenceCoverageSummary): ComplianceTwinArea {
+function evidenceArea(e: EvidenceCoverageSummary, thresholds?: ComplianceTwinThresholds): ComplianceTwinArea {
+  const evidenceRedThreshold = thresholds?.evidenceRedThreshold ?? DEFAULT_EVIDENCE_RED_THRESHOLD;
+  const evidenceAmberThreshold = thresholds?.evidenceAmberThreshold ?? DEFAULT_EVIDENCE_AMBER_THRESHOLD;
   const red: string[] = [];
   const amber: string[] = [];
 
-  if (e.coveragePercent != null && e.coveragePercent < EVIDENCE_RED_THRESHOLD) {
-    red.push(`Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${EVIDENCE_RED_THRESHOLD}% threshold`);
-  } else if (e.coveragePercent != null && e.coveragePercent < EVIDENCE_AMBER_THRESHOLD) {
+  if (e.coveragePercent != null && e.coveragePercent < evidenceRedThreshold) {
+    red.push(`Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${evidenceRedThreshold}% threshold`);
+  } else if (e.coveragePercent != null && e.coveragePercent < evidenceAmberThreshold) {
     // Deliberately `else if`, not two independent checks — found in
     // Group 3's own adversarial review. Coverage below the RED
     // threshold is also, trivially, below the amber one; two
@@ -256,7 +319,7 @@ function evidenceArea(e: EvidenceCoverageSummary): ComplianceTwinArea {
     // the same number crossing two thresholds at once. A red area
     // reports only its own, more severe, reason.
     amber.push(
-      `Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${EVIDENCE_AMBER_THRESHOLD}% threshold`,
+      `Evidence coverage is ${Math.round(e.coveragePercent)}%, below the ${evidenceAmberThreshold}% threshold`,
     );
   }
 
@@ -266,16 +329,21 @@ function evidenceArea(e: EvidenceCoverageSummary): ComplianceTwinArea {
     red,
     amber,
     'Evidence coverage is at or above the 90% threshold (or no register completions have been recorded yet)',
+    {
+      coveragePercent: e.coveragePercent,
+      evidenceRedThreshold,
+      evidenceAmberThreshold,
+    },
   );
 }
 
-export function assembleComplianceTwin(input: ComplianceTwinInput): ComplianceTwinSnapshot {
+export function assembleComplianceTwin(input: ComplianceTwinInput, thresholds?: ComplianceTwinThresholds): ComplianceTwinSnapshot {
   const areas: ComplianceTwinArea[] = [
-    safetyArea(input.hsKpis),
-    governanceArea(input.governanceKpis),
+    safetyArea(input.hsKpis, thresholds),
+    governanceArea(input.governanceKpis, thresholds),
     riskGraphArea(input.riskGraph),
     incidentPatternsArea(input.incidentPatterns),
-    evidenceArea(input.evidence),
+    evidenceArea(input.evidence, thresholds),
   ];
 
   return { overallBand: worstBand(areas.map(a => a.band)), areas };

@@ -192,11 +192,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 |---|---|---|---|
 | C8.1 | `risk_graph_neighbors()`, SECURITY INVOKER, depth-capped | IMPLEMENTED | 177 |
 | C8.2 | Connected Compliance Intelligence (uncovered hazards, ineffective shared controls, unlinked obligations) | IMPLEMENTED | `lib/riskGraph/intelligence.ts`, fixed post-hoc for the coverage-type bug (Group 4) |
-| C8.3 | Reusable Connections panel on relevant record pages | MISSING | Master Spec Phase 23 known-gap: "no reusable Connections panel and no portfolio-wide consultancy version" — Phase 8 built ONE combined explorer+dashboard page, not a per-record panel → assigned **Phase 23** |
-| C8.4 | Neighbour label resolution beyond hazards/RAs/legal obligations | PARTIAL | Phase 8's own scope note: "a known, disclosed scope limit... labelling every one of the ~35 `hs_entity_table()` branches would need a query per branch" → assigned **Phase 23** |
-| C8.5 | Portfolio-safe consultant Risk Graph view | MISSING | Phase 8's own scope decision: "no portfolio-wide (consultancy) RLS was added" → assigned **Phase 23** |
+| C8.3 | Reusable Connections panel on relevant record pages | IMPLEMENTED | **Phase 23 Group 1**: `ConnectionsPanel.tsx` (shared-dupe pair), wired into admin's audit detail page and portal's incident detail page (additive alongside the bespoke `IncidentLinks.tsx`) |
+| C8.4 | Neighbour label resolution beyond hazards/RAs/legal obligations | IMPLEMENTED | **Phase 23 Group 1**: `lib/riskGraph/entityLabels.ts` (shared-dupe pair), a curated label map for 14 entity types + incident, falling back to a humanised type + truncated id for anything uncurated |
+| C8.5 | Portfolio-safe consultant Risk Graph view | IMPLEMENTED | **Phase 23 Group 2**: migration 187 (six additive consultancy-read RLS policies on `hazards`/`risk_assessments`/`risk_assessment_items`/`risk_item_controls`/`organisation_legal_obligations`/`hs_links`), `RiskGraphClient.tsx` promoted to a shared-dupe pair, new portal page `/consultancy/clients/[id]/risk-graph`. Live-probed (8/8 checks): authorised Client A visible, unauthorised Client B invisible, SELECT-only, and `risk_graph_neighbors()` proven portfolio-safe with zero code change |
 
-**Gaps carried forward**: C8.3, C8.4, C8.5 → **Phase 23** (headline scope).
+**Gaps closed by Phase 23 Group 1-2**: C8.3, C8.4, C8.5.
 
 ---
 
@@ -234,11 +234,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 |---|---|---|---|
 | C11.1 | Register-completion evidence-coverage computation | IMPLEMENTED | `lib/evidenceEngine/analyze.ts` |
 | C11.2 | Evidence Library (browsing list, signed-on-demand URLs) | IMPLEMENTED | 200-row cap, session-signed |
-| C11.3 | Entity type / category / outcome / date-range / current-vs-historical filters | MISSING | Master Spec Phase 23 known-gap: "no category/outcome/date filters" → assigned **Phase 23** |
-| C11.4 | Current-outstanding-gap view (latest completion) vs. audit-history view | MISSING | Master Spec Phase 23 known-gap: "no current-outstanding view" → assigned **Phase 23** |
-| C11.5 | Combined cross-reference navigation with `requirement_evidence_links`/ISO/legal evidence | MISSING | Master Spec Phase 23 known-gap: "no combined evidence cross-reference" → assigned **Phase 23** |
+| C11.3 | Entity type / category / outcome / date-range / current-vs-historical filters | IMPLEMENTED | **Phase 23 Group 3**: `EvidenceEngineClient.tsx` gains client-side filters over the already-fetched, row-capped arrays — no new query shape |
+| C11.4 | Current-outstanding-gap view (latest completion) vs. audit-history view | IMPLEMENTED | **Phase 23 Group 3**: `analyzeEvidenceCoverage()` gains `currentGaps` — a genuinely different computation (only the NEWEST completion per item), not a UI filter over `gaps` |
+| C11.5 | Combined cross-reference navigation with `requirement_evidence_links`/ISO/legal evidence | IMPLEMENTED | **Phase 23 Group 3**: `crossReferenceComplianceItems()` — counts-only, per source kind (ISO clause/legal obligation/objective/audit finding), linking to the relevant catalogue page |
 
-**Gaps carried forward**: C11.3, C11.4, C11.5 → **Phase 23**.
+**Gaps closed by Phase 23 Group 3**: C11.3, C11.4, C11.5.
 
 ---
 
@@ -249,11 +249,11 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C12.1 | Composition of 5 existing modules into per-area RAG bands | IMPLEMENTED | `lib/complianceTwin/assemble.ts` |
 | C12.2 | Named-threshold bands, never a formula/score | IMPLEMENTED | fixed-constant `if`-chains |
 | C12.3 | Red-still-reports-amber-reasons; null-vs-zero handling | IMPLEMENTED (fixed post-hoc) | Group 3 adversarial pass fixed 2 real Medium defects |
-| C12.4 | Stored snapshot/history for posture trend | MISSING | Master Spec Phase 23 known-gap: "no stored snapshot" → assigned **Phase 23** |
-| C12.5 | Configurable thresholds/weighting at org/sector level, safe defaults, audited | MISSING | Master Spec Phase 23 known-gap: "hardcoded/non-configurable areas/thresholds" → assigned **Phase 23** |
-| C12.6 | Every score exposes inputs, missing evidence, rationale | PARTIAL | reasons are exposed; a structured "what's missing" breakdown per area is not a separate first-class surface → assigned **Phase 23** |
+| C12.4 | Stored snapshot/history for posture trend | IMPLEMENTED | **Phase 23 Group 4**: migration 188, `compliance_twin_snapshots` (staff-only RLS, UNIQUE(company_id, snapshot_date) upserts), "Save today's snapshot" + a 30-day trend list, admin Digital Twin page only |
+| C12.5 | Configurable thresholds/weighting at org/sector level, safe defaults, audited | IMPLEMENTED | **Phase 23 Group 5**: migration 189, `compliance_twin_thresholds` (staff-only RLS, audited), `assembleComplianceTwin()` gains an optional `thresholds` param — null/unset always falls back to the documented default; a staff-only edit form on the admin Digital Twin page |
+| C12.6 | Every score exposes inputs, missing evidence, rationale | IMPLEMENTED | **Phase 23 Group 6**: `ComplianceTwinArea` gains `inputs` — the exact raw values and the threshold actually used (post-override), a collapsible "Show inputs" per area in `ComplianceTwinView.tsx` |
 
-**Gaps carried forward**: C12.4, C12.5, C12.6 → **Phase 23**.
+**Gaps closed by Phase 23 Group 4-6**: C12.4, C12.5, C12.6.
 
 ---
 

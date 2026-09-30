@@ -105,7 +105,10 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
           <h1 className="text-xl font-display font-semibold" style={{ color: 'var(--ink)' }}>{(company as any)?.name ?? org.name}</h1>
           <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>{(company as any)?.sector ?? '—'} · {(company as any)?.contact_email ?? '—'}</p>
         </div>
-        <Link href={`/open-workspace?org=${id}&next=/dashboard`} className="btn-secondary btn-sm">Open full workspace</Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/consultancy/clients/${id}/risk-graph`} className="btn-secondary btn-sm">Risk Graph</Link>
+          <Link href={`/open-workspace?org=${id}&next=/dashboard`} className="btn-secondary btn-sm">Open full workspace</Link>
+        </div>
       </div>
 
       <ClientActionForms clientId={id} />

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
+import { portalUrl } from '@/lib/portalUrl';
 import { computeRiskGraphIntelligence, type RiskGraphLink } from '@/lib/riskGraph/intelligence';
 import RiskGraphClient from '@/components/hs/RiskGraphClient';
 
@@ -72,6 +73,6 @@ export default async function RiskGraphPage(props: { params: Promise<{ companyId
   ];
 
   return (
-    <RiskGraphClient companyId={params.companyId} intelligence={intelligence} exploreOptions={exploreOptions} />
+    <RiskGraphClient companyId={params.companyId} intelligence={intelligence} exploreOptions={exploreOptions} role="admin" portalBase={portalUrl()} />
   );
 }

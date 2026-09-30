@@ -159,20 +159,23 @@
     {
       "id": "C8.3",
       "phase": "C8",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "ConnectionsPanel.tsx shared-dupe pair, Phase 23 Group 1"
     },
     {
       "id": "C8.4",
       "phase": "C8",
-      "status": "PARTIAL",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "lib/riskGraph/entityLabels.ts shared-dupe pair, Phase 23 Group 1"
     },
     {
       "id": "C8.5",
       "phase": "C8",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 187, six consultancy-read RLS policies, Phase 23 Group 2, live-probed 8/8"
     },
     {
       "id": "C9.4",
@@ -201,38 +204,44 @@
     {
       "id": "C11.3",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "EvidenceEngineClient.tsx client-side filters, Phase 23 Group 3"
     },
     {
       "id": "C11.4",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "analyzeEvidenceCoverage() gains currentGaps, Phase 23 Group 3"
     },
     {
       "id": "C11.5",
       "phase": "C11",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "crossReferenceComplianceItems(), Phase 23 Group 3"
     },
     {
       "id": "C12.4",
       "phase": "C12",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 188, compliance_twin_snapshots, Phase 23 Group 4"
     },
     {
       "id": "C12.5",
       "phase": "C12",
-      "status": "MISSING",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "migration 189, compliance_twin_thresholds, Phase 23 Group 5"
     },
     {
       "id": "C12.6",
       "phase": "C12",
-      "status": "PARTIAL",
-      "assigned_to_phase": 23
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 23,
+      "note": "ComplianceTwinArea.inputs, Phase 23 Group 6"
     },
     {
       "id": "C13.6",
