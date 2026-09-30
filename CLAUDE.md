@@ -8836,12 +8836,92 @@ step, was built with `{ count: 'exact' }` from the start), both
 production builds compile. Migration 179 applied live and verified (14/
 14 probe checks pass).
 
-### Group 2 and Group 3
+### Group 2: portal badge management + public scan/check-in UI
 
-Not yet built as of this CLAUDE.md entry — Group 1 is committed and
-merged on its own branch first, per this codebase's standing "regular
-merges so you don't lose anything" discipline; the UI and the final
-regression/adversarial-QA/handover pass follow as their own PRs.
+- **`portal/src/lib/workforce/qrTokens.ts`**'s `mintWorkerQrToken()`/
+  `revokeWorkerQrToken()`/`hasActiveWorkerQrToken()` are called only
+  from `POST`/`DELETE /api/workforce/people/[id]/badge` — the one route
+  boundary a mint/revoke can cross, since `worker_qr_tokens` is
+  RLS-on-no-policies and a direct session write is never possible.
+  **`has_capability()` is called under the CALLER'S OWN session, never
+  the service role**, so it evaluates the caller's REAL grant for the
+  PERSON's own organisation (staff included — `is_tps_staff()` already
+  short-circuits it true) — the service-role client only performs the
+  write itself, after that check has passed. This is the first place
+  in this codebase a route calls `has_capability()` directly as an RPC
+  rather than relying on it inside RLS; legitimate, since Phase 6's own
+  UI already established calling it from app code "to explain a scoped
+  grant's own limits."
+- **The raw badge token is returned ONLY from the mint response, ever.**
+  `WorkerBadgePanel.tsx` renders the QR code ENTIRELY in the browser
+  (the `qrcode` npm package, a new dependency — never a third-party
+  hosted QR image service, which would leak the badge URL, and
+  therefore the token, off this platform) and tells the operator to
+  print or save it now: reopening the page later shows only "active" —
+  there is no "look the badge back up" read path, the same reason a
+  real ID card is reissued rather than reprinted from a stored copy.
+  Embedded in the person compliance profile page
+  (`/lead/workforce/people/[id]`), visible on every tab (not gated
+  behind a new profile tab of its own), gated on `workforce.manage` for
+  the management actions and a plain status line otherwise.
+- **`/lead/workforce/onsite`** (linked from the workforce index page's
+  own action row) lists everyone with an OPEN `site_checkins` row,
+  grouped by site — a plain, capability-gated (`workforce.read`) READ
+  under the ordinary session; RLS already does the real work. **No
+  manual check-in/out control anywhere in the portal** — the plan
+  doc's own flagged debt: the only way a row appears or disappears is
+  the public scan page.
+- **`/w/[token]`** (outside the `(portal)` route group, the exact
+  `/test/[token]`/`/policy/[token]`/`/leave/[token]` shape: a server
+  preflight fetch to its own API, then a client view) shows the coarse
+  status via the SAME `DEPLOYMENT_STATUS_LABELS`/`DEPLOYMENT_STATUS_
+  COLOURS` vocabulary the rest of the workforce subsystem already uses
+  — no separate, parallel label set invented for the public page — plus
+  a single Check in/Check out button.
+- **`lib/workforce/qrStatus.ts`**'s `loadWorkerQrStatus()` is the ONE
+  place a token is resolved to a person, called by the GET status route
+  and both check-in/out routes, so all three can never disagree about
+  what a token means. All three run under the SERVICE ROLE — an
+  anonymous scan has no session for RLS to evaluate anyway, and
+  `worker_qr_tokens` has no session policy regardless.
+- **Check-in always targets the worker's OWN assigned `people.site_id`,
+  never a manual site picker** — v1 scope, flagged as debt (a scan
+  station's own site is a real next step). A repeated check-in scan
+  while already checked in is reported as a no-op (`alreadyCheckedIn:
+  true`), never a second open row — the DB's own partial unique index
+  is the real guard; the route's `23505` branch only avoids surfacing
+  it as an error.
+- **Rate-limited the same way `/api/test/[token]`/`/api/policy/[token]`
+  already are** (`createRateLimiter`/`getRateLimitKey`, IP-keyed): 60
+  GETs / 20 POSTs per 5 minutes.
+- **`/w/` and `/api/w/` added to `PUBLIC_ROUTES`** in the portal
+  middleware, both the page and its own server-side preflight call —
+  the same reasoning every prior no-login link in this file already
+  states: the person scanning a badge may have no portal login at all.
+  A new middleware test pins the exemption is scoped to exactly `/w/`,
+  not a lookalike like `/workspace-admin`.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1561
+admin, unchanged — this group is portal-only; 737 portal — 722 + 15
+new: 8 `badge/route.test.ts` cases + 2 new middleware cases +
+`portalPagesLinked.test.ts`/`clientServerBoundary.test.ts` picking up
+the new pages/routes automatically), all five CI guards pass with no
+regressions (`check-shared-dupes.sh`: 56 pairs, unchanged; `check-row-
+cap.sh`: clean; `check-route-validation.sh`: 44, unchanged — none of
+the new routes read a request body at all; `check-admin-routes-linked.sh`:
+42 static admin routes, all reachable — this group touched no admin
+route; `check-blind-updates.sh`: 102, unchanged — the checkout route's
+`.update()` was built with `{ count: 'exact' }` from the start), both
+production builds compile, including `/api/workforce/people/[id]/badge`,
+`/lead/workforce/onsite`, `/w/[token]` and `/api/w/[token]/{,checkin,
+checkout}`.
+
+### Group 3
+
+Not yet built as of this CLAUDE.md entry — Groups 1-2 are committed and
+merged on their own branches first, per this codebase's standing
+"regular merges so you don't lose anything" discipline; the final
+regression/adversarial-QA/handover pass follows as its own PR.
 
 **Phase 15 is NOT to begin** until this phase is fully merged and
 deployed, per the operator's standing instruction.

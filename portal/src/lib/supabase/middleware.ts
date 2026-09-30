@@ -32,6 +32,13 @@ const PUBLIC_ROUTES = [
   // no cookie, so both the page and the API must be public.
   /^\/test\//,
   /^\/api\/test\//,
+  // Worker QR badge scan (Core-OS 360 Phase 14, 179). Whoever scans a
+  // badge — a security guard, a site manager — may have no portal
+  // login at all, the same reasoning every link above already carries.
+  // Authorisation is the token in the URL, through the service-role
+  // client (worker_qr_status(), service_role only).
+  /^\/w\//,
+  /^\/api\/w\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

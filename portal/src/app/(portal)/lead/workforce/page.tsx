@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Upload, CalendarClock } from 'lucide-react';
+import { ShieldCheck, Upload, CalendarClock, QrCode } from 'lucide-react';
 import { getWorkforceContext } from '@/lib/workforce/context';
 import { orgSitesAndDepartments, param, fmtDateTime } from '@/lib/hs/safetyContext';
 import {
@@ -82,6 +82,9 @@ export default async function SafeToDeployPage(props: { searchParams: Promise<Re
           <CsvButton filename="safe-to-deploy.csv" rows={matrixCsvRows(rows, names)} columns={WORKFORCE_CSV_COLUMNS} />
           <Link href="/lead/workforce/exceptions" className="btn-secondary btn-sm" style={{ minHeight: 40 }}>
             <CalendarClock size={14} /> Exceptions
+          </Link>
+          <Link href="/lead/workforce/onsite" className="btn-secondary btn-sm" style={{ minHeight: 40 }}>
+            <QrCode size={14} /> On site
           </Link>
           {canImport && (
             <Link href="/lead/workforce/import" className="btn-secondary btn-sm" style={{ minHeight: 40 }}>

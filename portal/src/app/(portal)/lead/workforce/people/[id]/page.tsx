@@ -26,6 +26,9 @@ import {
   RecordTrainingForm,
 } from './ProfileForms';
 import type { SiteOption, DepartmentOption } from './rows';
+import { createServiceSupabaseClient } from '@/lib/supabase/service';
+import { hasActiveWorkerQrToken } from '@/lib/workforce/qrTokens';
+import WorkerBadgePanel from '@/components/workforce/WorkerBadgePanel';
 
 export const metadata: Metadata = { title: 'Person compliance profile' };
 export const dynamic = 'force-dynamic';
@@ -50,7 +53,8 @@ export default async function PersonProfilePage(props: {
   const today = todayIso();
   const asOf = parseAsOf(param(sp, 'as_of'), today);
 
-  const [data, { sites, departments }] = await Promise.all([
+  const canManageBadge = ctx.can('workforce.manage');
+  const [data, { sites, departments }, hasBadge] = await Promise.all([
     loadProfile(supabase, companyId, id, asOf, {
       health: tabs.includes('occupational_health') ? 'full' : false,
       incidents: tabs.includes('safety'),
@@ -58,6 +62,10 @@ export default async function PersonProfilePage(props: {
       extras: true,
     }),
     orgSitesAndDepartments(supabase, companyId),
+    // worker_qr_tokens is RLS-on-no-policies (service role only, 179) —
+    // this read never touches the token itself, only whether an active
+    // one exists.
+    hasActiveWorkerQrToken(createServiceSupabaseClient(), id),
   ]);
   if (data.cannotSee || !data.person) return <CannotSee />;
   const p = data.person;
@@ -97,6 +105,8 @@ export default async function PersonProfilePage(props: {
           {p.site_id && names.sites[p.site_id] && <> · {names.sites[p.site_id]}</>}
         </p>
       </section>
+
+      <WorkerBadgePanel personId={p.id} hasActiveBadge={hasBadge} canManage={canManageBadge} />
 
       <nav aria-label="Profile sections" className="flex flex-wrap gap-1 no-print">
         {tabs.map(t => (
