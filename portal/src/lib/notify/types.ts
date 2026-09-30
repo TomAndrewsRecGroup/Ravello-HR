@@ -330,9 +330,17 @@ export function isNotificationType(v: string): v is NotificationType {
 export const EMAIL_MODES = ['immediate', 'daily', 'off'] as const;
 export type EmailMode = typeof EMAIL_MODES[number];
 
+/** Core-OS 360 Completion Programme, Phase 25, Group 5 (C9.5). A
+ *  scheduled "What Changed?" digest for a client's own organisation —
+ *  'off' by default (migration 193): a brand-new digest nobody has
+ *  asked for yet is explicit opt-in, not a surprise new email. */
+export const WHAT_CHANGED_DIGEST_MODES = ['off', 'daily', 'weekly'] as const;
+export type WhatChangedDigestMode = typeof WHAT_CHANGED_DIGEST_MODES[number];
+
 export interface NotificationPreferences {
-  user_id:        string;
-  email_mode:     EmailMode;
-  muted_types:    string[];
-  weekly_summary: boolean;
+  user_id:              string;
+  email_mode:            EmailMode;
+  muted_types:           string[];
+  weekly_summary:        boolean;
+  what_changed_digest:   WhatChangedDigestMode;
 }

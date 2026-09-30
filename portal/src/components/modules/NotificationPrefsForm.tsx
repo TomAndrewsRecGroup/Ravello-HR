@@ -3,16 +3,20 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Check } from 'lucide-react';
-import { EMAIL_MODES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_LABELS, type EmailMode, type NotificationType } from '@/lib/notify/types';
+import { EMAIL_MODES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_LABELS, WHAT_CHANGED_DIGEST_MODES, type EmailMode, type NotificationType, type WhatChangedDigestMode } from '@/lib/notify/types';
 
 // Notification preferences, stored in notification_preferences (096)
 // and read by the notification engine before every email. The previous
 // panel saved three checkboxes to localStorage and nothing read them.
 
 export interface PrefsInitial {
-  email_mode:     EmailMode;
-  muted_types:    string[];
-  weekly_summary: boolean;
+  email_mode:           EmailMode;
+  muted_types:          string[];
+  weekly_summary:       boolean;
+  /** Core-OS 360 Completion Programme, Phase 25, Group 5 (C9.5). Only
+   *  read/saved when showWhatChangedDigest is true — undefined is
+   *  treated as 'off'. */
+  what_changed_digest?: WhatChangedDigestMode;
 }
 
 interface Props {
@@ -20,6 +24,11 @@ interface Props {
   initial: PrefsInitial;
   /** Which types to offer muting for (the ones this app's users receive). */
   types?:  readonly NotificationType[];
+  /** Portal only — staff have no single "own organisation" for a
+   *  digest to summarise (see lib/whatChanged/clientScope.ts's own
+   *  client-facing scope), so admin's settings page omits this
+   *  control entirely rather than showing a toggle that does nothing. */
+  showWhatChangedDigest?: boolean;
 }
 
 const MODE_LABELS: Record<EmailMode, { label: string; hint: string }> = {
@@ -28,11 +37,18 @@ const MODE_LABELS: Record<EmailMode, { label: string; hint: string }> = {
   off:       { label: 'In-app only',                 hint: 'No email; the bell still shows everything.' },
 };
 
-export default function NotificationPrefsForm({ userId, initial, types = NOTIFICATION_TYPES }: Props) {
+const DIGEST_LABELS: Record<WhatChangedDigestMode, { label: string; hint: string }> = {
+  off:    { label: 'Off',            hint: 'No "What Changed?" digest email.' },
+  daily:  { label: 'Daily',          hint: "Yesterday's activity for your organisation, each morning." },
+  weekly: { label: 'Weekly',         hint: 'The past week’s activity for your organisation, every Monday.' },
+};
+
+export default function NotificationPrefsForm({ userId, initial, types = NOTIFICATION_TYPES, showWhatChangedDigest = false }: Props) {
   const supabase = createClient();
   const [mode, setMode] = useState<EmailMode>(initial.email_mode);
   const [muted, setMuted] = useState<Set<string>>(new Set(initial.muted_types));
   const [weekly, setWeekly] = useState(initial.weekly_summary);
+  const [digest, setDigest] = useState<WhatChangedDigestMode>(initial.what_changed_digest ?? 'off');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +62,8 @@ export default function NotificationPrefsForm({ userId, initial, types = NOTIFIC
     e.preventDefault();
     setSaving(true); setError(null); setSaved(false);
     const { error: err } = await supabase.from('notification_preferences').upsert({
-      user_id: userId, email_mode: mode, muted_types: [...muted], weekly_summary: weekly, updated_at: new Date().toISOString(),
+      user_id: userId, email_mode: mode, muted_types: [...muted], weekly_summary: weekly,
+      what_changed_digest: digest, updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
     setSaving(false);
     if (err) { setError(err.message); return; }
@@ -72,6 +89,21 @@ export default function NotificationPrefsForm({ userId, initial, types = NOTIFIC
         <input type="checkbox" checked={weekly} onChange={() => { setWeekly(w => !w); setSaved(false); }} className="w-4 h-4 rounded" />
         <span className="text-sm" style={{ color: 'var(--ink)' }}>Weekly summary email</span>
       </label>
+
+      {showWhatChangedDigest && (
+        <fieldset className="space-y-2">
+          <legend className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-soft)' }}>&quot;What Changed?&quot; digest</legend>
+          {WHAT_CHANGED_DIGEST_MODES.map(m => (
+            <label key={m} className="flex items-start gap-3 cursor-pointer">
+              <input type="radio" name="what_changed_digest" value={m} checked={digest === m} onChange={() => { setDigest(m); setSaved(false); }} className="mt-1" />
+              <span>
+                <span className="block text-sm" style={{ color: 'var(--ink)' }}>{DIGEST_LABELS[m].label}</span>
+                <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{DIGEST_LABELS[m].hint}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       <details>
         <summary className="text-xs font-semibold cursor-pointer" style={{ color: 'var(--ink-soft)' }}>

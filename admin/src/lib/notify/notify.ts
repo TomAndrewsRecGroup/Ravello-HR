@@ -161,7 +161,7 @@ export async function readPreferences(sb: SupabaseClient, userIds: string[]): Pr
   const out = new Map<string, NotificationPreferences>();
   if (userIds.length === 0) return out;
   const { data, error } = await sb.from('notification_preferences')
-    .select('user_id, email_mode, muted_types, weekly_summary').in('user_id', userIds);
+    .select('user_id, email_mode, muted_types, weekly_summary, what_changed_digest').in('user_id', userIds);
   if (error) throw new Error(`read preferences: ${error.message}`);
   for (const p of (data ?? []) as NotificationPreferences[]) out.set(p.user_id, p);
   return out;
