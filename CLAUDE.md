@@ -10643,3 +10643,147 @@ checks total.
 once this branch merges, per the Master Spec's own sequential-gate
 rule.
 
+---
+
+## Core-OS 360 Completion Programme: Phase 22 — Operational H&S &
+## Client Workflow Closure (in progress)
+
+Closes six of the seven gap-ledger rows Phase 20 assigned to this
+phase: C4.11, C4.12, C4.13, C5.3 fully, C2.7/C2.8/C4.14 (mobile/tablet
+and post-deploy notification observation) left honestly open — no
+device/browser testing capability exists in this environment. Full
+handover: `docs/CORE_OS_360_PHASE22_HANDOVER.md`.
+
+### Group 1 (migration 185): `consultancy_visits_lifecycle_guard()`
+
+173's own header comment flagged this as debt: "any authorised
+session may move between any two listed values." A `BEFORE UPDATE`
+trigger mirroring `permits_lifecycle_guard()`/`isolations_lifecycle_
+guard()`'s own shape (152/153) — one `ELSIF` per allowed `OLD → NEW`
+transition, refused with `23514` otherwise. Transitions read from the
+two real write paths that exist today (`VisitCaptureClient.tsx`'s
+start/finish buttons, the report-issue route's own advance) plus the
+full CHECK-constraint vocabulary, so the guard never blocks a state
+the schema itself already allows. `cancelled` reachable from every
+non-terminal status; `closed`/`cancelled` both dead ends. Live probe
+12/12, SQL-shape test 8/8.
+
+### Groups 2-4: portal UI for contractors, permits, isolations
+### (closes C4.11, C4.12)
+
+**Checked live, before writing any UI, and it changed the whole
+design**: a plain `client_admin` session already holds `contractors.
+manage` for their own organisation — `client_admin` maps to
+`organisation_admin` (117's `legacy_role_map`), which has held that
+capability since Phase 4. `has_capability()`'s home-organisation
+branch derives this automatically, no per-user grant needed. So Groups
+2-4 needed **no new RLS policy or capability at all** — the whole gap
+was missing UI, exactly as Group 13's own scope note said.
+
+`ContractorsClient.tsx`/`PermitsClient.tsx`/`IsolationsClient.tsx`
+were already fully self-contained (`companyId` as a prop, no
+route-param coupling) — reused VERBATIM as three new shared-dupe pairs
+rather than rebuilt. Three new portal pages (`/protect/{contractors,
+permits,isolations}`) read `companyId` from `getSessionProfile()`.
+
+`PermitsClient.tsx` gained the genuinely new piece — permit checklist
+responses (152's `permit_checklist_responses`, "deliberately left
+out" per Group 13's own note): `TemplateItemsPanel` (add checklist
+items to a template) and `ChecklistPanel` (confirm/N-A with an
+optional comment per permit) — insert-only, the register's own "a
+correction is a new row" discipline.
+
+**Live cross-tenant proof** (a real Old Albanians `client_admin`
+session against genuinely different-company seeded rows): 7/7 checks
+— cross-tenant contractor read/UPDATE/INSERT all refused, cross-tenant
+permit read/issue refused, cross-tenant isolation read/verify refused.
+
+### Group 5 (migration 186): environmental monitoring lower/range-bound
+### limits (closes C5.3)
+
+157's own header comment: "assumes an upper-bound limit... a
+lower-bound limit is a known, documented simplification for a later
+group." `limit_direction` (`upper | lower | range`, defaulting to
+`upper` — every existing reading's `within_limit` is byte-identical
+after this migration) and `recorded_limit_upper` for a genuine
+two-bound range. `within_limit` dropped and re-added as a `GENERATED`
+column (Postgres cannot alter a generation expression in place): the
+`upper` branch is unchanged from the original formula, `lower` inverts
+the comparison, `range` requires both bounds present before ever
+evaluating. An inverted range is refused at insert time by a new
+`BEFORE INSERT` guard. Audit/outbox triggers re-created to widen their
+whitelist to the two new classifying columns, never free text. Live
+probe 12/12, SQL-shape test 10/10.
+
+### Group 6: site-level Attention Queue detail + notification audience
+### widening
+
+`hsRules.ts`'s `contractor_status_changed`/`permit_status_changed`/
+`isolation_applied` widened from `staffOnly` to also tell the client's
+own admins, per each rule's own "widen to `admins()` once that page
+exists" comment — now true. Each keeps its staff notification (admin
+link corrected to the specific per-record page) and gains a client one
+(portal link).
+
+`attentionQueue.ts` gains `siteId`/`siteName` on every item (`null`
+except for genuinely site-scoped rows) and three new source categories
+that did not exist before this group: permits suspended/revoked (the
+exact condition `permit_status_changed` already treats as worth a
+nudge), an isolation still `applied` (not yet verified — distinct
+from the existing equipment item, which only says the asset is
+unavailable, never whether the isolation itself has been checked), and
+an environmental monitoring exceedance within a 30-day recency window
+(insert-only, so recency is the only "still worth attention" signal).
+Fixed the equipment item's stale "no dedicated portal page today"
+contractor link (now `/protect/contractors`) and gave it the asset's
+own site. Deliberately no site on the contractor category — 150's own
+table has no `site_id`, a contractor is company-wide.
+`loadAttentionQueue.ts` fetches the three new tables plus `hs_sites`,
+scoped by the existing `portfolioOrgIds()` filter — no new
+tenant-scoping mechanism.
+
+### Group 7: full regression, adversarial QA, handover
+
+Beyond the Groups 2-4 cross-tenant proof above: permit
+self-authorisation (155, Phase 4's own adversarial security review)
+re-verified LIVE — a real ARG person, set as a permit's own
+`authorised_person_id`, attempting to issue that SAME permit under
+their own session, refused with `23514`, confirming this phase's
+changes to a different table did not weaken it. LOTO lock removal by
+another worker (153) was NOT re-run — migration 153 untouched by this
+phase, its own 16/16 probe from ship time already covers it, and
+re-testing unrelated unchanged code was judged not a good use of this
+phase's QA budget. Invalid `consultancy_visits` status jumps via
+direct API is Group 1's own subject (already 12/12).
+
+**Mobile/tablet (C2.7, C2.8, C4.14): genuinely NOT verified.** No
+device/browser testing capability exists in this sandbox. What WAS
+checked: every new component reuses the platform's existing `.card`/
+`.input`/`.btn-*`/`table-wrapper` classes exclusively, no new bespoke
+stylesheet or fixed non-responsive width, and the handful of
+`min-width` declarations added match the pre-existing `AddLockForm`
+pattern already shipped in `IsolationsClient.tsx`. Reported as open,
+per the Master Spec's own Completion Claim Rule, not claimed done.
+
+Verified: `tsc --noEmit` clean both apps throughout, full `vitest run`
+green (**1660 admin** — 1648 + 8 `visitLifecycleGuardSql.test.ts` + 1
+`vocab.test.ts` case + 10 `environmentalMonitoringLimitDirectionSql.
+test.ts`, `hsRules.test.ts` cases widened not added; **773 portal** —
+760 + 9 from the three new routes' automatic sweep coverage + 4 new
+`attentionQueue.test.ts` cases), all six CI guards pass (63
+shared-dupe pairs, up from 60), both production builds compile
+(portal's one prerender failure is the long-documented sandbox-only
+missing-env-var limitation). Migrations 185 and 186 applied and
+live-probed, 24/24 checks; 8/8 further adversarial cross-tenant/
+self-authorisation checks this group — 32/32 live database checks
+total this phase, all passing.
+
+**Gate: PASS WITH ONE OPEN ITEM** — C4.14 (mobile/tablet, C2.7/C2.8
+folded in) carried forward as unclosed debt for whichever future pass
+has real device-testing capability; everything else this phase was
+assigned is closed with live evidence.
+
+**Phase 23 (Risk Graph/Evidence Engine/Digital Twin completion) may
+begin** once this branch merges, per the Master Spec's own
+sequential-gate rule.
+

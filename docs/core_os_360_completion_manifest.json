@@ -1,5 +1,5 @@
 {
-  "_comment": "Phase 20 machine-readable completion manifest. Derived from docs/CORE_OS_360_COMPLETION_MATRIX.md — that file is the human-readable source of truth with full evidence citations; this file exists so later phase gates (21-29) can programmatically check 'did every requirement assigned to my phase actually close' without re-parsing markdown prose. Every requirement id here must appear in the matrix, and vice versa — Phase 20 QA (task in progress) spot-checks this.",
+  "_comment": "Phase 20 machine-readable completion manifest. Derived from docs/CORE_OS_360_COMPLETION_MATRIX.md \u2014 that file is the human-readable source of truth with full evidence citations; this file exists so later phase gates (21-29) can programmatically check 'did every requirement assigned to my phase actually close' without re-parsing markdown prose. Every requirement id here must appear in the matrix, and vice versa \u2014 Phase 20 QA (task in progress) spot-checks this.",
   "generated": "2026-09-30",
   "generated_by_phase": 20,
   "status_vocabulary": [
@@ -11,70 +11,395 @@
     "ACCEPTED-NONREQUIREMENT"
   ],
   "requirements": [
-    { "id": "C1.8",  "phase": "C1",  "status": "IMPLEMENTED", "note": "access_scope_allows() — closed by C6.3 (migration 167)" },
-    { "id": "C1.9",  "phase": "C1",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 24 },
-    { "id": "C1.10", "phase": "C1",  "status": "IMPLEMENTED", "note": "person_sync_from_source() — closed Phase 21 Group 3, migration 184" },
-    { "id": "C1.11", "phase": "C1",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 25 },
-    { "id": "C1.12", "phase": "C1",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": [24, 28] },
-    { "id": "C1.13", "phase": "C1",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 28 },
-    { "id": "C2.7",  "phase": "C2",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C2.8",  "phase": "C2",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C3.7",  "phase": "C3",  "status": "IMPLEMENTED", "note": "employee_id picker (person_id derivation) — closed Phase 21 Group 1" },
-    { "id": "C3.8",  "phase": "C3",  "status": "IMPLEMENTED", "note": "learning_content_id picker on the Courses catalogue — closed Phase 21 Group 1" },
-    { "id": "C3.9",  "phase": "C3",  "status": "IMPLEMENTED", "note": "hs_tests.course_id, migration 183 — closed Phase 21 Group 1" },
-    { "id": "C3.10", "phase": "C3",  "status": "IMPLEMENTED", "note": "correction: bulk people CSV import already existed (OrgChartClient.tsx), missed by Phase 20's search; competency already covered by importCsv.ts — closed Phase 21 Group 4" },
-    { "id": "C4.11", "phase": "C4",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C4.12", "phase": "C4",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C4.13", "phase": "C4",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C4.14", "phase": "C4",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 22 },
-    { "id": "C5.3",  "phase": "C5",  "status": "PARTIAL", "assigned_to_phase": 22 },
-    { "id": "C5.17", "phase": "C5",  "status": "IMPLEMENTED", "note": "sibling-version-race fixed post-hoc, migrations 164-166" },
-    { "id": "C6.12", "phase": "C6",  "status": "IMPLEMENTED", "note": "closed within Phase 6 itself, Group 7" },
-    { "id": "C6.13", "phase": "C6",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 24 },
-    { "id": "C6.14", "phase": "C6",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 24 },
-    { "id": "C6.15", "phase": "C6",  "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 24 },
-    { "id": "C7.*",  "phase": "C7",  "status": "IMPLEMENTED", "note": "no open gap in Master Spec known-gaps list; confirm in QA pass" },
-    { "id": "C8.3",  "phase": "C8",  "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C8.4",  "phase": "C8",  "status": "PARTIAL", "assigned_to_phase": 23 },
-    { "id": "C8.5",  "phase": "C8",  "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C9.4",  "phase": "C9",  "status": "MISSING", "assigned_to_phase": 25 },
-    { "id": "C9.5",  "phase": "C9",  "status": "MISSING", "assigned_to_phase": 25 },
-    { "id": "C10.4", "phase": "C10", "status": "PARTIAL", "assigned_to_phase": 25 },
-    { "id": "C10.5", "phase": "C10", "status": "ACCEPTED-NONREQUIREMENT", "note": "cross-client incident benchmarking correctly never built without consent model" },
-    { "id": "C11.3", "phase": "C11", "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C11.4", "phase": "C11", "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C11.5", "phase": "C11", "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C12.4", "phase": "C12", "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C12.5", "phase": "C12", "status": "MISSING", "assigned_to_phase": 23 },
-    { "id": "C12.6", "phase": "C12", "status": "PARTIAL", "assigned_to_phase": 23 },
-    { "id": "C13.6", "phase": "C13", "status": "MISSING", "assigned_to_phase": 27 },
-    { "id": "C13.7", "phase": "C13", "status": "MISSING", "assigned_to_phase": 27 },
-    { "id": "C13.8", "phase": "C13", "status": "MISSING", "assigned_to_phase": 27 },
-    { "id": "C14.6", "phase": "C14", "status": "MISSING", "assigned_to_phase": 26 },
-    { "id": "C14.7", "phase": "C14", "status": "MISSING", "assigned_to_phase": 26 },
-    { "id": "C14.8", "phase": "C14", "status": "MISSING", "assigned_to_phase": 26 },
-    { "id": "C14.9", "phase": "C14", "status": "MISSING", "assigned_to_phase": 26 },
-    { "id": "C15.4", "phase": "C15", "status": "PARTIAL", "assigned_to_phase": 26 },
-    { "id": "C15.5", "phase": "C15", "status": "MISSING", "assigned_to_phase": 26 },
-    { "id": "C15.6", "phase": "C15", "status": "PARTIAL", "assigned_to_phase": 26 },
-    { "id": "C16.*", "phase": "C16", "status": "IMPLEMENTED", "note": "no open gap found against C16 specifically" },
-    { "id": "C17.5", "phase": "C17", "status": "MISSING", "assigned_to_phase": 25 },
-    { "id": "C17.6", "phase": "C17", "status": "MISSING", "assigned_to_phase": 25 },
-    { "id": "C17.7", "phase": "C17", "status": "PARTIAL", "assigned_to_phase": 25 },
-    { "id": "C18.4", "phase": "C18", "status": "ACCEPTED-NONREQUIREMENT", "note": "superseded/extended by C13.8, not a Phase 18 defect" },
-    { "id": "C19.8", "phase": "C19", "status": "ACCEPTED-NONREQUIREMENT", "note": "two orphaned routes explicitly ordered kept by product owner (HIRE offering), not deleted" },
-    { "id": "C19.9", "phase": "C19", "status": "DEFERRED-BUT-REQUIRED", "assigned_to_phase": 29 },
-    { "id": "PL.1", "phase": "protected-legacy", "status": "PARTIAL", "assigned_to_phase": 29, "note": "real automated preservation tests still needed for A2I signup, Development Plans, E-Learning checkout/webhook, Billing/Invoicing (manual scripts exist as interim baseline: docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md)" }
+    {
+      "id": "C1.8",
+      "phase": "C1",
+      "status": "IMPLEMENTED",
+      "note": "access_scope_allows() \u2014 closed by C6.3 (migration 167)"
+    },
+    {
+      "id": "C1.9",
+      "phase": "C1",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 24
+    },
+    {
+      "id": "C1.10",
+      "phase": "C1",
+      "status": "IMPLEMENTED",
+      "note": "person_sync_from_source() \u2014 closed Phase 21 Group 3, migration 184"
+    },
+    {
+      "id": "C1.11",
+      "phase": "C1",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C1.12",
+      "phase": "C1",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": [
+        24,
+        28
+      ]
+    },
+    {
+      "id": "C1.13",
+      "phase": "C1",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 28
+    },
+    {
+      "id": "C2.7",
+      "phase": "C2",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "note": "rules widened/mutation-tested (hsRules.test.ts) but a real post-deploy notification cannot be observed from this environment \u2014 operational, no further phase assignment"
+    },
+    {
+      "id": "C2.8",
+      "phase": "C2",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "note": "no device/browser testing capability in this environment; folded into C4.14 \u2014 still open"
+    },
+    {
+      "id": "C3.7",
+      "phase": "C3",
+      "status": "IMPLEMENTED",
+      "note": "employee_id picker (person_id derivation) \u2014 closed Phase 21 Group 1"
+    },
+    {
+      "id": "C3.8",
+      "phase": "C3",
+      "status": "IMPLEMENTED",
+      "note": "learning_content_id picker on the Courses catalogue \u2014 closed Phase 21 Group 1"
+    },
+    {
+      "id": "C3.9",
+      "phase": "C3",
+      "status": "IMPLEMENTED",
+      "note": "hs_tests.course_id, migration 183 \u2014 closed Phase 21 Group 1"
+    },
+    {
+      "id": "C3.10",
+      "phase": "C3",
+      "status": "IMPLEMENTED",
+      "note": "correction: bulk people CSV import already existed (OrgChartClient.tsx), missed by Phase 20's search; competency already covered by importCsv.ts \u2014 closed Phase 21 Group 4"
+    },
+    {
+      "id": "C4.11",
+      "phase": "C4",
+      "status": "IMPLEMENTED",
+      "assigned_to_phase": 22,
+      "note": "ContractorsClient/PermitsClient/IsolationsClient reused as portal shared-dupe pairs; client_admin already held contractors.manage, no new RLS needed \u2014 closed Phase 22 Groups 2-4"
+    },
+    {
+      "id": "C4.12",
+      "phase": "C4",
+      "status": "IMPLEMENTED",
+      "assigned_to_phase": 22,
+      "note": "TemplateItemsPanel/ChecklistPanel in PermitsClient.tsx, insert-only permit_checklist_responses \u2014 closed Phase 22 Group 3"
+    },
+    {
+      "id": "C4.13",
+      "phase": "C4",
+      "status": "IMPLEMENTED",
+      "assigned_to_phase": 22,
+      "note": "consultancy_visits_lifecycle_guard(), migration 185, 12/12 live probe \u2014 closed Phase 22 Group 1"
+    },
+    {
+      "id": "C4.14",
+      "phase": "C4",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "note": "no device/browser testing capability in this environment; no new CSS-level risk found in Phase 22's new components \u2014 still open, no further phase assignment until real device access exists"
+    },
+    {
+      "id": "C5.3",
+      "phase": "C5",
+      "status": "IMPLEMENTED",
+      "assigned_to_phase": 22,
+      "note": "limit_direction (upper/lower/range), migration 186, 12/12 live probe, byte-identical for pre-186 rows \u2014 closed Phase 22 Group 5"
+    },
+    {
+      "id": "C5.17",
+      "phase": "C5",
+      "status": "IMPLEMENTED",
+      "note": "sibling-version-race fixed post-hoc, migrations 164-166"
+    },
+    {
+      "id": "C6.12",
+      "phase": "C6",
+      "status": "IMPLEMENTED",
+      "note": "closed within Phase 6 itself, Group 7"
+    },
+    {
+      "id": "C6.13",
+      "phase": "C6",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 24
+    },
+    {
+      "id": "C6.14",
+      "phase": "C6",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 24
+    },
+    {
+      "id": "C6.15",
+      "phase": "C6",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 24
+    },
+    {
+      "id": "C7.*",
+      "phase": "C7",
+      "status": "IMPLEMENTED",
+      "note": "no open gap in Master Spec known-gaps list; confirm in QA pass"
+    },
+    {
+      "id": "C8.3",
+      "phase": "C8",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C8.4",
+      "phase": "C8",
+      "status": "PARTIAL",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C8.5",
+      "phase": "C8",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C9.4",
+      "phase": "C9",
+      "status": "MISSING",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C9.5",
+      "phase": "C9",
+      "status": "MISSING",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C10.4",
+      "phase": "C10",
+      "status": "PARTIAL",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C10.5",
+      "phase": "C10",
+      "status": "ACCEPTED-NONREQUIREMENT",
+      "note": "cross-client incident benchmarking correctly never built without consent model"
+    },
+    {
+      "id": "C11.3",
+      "phase": "C11",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C11.4",
+      "phase": "C11",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C11.5",
+      "phase": "C11",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C12.4",
+      "phase": "C12",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C12.5",
+      "phase": "C12",
+      "status": "MISSING",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C12.6",
+      "phase": "C12",
+      "status": "PARTIAL",
+      "assigned_to_phase": 23
+    },
+    {
+      "id": "C13.6",
+      "phase": "C13",
+      "status": "MISSING",
+      "assigned_to_phase": 27
+    },
+    {
+      "id": "C13.7",
+      "phase": "C13",
+      "status": "MISSING",
+      "assigned_to_phase": 27
+    },
+    {
+      "id": "C13.8",
+      "phase": "C13",
+      "status": "MISSING",
+      "assigned_to_phase": 27
+    },
+    {
+      "id": "C14.6",
+      "phase": "C14",
+      "status": "MISSING",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C14.7",
+      "phase": "C14",
+      "status": "MISSING",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C14.8",
+      "phase": "C14",
+      "status": "MISSING",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C14.9",
+      "phase": "C14",
+      "status": "MISSING",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C15.4",
+      "phase": "C15",
+      "status": "PARTIAL",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C15.5",
+      "phase": "C15",
+      "status": "MISSING",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C15.6",
+      "phase": "C15",
+      "status": "PARTIAL",
+      "assigned_to_phase": 26
+    },
+    {
+      "id": "C16.*",
+      "phase": "C16",
+      "status": "IMPLEMENTED",
+      "note": "no open gap found against C16 specifically"
+    },
+    {
+      "id": "C17.5",
+      "phase": "C17",
+      "status": "MISSING",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C17.6",
+      "phase": "C17",
+      "status": "MISSING",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C17.7",
+      "phase": "C17",
+      "status": "PARTIAL",
+      "assigned_to_phase": 25
+    },
+    {
+      "id": "C18.4",
+      "phase": "C18",
+      "status": "ACCEPTED-NONREQUIREMENT",
+      "note": "superseded/extended by C13.8, not a Phase 18 defect"
+    },
+    {
+      "id": "C19.8",
+      "phase": "C19",
+      "status": "ACCEPTED-NONREQUIREMENT",
+      "note": "two orphaned routes explicitly ordered kept by product owner (HIRE offering), not deleted"
+    },
+    {
+      "id": "C19.9",
+      "phase": "C19",
+      "status": "DEFERRED-BUT-REQUIRED",
+      "assigned_to_phase": 29
+    },
+    {
+      "id": "PL.1",
+      "phase": "protected-legacy",
+      "status": "PARTIAL",
+      "assigned_to_phase": 29,
+      "note": "real automated preservation tests still needed for A2I signup, Development Plans, E-Learning checkout/webhook, Billing/Invoicing (manual scripts exist as interim baseline: docs/PROTECTED_LEGACY_REGRESSION_SCRIPTS.md)"
+    }
   ],
   "gap_ledger_by_target_phase": {
     "21": [],
-    "22": ["C2.7", "C2.8", "C4.11", "C4.12", "C4.13", "C4.14", "C5.3"],
-    "23": ["C8.3", "C8.4", "C8.5", "C11.3", "C11.4", "C11.5", "C12.4", "C12.5", "C12.6"],
-    "24": ["C1.9", "C1.12", "C6.13", "C6.14", "C6.15"],
-    "25": ["C1.11", "C9.4", "C9.5", "C10.4", "C17.5", "C17.6", "C17.7"],
-    "26": ["C14.6", "C14.7", "C14.8", "C14.9", "C15.4", "C15.5", "C15.6"],
-    "27": ["C13.6", "C13.7", "C13.8"],
-    "28": ["C1.13", "C1.12"],
-    "29": ["C19.9", "PL.1"]
+    "22": [],
+    "23": [
+      "C8.3",
+      "C8.4",
+      "C8.5",
+      "C11.3",
+      "C11.4",
+      "C11.5",
+      "C12.4",
+      "C12.5",
+      "C12.6"
+    ],
+    "24": [
+      "C1.9",
+      "C1.12",
+      "C6.13",
+      "C6.14",
+      "C6.15"
+    ],
+    "25": [
+      "C1.11",
+      "C9.4",
+      "C9.5",
+      "C10.4",
+      "C17.5",
+      "C17.6",
+      "C17.7"
+    ],
+    "26": [
+      "C14.6",
+      "C14.7",
+      "C14.8",
+      "C14.9",
+      "C15.4",
+      "C15.5",
+      "C15.6"
+    ],
+    "27": [
+      "C13.6",
+      "C13.7",
+      "C13.8"
+    ],
+    "28": [
+      "C1.13",
+      "C1.12"
+    ],
+    "29": [
+      "C19.9",
+      "PL.1"
+    ],
+    "unassigned_operational": [
+      "C2.7",
+      "C2.8",
+      "C4.14"
+    ]
   }
 }

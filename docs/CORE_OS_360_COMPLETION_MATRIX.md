@@ -69,10 +69,10 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C2.4 | Investigations, root cause / 5 Whys | IMPLEMENTED | `incident_causes`, 125 |
 | C2.5 | RIDDOR decision support (never auto-decide) | IMPLEMENTED | flags only; `riddor.review` capability required |
 | C2.6 | Corrective actions on universal `actions` table | IMPLEMENTED | `source_type`/`source_id`, verification + effectiveness (125-126) |
-| C2.7 | Live notifications proven after deployment | DEFERRED-BUT-REQUIRED | Phase 2 handover: "watch for one real notification of each kind after deploy" left as an operational follow-up, not re-verified since → assigned **Phase 22** |
-| C2.8 | Mobile/tablet field verification | DEFERRED-BUT-REQUIRED | Phase 2 handover: not browser-tested at the time → assigned **Phase 22** |
+| C2.7 | Live notifications proven after deployment | DEFERRED-BUT-REQUIRED | Phase 22 widened/mutation-tested the contractor/permit/isolation rules (hsRules.test.ts, 40/40 pass) but a real post-deploy notification still cannot be observed from this environment — still open, no further phase assignment (operational, post-deploy only) |
+| C2.8 | Mobile/tablet field verification | DEFERRED-BUT-REQUIRED | Phase 22 handover: no device/browser testing capability in this environment — still open, folded into C4.14 |
 
-**Gaps carried forward**: C2.7→22, C2.8→22.
+**Gaps carried forward**: C2.7 (operational, post-deploy), C2.8→C4.14 (no further phase — needs real device/browser access).
 
 ---
 
@@ -109,12 +109,12 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C4.8 | Permit to work lifecycle | IMPLEMENTED | `permits_lifecycle_guard()`, 152, self-authorisation fixed 155 |
 | C4.9 | Isolation/LOTO, multi-lock | IMPLEMENTED | `isolations_lifecycle_guard()`, 153 |
 | C4.10 | Emergency planning, versioned, drills → actions | IMPLEMENTED | 154 |
-| C4.11 | Client portal UI for contractors/permits/isolations | DEFERRED-BUT-REQUIRED | Master Spec known-gap: "no portal UI for contractors/permits/isolations" (Phase 4 Group 13 built admin-only) → assigned **Phase 22** |
-| C4.12 | Permit checklist response UI | DEFERRED-BUT-REQUIRED | Master Spec known-gap: "skipped/incomplete" (Group 13's own scope note) → assigned **Phase 22** |
-| C4.13 | `consultancy_visits` DB-level lifecycle guard | DEFERRED-BUT-REQUIRED | Master Spec known-gap: "no database lifecycle guard" (173's own note: "any authorised session may move between any two listed values") → assigned **Phase 22** |
-| C4.14 | Mobile/tablet verification for inspections/PUWER/LOLER/defects/contractors/permits/LOTO | DEFERRED-BUT-REQUIRED | Never browser-tested at ship time → assigned **Phase 22** |
+| C4.11 | Client portal UI for contractors/permits/isolations | IMPLEMENTED | Phase 22 Groups 2-4: ContractorsClient/PermitsClient/IsolationsClient reused verbatim as shared-dupe pairs, `/protect/{contractors,permits,isolations}`; a plain `client_admin` already held `contractors.manage` (117's `legacy_role_map`), no new RLS needed — proven live before building; cross-tenant read/write refused, 7/7 checks |
+| C4.12 | Permit checklist response UI | IMPLEMENTED | Phase 22 Group 3: `TemplateItemsPanel`/`ChecklistPanel` in `PermitsClient.tsx`, insert-only `permit_checklist_responses` |
+| C4.13 | `consultancy_visits` DB-level lifecycle guard | IMPLEMENTED | Phase 22 Group 1, migration 185, `consultancy_visits_lifecycle_guard()`, 12/12 live probe checks |
+| C4.14 | Mobile/tablet verification for inspections/PUWER/LOLER/defects/contractors/permits/LOTO | DEFERRED-BUT-REQUIRED | Phase 22 handover: no device/browser testing capability in this environment; no new CSS-level risk found (reused existing responsive classes only) — still open, no further phase assignment until real device access exists |
 
-**Gaps carried forward**: C4.11, C4.12, C4.13, C4.14 → **Phase 22** (headline scope of that phase).
+**Gaps carried forward**: C4.14 (no further phase — needs real device/browser access; C2.8 above is the same underlying gap).
 
 ---
 
@@ -124,7 +124,7 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 |---|---|---|---|
 | C5.1 | Environmental Aspects & Impacts, deterministic significance (no AI scoring) | IMPLEMENTED | 156, `GENERATED ALWAYS AS (likelihood*severity*frequency)` |
 | C5.2 | Environmental incidents/spills/waste/monitoring/permits | IMPLEMENTED | 157 |
-| C5.3 | Environmental monitoring upper-bound-only limit evaluation | PARTIAL | 157's own comment: "assumes an upper-bound limit... a lower-bound limit is a documented, known gap" → assigned **Phase 22** |
+| C5.3 | Environmental monitoring upper/lower/range-bound limit evaluation | IMPLEMENTED | Phase 22 Group 5, migration 186, `limit_direction` (upper/lower/range), 12/12 live probe checks, byte-identical for every pre-186 row |
 | C5.4 | Shared ISO 45001/14001 clause framework, no copyrighted text | IMPLEMENTED | 158, `standard_clauses` |
 | C5.5 | ISO readiness dashboard, counts only, never a compliance claim | IMPLEMENTED | 158 |
 | C5.6 | Legal Register: requirements, obligations, evaluations, cautious vocabulary | IMPLEMENTED | 159, no "compliant"/"non-compliant" strings |
@@ -140,7 +140,7 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C5.16 | Broadcast integration for legal requirements | IMPLEMENTED | `?legal=<id>` prefill |
 | C5.17 | Sibling-version-race protection on `hs_documents`/`emergency_plans`/`environmental_aspects` | IMPLEMENTED (fixed post-hoc) | migrations 164-166, found+fixed in Group 10 adversarial pass |
 
-**Gaps carried forward**: C5.3 → **Phase 22** (folded into the environmental-monitoring completion item there, since it's the same subsystem as the contractor/permit field-workflow closure).
+**Gaps carried forward**: none.
 
 ---
 
@@ -415,7 +415,7 @@ satisfied by this recorded resolution (resolve ≠ delete).
 | Target Phase | Rows |
 |---|---|
 | **21** (People/LMS/Safe-to-Deploy closure) | *closed — C1.10, C3.7, C3.8, C3.9, C3.10 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE21_HANDOVER.md`* |
-| **22** (Operational H&S/client workflow closure) | C2.7, C2.8, C4.11, C4.12, C4.13, C4.14, C5.3 |
+| **22** (Operational H&S/client workflow closure) | *mostly closed — C4.11, C4.12, C4.13, C5.3 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE22_HANDOVER.md`; C2.7/C2.8/C4.14 remain open (no device/browser testing capability in this environment)* |
 | **23** (Risk Graph/Evidence Engine/Digital Twin completion) | C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 |
 | **24** (Consultant Command Centre/Ledger completion) | C1.9, C1.12 (shared w/28), C6.13, C6.14, C6.15 |
 | **25** (Operational intelligence/regulatory/Broadcast) | C1.11, C9.4, C9.5, C10.4, C17.5, C17.6, C17.7 |
