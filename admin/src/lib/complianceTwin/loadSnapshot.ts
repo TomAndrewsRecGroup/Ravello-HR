@@ -87,11 +87,11 @@ export async function loadComplianceTwinSnapshot(
       ? supabase.from('legal_requirements').select('id, title').in('id', requirementIds)
       : Promise.resolve({ data: [] as { id: string; title: string }[] }),
     readAllPages<RiskGraphLink>((from, to) =>
-      supabase.from('hs_links').select('from_type, from_id, to_type, to_id')
-        .eq('company_id', companyId).eq('from_type', 'legal_obligation').range(from, to)),
+      supabase.from('hs_links').select('id, from_type, from_id, to_type, to_id')
+        .eq('company_id', companyId).eq('from_type', 'legal_obligation').order('id').range(from, to)),
     readAllPages<RiskGraphLink>((from, to) =>
-      supabase.from('hs_links').select('from_type, from_id, to_type, to_id')
-        .eq('company_id', companyId).eq('to_type', 'legal_obligation').range(from, to)),
+      supabase.from('hs_links').select('id, from_type, from_id, to_type, to_id')
+        .eq('company_id', companyId).eq('to_type', 'legal_obligation').order('id').range(from, to)),
   ]);
 
   const titleByRequirement = new Map((requirements ?? []).map(r => [r.id, r.title]));
