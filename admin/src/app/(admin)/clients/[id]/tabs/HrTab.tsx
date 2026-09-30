@@ -11,14 +11,16 @@ interface Props {
   companyId: string;
   initialAbsenceRecords: any[];
   initialEmpDocs: any[];
+  initialEmployees: { id: string; full_name: string }[];
 }
 
-export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs }: Props) {
+export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs, initialEmployees }: Props) {
   const supabase = createClient();
   const [absenceRecords, setAbsenceRecords] = useState<any[]>(initialAbsenceRecords);
   const [empDocs] = useState<any[]>(initialEmpDocs);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadForm, setUploadForm] = useState({
+    employee_id:   '',
     employee_name: '',
     doc_type:      'right_to_work',
     title:         '',
@@ -39,6 +41,7 @@ export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs
       fd.append('file', file);
       fd.append('company_id',    companyId);
       fd.append('employee_name', uploadForm.employee_name.trim());
+      if (uploadForm.employee_id) fd.append('employee_id', uploadForm.employee_id);
       fd.append('doc_type',      uploadForm.doc_type);
       fd.append('title',         uploadForm.title.trim() || file.name);
       if (uploadForm.expiry_date) fd.append('expiry_date', uploadForm.expiry_date);
@@ -47,7 +50,7 @@ export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Upload failed');
 
-      setUploadForm({ employee_name: '', doc_type: 'right_to_work', title: '', expiry_date: '' });
+      setUploadForm({ employee_id: '', employee_name: '', doc_type: 'right_to_work', title: '', expiry_date: '' });
       setFile(null);
       setShowUpload(false);
       revalidateAdminPath(`/clients/${companyId}`);
@@ -169,8 +172,24 @@ export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs
             </div>
             <form onSubmit={uploadEmployeeDoc} className="grid sm:grid-cols-2 gap-3">
               <div className="form-group sm:col-span-2">
+                <label className="label">Employee record (recommended)</label>
+                <select className="input" value={uploadForm.employee_id}
+                  onChange={e => {
+                    const id = e.target.value;
+                    const emp = initialEmployees.find(x => x.id === id);
+                    setUploadForm(f => ({ ...f, employee_id: id, employee_name: emp ? emp.full_name : f.employee_name }));
+                  }}>
+                  <option value="">Not linked to an employee record — type a name below</option>
+                  {initialEmployees.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                </select>
+                <p className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+                  Linking to a record is what lets this document count toward that person's training/compliance status
+                  elsewhere in the platform. An unlinked document is stored but invisible to that engine.
+                </p>
+              </div>
+              <div className="form-group sm:col-span-2">
                 <label className="label">Employee name *</label>
-                <input className="input" value={uploadForm.employee_name} onChange={e => setUploadForm(f => ({ ...f, employee_name: e.target.value }))} placeholder="e.g. Jane Smith" />
+                <input className="input" value={uploadForm.employee_name} onChange={e => setUploadForm(f => ({ ...f, employee_name: e.target.value }))} placeholder="e.g. Jane Smith" disabled={!!uploadForm.employee_id} />
               </div>
               <div className="form-group">
                 <label className="label">Document type</label>
@@ -229,6 +248,9 @@ export default function HrTab({ companyId, initialAbsenceRecords, initialEmpDocs
                       <td>
                         <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{d.employee_name}</p>
                         {d.department && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.department}</p>}
+                        {d.employee_id
+                          ? <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{d.filed_by_authorised ? 'Linked · counts toward training/compliance status' : 'Linked'}</p>
+                          : <p className="text-xs" style={{ color: 'var(--red)' }}>Not linked to an employee record</p>}
                       </td>
                       <td>
                         {(d.file_storage_path || d.file_url) ? (

@@ -18,8 +18,8 @@ interface Opt { id: string; name: string }
 // organisation's own rows are editable with workforce.manage (RLS
 // decides). Items are deactivated, never deleted, so existing
 // requirements that point at them keep their meaning.
-export default function CatalogueClient({ tab, rows, companyId, canManage, sites }: {
-  tab: EditableTab; rows: Row[]; companyId: string; canManage: boolean; sites: Opt[];
+export default function CatalogueClient({ tab, rows, companyId, canManage, sites, learningContent = [] }: {
+  tab: EditableTab; rows: Row[]; companyId: string; canManage: boolean; sites: Opt[]; learningContent?: Opt[];
 }) {
   const router = useRouter();
   const cfg = CATALOGUE_CONFIG[tab];
@@ -28,6 +28,7 @@ export default function CatalogueClient({ tab, rows, companyId, canManage, sites
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const siteName = (id: string) => sites.find(s => s.id === id)?.name ?? '—';
+  const learningContentTitle = (id: string) => learningContent.find(c => c.id === id)?.name ?? '—';
   const columns = cfg.fields.filter(f => f.column);
   const colSpan = columns.length + 2 + (canManage ? 1 : 0);
 
@@ -55,7 +56,7 @@ export default function CatalogueClient({ tab, rows, companyId, canManage, sites
       </div>
       {msg && <p role="status" className="text-sm" style={{ color: msg.ok ? 'var(--teal)' : 'var(--red)' }}>{msg.text}</p>}
       {adding && (
-        <ItemForm tab={tab} mode="insert" initial={emptyValues(tab)} sites={sites} onCancel={() => setAdding(false)}
+        <ItemForm tab={tab} mode="insert" initial={emptyValues(tab)} sites={sites} learningContent={learningContent} onCancel={() => setAdding(false)}
           onSubmit={async (row) => {
             const res = await createClient().from(cfg.table).insert({ company_id: companyId, ...row });
             if (res.error) return dbMessage(res.error);
@@ -85,7 +86,7 @@ export default function CatalogueClient({ tab, rows, companyId, canManage, sites
                 return [
                   <tr key={r.id}>
                     {columns.map(c => (
-                      <td key={c.name} style={c.name === 'title' ? { color: 'var(--ink)' } : undefined}>{cellText(c, r[c.name], siteName)}</td>
+                      <td key={c.name} style={c.name === 'title' ? { color: 'var(--ink)' } : undefined}>{cellText(c, r[c.name], siteName, learningContentTitle)}</td>
                     ))}
                     <td>{own ? 'Your organisation' : <Pill tone="muted">Standard</Pill>}</td>
                     <td>{r.active_status === 'active' ? <Pill tone="good">Active</Pill> : <Pill tone="muted">Inactive</Pill>}</td>
@@ -105,7 +106,7 @@ export default function CatalogueClient({ tab, rows, companyId, canManage, sites
                   </tr>,
                   editing === r.id ? (
                     <tr key={`${r.id}-edit`}><td colSpan={colSpan}>
-                      <ItemForm tab={tab} mode="update" initial={rowToValues(tab, r)} sites={sites} onCancel={() => setEditing(null)}
+                      <ItemForm tab={tab} mode="update" initial={rowToValues(tab, r)} sites={sites} learningContent={learningContent} onCancel={() => setEditing(null)}
                         onSubmit={async (row) => {
                           const res = await createClient().from(cfg.table).update(row, COUNT_EXACT).eq('id', r.id).eq('company_id', companyId);
                           const out = judgeWrite({ error: res.error, count: res.count }, 'The item');
@@ -125,8 +126,8 @@ export default function CatalogueClient({ tab, rows, companyId, canManage, sites
   );
 }
 
-function ItemForm({ tab, mode, initial, sites, onSubmit, onCancel }: {
-  tab: EditableTab; mode: 'insert' | 'update'; initial: FormValues; sites: Opt[];
+function ItemForm({ tab, mode, initial, sites, learningContent, onSubmit, onCancel }: {
+  tab: EditableTab; mode: 'insert' | 'update'; initial: FormValues; sites: Opt[]; learningContent: Opt[];
   onSubmit: (row: Record<string, string | number | boolean | null>) => Promise<string | null>; onCancel: () => void;
 }) {
   const cfg = CATALOGUE_CONFIG[tab];
@@ -170,6 +171,11 @@ function ItemForm({ tab, mode, initial, sites, onSubmit, onCancel }: {
           <select id={id(f.name)} className="input" value={String(val ?? '')} onChange={e => set(e.target.value)}>
             <option value="">Not set</option>
             {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        ) : f.kind === 'learning_content' ? (
+          <select id={id(f.name)} className="input" value={String(val ?? '')} onChange={e => set(e.target.value)}>
+            <option value="">Not set</option>
+            {learningContent.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         ) : (
           <input id={id(f.name)} className="input" disabled={disabled} inputMode={f.kind === 'number' ? 'numeric' : undefined}

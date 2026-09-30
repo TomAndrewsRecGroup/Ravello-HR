@@ -1243,6 +1243,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
           companyId={company.id}
           initialAbsenceRecords={tabData['HR'].absenceRecords ?? []}
           initialEmpDocs={tabData['HR'].empDocs ?? []}
+          initialEmployees={tabData['HR'].employees ?? []}
         />
       )}
 

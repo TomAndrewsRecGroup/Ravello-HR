@@ -21,15 +21,23 @@ export default async function EmployeeDocsPage() {
     </main>
   );
 
-  const { data: docs } = await supabase
-    .from('employee_documents')
-    .select('id,employee_name,employee_email,department,doc_type,title,file_storage_path,file_url,expiry_date,status,notes,created_at')
-    .eq('company_id', companyId)
-    .order('employee_name', { ascending: true });
+  const [{ data: docs }, { data: employees }] = await Promise.all([
+    supabase
+      .from('employee_documents')
+      .select('id,employee_name,employee_id,employee_email,department,doc_type,title,file_storage_path,file_url,expiry_date,status,filed_by_authorised,notes,created_at')
+      .eq('company_id', companyId)
+      .order('employee_name', { ascending: true }),
+    // For the upload form's "Link to employee record" picker (C3.7): a
+    // document filed against a real employee_records row is what makes
+    // it count toward that person's training/compliance status
+    // elsewhere in the platform (person_id is derived from employee_id
+    // by employee_document_person_guard, migration 142).
+    supabase.from('employee_records').select('id, full_name').eq('company_id', companyId).eq('status', 'active').order('full_name').limit(500),
+  ]);
 
   return (
       <main className="portal-page flex-1">
-        <EmployeeDocsClient companyId={companyId} userId={user.id} initialDocs={docs ?? []} />
+        <EmployeeDocsClient companyId={companyId} userId={user.id} initialDocs={docs ?? []} employeeRecords={employees ?? []} />
       </main>
   );
 }

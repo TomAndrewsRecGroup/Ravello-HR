@@ -14,17 +14,20 @@ export default async function TestDetailPage(props: { params: Promise<{ id: stri
   const supabase = await createServerSupabaseClient();
 
   const { data: test } = await supabase.from('hs_tests')
-    .select('id, title, description, category, source_type, external_url, pass_mark, questions, certifies_training, recert_months, active, created_at, updated_at')
+    .select('id, title, description, category, source_type, external_url, pass_mark, questions, certifies_training, recert_months, course_id, active, created_at, updated_at')
     .eq('id', params.id).maybeSingle();
   if (!test) notFound();
 
-  const [companies, employees, sessions, assignments, submissions] = await Promise.all([
+  const [companies, employees, sessions, assignments, submissions, course] = await Promise.all([
     supabase.from('companies').select('id, name').eq('active', true).order('name'),
     readAllPages<{ id: string; company_id: string; full_name: string }>((from, to) =>
       supabase.from('employee_records').select('id, company_id, full_name').order('full_name').range(from, to)),
     supabase.from('hs_test_sessions').select('id, test_id, title, scheduled_on, notes, created_at').eq('test_id', params.id).order('created_at', { ascending: false }),
     supabase.from('hs_test_assignments').select('id, session_id, test_id, company_id, employee_id, status, created_at').eq('test_id', params.id).order('created_at', { ascending: false }),
     supabase.from('hs_test_submissions').select('id, assignment_id, company_id, employee_id, test_id, source, score, passed, notes, recorded_by_kind, submitted_at').eq('test_id', params.id),
+    test.course_id
+      ? supabase.from('training_courses').select('id, title').eq('id', test.course_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   return (
@@ -33,6 +36,7 @@ export default async function TestDetailPage(props: { params: Promise<{ id: stri
       <main className="admin-page flex-1">
         <TestDetailClient
           test={test as HsTest}
+          courseTitle={course?.data?.title ?? null}
           companies={companies.data ?? []}
           employees={employees.rows}
           sessions={(sessions.data ?? []) as HsTestSession[]}

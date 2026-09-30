@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   const file = form.get('file');
   const company_id    = String(form.get('company_id') ?? '').trim();
   const employee_name = String(form.get('employee_name') ?? '').trim();
+  const employee_id   = String(form.get('employee_id') ?? '').trim() || null;
   const doc_type      = String(form.get('doc_type') ?? 'other').trim();
   const title         = String(form.get('title') ?? '').trim();
   const expiry_date   = String(form.get('expiry_date') ?? '').trim() || null;
@@ -75,9 +76,18 @@ export async function POST(request: NextRequest) {
 
   // No file_size: employee_documents has no such column, and sending it
   // failed EVERY insert with PGRST204 after the file had uploaded.
+  //
+  // employee_id (when the staff member picked one) is what makes this
+  // document actually count toward that person's training/compliance
+  // status elsewhere in the platform — employee_document_person_guard()
+  // (142) derives person_id from it and validates it belongs to this
+  // same company, refusing the insert otherwise. Unset it stays exactly
+  // the old free-text-only behaviour: stored, but invisible to the
+  // Safe-to-Deploy engine.
   const { data: row, error: insErr } = await sb.from('employee_documents').insert({
     company_id,
     employee_name,
+    employee_id,
     doc_type,
     title:             title || file.name,
     file_storage_path: path,         // canonical

@@ -50,12 +50,12 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C1.7 | Internal search (`search_records()`), SECURITY INVOKER | IMPLEMENTED | 119, extended by every later phase that adds a searchable entity |
 | C1.8 | `access_scope` (health_safety/hr/recruitment/full) enforcement | DEFERRED-BUT-REQUIRED | Phase 1 handover §H: "not enforced" — closed by Phase 6 Group 1 (167, `access_scope_allows()`) — **already resolved**, see C6.3 |
 | C1.9 | Portal UI for consultancy owners to grant access | DEFERRED-BUT-REQUIRED | Phase 1 handover §H: "RPC ready, no UI" → assigned **Phase 24** (Consultant Command Centre completion) |
-| C1.10 | People synced back from source rows (candidate/athlete/employee edits reflected on `people`) | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 21** (People/LMS closure) |
+| C1.10 | People synced back from source rows (candidate/athlete/employee edits reflected on `people`) | IMPLEMENTED | Closed Phase 21 Group 3, migration 184: `person_sync_from_source()`, an AFTER UPDATE trigger on all three identity tables. Live-probed 8/8 |
 | C1.11 | Broadcast idempotency key | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 25** (Broadcast completion) |
 | C1.12 | Optimistic locking on shared records | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 24/28** (concurrency hardening, general) |
 | C1.13 | UI still uses legacy role checks in places | DEFERRED-BUT-REQUIRED | Phase 1 handover §H → assigned **Phase 28** (UX/navigation closure) |
 
-**Gaps carried forward**: C1.9→24, C1.10→21, C1.11→25, C1.12→24/28, C1.13→28.
+**Gaps carried forward**: C1.9→24, C1.10 closed Phase 21, C1.11→25, C1.12→24/28, C1.13→28.
 
 ---
 
@@ -86,12 +86,12 @@ enumerating every row that is not a clean `IMPLEMENTED`.
 | C3.4 | Occupational health split (summary vs. clinical, explicit-only capability) | IMPLEMENTED | `EXPLICIT_ONLY_CAPABILITIES`, 140 |
 | C3.5 | Hire/leave lifecycle triggers | IMPLEMENTED | `workforce_employee_sync()`, 137 |
 | C3.6 | Evidence never crosses an organisation (142 CRITICAL fixes) | IMPLEMENTED | folder-path checks in every `_wf_judge` branch, storage policies |
-| C3.7 | Employee document ↔ person linkage through the UI | DEFERRED-BUT-REQUIRED | Master Spec Phase 21 known-gap: "employee documents are not linked to people by the UI" → assigned **Phase 21** |
-| C3.8 | E-Learning course → `learning_content_id` mapping in course admin form | DEFERRED-BUT-REQUIRED | Master Spec Phase 21 known-gap: "course form does not set learning_content_id" → assigned **Phase 21** |
-| C3.9 | `hs_tests` pass → training-requirement mapping via explicit `course_id` | DEFERRED-BUT-REQUIRED | Master Spec Phase 21 known-gap: "training records receive person_id but no course_id mapping" → assigned **Phase 21** |
-| C3.10 | Controlled bulk CSV import for people/training/competency (user-facing, beyond training-records import already shipped in LEAD Phase 4) | PARTIAL | `parseTrainingCsv.ts` exists for training records only; no equivalent for people/competency bulk ops → assigned **Phase 21** |
+| C3.7 | Employee document ↔ person linkage through the UI | IMPLEMENTED | Closed Phase 21 Group 1: both admin's HR-tab upload form and the portal's Employee Documents page gained an employee-record picker setting `employee_id`, which `employee_document_person_guard()` (142) derives `person_id` from; a staff upload (service role) also auto-marks `filed_by_authorised` |
+| C3.8 | E-Learning course → `learning_content_id` mapping in course admin form | IMPLEMENTED | Closed Phase 21 Group 1: the workforce Courses catalogue gained an optional "E-Learning content" picker — the FK column existed since migration 133 and was completely orphaned |
+| C3.9 | `hs_tests` pass → training-requirement mapping via explicit `course_id` | IMPLEMENTED | Closed Phase 21 Group 1, migration 183: `hs_tests.course_id` (must be a standard/global course, enforced by `hs_tests_course_guard()`), carried onto the auto-logged `training_records` row so a passed test can satisfy a role/site requirement. Live-probed 7/7 |
+| C3.10 | Controlled bulk CSV import for people/training/competency (user-facing, beyond training-records import already shipped in LEAD Phase 4) | IMPLEMENTED | **Correction, Phase 21 Group 4**: this row was wrong. `portal/src/lib/workforce/importCsv.ts` already covered training/competency/credential (all three, not "training only" as originally claimed) since before Phase 20; `portal/src/app/(portal)/lead/org-chart/OrgChartClient.tsx` already has a working bulk people-creation CSV import (add-new + update-existing-by-name), missed by Phase 20's directory-scoped search. Phase 21 made one small, safe quality fix — a row with no name is now reported by line number instead of silently dropped — rather than rebuilding a live, working feature |
 
-**Gaps carried forward**: C3.7, C3.8, C3.9, C3.10 → **Phase 21** (this is that phase's headline scope).
+**Gaps carried forward**: none — C3.7, C3.8, C3.9, C3.10 closed in Phase 21 (see above).
 
 ---
 
@@ -414,7 +414,7 @@ satisfied by this recorded resolution (resolve ≠ delete).
 
 | Target Phase | Rows |
 |---|---|
-| **21** (People/LMS/Safe-to-Deploy closure) | C1.10, C3.7, C3.8, C3.9, C3.10 |
+| **21** (People/LMS/Safe-to-Deploy closure) | *closed — C1.10, C3.7, C3.8, C3.9, C3.10 all IMPLEMENTED, see `docs/CORE_OS_360_PHASE21_HANDOVER.md`* |
 | **22** (Operational H&S/client workflow closure) | C2.7, C2.8, C4.11, C4.12, C4.13, C4.14, C5.3 |
 | **23** (Risk Graph/Evidence Engine/Digital Twin completion) | C8.3, C8.4, C8.5, C11.3, C11.4, C11.5, C12.4, C12.5, C12.6 |
 | **24** (Consultant Command Centre/Ledger completion) | C1.9, C1.12 (shared w/28), C6.13, C6.14, C6.15 |

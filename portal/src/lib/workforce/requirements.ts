@@ -268,7 +268,7 @@ const AUTH_SCOPE_LABELS: Record<typeof AUTHORISATION_SCOPE_KINDS[number], string
   general: 'General', site: 'Site', plant: 'Plant', equipment: 'Equipment', voltage: 'Voltage', permit: 'Permit',
 };
 
-export type FieldKind = 'text' | 'textarea' | 'number' | 'bool' | 'select' | 'site';
+export type FieldKind = 'text' | 'textarea' | 'number' | 'bool' | 'select' | 'site' | 'learning_content';
 export interface CatalogueField {
   name: string;
   label: string;
@@ -309,7 +309,7 @@ export const CATALOGUE_CONFIG: Record<EditableTab, CatalogueConfig> = {
   courses: {
     label: 'Courses', table: 'training_courses', hasGlobal: true,
     intro: 'Training courses a role or site can require. A course records that training happened; it never makes anyone competent on its own.',
-    select: 'id, company_id, title, description, category, delivery_method, provider, validity_months, refresher_required, safety_critical, certificate_expected, active_status',
+    select: 'id, company_id, title, description, category, delivery_method, provider, validity_months, refresher_required, safety_critical, certificate_expected, learning_content_id, active_status',
     fields: [
       title,
       { name: 'category', label: 'Category', kind: 'text', max: 100, column: true },
@@ -319,6 +319,14 @@ export const CATALOGUE_CONFIG: Record<EditableTab, CatalogueConfig> = {
       bool('refresher_required', 'Refresher required'),
       bool('safety_critical', 'Safety-critical'),
       bool('certificate_expected', 'Certificate expected'),
+      // Optional: names which published E-Learning marketplace item
+      // delivers this course, so staff/managers assigning learning for
+      // a role gap know which purchasable content actually covers it.
+      // Never required — most courses are delivered another way
+      // (classroom, toolbox talk, an external provider) and have no
+      // marketplace content at all. The marketplace's own purchase
+      // flow is untouched: this is a reference link, not a trigger.
+      { name: 'learning_content_id', label: 'E-Learning content', kind: 'learning_content', column: true },
       { name: 'description', label: 'Description', kind: 'textarea', max: 4000 },
     ],
   },
@@ -452,11 +460,15 @@ export function buildCatalogueRow(tab: EditableTab, values: FormValues, mode: 'i
 }
 
 /** Display text for a catalogue cell. */
-export function cellText(f: CatalogueField, value: unknown, siteName: (id: string) => string): string {
+export function cellText(
+  f: CatalogueField, value: unknown, siteName: (id: string) => string,
+  learningContentTitle?: (id: string) => string,
+): string {
   if (f.kind === 'bool') return value === true ? 'Yes' : 'No';
   if (value == null || value === '') return '—';
   if (f.kind === 'select') return f.options?.find(o => o.value === value)?.label ?? String(value);
   if (f.kind === 'site') return siteName(String(value));
+  if (f.kind === 'learning_content') return learningContentTitle?.(String(value)) ?? '—';
   return String(value);
 }
 

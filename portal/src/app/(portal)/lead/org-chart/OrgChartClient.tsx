@@ -351,10 +351,16 @@ function parseCsv(text: string): { rows: CsvRow[]; warnings: string[] } {
   if (cols.name === -1) warnings.push('No "full_name" or "name" column found. Required.');
 
   const rows: CsvRow[] = [];
+  const skippedLines: number[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cells = split(lines[i]);
     const full_name    = (cells[cols.name]  ?? '').trim();
-    if (!full_name) continue;
+    // A row with no name cannot be matched or inserted — reported by
+    // line number rather than silently dropped, so a typo or a blank
+    // row in the middle of a large file cannot go unnoticed. Import
+    // stays disabled while any warning is present, the same "fix the
+    // file first" rule the missing-column check above already uses.
+    if (!full_name) { skippedLines.push(i + 1); continue; }
     rows.push({
       full_name,
       job_title:    (cols.title  >= 0 ? cells[cols.title]  : '').trim() || 'TBD',
@@ -362,6 +368,10 @@ function parseCsv(text: string): { rows: CsvRow[]; warnings: string[] } {
       line_manager: (cols.mgr    >= 0 ? cells[cols.mgr]    : '').trim(),
       email:        (cols.email  >= 0 ? cells[cols.email]  : '').trim(),
     });
+  }
+
+  if (skippedLines.length > 0) {
+    warnings.push(`${skippedLines.length} row(s) have no name and were not read (line${skippedLines.length === 1 ? '' : 's'} ${skippedLines.join(', ')}). Fix or remove them before importing.`);
   }
 
   return { rows, warnings };

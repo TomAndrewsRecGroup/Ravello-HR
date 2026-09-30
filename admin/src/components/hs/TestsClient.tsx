@@ -10,6 +10,7 @@ import type { HsTest } from '@/lib/hs/testTypes';
 
 interface Props {
   tests: HsTest[];
+  courses: { id: string; title: string }[];
 }
 
 interface DraftQuestion {
@@ -28,7 +29,7 @@ function newQuestion(): DraftQuestion {
   };
 }
 
-export default function TestsClient({ tests }: Props) {
+export default function TestsClient({ tests, courses }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -43,10 +44,11 @@ export default function TestsClient({ tests }: Props) {
   const [questions, setQuestions] = useState<DraftQuestion[]>([newQuestion()]);
   const [certifiesTraining, setCertifiesTraining] = useState(false);
   const [recertMonths, setRecertMonths] = useState('');
+  const [courseId, setCourseId] = useState('');
 
   function reset() {
     setTitle(''); setDescription(''); setCategory(''); setSourceType('built_in'); setExternalUrl('');
-    setPassMark('70'); setQuestions([newQuestion()]); setCertifiesTraining(false); setRecertMonths('');
+    setPassMark('70'); setQuestions([newQuestion()]); setCertifiesTraining(false); setRecertMonths(''); setCourseId('');
   }
 
   function updateQuestion(id: string, patch: Partial<DraftQuestion>) {
@@ -79,6 +81,7 @@ export default function TestsClient({ tests }: Props) {
         pass_mark: sourceType === 'built_in' ? Number(passMark) : null,
         questions: sourceType === 'built_in' ? questions : null,
         certifies_training: certifiesTraining, recert_months: recertMonths ? Number(recertMonths) : null,
+        course_id: certifiesTraining && courseId ? courseId : null,
       }),
     });
     setBusy(false);
@@ -117,7 +120,11 @@ export default function TestsClient({ tests }: Props) {
                 </td>
                 <td>{HS_TEST_SOURCE_TYPE_LABELS[t.source_type]}</td>
                 <td>{t.category || '—'}</td>
-                <td>{t.certifies_training ? `Yes${t.recert_months ? ` (${t.recert_months}mo)` : ''}` : 'No'}</td>
+                <td>
+                  {t.certifies_training
+                    ? `Yes${t.recert_months ? ` (${t.recert_months}mo)` : ''}${t.course_id ? ` — ${courses.find(c => c.id === t.course_id)?.title ?? 'course'}` : ''}`
+                    : 'No'}
+                </td>
                 <td><span className="badge" style={{ opacity: t.active ? 1 : 0.5 }}>{t.active ? 'Active' : 'Archived'}</span></td>
               </tr>
             ))}
@@ -222,9 +229,18 @@ export default function TestsClient({ tests }: Props) {
                   A pass also logs a completed training record for the employee
                 </label>
                 {certifiesTraining && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
                     <label className="label">Re-certify after (months, blank = never expires)</label>
                     <input className="input" type="number" min={1} max={120} value={recertMonths} onChange={e => setRecertMonths(e.target.value)} style={{ maxWidth: 160 }} />
+                    <label className="label">Satisfies training course (optional)</label>
+                    <select className="input" value={courseId} onChange={e => setCourseId(e.target.value)} style={{ maxWidth: 320 }}>
+                      <option value="">Not linked to a specific course</option>
+                      {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    </select>
+                    <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                      A pass will also count toward this training course's requirement on any role or site that requires it.
+                      Only standard (Core OS 360-wide) courses are listed here — a test is assigned across many client companies.
+                    </p>
                   </div>
                 )}
               </div>
