@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { HsAudit, HsAuditResponse, HsFile, AuditFinding, RequirementEvidenceLink } from '@/lib/hs/types';
 import AuditDetailClient from '@/components/hs/AuditDetailClient';
+import ConnectionsPanel from '@/components/hs/ConnectionsPanel';
 
 export const metadata: Metadata = { title: 'Audit detail' };
 export const dynamic = 'force-dynamic';
@@ -69,6 +70,7 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
         loadError={error?.message ?? null}
       />
+      <ConnectionsPanel entityType="audit" entityId={audit.id} companyId={params.companyId} canEdit role="admin" />
     </div>
   );
 }

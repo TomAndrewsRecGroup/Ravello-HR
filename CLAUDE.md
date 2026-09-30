@@ -10787,3 +10787,103 @@ assigned is closed with live evidence.
 begin** once this branch merges, per the Master Spec's own
 sequential-gate rule.
 
+---
+
+## Core-OS 360 Completion Programme: Phase 23 — Risk Graph / Evidence
+## Engine / Digital Twin completion (in progress)
+
+No detailed operator brief exists for this phase either. Scope: the
+nine gap-ledger rows Phase 20 assigned here — `docs/
+CORE_OS_360_COMPLETION_MATRIX.md` rows C8.3, C8.4, C8.5, C11.3, C11.4,
+C11.5, C12.4, C12.5, C12.6. Plan: `docs/CORE_OS_360_PHASE23_PLAN.md`,
+written after checking the live code (`intelligence.ts`,
+`RiskGraphClient.tsx`, `evidenceEngine/analyze.ts`,
+`EvidenceEngineClient.tsx`, `complianceTwin/assemble.ts`,
+`loadSnapshot.ts`, and `hs_links`'/`hazards`'/`risk_assessments`'
+current RLS — none had a consultancy-read policy except `actions`) —
+the session's own "repository reality beats handover narrative" rule.
+
+### Group 1: reusable Connections panel + broader label resolution
+### (closes C8.3, C8.4)
+
+- **`lib/riskGraph/entityLabels.ts`** (new shared-dupe pair): a
+  curated `{ table, column }` map for 14 entity types whose
+  title/name column was verified against its own migration file
+  before being added — never guessed from a table name. Types that
+  looked like good candidates but have no single clean title column
+  (isolations, consultation records, environmental complaints,
+  management reviews) are deliberately left uncurated rather than
+  guessing one; `legal_obligation` (no title column — resolved via
+  its `legal_requirement_id` join, the existing `intelligence.ts`
+  precedent) and `incident` (`${type} — ${occurred_on}`, since
+  `hs_incidents` has no title column at all) are special-cased.
+  `resolveEntityLabels()` batches ONE query per DISTINCT type actually
+  present in a result set — `risk_graph_neighbors()`'s own 500-row/
+  3-hop cap already bounds how many distinct types can ever appear at
+  once, closing Phase 8's own "would need a query per branch" concern
+  without inventing a heavier mechanism. Never throws — a failed
+  lookup for one type falls back to a humanised type + truncated id
+  for just that type's rows, the same posture GlobalSearch/WhatChanged
+  label resolution already takes.
+- **`hrefForEntity()` takes an explicit `{ role, companyId?, portalBase?
+  }`, never an imported `portalUrl()`** — this file must stay a true
+  byte-identical shared-dupe pair, and admin's `portalUrl()` helper (to
+  link OUT) has no portal-side equivalent (linking to itself would be
+  self-referential). The admin caller passes `portalUrl()`'s own
+  resolved string; the portal caller passes nothing (defaults to `''`),
+  so a "portal-only" type (hazard/risk_assessment/method_statement/
+  coshh_assessment/substance — all portal-only pages, per Phase 8's own
+  established note) resolves to a plain relative path when the page
+  itself IS the portal. The exact `ComplianceTwinView.tsx` precedent
+  (Phase 12, Group 2): "each page supplies its own correct hrefs"
+  rather than this file guessing a shared routing suffix. Every other
+  curated type resolves to a real per-company admin tab
+  (`HsCompanyTabs.tsx`'s own segment list, checked live before writing
+  this) when `role: 'admin'`, or a portal list/record page when
+  `role: 'portal'`; an uncurated type gets no link at all rather than a
+  guessed one.
+- **`ConnectionsPanel.tsx`** (new shared-dupe component): the GENERIC
+  version of `RaLinks.tsx`/`IncidentLinks.tsx`/`RamsCoshhLinks.tsx` —
+  those three stay exactly as they are (bespoke, two link types each,
+  genuinely useful), this is additive for every OTHER connection a
+  record might have. Queries `hs_links` DIRECTLY at depth 1 (never the
+  multi-hop `risk_graph_neighbors()` RPC, which does not return the
+  underlying `hs_links` row id — a per-record panel needs that id to
+  support removal, the exact reason `RaLinks.tsx` already queries
+  `hs_links` directly rather than the RPC). "Add a connection" is a
+  plain-paste target id, the established `EvidenceLinksPanel.tsx`/
+  `LessonsLearnedClient.tsx` precedent for a generic link tool with no
+  per-type options list to fetch.
+- **Wired into two reference pages, one per app** — a documented,
+  bounded scope decision, not an exhaustive rollout (the same
+  "adopted in its first two forms, not retrofitted everywhere"
+  precedent Phase 6 Group 7's `useUnsavedChangesWarning` already set):
+  admin's audit detail page (`/health-safety/<companyId>/audits/
+  <auditId>` — no link mechanism of any kind existed there before) and
+  portal's incident detail page, ADDITIVE alongside the existing
+  `IncidentLinks.tsx` (which only covers hazard/RA links —
+  `ConnectionsPanel` now covers every other kind: a contractor, a
+  permit, an action).
+- A TypeScript type-checking trap caught by `tsc`, not review: a
+  template-literal `.select(\`id, ${cfg.column}\`)` call made
+  supabase-js's generic type inference produce a `ParserError` type for
+  the response rows — the exact "`.select()` must stay ONE string
+  literal" footgun this file's own history already recorded once for a
+  different reason (splitting with `+`); fixed by casting through
+  `unknown` first, since the column name is genuinely dynamic here by
+  design (one resolver serving 14 different tables/columns).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1674 admin — 1660 + 14 new `entityLabels.test.ts` cases; 788 portal —
+773 + 15, 14 mirrored `entityLabels.test.ts` cases + the sweep tests
+picking up the new component/page reference automatically), all six
+CI guards pass (`check-shared-dupes.sh`: 65 pairs, up from 63;
+`check-row-cap.sh`: clean; `check-route-validation.sh`: 44, unchanged;
+`check-admin-routes-linked.sh`: 43 static routes, all reachable — the
+touched admin route is dynamic (`[auditId]`), so it needed no literal-
+reference check; `check-blind-updates.sh`: 102, unchanged — this
+group's only writes are `hs_links` inserts/deletes, the same
+guardless-by-design shape `RaLinks.tsx`/`EvidenceLinksPanel.tsx`
+already use; `check-paged-order.sh`: clean — this group added no
+`readAllPages()` call), both production builds compile.
+

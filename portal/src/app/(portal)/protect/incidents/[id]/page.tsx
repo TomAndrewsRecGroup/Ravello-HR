@@ -17,6 +17,7 @@ import IncidentPeople from './IncidentPeople';
 import InvestigationPanel from './InvestigationPanel';
 import RiddorPanel from './RiddorPanel';
 import IncidentLinks, { type ResolvedLink } from './IncidentLinks';
+import ConnectionsPanel from '@/components/hs/ConnectionsPanel';
 import IncidentTraining from './IncidentTraining';
 import type {
   ActionRow, CauseRow, IncidentPersonRow, IncidentRow, InvestigationRow, Option, RiddorRow, SensitiveRow, TimelineRow,
@@ -222,6 +223,10 @@ export default async function IncidentPage(props: { params: Promise<{ id: string
             options={linkOptions} canLink={canInvestigate} canAssign={canAssign}
             linkedRa={inc.linked_risk_assessment_id && raLabel ? { id: inc.linked_risk_assessment_id, label: raLabel } : null} />
         </section>
+      )}
+
+      {canRead && (
+        <ConnectionsPanel entityType="incident" entityId={inc.id} companyId={companyId} canEdit={canInvestigate} role="portal" />
       )}
 
       {canRead && (
