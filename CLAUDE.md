@@ -11405,7 +11405,77 @@ at 1724), all six CI guards pass with no regressions, portal
 production build compiles (the same long-documented sandbox-only
 missing-Supabase-env-var limitation, unrelated to this change).
 
-**Later Phase 24 groups** (C6.14 Communication Timeline pagination/
-filtering, C6.15 visit reports as a Communication Timeline source,
-final regression/QA/handover) continue from here.
+### Group 5: visit reports as a Communication Timeline source (C6.15)
+
+Checked before Group 4: `communicationTimeline.ts` had no
+`VisitReportRow` input of any kind — a genuinely separate gap from the
+value-report `reports` table it already covered (Phase 6, Group 6).
+Closed first so Group 4's own filtering/pagination work automatically
+covers the new source too, rather than needing a second pass.
+
+- **`VisitReportIssuedRow { id, version, issued_at }`** and a new
+  `'visit_report_issued'` `CommunicationKind`. `buildCommunicationTimeline()`
+  gains one more loop, always `visibility: 'shared_with_client'` — a
+  visit report (Phase 7, migration 176) is only ever passed into this
+  function once `status = 'issued'`; a draft is never a communication
+  event and this file needs no status check of its own to enforce
+  that, since the caller (Client 360) only ever queries issued rows.
+- **Dated by `issued_at`, never `created_at`.** A report can sit in
+  `draft` for days before it is ever shared with the client — only the
+  issue itself, not the drafting, is the event this timeline records.
+- Client 360's new query: `consultancy_visit_reports` filtered to
+  `client_organisation_id = id AND status = 'issued'`, capped at 20,
+  ordered `issued_at desc` — matching every other source query on the
+  page already.
+
+### Group 4: Communication Timeline pagination/filtering (C6.14)
+
+The timeline section had always hard-truncated to `.slice(0, 30)` with
+no way to see anything older, and no way to narrow it by kind or
+visibility — the actual gap-ledger wording.
+
+- **Filtering runs over the already-bounded, already-fetched array —
+  no second query.** Every source query on the page is individually
+  capped at 10-20 rows, so the combined, merged timeline is already
+  small; `ClientCockpitPage` filters and paginates it server-side
+  (this page has no `'use client'` component of its own to filter in,
+  unlike the Evidence Engine's own client-side filters from Phase 23,
+  Group 3 — the same posture, applied server-side here since that's
+  what this page already is).
+- **`searchParams: Promise<{ kind?: string; visibility?: string; page?:
+  string }>`** added to `ClientCockpitPage`'s signature, the standing
+  Next 15 async-props convention. `FilterForm`
+  (`components/safety/FilterForm.tsx`, already a generic, reusable
+  plain-GET-form component — reused unchanged, no new component
+  needed) renders the kind/visibility `<select>`s; submitting resets
+  to page 1 by simply not carrying a `page` param forward, the same
+  "a plain GET form, filters live in the URL" shape that component's
+  own header comment already documents.
+  **Pagination copies the admin Candidates-table idiom verbatim**
+  (`hiring/[id]/page.tsx`, 2026-09-04): a disabled Prev/Next is a
+  `<span>`, never a `<Link>` with `pointerEvents: none` — the same
+  accessibility discipline recorded there.
+- `TIMELINE_PAGE_SIZE = 20`. The page count/empty-state copy
+  distinguishes "no communications recorded yet" (nothing at all) from
+  "no communications match this filter" (a real filter with zero
+  results) — the same distinction the Digital Twin's own null-vs-zero
+  handling already established for a different kind of count.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(portal 809 — 808 + 1 new `communicationTimeline.test.ts` case for the
+visit-report kind; admin unchanged at 1724 — this pair of groups
+touched no admin file beyond nothing at all), all six CI guards pass
+with no regressions (66 shared-dupe pairs, unchanged —
+`communicationTimeline.ts` is portal-only, not a shared-dupe pair, per
+its own header comment; row-cap clean; 44 unvalidated routes,
+unchanged; 43 static admin routes, all reachable — this pair of groups
+touched no admin route; 102 blind-update chains, unchanged; every
+paged query's `.order()` present), portal production build compiles
+(the same long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated to this change — confirmed by the build
+compiling successfully before failing only on that one unrelated
+page's static export), admin production build compiles clean.
+
+**Later Phase 24 groups** (final regression/QA/handover) continue from
+here.
 

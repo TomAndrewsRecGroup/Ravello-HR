@@ -4,7 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { requirePortfolioSession, portfolioIncludes, createServiceSupabaseClient } from '@/lib/consultancy/portfolioAccess';
 import { SERVICE_LEDGER_ENTRY_TYPE_LABELS, SERVICE_TYPE_LABELS, VISIT_STATUS_LABELS } from '@/lib/consultancy/vocab';
 import type { ConsultancyServiceLedgerEntry, ConsultancyServiceScope, ConsultancyVisit } from '@/lib/consultancy/types';
-import { buildCommunicationTimeline, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
+import { buildCommunicationTimeline, type CommunicationKind, type CommunicationVisibility } from '@/lib/consultancy/communicationTimeline';
+import FilterForm from '@/components/safety/FilterForm';
 import ClientActionForms from './ClientActionForms';
 import { auditLog } from '@/lib/audit';
 
@@ -15,6 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `Client 360 — ${id.slice(0, 8)}` };
 }
 
+const TIMELINE_PAGE_SIZE = 20;
+
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
 // Core-OS 360 Phase 6, section 4: the Client 360 view — a consultant
@@ -23,8 +26,12 @@ const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', {
 // probes established). Internal-only consultancy notes never appear
 // here: nothing this page reads is a client-authored free-text field
 // beyond what the client's own portal pages already show them.
-export default async function ClientCockpitPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClientCockpitPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ kind?: string; visibility?: string; page?: string }>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
   const portfolio = await requirePortfolioSession();
   if (!portfolio) redirect('/dashboard');
   if (!portfolioIncludes(portfolio.organisations, id)) notFound();
@@ -48,7 +55,7 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
   const [
     { data: company }, { data: snapshot }, { data: scopes }, { data: visits },
     { data: ledger }, { data: milestones }, { data: serviceRequests }, { data: documents },
-    { data: valueReports }, { data: emails }, { data: broadcasts },
+    { data: valueReports }, { data: emails }, { data: broadcasts }, { data: visitReports },
   ] = await Promise.all([
     sb.from('companies').select('id, name, sector, contact_email, active').eq('id', id).maybeSingle(),
     sb.from('client_health_snapshots').select('*').eq('company_id', id).order('snapshot_date', { ascending: false }).limit(1).maybeSingle(),
@@ -69,6 +76,10 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
     // scoped to this company_id is exactly the client-facing mail.
     sb.from('email_log').select('id, subject, to_email, sent_at').eq('company_id', id).eq('target_type', 'company').order('sent_at', { ascending: false }).limit(20),
     sb.from('actions').select('id, title, created_at').eq('company_id', id).eq('created_by_admin', true).order('created_at', { ascending: false }).limit(20),
+    // Core-OS 360 Completion Programme, Phase 24, Group 5 (C6.15): only
+    // ISSUED visit reports are a communication event — a draft sitting
+    // unpublished is not something the client has been told about yet.
+    sb.from('consultancy_visit_reports').select('id, version, issued_at').eq('client_organisation_id', id).eq('status', 'issued').order('issued_at', { ascending: false }).limit(20),
   ]);
 
   const s = snapshot as any;
@@ -79,11 +90,12 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
     .filter(l => l.entry_type === 'manual')
     .map(l => ({ id: l.id, summary: l.summary, occurred_at: l.occurred_at }));
 
-  const timeline = buildCommunicationTimeline({
+  const allTimeline = buildCommunicationTimeline({
     emails: (emails ?? []) as any[],
     broadcasts: (broadcasts ?? []) as any[],
     serviceRequests: (serviceRequests ?? []) as any[],
     reports: (valueReports ?? []) as any[],
+    visitReports: (visitReports ?? []) as any[],
     manualLedgerNotes,
   });
 
@@ -96,6 +108,43 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
     client_originated: 'var(--blue)',
     shared_with_client: 'var(--teal)',
     internal_consultancy: 'var(--gold)',
+  };
+  const KIND_LABEL: Record<CommunicationKind, string> = {
+    email: 'Email',
+    broadcast: 'Broadcast',
+    service_request_raised: 'Service request raised',
+    service_request_responded: 'Service request responded',
+    report_issued: 'Value report issued',
+    visit_report_issued: 'Visit report issued',
+    consultant_note: 'Consultant note',
+  };
+
+  // Core-OS 360 Completion Programme, Phase 24, Group 4 (closes
+  // gap-ledger row C6.14 — "pagination/filtering on the Communication
+  // Timeline"). The old rendering was a hard `.slice(0, 30)` with no
+  // way to see anything older or narrow it down. Filtering runs over
+  // the already-built, already-bounded array (every source query is
+  // itself capped at 10-20 rows) — no second query, the same "the
+  // data is already loaded, filter it in the browser [server render]"
+  // posture the Evidence Engine's own client-side filters (Phase 23,
+  // Group 3) already established, just server-side here since this
+  // page has no 'use client' component of its own to filter in.
+  const kindFilter = (sp.kind ?? '') as CommunicationKind | '';
+  const visibilityFilter = (sp.visibility ?? '') as CommunicationVisibility | '';
+  const filteredTimeline = allTimeline.filter(e =>
+    (!kindFilter || e.kind === kindFilter) && (!visibilityFilter || e.visibility === visibilityFilter),
+  );
+  const timelinePage = Math.max(1, Number(sp.page ?? '1') || 1);
+  const timelineFrom = (timelinePage - 1) * TIMELINE_PAGE_SIZE;
+  const timelineTotalPages = Math.max(1, Math.ceil(filteredTimeline.length / TIMELINE_PAGE_SIZE));
+  const timeline = filteredTimeline.slice(timelineFrom, timelineFrom + TIMELINE_PAGE_SIZE);
+  const timelineQuery = (page: number) => {
+    const q = new URLSearchParams();
+    if (kindFilter) q.set('kind', kindFilter);
+    if (visibilityFilter) q.set('visibility', visibilityFilter);
+    if (page > 1) q.set('page', String(page));
+    const s = q.toString();
+    return s ? `?${s}` : '';
   };
 
   return (
@@ -221,25 +270,62 @@ export default async function ClientCockpitPage({ params }: { params: Promise<{ 
         </section>
       </div>
 
-      <section className="card p-4 space-y-2">
-        <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Communication timeline</h2>
+      <section className="card p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Communication timeline</h2>
+          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+            {filteredTimeline.length} communication{filteredTimeline.length === 1 ? '' : 's'}{(kindFilter || visibilityFilter) ? ' (filtered)' : ''}
+          </span>
+        </div>
+        {allTimeline.length > 0 && (
+          <FilterForm
+            fields={[
+              { name: 'kind', label: 'Kind', type: 'select', value: kindFilter, options: (Object.keys(KIND_LABEL) as CommunicationKind[]).map(k => ({ value: k, label: KIND_LABEL[k] })) },
+              { name: 'visibility', label: 'Visibility', type: 'select', value: visibilityFilter, options: (Object.keys(VISIBILITY_LABEL) as CommunicationVisibility[]).map(v => ({ value: v, label: VISIBILITY_LABEL[v] })) },
+            ]}
+          />
+        )}
         {timeline.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No communications recorded yet.</p>
+          <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
+            {allTimeline.length === 0 ? 'No communications recorded yet.' : 'No communications match this filter.'}
+          </p>
         ) : (
-          <ul className="text-sm space-y-2" style={{ color: 'var(--ink-soft)' }}>
-            {timeline.slice(0, 30).map(entry => (
-              <li key={entry.id} className="flex items-start gap-2">
-                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--ink-faint)', minWidth: 90 }}>{fmt(entry.occurredAt)}</span>
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap"
-                  style={{ background: 'rgba(0,0,0,0.04)', color: VISIBILITY_COLOR[entry.visibility] }}
-                >
-                  {VISIBILITY_LABEL[entry.visibility]}
+          <>
+            <ul className="text-sm space-y-2" style={{ color: 'var(--ink-soft)' }}>
+              {timeline.map(entry => (
+                <li key={entry.id} className="flex items-start gap-2">
+                  <span className="text-xs whitespace-nowrap" style={{ color: 'var(--ink-faint)', minWidth: 90 }}>{fmt(entry.occurredAt)}</span>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap"
+                    style={{ background: 'rgba(0,0,0,0.04)', color: VISIBILITY_COLOR[entry.visibility] }}
+                  >
+                    {VISIBILITY_LABEL[entry.visibility]}
+                  </span>
+                  <span>{entry.summary}</span>
+                </li>
+              ))}
+            </ul>
+            {timelineTotalPages > 1 && (
+              <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid var(--line)' }}>
+                <span className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>
+                  {timelineFrom + 1}-{Math.min(timelineFrom + TIMELINE_PAGE_SIZE, filteredTimeline.length)} of {filteredTimeline.length}
                 </span>
-                <span>{entry.summary}</span>
-              </li>
-            ))}
-          </ul>
+                <div className="flex items-center gap-2">
+                  {timelinePage <= 1 ? (
+                    <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>← Prev</span>
+                  ) : (
+                    <Link prefetch={false} href={`/consultancy/clients/${id}${timelineQuery(timelinePage - 1)}`} className="btn-secondary btn-sm">← Prev</Link>
+                  )}
+                  <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Page {timelinePage} of {timelineTotalPages}</span>
+                  {timelinePage >= timelineTotalPages ? (
+                    <span className="btn-secondary btn-sm" aria-disabled="true" style={{ opacity: 0.4 }}>Next →</span>
+                  ) : (
+                    <Link prefetch={false} href={`/consultancy/clients/${id}${timelineQuery(timelinePage + 1)}`} className="btn-secondary btn-sm">Next →</Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
     </main>

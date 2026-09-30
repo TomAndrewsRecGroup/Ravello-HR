@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCommunicationTimeline } from '../communicationTimeline';
 
-const empty = { emails: [], broadcasts: [], serviceRequests: [], reports: [], manualLedgerNotes: [] };
+const empty = { emails: [], broadcasts: [], serviceRequests: [], reports: [], visitReports: [], manualLedgerNotes: [] };
 
 describe('buildCommunicationTimeline', () => {
   it('returns an empty timeline when every source is empty', () => {
@@ -53,6 +53,16 @@ describe('buildCommunicationTimeline', () => {
     expect(entries[0].summary).toContain('Q3 2026');
   });
 
+  it('classifies an issued visit report as shared_with_client, dated by issued_at not created_at', () => {
+    const entries = buildCommunicationTimeline({
+      ...empty,
+      visitReports: [{ id: 'vr1', version: 2, issued_at: '2026-09-07T10:00:00Z' }],
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ kind: 'visit_report_issued', visibility: 'shared_with_client', id: 'visit-report:vr1', occurredAt: '2026-09-07T10:00:00Z' });
+    expect(entries[0].summary).toContain('v2');
+  });
+
   it('classifies a manual consultancy ledger note as internal_consultancy — never shown to the client', () => {
     const entries = buildCommunicationTimeline({
       ...empty,
@@ -67,6 +77,7 @@ describe('buildCommunicationTimeline', () => {
       broadcasts: [{ id: 'b1', title: 'Middle', created_at: '2026-09-02T00:00:00Z' }],
       serviceRequests: [],
       reports: [{ id: 'r1', title: 'Newest', period: null, created_at: '2026-09-03T00:00:00Z' }],
+      visitReports: [],
       manualLedgerNotes: [],
     });
     expect(entries.map(e => e.id)).toEqual(['report:r1', 'broadcast:b1', 'email:e1']);
