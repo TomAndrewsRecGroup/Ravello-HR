@@ -11986,3 +11986,26 @@ long-documented sandbox-only missing-Supabase-env-var limitation). No
 migration in this group — entirely TypeScript over the already-live
 schema.
 
+### Group 8: full regression, adversarial QA, handover (gate: PASS)
+
+Full handover: `docs/CORE_OS_360_PHASE26_HANDOVER.md`. A dedicated
+adversarial review pass across all seven groups found no Critical,
+High or Medium defect — four accepted, documented, low-severity scope
+limitations (C14.9's narrower object coverage, C15.4's excluded
+signal types, C15.5's UI-level-only gate, C15.6's same-actor-only
+provenance) were confirmed correctly documented rather than silently
+narrowed. `docs/CORE_OS_360_COMPLETION_MATRIX.md` and `docs/
+core_os_360_completion_manifest.json` updated to close all seven
+gap-ledger rows (C14.6, C14.7, C14.8, C14.9, C15.4, C15.5, C15.6).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **1799**, unchanged since Group 4; portal **862**, unchanged
+since Group 7), all six CI guards pass with no regressions (70
+shared-dupe pairs; row-cap clean; 44 unvalidated routes, unchanged; 43
+static admin routes, all reachable; 102 blind-update chains,
+unchanged; every paged query's `.order()` present), both production
+builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation).
+
+**Phase 26 is complete.**
+

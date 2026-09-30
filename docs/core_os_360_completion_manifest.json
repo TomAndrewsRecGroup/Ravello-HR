@@ -271,44 +271,51 @@
     {
       "id": "C14.6",
       "phase": "C14",
-      "status": "MISSING",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "WorkerBadgePanel.tsx's print toggle + humanBadgeId() fallback id — Phase 26 Group 1"
     },
     {
       "id": "C14.7",
       "phase": "C14",
-      "status": "MISSING",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "migration 195, recorded_via widens to 'qr_scan'|'manual', new client RLS + column-restriction guard, ManualCheckinForm.tsx/CheckoutButton.tsx — Phase 26 Group 2"
     },
     {
       "id": "C14.8",
       "phase": "C14",
-      "status": "MISSING",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "new site_checkins reminder rule (overdue the morning after check-in, then weekly), notifies workforce.manage holders, re-checks live before notifying — Phase 26 Group 3"
     },
     {
       "id": "C14.9",
       "phase": "C14",
-      "status": "MISSING",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "migration 196, entity_qr_tokens covers hs_equipment + coshh_assessments (narrower than the gap's five-item wording — work areas/site entrance and PPE deliberately excluded, documented in the migration's own header) — Phase 26 Group 4"
     },
     {
       "id": "C15.4",
       "phase": "C15",
-      "status": "PARTIAL",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "ramsSectionState() gains site_name/open_hazards_at_site/lifting_or_plant_equipment_at_site/incidents_at_site_last_12_months, real counts scoped to the caller's own company (people/competency/controls/documents deliberately excluded — no honest linkage exists on a RAMS) — Phase 26 Group 5"
     },
     {
       "id": "C15.5",
       "phase": "C15",
-      "status": "MISSING",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "ramsApprovalWarnings(): quarantined/decommissioned/out-of-service/overdue-inspection linked equipment, NOT_READY/REVIEW_REQUIRED author/manager via person_deployment_status() (136), a UI-level acknowledgement gate before Approve/Make active — Phase 26 Group 6"
     },
     {
       "id": "C15.6",
       "phase": "C15",
-      "status": "PARTIAL",
-      "assigned_to_phase": 26
+      "status": "IMPLEMENTED",
+      "closed_in_phase": 26,
+      "note": "\"What informed this?\" toggle on RamsHeaderEditor.tsx reads the existing jev_decisions row back under jev_decisions_actor_read (098) — no new write, no new route — Phase 26 Group 7"
     },
     {
       "id": "C16.*",
