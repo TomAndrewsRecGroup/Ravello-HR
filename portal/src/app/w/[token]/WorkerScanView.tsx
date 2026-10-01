@@ -1,6 +1,9 @@
 'use client';
 import { useState } from 'react';
+import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import { DEPLOYMENT_STATUS_COLOURS, DEPLOYMENT_STATUS_LABELS, type DeploymentStatus } from '@/lib/workforce/vocab';
+import ReportForm from './ReportForm';
+import DocumentsList from './DocumentsList';
 
 // Public, anonymous badge scan view. Shows the coarse Safe to Deploy
 // status only — never the reasons/requirements the engine also
@@ -21,6 +24,7 @@ export default function WorkerScanView({
   const [checkedIn, setCheckedIn] = useState(initialCheckedIn);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [reportKind, setReportKind] = useState<'incident' | 'hazard' | null>(null);
 
   const known = (Object.keys(DEPLOYMENT_STATUS_LABELS) as DeploymentStatus[]).includes(status as DeploymentStatus);
   const label = known ? DEPLOYMENT_STATUS_LABELS[status as DeploymentStatus] : status;
@@ -71,6 +75,27 @@ export default function WorkerScanView({
           {checkedIn ? 'Check out' : 'Check in'}
         </button>
         {message && <p className="text-sm text-center" style={{ color: 'var(--ink-soft)' }}>{message}</p>}
+
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }} className="space-y-3">
+          {reportKind ? (
+            <ReportForm token={token} kind={reportKind} hasSite={!!siteName} onDone={() => setReportKind(null)} />
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" className="btn-secondary" style={{ minHeight: 44 }} onClick={() => setReportKind('incident')}>
+                <AlertTriangle size={14} /> Report incident
+              </button>
+              <button type="button" className="btn-secondary" style={{ minHeight: 44 }} onClick={() => setReportKind('hazard')}>
+                <ShieldAlert size={14} /> Report hazard
+              </button>
+            </div>
+          )}
+        </div>
+
+        {!reportKind && (
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+            <DocumentsList token={token} />
+          </div>
+        )}
       </div>
     </main>
   );

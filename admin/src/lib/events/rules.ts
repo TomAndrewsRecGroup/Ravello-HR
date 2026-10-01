@@ -307,6 +307,38 @@ const reminderRules: Rule[] = [
     },
   },
   {
+    // Fixing the LMS progress-tracking gap: a learning_assignments row
+    // (202) approaching or past its own due_date. Content title and
+    // person name are looked up by id here (slimRow() strips any
+    // embed from the reminder payload) — the training_record_reminder
+    // precedent, immediately above.
+    id: 'learning_assignment_reminder',
+    on: 'learning_assignments.reminder',
+    when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },
+    then: async ({ event, sb }) => {
+      const { bucket, due_date, row } = reminderPayload(event);
+      const expired = bucket === 'overdue';
+      const contentId = s(row.content_id);
+      const personId = s(row.person_id);
+      let title = 'Learning content';
+      let personName = 'an employee';
+      if (contentId) {
+        const { data } = await sb.from('learning_content').select('title').eq('id', contentId).maybeSingle();
+        title = (data as { title?: string } | null)?.title ?? title;
+      }
+      if (personId) {
+        const { data } = await sb.from('people').select('full_name').eq('id', personId).maybeSingle();
+        personName = (data as { full_name?: string } | null)?.full_name ?? personName;
+      }
+      return [notifyC({
+        audiences: admins(event.company_id ?? ''), companyId: event.company_id,
+        type: expired ? 'learning_assignment_overdue' : 'learning_assignment_due',
+        title: `"${title}" assigned to ${personName} ${expired ? `was due ${due_date}` : `is due ${due_date}`}`,
+        link:  { portal: '/lead/learning' },
+      })];
+    },
+  },
+  {
     id: 'document_review_reminder',
     on: 'documents.reminder',
     when: e => { const b = reminderPayload(e).bucket; return dueSoon(b) || b === 'overdue'; },

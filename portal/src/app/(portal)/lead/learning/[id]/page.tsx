@@ -19,7 +19,7 @@ export default async function LearningDetailPage(props: { params: Promise<{ id: 
   const { user, companyId } = await getSessionProfile();
   if (!user) redirect('/auth/login');
 
-  const [{ data: content }, { data: allContent }, { data: purchase }] = await Promise.all([
+  const [{ data: content }, { data: allContent }, { data: purchase }, { data: myPerson }, { data: canManage }] = await Promise.all([
     supabase
       .from('learning_content')
       .select('id,title,description,category,content_type,creator_name,file_url,thumbnail_url,duration_mins,price_pence,stripe_price_id,tags,is_featured,view_count,created_at')
@@ -41,11 +41,29 @@ export default async function LearningDetailPage(props: { params: Promise<{ id: 
           .eq('status', 'active')
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from('people').select('id').eq('user_id', user.id).maybeSingle(),
+    companyId
+      ? supabase.rpc('has_capability', { p_org: companyId, p_cap: 'training.manage' })
+      : Promise.resolve({ data: false }),
   ]);
 
   if (!content) notFound();
 
   const hasAccess = purchase && (!purchase.access_expires_at || new Date(purchase.access_expires_at) > new Date());
+
+  // Real LMS assignment/progress tracking (learning_assignments, 202) —
+  // distinct from the company-wide `purchase` above. Fetched by this
+  // viewer's own person_id; the manager's own team picker (below) is a
+  // separate query, scoped to the company, never a blind table read.
+  const { data: myAssignment } = myPerson
+    ? await supabase.from('learning_assignments')
+        .select('id, status, progress_percent, due_date, assigned_at')
+        .eq('content_id', params.id).eq('person_id', myPerson.id).maybeSingle()
+    : { data: null };
+  const { data: teamPeople } = canManage && companyId
+    ? await supabase.from('people').select('id, full_name').eq('company_id', companyId)
+        .eq('worker_type', 'employee').order('full_name').limit(500)
+    : { data: null };
 
   // "You May Like": tag similarity, top 5
   const related = (allContent ?? [])
@@ -72,6 +90,9 @@ export default async function LearningDetailPage(props: { params: Promise<{ id: 
           hasAccess={!!hasAccess}
           companyId={companyId ?? ''}
           userId={user.id}
+          myAssignment={myAssignment}
+          canManage={!!canManage}
+          teamPeople={teamPeople ?? []}
         />
       </main>
   );

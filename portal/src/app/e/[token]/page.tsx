@@ -48,5 +48,5 @@ export default async function EntityQrScanPage(props: Props) {
     );
   }
 
-  return <EntityScanView entityType={result.entityType} fields={result.fields} />;
+  return <EntityScanView token={params.token} entityType={result.entityType} fields={result.fields} />;
 }

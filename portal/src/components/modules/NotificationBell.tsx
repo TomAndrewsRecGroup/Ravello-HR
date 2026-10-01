@@ -29,6 +29,8 @@ const TYPE_META: Record<NotificationType, { Icon: React.ElementType; color: stri
   employee_document_expired:  { Icon: FileText,       color: 'var(--danger)' },
   training_record_expiring:  { Icon: FileText,       color: 'var(--amber)' },
   training_record_expired:   { Icon: FileText,       color: 'var(--danger)' },
+  learning_assignment_due:     { Icon: GraduationCap, color: 'var(--amber)' },
+  learning_assignment_overdue: { Icon: GraduationCap, color: 'var(--danger)' },
   policy_ack_overdue:         { Icon: FileText,       color: 'var(--danger)' },
   review_due:                 { Icon: CalendarClock,  color: 'var(--amber)' },
   checklist_task_due:         { Icon: CheckSquare,    color: 'var(--amber)' },

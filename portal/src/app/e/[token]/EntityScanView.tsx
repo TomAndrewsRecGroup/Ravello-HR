@@ -1,5 +1,9 @@
+'use client';
+import { useState } from 'react';
+import { ShieldAlert } from 'lucide-react';
 import { HS_EQUIPMENT_STATUS_LABELS, type HsEquipmentStatus } from '@/lib/hs/vocab';
 import { DOC_STATUS_LABELS, type DocStatus } from '@/lib/hs/safetyVocab';
+import EntityReportForm from './EntityReportForm';
 
 // Public, anonymous entity badge scan view. Shows the coarse status
 // only — never a free-text field (entity_qr_status(), 196, deliberately
@@ -86,15 +90,28 @@ function CoshhView({ fields }: { fields: Record<string, unknown> }) {
 }
 
 export default function EntityScanView({
-  entityType, fields,
+  token, entityType, fields,
 }: {
+  token: string;
   entityType: 'equipment' | 'coshh_assessment';
   fields: Record<string, unknown>;
 }) {
+  const [reporting, setReporting] = useState(false);
+
   return (
     <main className="min-h-screen flex items-center justify-center px-4" style={{ background: '#FAFAF8' }}>
       <div className="w-full max-w-[420px] rounded-[20px] p-8 space-y-4" style={{ background: '#fff', border: '1px solid var(--line)' }}>
         {entityType === 'equipment' ? <EquipmentView fields={fields} /> : <CoshhView fields={fields} />}
+
+        <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+          {reporting ? (
+            <EntityReportForm token={token} onDone={() => setReporting(false)} />
+          ) : (
+            <button type="button" className="btn-secondary w-full" style={{ minHeight: 44 }} onClick={() => setReporting(true)}>
+              <ShieldAlert size={14} /> Report an issue with this
+            </button>
+          )}
+        </div>
       </div>
     </main>
   );

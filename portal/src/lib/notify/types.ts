@@ -43,6 +43,8 @@ export const NOTIFICATION_TYPES = [
   'employee_document_expired',
   'training_record_expiring',
   'training_record_expired',
+  'learning_assignment_due',
+  'learning_assignment_overdue',
   'policy_ack_overdue',
   'review_due',
   'checklist_task_due',
@@ -322,6 +324,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   consultancy_followup_due:   'Follow-up visit due',
   board_assurance_report_issued: 'Board assurance report issued',
   lesson_learned_published:   'New lesson learned shared with you',
+  learning_assignment_due:    'Learning assignment due soon',
+  learning_assignment_overdue: 'Learning assignment overdue',
 };
 
 export function isNotificationType(v: string): v is NotificationType {

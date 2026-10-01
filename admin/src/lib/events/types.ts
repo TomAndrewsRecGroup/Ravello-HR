@@ -185,6 +185,9 @@ export const REMINDER_ENTITIES = [
   // (179's own "attendance, not compliance" posture) — this is a
   // reminder-only entity, the training_records precedent.
   'site_checkins',
+  // Fixing the LMS progress-tracking gap: a learning_assignments row
+  // (202) with its own due_date and not yet completed.
+  'learning_assignments',
 ] as const;
 export type ReminderEntity = typeof REMINDER_ENTITIES[number];
 

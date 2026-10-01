@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import LearningAssignmentPanel from './LearningAssignmentPanel';
 import {
   Clock, Users, Tag, Play, FileText, Link as LinkIcon, BookOpen,
   Lock, CheckCircle2, Loader2, Share2, ChevronRight, Star,
@@ -34,6 +35,14 @@ interface Purchase {
   created_at: string;
 }
 
+interface Assignment {
+  id: string;
+  status: 'assigned' | 'in_progress' | 'completed';
+  progress_percent: number;
+  due_date: string | null;
+  assigned_at: string;
+}
+
 interface Props {
   content: Content;
   related: Content[];
@@ -42,6 +51,9 @@ interface Props {
   hasAccess: boolean;
   companyId: string;
   userId: string;
+  myAssignment: Assignment | null;
+  canManage: boolean;
+  teamPeople: { id: string; full_name: string }[];
 }
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -128,7 +140,7 @@ function RelatedCard({ item }: { item: Content }) {
 }
 
 export default function LearningDetailClient({
-  content, related, byCreator, purchase, hasAccess, companyId, userId,
+  content, related, byCreator, purchase, hasAccess, companyId, userId, myAssignment, canManage, teamPeople,
 }: Props) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
@@ -379,6 +391,14 @@ export default function LearningDetailClient({
               </div>
             )}
           </div>
+
+          {(myAssignment || (canManage && teamPeople.length > 0)) && (
+            <div className="card p-5">
+              <LearningAssignmentPanel
+                contentId={content.id} myAssignment={myAssignment} canManage={canManage} teamPeople={teamPeople}
+              />
+            </div>
+          )}
 
           {/* Back to library */}
           <Link prefetch={false} href="/lead/learning" className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ink-faint)' }}>

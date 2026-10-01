@@ -10,6 +10,7 @@ import { hashAccessToken, normaliseAccessToken } from '@/lib/auth/accessTokens';
 export interface WorkerQrStatus {
   ok: true;
   personId: string;
+  companyId: string;
   siteId: string | null;
   fullName: string;
   jobTitle: string | null;
@@ -34,13 +35,14 @@ export async function loadWorkerQrStatus(
   const { data: statusResult } = await service.rpc('worker_qr_status', { p_token_hash: tokenHash });
   if (!statusResult?.ok) return { ok: false };
 
-  const { data: person } = await service.from('people').select('site_id').eq('id', tokenRow.person_id).maybeSingle();
+  const { data: person } = await service.from('people').select('site_id, company_id').eq('id', tokenRow.person_id).maybeSingle();
   const { data: openCheckin } = await service.from('site_checkins')
     .select('id').eq('person_id', tokenRow.person_id).is('checked_out_at', null).maybeSingle();
 
   return {
     ok: true,
     personId: tokenRow.person_id,
+    companyId: (person?.company_id as string | undefined) ?? '',
     siteId: (person?.site_id as string | null) ?? null,
     fullName: statusResult.full_name as string,
     jobTitle: (statusResult.job_title as string | null) ?? null,

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {
   Clock, Star, Play, FileText, Link as LinkIcon, BookOpen,
   Lock, CheckCircle2, ChevronLeft, ChevronRight, Search,
-  SlidersHorizontal, X,
+  SlidersHorizontal, X, ClipboardList,
 } from 'lucide-react';
 
 interface Content {
@@ -29,12 +29,28 @@ interface Purchase {
   access_expires_at: string | null;
 }
 
+interface Assignment {
+  id: string;
+  content_id: string;
+  status: 'assigned' | 'in_progress' | 'completed';
+  progress_percent: number;
+  due_date: string | null;
+}
+
 interface Props {
   content: Content[];
   purchases: Purchase[];
+  assignments: Assignment[];
   companyId: string;
   userId: string;
 }
+
+const ASSIGNMENT_STATUS_LABELS: Record<Assignment['status'], string> = {
+  assigned: 'Assigned', in_progress: 'In progress', completed: 'Completed',
+};
+const ASSIGNMENT_STATUS_COLOURS: Record<Assignment['status'], string> = {
+  assigned: 'var(--ink-faint)', in_progress: 'var(--amber)', completed: 'var(--success)',
+};
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   video: Play, pdf: FileText, pptx: FileText, link: LinkIcon, scorm: BookOpen,
@@ -303,7 +319,7 @@ function HeroBanner({ item, purchase }: { item: Content; purchase?: Purchase }) 
 }
 
 // ── Main component ────────────────────────────────────────────
-export default function LearningBrowse({ content, purchases, companyId, userId }: Props) {
+export default function LearningBrowse({ content, purchases, assignments, companyId, userId }: Props) {
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
@@ -344,6 +360,12 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
   }), [content, filterCat, filterType, filterPrice, search]);
 
   const isFiltering = search || filterCat !== 'all' || filterType !== 'all' || filterPrice !== 'all';
+
+  const contentById = useMemo(() => new Map(content.map(c => [c.id, c])), [content]);
+  const openAssignments = useMemo(
+    () => assignments.filter(a => a.status !== 'completed' && contentById.has(a.content_id)),
+    [assignments, contentById],
+  );
 
   // Sections
   const featured = useMemo(() => content.filter(c => c.is_featured), [content]);
@@ -452,6 +474,39 @@ export default function LearningBrowse({ content, purchases, companyId, userId }
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Assigned to you — real LMS assignment/progress, distinct from
+          the company-wide purchases below (learning_assignments, 202) */}
+      {openAssignments.length > 0 && (
+        <div className="px-1">
+          <h2 className="font-display font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+            <ClipboardList size={14} style={{ color: 'var(--purple)' }} /> Assigned to you
+          </h2>
+          <div className="space-y-2">
+            {openAssignments.map(a => {
+              const item = contentById.get(a.content_id);
+              if (!item) return null;
+              return (
+                <Link prefetch={false} key={a.id} href={`/learning/${item.id}`}
+                  className="flex items-center gap-3 p-3 rounded-lg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{item.title}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--ink-faint)' }}>
+                      {a.due_date ? `Due ${new Date(a.due_date).toLocaleDateString('en-GB')}` : 'No due date'}
+                      {a.progress_percent > 0 ? ` · ${a.progress_percent}%` : ''}
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                    style={{ color: ASSIGNMENT_STATUS_COLOURS[a.status], background: 'var(--surface-alt)' }}>
+                    {ASSIGNMENT_STATUS_LABELS[a.status]}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
 

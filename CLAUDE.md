@@ -12917,3 +12917,188 @@ read back via `pg_get_constraintdef()` and probed both directions
 apply; `client_services` confirmed gone via `to_regclass()`, the
 shared `update_updated_at()` function confirmed still present.
 
+---
+
+## QR field reporting + real LMS assignment/progress tracking
+## (2026-10-01, migrations 201-202)
+
+Closes the two gaps the go-live feature audit named explicitly: the
+Worker/Entity QR scan pages (`/w/[token]`, 179; `/e/[token]`, 196) had
+exactly one button (check in/out) and no way for a person on site with
+no portal login to report an incident or hazard, upload a photo, or
+read a company's current H&S documents; and the E-Learning marketplace
+(`learning_content`/`learning_purchases`, 006) only ever granted a
+COMPANY-WIDE access window, never a way to assign a specific piece of
+content to a specific employee or track their own completion.
+
+### QR field reporting (migration 201)
+
+- **The reporter has no session, by construction.** Every insert runs
+  under the SERVICE ROLE from the public, token-gated route
+  (`worker_qr_tokens`/`entity_qr_tokens`'s own "possession of the token
+  is the proof" model) — never a direct session write, the same reason
+  `site_checkins`' own mutations are route-only. `hs_incident_guard`/
+  `hs_hazard_guard` already branch on `current_user IN
+  ('authenticated','anon')`, which is false for a service-role
+  connection, so their own session-only defaulting is skipped and the
+  route supplies sensible values directly — no change needed to either
+  guard.
+- **`hs_check_refs()` gains one more reference to validate**
+  (`reported_by_person_id → people`), added to its existing shared
+  VALUES list — the standing "extend the list, never invent a bespoke
+  check" rule — after reading the LIVE function body first (confirmed
+  byte-identical to 125's own canonical definition before extending
+  it, not guessed from an older migration file).
+- **`entity_qr_report_context(p_token_hash)`** is the one new DEFINER
+  function, grant-shape-identical to `worker_qr_status()`
+  (`service_role` only, `REVOKE ALL FROM PUBLIC, anon, authenticated`)
+  — `entity_qr_status()` deliberately never exposes `entity_id`/
+  `company_id` to the browser, so a report route needs this
+  server-side companion to resolve a badge token to what it actually
+  needs to insert a correctly-scoped hazard.
+- **Four new routes**: `/api/w/[token]/report-incident`,
+  `/report-hazard`, `/evidence` (photo upload, reusing
+  `uploadEvidence()` verbatim — the exact helper `IncidentReportForm
+  .tsx` already calls under a real session, only the client passed to
+  it differs here), `/documents` (reads the company's currently
+  `active` `hs_documents`, signs the latest `hs_files` row per
+  document under the service role, 300s like every other evidence link
+  in this codebase); and `/api/e/[token]/report-hazard` (links a
+  `linked_asset_id` for equipment, folds a COSHH assessment's name into
+  the hazard's own title/description — hazards has no FK column for a
+  COSHH link, a documented, honest scope limit rather than inventing
+  one). All four validated with `parseBody`/`parseForm` + zod, field
+  ceilings matched EXACTLY to the underlying CHECK constraints
+  (`hs_incidents`/`hazards`: title≤200, description≤4000,
+  location≤300) — the Phase 15 B.1 lesson, applied from the start.
+- **No new consequence rule needed anywhere.** The existing
+  `incident_reported`/`hazard_reported` rules in `safetyRules.ts`
+  already react to any row regardless of who or what inserted it.
+- **Worker scan UI** (`WorkerScanView.tsx`) gains Report incident/
+  Report hazard buttons (`ReportForm.tsx`, photo upload after the
+  report is created) and a Documents section (`DocumentsList.tsx`,
+  lazy-fetched, expand-on-click). **Entity scan UI**
+  (`EntityScanView.tsx`) converted to a client component and gains a
+  single "Report an issue with this" button (`EntityReportForm.tsx`).
+  Both `/api/w/` and `/api/e/` were already prefix-matched in the
+  portal middleware's `PUBLIC_ROUTES` — no middleware change needed.
+
+### Real LMS assignment + progress tracking (migration 202)
+
+- **`learning_assignments` is deliberately separate from
+  `development_items.linked_course_id`** (134, which links to
+  `training_courses` — the formal H&S/workforce training register, a
+  different catalogue) and additive alongside `learning_purchases`
+  (006, untouched) — this table is keyed to `learning_content` and
+  tracks one specific assignment to one specific person.
+  `UNIQUE (content_id, person_id)`: a re-assignment upserts the same
+  row, the idempotency discipline this codebase uses throughout.
+- **Progress is self-reported** (`status` + `progress_percent`) — the
+  same honest default this codebase uses everywhere rather than
+  fabricate a number: there is no video-player hook to read actual
+  watch time from, so the learner's own "mark complete" is the real
+  signal.
+- **A real bug caught by this codebase's own standing regression
+  test, not by review**: the first draft derived `company_id` via a
+  raw `SELECT company_id FROM people WHERE id = NEW.person_id` inside
+  a function declared `SECURITY DEFINER`, and the self-restriction
+  branch keyed on `current_user IN ('authenticated','anon')` —
+  `invokerGuards.test.ts` (088's own rule, reaffirmed after 134
+  shipped the identical mistake and a self-submitted certificate was
+  stored as verified until 134a caught it live) immediately failed:
+  under DEFINER, `current_user` becomes the function's OWNER, never
+  `'authenticated'`/`'anon'`, which would have silently skipped the
+  whole self-restriction for EVERY session — a self-user could have
+  changed their own `due_date`/`notes`/`assigned_by` despite the
+  trigger's own stated intent. **Fixed**: the function is `SECURITY
+  INVOKER`, and the person→company lookup now calls the existing
+  `workforce_person_company()` DEFINER helper (134a) instead of a raw
+  SELECT, the exact `workforce_evidence_guard()` (142) precedent for
+  "a session-keyed guard stays INVOKER; a small DEFINER helper does
+  the one cross-table lookup it needs."
+- **Mutation-tested live, not just via the SQL-shape test**: a
+  rolled-back probe built two genuinely non-privileged identities
+  (real throwaway `auth.users` rows inside the transaction, since
+  every live `people.user_id` in production belongs to a
+  `client_admin`, who already holds `training.manage` — testing
+  against one of those would have falsely looked like a pass) and
+  confirmed: the assigned person updates their own progress; the SAME
+  person is refused changing `due_date` ("You may only update your own
+  progress"); an unrelated non-manager person cannot touch the row at
+  all (RLS-filtered, 0 rows); `row_version` is forced to 2 regardless
+  of anything the caller sent. All 6 checks passed; no trace left live
+  after rollback.
+- **RLS**: staff `FOR ALL`; a session holding `training.manage` on its
+  own company may change anything; the assigned person's own linked
+  portal login sees and updates only their own row (the trigger above
+  decides which columns they may actually touch).
+  `apply_write_guard()` applied; `audit_row()` whitelists identifying
+  columns only, never `notes`.
+- **UI**: `LearningAssignmentPanel.tsx` — a manager's "Assign to a team
+  member" picker (`teamPeople`, `worker_type = 'employee'`) and the
+  assigned person's own Start/Mark complete buttons, both counted
+  writes (`{ count: 'exact' }` + `judgeWrite()` from the start — this
+  codebase's own blind-update discipline, never retrofitted after the
+  guard catches it). An "Assigned to you" section on the Learning
+  browse page reads the viewer's own assignments
+  (`/lead/learning/page.tsx`).
+- **Reminders**: `learning_assignments` joins `REMINDER_ENTITIES`
+  (`due_30`/`due_7`/`overdue`, excluding completed rows), a new
+  `learning_assignment_reminder` consequence rule resolves the
+  content title and person name by id (never a reminder-payload
+  embed — the standing `slimRow()` discipline), new notification types
+  `learning_assignment_due`/`learning_assignment_overdue` added to the
+  shared `notify/types.ts` (both the type tuple AND the label map —
+  caught by `tsc`, not by review, when the first pass only added the
+  tuple entry).
+
+### Two CI-guard regressions found and fixed before this shipped
+
+- **`check-unbounded-reads.sh`'s ratchet (baseline 302) caught two new
+  unbounded chains**: `documents/route.ts`'s `hs_files` read (bounded
+  by construction — at most 30 doc ids — but the scanner can't see
+  that) and the Learning page's new `learning_assignments` read.
+  Fixed with `.limit(500)`/`.limit(500)`, the exact `.in('entity_id',
+  …).limit(500)` precedent already used throughout the H&S register
+  reads, rather than widening the baseline.
+- **`check-blind-updates.sh`'s ratchet (baseline 101) caught two new
+  blind UPDATEs** in `LearningAssignmentPanel.tsx` (mark-complete,
+  start). Fixed with `COUNT_EXACT` + `judgeWrite()`, the
+  `CheckoutButton.tsx` precedent, before this shipped — built counted
+  from the start is the discipline, catching it here is the guard
+  doing its job.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 1921/1921 — up from before this change by 17 new:
+`qrFieldReportingSql.test.ts` (5), `learningAssignmentsSql.test.ts`
+(10, including the new SECURITY-INVOKER-pinning case), plus
+`invokerGuards.test.ts` correctly catching and then confirming the
+fix; portal 961/961 — unchanged test-file count, this work touched
+portal application code but added no new portal test file beyond
+what the admin-side SQL-shape tests already pin), all seven CI guards
+pass with no regressions (73 shared-dupe pairs, unchanged; row-cap
+clean; 44 unvalidated routes, unchanged — all five new routes
+validated with `parseBody`/`parseForm`; 43 static admin routes, all
+reachable — this work touched no admin route; 101 blind-update
+chains, back to baseline after the two-chain regression above was
+fixed; every paged query's `.order()` present; 302 unbounded-read
+chains, back to baseline after the two-chain regression above was
+fixed), both production builds compile, including `/w/[token]`,
+`/e/[token]`, `/api/w/[token]/{report-incident,report-hazard,
+evidence,documents}`, `/api/e/[token]/report-hazard`,
+`/lead/learning` and `/lead/learning/[id]`. Migrations 201 and 202
+applied live via a mix of `apply_migration` (201, and 202's own
+history row recorded by hand after `apply_migration` itself twice
+timed out/was cancelled mid-call on 202 — confirmed via `to_regclass()`
+that neither partial attempt left anything behind before re-applying
+the DDL statement-by-statement through `execute_sql`) and verified
+independently afterward: all four new `hs_incidents`/`hazards`
+columns present, `entity_qr_report_context()`'s grant shape matches
+`worker_qr_status()`'s exactly, `learning_assignments` has RLS on
+with exactly 7 policies (4 of its own + the write guard's 3), both
+triggers present, `learning_assignments_fill()` confirmed
+`prosecdef = false` (SECURITY INVOKER) directly from `pg_proc` — and
+the full self-restriction/cross-person-isolation/row_version-forcing
+behaviour proven end to end in the rolled-back live probe described
+above, not merely asserted from the function body text.
+

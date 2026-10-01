@@ -529,6 +529,20 @@ REMINDERS.push({
   buckets: ['overdue', 'overdue_weekly'],
 });
 
+// Fixing the LMS progress-tracking gap: a learning_assignments row
+// (202) with its own due_date, not yet completed. The consuming rule
+// (lib/events/rules.ts) looks the content title and person's name up
+// itself — slimRow() never lets an embed into the reminder payload,
+// the training_record_reminder precedent.
+REMINDERS.push({
+  id: 'learning_assignments', entity: 'learning_assignments',
+  select: 'id, company_id, content_id, person_id, due_date',
+  query: (sb, from, to) => sb.from('learning_assignments').select('id, company_id, content_id, person_id, due_date')
+    .not('due_date', 'is', null).neq('status', 'completed').order('id').range(from, to),
+  dueDateOf: r => str(r.due_date),
+  buckets: ['due_30', 'due_7', 'overdue'],
+});
+
 function companyViaInstance(r: Record<string, unknown>): string | null {
   const inst = r.instance as { company_id?: string } | { company_id?: string }[] | null | undefined;
   const one = Array.isArray(inst) ? inst[0] : inst;
