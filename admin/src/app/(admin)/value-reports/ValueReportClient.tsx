@@ -15,7 +15,6 @@ interface Props {
   serviceRequests: any[];
   actions: any[];
   profiles: any[];
-  services: any[];
   trainingNeeds: any[];
   performanceReviews: any[];
   absenceRecords: any[];
@@ -36,7 +35,7 @@ function fmtMonth(date: Date): string {
 type PeriodType = 'month' | 'quarter';
 
 export default function ValueReportClient({
-  companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
+  companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles,
   trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
   standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
 }: Props) {
@@ -77,7 +76,7 @@ export default function ValueReportClient({
   }, []);
 
   const inputs = {
-    requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services,
+    requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, companies,
     trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
     standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
   };
@@ -102,7 +101,7 @@ export default function ValueReportClient({
     return { company, month: fmtMonth(new Date(selectedYear, selectedMonth)), period: fmtMonth(new Date(selectedYear, selectedMonth)), ...data };
   }, [
     selectedCompany, periodType, selectedMonth, selectedYear, selectedQuarter, selectedQuarterYear, companies, requisitions,
-    candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, services, trainingNeeds,
+    candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, trainingNeeds,
     performanceReviews, absenceRecords, onboardingInstances, standards, standardClauses, standardEvidenceLinks,
     legalObligations, complianceEvaluations, objectives, auditFindings,
   ]);
@@ -408,19 +407,6 @@ export default function ValueReportClient({
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Portal Users</p>
                 <p className="text-lg font-bold mt-1" style={{ color: 'var(--ink)' }}>{report.usage.portalUsers}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Active Services</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {report.usage.activeServices.length > 0
-                    ? report.usage.activeServices.map((s: any) => (
-                      <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)' }}>
-                        {s.service_name}
-                      </span>
-                    ))
-                    : <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>None</span>
-                  }
-                </div>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>Monthly Fee</p>

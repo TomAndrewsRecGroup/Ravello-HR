@@ -7,7 +7,7 @@ import { requireStaff } from '@/lib/auth/requireStaff';
 
 export const runtime = 'nodejs';
 
-const PACKAGES = ['HIRE', 'LEAD', 'PROTECT', 'OTHER'] as const;
+const PACKAGES = ['HIRE', 'LEAD', 'PROTECT', 'CONSULTANCY', 'OTHER'] as const;
 const TERMS    = [14, 30] as const;
 type PackageLabel = typeof PACKAGES[number];
 type TermsDays    = typeof TERMS[number];

@@ -20,6 +20,7 @@ import InvoicesTab from './tabs/InvoicesTab';
 import WhatChangedTab from './tabs/WhatChangedTab';
 
 import { ACTION_PRIORITIES, COMPLIANCE_CATEGORIES, COMPLIANCE_CATEGORY_LABELS, COMPLIANCE_STATUSES, COMPLIANCE_STATUS_LABELS, HIRING_STAGE_LABELS, labelFor, ROLE_LABELS } from '@/lib/ui/statusMaps';
+import { SERVICE_TYPE_LABELS, SERVICE_SCOPE_STATUS_LABELS } from '@/lib/consultancy/vocab';
 import FileLink from '@/components/modules/FileLink';
 import {
   MILESTONE_PILLARS, MILESTONE_PILLAR_LABELS, MILESTONE_STATUSES, MILESTONE_STATUS_LABELS,
@@ -194,6 +195,7 @@ function BillingPanel({
   customerId,
   subscriptionId,
   currency,
+  consultancyServiceScopes,
 }: {
   companyId: string;
   initialPence: number | null;
@@ -201,6 +203,7 @@ function BillingPanel({
   customerId: string | null;
   subscriptionId: string | null;
   currency: string | null;
+  consultancyServiceScopes: any[];
 }) {
   const [pence,    setPence]    = useState<number | null>(initialPence ?? null);
   const [statusV,  setStatusV]  = useState<string | null>(initialStatus ?? null);
@@ -320,6 +323,32 @@ function BillingPanel({
           </div>
         </div>
       </div>
+
+      {/* Read-only context for whoever is setting the retainer: what
+          consultancy service (today, Andrews Recruitment Group's own
+          H&S delivery) is actually scoped against this client.
+          consultancy_service_scopes (168) has no write path on this
+          page — it's written from the portal's Command Centre
+          (/consultancy/clients/[id]) under the capability-gated
+          portfolio policy; this is display only. */}
+      {consultancyServiceScopes.length > 0 && (
+        <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)' }}>Consultancy services</p>
+          <div className="space-y-1.5">
+            {consultancyServiceScopes.map((s: any) => (
+              <div key={s.id} className="flex items-center justify-between gap-2 text-xs">
+                <span style={{ color: 'var(--ink)' }}>
+                  {SERVICE_TYPE_LABELS[s.service_type as keyof typeof SERVICE_TYPE_LABELS] ?? s.service_type}
+                  {s.commercial_reference && <span style={{ color: 'var(--ink-faint)' }}> · {s.commercial_reference}</span>}
+                </span>
+                <span className={`badge ${s.status === 'active' ? 'badge-normal' : 'badge-inactive'}`}>
+                  {SERVICE_SCOPE_STATUS_LABELS[s.status as keyof typeof SERVICE_SCOPE_STATUS_LABELS] ?? s.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -373,9 +402,10 @@ interface Props {
   notes: any[];
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
   staffUserId: string | null;
+  consultancyServiceScopes: any[];
 }
 
-export default function ClientDetailTabs({ company, users, reqs, notes, stats, staffUserId }: Props) {
+export default function ClientDetailTabs({ company, users, reqs, notes, stats, staffUserId, consultancyServiceScopes }: Props) {
   const supabase = createClient();
   const [tab, setTab] = useState<Tab>('Overview');
 
@@ -657,6 +687,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
               customerId={company.stripe_customer_id ?? null}
               subscriptionId={company.stripe_subscription_id ?? null}
               currency={company.billing_currency ?? 'gbp'}
+              consultancyServiceScopes={consultancyServiceScopes}
             />
 
             {/* Users */}

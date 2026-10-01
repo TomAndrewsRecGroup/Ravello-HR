@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, FileText, ExternalLink, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-const PACKAGES = ['HIRE', 'LEAD', 'PROTECT', 'OTHER'] as const;
+const PACKAGES = ['HIRE', 'LEAD', 'PROTECT', 'CONSULTANCY', 'OTHER'] as const;
 type PackageLabel = typeof PACKAGES[number];
 
 interface User {

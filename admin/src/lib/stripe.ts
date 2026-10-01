@@ -281,7 +281,7 @@ interface RaiseOneOffInvoiceArgs {
   paymentTermsDays:  14 | 30;
   invoiceDate:       Date;
   dueDate:           Date;
-  packageLabel:      'HIRE' | 'LEAD' | 'PROTECT' | 'OTHER';
+  packageLabel:      'HIRE' | 'LEAD' | 'PROTECT' | 'CONSULTANCY' | 'OTHER';
   companyId:         string;
   syncCustomerEmail?: boolean;
 }

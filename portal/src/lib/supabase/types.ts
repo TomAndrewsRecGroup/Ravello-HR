@@ -264,19 +264,10 @@ export interface ComplianceItem {
   assigned_to: string | null;
 }
 
-export interface ClientService {
-  id:           string;
-  created_at:   string;
-  updated_at:   string;
-  company_id:   string;
-  service_name: string;
-  service_tier: string;
-  start_date:   string;
-  end_date:     string | null;
-  status:       'active' | 'paused' | 'completed';
-  monthly_fee:  number | null;
-  notes:        string | null;
-}
+// ClientService / client_services removed 2026-10-01 — the table had
+// no writer anywhere in either app (0 live rows, ever) and is now
+// dropped (migration 200). See CLAUDE.md's "retire client_services"
+// entry. The real retainer figure is companies.monthly_retainer_pence.
 
 export interface Action {
   id:                  string;
@@ -382,7 +373,6 @@ export interface Database {
       ticket_messages:  { Row: TicketMessage;   Insert: Partial<TicketMessage>;   Update: Partial<TicketMessage>; };
       reports:          { Row: Report;          Insert: Partial<Report>;          Update: Partial<Report>; };
       compliance_items: { Row: ComplianceItem;  Insert: Partial<ComplianceItem>;  Update: Partial<ComplianceItem>; };
-      client_services:  { Row: ClientService;   Insert: Partial<ClientService>;   Update: Partial<ClientService>; };
       actions:          { Row: Action;          Insert: Partial<Action>;          Update: Partial<Action>; };
       milestones:       { Row: Milestone;       Insert: Partial<Milestone>;       Update: Partial<Milestone>; };
       service_requests: { Row: ServiceRequest;  Insert: Partial<ServiceRequest>;  Update: Partial<ServiceRequest>; };

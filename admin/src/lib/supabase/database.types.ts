@@ -204,21 +204,6 @@ export type Database = {
         Insert: Partial<Database['public']['Tables']['actions']['Row']> & { company_id: string; title: string; action_type: string };
         Update: Partial<Database['public']['Tables']['actions']['Row']>;
       };
-      client_services: {
-        Row: {
-          id: string;
-          company_id: string;
-          service_name: string;
-          service_tier: string;
-          start_date: string;
-          status: string;
-          monthly_fee: number | null;
-          renewal_date: string | null;
-          created_at: string;
-        };
-        Insert: Partial<Database['public']['Tables']['client_services']['Row']> & { company_id: string; service_name: string; service_tier: string; start_date: string };
-        Update: Partial<Database['public']['Tables']['client_services']['Row']>;
-      };
       internal_tasks: {
         Row: {
           id: string;

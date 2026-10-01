@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   // from getSessionProfile()'s single round-trip; user's full_name
   // is read alongside the data queries.
   const [{ data: fullProfile },
-    reqRes, docRes, ticketRes, complianceRes, servicesRes, actionsRes,
+    reqRes, docRes, ticketRes, complianceRes, actionsRes,
     frictionRes] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user?.id ?? '').single(),
     supabase
@@ -72,11 +72,6 @@ export default async function DashboardPage() {
       .order('due_date')
       .limit(5),
     supabase
-      .from('client_services')
-      .select('id,service_name,service_tier,status')
-      .eq('company_id', companyId ?? '')
-      .eq('status', 'active'),
-    supabase
       .from('actions')
       .select('id,title,description,priority,status,due_date,created_at')
       .eq('company_id', companyId ?? '')
@@ -90,7 +85,6 @@ export default async function DashboardPage() {
   const documents       = docRes.data      ?? [];
   const tickets         = ticketRes.data   ?? [];
   const complianceItems = complianceRes.data ?? [];
-  const services        = servicesRes.data  ?? [];
   const actions         = actionsRes.data   ?? [];
   const frictionAssessment = frictionRes.data ?? null;
 
@@ -328,23 +322,8 @@ export default async function DashboardPage() {
           </section>
         </div>
 
-        {/* ── Services + Documents: compact ──────────────────────── */}
+        {/* ── Documents: compact ──────────────────────────────────── */}
         <div className="grid lg:grid-cols-2 gap-5">
-          {services.length > 0 && (
-            <section className="card p-5">
-              <h2 className="font-display text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>
-                Active Services
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {services.map((s: any) => (
-                  <span key={s.id} className="text-xs font-medium px-2.5 py-1 rounded-lg" style={{ background: 'rgba(11,120,150,0.06)', color: 'var(--purple)', border: '1px solid rgba(11,120,150,0.12)' }}>
-                    {s.service_name}{s.service_tier ? `: ${s.service_tier}` : ''}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
           {documents.length > 0 && (
             <section className="card p-5">
               <div className="flex items-center justify-between mb-3">

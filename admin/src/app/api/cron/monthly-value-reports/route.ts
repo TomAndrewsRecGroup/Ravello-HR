@@ -38,11 +38,13 @@ async function run(req: NextRequest) {
 
     const [
       companiesRes, reqsPage, candsPage, ticketsPage, docsPage, compliancePage,
-      servReqsPage, actionsPage, profilesPage, servicesPage,
+      servReqsPage, actionsPage, profilesPage,
       trainingPage, reviewsPage, absencePage, onboardingPage,
       standardsPage, clausesPage, evidenceLinksPage, legalObligationsPage, evaluationsPage, objectivesPage, auditFindingsPage,
     ] = await Promise.all([
-      sb.from('companies').select('id, name, active, contact_email').eq('active', true).not('contact_email', 'is', null),
+      // monthly_retainer_pence is the real MRR source (2026-10-01,
+      // replacing the dead `client_services` table).
+      sb.from('companies').select('id, name, active, contact_email, monthly_retainer_pence').eq('active', true).not('contact_email', 'is', null),
       readAllPages<any>((from, to) => sb.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('candidates').select('id, company_id, full_name, client_status, created_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('tickets').select('id, company_id, subject, status, priority, created_at, resolved_at').order('id').range(from, to)),
@@ -51,7 +53,6 @@ async function run(req: NextRequest) {
       readAllPages<any>((from, to) => sb.from('service_requests').select('id, company_id, subject, status, created_at, responded_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('actions').select('id, company_id, title, status, created_at, completed_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('profiles').select('id, company_id, role').neq('role', 'tps_admin').order('id').range(from, to)),
-      readAllPages<any>((from, to) => sb.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('training_needs').select('id, company_id, status, created_at, updated_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('performance_reviews').select('id, company_id, status, due_date, completed_at, created_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('absence_records').select('id, company_id, status, start_date, days, created_at').eq('status', 'approved').order('id').range(from, to)),
@@ -68,13 +69,13 @@ async function run(req: NextRequest) {
       readAllPages<any>((from, to) => sb.from('audit_findings').select('company_id, created_at, closed_at').order('id').range(from, to)),
     ]);
 
-    const companies = (companiesRes.data ?? []) as { id: string; name: string; contact_email: string }[];
+    const companies = (companiesRes.data ?? []) as { id: string; name: string; contact_email: string; monthly_retainer_pence: number | null }[];
     if (companiesRes.error) throw new Error(`companies: ${companiesRes.error.message}`);
 
     const inputs = {
       requisitions: reqsPage.rows, candidates: candsPage.rows, tickets: ticketsPage.rows, documents: docsPage.rows,
       complianceItems: compliancePage.rows, serviceRequests: servReqsPage.rows, actions: actionsPage.rows,
-      profiles: profilesPage.rows, services: servicesPage.rows,
+      profiles: profilesPage.rows, companies,
       trainingNeeds: trainingPage.rows, performanceReviews: reviewsPage.rows,
       absenceRecords: absencePage.rows, onboardingInstances: onboardingPage.rows,
       standards: standardsPage.rows, standardClauses: clausesPage.rows, standardEvidenceLinks: evidenceLinksPage.rows,

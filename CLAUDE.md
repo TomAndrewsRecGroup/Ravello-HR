@@ -12815,3 +12815,105 @@ with, what billing should call the newer service lines, whether
 `client_services` should be revived or formally retired) rather than
 a unilateral change to live invoicing and onboarding behaviour.
 
+---
+
+## Onboarding/billing integration gaps closed (2026-10-01,
+## migrations 199-200)
+
+The three gaps above were put to the operator as a decision, not
+silently resolved. Decision: auto-apply a sector pack on client
+creation; add explicit Consultancy/H&S billing packages and surface
+`consultancy_service_scopes` on the retainer panel; retire
+`client_services` formally (stop every reader, drop the table).
+
+- **Onboarding auto-seed.** `POST /api/admin/clients` now looks up the
+  new company's own `sector` against `lib/hs/sectorPackMapping.ts`'s
+  `packSectorKeyForCompanySector()` — a deliberately CONSERVATIVE,
+  curated map from the onboarding wizard's 65+ free-text `SECTORS`
+  values onto one of the five seeded `hs_sector_packs` keys (106:
+  office/construction/manufacturing/care/hospitality). The same "never
+  guess" discipline this file already applies to a country/industry
+  match elsewhere (the referral gate's `KNOWN_COUNTRIES`, Manatal's
+  `splitLocation`): a sector that could plausibly be office- or
+  site-based (Engineering, Agriculture, Mining, Education, …) maps to
+  `null` — no pack applied, staff still picks one by hand from the
+  register's own `ApplyPackPanel`, exactly as before. A confident match
+  applies every item from that pack to `compliance_items` (reusing
+  `itemsToApply()`/`firstDueDate()` verbatim — a fresh company has no
+  existing titles to de-dup against, so every item applies). Best-effort,
+  the same posture as the existing Manatal/Stripe onboarding steps: a
+  failure here never undoes the company row, surfaced in the route's
+  own response as `sector_pack: { error }` rather than failing the
+  whole request.
+- **Billing gets a real Consultancy line.** `one_off_invoices.package`'s
+  CHECK (065) widened from `HIRE/LEAD/PROTECT/OTHER` to add
+  `CONSULTANCY` (migration 199 — checked live first: 0 rows on the
+  table, so the CHECK was tightened directly). `raise-invoice`'s
+  `PACKAGES`, `InvoicesTab.tsx`'s dropdown, and `lib/stripe.ts`'s
+  `raiseOneOffInvoice()` parameter type all widened to match — one
+  vocabulary, not three that could drift.
+- **The retainer panel now shows what's actually being delivered.**
+  `lib/cache/clientDetail.ts`'s `getCachedClientDetail()` (the
+  `/clients/[id]` page's existing per-client cache, already invalidated
+  by the retainer PATCH route via `revalidateTag`) gains one more
+  parallel read: the client's own `consultancy_service_scopes` rows
+  (168, read-only here — staff already hold `is_tps_staff()`'s own
+  `FOR ALL` policy on this table, so no capability wiring was needed
+  for the admin app at all, unlike the portal Command Centre's own
+  portfolio-wide write path). `BillingPanel` (in `ClientDetailTabs.tsx`)
+  renders them read-only, labelled via the existing
+  `lib/consultancy/vocab.ts` (`SERVICE_TYPE_LABELS`/
+  `SERVICE_SCOPE_STATUS_LABELS`) — no new vocabulary invented. This
+  closes the actual gap named above: a consultancy service scope and a
+  retainer figure can now be read side by side by whoever is setting
+  either.
+- **`client_services` is gone — formally, not just abandoned.**
+  Checked live immediately before dropping it (0 rows, same as every
+  earlier check this session): table dropped (migration 200,
+  `DROP TABLE ... CASCADE` — its own `updated_at` trigger goes with it;
+  the shared `update_updated_at()` function, used by 10+ other tables,
+  is untouched). Every reader removed: the admin client-tab-data API's
+  unreachable `case 'Services':` branch (confirmed dead — no caller
+  anywhere sends `tab=Services`, the UI tab itself was removed at some
+  earlier point); the portal dashboard's always-empty "Active Services"
+  panel; and the Value Report's own MRR calculation, which was
+  silently reporting **£0 for every real paying client** because
+  nothing had ever written to the table it was reading from. `usage.mrr`
+  now reads the real `companies.monthly_retainer_pence` directly — a
+  genuine correctness fix, not just a removal. `usage.activeServices`
+  (a chip list that was always empty) is dropped from the report
+  entirely rather than replaced with an invented substitute. The
+  `ClientService` TS interface and its `client_services` Database-type
+  entry are removed from both apps' type files.
+- **Every test fixture referencing the old shape was updated, not
+  just the application code**: `computeReport.test.ts` (MRR now comes
+  from a `companies` fixture, not a `services` one, with a dedicated
+  "no retainer on file → £0" case), `computeQuarterlyValueReport.test.ts`
+  (the "usage is taken wholesale from the last month" property still
+  holds under the new input shape), and the monthly-value-reports cron's
+  own route test (the `client_services: []` fixture key dropped, since
+  nothing reads that table name any more).
+- New `sectorPackMapping.test.ts` (6 cases): each of the five pack keys
+  reachable from a real sector; an ambiguous or unlisted sector never
+  guessed; every mapped sector is a real `SECTORS` entry (so the map
+  can't silently drift from the onboarding dropdown); every mapped
+  value is one of the five real pack keys.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 1905/1905 — up from before this change by the new
+`sectorPackMapping.test.ts` cases plus the two rewritten MRR cases;
+portal 956/956, unchanged — this work touched admin only beyond the
+two shared type-file edits), all seven CI guards pass with no
+regressions (73 shared-dupe pairs, unchanged; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+101 blind-update chains, unchanged; every paged query's `.order()`
+present; 302 unbounded-read baseline, unchanged), both production
+builds compile (portal's one prerender failure on `/onboarding` is the
+same long-documented sandbox-only missing-Supabase-env-var limitation
+recorded throughout this file's history, unrelated to this change).
+Migrations 199 and 200 applied live and verified: the widened CHECK
+read back via `pg_get_constraintdef()` and probed both directions
+(CONSULTANCY accepted, a bogus value still refused) before the real
+apply; `client_services` confirmed gone via `to_regclass()`, the
+shared `update_updated_at()` function confirmed still present.
+

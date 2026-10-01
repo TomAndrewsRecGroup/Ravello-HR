@@ -145,7 +145,6 @@ export function buildReportPdf(
 
   section('SYSTEM USAGE', [
     ['Portal users',     r.usage.portalUsers],
-    ['Active services',  r.usage.activeServices.map((s: any) => s.service_name).join(', ') || 'None'],
     ['Monthly fee',      `£${r.usage.mrr}`],
   ]);
 
