@@ -12663,3 +12663,155 @@ hardware that no code change in any sandbox can supply. This is the
 documented exception the matrix's own closing rule anticipates, not
 debt discovered only at this final gate.
 
+---
+
+## The one page built to catch RLS drift was itself crying wolf
+## (2026-10-01, migration 198)
+
+Operator: "have a look at the system health page on the platform, lots
+of issues there." The admin `/health` page's "Row-level security"
+panel — `rls_policy_audit()` (080, Foundations Sweep), run live on
+every page load specifically to surface real tenant-isolation drift —
+was reporting **6 critical + 25 warning** findings on the only two
+live companies in production. Investigated each one against the LIVE
+policy text (`pg_policies`), never assumed from the audit's own label,
+before touching anything.
+
+- **25/25 warnings were false positives, and all for the same reason.**
+  Every one is a `_read` policy scoped by a bare `person_visible
+  (person_id)` or `is_me(person_id)` call — `person_authorisations`,
+  `person_competencies`, `person_credentials`, `person_deployment_
+  status`, `role_assignments`, `training_records`, `training_
+  attendance`, `pre_employment_checks`, `ppe_issues`,
+  `induction_assignments`/`completions`, `development_items`,
+  `requirement_exceptions`, `authorisation_suspensions`,
+  `competency_suspensions`, `deployment_status_log` — real, correct
+  Phase 3 scoping ("You see a person if you can see a linked employee/
+  candidate/athlete row, or they are your own workforce"). The
+  audit's regex (`company_id|is_tps_staff|get_my_role|my_company_id|
+  auth\.uid|user_id`) was written in migration 080, before `person_
+  visible()`/`is_me()` existed — nobody revisited it as Phase 1-29
+  introduced the workforce scoping vocabulary. Fixed by adding both
+  function names to the recognised list.
+- **2/6 criticals were also false positives.** `entity_qr_tokens`
+  (196) and `worker_qr_tokens` (179) are RLS-on with deliberately ZERO
+  session policies — service role only, the documented "fails closed"
+  pattern this file already records for both tables. `policy_ack_
+  tokens`/`hs_test_tokens`/`profile_access_tokens` use the SAME
+  posture but via 3 RESTRICTIVE write-guard policies with no SELECT
+  grant, which is why those three never tripped this check at all —
+  two different implementations of "service role only," only one of
+  which the audit recognised. Exempted both tables by exact name,
+  mirroring the `salary_benchmarks` exemption already in this
+  function.
+- **4/6 criticals were real `USING(true)` policies, and legitimately
+  so.** `access_capabilities`/`access_role_capabilities`/`access_
+  roles`/`legacy_role_map` (117) are the platform-wide capability/role
+  catalogue — non-tenant reference data every authenticated session
+  must resolve (`has_capability()`, role labels), the same category as
+  `salary_benchmarks`' own existing SELECT exemption. Each policy is
+  already restricted `TO authenticated` (verified via `pg_policies.
+  roles`), so the separate `anon` table grant these four tables also
+  carried was inert under RLS — **tightened anyway** (`REVOKE SELECT,
+  REFERENCES, TRIGGER ... FROM PUBLIC, anon`), matching 093's own
+  "revoke what nothing needs, even when already inert" discipline,
+  rather than left as a latent permission a future RLS change could
+  turn live. Exempted by **exact policy name**, not by relaxing the
+  `USING(true)` detection itself — a future accidental blanket policy
+  on a genuinely tenant-scoped table must still be caught.
+- **Net effect, verified live**: 6 critical + 25 warning → **0**. No
+  RLS policy, grant visible to `authenticated`, or actual tenant-
+  isolation behaviour changed for any live session — only the audit's
+  own detection and one dead `anon` grant.
+- **Mutation-tested live, in a rolled-back transaction**: a fresh
+  blanket `USING(true)` policy on a throwaway table, a fresh policy
+  scoped by neither recognised predicate, and a fresh RLS-enabled
+  table with zero policies were all still correctly caught (critical/
+  warning as appropriate) — only the four named catalogue policies and
+  two named service-role-only tables are exempted by name; nothing
+  about the detection logic itself was weakened.
+- **While reading the page, confirmed `/health`'s RAG band itself
+  (`computeBand`) and its churn-trend signal degrade correctly on
+  thin data** — the live database currently holds two companies, most
+  Phase 1-29 tables at zero rows, and 10 days of `client_health_
+  snapshots`; the band never depends on that history (computed live
+  from `compliance_items`/`tickets`/`requisitions` each load) and the
+  Trend column correctly renders "—" rather than a false signal when
+  fewer than one snapshot exists. Not a bug — the RLS panel was the
+  only genuinely broken thing on this page.
+- **A real naming/overlap issue, found but not fixed here**: `/health`
+  (RAG bands from compliance/tickets/stalled-roles), `/engagement`
+  (a differently-scored 0-100 engagement band, same page family,
+  different taxonomy), and `/health-safety` plus its four per-client
+  sub-pages (Digital Twin, Assurance Today, Core 360 Status, Board
+  Assurance) are five-plus surfaces that all answer some version of
+  "is this client okay" with no cross-link or reconciliation — a
+  client can read "On track" on one and "At risk" on another with no
+  indication why. Recorded as a known UX gap, not touched in this
+  pass (a reconciliation or rename is a design decision, not a bug
+  fix).
+
+Migration 198 applied live and verified (function redefinition,
+`anon` grant revoked, `authenticated` grant unaffected, zero findings
+returned, mutation probe rolled back with zero trace left).
+
+---
+
+## New-client onboarding and billing never learned about Phases 1-29
+## (found 2026-10-01, not yet fixed — needs a product decision)
+
+Same session, following on from the operator's "make sure the new
+elements are connected to the old parts" instruction. Audited the
+client-onboarding wizard and the billing/invoicing code against
+everything Core-OS 360 Phases 1-29 built. Three real, confirmed gaps,
+left for a scoping decision rather than silently redesigned:
+
+- **A new client is onboarded with ZERO H&S/workforce/governance
+  scaffolding.** `POST /api/admin/clients` (the onboarding wizard's
+  only creation path) writes exactly the `feature_flags` a staff
+  member ticked, optionally creates a Stripe customer/subscription and
+  a Manatal org, and sends an invite — nothing else. No sector pack is
+  applied (`hs_sector_packs`/`ApplyPackPanel.tsx` exist and work, but
+  are never referenced from the wizard — staff must separately open
+  the new client's H&S register afterward and apply one by hand), no
+  default onboarding template, no Safe-to-Deploy baseline. The old
+  Phase 38 "auto-seed on BD-to-client convert" behaviour this file
+  once documented belongs to a flow that no longer exists in the
+  codebase (BD Intelligence/BD Roles were removed 2026-09-25) and was
+  never replaced with an equivalent in the current wizard.
+- **Billing has no connection to any service this platform added since
+  Phase 4.** The only real billing state is `companies.monthly_
+  retainer_pence` + `feature_flags`, set by the onboarding wizard and
+  the `/retainer` PATCH route. `raise-invoice`'s `PACKAGES` constant is
+  still `['HIRE','LEAD','PROTECT','OTHER']` — there is no Consultancy,
+  H&S-as-a-service, or Workforce/Safe-to-Deploy line; staff must
+  shoehorn any of those into free-text "OTHER". `consultancy_service_
+  scopes` (Phase 6, tracks service type/dates/commercial reference) is
+  written by its own portal route with zero code anywhere joining it
+  to retainer, flags, `client_services`, or Stripe — a client can carry
+  a full consultancy service scope on record with billing having no
+  idea, or vice versa.
+- **`client_services` is dead, orphaned data.** No insert path exists
+  anywhere in the codebase (confirmed by a full grep); its only readers
+  are the Value Report and the monthly cron. The client-detail page's
+  own tab list no longer has a "Services" tab — it was pulled at some
+  earlier point and nothing ever flagged the table as now-unused the
+  way this file's standing discipline usually catches (e.g. `leave_
+  records` being retired after its own fix — this one was simply
+  missed).
+- **Feature flags themselves are NOT the gap** — checked and found
+  fine: `FLAG_GROUPS` (`lib/featureFlags.ts`) is a real single source
+  of truth, exposed in both the onboarding wizard and a dedicated
+  `/feature-flags` page; staff never hand-edit JSONB. The newer Phase
+  1-29 modules are deliberately gated on the existing `protect`/`lead`
+  masters rather than given their own flags (documented inline in
+  `moduleAccess.ts`), and Consultancy is deliberately capability-gated
+  rather than flag-gated — both coherent, already-made design choices,
+  not unfixed debt.
+
+**Not fixed in this pass** — each of the first three needs an actual
+product/business decision (what a new client should be auto-seeded
+with, what billing should call the newer service lines, whether
+`client_services` should be revived or formally retired) rather than
+a unilateral change to live invoicing and onboarding behaviour.
+
