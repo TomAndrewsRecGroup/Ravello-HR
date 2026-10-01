@@ -8,6 +8,8 @@ import { hasPaidFlag } from '@/lib/featureFlags';
 import { sendEmail, clientWelcomeEmail } from '@/lib/email';
 import { isManatalConfigured, createManatalOrganization, lastManatalError } from '@/lib/manatal';
 import { limiters, getUserRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
+import { packSectorKeyForCompanySector } from '@/lib/hs/sectorPackMapping';
+import { itemsToApply, firstDueDate } from '@/lib/hs/sectorPacks';
 
 const DEFAULT_FLAGS = {
   hiring: true, documents: true, reports: false, support: true,
@@ -38,6 +40,11 @@ interface CreateClientResult {
   manatal?: {
     organization_id?: string;
     error?:           string;
+  };
+  sector_pack?: {
+    applied?: number;
+    pack?:    string;
+    error?:   string;
   };
 }
 
@@ -106,6 +113,52 @@ export async function POST(request: NextRequest) {
   }
 
   const result: CreateClientResult = { company_id: company.id };
+
+  // ── 1b. Auto-apply a starter H&S register pack when the company's
+  // own sector maps confidently onto one of the five seeded packs
+  // (106) — never a guess: packSectorKeyForCompanySector() returns
+  // null for anything ambiguous, and nothing is applied in that case.
+  // Best-effort, the same posture as the Manatal/Stripe steps below —
+  // a failure here never undoes the company row; staff can still open
+  // the client's register and apply a pack by hand (ApplyPackPanel).
+  const packKey = packSectorKeyForCompanySector(body.sector);
+  if (packKey) {
+    try {
+      const { data: pack } = await supabase
+        .from('hs_sector_packs')
+        .select('id, name')
+        .eq('sector', packKey)
+        .maybeSingle();
+      if (pack) {
+        const { data: packItems } = await supabase
+          .from('hs_sector_pack_items')
+          .select('id, pack_id, category, title, description, recurrence_every, recurrence_unit, legal_basis, sort_order')
+          .eq('pack_id', pack.id);
+        const toApply = itemsToApply(packItems ?? [], []); // fresh company: nothing on the register yet
+        if (toApply.length > 0) {
+          const day = new Date().toISOString().slice(0, 10);
+          const { error: applyErr } = await supabase.from('compliance_items').insert(
+            toApply.map(i => ({
+              company_id: company.id,
+              title: i.title,
+              category: i.category,
+              description: i.description,
+              due_date: firstDueDate(i, day),
+              recurrence_every: i.recurrence_every,
+              recurrence_unit: i.recurrence_unit,
+              legal_basis: i.legal_basis,
+              source: 'pack' as const,
+            })),
+          );
+          result.sector_pack = applyErr
+            ? { error: applyErr.message }
+            : { applied: toApply.length, pack: pack.name };
+        }
+      }
+    } catch (e: any) {
+      result.sector_pack = { error: e?.message ?? 'Sector pack apply failed.' };
+    }
+  }
 
   // ── 2. Manatal organization — one per TPS client, tagged with
   // industry 'TPS' so the upstream account stays filterable. The id

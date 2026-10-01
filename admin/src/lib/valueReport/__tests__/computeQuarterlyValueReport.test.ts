@@ -3,7 +3,7 @@ import { computeQuarterlyValueReport, quarterMonths } from '../computeReport';
 
 const CO = 'co-1';
 const empty = {
-  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], services: [],
+  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
   trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [],
   standards: [], standardClauses: [], standardEvidenceLinks: [], legalObligations: [], complianceEvaluations: [], objectives: [], auditFindings: [],
 };
@@ -60,9 +60,9 @@ describe('computeQuarterlyValueReport', () => {
     expect(r.governance.objectivesOnTrack).toBe(1); // stock, period-independent
   });
 
-  it('usage (portal users, active services, MRR) is taken wholesale from the last month, never summed', () => {
-    const services = [{ company_id: CO, monthly_fee: 500 }];
-    const r = computeQuarterlyValueReport(CO, 2026, 3, { ...empty, services });
+  it('usage (portal users, MRR) is taken wholesale from the last month, never summed', () => {
+    const companies = [{ id: CO, monthly_retainer_pence: 50000 }];
+    const r = computeQuarterlyValueReport(CO, 2026, 3, { ...empty, companies });
     expect(r.usage.mrr).toBe(500); // not 1500
   });
 

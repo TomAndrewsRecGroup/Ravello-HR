@@ -48,6 +48,7 @@ export interface ClientDetail {
   tickets:      any[];
   notes:        any[];
   docsCount:    number;
+  consultancyServiceScopes: any[];
 }
 
 // Cheap uncached lookup that turns a slug or UUID into the canonical
@@ -83,15 +84,26 @@ async function fetchFromDb(companyId: string): Promise<ClientDetail | null> {
     { data: tickets, error: ticketsErr },
     { data: notes,   error: notesErr },
     { count: docsCount, error: docsErr },
+    { data: consultancyServiceScopes, error: scopesErr },
   ] = await Promise.all([
     sb.from('profiles').select('id,email,full_name,role,created_at').eq('company_id', companyId).order('created_at'),
     sb.from('requisitions').select('id,title,department,seniority,stage,salary_range,location,employment_type,friction_score,friction_level,assigned_recruiter,created_at').eq('company_id', companyId).order('created_at', { ascending: false }),
     sb.from('tickets').select('id,subject,status,priority').eq('company_id', companyId).neq('status', 'closed'),
     sb.from('client_notes').select('id,company_id,author_id,note_type,title,body,pinned,created_at,profiles(full_name)').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50),
     sb.from('documents').select('*', { count: 'exact', head: true }).eq('company_id', companyId),
+    // Read-only context for the Billing panel: what a consultancy
+    // (today, Andrews Recruitment Group's own H&S delivery — see
+    // CLAUDE.md's "Billing: Consultancy/H&S packages" entry) has
+    // actually scoped against this client, so staff raising a
+    // retainer/invoice can see what's being delivered rather than
+    // guessing from the feature flags alone.
+    sb.from('consultancy_service_scopes')
+      .select('id,service_type,status,start_date,end_date,review_frequency,commercial_reference')
+      .eq('client_organisation_id', companyId)
+      .order('start_date', { ascending: false }),
   ]);
 
-  const firstErr = usersErr || reqsErr || ticketsErr || notesErr || docsErr;
+  const firstErr = usersErr || reqsErr || ticketsErr || notesErr || docsErr || scopesErr;
   if (firstErr) throw new Error(`clientDetail rollup failed: ${firstErr.message}`);
 
   return {
@@ -101,6 +113,7 @@ async function fetchFromDb(companyId: string): Promise<ClientDetail | null> {
     tickets: tickets ?? [],
     notes:   notes   ?? [],
     docsCount: docsCount ?? 0,
+    consultancyServiceScopes: consultancyServiceScopes ?? [],
   };
 }
 

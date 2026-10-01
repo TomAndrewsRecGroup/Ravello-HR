@@ -25,7 +25,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
     redirect(`/clients/${detail.company.slug}`);
   }
 
-  const { company: c, users, reqs, tickets, notes, docsCount } = detail;
+  const { company: c, users, reqs, tickets, notes, docsCount, consultancyServiceScopes } = detail;
   const activeRoles = reqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage)).length;
   const ticketCount = tickets.length;
 
@@ -50,6 +50,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
           notes={notes}
           stats={{ activeRoles, docsCount, ticketCount }}
           staffUserId={staffUser?.id ?? null}
+          consultancyServiceScopes={consultancyServiceScopes}
         />
       </main>
     </>

@@ -3,7 +3,7 @@ import { computeValueReport } from '../computeReport';
 
 const CO = 'co-1';
 const empty = {
-  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], services: [],
+  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
   trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [],
   standards: [], standardClauses: [], standardEvidenceLinks: [], legalObligations: [], complianceEvaluations: [], objectives: [], auditFindings: [],
 };
@@ -33,15 +33,19 @@ describe('computeValueReport', () => {
     expect(r.support.ticketsResolved).toBe(2);
   });
 
-  it('sums active service monthly fees into MRR regardless of month', () => {
-    const services = [
-      { company_id: CO, monthly_fee: 500 },
-      { company_id: CO, monthly_fee: 250 },
-      { company_id: 'co-2', monthly_fee: 999 },
+  it('reports MRR from the company\'s own real retainer, in pounds', () => {
+    const companies = [
+      { id: CO, monthly_retainer_pence: 75000 },
+      { id: 'co-2', monthly_retainer_pence: 99900 },
     ];
-    const r = computeValueReport(CO, 2026, 8, { ...empty, services });
+    const r = computeValueReport(CO, 2026, 8, { ...empty, companies });
     expect(r.usage.mrr).toBe(750);
-    expect(r.usage.activeServices).toHaveLength(2);
+  });
+
+  it('reports zero MRR for a company with no retainer on file', () => {
+    const companies = [{ id: CO, monthly_retainer_pence: null }];
+    const r = computeValueReport(CO, 2026, 8, { ...empty, companies });
+    expect(r.usage.mrr).toBe(0);
   });
 
   it('includes a lead section computed the same way computeLeadMetrics does standalone', () => {

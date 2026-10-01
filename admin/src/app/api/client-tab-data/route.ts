@@ -106,15 +106,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ absenceRecords: absenceRecords ?? [], empDocs: empDocs ?? [], employees: employees ?? [] });
     }
 
-    case 'Services': {
-      const { data } = await supabase
-        .from('client_services')
-        .select('id,service_name,service_tier,start_date,monthly_fee,status')
-        .eq('company_id', companyId)
-        .order('start_date', { ascending: false });
-      return NextResponse.json({ services: data ?? [] });
-    }
-
     case 'Friction': {
       const [{ data: assessment }, { data: items }] = await Promise.all([
         supabase.from('company_assessments').select('id,overall_band,confidence,dimensions,summary,created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(1).maybeSingle(),

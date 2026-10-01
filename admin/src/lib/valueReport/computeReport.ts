@@ -26,7 +26,10 @@ export interface ValueReportInputs {
   serviceRequests: any[];
   actions: any[];
   profiles: any[];
-  services: any[];
+  // Real retainer source, replacing the dead `client_services` table
+  // (2026-10-01, retired — see CLAUDE.md): a plain lookup by company
+  // id for monthly_retainer_pence, never a second billing source.
+  companies: any[];
   trainingNeeds: TrainingNeedRow[];
   performanceReviews: PerformanceReviewRow[];
   absenceRecords: AbsenceRecordRow[];
@@ -47,7 +50,7 @@ export interface ValueReportData {
   protect: { complianceItems: number; documentsUploaded: number; actionsCreated: number; actionsCompleted: number };
   lead: ReturnType<typeof computeLeadMetrics>;
   governance: ReturnType<typeof computeGovernanceMetrics>;
-  usage: { portalUsers: number; activeServices: any[]; mrr: number };
+  usage: { portalUsers: number; mrr: number };
 }
 
 export function computeValueReport(companyId: string, year: number, month: number, d: ValueReportInputs): ValueReportData {
@@ -68,8 +71,8 @@ export function computeValueReport(companyId: string, year: number, month: numbe
   const totalActiveRoles = d.requisitions.filter((r: any) => r.company_id === cid && !['filled', 'cancelled'].includes(r.stage)).length;
   const totalFilled = d.requisitions.filter((r: any) => r.company_id === cid && r.stage === 'filled').length;
   const totalUsers = d.profiles.filter((p: any) => p.company_id === cid).length;
-  const activeServices = d.services.filter((s: any) => s.company_id === cid);
-  const mrr = activeServices.reduce((sum: number, s: any) => sum + (s.monthly_fee ?? 0), 0);
+  const company = d.companies.find((c: any) => c.id === cid);
+  const mrr = (company?.monthly_retainer_pence ?? 0) / 100;
 
   const resolved = d.tickets.filter((t: any) => t.company_id === cid && t.resolved_at && inMonth(t.resolved_at, year, month));
   let avgResolution = 0;
@@ -90,7 +93,7 @@ export function computeValueReport(companyId: string, year: number, month: numbe
     protect: { complianceItems: monthCompliance.length, documentsUploaded: monthDocs.length, actionsCreated: monthActions.length, actionsCompleted: completedActions.length },
     lead,
     governance,
-    usage: { portalUsers: totalUsers, activeServices, mrr },
+    usage: { portalUsers: totalUsers, mrr },
   };
 }
 

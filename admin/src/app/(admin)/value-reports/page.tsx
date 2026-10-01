@@ -20,11 +20,14 @@ export default async function ValueReportsPage() {
   // 100K. Value-reports is a portfolio overview; a date filter would
   // be cleaner long-term but this caps the scaling cliff today.
   const [
-    compRes, reqRes, candRes, ticketRes, docRes, complianceRes, servReqRes, actionsRes, loginRes, servicesRes,
+    compRes, reqRes, candRes, ticketRes, docRes, complianceRes, servReqRes, actionsRes, loginRes,
     trainingRes, reviewsRes, absenceRes, onboardingRes,
     standardsRes, clausesRes, evidenceLinksRes, legalObligationsRes, evaluationsRes, objectivesRes, auditFindingsRes,
   ] = await Promise.all([
-    supabase.from('companies').select('id, name, active, contact_email').eq('active', true).order('name').limit(500),
+    // monthly_retainer_pence is the real MRR source (2026-10-01,
+    // replacing the dead `client_services` table — see CLAUDE.md's
+    // "retire client_services" entry).
+    supabase.from('companies').select('id, name, active, contact_email, monthly_retainer_pence').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('candidates').select('id, company_id, full_name, client_status, created_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('tickets').select('id, company_id, subject, status, priority, created_at, resolved_at').order('id').range(from, to)),
@@ -33,7 +36,6 @@ export default async function ValueReportsPage() {
     readAllPages<any>((from, to) => supabase.from('service_requests').select('id, company_id, subject, status, created_at, responded_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('actions').select('id, company_id, title, status, created_at, completed_at').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('profiles').select('id, company_id, role').neq('role', 'tps_admin').order('id').range(from, to)),
-    readAllPages<any>((from, to) => supabase.from('client_services').select('id, company_id, service_name, monthly_fee, status').eq('status', 'active').order('id').range(from, to)),
     // LEAD: people-management metrics, distinct from SUPPORT's
     // ticket/service-request handling — see CLAUDE.md, the naming/
     // flags sweep flagged this as the real gap, not just a label fix.
@@ -69,7 +71,6 @@ export default async function ValueReportsPage() {
           serviceRequests={servReqRes.data ?? []}
           actions={actionsRes.data ?? []}
           profiles={loginRes.data ?? []}
-          services={servicesRes.data ?? []}
           trainingNeeds={trainingRes.data ?? []}
           performanceReviews={reviewsRes.data ?? []}
           absenceRecords={absenceRes.data ?? []}
