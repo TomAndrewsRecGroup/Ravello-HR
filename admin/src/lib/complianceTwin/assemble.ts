@@ -40,12 +40,26 @@ import type { EvidenceCoverageSummary } from '@/lib/evidenceEngine/analyze';
 
 export type ComplianceTwinBand = 'red' | 'amber' | 'green';
 
+// Go-live audit follow-up (2026-10-02): a per-AREA band may also be
+// 'unverified' — genuinely no data exists to judge (today: zero
+// register completions at all for the Evidence area), as opposed to a
+// verified-good 'green'. The two used to render identically, which the
+// audit flagged as a real false-positive risk: a brand-new client with
+// no evidence on file looked exactly as "fine" as one with full
+// coverage. `overallBand` (the snapshot-level rollup) deliberately
+// stays the plain 3-state `ComplianceTwinBand` — 'unverified' never
+// escalates it (see `worstBand()`'s own comment) and never leaks into
+// it, so every existing consumer of `overallBand` (Board Assurance's
+// trend comparison, Assurance Today, the stored snapshot/trend UI)
+// needed no change at all.
+export type ComplianceTwinAreaBand = ComplianceTwinBand | 'unverified';
+
 export type ComplianceTwinAreaKey = 'safety' | 'governance' | 'risk_graph' | 'incident_patterns' | 'evidence';
 
 export interface ComplianceTwinArea {
   area: ComplianceTwinAreaKey;
   label: string;
-  band: ComplianceTwinBand;
+  band: ComplianceTwinAreaBand;
   /** Plain sentences built from the underlying numbers — never AI-generated. */
   reasons: string[];
   /**
@@ -99,11 +113,18 @@ const DEFAULT_EVIDENCE_AMBER_THRESHOLD = 90;
 const DEFAULT_OBJECTIVES_ON_TRACK_AMBER_THRESHOLD = 50;
 const DEFAULT_WASTE_NON_CONFORMANCE_AMBER_THRESHOLD = 10; // percent
 
-const BAND_SEVERITY: Record<ComplianceTwinBand, number> = { green: 0, amber: 1, red: 2 };
+const BAND_SEVERITY: Record<ComplianceTwinAreaBand, number> = { unverified: 0, green: 0, amber: 1, red: 2 };
 
-function worstBand(bands: ComplianceTwinBand[]): ComplianceTwinBand {
+function worstBand(bands: ComplianceTwinAreaBand[]): ComplianceTwinBand {
   let worst: ComplianceTwinBand = 'green';
-  for (const b of bands) if (BAND_SEVERITY[b] > BAND_SEVERITY[worst]) worst = b;
+  for (const b of bands) {
+    // 'unverified' ties green's severity (0) but is never itself a
+    // candidate for `worst` — a missing-data area is not a red/amber
+    // finding, so it can never promote the overall band, only the
+    // area's own display differs.
+    if (b === 'unverified') continue;
+    if (BAND_SEVERITY[b] > BAND_SEVERITY[worst]) worst = b;
+  }
   return worst;
 }
 
@@ -122,14 +143,19 @@ function buildArea(
   amberReasons: string[],
   cleanReason: string,
   inputs: Record<string, number | string | null>,
+  cleanBand: ComplianceTwinAreaBand = 'green',
 ): ComplianceTwinArea {
   const band = worstBand([
     ...redReasons.map(() => 'red' as const),
     ...amberReasons.map(() => 'amber' as const),
   ]);
+  // worstBand() here only ever sees 'red'/'amber' literals, so a result
+  // of 'green' means neither fired — exactly where `cleanBand` (default
+  // 'green') substitutes 'unverified' for an area with no data to judge.
+  const finalBand: ComplianceTwinAreaBand = band === 'green' ? cleanBand : band;
   const reasons =
-    band === 'red' ? [...redReasons, ...amberReasons] : band === 'amber' ? amberReasons : [cleanReason];
-  return { area, label, band, reasons, inputs };
+    finalBand === 'red' ? [...redReasons, ...amberReasons] : finalBand === 'amber' ? amberReasons : [cleanReason];
+  return { area, label, band: finalBand, reasons, inputs };
 }
 
 function safetyArea(k: HsKpis, thresholds?: ComplianceTwinThresholds): ComplianceTwinArea {
@@ -323,17 +349,31 @@ function evidenceArea(e: EvidenceCoverageSummary, thresholds?: ComplianceTwinThr
     );
   }
 
+  // No register completions recorded at all (`coveragePercent` null) is
+  // genuinely NOT the same fact as "verified at or above the amber
+  // threshold" — both used to render as an identical green band, which
+  // a follow-up go-live audit flagged as a real false-positive risk: a
+  // brand-new client with zero evidence on file looked exactly as
+  // "fine" as one with full coverage. Distinguished as 'unverified'
+  // here; `red`/`amber` are empty in this branch by construction (both
+  // checks above are gated on `coveragePercent != null`).
+  const cleanBand: ComplianceTwinAreaBand = e.coveragePercent == null ? 'unverified' : 'green';
+  const cleanReason = e.coveragePercent == null
+    ? 'No register completions have been recorded yet — evidence coverage cannot be verified'
+    : 'Evidence coverage is at or above the 90% threshold';
+
   return buildArea(
     'evidence',
     'Evidence Coverage',
     red,
     amber,
-    'Evidence coverage is at or above the 90% threshold (or no register completions have been recorded yet)',
+    cleanReason,
     {
       coveragePercent: e.coveragePercent,
       evidenceRedThreshold,
       evidenceAmberThreshold,
     },
+    cleanBand,
   );
 }
 

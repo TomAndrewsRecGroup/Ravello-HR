@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { BoardAssuranceReportData, BoardAssuranceTrend } from '@/lib/boardAssurance/computeReport';
-import type { ComplianceTwinBand } from '@/lib/complianceTwin/assemble';
+import type { ComplianceTwinBand, ComplianceTwinAreaBand } from '@/lib/complianceTwin/assemble';
 
 export interface BoardAssuranceReportRow {
   id: string;
@@ -14,7 +14,11 @@ export interface BoardAssuranceReportRow {
   acknowledgementCount: number;
 }
 
-const BAND_COLOUR: Record<ComplianceTwinBand, string> = { red: 'var(--red)', amber: 'var(--gold)', green: 'var(--teal)' };
+// Record<ComplianceTwinAreaBand, ...> here (not the narrower
+// ComplianceTwinBand) because this component also renders each area's
+// own band below — `overallBand` itself is always the plain 3-state
+// ComplianceTwinBand (see assemble.ts), a subtype that indexes fine.
+const BAND_COLOUR: Record<ComplianceTwinAreaBand, string> = { red: 'var(--red)', amber: 'var(--gold)', green: 'var(--teal)', unverified: 'var(--ink-faint)' };
 const BAND_LABEL: Record<ComplianceTwinBand, string> = { red: 'Needs attention', amber: 'Worth a look', green: 'On track' };
 const TREND_LABEL: Record<BoardAssuranceTrend, string> = { improved: 'Improved', declined: 'Declined', unchanged: 'Unchanged' };
 

@@ -13282,3 +13282,65 @@ builds compile (portal's one prerender failure is the same long-
 documented sandbox-only missing-Supabase-env-var limitation, unrelated
 to this change).
 
+---
+
+## Closing the go-live audit's gap list, decided items first: Evidence
+## Coverage gets a real "unverified" band (2026-10-02)
+
+Follow-up to the gap-closure pass above. The 2026-10-01 audit's own
+§3 flagged this explicitly: "a brand-new client with ZERO evidence on
+file renders the identical green band as one with 100% coverage" on
+the Compliance Digital Twin's Evidence Coverage area
+(`lib/complianceTwin/assemble.ts`). Put to the operator as a decision
+(changing a deliberate prior design choice, not a bug) — the answer
+was to add a distinct "unverified" state rather than leave it.
+
+- **A new `ComplianceTwinAreaBand = ComplianceTwinBand | 'unverified'`
+  type, confined to the per-AREA field only.** `ComplianceTwinSnapshot
+  .overallBand` deliberately stays the plain 3-state
+  `ComplianceTwinBand` — `worstBand()` now explicitly skips
+  `'unverified'` entries when computing the rollup (tied with green's
+  severity, but never itself a candidate for "worst"), so the type
+  genuinely cannot leak into `overallBand`. That is what let every
+  existing consumer of `overallBand` — Board Assurance's trend
+  comparison (`deriveTrend()`'s severity ordering), Assurance Today,
+  the stored-snapshot trend UI — go **completely untouched**: the
+  widening is invisible to anything that only ever reads the rollup.
+- **`buildArea()` gained an optional `cleanBand` parameter** (default
+  `'green'`, unchanged for the other four areas) rather than a
+  special-cased branch bolted onto `evidenceArea()` alone — the same
+  shared helper every area already calls.
+  `evidenceArea()` passes `'unverified'` exactly when
+  `coveragePercent == null` (genuinely zero register completions to
+  judge, not a 0% finding — a real 0% with real completions already,
+  correctly, hits the red/amber checks above it) and gives it its own,
+  specific reason text ("No register completions have been recorded
+  yet — evidence coverage cannot be verified") instead of reusing the
+  old dual-purpose sentence that used to paper over the ambiguity.
+- **`ComplianceTwinView.tsx`** (shared-dupe pair) gained a fourth
+  colour/label/icon (`HelpCircle`, muted `--ink-faint`, "Not yet
+  verified") — `BAND_COLOUR`/`BAND_LABEL`'s `Record<...>` types made
+  this compiler-enforced: leaving the entry out would not compile.
+  **`BoardAssuranceClient.tsx`** needed the identical widening on its
+  own local `BAND_COLOUR` map (it renders each area's band directly,
+  not through the shared view component) — the one other real
+  consumer `tsc` surfaced; nothing else in either app indexes a
+  `Record` by an area's own band.
+- **Mutation-tested via the existing test, not a new one bolted on**:
+  the exact test that used to assert `'green'` for a null-coverage
+  input (`assemble.test.ts`) was rewritten to assert `'unverified'`
+  instead, plus its own specific reason text — this IS the regression
+  test for the bug the audit found, not a new case alongside the old,
+  now-wrong one. A second new case pins that an unverified evidence
+  area never promotes `overallBand` away from green, proving the
+  confinement claim above rather than just asserting it in a comment.
+
+Verified: `tsc --noEmit` clean both apps (one other real consumer,
+`BoardAssuranceClient.tsx`, found and fixed by the compiler itself,
+not by inspection), full `vitest run` green (1922 admin — 1921 + 1 net
+new case; portal unchanged, no portal test file for this module per
+the established convention), all seven CI guards pass (73 shared-dupe
+pairs, unchanged — both widened files were already registered pairs),
+both production builds compile (portal's one prerender failure is the
+same long-documented sandbox-only missing-Supabase-env-var limitation).
+

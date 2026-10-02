@@ -232,12 +232,29 @@ describe('assembleComplianceTwin', () => {
       expect(areaOf(assembleComplianceTwin(input), 'evidence').band).toBe('green');
     });
 
-    it('treats a null coverage percent (no completions recorded) as green, not a gap', () => {
+    it('treats a null coverage percent (no completions recorded) as unverified, never a false-positive green', () => {
+      // Go-live audit follow-up (2026-10-02): this used to assert
+      // 'green' here — a brand-new client with ZERO evidence on file
+      // rendered identically to one with full coverage. A null
+      // coveragePercent means genuinely nothing to judge, which is a
+      // different fact from "verified good."
       const input = baseInput();
       input.evidence.coveragePercent = null;
       input.evidence.totalCompletions = 0;
       input.evidence.completionsWithEvidenceCount = 0;
-      expect(areaOf(assembleComplianceTwin(input), 'evidence').band).toBe('green');
+      const area = areaOf(assembleComplianceTwin(input), 'evidence');
+      expect(area.band).toBe('unverified');
+      expect(area.reasons).toEqual(['No register completions have been recorded yet — evidence coverage cannot be verified']);
+    });
+
+    it('an unverified evidence area never promotes the overall band away from green', () => {
+      const input = baseInput();
+      input.evidence.coveragePercent = null;
+      input.evidence.totalCompletions = 0;
+      input.evidence.completionsWithEvidenceCount = 0;
+      const snap = assembleComplianceTwin(input);
+      expect(areaOf(snap, 'evidence').band).toBe('unverified');
+      expect(snap.overallBand).toBe('green');
     });
   });
 

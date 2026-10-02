@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import type { ComplianceTwinSnapshot, ComplianceTwinBand, ComplianceTwinAreaKey } from '@/lib/complianceTwin/assemble';
+import { AlertTriangle, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import type { ComplianceTwinSnapshot, ComplianceTwinBand, ComplianceTwinAreaBand, ComplianceTwinAreaKey } from '@/lib/complianceTwin/assemble';
 
 // Core-OS 360 Phase 12, Group 2 (shared-dupe pair: admin and portal —
 // both render the identical, already-assembled snapshot; only the
@@ -18,16 +18,21 @@ import type { ComplianceTwinSnapshot, ComplianceTwinBand, ComplianceTwinAreaKey 
 // server-renderable in both apps — no 'use client' needed, the same
 // call IncidentPatternsView.tsx already made.
 
-const BAND_COLOUR: Record<ComplianceTwinBand, string> = {
+const BAND_COLOUR: Record<ComplianceTwinAreaBand, string> = {
   red: 'var(--red)',
   amber: 'var(--gold)',
   green: 'var(--teal)',
+  unverified: 'var(--ink-faint)',
 };
 
-const BAND_LABEL: Record<ComplianceTwinBand, string> = {
+const BAND_LABEL: Record<ComplianceTwinAreaBand, string> = {
   red: 'Needs attention',
   amber: 'Worth a look',
   green: 'On track',
+  // Distinct from 'green' on purpose — see assemble.ts: a brand-new
+  // client with zero evidence on file is not the same fact as one
+  // whose evidence has actually been checked and found good.
+  unverified: 'Not yet verified',
 };
 
 // Core-OS 360 Completion Programme, Phase 23, Group 6 (closes
@@ -39,10 +44,11 @@ function humaniseKey(key: string): string {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
 }
 
-function BandIcon({ band, size = 20 }: { band: ComplianceTwinBand; size?: number }) {
+function BandIcon({ band, size = 20 }: { band: ComplianceTwinAreaBand; size?: number }) {
   const colour = BAND_COLOUR[band];
   if (band === 'red') return <XCircle size={size} style={{ color: colour, flexShrink: 0 }} />;
   if (band === 'amber') return <AlertTriangle size={size} style={{ color: colour, flexShrink: 0 }} />;
+  if (band === 'unverified') return <HelpCircle size={size} style={{ color: colour, flexShrink: 0 }} />;
   return <CheckCircle2 size={size} style={{ color: colour, flexShrink: 0 }} />;
 }
 
@@ -94,7 +100,7 @@ export default function ComplianceTwinView({
                 </div>
                 <ul className="text-sm space-y-1">
                   {area.reasons.map((r, i) => (
-                    <li key={i} style={{ color: area.band === 'green' ? 'var(--ink-faint)' : 'var(--ink-soft)' }}>
+                    <li key={i} style={{ color: area.band === 'green' || area.band === 'unverified' ? 'var(--ink-faint)' : 'var(--ink-soft)' }}>
                       {r}
                     </li>
                   ))}
