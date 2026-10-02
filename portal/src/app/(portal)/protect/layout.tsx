@@ -49,6 +49,7 @@ const TABS = [
   { href: '/protect/critical-controls', label: 'Critical Controls' },
   { href: '/protect/incident-patterns', label: 'Incident Patterns' },
   { href: '/protect/continuous-improvement', label: 'Continuous Improvement' },
+  { href: '/protect/operational-exceptions', label: 'Operational Exceptions' },
   { href: '/protect/evidence',         label: 'Evidence' },
   { href: '/protect/assurance',        label: 'Assurance Today' },
   { href: '/protect/digital-twin',     label: 'Digital Twin' },

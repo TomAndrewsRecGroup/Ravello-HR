@@ -13825,3 +13825,87 @@ production builds compile, including
 `/protect/continuous-improvement`. No migration in this item —
 entirely TypeScript composition over already-live schema.
 
+---
+
+## Go-live gap list, item 10: Operational Exception Detection (2026-10-02)
+
+The last of the ten items, deliberately left for last: the survey
+itself flagged that a literal reading of "exception detection" (z-
+scores, outlier models) would be the first genuine departure from this
+codebase's own absolute, repeatedly-stated rule — "no AI, no scores,
+no prediction anywhere" — and asked for a product decision rather than
+a unilateral interpretation. The decision, already recorded in this
+file: scope it as **deterministic cross-signal correlation** — several
+independent, already-computed, fixed-threshold facts true on the SAME
+record at once — never anything statistical. No migration: every
+signal is read verbatim from a table/RPC this codebase already
+computes correctly on its own terms.
+
+- **`lib/operationalExceptions/analyze.ts`** (new shared-dupe pair, 81
+  pairs up from 80): `computeOperationalExceptions()` flags a PERSON
+  where 2+ of `{ Safe-to-Deploy status != READY (workforce_matrix,
+  Phase 3's own engine), a stale open site check-in (site_checkins,
+  the exact "checked in on a previous calendar day and never checked
+  out" definition the existing reminders rule already uses) }` are
+  true at once, and an ASSET where 2+ of
+  `{ quarantined/out_of_service, an overdue inspection
+  (next_inspection_due < today — the same threshold lib/hs/kpis.ts
+  already uses for equipmentOverdueCount), an isolation still applied
+  and not yet verified removed, an issued/suspended permit still
+  naming it }` are true at once. The THRESHOLD (2+) is itself fixed
+  and named, never tuned or learned. A single flagged fact alone is
+  routine and already shown on its own page (the Register, the
+  Equipment tab, the workforce dashboard) — what none of them show is
+  the SAME record carrying two or more unrelated problems
+  simultaneously, which is the actual compound situation worth a
+  human's attention right now.
+- **Every signal was verified against the live RLS/grant shape before
+  being chosen**, not assumed: `workforce_matrix(p_company)` (138)
+  explicitly allows `is_tps_staff()` OR the caller's own
+  `my_company_id()`; `hs_equipment`/`isolations`/`permits` all carry a
+  `staff ALL` policy plus a client policy reusing `asset.read`/
+  `contractors.manage` (a plain `client_admin` already holds
+  `contractors.manage` via the `organisation_admin` role mapping,
+  confirmed against Phase 22's own contractors/permits/isolations
+  portal work); `site_checkins` carries `workforce.read`. So both the
+  admin page (staff session) and the portal page (the client's own
+  session) read every table DIRECTLY — no service role needed
+  anywhere, the exact `ConnectionsPanel`/Core 360 Status precedent.
+- **Decommissioned assets are excluded at the query level, not
+  specially handled in the pure function** — a decommissioned asset
+  is a terminal, intentional retirement, never an "exception" to flag,
+  and nothing can legally hold an isolation or a live permit against
+  one once retired, so there is nothing for the second signal to ever
+  attach to regardless.
+- **`OperationalExceptionsView.tsx`** (new shared-dupe pair, 82
+  pairs): the `ComplianceTwinView`/`Core360StatusView` precedent — a
+  plain two-section table (People, Assets), each row showing the
+  record's own signal count and the plain-English reason for each one,
+  sorted by signal count descending then label ascending for
+  determinism. `personHref`/`assetHref` are supplied by the caller,
+  since the two apps' own routing for a person or an asset genuinely
+  diverges (admin has NO person profile page of its own — the Core
+  360 Status "People" domain's own established precedent — so its
+  person rows link OUT to the portal's `/lead/workforce/people/<id>`;
+  asset rows link to the Equipment tab, with the portal side using
+  the existing `#eq-<id>` row anchor that page already carries).
+- **Admin**: a new `HsCompanyTabs.tsx` tab
+  (`/health-safety/<companyId>/operational-exceptions`). **Portal**:
+  `/protect/operational-exceptions`, gated by `protect` alone.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (2009/201 admin, 1003/72 portal — the new `analyze.test.ts`, 13
+cases, mirrored byte-identical), all seven CI guards pass with no
+regressions (80 → 82 shared-dupe pairs; row-cap clean; 44 unvalidated
+routes, unchanged; 45 static admin routes, all reachable; 101
+blind-update chains, unchanged — this item writes nothing, purely
+read-only; every paged query's `.order()` present; 301 unbounded-read
+chains, unchanged), both production builds compile, including
+`/health-safety/<companyId>/operational-exceptions` and
+`/protect/operational-exceptions`. No migration in this item —
+entirely TypeScript composition over already-live schema.
+
+---
+
+**The go-live gap list (all ten items) is complete.**
+
