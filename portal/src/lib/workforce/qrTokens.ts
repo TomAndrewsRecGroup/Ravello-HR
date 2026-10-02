@@ -52,7 +52,19 @@ export async function mintWorkerQrToken(
 
   const { error: insertErr } = await service.from('worker_qr_tokens')
     .insert({ person_id: personId, token_hash: tokenHash, created_by: actorUserId });
-  if (insertErr) return { error: insertErr.message };
+  if (insertErr) {
+    // A double-click or a retried request can race this exact insert —
+    // the revoke above and this insert are two separate statements, not
+    // one transaction, so a second concurrent "Regenerate" can lose to
+    // the DB's own partial unique index (one active badge per person)
+    // after both requests' revokes have already run. That is a benign,
+    // expected race, never a raw Postgres constraint-violation string a
+    // person has to read.
+    if (insertErr.code === '23505') {
+      return { error: 'Another request already generated a new badge for this person. Refresh the page to see it.' };
+    }
+    return { error: insertErr.message };
+  }
 
   return { token, tokenHash };
 }

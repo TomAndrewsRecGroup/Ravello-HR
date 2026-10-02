@@ -345,6 +345,8 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag, rl
                 <th>Stalled Roles</th>
                 <th>Band</th>
                 <th>Trend</th>
+                <th>Engagement</th>
+                <th>Last Login</th>
                 <th></th>
               </tr>
             </thead>
@@ -355,6 +357,11 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag, rl
                   : c.band === 'amber'
                     ? { bg: 'rgba(191,143,40,0.10)', color: 'var(--gold)' }
                     : { bg: 'rgba(20,184,166,0.10)', color: 'var(--teal)' };
+                const engStyle = c.engagement.status === 'healthy'
+                  ? { color: 'var(--teal)', label: 'Healthy' }
+                  : c.engagement.status === 'at_risk'
+                    ? { color: 'var(--gold)', label: 'At Risk' }
+                    : { color: 'var(--red)', label: 'Disengaged' };
                 return (
                   <tr key={c.id}>
                     <td className="font-medium" style={{ color: 'var(--ink)' }}>{c.name}</td>
@@ -394,10 +401,25 @@ export default function HealthClient({ ivylens: initialIvylens, clients, rag, rl
                         </span>
                       )}
                     </td>
+                    <td title={`${c.engagement.activeRoles} active roles, ${c.engagement.userCount} users, last Core OS 360 note ${c.engagement.lastNote === 999 ? 'never' : `${c.engagement.lastNote}d ago`}`}>
+                      <span className="text-xs font-bold" style={{ color: engStyle.color }}>
+                        {c.engagement.score} · {engStyle.label}
+                      </span>
+                    </td>
                     <td>
-                      <Link href={clientHref(c)} prefetch={false} className="btn-ghost btn-sm">
-                        Open →
-                      </Link>
+                      <span className="text-xs" style={{ color: c.engagement.daysSinceLogin > 30 ? 'var(--red)' : c.engagement.daysSinceLogin > 14 ? 'var(--gold)' : 'var(--ink-soft)' }}>
+                        {c.engagement.daysSinceLogin === 999 ? 'Never' : c.engagement.daysSinceLogin === 0 ? 'Today' : `${c.engagement.daysSinceLogin}d ago`}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex gap-1.5">
+                        <Link href={clientHref(c)} prefetch={false} className="btn-ghost btn-sm">
+                          Open →
+                        </Link>
+                        <Link href={`/health-safety/${c.id}/core-360-status`} prefetch={false} className="btn-ghost btn-sm">
+                          Core 360 →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

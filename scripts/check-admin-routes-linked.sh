@@ -51,6 +51,11 @@ ALLOWED=(
   # /clients/onboard, for old bookmarks/deep-links. It deliberately has
   # no live link anywhere in the app — that is the whole point of it.
   "clients/new"
+  # /engagement is a retired page kept only as a redirect to /health
+  # (go-live gap list, item 3, 2026-10-02 — "keep only one" dashboard:
+  # Engagement's own content merged into /health's Client Health
+  # table). Deliberately has no live link of its own any more.
+  "engagement"
 )
 
 fail=0

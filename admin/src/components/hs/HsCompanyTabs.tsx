@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS: { seg: string; label: string }[] = [
-  // Core 360 Status is the designated primary "is this client OK"
-  // view (go-live gap list, 2026-10-02) — placed first so it is the
-  // default landing tab; Assurance Today/Digital Twin/Board Assurance
-  // remain as detail views, each linking back here.
+  // Core 360 Status is the ONE "is this client OK" view (go-live gap
+  // list, item 3, 2026-10-02) — Assurance Today, Digital Twin and
+  // Board Assurance are now sections ON this page, not separate tabs;
+  // their own routes still exist as plain redirects here, for an old
+  // bookmark or sidebar link, but no longer get their own tab.
   { seg: 'core-360-status', label: 'Core 360 Status' },
   { seg: 'register',   label: 'Register' },
   { seg: 'documents',  label: 'Documents' },
@@ -38,9 +39,6 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'consultation', label: 'Consultation' },
   { seg: 'environmental-complaints', label: 'Complaints' },
   { seg: 'kpis',       label: 'KPIs' },
-  { seg: 'assurance',  label: 'Assurance Today' },
-  { seg: 'digital-twin', label: 'Digital Twin' },
-  { seg: 'board-assurance', label: 'Board Assurance' },
   { seg: 'timeline',   label: 'Timeline' },
 ];
 

@@ -8,7 +8,16 @@
 // rows stored with the old paths keep working.
 
 /** @type {{ source: string; destination: string; permanent: boolean }[]} */
-export const PORTAL_REDIRECTS = ['absence', 'offboarding', 'hr-dashboard', 'employee-docs'].flatMap(p => [
-  { source: `/protect/${p}`,          destination: `/lead/${p}`,          permanent: true },
-  { source: `/protect/${p}/:path*`,   destination: `/lead/${p}/:path*`,   permanent: true },
-]);
+export const PORTAL_REDIRECTS = [
+  ...['absence', 'offboarding', 'hr-dashboard', 'employee-docs'].flatMap(p => [
+    { source: `/protect/${p}`,          destination: `/lead/${p}`,          permanent: true },
+    { source: `/protect/${p}/:path*`,   destination: `/lead/${p}/:path*`,   permanent: true },
+  ]),
+  // Go-live gap list, item 3 (2026-10-02): "keep only one" dashboard —
+  // Assurance Today, Digital Twin and Board Assurance are now sections
+  // on the one consolidated Core 360 Status page, not separate pages.
+  ...['assurance', 'digital-twin', 'board-assurance'].flatMap(p => [
+    { source: `/protect/${p}`,          destination: '/protect/core-360-status',        permanent: true },
+    { source: `/protect/${p}/:path*`,   destination: '/protect/core-360-status/:path*', permanent: true },
+  ]),
+];

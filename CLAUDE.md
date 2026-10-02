@@ -13909,3 +13909,236 @@ entirely TypeScript composition over already-live schema.
 
 **The go-live gap list (all ten items) is complete.**
 
+---
+
+## Go-live follow-up audit, round two: a confirmation pass + seven more
+## items, two of them small schema additions (2026-10-02, migrations
+## 208-209)
+
+A re-audit (`go-live-qa` skill, targeted) confirmed the two LMS/QR gaps
+the prior full audit named were genuinely closed by migrations 201/202
+— table/RLS/triggers live, routes/UI wired in, the SECURITY INVOKER
+self-restriction fix on `learning_assignments_fill()` confirmed via
+`pg_proc.prosecdef = false` rather than trusting the migration text —
+and surfaced seven smaller, real findings. Put to the operator as a
+numbered list; the answer was **"2. Keep / 3. Keep only one / All
+other things, get done."**
+
+### Item 2 — two orphaned routes: KEEP, no code change
+
+`admin/src/app/api/admin/manatal/matches/route.ts` + its `move-stage`
+sibling (a fully-built applicant-pipeline viewer with no caller
+anywhere in `admin/src` today, per Phase 19 Group 2's own finding) and
+`portal/src/app/api/consultancy/attention-queue/route.ts` (superseded
+when its own page became a server component calling
+`loadAttentionQueue()` directly) remain exactly as Phase 19 left them:
+flagged, rate-limited, **not deleted**. Deleting live route code on the
+strength of a static-analysis "no caller found" survey — with no
+certainty an external tool, bookmark, or manual workflow doesn't hit it
+directly — stays the wrong call to make unilaterally. Decision recorded
+here; no code touched.
+
+### Item 3 — "keep only one" dashboard, at two levels
+
+The audit's own gap list named five-plus overlapping "is this client
+OK" surfaces with no cross-link. They split into two genuinely
+different shapes — a cross-client PORTFOLIO LIST (`/health`,
+`/engagement`) and four PER-CLIENT DETAIL pages (Digital Twin,
+Assurance Today, Board Assurance, Core 360 Status) — so this
+consolidates each category to ONE survivor rather than forcing one page
+to serve both shapes.
+
+- **Per-client detail: Core 360 Status is now the one page.**
+  `AssuranceTodayView` already EMBEDS `ComplianceTwinView` internally
+  (confirmed by reading the component before touching anything) —
+  meaning "Assurance Today" was already a strict superset of "Digital
+  Twin." Rewritten `/health-safety/<companyId>/core-360-status` (admin)
+  and `/protect/core-360-status` (portal) to compose, in order: the six
+  Core 360 Status domains → an "EHS Posture — Right Now" section
+  (`SaveSnapshotButton` + the full `AssuranceTodayView`, which already
+  carries the Twin + `SnapshotTrend` + `ThresholdsForm`) → a "Board
+  Assurance" section (the existing generate/issue/acknowledge
+  workflow — explicitly PRESERVED per the operator's own prior
+  decision, folded in as a section rather than dropped). The three
+  standalone routes (`digital-twin`, `assurance`, `board-assurance`)
+  are retired: admin's three became plain `redirect()` stubs to
+  `core-360-status` (each nests under the already-linked
+  `/health-safety` prefix and is dynamic, so `check-admin-routes-
+  linked.sh` needs no new `ALLOWED` entry for them); portal's three
+  page DIRECTORIES were deleted entirely and replaced with
+  `redirects.mjs` config-level entries (the exact
+  `/protect/{absence,offboarding,hr-dashboard,employee-docs}` →
+  `/lead/...` precedent, confirmed by reading `redirects.test.ts`'s own
+  `page(source) === false` / `page(destination) === true` assertions)
+  — a page-level `redirect()` stub was tried first and FAILED
+  `portalPagesLinked.test.ts` (nothing outside its own directory links
+  to it once removed from the tab list), which is exactly why the
+  config-level mechanism exists. `HsCompanyTabs.tsx` and the portal
+  `/protect` layout's own `TABS` arrays lost the three retired entries;
+  `moduleAccess.ts`'s `ROUTE_FLAGS` lost the three portal route keys.
+- **Portfolio list: `/health` is now the one page, with `/engagement`'s
+  own content merged in, not dropped.** `/engagement` carried genuinely
+  distinct signal (portal usage, logins, churn risk) `/health` never
+  had, so this isn't a retire-outright like the clients/new precedent —
+  `HealthStatusPage` gained the full engagement computation
+  (`computeEngagementScore`/`computeBand`/`computeChurnSignal`, reused
+  unchanged) merged per-row into the same `ClientHealth` array, with
+  new "Engagement" and "Last Login" columns on `HealthClient.tsx`'s
+  table and a second "Core 360 →" link per row (alongside the existing
+  "Open →") so the portfolio list and the per-client detail page are no
+  longer disconnected. `/engagement` itself becomes a `redirect('/health')`
+  stub (`engagement/loading.tsx` deleted — a redirect page renders
+  nothing to show a loading state for); `AdminSidebar.tsx` lost its
+  Engagement nav item; `check-admin-routes-linked.sh`'s `ALLOWED` list
+  gained `"engagement"`, the `clients/new` precedent. `/health`/
+  `/engagement` were deliberately left OUT of the per-client-detail
+  consolidation — IvyLens health and the live RLS-drift audit have no
+  per-client equivalent and belong only at the portfolio level, the
+  same reasoning that keeps this a two-tier consolidation rather than
+  one page for everything.
+- **`check-unbounded-reads.sh`'s baseline dropped 301 → 300**: merging
+  `/engagement`'s own queries into `/health` removed a now-redundant
+  unbounded read in the process, a real improvement the script's own
+  exit message asks to be recorded, not just tolerated as a ratchet.
+
+### Item 4 — `person_authorisations` had no way to scope a permit's
+### required authorisation to a specific ASSET (migration 209)
+
+`scope_site_id` (134) has always let a grant be scoped to one site;
+nothing scoped it to one piece of plant — a permit requiring, say,
+"certified on THIS crane" could only ever be checked against "certified
+on THIS SITE," which is a materially weaker guarantee for lifting/plant
+work.
+
+- **Two environment limitations, independently confirmed this session,
+  shaped the whole approach.** `DROP FUNCTION`/`DROP TABLE` via both
+  `execute_sql` and `apply_migration` reliably TIME OUT (60s) in this
+  sandbox — proven with an isolated single-statement `DROP FUNCTION`
+  probe that timed out and a follow-up `SELECT` confirming the function
+  was never actually dropped (not a slow-response false alarm). And
+  `CREATE OR REPLACE FUNCTION` adding a new trailing parameter to an
+  EXISTING function does not safely replace it — proven in an isolated
+  rolled-back probe: it creates a second, ambiguous overload
+  (`ERROR 42725: function ... is not unique`), never a clean signature
+  change. Both independently rule out "widen `person_holds_
+  authorisation()`'s own signature" as a safe option here.
+- **So a NEW function, never a modified one.**
+  `person_authorisations.scope_asset_id` (nullable,
+  `REFERENCES hs_equipment(id) ON DELETE SET NULL`, mirroring
+  `scope_site_id`'s own FK style exactly). `workforce_evidence_guard()`
+  (re-created in place, `SECURITY INVOKER` unchanged) gained one more
+  `assert_same_org(NEW.company_id, 'hs_equipment', NEW.scope_asset_id)`
+  line, alongside its existing `scope_site_id` check. The original
+  4-argument `person_holds_authorisation()` is completely untouched —
+  confirmed its only real SQL caller is `permits_lifecycle_guard()` and
+  its only TypeScript references are comments, never calls. A NEW,
+  separately-named 5-argument `person_holds_authorisation_with_asset(
+  p_person_id, p_type_id, p_site_id, p_asset_id, p_as_of DEFAULT NULL)`
+  — identical `STABLE SECURITY DEFINER`/`REVOKE ALL FROM PUBLIC, anon`/
+  `GRANT EXECUTE TO authenticated` shape, adding exactly one clause:
+  `AND (pa.scope_asset_id IS NULL OR pa.scope_asset_id = p_asset_id)` —
+  so a grant with no asset scope still means "any asset," the same
+  NULL-means-unscoped convention `scope_site_id` already established.
+  `permits_lifecycle_guard()` (152, last redefined by 155 — the live
+  body read via `pg_get_functiondef()` and confirmed byte-identical to
+  the migration file before extending it) is re-created with its one
+  call site swapped to the new function.
+- **Live-probed in a rolled-back transaction** (two real companies, one
+  as the "same org" test, the other as the cross-org refusal target;
+  fabricated `people`/`hs_equipment`/`authorisation_types`/`person_
+  authorisations` rows): a grant scoped to asset A matches asset A
+  (`true`) and refuses asset B (`false`); a grant with `scope_asset_id
+  = NULL` matches any asset (`true`); inserting a grant whose
+  `scope_asset_id` names a DIFFERENT organisation's asset is refused
+  with `23514`. All 4 checks passed; a follow-up row-count query
+  confirmed zero trace left live after rollback.
+
+### Item 5 — the 7 remaining duplicate-emailed referral recipients,
+### corrected by hand (DML, no migration)
+
+"Sending by hand claims first, too" (above) already corrected 3 of the
+21 people the 2026-09-21→24 duplicate-send incident emailed but a later
+re-scan scored below threshold, leaving 7 "still open" — this closes
+them. Verified live, not assumed: exactly 7 `referral_applications`
+rows (requisition `7ae62d7d-491f-49e5-a250-b1816b6c9b03`, "AI &
+Software Engineers") sat at `rejected_score` despite each one's own
+candidate having a confirmed, successful Resend send in `email_log` for
+that exact role's invite subject, predating the row's own final
+re-scan. Each corrected row moved `rejected_score → email_sent` with a
+`status_history` entry (`by: 'correction'`, dated 2026-10-02, reasons
+quoting the email-log evidence) rather than a silent UPDATE — the same
+auditable-correction discipline the earlier 3-row fix already
+established. No further action is taken for these 7: they were already
+emailed, the record now simply says so.
+
+### Item 6 — Worker QR badge "Regenerate" could leak a raw Postgres
+### error on a double-click race
+
+`mintWorkerQrToken()`'s insert-error branch returned `insertErr.message`
+verbatim — on the one real race this can hit (two concurrent
+regenerate clicks both racing the partial-unique "at most one active
+badge" index), that message was a raw `duplicate key value violates
+unique constraint "..."` string surfaced straight to the person
+clicking the button. Fixed: a `23505` is now caught specifically and
+reported as "Another request already generated a new badge for this
+person. Refresh the page to see it."; every other error still returns
+its real message. Mutation-tested in `qrTokens.test.ts` — a new test
+case seeds the race by pushing a competing active-token row from inside
+the revoke call's own resolve handler, reverting the fix was confirmed
+to fail it (raw string surfaced), then restored and re-verified green.
+
+### Item 7 — `compliance_twin_thresholds` was never read on the portal
+### side (migration 208, folded into Item 3's rewrite)
+
+`assembleComplianceTwin(input, thresholds?)`'s optional second
+parameter has existed since Phase 23 Group 5, but only ever got wired
+up on admin's side (`loadComplianceTwinSnapshot()`) — portal's own
+standalone Digital Twin page always used the hardcoded defaults, so a
+client whose thresholds staff had deliberately overridden saw a
+DIFFERENT band on the portal than on the admin app for the identical
+data. Two parts: `compliance_twin_thresholds_client_read` (migration
+208) — a `FOR SELECT TO authenticated` policy gated on
+`company_id = my_company_id() AND has_capability(..., 'risk.read')`,
+since the table's only prior policy was staff-`FOR ALL`; and the
+rewritten portal `/protect/core-360-status` page (Item 3's own
+consolidation) now reads that row and passes it through to
+`assembleComplianceTwin()`, exactly as admin's loader already does —
+so the admin/portal asymmetry closes as a side effect of the page this
+item needed fixing anyway, rather than needing its own separate page.
+
+### A general environment note, worth carrying forward
+
+Both DROP-statement-timeout findings above (Item 4) independently
+reconfirm this file's own already-documented history of migration 203
+(`DROP TABLE tickets, ticket_messages`) failing repeatedly — the root
+cause is now understood (a general DDL-path timeout on destructive
+statements in this sandbox, not transient infrastructure flakiness) but
+migration 203 itself remains UNAPPLIED; `tickets`/`ticket_messages`
+still exist live, empty and dead-code-free on the application side.
+**Any future migration in this environment should be designed to avoid
+requiring a `DROP FUNCTION`/`DROP TABLE` to succeed** — a new object
+alongside the old (as Item 4 did here), or `ADD COLUMN IF NOT EXISTS`/
+`CREATE OR REPLACE` for anything that doesn't change a function's own
+parameter list, rather than a rename-and-drop that this sandbox's DDL
+path cannot reliably complete.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (the Item 6 regression test, no other test file needed changing —
+Items 2/3/4/5/7 touched no tested pure-logic module beyond what was
+already covered), all seven CI guards pass with no regressions
+(`check-unbounded-reads.sh` baseline correctly lowered 301→300;
+`check-admin-routes-linked.sh`'s `ALLOWED` list correctly extended;
+every other guard unchanged), both production builds compile (admin's
+`next build` needed one retry with `NODE_OPTIONS=--max-old-space-size=4096`
+after an OOM-killed first attempt — unrelated to this change, a
+sandbox memory-ceiling issue, not a code defect; portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-env-
+var limitation recorded throughout this file's history). Migrations 208
+and 209 applied live and verified (208: both policies present,
+`compliance_twin_thresholds_staff_all` + the new client-read policy;
+209: column exists, both `person_holds_authorisation` and `person_
+holds_authorisation_with_asset` exist as separate, non-ambiguous
+functions, grants correct, `permits_lifecycle_guard()`'s live body
+confirmed calling the new function, and the full functional probe above
+passed 4/4 with zero trace left after rollback).
+

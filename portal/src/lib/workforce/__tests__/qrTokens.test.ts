@@ -7,7 +7,7 @@ import { mintWorkerQrToken, revokeWorkerQrToken, hasActiveWorkerQrToken, workerQ
 // ordering and the active/revoked distinction are genuinely exercised.
 interface Row { id: string; person_id: string; token_hash: string; revoked_at: string | null; revoked_by: string | null; created_by: string | null }
 
-function fakeService(seed: Row[] = []) {
+function fakeService(seed: Row[] = [], opts: { onUpdateResolved?: () => void } = {}) {
   const rows: Row[] = [...seed];
   let nextId = 1;
   const client = {
@@ -22,6 +22,12 @@ function fakeService(seed: Row[] = []) {
             then(resolve: any) {
               const hit = rows.filter(r => filters.every(f => f(r)));
               hit.forEach(r => Object.assign(r, patch));
+              // Lets a test simulate a genuinely concurrent request's own
+              // revoke+insert completing in the gap between THIS revoke
+              // and the insert that follows it — the real race this file
+              // exists to guard against, since the two statements are not
+              // one transaction.
+              opts.onUpdateResolved?.();
               return Promise.resolve({ error: null, count: hit.length }).then(resolve);
             },
           };
@@ -31,10 +37,10 @@ function fakeService(seed: Row[] = []) {
           return {
             then(resolve: any) {
               if (payload.token_hash && rows.some(r => r.token_hash === payload.token_hash)) {
-                return Promise.resolve({ error: { message: 'duplicate key value violates unique constraint' } }).then(resolve);
+                return Promise.resolve({ error: { message: 'duplicate key value violates unique constraint', code: '23505' } }).then(resolve);
               }
               if (rows.some(r => r.person_id === payload.person_id && r.revoked_at == null)) {
-                return Promise.resolve({ error: { message: 'duplicate key value violates unique constraint (one_active_per_person)' } }).then(resolve);
+                return Promise.resolve({ error: { message: 'duplicate key value violates unique constraint "worker_qr_tokens_one_active_per_person"', code: '23505' } }).then(resolve);
               }
               rows.push({ id: `row-${nextId++}`, person_id: payload.person_id!, token_hash: payload.token_hash!, revoked_at: null, revoked_by: null, created_by: payload.created_by ?? null });
               return Promise.resolve({ error: null }).then(resolve);
@@ -87,6 +93,31 @@ describe('mintWorkerQrToken', () => {
     ]);
     await mintWorkerQrToken(client as any, PERSON, 'staff-1');
     expect(rows.find(r => r.person_id === 'someone-else')?.revoked_at).toBeNull();
+  });
+
+  it('a double-click/concurrent regenerate race returns a friendly message, never the raw Postgres error', async () => {
+    // The revoke and the insert are two separate statements, not one
+    // transaction (documented in qrTokens.ts) — simulate a SECOND,
+    // genuinely concurrent request's own revoke+insert completing in
+    // the gap right after THIS request's own revoke runs, so this
+    // request's insert then collides with the partial unique index.
+    const { client, rows } = fakeService(
+      [{ id: 'row-0', person_id: PERSON, token_hash: 'a'.repeat(64), revoked_at: null, revoked_by: null, created_by: null }],
+      {
+        onUpdateResolved() {
+          rows.push({ id: 'row-concurrent', person_id: PERSON, token_hash: 'c'.repeat(64), revoked_at: null, revoked_by: null, created_by: 'other-session' });
+        },
+      },
+    );
+    const res = await mintWorkerQrToken(client as any, PERSON, 'staff-1');
+    expect(res).toEqual({
+      error: 'Another request already generated a new badge for this person. Refresh the page to see it.',
+    });
+    // The error message is a string a person reads — it must never be
+    // the raw constraint-violation text from Postgres.
+    expect('error' in res && res.error).not.toMatch(/constraint|duplicate key/i);
+    // The concurrent request's own badge is left standing, untouched.
+    expect(rows.find(r => r.id === 'row-concurrent')?.revoked_at).toBeNull();
   });
 });
 

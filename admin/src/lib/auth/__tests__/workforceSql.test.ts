@@ -174,11 +174,26 @@ describe('142: workforce evidence stays inside its own organisation (QA 42, thre
   const stripped = m142.replace(/--.*$/gm, '');
   it('142 is the LATEST definition of every function it replaces (an older copy is not what runs)', () => {
     const files = readdirSync(MIG).filter(f => f.endsWith('.sql')).sort();
+    // workforce_evidence_guard is re-created again by 209 (go-live gap
+    // list item 4, 2026-10-02) to add one more assert_same_org call for
+    // the new scope_asset_id column — 209 is now its latest definition,
+    // confirmed to carry 142's own body plus that one line (see the
+    // "stays the LATEST definition" case below). health_record_guard
+    // has never been redefined since 142.
+    const latest: Record<string, string> = {
+      workforce_evidence_guard: '209_person_authorisations_scope_asset_id.sql',
+      health_record_guard: '142_workforce_org_isolation.sql',
+    };
     for (const f of ['workforce_evidence_guard', 'health_record_guard']) {
       const defining = files.filter(x => readFileSync(`${MIG}/${x}`, 'utf8').includes(`FUNCTION public.${f}(`));
-      expect(defining.at(-1), f).toBe('142_workforce_org_isolation.sql');
+      expect(defining.at(-1), f).toBe(latest[f]);
     }
     // _wf_judge is redefined again by 143 (adds p_mandatory) — that test lives in the 143 describe block below.
+  });
+  it('209\'s redefinition of workforce_evidence_guard carries 142\'s own scope_site_id check forward, never drops it', () => {
+    const m209 = readFileSync(`${MIG}/209_person_authorisations_scope_asset_id.sql`, 'utf8');
+    expect(m209).toMatch(/assert_same_org\(NEW\.company_id, 'hs_sites', NEW\.scope_site_id\)/);
+    expect(m209).toMatch(/assert_same_org\(NEW\.company_id, 'hs_equipment', NEW\.scope_asset_id\)/);
   });
   it('C1/H: every evidence query in the judge is filtered to the person\'s own organisation', () => {
     const judge = fn(m142, '_wf_judge').body;
