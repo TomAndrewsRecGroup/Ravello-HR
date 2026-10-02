@@ -45,6 +45,14 @@ const PUBLIC_ROUTES = [
   // portal login at all.
   /^\/e\//,
   /^\/api\/e\//,
+  // Shareable report links (go-live gap list, item 7, 207). The
+  // recipient (an insurer, an auditor, a regulator) has no portal
+  // login at all — the token in the URL is the whole authorisation,
+  // through the service-role client, the same shape as every link
+  // above. The page's own server-side preflight calls the API with no
+  // cookie, so both must be public.
+  /^\/report\//,
+  /^\/api\/report\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

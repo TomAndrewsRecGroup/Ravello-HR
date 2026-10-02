@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { BarChart3, ExternalLink } from 'lucide-react';
 import ReportUploadForm from './ReportUploadForm';
 import ExportCSVButton from '@/components/modules/ExportCSVButton';
+import ShareReportButton from '@/components/modules/ShareReportButton';
 
 export const metadata: Metadata = { title: 'Reports' };
 export const revalidate = 30;
@@ -196,15 +197,18 @@ export default async function AdminReportsPage() {
                           {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="px-4 py-3">
-                          <FileLink
-                            kind="report"
-                            id={r.id}
-                            storagePath={r.storage_path}
-                            fileUrl={r.file_url}
-                            className="btn-secondary btn-sm flex items-center gap-1.5 w-fit"
-                          >
-                            <ExternalLink size={12} /> Open
-                          </FileLink>
+                          <div className="flex items-center gap-1.5">
+                            <FileLink
+                              kind="report"
+                              id={r.id}
+                              storagePath={r.storage_path}
+                              fileUrl={r.file_url}
+                              className="btn-secondary btn-sm flex items-center gap-1.5 w-fit"
+                            >
+                              <ExternalLink size={12} /> Open
+                            </FileLink>
+                            <ShareReportButton reportId={r.id} apiBase="/api/admin/reports" />
+                          </div>
                         </td>
                       </tr>
                     ))}

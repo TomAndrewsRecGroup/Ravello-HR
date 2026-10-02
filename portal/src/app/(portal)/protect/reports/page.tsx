@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import FileLink from '@/components/modules/FileLink';
 import ExportCSVButton from '@/components/modules/ExportCSVButton';
+import ShareReportButton from '@/components/modules/ShareReportButton';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
 import { BarChart3, Download } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Reports' };
@@ -9,7 +11,8 @@ export const revalidate = 60;
 
 export default async function ReportsPage() {
   const supabase = await createServerSupabaseClient();
-  const { companyId, featureFlags } = await getSessionProfile();
+  const { companyId, featureFlags, role, isTpsStaff } = await getSessionProfile();
+  const canShare = isCompanySuperUser({ role, isTpsStaff });
   const flags: Record<string, boolean> = featureFlags ?? {};
   // Was checking flags.reports — a different, unrelated flag ("CSV
   // Reports" in the General FLAG_GROUP). This page's own middleware
@@ -155,16 +158,19 @@ export default async function ReportsPage() {
                       <td style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
                       <td style={{ color: 'var(--ink-faint)' }}>{new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td>
-                        <FileLink
-                          kind="report"
-                          id={r.id}
-                          storagePath={r.storage_path}
-                          fileUrl={r.file_url}
-                          download
-                          className="btn-secondary btn-sm flex items-center gap-1.5"
-                        >
-                          <Download size={13} /> Download
-                        </FileLink>
+                        <div className="flex items-center gap-1.5">
+                          <FileLink
+                            kind="report"
+                            id={r.id}
+                            storagePath={r.storage_path}
+                            fileUrl={r.file_url}
+                            download
+                            className="btn-secondary btn-sm flex items-center gap-1.5"
+                          >
+                            <Download size={13} /> Download
+                          </FileLink>
+                          {canShare && <ShareReportButton reportId={r.id} apiBase="/api/reports" />}
+                        </div>
                       </td>
                     </tr>
                   ))}

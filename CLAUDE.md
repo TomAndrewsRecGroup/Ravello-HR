@@ -13658,3 +13658,93 @@ live and verified (RLS enabled, the fill trigger refuses a non-broadcast
 action and derives every sensitive field server-side, the write guard
 applied, `UPDATE`/`DELETE`/`TRUNCATE` revoked from every session role).
 
+---
+
+## Go-live gap list, item 7: Shareable Reports (2026-10-02, migration 207)
+
+Neither app had any way to hand a report (an uploaded document or a
+generated Value Report, both rows on the generic `reports` table) to
+an external party — an insurer, an auditor, a regulator — without
+giving them a portal or admin login. No code anywhere built this; a
+new token table was needed from scratch.
+
+- **`report_share_tokens`** (migration 207): the exact
+  `policy_ack_tokens`/`hs_test_tokens`/`worker_qr_tokens` shape — RLS
+  on, **no policies at all**, service role only, "fails closed by
+  design." Unlike a single-use set-password token, a share link is
+  DURABLE (the `worker_qr_tokens` model): the recipient may open it
+  more than once before it expires or is revoked. Bounded to a hard
+  **90-day maximum lifetime** by the table's own CHECK — never an
+  indefinitely-living external link to a client's own document.
+  `token_hash` is the primary key, shaped like a SHA-256 hex digest by
+  its own CHECK. `rls_policy_audit()` (080, re-tuned 198) is
+  re-defined in the same migration to add this table to its existing
+  "RLS-on-no-policies is a deliberate, exempted shape" list, alongside
+  `entity_qr_tokens`/`worker_qr_tokens` — otherwise the admin `/health`
+  page's own RLS panel would report it as a false-positive critical
+  finding the moment it shipped.
+- **`lib/auth/reportShareTokens.ts`** (shared-dupe pair): the
+  mint/peek/touch/revoke/list functions, reusing `hashAccessToken`/
+  `normaliseAccessToken` from the existing `accessTokens.ts` — the same
+  UUID-token-then-SHA-256 shape every other token table in this
+  codebase already uses, never a bespoke format. `listReportShareTokens`
+  never returns the raw token OR its full hash — only a 12-hex-char
+  **prefix** (48 bits), enough for a "revoke this one" UI action,
+  nowhere near enough to help anyone recover the original random token
+  (that would mean inverting SHA-256, not guessing from a prefix).
+  `revokeReportShareToken` resolves that prefix back to exactly one row
+  (bounded `.limit(2)` — only ever needs to tell "exactly one" from
+  "more than one") before revoking it, scoped to the report and company
+  that created it.
+- **Two mint/list/revoke routes**, each the real authorisation
+  boundary since the table itself has none: admin's `POST`/`GET`/
+  `DELETE /api/admin/reports/<id>/share` (`requireStaff()` — staff may
+  share any report) and portal's own `/api/reports/<id>/share`
+  (`getSessionProfile()` + `isCompanySuperUser()`, the Phase 28
+  consolidated helper — a client's own account admin only, scoped to
+  their own company's reports). Both read/write with the service role
+  only after the session check passes.
+- **The public open page is portal-only**, the same reasoning every
+  other no-login link in this codebase already states: whoever holds
+  the link has no login on EITHER app. `/report/[token]` (outside the
+  `(portal)` route group, the `/policy/[token]`/`/test/[token]` shape)
+  + its own server-side preflight `/api/report/[token]` — both added
+  to `PUBLIC_ROUTES` in the portal middleware. Signs the underlying
+  file via the existing `signFileUrl()`/`documents` bucket path (the
+  same `kind: 'report'` mapping `/api/files/sign` already uses for a
+  signed-in session), bumps `access_count`/`last_accessed_at`
+  best-effort, and never trusts a 404-vs-410 distinction to leak
+  whether a report exists — `peekReportShareToken` returns `null` for
+  "nothing matches this hash" either way, and `'revoked'`/`'expired'`
+  only once a real row is found.
+- **`ShareReportButton.tsx`** (shared-dupe pair): a `fixed inset-0`
+  modal overlay, not an absolutely-positioned dropdown — the admin
+  Reports table's own row wrapper is `card overflow-hidden`, which
+  would have silently clipped a dropdown anchored to the row's own
+  "Share" button, the exact kind of defect this codebase's own
+  discipline exists to catch before it ships, not after. The raw share
+  URL is shown exactly once, right after minting, and the component
+  never asks for it back. Wired into admin's `/reports` page (every
+  report, staff-only) and portal's `/protect/reports` page (only when
+  `isCompanySuperUser()`, matching the route's own gate — the button
+  is simply not rendered for a plain `client_user`, rather than
+  rendering it and letting the route's 403 be the first signal).
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (the new `reportShareTokensSql.test.ts` plus a new middleware
+exemption test case), all seven CI guards pass with no regressions —
+two real violations were caught and fixed before this shipped, not
+after: `touchReportShareToken`'s access-stat bump had no `{ count:
+'exact' }` (fixed, `check-blind-updates.sh`), and
+`revokeReportShareToken`'s prefix-lookup `SELECT` had no bound at all
+(fixed with `.limit(2)`, `check-unbounded-reads.sh`) — both ratchets
+back to their exact baseline after the fix. Both production builds
+compile, including `/report/[token]`, `/api/report/[token]`,
+`/api/reports/<id>/share` and `/api/admin/reports/<id>/share`.
+Migration 207 applied live and verified (table exists, RLS enabled, 0
+policies, 0 `rls_policy_audit()` findings for the table, and a full
+rolled-back functional probe: a valid insert, a 91-day expiry refused,
+a malformed token_hash refused, an overlong recipient_note refused, a
+duplicate token_hash refused, and a plain UPDATE revoke proven to work
+— 0 leftover rows after rollback).
+
