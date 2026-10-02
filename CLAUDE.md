@@ -13409,3 +13409,128 @@ compile (portal's one prerender failure on `/auth/reset-password` is
 the same long-documented sandbox-only missing-Supabase-env-var
 limitation, unrelated to this change).
 
+---
+
+## Go-live gap list, round two: five more items closed (2026-10-02,
+## migration 204)
+
+Following the two confirmation audits above, the operator asked to
+keep working down the full go-live feature-gap list — "all of it."
+Five of the ten remaining items are closed in this pass, each checked
+against the live code FIRST (a background survey agent traced all ten
+against the real codebase before any line was written) — three turned
+out to need no new table at all, reusing data this platform already
+computes daily; two needed a small, honestly-scoped schema addition.
+
+- **Daily Management Briefing** (admin `/briefing`,
+  `lib/briefing/compute.ts`): "what needs attention today" across the
+  whole portfolio for staff, genuinely different from `/health` (a
+  per-client RAG roll-up a staff member has to open client-by-client)
+  and the per-client `WhatChangedTab` (a retrospective, not a "what's
+  outstanding right now" view). Pure composition over TODAY's already-
+  written `client_health_snapshots` row (107/168, written daily by the
+  existing cron) — no new table, no AI. Each of the 13 already-stored
+  counts is bucketed into a fixed, named critical/warning severity
+  (never a score); `assets_unavailable` gets the one three-way
+  threshold (1-2 is a warning, 3+ is critical), mirroring
+  `lib/core360Status/assemble.ts`'s own Plant domain. Falls back to
+  yesterday's snapshot, labelled as stale, if today's cron (06:45 UTC)
+  hasn't run yet. Linked from `AdminSidebar.tsx`'s Intelligence group,
+  ahead of Health Status.
+- **People Timeline** (portal person profile, new "Timeline" tab,
+  `lib/workforce/timeline.ts`): a single chronological feed for ONE
+  person across training, competency, qualifications, inductions,
+  authorisations, PPE, pre-employment checks, development items, Safe
+  to Deploy status changes and safety/incident mentions — distinct
+  from the per-COMPANY Safety Timeline (`hs_events`) and the per-client
+  admin "What Changed" feature. `loadProfile.ts` already fetches every
+  one of these ~10 tables under the viewer's own RLS session for the
+  profile's existing tabs; this file only UNIONs and sorts what was
+  already loaded — no new query, no new table, and nothing from the
+  gated Occupational Health tab is ever included (health stays behind
+  its own, separate capability check).
+- **Group Roll-Up Reporting** (admin `/clients/groups`,
+  `lib/groupRollup/compute.ts`): `companies.parent_organisation_id`
+  (117) has existed since Phase 1 but was, until now, read or written
+  in exactly one place — the Organisations page's own plain reassignment
+  dropdown. This adds the actual roll-up: combined monthly retainer
+  across a parent and its direct children, plus the SAME
+  `assembleDailyBriefing()` bucketing the Daily Briefing already uses,
+  scoped to just that group's own companies. A group is exactly one
+  level deep (the parent plus its direct children), matching the only
+  relationship the Organisations page's own UI ever creates — no
+  grandchild-chain traversal invented for a shape nothing populates.
+- **Emergency Readiness live-check** (admin Emergency Plans,
+  `lib/emergencyReadiness/compute.ts`): migration 154's own header
+  comment named the intended design in 2026-09-28 — "who currently
+  holds that authorisation is read LIVE from `person_authorisations`"
+  — but the live join was never actually built into the UI; the page
+  only ever showed the REQUIRED minimum headcount, never the CURRENT
+  one. This reads `person_authorisations` directly (status `active`,
+  not expired, scoped to the plan's own site when it names one) and
+  `hs_equipment.status` for linked equipment, producing a per-plan
+  Ready/Needs attention/Critical gap band with named reasons — a
+  missing role is critical, unavailable equipment or an overdue drill
+  (no drill in the last documented, fixed 365 days) is a warning. No
+  AI, no score — every number is a live headcount against a stored
+  minimum.
+- **Time-to-Interview / Time-to-Offer / Stage-Duration analytics**
+  (admin Hiring Analytics, migration 204 +
+  `lib/hiring/stageDuration.ts`): `requisitions.stage_changed_at` (104)
+  only ever held ONE fact — when the CURRENT stage began, overwritten
+  on every move — so no per-stage duration had ever been computable
+  after the fact; the existing "Time to Hire" metric is the only
+  duration this codebase had ever measured, and it spans the whole
+  pipeline. **`requisition_stage_history`** is a new, insert-only
+  append log, extending the EXISTING `requisition_stage_stamp()`
+  trigger (104) in place — re-created, never a parallel mechanism — so
+  the one function that already stamps `stage_changed_at` also records
+  the transition it just computed; the two can never drift apart.
+  Honestly scoped: history starts the day this migration applies, with
+  a one-time backfill inserting exactly ONE row per existing
+  requisition (its current stage, dated by the `stage_changed_at` it
+  already had) rather than a guessed prior transition that was never
+  actually recorded. `computeStageDurations()` derives days-to-interview/
+  offer/filled from the first transition into each named stage, and an
+  average time spent per stage — averaged only across requisitions that
+  actually reached each milestone, never treating a non-reaching one as
+  zero (the exact "absence of evidence is not a pass/fail, it's absence"
+  discipline this codebase applies everywhere else).
+
+### A note on the one item explicitly NOT attempted here
+
+**Operational Exception Detection** (the tenth item) was flagged by
+the survey agent as potentially conflicting with this codebase's own
+absolute, repeatedly-stated rule: "no AI, no scores, no prediction
+anywhere." A literal reading of "exception detection" as statistical/
+ML anomaly detection (z-scores, outlier models) would be a genuine,
+first-of-its-kind departure from that rule and needs a product
+decision before it is built, not a unilateral interpretation — left
+for the next pass, to be scoped as deterministic cross-signal
+correlation (e.g. several independent, already-computed fixed-
+threshold facts co-occurring on the same record) rather than anything
+statistical, matching every other "intelligence" feature this codebase
+has ever shipped.
+
+### Verified
+
+Migration 204 applied live (via `execute_sql`, statement-by-statement,
+after `apply_migration`'s own DDL call timed out — the same persistent,
+transient DDL-path issue this file's history already records for
+migration 203 twice; `to_regclass()`/`pg_policy`/`information_schema`
+read back directly rather than trusting any apply call's own success
+response) and live-probed in a rolled-back transaction: a real stage
+UPDATE on an existing requisition correctly inserted a new history row,
+confirmed rolled back with zero trace afterward. `tsc --noEmit` clean
+both apps, full `vitest run` green both apps (1963 admin, 970 portal),
+all seven CI guards pass with no regressions (73 shared-dupe pairs;
+row-cap clean; 44 unvalidated routes, unchanged; 45 static admin
+routes, all reachable — the three new admin routes are all linked from
+the sidebar or each other; 101 blind-update chains, unchanged; every
+paged query's `.order()` present; 301 unbounded-read chains, unchanged
+after converting three newly-added pages from a bare `.select()` to
+`readAllPages()`/a narrowly-scoped `.eq()` read from the start), both
+production builds compile, including `/briefing`, `/clients/groups`,
+`/clients/groups/[parentId]` and the extended `/health-safety/
+[companyId]/emergency-plans` and `/hiring/analytics` pages.
+
