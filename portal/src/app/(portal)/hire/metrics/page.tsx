@@ -93,7 +93,12 @@ export default async function MetricsPage() {
     supabase.from('requisitions').select('id,title,stage,friction_level,created_at').eq('company_id', companyId),
     supabase.from('candidates').select('id,client_status,approved_for_client,requisition_id').eq('company_id', companyId),
     supabase.from('compliance_items').select('id,status,category,due_date').eq('company_id', companyId),
-    supabase.from('tickets').select('id,status,priority,created_at,resolved_at').eq('company_id', companyId),
+    // tickets/ticket_messages were retired as the support object (see
+    // "Support & BD in sync" in CLAUDE.md) — service_requests is the
+    // live one. This used to read the now-permanently-empty tickets
+    // table, so the Support card had silently shown "No tickets
+    // raised" for every client since that migration.
+    supabase.from('service_requests').select('id,status,priority,created_at,responded_at').eq('company_id', companyId),
     supabase.from('documents').select('id,category,approved_at').eq('company_id', companyId),
     supabase.from('actions').select('id,status,priority').eq('company_id', companyId),
     flags.lead !== false
@@ -161,8 +166,8 @@ export default async function MetricsPage() {
   const maxCat = Math.max(...Object.values(compByCat), 1);
 
   /* ── Support stats ── */
-  const openTickets     = tickets.filter(t => !['resolved','closed'].includes(t.status));
-  const resolvedTickets = tickets.filter(t => ['resolved','closed'].includes(t.status));
+  const openTickets     = tickets.filter(t => t.status !== 'complete');
+  const resolvedTickets = tickets.filter(t => t.status === 'complete');
   const urgentTickets   = openTickets.filter(t => t.priority === 'urgent' || t.priority === 'high');
 
   const ticketPrios = ['urgent','high','normal','low'].map(p => ({
@@ -322,7 +327,7 @@ export default async function MetricsPage() {
           <div className="card p-6">
             <SectionHeader icon={LifeBuoy} title="HR Support" color="var(--teal)" />
             {tickets.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No tickets raised.</p>
+              <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No requests raised.</p>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -330,6 +335,8 @@ export default async function MetricsPage() {
                     { label: 'Total',    value: tickets.length,        bg: 'var(--surface-alt)' },
                     { label: 'Open',     value: openTickets.length,    bg: 'rgba(217,119,6,0.08)' },
                     { label: 'Resolved', value: resolvedTickets.length, bg: 'rgba(22,163,74,0.08)' },
+                    // "Resolved" here means service_requests.status ===
+                    // 'complete' — label unchanged from the old wording.
                   ].map(s => (
                     <div key={s.label} className="rounded-[10px] p-3 text-center" style={{ background: s.bg }}>
                       <p className="font-display font-bold text-2xl" style={{ color: 'var(--ink)' }}>{s.value}</p>
@@ -341,7 +348,7 @@ export default async function MetricsPage() {
                   <div className="rounded-[10px] px-4 py-3 mb-4 flex items-center gap-2"
                     style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}>
                     <p className="text-xs font-semibold" style={{ color: 'var(--rose)' }}>
-                      {urgentTickets.length} urgent/high priority ticket{urgentTickets.length !== 1 ? 's' : ''} open
+                      {urgentTickets.length} urgent/high priority request{urgentTickets.length !== 1 ? 's' : ''} open
                     </p>
                   </div>
                 )}

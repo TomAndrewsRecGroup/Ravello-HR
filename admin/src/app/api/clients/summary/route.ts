@@ -45,7 +45,11 @@ export async function GET() {
     // c.archived_at in the UI).
     sb.from('companies').select('id,name,slug,sector,size_band,contact_email,active,logo_url,feature_flags,account_owner_id,friction_band,monthly_retainer_pence,subscription_status,billing_currency').order('name').limit(200),
     sb.from('requisitions').select('company_id,stage').neq('stage', 'filled').neq('stage', 'cancelled').limit(200),
-    sb.from('tickets').select('company_id,status').in('status', ['open', 'in_progress']).limit(200),
+    // tickets/ticket_messages were retired as the support object (see
+    // "Support & BD in sync" in CLAUDE.md) — service_requests is the
+    // live one. This used to read the now-permanently-empty tickets
+    // table.
+    sb.from('service_requests').select('company_id,status').in('status', ['new', 'in_progress']).limit(200),
     sb.from('compliance_items').select('company_id,status,due_date').neq('status', 'complete').limit(200),
     sb.from('profiles').select('id,full_name,email,role,created_at,company_id').in('role', ['client_admin', 'client_editor']).limit(200),
   ]);

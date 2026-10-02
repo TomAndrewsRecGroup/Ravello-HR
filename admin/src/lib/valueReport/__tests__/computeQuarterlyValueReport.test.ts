@@ -3,7 +3,7 @@ import { computeQuarterlyValueReport, quarterMonths } from '../computeReport';
 
 const CO = 'co-1';
 const empty = {
-  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
+  requisitions: [], candidates: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
   trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [],
   standards: [], standardClauses: [], standardEvidenceLinks: [], legalObligations: [], complianceEvaluations: [], objectives: [], auditFindings: [],
 };
@@ -66,15 +66,15 @@ describe('computeQuarterlyValueReport', () => {
     expect(r.usage.mrr).toBe(500); // not 1500
   });
 
-  it('averages the three months\' own avgResolutionHours rather than recomputing from raw tickets', () => {
-    const tickets = [
-      { company_id: CO, status: 'resolved', created_at: '2026-07-01T00:00:00Z', resolved_at: '2026-07-01T10:00:00Z' }, // 10h in July
-      { company_id: CO, status: 'resolved', created_at: '2026-09-01T00:00:00Z', resolved_at: '2026-09-01T20:00:00Z' }, // 20h in September
+  it('averages the three months\' own avgResponseHours rather than recomputing from raw service requests', () => {
+    const serviceRequests = [
+      { company_id: CO, status: 'complete', created_at: '2026-07-01T00:00:00Z', responded_at: '2026-07-01T10:00:00Z' }, // 10h in July
+      { company_id: CO, status: 'complete', created_at: '2026-09-01T00:00:00Z', responded_at: '2026-09-01T20:00:00Z' }, // 20h in September
     ];
-    const r = computeQuarterlyValueReport(CO, 2026, 3, { ...empty, tickets });
-    // July avg=10, August avg=0 (nothing resolved), September avg=20 -> (10+0+20)/3 = 10
-    expect(r.support.avgResolutionHours).toBe(10);
-    expect(r.support.ticketsResolved).toBe(2); // flow, summed
+    const r = computeQuarterlyValueReport(CO, 2026, 3, { ...empty, serviceRequests });
+    // July avg=10, August avg=0 (nothing responded), September avg=20 -> (10+0+20)/3 = 10
+    expect(r.support.avgResponseHours).toBe(10);
+    expect(r.support.serviceRequestsResponded).toBe(2); // flow, summed
   });
 
   it('returns all zeros for a company with no rows anywhere', () => {

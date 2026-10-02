@@ -27,7 +27,6 @@ beforeEach(() => {
       { id: 'co-inactive', active: false, last_portal_login: null, login_count_30d: 0 },
     ],
     compliance_items: [],
-    tickets: [],
     requisitions: [],
     profiles: [],
     documents: [],

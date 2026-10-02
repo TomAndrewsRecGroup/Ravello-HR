@@ -51,7 +51,12 @@ export default async function HealthStatusPage() {
   ] = await Promise.all([
     supabase.from('companies').select('id,slug,name,active').order('name'),
     supabase.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'complete'),
-    supabase.from('tickets').select('company_id').in('status', ['open', 'in_progress']),
+    // tickets/ticket_messages were retired as the support object back in
+    // "Support & BD in sync" — service_requests is the live one
+    // (new|in_progress|complete). This used to read the now-permanently-
+    // empty tickets table, so open_tickets had silently read zero for
+    // every client since that migration.
+    supabase.from('service_requests').select('company_id').in('status', ['new', 'in_progress']),
     supabase.from('requisitions').select('company_id,updated_at,stage').not('stage', 'in', '(filled,cancelled)').lt('updated_at', fortnightAgo),
     computeIvylensHealth(supabase),
     // Row-level security drift, reported by the database itself.

@@ -3,7 +3,7 @@ import { computeValueReport } from '../computeReport';
 
 const CO = 'co-1';
 const empty = {
-  requisitions: [], candidates: [], tickets: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
+  requisitions: [], candidates: [], documents: [], complianceItems: [], serviceRequests: [], actions: [], profiles: [], companies: [],
   trainingNeeds: [], performanceReviews: [], absenceRecords: [], onboardingInstances: [],
   standards: [], standardClauses: [], standardEvidenceLinks: [], legalObligations: [], complianceEvaluations: [], objectives: [], auditFindings: [],
 };
@@ -23,14 +23,14 @@ describe('computeValueReport', () => {
     expect(r.hire.activeRoles).toBe(1); // the one still submitted
   });
 
-  it('computes average ticket resolution hours for tickets resolved this month', () => {
-    const tickets = [
-      { company_id: CO, status: 'resolved', created_at: '2026-09-01T00:00:00Z', resolved_at: '2026-09-01T10:00:00Z' },
-      { company_id: CO, status: 'resolved', created_at: '2026-09-02T00:00:00Z', resolved_at: '2026-09-02T20:00:00Z' },
+  it('computes average service-request response hours for requests responded to this month', () => {
+    const serviceRequests = [
+      { company_id: CO, status: 'complete', created_at: '2026-09-01T00:00:00Z', responded_at: '2026-09-01T10:00:00Z' },
+      { company_id: CO, status: 'complete', created_at: '2026-09-02T00:00:00Z', responded_at: '2026-09-02T20:00:00Z' },
     ];
-    const r = computeValueReport(CO, 2026, 8, { ...empty, tickets });
-    expect(r.support.avgResolutionHours).toBe(15); // (10 + 20) / 2
-    expect(r.support.ticketsResolved).toBe(2);
+    const r = computeValueReport(CO, 2026, 8, { ...empty, serviceRequests });
+    expect(r.support.avgResponseHours).toBe(15); // (10 + 20) / 2
+    expect(r.support.serviceRequestsResponded).toBe(2);
   });
 
   it('reports MRR from the company\'s own real retainer, in pounds', () => {
@@ -57,7 +57,7 @@ describe('computeValueReport', () => {
   it('returns all zeros for a company with no rows anywhere', () => {
     const r = computeValueReport('nope', 2026, 8, empty);
     expect(r.hire).toEqual({ newRoles: 0, filled: 0, candidates: 0, activeRoles: 0, totalFilled: 0 });
-    expect(r.support.avgResolutionHours).toBe(0);
+    expect(r.support.avgResponseHours).toBe(0);
     expect(r.usage.mrr).toBe(0);
     expect(r.governance.auditFindingsOpen).toBe(0);
     expect(r.governance.isoReadiness).toEqual([]);

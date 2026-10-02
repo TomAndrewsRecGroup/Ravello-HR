@@ -186,7 +186,7 @@ export default function GlobalSearch() {
             type="text"
             className="flex-1 text-sm outline-none bg-transparent"
             style={{ color: 'var(--ink)' }}
-            placeholder="Search clients, roles, candidates, tickets..."
+            placeholder="Search clients, roles, candidates, requests..."
             value={query}
             onChange={e => handleInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -254,7 +254,7 @@ export default function GlobalSearch() {
             ))}
             <div className="px-4 py-2" style={{ borderTop: '1px solid var(--line)' }}>
               <p className="text-[10px]" style={{ color: 'var(--ink-faint)' }}>
-                Type to search across clients, roles, candidates, tickets, documents and compliance
+                Type to search across clients, roles, candidates, requests, documents and compliance
               </p>
             </div>
           </div>

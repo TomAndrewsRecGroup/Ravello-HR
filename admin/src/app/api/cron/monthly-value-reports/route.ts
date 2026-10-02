@@ -37,7 +37,7 @@ async function run(req: NextRequest) {
     const { year, month, label: period } = previousMonth();
 
     const [
-      companiesRes, reqsPage, candsPage, ticketsPage, docsPage, compliancePage,
+      companiesRes, reqsPage, candsPage, docsPage, compliancePage,
       servReqsPage, actionsPage, profilesPage,
       trainingPage, reviewsPage, absencePage, onboardingPage,
       standardsPage, clausesPage, evidenceLinksPage, legalObligationsPage, evaluationsPage, objectivesPage, auditFindingsPage,
@@ -47,7 +47,6 @@ async function run(req: NextRequest) {
       sb.from('companies').select('id, name, active, contact_email, monthly_retainer_pence').eq('active', true).not('contact_email', 'is', null),
       readAllPages<any>((from, to) => sb.from('requisitions').select('id, company_id, title, stage, created_at, updated_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('candidates').select('id, company_id, full_name, client_status, created_at').order('id').range(from, to)),
-      readAllPages<any>((from, to) => sb.from('tickets').select('id, company_id, subject, status, priority, created_at, resolved_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('documents').select('id, company_id, name, created_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('compliance_items').select('id, company_id, title, status, created_at').order('id').range(from, to)),
       readAllPages<any>((from, to) => sb.from('service_requests').select('id, company_id, subject, status, created_at, responded_at').order('id').range(from, to)),
@@ -73,7 +72,7 @@ async function run(req: NextRequest) {
     if (companiesRes.error) throw new Error(`companies: ${companiesRes.error.message}`);
 
     const inputs = {
-      requisitions: reqsPage.rows, candidates: candsPage.rows, tickets: ticketsPage.rows, documents: docsPage.rows,
+      requisitions: reqsPage.rows, candidates: candsPage.rows, documents: docsPage.rows,
       complianceItems: compliancePage.rows, serviceRequests: servReqsPage.rows, actions: actionsPage.rows,
       profiles: profilesPage.rows, companies,
       trainingNeeds: trainingPage.rows, performanceReviews: reviewsPage.rows,

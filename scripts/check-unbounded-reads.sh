@@ -24,7 +24,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-BASELINE=302
+BASELINE=301
 
 COUNT=$(node scripts/lib/scan-unbounded-reads.mjs --count)
 

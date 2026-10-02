@@ -13185,3 +13185,100 @@ failure (`/auth/reset-password`) is the same long-documented
 sandbox-only missing-Supabase-env-var limitation recorded throughout
 this file's history, unrelated to this change.
 
+---
+
+## A follow-up go-live audit's own "dead table" claim was wrong — the real
+## bug was ten silent reads of a table nothing had written to since
+## 2026-09-25 (2026-10-02, migration 203 pending)
+
+A confirmation pass following the 2026-10-01 full feature/tenancy audit
+re-checked its consolidated gap list and was asked to close it. The
+audit's own §4 flagged `tickets`/`ticket_messages` as "still physically
+exist, unused, unaudited — recommend dropping." **That claim was wrong
+for `tickets`.** A repo-wide search for the literal table name (not the
+word "tickets", which also appears in comments, placeholder copy and an
+unrelated IvyLens-ticket feature) found it was still being READ from —
+just never written to since "Support & BD in sync" moved the real
+support object to `service_requests` — by **ten call sites across both
+apps**: `/health`, `/engagement`, `/activity`, `/reports`,
+`/value-reports`, the client-detail billing cache
+(`lib/cache/clientDetail.ts`), `api/clients/summary`, two crons
+(`health-snapshot`, `monthly-value-reports`), and the portal's HIRE
+metrics page. Every one of them had been silently reading **zero rows,
+forever**, since the cutover — a real, live regression on the
+**client-facing Value Report** (`ticketsRaised`/`ticketsResolved`/
+`avgResolutionHours` always reported 0) and on the internal `/health`
+and `/engagement` dashboards' "open tickets" signal, exactly the
+"compiles, renders, reports success" class of silent defect this file's
+own history already warns about repeatedly.
+
+- **Every read site redirected to `service_requests`**, the actual live
+  support object, with the status vocabulary corrected
+  (`open`/`in_progress`/`resolved`/`closed` → `new`/`in_progress`/
+  `complete`). `computeValueReport()`'s `support` section replaced
+  `ticketsRaised`/`ticketsResolved`/`avgResolutionHours` with
+  `avgResponseHours` (computed from `service_requests.responded_at -
+  created_at`) — a genuinely working metric instead of a permanently-
+  zero one, propagated through `buildReportPdf.ts`,
+  `ValueReportClient.tsx`, both callers and all affected tests.
+- **`health-snapshot`'s cron used to read the dead `tickets` table
+  TWICE more** (once unpaged for the open-count, once paged for
+  recency) **on top of a THIRD, already-live `service_requests` read**
+  feeding `computePortfolioCounts` — consolidated into ONE paged read
+  serving all three consumers, removing two redundant queries rather
+  than just swapping the table name.
+- **`activity/page.tsx`'s dead `ticket_created` feed block was removed
+  outright** rather than fixed — `service_requests`' own `service_
+  request` feed item already covers the same signal correctly; keeping
+  both would have been two vocabularies for one fact.
+- **The admin dashboard home page (`dashboard/page.tsx`) was checked and
+  found to already be correct** — it already read `service_requests`
+  under a `ticketRes`/`tickets` variable name (historical naming, not a
+  bug); the audit's grep-for-the-word-"tickets" false-positived on its
+  own explanatory comment.
+- **UI copy fixed where it said "tickets"** (`GlobalSearch.tsx`'s
+  placeholder and footer hint, the client-detail "Open Tickets" stat
+  label, the portal HIRE metrics Support card) — `search_records()`
+  (Phase 1) already has a real `service_request` branch, so the
+  GlobalSearch copy was describing a dead table when the live search
+  already covered the right one.
+- **`ticket_messages` genuinely was dead** — zero references anywhere,
+  confirmed by the same literal-table-name search. Both tables' now-
+  orphaned type declarations (`Ticket`/`TicketMessage`/`TicketStatus`/
+  `TicketPriority` interfaces, the `tickets`/`ticket_messages` `Database`
+  table entries, the `ticket_status` enum entry) were removed from both
+  apps' `database.types.ts`/`types.ts`, mirroring the `client_services`
+  removal precedent (2026-10-01).
+- **Migration 203 drops both tables** — written and verified safe live
+  first (0 rows each, confirmed again immediately before every attempt;
+  the only FKs are `tickets→companies`/`auth.users` and `ticket_
+  messages→tickets`/`auth.users`, nothing else references either
+  table). **Not yet applied**: four consecutive `apply_migration`/
+  `execute_sql` DDL calls timed out (60s) against this project during
+  this session, including a trivial scratch-table `CREATE`/`DROP`
+  round-trip used to confirm the timeout was a general DDL-path issue
+  and not specific to these two tables — ordinary `SELECT`s against the
+  same project succeeded throughout, and `pg_stat_activity`/`pg_locks`
+  showed no blocking session, ruling out lock contention. The
+  application code no longer references either table either way, so
+  this is purely pending cleanup, not a blocker — re-run `203_drop_
+  dead_tickets_tables.sql` once the DDL path is responsive again, then
+  verify via `to_regclass('public.tickets')`/`to_regclass('public.
+  ticket_messages')` reading back `NULL`, never trusting a bare success
+  response for DDL (this file's own standing rule since the IvyLens
+  telemetry table incident).
+- `check-unbounded-reads.sh`'s baseline lowered 302 → 301 — removing
+  `health-snapshot`'s redundant unpaged `tickets` read deleted one
+  unbounded chain outright, a real improvement the guard's own exit
+  message asked to be recorded.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (1921
+admin, unchanged count — this touched existing tests, not added new
+ones; portal unaffected, no portal test file touched beyond the UI copy
+fix with no test coverage of its own), all seven CI guards pass
+(unbounded-reads baseline correctly lowered; row-cap clean;
+paged-order clean; blind-updates 101, unchanged), both production
+builds compile (portal's one prerender failure is the same long-
+documented sandbox-only missing-Supabase-env-var limitation, unrelated
+to this change).
+

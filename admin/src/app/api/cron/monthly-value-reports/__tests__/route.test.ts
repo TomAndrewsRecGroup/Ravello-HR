@@ -46,7 +46,7 @@ beforeEach(() => {
       { id: 'co-1', name: 'Acme Ltd', active: true, contact_email: 'ops@acme.example' },
       { id: 'co-2', name: 'No Email Co', active: true, contact_email: null },
     ],
-    requisitions: [], candidates: [], tickets: [], documents: [], compliance_items: [],
+    requisitions: [], candidates: [], documents: [], compliance_items: [],
     service_requests: [], actions: [], profiles: [],
     training_needs: [], performance_reviews: [], absence_records: [], onboarding_instances: [],
     management_system_standards: [], standard_clauses: [], standard_evidence_links: [],

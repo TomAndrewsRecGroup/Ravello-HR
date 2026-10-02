@@ -24,7 +24,7 @@ export default async function AdminReportsPage() {
   // (an import writes many rows in the same millisecond) and without a
   // total order two pages can be ordered differently, dropping or
   // duplicating rows across the boundary.
-  const [reportsRes, companiesRes, reqs, cands, comp, tickets] = await Promise.all([
+  const [reportsRes, companiesRes, reqs, cands, comp, serviceRequests] = await Promise.all([
     supabase.from('reports').select('id,title,period,storage_path,file_url,narrative,created_at,companies(id,slug,name)').order('created_at', { ascending: false }).limit(500),
     supabase.from('companies').select('id,slug,name').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('requisitions')
@@ -36,8 +36,12 @@ export default async function AdminReportsPage() {
     readAllPages<any>((from, to) => supabase.from('compliance_items')
       .select('id,title,category,status,due_date,companies(name)')
       .order('due_date').order('id').range(from, to)),
-    readAllPages<any>((from, to) => supabase.from('tickets')
-      .select('id,subject,status,priority,created_at,resolved_at,companies(name)')
+    // tickets/ticket_messages were retired as the support object (see
+    // "Support & BD in sync" in CLAUDE.md) — service_requests is the
+    // live one. This export used to read the now-permanently-empty
+    // tickets table, so "Support Tickets" always downloaded empty.
+    readAllPages<any>((from, to) => supabase.from('service_requests')
+      .select('id,subject,status,priority,created_at,responded_at,companies(name)')
       .order('created_at', { ascending: false }).order('id').range(from, to)),
   ]);
 
@@ -51,8 +55,8 @@ export default async function AdminReportsPage() {
     reqs.error    && `Roles: ${reqs.error}`,
     cands.error   && `Candidates: ${cands.error}`,
     comp.error    && `Compliance: ${comp.error}`,
-    tickets.error && `Tickets: ${tickets.error}`,
-    (reqs.truncated || cands.truncated || comp.truncated || tickets.truncated)
+    serviceRequests.error && `Support requests: ${serviceRequests.error}`,
+    (reqs.truncated || cands.truncated || comp.truncated || serviceRequests.truncated)
       && 'An export hit the 200,000-row safety ceiling and is incomplete.',
   ].filter(Boolean) as string[];
   const today = new Date().toISOString().slice(0, 10);
@@ -86,13 +90,13 @@ export default async function AdminReportsPage() {
     'Due Date': c.due_date ? new Date(c.due_date).toLocaleDateString('en-GB') : '',
   }));
 
-  const ticketsCSV = tickets.rows.map((t: any) => ({
-    Client:     (t.companies as any)?.name ?? '',
-    Subject:    t.subject,
-    Status:     t.status,
-    Priority:   t.priority,
-    Raised:     new Date(t.created_at).toLocaleDateString('en-GB'),
-    Resolved:   t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('en-GB') : '',
+  const requestsCSV = serviceRequests.rows.map((s: any) => ({
+    Client:     (s.companies as any)?.name ?? '',
+    Subject:    s.subject,
+    Status:     s.status,
+    Priority:   s.priority,
+    Raised:     new Date(s.created_at).toLocaleDateString('en-GB'),
+    Responded:  s.responded_at ? new Date(s.responded_at).toLocaleDateString('en-GB') : '',
   }));
 
   return (
@@ -138,10 +142,10 @@ export default async function AdminReportsPage() {
               headers={['Client', 'Title', 'Category', 'Status', 'Due Date']}
             />
             <ExportCSVButton
-              data={ticketsCSV}
-              filename={`support-tickets-${today}`}
-              label="Support Tickets"
-              headers={['Client', 'Subject', 'Status', 'Priority', 'Created', 'Resolved']}
+              data={requestsCSV}
+              filename={`support-requests-${today}`}
+              label="Support Requests"
+              headers={['Client', 'Subject', 'Status', 'Priority', 'Raised', 'Responded']}
             />
           </div>
         </div>

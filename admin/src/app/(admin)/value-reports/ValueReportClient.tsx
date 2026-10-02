@@ -9,7 +9,6 @@ interface Props {
   companies: any[];
   requisitions: any[];
   candidates: any[];
-  tickets: any[];
   documents: any[];
   complianceItems: any[];
   serviceRequests: any[];
@@ -35,7 +34,7 @@ function fmtMonth(date: Date): string {
 type PeriodType = 'month' | 'quarter';
 
 export default function ValueReportClient({
-  companies, requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles,
+  companies, requisitions, candidates, documents, complianceItems, serviceRequests, actions, profiles,
   trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
   standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
 }: Props) {
@@ -76,7 +75,7 @@ export default function ValueReportClient({
   }, []);
 
   const inputs = {
-    requisitions, candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, companies,
+    requisitions, candidates, documents, complianceItems, serviceRequests, actions, profiles, companies,
     trainingNeeds, performanceReviews, absenceRecords, onboardingInstances,
     standards, standardClauses, standardEvidenceLinks, legalObligations, complianceEvaluations, objectives, auditFindings,
   };
@@ -101,7 +100,7 @@ export default function ValueReportClient({
     return { company, month: fmtMonth(new Date(selectedYear, selectedMonth)), period: fmtMonth(new Date(selectedYear, selectedMonth)), ...data };
   }, [
     selectedCompany, periodType, selectedMonth, selectedYear, selectedQuarter, selectedQuarterYear, companies, requisitions,
-    candidates, tickets, documents, complianceItems, serviceRequests, actions, profiles, trainingNeeds,
+    candidates, documents, complianceItems, serviceRequests, actions, profiles, trainingNeeds,
     performanceReviews, absenceRecords, onboardingInstances, standards, standardClauses, standardEvidenceLinks,
     legalObligations, complianceEvaluations, objectives, auditFindings,
   ]);
@@ -309,11 +308,9 @@ export default function ValueReportClient({
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'Tickets raised', value: report.support.ticketsRaised },
-                  { label: 'Tickets resolved', value: report.support.ticketsResolved, highlight: true },
-                  { label: 'Avg resolution time', value: `${report.support.avgResolutionHours}h` },
                   { label: 'Service requests', value: report.support.serviceRequests },
-                  { label: 'Requests responded', value: report.support.serviceRequestsResponded },
+                  { label: 'Requests responded', value: report.support.serviceRequestsResponded, highlight: true },
+                  { label: 'Avg response time', value: `${report.support.avgResponseHours}h` },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{item.label}</span>

@@ -20,7 +20,6 @@ export function inMonth(dateStr: string | null | undefined, year: number, month:
 export interface ValueReportInputs {
   requisitions: any[];
   candidates: any[];
-  tickets: any[];
   documents: any[];
   complianceItems: any[];
   serviceRequests: any[];
@@ -46,7 +45,14 @@ export interface ValueReportInputs {
 
 export interface ValueReportData {
   hire: { newRoles: number; filled: number; candidates: number; activeRoles: number; totalFilled: number };
-  support: { ticketsRaised: number; ticketsResolved: number; avgResolutionHours: number; serviceRequests: number; serviceRequestsResponded: number };
+  // `tickets`/`ticket_messages` were retired as the support object back
+  // in "Support & BD in sync" (service_requests replaced them) — this
+  // used to carry a parallel ticketsRaised/ticketsResolved/
+  // avgResolutionHours trio sourced from that now-permanently-empty
+  // table, so every Value Report ever generated silently reported zero
+  // tickets. avgResponseHours replaces avgResolutionHours, computed
+  // from service_requests' own first-response time instead.
+  support: { serviceRequests: number; serviceRequestsResponded: number; avgResponseHours: number };
   protect: { complianceItems: number; documentsUploaded: number; actionsCreated: number; actionsCompleted: number };
   lead: ReturnType<typeof computeLeadMetrics>;
   governance: ReturnType<typeof computeGovernanceMetrics>;
@@ -59,8 +65,6 @@ export function computeValueReport(companyId: string, year: number, month: numbe
   const monthReqs = d.requisitions.filter((r: any) => r.company_id === cid && inMonth(r.created_at, year, month));
   const filledReqs = d.requisitions.filter((r: any) => r.company_id === cid && r.stage === 'filled' && inMonth(r.updated_at, year, month));
   const monthCandidates = d.candidates.filter((c: any) => c.company_id === cid && inMonth(c.created_at, year, month));
-  const monthTickets = d.tickets.filter((t: any) => t.company_id === cid && inMonth(t.created_at, year, month));
-  const resolvedTickets = d.tickets.filter((t: any) => t.company_id === cid && inMonth(t.resolved_at, year, month));
   const monthDocs = d.documents.filter((doc: any) => doc.company_id === cid && inMonth(doc.created_at, year, month));
   const monthCompliance = d.complianceItems.filter((c: any) => c.company_id === cid && inMonth(c.created_at, year, month));
   const monthServReqs = d.serviceRequests.filter((s: any) => s.company_id === cid && inMonth(s.created_at, year, month));
@@ -74,11 +78,10 @@ export function computeValueReport(companyId: string, year: number, month: numbe
   const company = d.companies.find((c: any) => c.id === cid);
   const mrr = (company?.monthly_retainer_pence ?? 0) / 100;
 
-  const resolved = d.tickets.filter((t: any) => t.company_id === cid && t.resolved_at && inMonth(t.resolved_at, year, month));
-  let avgResolution = 0;
-  if (resolved.length > 0) {
-    const totalHours = resolved.reduce((sum: number, t: any) => sum + (new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime()) / 3600000, 0);
-    avgResolution = Math.round(totalHours / resolved.length);
+  let avgResponse = 0;
+  if (respondedServReqs.length > 0) {
+    const totalHours = respondedServReqs.reduce((sum: number, s: any) => sum + (new Date(s.responded_at).getTime() - new Date(s.created_at).getTime()) / 3600000, 0);
+    avgResponse = Math.round(totalHours / respondedServReqs.length);
   }
 
   const lead = computeLeadMetrics(cid, year, month, d.trainingNeeds, d.performanceReviews, d.absenceRecords, d.onboardingInstances);
@@ -89,7 +92,7 @@ export function computeValueReport(companyId: string, year: number, month: numbe
 
   return {
     hire: { newRoles: monthReqs.length, filled: filledReqs.length, candidates: monthCandidates.length, activeRoles: totalActiveRoles, totalFilled },
-    support: { ticketsRaised: monthTickets.length, ticketsResolved: resolvedTickets.length, avgResolutionHours: avgResolution, serviceRequests: monthServReqs.length, serviceRequestsResponded: respondedServReqs.length },
+    support: { serviceRequests: monthServReqs.length, serviceRequestsResponded: respondedServReqs.length, avgResponseHours: avgResponse },
     protect: { complianceItems: monthCompliance.length, documentsUploaded: monthDocs.length, actionsCreated: monthActions.length, actionsCompleted: completedActions.length },
     lead,
     governance,
@@ -131,14 +134,13 @@ export function computeQuarterlyValueReport(companyId: string, year: number, qua
       activeRoles: m3.hire.activeRoles, totalFilled: m3.hire.totalFilled,
     },
     support: {
-      ticketsRaised: sum(r => r.support.ticketsRaised), ticketsResolved: sum(r => r.support.ticketsResolved),
-      // A simple average of the three months' own averages — not
-      // recomputed from raw tickets, which this composed function
-      // never sees; each month's avgResolutionHours is already 0 when
-      // that month resolved nothing, so this never divides by a count
-      // of months with no data.
-      avgResolutionHours: Math.round((m1.support.avgResolutionHours + m2.support.avgResolutionHours + m3.support.avgResolutionHours) / 3),
       serviceRequests: sum(r => r.support.serviceRequests), serviceRequestsResponded: sum(r => r.support.serviceRequestsResponded),
+      // A simple average of the three months' own averages — not
+      // recomputed from raw service requests, which this composed
+      // function never sees; each month's avgResponseHours is already
+      // 0 when that month answered nothing, so this never divides by a
+      // count of months with no data.
+      avgResponseHours: Math.round((m1.support.avgResponseHours + m2.support.avgResponseHours + m3.support.avgResponseHours) / 3),
     },
     protect: {
       complianceItems: sum(r => r.protect.complianceItems), documentsUploaded: sum(r => r.protect.documentsUploaded),

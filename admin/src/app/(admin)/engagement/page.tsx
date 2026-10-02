@@ -21,7 +21,12 @@ export default async function EngagementPage() {
     supabase.from('companies').select('id, slug, name, last_portal_login, login_count_30d').eq('active', true).order('name').limit(500),
     readAllPages<any>((from, to) => supabase.from('profiles').select('id, company_id').neq('role', 'tps_admin').order('id').range(from, to)),
     readAllPages<any>((from, to) => supabase.from('requisitions').select('company_id, stage, created_at').order('id').range(from, to)),
-    readAllPages<any>((from, to) => supabase.from('tickets').select('company_id, status, created_at').order('id').range(from, to)),
+    // tickets/ticket_messages were retired as the support object (see
+    // "Support & BD in sync" in CLAUDE.md) — service_requests is the
+    // live one. This used to read the now-permanently-empty tickets
+    // table, so every openTickets/recentTickets count here had
+    // silently read zero since that migration.
+    readAllPages<any>((from, to) => supabase.from('service_requests').select('company_id, status, created_at').order('id').range(from, to)),
     // Was selecting `company_id` AND requesting an exact count via
     // head:false — got both rows AND the count, doubling work. We
     // only need the count here; head:true is correct.
@@ -63,7 +68,7 @@ export default async function EngagementPage() {
     const daysSinceLogin = lastLogin > 0 ? Math.floor((now - lastLogin) / 86400000) : 999;
 
     const activeRoles = companyReqs.filter((r: any) => !['filled', 'cancelled'].includes(r.stage)).length;
-    const openTickets = companyTickets.filter((t: any) => !['closed', 'resolved'].includes(t.status)).length;
+    const openTickets = companyTickets.filter((t: any) => t.status !== 'complete').length;
     const recentReqs = companyReqs.filter((r: any) => new Date(r.created_at).getTime() > thirtyDaysAgo).length;
     const recentTickets = companyTickets.filter((t: any) => new Date(t.created_at).getTime() > thirtyDaysAgo).length;
     const noteDate = latestNoteMap.get(c.id);

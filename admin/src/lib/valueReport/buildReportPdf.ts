@@ -99,11 +99,9 @@ export function buildReportPdf(
   ]);
 
   section('SUPPORT', [
-    ['Tickets raised',             r.support.ticketsRaised],
-    ['Tickets resolved',           r.support.ticketsResolved],
-    ['Avg resolution time (hours)', r.support.avgResolutionHours],
     ['Service requests',           r.support.serviceRequests],
     ['Service requests responded', r.support.serviceRequestsResponded],
+    ['Avg response time (hours)',  r.support.avgResponseHours],
   ]);
 
   section('PROTECT', [

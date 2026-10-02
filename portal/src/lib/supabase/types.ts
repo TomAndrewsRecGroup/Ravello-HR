@@ -14,8 +14,6 @@ export type HiringStage =
   | 'cancelled';
 
 export type FrictionLevel  = 'Low' | 'Medium' | 'High' | 'Critical' | 'Unknown';
-export type TicketStatus   = 'open' | 'in_progress' | 'resolved' | 'closed';
-export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type DocCategory    = 'contract' | 'policy' | 'letter' | 'report' | 'other';
 export type UserRole       = 'client_admin' | 'client_editor' | 'tps_admin';
 
@@ -219,29 +217,6 @@ export interface Document {
   parent_id:         string | null;
 }
 
-export interface Ticket {
-  id:           string;
-  created_at:   string;
-  updated_at:   string;
-  company_id:   string;
-  submitted_by: string;
-  subject:      string;
-  description:  string;
-  status:       TicketStatus;
-  priority:     TicketPriority;
-  assigned_to:  string | null;
-  resolved_at:  string | null;
-}
-
-export interface TicketMessage {
-  id:          string;
-  created_at:  string;
-  ticket_id:   string;
-  sender_id:   string;
-  body:        string;
-  is_internal: boolean;
-}
-
 export interface Report {
   id:           string;
   created_at:   string;
@@ -369,8 +344,6 @@ export interface Database {
       requisitions:     { Row: Requisition;     Insert: Partial<Requisition>;     Update: Partial<Requisition>; };
       candidates:       { Row: Candidate;       Insert: Partial<Candidate>;       Update: Partial<Candidate>; };
       documents:        { Row: Document;        Insert: Partial<Document>;        Update: Partial<Document>; };
-      tickets:          { Row: Ticket;          Insert: Partial<Ticket>;          Update: Partial<Ticket>; };
-      ticket_messages:  { Row: TicketMessage;   Insert: Partial<TicketMessage>;   Update: Partial<TicketMessage>; };
       reports:          { Row: Report;          Insert: Partial<Report>;          Update: Partial<Report>; };
       compliance_items: { Row: ComplianceItem;  Insert: Partial<ComplianceItem>;  Update: Partial<ComplianceItem>; };
       actions:          { Row: Action;          Insert: Partial<Action>;          Update: Partial<Action>; };
@@ -384,7 +357,6 @@ export interface Database {
     Functions: Record<string, never>;
     Enums: {
       hiring_stage:   HiringStage;
-      ticket_status:  TicketStatus;
       doc_category:   DocCategory;
       user_role:      UserRole;
     };

@@ -98,21 +98,6 @@ export type Database = {
         Insert: Partial<Database['public']['Tables']['candidates']['Row']> & { requisition_id: string; company_id: string; full_name: string };
         Update: Partial<Database['public']['Tables']['candidates']['Row']>;
       };
-      tickets: {
-        Row: {
-          id: string;
-          company_id: string;
-          submitted_by: string;
-          subject: string;
-          description: string;
-          status: string;
-          priority: string;
-          resolved_at: string | null;
-          created_at: string;
-        };
-        Insert: Partial<Database['public']['Tables']['tickets']['Row']> & { company_id: string; subject: string; description: string };
-        Update: Partial<Database['public']['Tables']['tickets']['Row']>;
-      };
       documents: {
         Row: {
           id: string;

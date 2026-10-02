@@ -3,7 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import {
-  Briefcase, LifeBuoy, ShieldCheck, FileText, UserPlus,
+  Briefcase, ShieldCheck, FileText, UserPlus,
   CheckCircle2, AlertTriangle, Users, Building2, Radio,
   MessageSquare, Calendar, LogIn,
 } from 'lucide-react';
@@ -15,7 +15,6 @@ export const revalidate = 30;
 // covered by tasks + dashboard rollups, not duplicated here.
 const EVENT_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   role_created:        { icon: Briefcase,      color: 'var(--purple)',    label: 'New Role' },
-  ticket_created:      { icon: LifeBuoy,       color: 'var(--amber)',     label: 'Ticket Raised' },
   compliance_updated:  { icon: ShieldCheck,    color: 'var(--blue)',      label: 'Compliance' },
   document_uploaded:   { icon: FileText,       color: 'var(--teal)',      label: 'Document' },
   candidate_added:     { icon: Users,          color: 'var(--purple)',    label: 'Candidate' },
@@ -47,10 +46,8 @@ export default async function ActivityPage() {
   // Build activity from multiple sources (last 7 days)
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
-  const [reqRes, ticketRes, docRes, candRes, notesRes, complianceRes, servReqRes] = await Promise.all([
+  const [reqRes, docRes, candRes, notesRes, complianceRes, servReqRes] = await Promise.all([
     supabase.from('requisitions').select('id, title, stage, created_at, updated_at, companies(id, slug, name)')
-      .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(30),
-    supabase.from('tickets').select('id, subject, status, created_at, resolved_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(30),
     supabase.from('documents').select('id, name, created_at, companies(id, slug, name)')
       .gte('created_at', sevenDaysAgo).order('created_at', { ascending: false }).limit(20),
@@ -79,14 +76,6 @@ export default async function ActivityPage() {
         title: r.title, subtitle: `Stage: ${r.stage}`,
         companyName: r.companies?.name ?? '', companyId: r.companies?.id ?? '',
         href: `/hiring/${r.id}`, timestamp: r.created_at,
-      })),
-    ...(ticketRes.data ?? [])
-      .filter((t: any) => !t.resolved_at && t.status !== 'closed')
-      .map((t: any) => ({
-        id: `tick-${t.id}`, type: 'ticket_created',
-        title: t.subject, subtitle: t.status,
-        companyName: t.companies?.name ?? '', companyId: t.companies?.id ?? '',
-        href: `/support/${t.id}`, timestamp: t.created_at,
       })),
     ...(docRes.data ?? []).map((d: any) => ({
       id: `doc-${d.id}`, type: 'document_uploaded',

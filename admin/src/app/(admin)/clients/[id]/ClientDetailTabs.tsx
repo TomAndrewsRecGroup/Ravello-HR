@@ -638,7 +638,7 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
               {[
                 { label: 'Active Roles',   value: stats.activeRoles },
                 { label: 'Documents',      value: stats.docsCount },
-                { label: 'Open Tickets',   value: stats.ticketCount },
+                { label: 'Open Requests',  value: stats.ticketCount },
               ].map(s => (
                 <div key={s.label} className="stat-card">
                   <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{s.label}</p>

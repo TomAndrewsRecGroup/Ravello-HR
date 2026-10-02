@@ -24,20 +24,27 @@ async function run(req: NextRequest) {
     const thirtyDaysAgo = now.getTime() - 30 * 86_400_000;
 
     const [
-      companiesRes, complianceRes, ticketsRes, stalledReqsRes,
-      profilesPage, reqsPage, ticketsAllPage, docsRes,
+      companiesRes, complianceRes, stalledReqsRes,
+      profilesPage, reqsPage, serviceRequestsAllPage, docsRes,
       actionsPage, legalObligationsPage, docsReviewDuePage, incidentsPage,
       deploymentStatusPage, equipmentPage, auditFindingsPage, contractorsPage,
       contractorInsurancesPage, environmentalPermitsPage, managementReviewsPage,
-      serviceRequestsPage, consultancyVisitsPage,
+      consultancyVisitsPage,
     ] = await Promise.all([
       sb.from('companies').select('id, active, last_portal_login, login_count_30d'),
       sb.from('compliance_items').select('company_id').lt('due_date', now.toISOString()).neq('status', 'complete'),
-      sb.from('tickets').select('company_id').in('status', ['open', 'in_progress']),
       sb.from('requisitions').select('company_id,updated_at,stage').not('stage', 'in', '(filled,cancelled)').lt('updated_at', fortnightAgo),
       readAllPages<{ company_id: string }>((from, to) => sb.from('profiles').select('company_id').neq('role', 'tps_admin').order('id').range(from, to)),
       readAllPages<{ company_id: string; stage: string; created_at: string }>((from, to) => sb.from('requisitions').select('company_id, stage, created_at').order('id').range(from, to)),
-      readAllPages<{ company_id: string; status: string; created_at: string }>((from, to) => sb.from('tickets').select('company_id, status, created_at').order('id').range(from, to)),
+      // tickets/ticket_messages were retired as the support object (see
+      // "Support & BD in sync" in CLAUDE.md) — service_requests is the
+      // live one. This used to read the now-permanently-empty tickets
+      // table for band/engagement_score via a separate, unpaged query,
+      // so every client's support load had silently scored zero since
+      // that migration. ONE paged read now feeds band/engagement_score
+      // (open count, recency) AND computePortfolioCounts below — it
+      // used to be two separate reads of this same table.
+      readAllPages<{ company_id: string; status: string; created_at: string }>((from, to) => sb.from('service_requests').select('company_id, status, created_at').order('id').range(from, to)),
       sb.from('documents').select('company_id'),
       // Phase 6 section 2: the factual portfolio counts. Every one of
       // these is paged (never a bare .select()) — a consultancy with a
@@ -65,8 +72,6 @@ async function run(req: NextRequest) {
         (from, to) => sb.from('environmental_permits').select('company_id, status, expires_on').order('id').range(from, to)),
       readAllPages<{ company_id: string; status: string; review_date: string | null }>(
         (from, to) => sb.from('management_reviews').select('company_id, status, review_date').order('id').range(from, to)),
-      readAllPages<{ company_id: string; status: string }>(
-        (from, to) => sb.from('service_requests').select('company_id, status').order('id').range(from, to)),
       readAllPages<{ client_organisation_id: string; status: string; scheduled_date: string }>(
         (from, to) => sb.from('consultancy_visits').select('client_organisation_id, status, scheduled_date').order('id').range(from, to)),
     ]);
@@ -80,7 +85,7 @@ async function run(req: NextRequest) {
       return m;
     };
     const overdueByCompany = countBy((complianceRes.data ?? []) as { company_id: string }[]);
-    const ticketsByCompany = countBy((ticketsRes.data ?? []) as { company_id: string }[]);
+    const ticketsByCompany = countBy(serviceRequestsAllPage.rows.filter((s) => s.status === 'new' || s.status === 'in_progress'));
     const stalledByCompany = countBy((stalledReqsRes.data ?? []) as { company_id: string }[]);
 
     const userCountMap = countBy(profilesPage.rows);
@@ -91,7 +96,7 @@ async function run(req: NextRequest) {
       if (new Date(r.created_at).getTime() > thirtyDaysAgo) recentReqsMap.set(r.company_id, (recentReqsMap.get(r.company_id) ?? 0) + 1);
     }
     const recentTicketsMap = new Map<string, number>();
-    for (const t of ticketsAllPage.rows) {
+    for (const t of serviceRequestsAllPage.rows) {
       if (new Date(t.created_at).getTime() > thirtyDaysAgo) recentTicketsMap.set(t.company_id, (recentTicketsMap.get(t.company_id) ?? 0) + 1);
     }
     const docCountMap = countBy((docsRes.data ?? []) as { company_id: string }[]);
@@ -111,7 +116,7 @@ async function run(req: NextRequest) {
         contractorInsurances: contractorInsurancesPage.rows,
         environmentalPermits: environmentalPermitsPage.rows,
         managementReviews: managementReviewsPage.rows,
-        serviceRequests: serviceRequestsPage.rows,
+        serviceRequests: serviceRequestsAllPage.rows,
         consultancyVisits: consultancyVisitsPage.rows,
       },
     );
