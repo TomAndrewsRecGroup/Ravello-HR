@@ -259,6 +259,7 @@ export interface Action {
   dismissed_at:        string | null;
   completed_at:        string | null;
   dismiss_until:       string | null;
+  created_by_admin?:   boolean | null;
 }
 
 export interface Milestone {

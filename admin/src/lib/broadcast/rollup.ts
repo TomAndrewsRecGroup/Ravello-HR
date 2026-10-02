@@ -35,6 +35,10 @@ export interface BroadcastBucket {
   companies:    BroadcastCompany[];
   total:        number;
   complete:     number;
+  /** How many of this bucket's recipients have acknowledged it (206) —
+   *  a distinct fact from `complete`: acknowledging a message is not
+   *  the same as completing the task it may also raise. */
+  acknowledged: number;
   /** True when this bucket was raised from a legal requirement or
    *  regulatory-update prefill (source_type 'regulatory_broadcast') —
    *  an ordinary hand-typed broadcast is false. */
@@ -50,7 +54,16 @@ function fallbackKey(a: BroadcastActionRow): string {
   return `t:${a.title}|${a.description ?? ''}|${ts.toISOString()}`;
 }
 
-export function groupBroadcastActions(actions: BroadcastActionRow[]): BroadcastBucket[] {
+/**
+ * @param acknowledgedActionIds action ids (206's broadcast_acknowledgements,
+ *   distinct action_id values) with at least one recipient acknowledgement —
+ *   supplied as plain input, the same "pure grouping, data handed in" shape
+ *   `complete` already uses for `status`, never fetched inside this file.
+ */
+export function groupBroadcastActions(
+  actions: BroadcastActionRow[],
+  acknowledgedActionIds?: ReadonlySet<string>,
+): BroadcastBucket[] {
   const byKey = new Map<string, BroadcastBucket>();
   for (const a of actions) {
     // source_id exactly identifies ONE send (broadcast_sends.id) —
@@ -62,7 +75,7 @@ export function groupBroadcastActions(actions: BroadcastActionRow[]): BroadcastB
     if (!b) {
       b = {
         key, title: a.title, description: a.description, action_type: a.action_type, priority: a.priority,
-        due_date: a.due_date, created_at: a.created_at, companies: [], total: 0, complete: 0,
+        due_date: a.due_date, created_at: a.created_at, companies: [], total: 0, complete: 0, acknowledged: 0,
         regulatory: a.source_type === 'regulatory_broadcast',
       };
       byKey.set(key, b);
@@ -71,6 +84,7 @@ export function groupBroadcastActions(actions: BroadcastActionRow[]): BroadcastB
     if (c) b.companies.push(c);
     b.total++;
     if (a.status === 'complete') b.complete++;
+    if (acknowledgedActionIds?.has(a.id)) b.acknowledged++;
   }
   return [...byKey.values()];
 }

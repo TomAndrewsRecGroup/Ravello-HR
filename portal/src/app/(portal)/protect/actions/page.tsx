@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import ActionButtons from '@/components/modules/ActionButtons';
+import AcknowledgeBroadcastButton from '@/components/modules/AcknowledgeBroadcastButton';
 import { CheckCircle2, AlertTriangle, Info, ExternalLink, ShieldCheck } from 'lucide-react';
 import type { Action } from '@/lib/supabase/types';
 import { groupActionsByPriority } from '@/lib/actions/priority';
@@ -64,9 +65,10 @@ function priorityBadgeClass(priority: Action['priority']): string {
 
 interface ActionCardProps {
   action: Action;
+  acknowledgedBroadcastIds: ReadonlySet<string>;
 }
 
-function ActionCard({ action }: ActionCardProps) {
+function ActionCard({ action, acknowledgedBroadcastIds }: ActionCardProps) {
   const target = action.related_entity_type ? ENTITY_PATHS[action.related_entity_type] : undefined;
   const entityPath = target
     ? `${target.base}${target.withId && action.related_entity_id ? `/${action.related_entity_id}` : ''}`
@@ -103,6 +105,9 @@ function ActionCard({ action }: ActionCardProps) {
               {entityLabel} <ExternalLink size={10} />
             </a>
           )}
+          {action.created_by_admin === true && (
+            <AcknowledgeBroadcastButton actionId={action.id} acknowledged={acknowledgedBroadcastIds.has(action.id)} />
+          )}
           <ActionButtons actionId={action.id} />
         </div>
       </div>
@@ -114,9 +119,10 @@ interface SectionProps {
   title: string;
   actions: Action[];
   accent: string;
+  acknowledgedBroadcastIds: ReadonlySet<string>;
 }
 
-function PrioritySection({ title, actions, accent }: SectionProps) {
+function PrioritySection({ title, actions, accent, acknowledgedBroadcastIds }: SectionProps) {
   if (actions.length === 0) return null;
   return (
     <section>
@@ -134,7 +140,7 @@ function PrioritySection({ title, actions, accent }: SectionProps) {
         </span>
       </h2>
       <div className="space-y-3">
-        {actions.map(a => <ActionCard key={a.id} action={a} />)}
+        {actions.map(a => <ActionCard key={a.id} action={a} acknowledgedBroadcastIds={acknowledgedBroadcastIds} />)}
       </div>
     </section>
   );
@@ -182,6 +188,15 @@ export default async function ActionsPage(props: { searchParams: Promise<Record<
   const allOpen: OpenAction[] = error ? [] : ((actionsData ?? []) as OpenAction[]);
   const actions: Action[] = allOpen.filter(a => !a.source_type || !safetySet.has(a.source_type));
   const groups = groupActionsByPriority(actions);
+
+  // Which broadcast-raised actions on this page the signed-in user has
+  // already acknowledged (206) — a plain by-id-list read under the
+  // caller's own RLS, never a chained embed.
+  const broadcastActionIds = actions.filter(a => a.created_by_admin === true).map(a => a.id);
+  const { data: ackRows } = broadcastActionIds.length && userId
+    ? await supabase.from('broadcast_acknowledgements').select('action_id').eq('acknowledged_by', userId).in('action_id', broadcastActionIds).limit(500)
+    : { data: [] as { action_id: string }[] };
+  const acknowledgedBroadcastIds = new Set((ackRows ?? []).map(r => r.action_id));
 
   const safety = (safetyRes.data ?? []) as unknown as (SafetyAction & { source_id: string | null })[];
   const idsOf = (t: string) => [...new Set(safety.filter(a => a.source_type === t && a.source_id).map(a => a.source_id as string))];
@@ -267,7 +282,7 @@ export default async function ActionsPage(props: { searchParams: Promise<Record<
             </p>
             <div className="space-y-8">
               {groups.map(g => (
-                <PrioritySection key={g.priority} title={g.title} actions={g.actions} accent={g.accent} />
+                <PrioritySection key={g.priority} title={g.title} actions={g.actions} accent={g.accent} acknowledgedBroadcastIds={acknowledgedBroadcastIds} />
               ))}
             </div>
           </>

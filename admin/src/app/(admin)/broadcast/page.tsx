@@ -90,6 +90,16 @@ export default async function BroadcastPage(props: { searchParams: Promise<{ upd
   ]);
   const prefill = updatePrefill ?? legalPrefill;
 
+  // Who has acknowledged which broadcast-raised action (206) — a
+  // by-id-list read, bounded by the same 200-action buffer above, never
+  // a second, wider scan. Distinct action_ids only; RecentBroadcasts
+  // only needs "has at least one acknowledgement", not who or how many.
+  const broadcastActionIds = (actionsRes.data ?? []).map((a: { id: string }) => a.id);
+  const { data: ackRows } = broadcastActionIds.length
+    ? await sb.from('broadcast_acknowledgements').select('action_id').in('action_id', broadcastActionIds).limit(500)
+    : { data: [] as { action_id: string }[] };
+  const acknowledgedActionIds = new Set((ackRows ?? []).map((r: { action_id: string }) => r.action_id));
+
   return (
     <>
       <AdminTopbar
@@ -98,7 +108,7 @@ export default async function BroadcastPage(props: { searchParams: Promise<{ upd
       />
       <main className="admin-page flex-1 space-y-6">
         <BroadcastClient companies={companiesRes.data ?? []} prefill={prefill} />
-        <RecentBroadcasts actions={(actionsRes.data ?? []) as any} />
+        <RecentBroadcasts actions={(actionsRes.data ?? []) as any} acknowledgedActionIds={acknowledgedActionIds} />
       </main>
     </>
   );

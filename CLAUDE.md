@@ -13534,3 +13534,127 @@ production builds compile, including `/briefing`, `/clients/groups`,
 `/clients/groups/[parentId]` and the extended `/health-safety/
 [companyId]/emergency-plans` and `/hiring/analytics` pages.
 
+---
+
+## Go-live gap list, item 4: Critical Control Visibility (2026-10-02,
+## migration 205)
+
+`lib/riskGraph/intelligence.ts`'s `ineffectiveSharedControls` (Phase 8)
+already flags an ineffective control relied on by 2+ DISTINCT risk
+assessments — but that is a SHARED-exposure signal, not a dedicated "is
+every control we rely on for safety actually working" view, and
+`controls`/`risk_item_controls` (123) had no safety-critical concept at
+all: a control's own `effectiveness` on each use already exists, but
+nothing distinguished "this control happens to be ineffective somewhere"
+from "this is one of our SAFETY-CRITICAL controls and it has a gap."
+
+- **`controls.safety_critical`** (migration 205): a plain boolean, NOT
+  NULL DEFAULT false — the catalogue, the same place
+  `training_courses`/`competencies`/`authorisation_types`/`job_roles`
+  already carry their own safety-critical flag (Phase 3). Never
+  retroactively set on an existing control; a staff/client user ticks it
+  explicitly when adding or editing a control.
+- **`lib/criticalControls/compute.ts`** (shared-dupe pair,
+  `computeCriticalControlVisibility()`): pure, deterministic, computed
+  at read time — no stored aggregate, no AI, no score. Groups
+  `risk_item_controls` uses by `control_id`, restricted to ACTIVE
+  safety-critical controls that are actually relied on by at least one
+  assessment (a safety-critical control with zero uses is a catalogue
+  entry nobody has applied yet — a different, separately worth-knowing
+  fact from "applied, and failing," so it is excluded rather than shown
+  as a false "OK"). Each use bands `effective`/`unverified`/`gap`
+  (`gap` = `ineffective`/`not_implemented`; `unverified` =
+  `verification_required` — the same "unverified is not the same as
+  failing" distinction this codebase already draws elsewhere, e.g.
+  Evidence Coverage's own `'unverified'` compliance-twin band). A
+  control relied on by several assessments takes the WORST band across
+  all of them, sorted gap-first.
+- **Two dedicated views**, both reading `controls`/`risk_item_controls`/
+  `risk_assessment_items`/`risk_assessments` by id list and joining in
+  TypeScript — never a chained embed, the standing "fetch by id list"
+  rule this codebase has followed since the referral PATCH route's own
+  PGRST200 lesson: admin's `/health-safety/<companyId>/critical-controls`
+  (a new `HsCompanyTabs.tsx` tab, no new sidebar entry needed — nests
+  under the already-linked `/health-safety` prefix) and portal's
+  read-only `/protect/critical-controls` (gated by `protect` alone,
+  added to `moduleAccess.ts` and the PROTECT `SectionTabs`).
+  `CriticalControlsView.tsx` (shared-dupe pair, the
+  `ComplianceTwinView.tsx` precedent) is the one presentational
+  component both pages render, taking an `raHref: (id) => string`
+  callback so each app supplies its own correct per-assessment link
+  rather than guessing a shared routing suffix.
+- **The one write path, portal's `ItemControls.tsx`** (the existing
+  risk-assessment controls panel), gained a "Safety-critical control"
+  checkbox on the new-control form and a per-control toggle button
+  (`toggleSafetyCritical()`), both plain session writes under
+  `risk.create`/`risk.read` RLS — the counted-write discipline
+  (`COUNT_EXACT`/`judgeWrite()`) from the start, not retrofitted after
+  the blind-updates guard caught it.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps, all seven CI guards pass with no regressions (the new shared-dupe
+pair registered in `scripts/check-shared-dupes.sh`), both production
+builds compile, including `/health-safety/<companyId>/critical-controls`
+and `/protect/critical-controls`. Migration 205 applied live.
+
+---
+
+## Go-live gap list, item 2: Required Acknowledgement on Broadcasts
+## (2026-10-02, migration 206)
+
+`POST /api/broadcast` (admin) raises one `actions` row per company
+(`created_by_admin = true`) and sends an email — nothing had ever
+recorded whether the recipient actually read or acted on it, the exact
+gap `policy_acknowledgements` (103) and `board_assurance_acknowledgements`
+(178) already closed for their own artefacts.
+
+- **`broadcast_acknowledgements`** (migration 206): the identical
+  shape — insert-only, `UNIQUE (action_id, acknowledged_by)` so the
+  same person can never acknowledge the same broadcast twice.
+  `company_id`/`acknowledged_by`/`acknowledged_by_name`/
+  `acknowledged_at` are ALL derived from the parent action and the
+  session by `broadcast_acknowledgements_fill()` (BEFORE INSERT,
+  SECURITY DEFINER) — never trusted from the caller, the same
+  discipline `board_assurance_acknowledgements_fill()` already uses.
+  The trigger also refuses acknowledging an action that was NOT raised
+  by a broadcast (`created_by_admin IS NOT TRUE`) — acknowledging a
+  message is a genuinely different fact from completing the task an
+  ordinary action already has its own "mark complete" lifecycle for,
+  and the two must never be conflated.
+- **No capability gate, deliberately** — `actions` itself predates the
+  Phase 1 capability model and stays a plain company-scoped read/write
+  for any signed-in client user; this mirrors that (`company_id =
+  my_company_id()`), not the H&S `risk.read`/`risk.create` pair.
+- **No outbox entry** — the original broadcast's own `actions.created`
+  event and email already told the client; an acknowledgement coming
+  BACK needs no automated consequence, only a record staff can read.
+- **`AcknowledgeBroadcastButton.tsx`** (portal): the exact
+  `RamsAcknowledge.tsx`/`BoardAssuranceAcknowledge.tsx` pattern — a
+  plain session insert, with the `23505` duplicate-click case treated
+  as already-acknowledged rather than an error. Wired into
+  `/protect/actions`' generic (non-safety) `ActionCard`, shown only
+  when `action.created_by_admin === true`, alongside the existing
+  `ActionButtons`. The page fetches which of the visible broadcast
+  actions the signed-in user has already acknowledged in one
+  by-id-list read (bounded, `.limit(500)`, matching every other
+  by-id-list read in this codebase) rather than per-card.
+- **Admin visibility**: `lib/broadcast/rollup.ts`'s
+  `groupBroadcastActions()` gained an optional `acknowledgedActionIds`
+  parameter — the SAME "pure grouping, data handed in" shape `complete`
+  already uses for `status`, never fetched inside the pure function
+  itself. `RecentBroadcasts.tsx` gained an "Acknowledged" column
+  alongside the existing "Completion" one — a genuinely different fact
+  (a client reading a message vs. finishing the task it may also have
+  raised), never merged into one count. `/broadcast`'s own page reads
+  `broadcast_acknowledgements` for the same 200-action, 90-day buffer
+  the actions query already uses, bounded identically.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps, all seven CI guards pass with no regressions (the new by-id-list
+reads on both apps' actions/broadcast pages were built with an explicit
+`.limit(500)` from the start, so `check-unbounded-reads.sh`'s ratchet
+did not move), both production builds compile. Migration 206 applied
+live and verified (RLS enabled, the fill trigger refuses a non-broadcast
+action and derives every sensitive field server-side, the write guard
+applied, `UPDATE`/`DELETE`/`TRUNCATE` revoked from every session role).
+

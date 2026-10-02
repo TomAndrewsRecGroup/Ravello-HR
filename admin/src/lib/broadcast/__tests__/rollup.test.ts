@@ -62,6 +62,23 @@ describe('groupBroadcastActions', () => {
     expect(handTyped.regulatory).toBe(false);
   });
 
+  it('counts acknowledgement from the supplied id set, independently of completion status', () => {
+    const buckets = groupBroadcastActions(
+      [
+        row({ id: 'a1', source_id: 'send-1', status: 'active' }),
+        row({ id: 'a2', source_id: 'send-1', status: 'complete' }),
+        row({ id: 'a3', source_id: 'send-1', status: 'active' }),
+      ],
+      new Set(['a1', 'a2']),
+    );
+    expect(buckets[0]).toMatchObject({ total: 3, complete: 1, acknowledged: 2 });
+  });
+
+  it('acknowledged is zero when no id set is supplied at all', () => {
+    const buckets = groupBroadcastActions([row({ id: 'a1', source_id: 'send-1' })]);
+    expect(buckets[0].acknowledged).toBe(0);
+  });
+
   it('normalises the companies embed whether PostgREST returns an array or a single object', () => {
     const buckets = groupBroadcastActions([
       row({ id: 'a1', source_id: 'send-1', companies: [{ id: 'co-1', slug: null, name: 'Array shape' }] }),

@@ -18,10 +18,10 @@ const PRIORITY_TONE: Record<string, { bg: string; fg: string; label: string }> =
 
 const PAGE_SIZE = 10;
 
-export default function RecentBroadcasts({ actions }: { actions: BroadcastActionRow[] }) {
+export default function RecentBroadcasts({ actions, acknowledgedActionIds }: { actions: BroadcastActionRow[]; acknowledgedActionIds?: ReadonlySet<string> }) {
   const [page, setPage] = useState(1);
 
-  const buckets = useMemo(() => groupBroadcastActions(actions), [actions]);
+  const buckets = useMemo(() => groupBroadcastActions(actions, acknowledgedActionIds), [actions, acknowledgedActionIds]);
 
   const totalPages = Math.max(1, Math.ceil(buckets.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -55,6 +55,7 @@ export default function RecentBroadcasts({ actions }: { actions: BroadcastAction
                   <th>Sent</th>
                   <th>Recipients</th>
                   <th>Completion</th>
+                  <th>Acknowledged</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,6 +118,9 @@ export default function RecentBroadcasts({ actions }: { actions: BroadcastAction
                       </td>
                       <td className="text-xs" style={{ color: b.complete === b.total ? 'var(--teal)' : 'var(--ink-faint)' }}>
                         {b.complete} of {b.total} complete
+                      </td>
+                      <td className="text-xs" style={{ color: b.acknowledged === b.total ? 'var(--teal)' : 'var(--ink-faint)' }}>
+                        {b.acknowledged} of {b.total} acknowledged
                       </td>
                     </tr>
                   );
