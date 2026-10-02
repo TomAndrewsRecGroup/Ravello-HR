@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { loadComplianceTwinSnapshot } from '@/lib/complianceTwin/loadSnapshot';
@@ -37,6 +38,9 @@ export default async function DigitalTwinPage(props: { params: Promise<{ company
   const base = `/health-safety/${params.companyId}`;
   return (
     <div className="space-y-4">
+      <div className="card p-3 text-sm" style={{ color: 'var(--ink-faint)' }}>
+        This is a detail view. <Link href={`${base}/core-360-status`} style={{ color: 'var(--purple)' }}>See Core 360 Status</Link> for the one overall verdict across People, Plant, Training, Risk Controls, Environmental and Contractors.
+      </div>
       {!loadError && (
         <div className="flex justify-end">
           <SaveSnapshotButton companyId={params.companyId} snapshot={snapshot} />

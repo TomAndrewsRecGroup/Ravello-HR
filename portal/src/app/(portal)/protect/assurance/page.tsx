@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
@@ -218,7 +219,10 @@ export default async function ProtectAssurancePage() {
   const snapshot = assembleAssuranceToday(counts, twin, new Date());
 
   return (
-    <main className="portal-page flex-1">
+    <main className="portal-page flex-1 space-y-4">
+      <div className="card p-3 text-sm" style={{ color: 'var(--ink-faint)' }}>
+        This is a detail view. <Link href="/protect/core-360-status" style={{ color: 'var(--purple)' }}>See Core 360 Status</Link> for the one overall verdict across People, Plant, Training, Risk Controls, Environmental and Contractors.
+      </div>
       <AssuranceTodayView
         snapshot={snapshot}
         loadError={loadError}

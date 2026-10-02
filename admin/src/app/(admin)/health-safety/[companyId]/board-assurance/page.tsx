@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import BoardAssuranceClient, { type BoardAssuranceReportRow } from '@/components/hs/BoardAssuranceClient';
@@ -42,11 +43,16 @@ export default async function BoardAssurancePage(props: { params: Promise<{ comp
   }));
 
   return (
-    <BoardAssuranceClient
-      companyId={params.companyId}
-      companyName={company?.name ?? 'This client'}
-      reports={rows}
-      loadError={error?.message ?? null}
-    />
+    <div className="space-y-4">
+      <div className="card p-3 text-sm" style={{ color: 'var(--ink-faint)' }}>
+        This is a detail view. <Link href={`/health-safety/${params.companyId}/core-360-status`} style={{ color: 'var(--purple)' }}>See Core 360 Status</Link> for the one overall verdict across People, Plant, Training, Risk Controls, Environmental and Contractors.
+      </div>
+      <BoardAssuranceClient
+        companyId={params.companyId}
+        companyName={company?.name ?? 'This client'}
+        reports={rows}
+        loadError={error?.message ?? null}
+      />
+    </div>
   );
 }

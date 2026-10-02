@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { loadComplianceTwinSnapshot } from '@/lib/complianceTwin/loadSnapshot';
@@ -28,16 +29,21 @@ export default async function AssuranceTodayPage(props: { params: Promise<{ comp
 
   const base = `/health-safety/${params.companyId}`;
   return (
-    <AssuranceTodayView
-      snapshot={snapshot}
-      loadError={loadError}
-      twinLinks={{
-        safety: `${base}/kpis`,
-        governance: `${base}/legal`,
-        risk_graph: `${base}/risk-graph`,
-        incident_patterns: `${base}/incident-patterns`,
-        evidence: `${base}/evidence`,
-      }}
-    />
+    <>
+      <div className="card p-3 mb-4 text-sm" style={{ color: 'var(--ink-faint)' }}>
+        This is a detail view. <Link href={`${base}/core-360-status`} style={{ color: 'var(--purple)' }}>See Core 360 Status</Link> for the one overall verdict across People, Plant, Training, Risk Controls, Environmental and Contractors.
+      </div>
+      <AssuranceTodayView
+        snapshot={snapshot}
+        loadError={loadError}
+        twinLinks={{
+          safety: `${base}/kpis`,
+          governance: `${base}/legal`,
+          risk_graph: `${base}/risk-graph`,
+          incident_patterns: `${base}/incident-patterns`,
+          evidence: `${base}/evidence`,
+        }}
+      />
+    </>
   );
 }

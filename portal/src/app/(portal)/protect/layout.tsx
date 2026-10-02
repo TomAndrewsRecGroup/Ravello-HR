@@ -9,6 +9,12 @@ import { currentModuleFlags } from '@/lib/auth/moduleFlags';
 const TABS = [
   // The operational safety core (Phase 2), in the order work flows.
   { href: '/protect',                  label: 'Overview' },
+  // Core 360 Status is the designated primary "is this client OK" view
+  // (go-live gap list, 2026-10-02) — placed right after Overview so
+  // it's the first real status page a client reaches; Assurance
+  // Today/Digital Twin/Board Assurance remain as detail views, each
+  // linking back here.
+  { href: '/protect/core-360-status',  label: 'Core 360 Status' },
   { href: '/protect/hazards',          label: 'Hazards' },
   { href: '/protect/risk-assessments', label: 'Risk Assessments' },
   { href: '/protect/rams',             label: 'RAMS' },
@@ -45,7 +51,6 @@ const TABS = [
   { href: '/protect/assurance',        label: 'Assurance Today' },
   { href: '/protect/digital-twin',     label: 'Digital Twin' },
   { href: '/protect/board-assurance',  label: 'Board Assurance' },
-  { href: '/protect/core-360-status',  label: 'Core 360 Status' },
   { href: '/protect/lessons-learned',  label: 'Lessons Learned' },
   { href: '/protect/what-changed',     label: 'What Changed' },
   { href: '/protect/analysis',         label: 'Analysis' },

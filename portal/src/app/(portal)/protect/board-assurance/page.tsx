@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ShieldCheck } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
@@ -73,6 +74,10 @@ export default async function ProtectBoardAssurancePage() {
           Board assurance reports could not be loaded. Refresh to try again.
         </p>
       )}
+
+      <div className="card p-3 text-sm" style={{ color: 'var(--ink-faint)' }}>
+        This is a detail view. <Link href="/protect/core-360-status" style={{ color: 'var(--purple)' }}>See Core 360 Status</Link> for the one overall verdict across People, Plant, Training, Risk Controls, Environmental and Contractors.
+      </div>
 
       <div className="card p-4 text-sm" style={{ color: 'var(--ink-soft)' }}>
         A quarterly summary of your organisation&rsquo;s compliance position across Safety, Governance, Risk,

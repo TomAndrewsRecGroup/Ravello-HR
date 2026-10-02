@@ -13253,20 +13253,23 @@ own history already warns about repeatedly.
   first (0 rows each, confirmed again immediately before every attempt;
   the only FKs are `tickets→companies`/`auth.users` and `ticket_
   messages→tickets`/`auth.users`, nothing else references either
-  table). **Not yet applied**: four consecutive `apply_migration`/
-  `execute_sql` DDL calls timed out (60s) against this project during
-  this session, including a trivial scratch-table `CREATE`/`DROP`
-  round-trip used to confirm the timeout was a general DDL-path issue
+  table). **Still not applied, re-tried a fifth time (2026-10-02)**:
+  every `apply_migration`/`execute_sql` DDL call against these two
+  tables has timed out (60s) across two separate sessions now,
+  including the original trivial scratch-table `CREATE`/`DROP`
+  round-trip that confirmed the timeout was a general DDL-path issue
   and not specific to these two tables — ordinary `SELECT`s against the
-  same project succeeded throughout, and `pg_stat_activity`/`pg_locks`
-  showed no blocking session, ruling out lock contention. The
-  application code no longer references either table either way, so
-  this is purely pending cleanup, not a blocker — re-run `203_drop_
-  dead_tickets_tables.sql` once the DDL path is responsive again, then
-  verify via `to_regclass('public.tickets')`/`to_regclass('public.
-  ticket_messages')` reading back `NULL`, never trusting a bare success
-  response for DDL (this file's own standing rule since the IvyLens
-  telemetry table incident).
+  same project (including `to_regclass()` checks run immediately before
+  and after each retry) succeeded instantly throughout, and
+  `pg_stat_activity` showed no blocking session each time, ruling out
+  lock contention again on this retry too. The application code no
+  longer references either table either way, so this remains purely
+  pending cleanup, not a blocker — re-run `203_drop_dead_tickets_
+  tables.sql` once the DDL path is responsive again, then verify via
+  `to_regclass('public.tickets')`/`to_regclass('public.ticket_messages')`
+  reading back `NULL`, never trusting a bare success response for DDL
+  (this file's own standing rule since the IvyLens telemetry table
+  incident).
 - `check-unbounded-reads.sh`'s baseline lowered 302 → 301 — removing
   `health-snapshot`'s redundant unpaged `tickets` read deleted one
   unbounded chain outright, a real improvement the guard's own exit
@@ -13343,4 +13346,66 @@ the established convention), all seven CI guards pass (73 shared-dupe
 pairs, unchanged — both widened files were already registered pairs),
 both production builds compile (portal's one prerender failure is the
 same long-documented sandbox-only missing-Supabase-env-var limitation).
+
+---
+
+## Closing the go-live audit's gap list, decided item 2: Core 360 Status
+## designated the primary "is this client OK" dashboard (2026-10-02)
+
+The audit's gap list named five-plus overlapping dashboards answering
+some version of "is this client OK" — `/health`, `/engagement`,
+`/health-safety`'s own per-client KPIs tab, Digital Twin, Assurance
+Today, Board Assurance, Core 360 Status — with no cross-link or
+reconciliation, so a client could read "On track" on one and "At risk"
+on another with no indication why. Given the choice between adding
+cross-links alone and the bigger UX change of picking one canonical
+answer, the operator chose the latter.
+
+- **Core 360 Status (Phase 27, C13.8) is the designated primary view.**
+  It already composes `PortfolioCounts` and `RiskGraphIntelligence`
+  into six NAMED domains (People, Plant, Training, Risk Controls,
+  Environmental, Contractors) rather than Digital Twin/Assurance
+  Today's five EHS-pillar areas — the domain framing is the one most
+  directly answering "is this client OK" in plain business terms, and
+  it already sits downstream of (reuses, never duplicates) every other
+  dashboard's own computation.
+- **Moved to the front of both tab lists**, not merely added a link:
+  `HsCompanyTabs.tsx`'s `TABS` array now opens with `core-360-status`
+  (ahead of `register`); the portal `/protect` layout's `TABS` now
+  places it immediately after Overview. Both apps keep every other tab
+  — this is a prominence change, not a removal.
+- **Digital Twin, Assurance Today and Board Assurance are now
+  explicitly framed as detail views**, in both apps: each page gained
+  a one-line `card` banner at the top — "This is a detail view. See
+  Core 360 Status for the one overall verdict across People, Plant,
+  Training, Risk Controls, Environmental and Contractors." — linking to
+  `core-360-status`/`core-360-status`. `/health` and `/engagement`
+  (the client-portfolio BD/account-management signals, staff-only,
+  genuinely answering a different question — churn risk and raw
+  compliance/ticket counts, not an EHS domain verdict) were
+  deliberately left untouched: reconciling THEM into this hierarchy is
+  a separate, larger product decision (what "client health" even means
+  across Sales vs. Safety) that was not part of what was asked for
+  here, and forcing a link from a commercial-health page to an EHS
+  dashboard would have implied an equivalence that isn't actually true.
+- **No schema, no new component — pure routing/labelling.** The banner
+  is an inline `<div className="card">` + `<Link>`, not a new shared
+  component: the exact wording and link target differ only by which
+  page it sits on (admin needs `/health-safety/<companyId>/...`,
+  portal needs `/protect/...`), so a shared component would have
+  needed the same per-caller-href plumbing `ComplianceTwinView.tsx`
+  already uses for its own area links, for a three-line banner that
+  isn't worth the indirection.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green (190
+test files / 1922 tests admin, 69 test files / 961 tests portal — both
+unchanged counts, confirming this is a pure UI/routing change with no
+new or altered pure logic), all seven CI guards pass with no
+regressions (73 shared-dupe pairs, unchanged; row-cap clean; 44
+unvalidated routes, unchanged; 43 static admin routes, all reachable;
+101 blind-update chains, unchanged; every paged query's `.order()`
+present; 301 unbounded-read chains, unchanged), both production builds
+compile (portal's one prerender failure on `/auth/reset-password` is
+the same long-documented sandbox-only missing-Supabase-env-var
+limitation, unrelated to this change).
 
