@@ -55,6 +55,7 @@ import {
   Award,
   Scale,
   CalendarClock,
+  Sunrise,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
@@ -75,6 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/engagement',      label: 'Engagement',     icon: Gauge },
       { href: '/feature-flags',   label: 'Feature Flags',  icon: ToggleLeft },
       { href: '/organisations',   label: 'Organisations & Access', icon: Network },
+      { href: '/clients/groups',  label: 'Group Roll-Up',  icon: Building2 },
     ],
   },
   {
@@ -89,6 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Intelligence',
     items: [
+      { href: '/briefing',        label: 'Daily Briefing', icon: Sunrise },
       { href: '/health',          label: 'Health Status',   icon: Activity },
     ],
   },

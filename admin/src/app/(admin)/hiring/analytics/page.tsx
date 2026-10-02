@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import Link from 'next/link';
 import { BarChart3, Clock, Users, CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react';
 import { HIRING_STAGE_LABELS as STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
+import { computeStageDurations, type StageHistoryRow } from '@/lib/hiring/stageDuration';
 
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
@@ -28,17 +30,30 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 export default async function AdminHiringAnalyticsPage() {
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: reqs }, { data: candidates }, { data: offers }, { data: companies }] = await Promise.all([
+  const [{ data: reqs }, { data: candidates }, { data: offers }, { data: companies }, stageHistoryPage] = await Promise.all([
     supabase.from('requisitions').select('id,title,stage,friction_level,assigned_recruiter,created_at,companies(id,slug,name)').order('created_at', { ascending: false }),
     supabase.from('candidates').select('id,approved_for_client,client_status'),
     supabase.from('offers').select('id,status'),
     supabase.from('companies').select('id,slug,name').eq('active', true),
+    // Time-to-Interview / Time-to-Offer / Stage-Duration analytics
+    // (go-live gap list, item 5, migration 204) — real transitions,
+    // never a single current-stage timestamp.
+    readAllPages<StageHistoryRow>((from, to) =>
+      supabase.from('requisition_stage_history').select('requisition_id, from_stage, to_stage, changed_at')
+        .order('id').range(from, to)),
   ]);
 
   const allReqs = reqs ?? [];
   const allCands = candidates ?? [];
   const allOffers = offers ?? [];
   const allCompanies = companies ?? [];
+  const today = new Date().toISOString();
+  const stageDurations = computeStageDurations(
+    stageHistoryPage.rows,
+    allReqs.map(r => ({ id: r.id, title: r.title, created_at: r.created_at })),
+    today,
+  );
+  const fmtDays = (d: number | null) => (d == null ? '—' : `${Math.round(d)}d`);
 
   // ── Computed stats ──────────────────────────────────────────
   const activeRoles = allReqs.filter(r => !['filled', 'cancelled'].includes(r.stage));
@@ -200,6 +215,46 @@ export default async function AdminHiringAnalyticsPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Time-to-Interview / Time-to-Offer / Stage Duration ── */}
+        <div className="card p-6">
+          <h2 className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>Time to Interview / Offer, and Time per Stage</h2>
+          <p className="text-xs mb-5" style={{ color: 'var(--ink-faint)' }}>
+            From each role&rsquo;s own recorded stage transitions (migration 204, recording from 2026-10-02 onward) —
+            averaged only across roles that actually reached each milestone.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+            {[
+              { label: 'Avg. time to first interview', value: fmtDays(stageDurations.avgDaysToInterview) },
+              { label: 'Avg. time to offer',            value: fmtDays(stageDurations.avgDaysToOffer) },
+              { label: 'Avg. time to filled',           value: fmtDays(stageDurations.avgDaysToFilled) },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-[10px] p-4 text-center" style={{ background: 'rgba(59,111,255,0.08)' }}>
+                <p className="text-2xl font-bold" style={{ color: 'var(--blue)' }}>{value}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide mt-1" style={{ color: 'var(--blue)' }}>{label}</p>
+              </div>
+            ))}
+          </div>
+          {Object.keys(stageDurations.avgDaysByStage).length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No stage transitions recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Average time spent in each stage</p>
+              {STAGE_ORDER.filter(s => stageDurations.avgDaysByStage[s] != null).map(s => {
+                const maxAvg = Math.max(...Object.values(stageDurations.avgDaysByStage), 1);
+                return (
+                  <div key={s}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{labelFor(STAGE_LABELS, s)}</span>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{fmtDays(stageDurations.avgDaysByStage[s])}</span>
+                    </div>
+                    <Bar pct={(stageDurations.avgDaysByStage[s] / maxAvg) * 100} color="var(--blue)" />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Per-client breakdown ──────────────────────────── */}

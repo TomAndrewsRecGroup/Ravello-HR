@@ -14,12 +14,13 @@ import {
 
 // ─── Tabs ───────────────────────────────────────────────────────────
 
-export const PROFILE_TABS = ['overview', 'employment', 'roles', 'training', 'competency', 'credentials', 'inductions',
+export const PROFILE_TABS = ['overview', 'timeline', 'employment', 'roles', 'training', 'competency', 'credentials', 'inductions',
   'authorisations', 'pre_employment', 'occupational_health', 'development', 'safety', 'history'] as const;
 export type ProfileTab = typeof PROFILE_TABS[number];
 
 export const PROFILE_TAB_LABELS: Record<ProfileTab, string> = {
   overview: 'Overview',
+  timeline: 'Timeline',
   employment: 'Employment',
   roles: 'Roles',
   training: 'Training',

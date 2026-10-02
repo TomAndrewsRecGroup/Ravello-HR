@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import type { EmergencyDrill, EmergencyPlan, EmergencyPlanEquipment, EmergencyPlanRole } from '@/lib/hs/types';
 import EmergencyPlansClient from '@/components/hs/EmergencyPlansClient';
+import { computeEmergencyReadiness, type ActiveAuthorisationRow, type EquipmentStatusRow } from '@/lib/emergencyReadiness/compute';
 
 export const metadata: Metadata = { title: 'H&S emergency plans' };
 export const dynamic = 'force-dynamic';
@@ -27,8 +28,8 @@ export default async function HealthSafetyEmergencyPlansPage(props: { params: Pr
         .eq('company_id', params.companyId).order('drill_date', { ascending: false }).order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
       supabase.from('hs_sites').select('id, name').eq('company_id', params.companyId).eq('active', true).order('name').order('id').range(from, to)),
-    readAllPages<PickRow>((from, to) =>
-      supabase.from('hs_equipment').select('id, name').eq('company_id', params.companyId).order('name').order('id').range(from, to)),
+    readAllPages<PickRow & { status?: string }>((from, to) =>
+      supabase.from('hs_equipment').select('id, name, status').eq('company_id', params.companyId).order('name').order('id').range(from, to)),
     readAllPages<{ id: string; full_name: string }>((from, to) =>
       supabase.from('people').select('id, full_name').eq('company_id', params.companyId).order('full_name').order('id').range(from, to)),
     readAllPages<PickRow>((from, to) =>
@@ -50,7 +51,37 @@ export default async function HealthSafetyEmergencyPlansPage(props: { params: Pr
             .in('plan_id', planIds).order('id').range(from, to)),
       ]);
 
-  const loadError = [plans, roles, planEquipment, drills, sites, equipment, people, authTypes]
+  // Emergency Readiness live-check (go-live gap list, item 3): who
+  // CURRENTLY holds each required authorisation, read directly from
+  // person_authorisations under this same staff session — the exact
+  // live join migration 154's own header comment already named as the
+  // intended design, never built into this page until now.
+  const authHolders = planIds.length === 0 || roles.rows.length === 0
+    ? { rows: [] as ActiveAuthorisationRow[], error: null }
+    : await readAllPages<ActiveAuthorisationRow>((from, to) =>
+        supabase.from('person_authorisations').select('authorisation_type_id, scope_site_id, status, expires_on')
+          .eq('company_id', params.companyId)
+          .in('authorisation_type_id', [...new Set(roles.rows.map(r => r.authorisation_type_id))])
+          .order('id').range(from, to));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const authTypeNames = Object.fromEntries(authTypes.rows.map(a => [a.id, a.title ?? 'Authorisation']));
+  const equipmentNames = Object.fromEntries(equipment.rows.map(e => [e.id, e.name ?? 'Equipment']));
+  const equipmentStatusRows: EquipmentStatusRow[] = equipment.rows.map(e => ({ id: e.id, status: e.status ?? 'in_service' }));
+
+  const readiness = computeEmergencyReadiness(
+    plans.rows.map(p => ({ id: p.id, site_id: p.site_id, plan_type: p.plan_type, title: p.title, status: p.status })),
+    roles.rows.map(r => ({ plan_id: r.plan_id, authorisation_type_id: r.authorisation_type_id, min_count: r.min_count })),
+    planEquipment.rows.map(e => ({ plan_id: e.plan_id, asset_id: e.asset_id })),
+    drills.rows.map(d => ({ plan_id: d.plan_id, drill_date: d.drill_date, outcome: d.outcome })),
+    authHolders.rows,
+    equipmentStatusRows,
+    authTypeNames,
+    equipmentNames,
+    today,
+  );
+
+  const loadError = [plans, roles, planEquipment, drills, sites, equipment, people, authTypes, authHolders]
     .map(r => r.error).find(Boolean) ?? null;
 
   return (
@@ -65,6 +96,7 @@ export default async function HealthSafetyEmergencyPlansPage(props: { params: Pr
       people={people.rows.map(r => ({ id: r.id, name: r.full_name ?? '' }))}
       authorisationTypes={authTypes.rows.map(r => ({ id: r.id, title: r.title ?? '' }))}
       loadError={loadError}
+      readiness={readiness}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   type EmergencyPlanType, type EmergencyDrillOutcome,
 } from '@/lib/hs/vocab';
 import type { EmergencyDrill, EmergencyPlan, EmergencyPlanEquipment, EmergencyPlanRole } from '@/lib/hs/types';
+import type { PlanReadiness } from '@/lib/emergencyReadiness/compute';
 
 interface PickOption { id: string; name: string }
 interface AuthOption { id: string; title: string }
@@ -25,7 +26,15 @@ interface Props {
   people: PickOption[];
   authorisationTypes: AuthOption[];
   loadError: string | null;
+  /** Emergency Readiness live-check (go-live gap list, item 3) — one
+   *  entry per ACTIVE plan, computed server-side from today's live
+   *  person_authorisations/hs_equipment state. Empty/missing for a
+   *  superseded plan, which this page already excludes by default. */
+  readiness: PlanReadiness[];
 }
+
+const READINESS_COLOUR: Record<PlanReadiness['band'], string> = { ready: 'var(--teal)', attention: 'var(--gold)', critical: 'var(--red)' };
+const READINESS_LABEL: Record<PlanReadiness['band'], string> = { ready: 'Ready', attention: 'Needs attention', critical: 'Critical gap' };
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (d: string | null) =>
@@ -36,8 +45,9 @@ const DRILL_COLOUR: Record<EmergencyDrillOutcome, string> = {
 };
 
 export default function EmergencyPlansClient({
-  companyId, plans, roles, planEquipment, drills, sites, equipment, people, authorisationTypes, loadError,
+  companyId, plans, roles, planEquipment, drills, sites, equipment, people, authorisationTypes, loadError, readiness,
 }: Props) {
+  const readinessFor = (id: string) => readiness.find(r => r.planId === id) ?? null;
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -91,6 +101,7 @@ export default function EmergencyPlansClient({
           {visible.map(plan => {
             const isOpen = expanded === plan.id;
             const overdue = plan.status === 'active' && plan.review_due_at && plan.review_due_at < today();
+            const r = readinessFor(plan.id);
             return (
               <li key={plan.id}>
                 <button className="w-full flex items-center gap-3 p-4 text-left" aria-expanded={isOpen} onClick={() => setExpanded(isOpen ? null : plan.id)}>
@@ -101,6 +112,7 @@ export default function EmergencyPlansClient({
                       <span className="badge">{EMERGENCY_PLAN_TYPE_LABELS[plan.plan_type]}</span>
                       <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>v{plan.version}</span>
                       {plan.status === 'superseded' && <span className="badge" style={{ opacity: 0.6 }}>Superseded</span>}
+                      {r && <span className="badge" style={{ background: READINESS_COLOUR[r.band], color: 'white' }}>{READINESS_LABEL[r.band]}</span>}
                     </span>
                     <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{siteFor(plan.site_id)}</span>
                   </span>
@@ -119,15 +131,33 @@ export default function EmergencyPlansClient({
                       <button className="btn-secondary btn-sm" onClick={() => newVersion(plan)}>New version</button>
                     )}
 
+                    {r && (
+                      <div className="rounded-lg p-3" style={{ background: 'var(--surface-soft)' }}>
+                        <h3 className="label flex items-center gap-2">
+                          <span className="badge" style={{ background: READINESS_COLOUR[r.band], color: 'white' }}>{READINESS_LABEL[r.band]}</span>
+                          Live readiness, right now
+                        </h3>
+                        <ul className="text-sm space-y-0.5 mt-1">
+                          {r.reasons.map((reason, i) => <li key={i} style={{ color: 'var(--ink-soft)' }}>{reason}</li>)}
+                        </ul>
+                      </div>
+                    )}
+
                     <div>
                       <h3 className="label">Required roles on site</h3>
                       {rolesFor(plan.id).length === 0 ? (
                         <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>None recorded.</p>
                       ) : (
                         <ul className="flex flex-wrap gap-2">
-                          {rolesFor(plan.id).map(r => (
-                            <li key={r.id} className="badge">{authTitle(r.authorisation_type_id)} × {r.min_count}</li>
-                          ))}
+                          {rolesFor(plan.id).map(role => {
+                            const cov = r?.roles.find(x => x.authorisationTypeId === role.authorisation_type_id);
+                            return (
+                              <li key={role.id} className="badge" style={cov && !cov.met ? { color: 'var(--red)' } : undefined}>
+                                {authTitle(role.authorisation_type_id)} &times; {role.min_count}
+                                {cov && ` (${cov.holding} currently held)`}
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                       {plan.status === 'active' && (

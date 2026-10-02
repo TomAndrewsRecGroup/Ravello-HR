@@ -19,6 +19,7 @@ import type { DeploymentRequirement } from '@/lib/workforce/types';
 import { DeploymentBadge, RequirementBadge } from '@/components/workforce/DeploymentBadge';
 import Pill, { toneFor } from '@/components/safety/Pill';
 import { loadProfile, titles, type ProfileData } from './loadProfile';
+import { buildPersonTimeline, TIMELINE_CATEGORY_LABELS, type TimelineCategory } from '@/lib/workforce/timeline';
 import RpcAction from './RpcAction';
 import RolePreview from './RolePreview';
 import {
@@ -125,6 +126,7 @@ export default async function PersonProfilePage(props: {
         <Overview data={data} asOf={asOf} today={today} names={names} companyId={companyId}
           canDup={ctx.can('workforce.read') || ctx.can('people.write')} canAssign={ctx.can('training.manage')} />
       )}
+      {tab === 'timeline' && <TimelineTab data={data} />}
       {tab === 'employment' && <Employment data={data} names={names} />}
       {tab === 'roles' && (
         <RolesTab data={data} names={names} companyId={companyId} manage={ctx.can('workforce.manage')}
@@ -920,6 +922,49 @@ function SafetyTab({ data }: { data: ProfileData }) {
               <Link href={`/protect/incidents/${i.id}`} className="underline">{i.incident_number ?? 'Incident'}</Link>
               <span style={{ color: 'var(--ink-faint)' }}>{fmtDate(i.occurred_on)}</span>
               <Pill tone={toneFor(i.status)}>{i.status.replace(/_/g, ' ')}</Pill>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+// ─── Timeline (go-live gap list, item 1) ───────────────────────────
+// Pure composition over data the profile already loaded under the
+// viewer's own RLS session — never a new query, never a new table.
+
+const TIMELINE_TONE: Record<TimelineCategory, Parameters<typeof Pill>[0]['tone']> = {
+  training: 'info', competency: 'good', credential: 'good', induction: 'info',
+  authorisation: 'warn', ppe: 'neutral', pre_employment: 'neutral', development: 'info',
+  status: 'muted', incident: 'bad', suspension: 'bad',
+};
+
+function TimelineTab({ data }: { data: ProfileData }) {
+  const names = {
+    courses: titles(data.catalogue.courses),
+    competencies: titles(data.catalogue.competencies),
+    credentialTypes: titles(data.catalogue.credentialTypes),
+    inductions: titles(data.catalogue.inductions),
+    authTypes: titles(data.catalogue.authTypes),
+    ppeTypes: titles(data.catalogue.ppeTypes),
+    checkTypes: titles(data.catalogue.checkTypes),
+  };
+  const events = buildPersonTimeline(data, names, DEPLOYMENT_STATUS_LABELS);
+  return (
+    <Card title="Timeline">
+      <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+        Everything recorded about this person across training, competency, qualifications, inductions, authorisations,
+        PPE, pre-employment checks, development and Safe to Deploy status — one feed, most recent first.
+      </p>
+      {events.length === 0 ? <Empty>Nothing recorded yet.</Empty> : (
+        <ul className="text-sm space-y-2">
+          {events.map((e, i) => (
+            <li key={i} className="flex flex-wrap items-baseline gap-2">
+              <span style={{ color: 'var(--ink-faint)', minWidth: '7rem' }}>{fmtDate(e.date)}</span>
+              <Pill tone={TIMELINE_TONE[e.category]}>{TIMELINE_CATEGORY_LABELS[e.category]}</Pill>
+              <span style={{ color: 'var(--ink)' }}>{e.label}</span>
+              {e.detail && <span style={{ color: 'var(--ink-faint)' }}>({e.detail})</span>}
             </li>
           ))}
         </ul>
