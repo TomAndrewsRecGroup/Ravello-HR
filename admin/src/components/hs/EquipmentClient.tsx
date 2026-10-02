@@ -12,7 +12,14 @@ import {
 import { HS_EVIDENCE_ACCEPT, evidenceUrl, uploadEvidence } from '@/lib/hs/evidence';
 import { daysUntil } from '@/lib/hs/recurrence';
 import type { HsEquipment, HsEquipmentInspection, HsFile } from '@/lib/hs/types';
+import { HAZARD_STATUS_LABELS, type HazardStatus } from '@/lib/hs/safetyVocab';
+import { portalUrl } from '@/lib/portalUrl';
 import EntityQrPanel from './EntityQrPanel';
+
+// Only the fields this component actually reads from a linked hazard
+// row — the same "narrow local interface" precedent this codebase
+// uses throughout rather than widening the shared types file.
+interface LinkedHazard { id: string; title: string; status: string; identified_at: string }
 
 interface Props {
   companyId: string;
@@ -22,6 +29,7 @@ interface Props {
   inspections: HsEquipmentInspection[];
   files: HsFile[];
   activeQrEquipmentIds: Set<string>;
+  hazardsByAsset: Map<string, LinkedHazard[]>;
   loadError: string | null;
 }
 
@@ -37,7 +45,7 @@ function dueColour(due: string | null, status: HsEquipmentStatus): string {
   return 'var(--teal)';
 }
 
-export default function EquipmentClient({ companyId, companyName, canRecord, equipment, inspections, files, activeQrEquipmentIds, loadError }: Props) {
+export default function EquipmentClient({ companyId, companyName, canRecord, equipment, inspections, files, activeQrEquipmentIds, hazardsByAsset, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -154,6 +162,8 @@ export default function EquipmentClient({ companyId, companyName, canRecord, equ
                       companyName={companyName}
                     />
 
+                    <ItemReports hazards={hazardsByAsset.get(item.id) ?? []} />
+
                     <div>
                       <h3 className="label">Inspection history</h3>
                       {history.length === 0 ? (
@@ -184,6 +194,31 @@ export default function EquipmentClient({ companyId, companyName, canRecord, equ
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+// Reports left via this item's own QR scan (/e/[token] -> report-hazard,
+// 201) — tracked back here via hazards.linked_asset_id. Hazards have
+// no admin-side detail page (they're worked only in the portal
+// workspace, staff included, the same posture as risk assessments and
+// COSHH), so each one links OUT rather than duplicating the register.
+function ItemReports({ hazards }: { hazards: { id: string; title: string; status: string; identified_at: string }[] }) {
+  if (hazards.length === 0) return null;
+  return (
+    <div>
+      <h3 className="label">Reports from this item&apos;s QR code</h3>
+      <ul className="space-y-1">
+        {hazards.map(h => (
+          <li key={h.id} className="text-sm flex flex-wrap items-center gap-2 rounded-lg p-2" style={{ background: 'var(--surface-soft)' }}>
+            <a href={`${portalUrl()}/protect/hazards/${h.id}`} target="_blank" rel="noopener" style={{ color: 'var(--purple)' }}>
+              {h.title}
+            </a>
+            <span style={{ color: 'var(--ink-faint)' }}>{HAZARD_STATUS_LABELS[h.status as HazardStatus] ?? h.status}</span>
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmt(h.identified_at?.slice(0, 10) ?? null)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

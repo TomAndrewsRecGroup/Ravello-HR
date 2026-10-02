@@ -11,6 +11,7 @@ const TABS: { seg: string; label: string }[] = [
   { seg: 'incidents',  label: 'Incidents' },
   { seg: 'incident-patterns', label: 'Incident Patterns' },
   { seg: 'equipment',  label: 'Equipment' },
+  { seg: 'qr-codes',   label: 'QR Codes' },
   { seg: 'contractors', label: 'Contractors' },
   { seg: 'permits',    label: 'Permits' },
   { seg: 'isolations', label: 'Isolations' },

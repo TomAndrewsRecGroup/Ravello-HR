@@ -20,11 +20,11 @@ export default async function HazardPage(props: { params: Promise<{ id: string }
   if (!companyId) notFound();
 
   const { data: h } = await supabase.from('hazards')
-    .select('id, company_id, reference, title, description, status, source, perceived_seriousness, immediate_action_taken, site_id, department_id, linked_location, linked_process, hazard_category_id, owner_id, identified_by, identified_at, reviewed_at, closed_at, notes, row_version')
+    .select('id, company_id, reference, title, description, status, source, perceived_seriousness, immediate_action_taken, site_id, department_id, linked_location, linked_process, hazard_category_id, owner_id, identified_by, identified_at, reviewed_at, closed_at, notes, row_version, linked_asset_id')
     .eq('id', id).eq('company_id', companyId).maybeSingle();
   if (!h) notFound();
 
-  const [dir, { sites, departments }, cats, files, items, links, actions] = await Promise.all([
+  const [dir, { sites, departments }, cats, files, items, links, actions, linkedAsset] = await Promise.all([
     orgDirectory(supabase),
     orgSitesAndDepartments(supabase, companyId),
     supabase.from('hazard_categories').select('id, name').eq('active', true).order('sort_order').limit(200),
@@ -32,6 +32,13 @@ export default async function HazardPage(props: { params: Promise<{ id: string }
     supabase.from('risk_assessment_items').select('risk_assessment_id').eq('hazard_id', id).limit(200),
     supabase.from('hs_links').select('from_type, from_id, to_type, to_id, relation').or(`and(from_type.eq.hazard,from_id.eq.${id}),and(to_type.eq.hazard,to_id.eq.${id})`).limit(200),
     supabase.from('actions').select('id, title, status, due_date, assigned_to').eq('source_type', 'hazard').eq('source_id', id).order('created_at').limit(200),
+    // Only set when this hazard came in via the item's own entity QR
+    // scan (/e/[token] -> report-hazard, 201) with linked_asset_id —
+    // the reverse of the equipment page's own "reports from this
+    // item's QR code" list.
+    h.linked_asset_id
+      ? supabase.from('hs_equipment').select('id, name').eq('id', h.linked_asset_id).maybeSingle()
+      : Promise.resolve({ data: null as { id: string; name: string } | null }),
   ]);
   const raIds = [...new Set([
     ...(items.data ?? []).map(i => i.risk_assessment_id as string),
@@ -67,6 +74,9 @@ export default async function HazardPage(props: { params: Promise<{ id: string }
           <Meta label="Reported" value={fmtDateTime(h.identified_at)} />
           <Meta label="Source" value={HAZARD_SOURCE_LABELS[h.source as HazardSource]} />
           <Meta label="Reviewed" value={h.reviewed_at ? fmtDate(h.reviewed_at) : 'Not yet'} />
+          {linkedAsset.data && (
+            <Meta label="Reported against" value={<Link href={`/protect/equipment#eq-${linkedAsset.data.id}`} style={{ color: 'var(--purple)' }}>{linkedAsset.data.name}</Link>} />
+          )}
         </dl>
         {h.description && <Block title="What was seen">{h.description}</Block>}
         {h.immediate_action_taken && <Block title="Immediate action taken">{h.immediate_action_taken}</Block>}

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
-import { AlertTriangle, Package } from 'lucide-react';
+import { Fragment } from 'react';
+import Link from 'next/link';
+import { AlertTriangle, Package, ShieldAlert } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { HS_EQUIPMENT_STATUS_LABELS } from '@/lib/hs/vocab';
+import { HAZARD_STATUS_LABELS, type HazardStatus } from '@/lib/hs/safetyVocab';
 import type { HsEquipment } from '@/lib/hs/types';
 
 export const metadata: Metadata = { title: 'Equipment' };
@@ -25,6 +28,27 @@ export default async function ProtectEquipmentPage() {
 
   const rows = (equipment ?? []) as HsEquipment[];
   const today = new Date().toISOString().slice(0, 10);
+  const equipmentIds = rows.map(r => r.id);
+
+  // Reports a worker left via this item's own entity QR scan
+  // (/e/[token] -> report-hazard, 201) land in `hazards` tagged with
+  // `linked_asset_id` — nothing surfaced that back onto the asset
+  // itself until now, so a scanned report was invisible from here.
+  const { data: hazards } = equipmentIds.length > 0
+    ? await supabase.from('hazards')
+        .select('id, title, status, identified_at, linked_asset_id')
+        .eq('company_id', companyId)
+        .in('linked_asset_id', equipmentIds)
+        .order('identified_at', { ascending: false })
+        .limit(500)
+    : { data: [] as { id: string; title: string; status: string; identified_at: string; linked_asset_id: string }[] };
+
+  const hazardsByAsset = new Map<string, { id: string; title: string; status: string; identified_at: string }[]>();
+  for (const h of hazards ?? []) {
+    const list = hazardsByAsset.get(h.linked_asset_id) ?? [];
+    list.push(h);
+    hazardsByAsset.set(h.linked_asset_id, list);
+  }
 
   return (
     <main className="portal-page flex-1 space-y-4">
@@ -45,17 +69,41 @@ export default async function ProtectEquipmentPage() {
             <tbody>
               {rows.map(item => {
                 const overdue = item.status === 'in_service' && item.next_inspection_due && item.next_inspection_due < today;
+                const itemHazards = hazardsByAsset.get(item.id) ?? [];
                 return (
-                  <tr key={item.id}>
-                    <td>{item.name}{item.serial_number && <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{item.serial_number}</span>}</td>
-                    <td>{item.category ?? '—'}</td>
-                    <td>{HS_EQUIPMENT_STATUS_LABELS[item.status]}</td>
-                    <td>{fmt(item.last_inspected_on)}</td>
-                    <td style={{ color: overdue ? 'var(--red)' : 'var(--ink)', fontWeight: overdue ? 600 : 400 }}>
-                      {overdue && <AlertTriangle size={12} className="inline mr-1" />}
-                      {fmt(item.next_inspection_due)}
-                    </td>
-                  </tr>
+                  <Fragment key={item.id}>
+                    <tr id={`eq-${item.id}`}>
+                      <td>{item.name}{item.serial_number && <span className="block text-xs" style={{ color: 'var(--ink-faint)' }}>{item.serial_number}</span>}</td>
+                      <td>{item.category ?? '—'}</td>
+                      <td>{HS_EQUIPMENT_STATUS_LABELS[item.status]}</td>
+                      <td>{fmt(item.last_inspected_on)}</td>
+                      <td style={{ color: overdue ? 'var(--red)' : 'var(--ink)', fontWeight: overdue ? 600 : 400 }}>
+                        {overdue && <AlertTriangle size={12} className="inline mr-1" />}
+                        {fmt(item.next_inspection_due)}
+                      </td>
+                    </tr>
+                    {itemHazards.length > 0 && (
+                      <tr>
+                        <td colSpan={5} className="pt-0">
+                          <div className="rounded-lg p-2 text-xs space-y-1" style={{ background: 'var(--surface-soft)' }}>
+                            <p className="flex items-center gap-1 font-medium" style={{ color: 'var(--ink-soft)' }}>
+                              <ShieldAlert size={12} /> Reports from this item&apos;s QR code
+                            </p>
+                            <ul className="space-y-0.5">
+                              {itemHazards.map(h => (
+                                <li key={h.id}>
+                                  <Link href={`/protect/hazards/${h.id}`} style={{ color: 'var(--purple)' }}>{h.title}</Link>{' '}
+                                  <span style={{ color: 'var(--ink-faint)' }}>
+                                    — {HAZARD_STATUS_LABELS[h.status as HazardStatus] ?? h.status} · {fmt(h.identified_at?.slice(0, 10) ?? null)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

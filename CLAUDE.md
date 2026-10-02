@@ -13102,3 +13102,86 @@ the full self-restriction/cross-person-isolation/row_version-forcing
 behaviour proven end to end in the rolled-back live probe described
 above, not merely asserted from the function body text.
 
+---
+
+## Entity QR reports now track back to the item, and admin got its own
+## QR management page (2026-10-02)
+
+Operator: the scanned-report flow should "track to the item" so the
+client and admin can both see it, and admin needs its own place to
+"easily add and create the codes per client." No migration — both
+pieces were missing UI over schema that already existed.
+
+- **The gap was real, not just hidden.** `/e/[token]`'s `report-hazard`
+  route (201) has always written `linked_asset_id` onto the `hazards`
+  row it inserts — but nothing anywhere read that column back. A
+  worker's scanned report vanished into the general register with no
+  visible link to the machine it was actually about, on either side.
+- **Equipment pages now show "Reports from this item's QR code."**
+  Admin's `EquipmentClient.tsx` (under the existing `EntityQrPanel`)
+  and portal's `/protect/equipment` (as an inline row under each item)
+  both query `hazards` filtered to `linked_asset_id` for that
+  company's equipment ids and list the open reports, each linking to
+  the hazard itself. Admin has no hazard detail page (hazards are
+  worked only in the portal workspace, staff included — the standing
+  rule since Phase 1), so its list links OUT via `portalUrl()`.
+- **The hazard detail page shows the reverse link.** When
+  `linked_asset_id` is set, `/protect/hazards/[id]` now shows
+  "Reported against: <equipment name>", linking back to
+  `/protect/equipment#eq-<id>` — each equipment row carries that
+  anchor id now, so the link lands on the right row.
+- **A real JSX trap, caught before it shipped, not after.** The
+  equipment page's `.map()` now returns two sibling `<tr>`s (the item
+  row plus a conditional reports row) — the exact "`<>...</>` cannot
+  carry a `key` prop" footgun this file's own history already records
+  once for a different reason. Fixed with an explicit
+  `<Fragment key={item.id}>` from the start.
+- **Admin's new "QR Codes" tab** (`HsCompanyTabs.tsx`, nests under the
+  already-linked `/health-safety` prefix, no new sidebar entry needed)
+  is one page per client listing every equipment item and every COSHH
+  assessment with its own mint/revoke control
+  (`QrCodesClient.tsx` + the existing `EntityQrPanel.tsx`, unchanged) —
+  additive alongside the equipment tab's own per-row panel, not a
+  replacement for it.
+- **COSHH never had an admin-side mint path at all** — it's portal-
+  only, so the only way to generate a COSHH QR before this was the
+  portal's own assessment detail page. A new
+  `POST`/`DELETE /api/admin/hs/coshh/[id]/qr` route mirrors the
+  existing equipment route exactly (`requireStaff()` is the only
+  gate — the whole `/health-safety` section is already staff-only by
+  the admin app's own auth layer, the identical posture the equipment
+  route already has) and calls the same shared
+  `mintEntityQrToken`/`revokeEntityQrToken` helpers (196) the portal's
+  own COSHH route already uses.
+- **`entity_qr_tokens` carries its own `company_id`** — confirmed live
+  before writing the query — so scoping the new QR Codes page to one
+  client needed no id-list join, just `.eq('company_id', ...)`.
+- **One unbounded-read regression, caught and fixed by the guard
+  itself before this shipped**: the first draft of the QR Codes page's
+  `entity_qr_tokens` read had no bound at all
+  (`check-unbounded-reads.sh` correctly flagged it, 303 vs the 302
+  baseline); adding `.limit(1000)` then tripped the SIBLING guard
+  (`check-row-cap.sh`, which treats exactly 1,000 as indistinguishable
+  from unbounded at the PostgREST cap boundary) — settled on
+  `.limit(500)`, satisfying both.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(1921/1921 both apps, unchanged — this is UI/route work with no new
+pure-logic module, the established "no component-level test"
+convention), all seven CI guards pass with no regressions
+(73 shared-dupe pairs, unchanged — `EntityQrPanel.tsx` was already a
+registered pair and is reused unchanged, not duplicated; row-cap
+clean; 44 unvalidated routes, unchanged — the new COSHH route takes no
+request body; 43 static admin routes, all reachable — the new page is
+dynamic (`[companyId]/qr-codes`), needing no literal-reference check;
+101 blind-update chains, unchanged — this work adds no new write path
+beyond the existing mint/revoke calls; 302 unbounded-read chains, back
+to baseline after the fix above; every paged query's `.order()`
+present), both production builds compile, including
+`/health-safety/[companyId]/qr-codes` and
+`/api/admin/hs/coshh/[id]/qr` (admin) — confirmed present in the build
+output by name, not just a clean exit code. Portal's one prerender
+failure (`/auth/reset-password`) is the same long-documented
+sandbox-only missing-Supabase-env-var limitation recorded throughout
+this file's history, unrelated to this change.
+
