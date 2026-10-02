@@ -13748,3 +13748,80 @@ a malformed token_hash refused, an overlong recipient_note refused, a
 duplicate token_hash refused, and a plain UPDATE revoke proven to work
 — 0 leftover rows after rollback).
 
+---
+
+## Go-live gap list, item 8: Continuous Improvement named view (2026-10-02)
+
+"Are we getting better?" had no dedicated answer anywhere — every
+existing H&S intelligence surface answers a different question: the
+Digital Twin/Core 360 Status/Assurance Today family reports what is
+true RIGHT NOW; Incident Pattern Intelligence reports what keeps
+happening at a site. Nothing composed audit findings, recurring root
+causes and objective progress into one period-over-period trend. No
+migration — this is pure composition over three already-live tables
+(`audit_findings`, 162; `objectives`, 161; the existing incident/
+investigation/cause tables Incident Pattern Intelligence already
+reads), reusing `analyzeIncidentPatterns()` VERBATIM for the
+root-cause signal rather than re-deriving the same grouping logic a
+second time — the "REUSE, never a parallel system" rule this codebase
+has followed since Phase 4's own existing-operations audit.
+
+- **`lib/continuousImprovement/analyze.ts`** (new shared-dupe pair,
+  79 pairs up from 78): `computeContinuousImprovement()` composes
+  `computeAuditFindingsTrend()` (raised/closed per window, plus a
+  point-in-time `openNow` unaffected by the window — the exact
+  `incidentPatterns`-style distinction between a window-scoped count
+  and "what's true right now") and `computeObjectivesSummary()`
+  (status breakdown + `healthyPercent`, null — never zero — when there
+  are no in-flight objectives, the standing null-vs-zero discipline
+  this codebase draws throughout) with `analyzeIncidentPatterns()`'s
+  own `recurringRootCauses` output, imported and called directly, not
+  copied. `incidentPatternWindows`/`clampWindowDays` are re-exported
+  from the same module so both this file's callers and the existing
+  Incident Patterns pages share one window-fairness computation.
+- **`avgDaysToCloseClosed` is computed only for findings CLOSED in the
+  current window**, and is `null` — never `0` — when nothing closed,
+  the identical null-vs-zero rule the rest of this codebase already
+  applies everywhere a average could otherwise silently read as "zero
+  days, fully healthy" for a period with no real data.
+- **`healthyPercent` excludes `draft`/`abandoned` from its
+  denominator** — neither is currently being pursued, so counting them
+  would understate a genuinely on-track portfolio of real, in-flight
+  objectives.
+- **`ContinuousImprovementView.tsx`** (new shared-dupe pair, 80 pairs):
+  the exact `IncidentPatternsView.tsx` precedent — a window picker
+  (30/90/365-day quick-picks plus a custom-days form,
+  `clampWindowDays`-bounded server-side) and three cards (audit
+  findings trend table, recurring root causes list, objective status
+  breakdown), no interactivity beyond plain navigation links, so no
+  `'use client'` needed. Reported entirely as counts and a
+  period-over-period comparison, never a score or a trend LINE drawn
+  from fewer than two real data points — no AI anywhere in this view.
+- **Admin**: a new `HsCompanyTabs.tsx` tab
+  (`/health-safety/<companyId>/continuous-improvement`), nesting under
+  the already-linked `/health-safety` prefix, no new sidebar entry
+  needed. **Portal**: `/protect/continuous-improvement`, gated by
+  `protect` alone (added to `moduleAccess.ts`'s `ROUTE_FLAGS` and the
+  PROTECT layout's own tab list) — read-only, the standing PROTECT
+  posture that nothing here is self-certified. Both pages read under
+  their own normal access path: admin as staff with no row filter
+  beyond `company_id`; portal under the signed-in company's own
+  session RLS — `audit_findings_client_read` (Phase 4 Group 7) and
+  `objectives`' own client-read policy (Phase 5 Group 6, reusing
+  `risk.read`) already cover the two tables the Incident Patterns page
+  didn't already need, so no service role was required anywhere on
+  the portal page.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (1996/200 admin, 988/71 portal — the new `analyze.test.ts`, 9
+cases, mirrored byte-identical to both), all seven CI guards pass with
+no regressions (79 → 80 shared-dupe pairs; row-cap clean; 44
+unvalidated routes, unchanged — this item added no new route, only two
+pages; 45 static admin routes, all reachable; 101 blind-update chains,
+unchanged — this item writes nothing, purely read-only; every paged
+query's `.order()` present; 301 unbounded-read chains, unchanged), both
+production builds compile, including
+`/health-safety/<companyId>/continuous-improvement` and
+`/protect/continuous-improvement`. No migration in this item —
+entirely TypeScript composition over already-live schema.
+

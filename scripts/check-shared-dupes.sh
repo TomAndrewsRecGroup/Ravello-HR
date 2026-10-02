@@ -95,6 +95,8 @@ PAIRS=(
   "admin/src/lib/devPlan.ts|portal/src/lib/devPlan.ts"
   "admin/src/lib/auth/reportShareTokens.ts|portal/src/lib/auth/reportShareTokens.ts"
   "admin/src/components/modules/ShareReportButton.tsx|portal/src/components/modules/ShareReportButton.tsx"
+  "admin/src/lib/continuousImprovement/analyze.ts|portal/src/lib/continuousImprovement/analyze.ts"
+  "admin/src/components/hs/ContinuousImprovementView.tsx|portal/src/components/hs/ContinuousImprovementView.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
