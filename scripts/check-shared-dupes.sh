@@ -82,6 +82,8 @@ PAIRS=(
   "admin/src/lib/assurance/today.ts|portal/src/lib/assurance/today.ts"
   "admin/src/components/hs/AssuranceTodayView.tsx|portal/src/components/hs/AssuranceTodayView.tsx"
   "admin/src/components/hs/ContractorsClient.tsx|portal/src/components/hs/ContractorsClient.tsx"
+  "admin/src/lib/criticalControls/compute.ts|portal/src/lib/criticalControls/compute.ts"
+  "admin/src/components/hs/CriticalControlsView.tsx|portal/src/components/hs/CriticalControlsView.tsx"
   "admin/src/components/hs/PermitsClient.tsx|portal/src/components/hs/PermitsClient.tsx"
   "admin/src/components/hs/IsolationsClient.tsx|portal/src/components/hs/IsolationsClient.tsx"
   "admin/src/lib/whatChanged/compute.ts|portal/src/lib/whatChanged/compute.ts"

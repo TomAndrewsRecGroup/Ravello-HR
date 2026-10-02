@@ -41,7 +41,7 @@ export default async function RiskAssessmentPage(props: { params: Promise<{ id: 
       .eq('risk_assessment_id', id).order('sort_order').order('created_at').limit(200),
     supabase.from('risk_assessments').select('id, version, status, approved_by, approved_at, created_at, superseded_at')
       .eq('company_id', companyId).eq('reference', ra.reference).order('version', { ascending: false }).limit(100),
-    supabase.from('controls').select('id, title, control_type, status, verification_required').eq('company_id', companyId).eq('status', 'active').order('title').limit(500),
+    supabase.from('controls').select('id, title, control_type, status, verification_required, safety_critical').eq('company_id', companyId).eq('status', 'active').order('title').limit(500),
     supabase.from('hazards').select('id, reference, title').eq('company_id', companyId).neq('status', 'archived').order('identified_at', { ascending: false }).limit(500),
     supabase.from('hs_incidents').select('id, incident_number, title, incident_type').eq('company_id', companyId).order('occurred_on', { ascending: false }).limit(200),
     supabase.from('hs_files').select('id, storage_path, file_name, evidence_type, description').eq('entity_type', 'risk_assessment').eq('entity_id', id).order('created_at').limit(200),

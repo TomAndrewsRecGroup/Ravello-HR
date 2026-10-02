@@ -46,6 +46,7 @@ const TABS = [
   { href: '/protect/tests',            label: 'Tests' },
   { href: '/protect/timeline',         label: 'Timeline' },
   { href: '/protect/risk-graph',       label: 'Risk Graph' },
+  { href: '/protect/critical-controls', label: 'Critical Controls' },
   { href: '/protect/incident-patterns', label: 'Incident Patterns' },
   { href: '/protect/evidence',         label: 'Evidence' },
   { href: '/protect/assurance',        label: 'Assurance Today' },

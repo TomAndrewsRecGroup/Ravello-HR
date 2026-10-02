@@ -40,6 +40,8 @@ export default function ItemControls({ companyId, itemId, links, library, people
   const [newType, setNewType] = useState<ControlType>('engineering');
   const [newDesc, setNewDesc] = useState('');
   const [newVerify, setNewVerify] = useState(false);
+  const [newSafetyCritical, setNewSafetyCritical] = useState(false);
+  const [togglingCritical, setTogglingCritical] = useState<string | null>(null);
   const canRecord = editable || reviewing;
   const newMode = creating || library.length === 0;
   const who = (id: string | null) => (id ? people.find(p => p.user_id === id)?.full_name ?? 'Someone outside this organisation' : '');
@@ -81,7 +83,7 @@ export default function ItemControls({ companyId, itemId, links, library, people
     if (newMode) {
       const { data, error: err } = await sb.from('controls').insert({
         company_id: companyId, title: newTitle.trim(), control_type: newType, description: newDesc.trim() || null,
-        verification_required: newVerify,
+        verification_required: newVerify, safety_critical: newSafetyCritical,
       }).select('id, title, control_type').single();
       if (err || !data) { setBusy(null); setError(err?.message ?? 'The control was not added to the library.'); return; }
       cid = data.id as string;
@@ -100,7 +102,21 @@ export default function ItemControls({ companyId, itemId, links, library, people
       if (newMode) router.refresh();
       return;
     }
-    setAdding(false); setCreating(false); setControlId(''); setNewTitle(''); setNewDesc(''); setNewVerify(false); setEff('verification_required');
+    setAdding(false); setCreating(false); setControlId(''); setNewTitle(''); setNewDesc(''); setNewVerify(false); setNewSafetyCritical(false); setEff('verification_required');
+    router.refresh();
+  }
+
+  // Critical Control Visibility (go-live gap list, item 4): a plain
+  // boolean on the shared controls catalogue (205), toggled from
+  // wherever a control is already managed — never a separate page,
+  // since this is the one place a control's own row is already
+  // editable.
+  async function toggleSafetyCritical(controlId: string, next: boolean) {
+    setTogglingCritical(controlId); setError(null);
+    const res = await createClient().from('controls').update({ safety_critical: next }, COUNT_EXACT).eq('id', controlId);
+    setTogglingCritical(null);
+    const out = judgeWrite({ error: res.error, count: res.count }, 'The safety-critical flag');
+    if (!out.ok) { setError(out.message); return; }
     router.refresh();
   }
 
@@ -117,6 +133,7 @@ export default function ItemControls({ companyId, itemId, links, library, people
                 {rows.map(l => (
                   <li key={l.id} className="flex flex-wrap items-center gap-2 text-sm p-2 rounded" style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}>
                     <Pill tone="neutral">{CONTROL_TYPE_LABELS[l.control_type]}</Pill>
+                    {library.find(c => c.id === l.control_id)?.safety_critical && <Pill tone="bad">Safety-critical</Pill>}
                     <span className="flex-1 min-w-[160px]" style={{ color: 'var(--ink)' }}>{l.control_title}</span>
                     {canRecord ? (
                       <select className="input" style={{ width: 'auto' }} value={l.effectiveness} disabled={busy === l.id}
@@ -125,6 +142,13 @@ export default function ItemControls({ companyId, itemId, links, library, people
                       </select>
                     ) : <Pill tone={EFF_TONE[l.effectiveness]}>{CONTROL_EFFECTIVENESS_LABELS[l.effectiveness]}</Pill>}
                     {busy === l.id && <Loader2 size={14} className="animate-spin" />}
+                    {editable && (
+                      <button type="button" className="btn-ghost btn-sm no-print" disabled={togglingCritical === l.control_id}
+                        onClick={() => toggleSafetyCritical(l.control_id, !(library.find(c => c.id === l.control_id)?.safety_critical))}>
+                        {togglingCritical === l.control_id && <Loader2 size={12} className="animate-spin" />}
+                        {library.find(c => c.id === l.control_id)?.safety_critical ? 'Unmark critical' : 'Mark safety-critical'}
+                      </button>
+                    )}
                     {editable && (
                       <button type="button" className="btn-icon no-print" aria-label="Remove control" disabled={busy === l.id} onClick={() => unlink(l)}><X size={14} /></button>
                     )}
@@ -162,6 +186,9 @@ export default function ItemControls({ companyId, itemId, links, library, people
                 </select></label>
               <label className="flex items-center gap-2 text-sm self-end" style={{ minHeight: 40 }}>
                 <input type="checkbox" checked={newVerify} onChange={e => setNewVerify(e.target.checked)} /> Needs verifying on site
+              </label>
+              <label className="flex items-center gap-2 text-sm self-end sm:col-span-2" style={{ minHeight: 40 }}>
+                <input type="checkbox" checked={newSafetyCritical} onChange={e => setNewSafetyCritical(e.target.checked)} /> Safety-critical control
               </label>
               <label className="block sm:col-span-2"><span className="label">Description (optional)</span>
                 <input className="input" value={newDesc} onChange={e => setNewDesc(e.target.value)} maxLength={2000} /></label>

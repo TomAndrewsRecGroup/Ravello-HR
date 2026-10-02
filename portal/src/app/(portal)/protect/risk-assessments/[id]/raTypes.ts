@@ -81,7 +81,7 @@ export interface RaItemControl {
   notes: string | null;
 }
 
-export interface LibraryControl { id: string; title: string; control_type: ControlType; status: string; verification_required: boolean }
+export interface LibraryControl { id: string; title: string; control_type: ControlType; status: string; verification_required: boolean; safety_critical: boolean }
 
 export interface MatrixRow extends RiskMatrix { id: string; name: string; company_id: string | null; is_default: boolean }
 
