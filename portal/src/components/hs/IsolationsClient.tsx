@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Lock, Loader2, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -77,7 +78,12 @@ export default function IsolationsClient({ companyId, isolations, locks, equipme
                 {isOpen && (
                   <div className="px-4 pb-4 pl-11 space-y-4">
                     {iso.description && <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--ink-soft)' }}>{iso.description}</p>}
-                    <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>Applied {fmtDt(iso.applied_at)}</div>
+                    <div className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+                      Applied {fmtDt(iso.applied_at)} ·{' '}
+                      <Link href={`/health-safety/${companyId}/equipment#eq-${iso.asset_id}`} style={{ color: 'var(--purple)' }}>
+                        View {assetFor(iso.asset_id)} on the Equipment tab
+                      </Link>
+                    </div>
 
                     <div>
                       <h3 className="label">Personal locks</h3>

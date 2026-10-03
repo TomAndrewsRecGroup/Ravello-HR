@@ -14335,3 +14335,69 @@ page's new by-id-list action read was caught unbounded by the guard on
 the first pass and capped at 200 before this shipped, restoring the
 baseline), both production builds compile. No migration in this
 round — every fix is TypeScript/UI over already-live schema.
+
+---
+
+## Cross-linking round: real action status everywhere a governance
+## record raises one (2026-10-03)
+
+Follow-up to the connector audit above. Six governance/environmental
+page families each raise a real corrective action via
+`actions.source_type`/`source_id` (`legal_requirement`, `objective`,
+`environmental_spill`, `waste_movement`, `environmental_monitoring`,
+`environmental_permit_condition`) — but until now, none of the pages
+that raise one ever showed what became of it: the reader had to
+separately open Actions and search for it by hand.
+
+- **`LinkedActionBadge.tsx`** (already introduced for the audit
+  detail page in the prior round) is now the ONE shared renderer for
+  this across every page listed below — a real status/priority/due-
+  date/verification badge, never a bare "Action raised" label with no
+  further information.
+- **`source_id` is NOT always the raising record's own id — checked
+  per rule, not assumed.** `governanceRules.ts`'s
+  `objective_at_risk_or_missed` and every `environmentalRules.ts` rule
+  key `source_id` directly to the row that changed
+  (`event.entity_id`). `legalRegisterRules.ts`'s
+  `legal_evaluation_noncompliance` is the one exception: it keys
+  `source_id` to the OBLIGATION's own id, never the evaluation's,
+  because several evaluations of one obligation share the same
+  obligation — read from the live rule file before wiring each page,
+  not guessed from the column name.
+- **Legal Register** (admin `LegalRegisterClient.tsx` + page, portal
+  `/protect/legal-register`): an action is filtered per obligation via
+  `source_id === obligation.id` and rendered under "Corrective
+  action", above the evaluation history.
+- **Objectives** (admin `ObjectivesClient.tsx` + page, portal
+  `/protect/objectives`): filtered per objective via
+  `source_id === objective.id`.
+- **Environmental Spills/Waste/Monitoring/Permits** (all four, both
+  apps): each table/card view gained a per-row linked-action lookup
+  (spill id, waste-movement id, monitoring-reading id, permit-
+  condition id respectively) and an "Action" column/section showing
+  the badge only when a match exists — `action && <LinkedActionBadge
+  .../>`, never rendering the component's own "doesn't resolve"
+  fallback for the common "nothing raised yet" case.
+- **Every new query is a by-id-list `.select()`, capped at `.limit
+  (500)`** — the standing "fetch by id list, never blind" rule this
+  codebase has followed since the referral PATCH route's own PGRST200
+  lesson, applied to six more page families.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (2010 admin / 1001 portal — unchanged counts, this round is
+UI/route-glue work with no new pure-logic module, the established "no
+component-level test" convention for presentational wiring), all
+seven CI guards pass with no regressions (81 shared-dupe pairs,
+unchanged — `LegalRegisterClient.tsx`/`ObjectivesClient.tsx`/the four
+`Environmental*Client.tsx` files are admin-only, not shared-dupe
+pairs, since each app's own equivalent page already had its own
+independent markup before this round; row-cap clean; 44 unvalidated
+routes, unchanged; 44 static admin routes, all reachable; 101 blind-
+update chains, unchanged — every new write path here is a read, not a
+write; every paged query's `.order()` present; 300 unbounded-read
+chains, unchanged — every new by-id-list read was built with
+`.limit(500)` from the start), both production builds compile. No
+migration in this round — every fix reads the already-live `actions`
+table through its existing RLS (a plain company-scoped read, the same
+posture `Broadcast acknowledgement`'s own entry above already
+documents for a signed-in client session).

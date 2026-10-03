@@ -35,6 +35,20 @@ export default async function HealthSafetyManagementReviewPage(props: { params: 
       ])
     : [{ data: [] as ManagementReviewAttendee[], error: null }, { data: [] as ManagementReviewDataPack[], error: null }, { data: [] as ManagementReviewDecision[], error: null }];
 
+  // UI/UX cross-linking pass (2026-10-03): a decision's own
+  // `resulting_action_id` used to render as a bare "Action raised"
+  // badge with no status — the same "opaque id, not a link" gap the
+  // audit detail page's own corrective_action_id already had, fixed
+  // for the identical reason: readers had no way to see what became
+  // of a decision's own follow-up without separately opening Actions.
+  const decisionRows = (decisions ?? []) as ManagementReviewDecision[];
+  const resultingActionIds = [...new Set(decisionRows.map(d => d.resulting_action_id).filter((id): id is string => id != null))];
+  const { data: linkedActions } = resultingActionIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at')
+        .eq('company_id', params.companyId).in('id', resultingActionIds).limit(200)
+    : { data: [] as { id: string; title: string; status: string; priority: string | null; due_date: string | null; verification_required: boolean; verified_at: string | null }[] };
+
   return (
     <ManagementReviewClient
       companyId={params.companyId}
@@ -42,7 +56,8 @@ export default async function HealthSafetyManagementReviewPage(props: { params: 
       reviews={reviewRows}
       attendees={(attendees ?? []) as ManagementReviewAttendee[]}
       dataPacks={(packs ?? []) as ManagementReviewDataPack[]}
-      decisions={(decisions ?? []) as ManagementReviewDecision[]}
+      decisions={decisionRows}
+      linkedActions={linkedActions ?? []}
       people={people.rows}
       loadError={reviewError?.message ?? attError?.message ?? packError?.message ?? decError?.message ?? null}
     />

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, ClipboardCheck, Loader2, Plus, UserPlus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -45,6 +46,7 @@ export default function PermitsClient({
 
   const nameFor = (id: string | null) => (id ? people.find(p => p.id === id)?.name ?? 'Unknown' : '—');
   const siteFor = (id: string) => sites.find(s => s.id === id)?.name ?? 'Unknown site';
+  const equipmentFor = (id: string | null) => (id ? equipment.find(e => e.id === id)?.name ?? null : null);
   const templateFor = (id: string) => templates.find(t => t.id === id) ?? null;
   const peopleFor = (permitId: string) => permitPeople.filter(pp => pp.permit_id === permitId);
   const itemsForTemplate = (templateId: string) => templateItems.filter(i => i.template_id === templateId);
@@ -91,6 +93,7 @@ export default function PermitsClient({
                       <span className="font-mono text-xs" style={{ color: 'var(--ink-faint)' }}>{p.permit_number ?? 'draft'}</span>
                       <strong style={{ color: 'var(--ink)' }}>{tmpl ? PERMIT_TYPE_LABELS[tmpl.permit_type] : 'Permit'}</strong>
                       <span className="badge">{siteFor(p.site_id)}</span>
+                      {equipmentFor(p.asset_id) && <span className="badge">{equipmentFor(p.asset_id)}</span>}
                     </span>
                     <span className="block text-xs truncate" style={{ color: 'var(--ink-faint)' }}>{p.scope_of_work}</span>
                   </span>
@@ -107,6 +110,11 @@ export default function PermitsClient({
                       {p.suspended_reason && <span style={{ color: 'var(--gold)' }}>Suspended: {p.suspended_reason}</span>}
                       {p.closeout_notes && <span>Closed: {p.closeout_notes}</span>}
                       {p.revoked_reason && <span style={{ color: 'var(--red)' }}>Revoked: {p.revoked_reason}</span>}
+                      {p.asset_id && equipmentFor(p.asset_id) && (
+                        <Link href={`/health-safety/${companyId}/equipment#eq-${p.asset_id}`} style={{ color: 'var(--purple)' }}>
+                          View {equipmentFor(p.asset_id)} on the Equipment tab
+                        </Link>
+                      )}
                     </div>
 
                     <div>

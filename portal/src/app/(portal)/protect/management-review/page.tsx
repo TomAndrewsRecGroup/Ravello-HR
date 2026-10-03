@@ -3,6 +3,7 @@ import { ClipboardList } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { MANAGEMENT_REVIEW_STATUS_LABELS } from '@/lib/hs/vocab';
 import type { ManagementReview, ManagementReviewDecision } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Management Review' };
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,16 @@ export default async function ProtectManagementReviewPage() {
     : { data: [] as ManagementReviewDecision[], error: null };
   const decisionRows = (decisions ?? []) as ManagementReviewDecision[];
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own
+  // management-review page fix — a decision's resulting_action_id used
+  // to render as a bare "Action raised" badge with no status.
+  const resultingActionIds = [...new Set(decisionRows.map(d => d.resulting_action_id).filter((id): id is string => id != null))];
+  const { data: linkedActions } = resultingActionIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at')
+        .eq('company_id', companyId).in('id', resultingActionIds).limit(200)
+    : { data: [] as LinkedActionSummary[] };
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {(reviewError || decError) && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>The management review record could not be loaded. Refresh to try again.</p>}
@@ -55,12 +66,14 @@ export default async function ProtectManagementReviewPage() {
                 ) : (
                   <ul className="space-y-2">
                     {reviewDecisions.map(d => (
-                      <li key={d.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--surface-soft)' }}>
+                      <li key={d.id} className="rounded-md p-3 text-sm space-y-2" style={{ background: 'var(--surface-soft)' }}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{d.topic}</span>
-                          {d.resulting_action_id && <span className="badge">Action raised</span>}
                         </div>
-                        <p className="mt-1" style={{ color: 'var(--ink-soft)' }}>{d.decision_text}</p>
+                        <p style={{ color: 'var(--ink-soft)' }}>{d.decision_text}</p>
+                        {d.resulting_action_id && (
+                          <LinkedActionBadge action={(linkedActions ?? []).find(a => a.id === d.resulting_action_id) ?? null} />
+                        )}
                       </li>
                     ))}
                   </ul>

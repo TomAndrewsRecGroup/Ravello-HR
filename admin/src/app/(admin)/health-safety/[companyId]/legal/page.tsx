@@ -43,6 +43,18 @@ export default async function HealthSafetyLegalRegisterPage(props: { params: Pro
       : Promise.resolve({ data: [] as RequirementEvidenceLink[], error: null }),
   ]);
 
+  // UI/UX cross-linking pass (2026-10-03): a noncompliance-flavoured
+  // evaluation raises a real corrective action
+  // (legalRegisterRules.ts's own legal_evaluation_noncompliance rule,
+  // source_type='legal_requirement', source_id=the OBLIGATION's own
+  // id — never the evaluation's, since one obligation may be flagged
+  // more than once) — nothing here ever showed it.
+  const { data: linkedActions } = obligationIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', params.companyId).eq('source_type', 'legal_requirement').in('source_id', obligationIds).limit(500)
+    : { data: [] as { id: string; title: string; status: string; priority: string | null; due_date: string | null; verification_required: boolean; verified_at: string | null; source_id: string }[] };
+
   return (
     <LegalRegisterClient
       companyId={params.companyId}
@@ -50,6 +62,7 @@ export default async function HealthSafetyLegalRegisterPage(props: { params: Pro
       obligations={obligations.rows}
       evaluations={(evaluations ?? []) as ComplianceEvaluation[]}
       evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
+      linkedActions={linkedActions ?? []}
       loadError={catError?.message ?? obligations.error ?? evalError?.message ?? linksError?.message ?? null}
     />
   );

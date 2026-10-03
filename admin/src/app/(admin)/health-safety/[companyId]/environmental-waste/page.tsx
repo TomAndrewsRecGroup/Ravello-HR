@@ -4,6 +4,7 @@ import { readAllPages } from '@/lib/supabase/paged';
 import type { WasteStream, WasteMovement } from '@/lib/hs/types';
 import type { Contractor } from '@/lib/hs/types';
 import EnvironmentalWasteClient from '@/components/hs/EnvironmentalWasteClient';
+import type { LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Waste' };
 export const dynamic = 'force-dynamic';
@@ -30,12 +31,24 @@ export default async function HealthSafetyEnvironmentalWastePage(props: { params
         .eq('company_id', params.companyId).order('name').order('id').range(from, to)),
   ]);
 
+  // UI/UX cross-linking pass (2026-10-03): a flagged non-conformance on
+  // a waste movement raises a real corrective action
+  // (environmentalRules.ts's own rules, source_type='waste_movement',
+  // source_id=the movement's own id) that nothing here ever showed.
+  const movementIds = movements.rows.map(m => m.id);
+  const { data: linkedActions } = movementIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', params.companyId).eq('source_type', 'waste_movement').in('source_id', movementIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+
   return (
     <EnvironmentalWasteClient
       companyId={params.companyId}
       streams={streams.rows}
       movements={movements.rows}
       contractors={contractors.rows}
+      linkedActions={(linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[]}
       loadError={streams.error ?? movements.error ?? contractors.error ?? null}
     />
   );

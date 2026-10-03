@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import type { Objective, ObjectiveMeasurement, ManagementSystemStandard, RequirementEvidenceLink } from '@/lib/hs/types';
 import ObjectivesClient from '@/components/hs/ObjectivesClient';
+import type { LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Objectives & targets' };
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,17 @@ export default async function HealthSafetyObjectivesPage(props: { params: Promis
       : Promise.resolve({ data: [] as RequirementEvidenceLink[], error: null }),
   ]);
 
+  // UI/UX cross-linking pass (2026-10-03): an objective that goes
+  // at_risk/missed raises a real corrective action
+  // (governanceRules.ts's own objective_at_risk_or_missed rule,
+  // source_type='objective', source_id=the OBJECTIVE's own id directly)
+  // that nothing here ever showed.
+  const { data: linkedActions } = objectiveIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', params.companyId).eq('source_type', 'objective').in('source_id', objectiveIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+
   return (
     <ObjectivesClient
       companyId={params.companyId}
@@ -49,6 +61,7 @@ export default async function HealthSafetyObjectivesPage(props: { params: Promis
       standards={(standards ?? []) as ManagementSystemStandard[]}
       people={people.rows}
       evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
+      linkedActions={(linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[]}
       loadError={objError?.message ?? stdError?.message ?? mError?.message ?? linksError?.message ?? null}
     />
   );

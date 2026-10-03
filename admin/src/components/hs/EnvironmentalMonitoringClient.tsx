@@ -9,10 +9,12 @@ import {
   ENVIRONMENTAL_MONITORING_LIMIT_DIRECTIONS, ENVIRONMENTAL_MONITORING_LIMIT_DIRECTION_LABELS, type EnvironmentalMonitoringLimitDirection,
 } from '@/lib/hs/vocab';
 import type { EnvironmentalMonitoringReading } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
   readings: EnvironmentalMonitoringReading[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -32,7 +34,7 @@ function limitCell(r: EnvironmentalMonitoringReading): string {
 // blank is a real, honest "no limit on file" state, never guessed at.
 // limit_direction defaults to 'upper' — every reading recorded before
 // 186 shipped is exactly this, unchanged.
-export default function EnvironmentalMonitoringClient({ companyId, readings, loadError }: Props) {
+export default function EnvironmentalMonitoringClient({ companyId, readings, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -100,9 +102,11 @@ export default function EnvironmentalMonitoringClient({ companyId, readings, loa
         </div>
       ) : (
         <div className="table-wrapper"><table className="table">
-          <thead><tr><th>Date</th><th>Category</th><th>Parameter</th><th>Value</th><th>Limit</th><th>Within limit</th></tr></thead>
+          <thead><tr><th>Date</th><th>Category</th><th>Parameter</th><th>Value</th><th>Limit</th><th>Within limit</th><th>Action</th></tr></thead>
           <tbody>
-            {readings.map(r => (
+            {readings.map(r => {
+              const action = linkedActions.find(a => a.source_id === r.id) ?? null;
+              return (
               <tr key={r.id}>
                 <td>{fmt(r.recorded_at)}</td>
                 <td>{ENVIRONMENTAL_MONITORING_CATEGORY_LABELS[r.category]}</td>
@@ -114,8 +118,10 @@ export default function EnvironmentalMonitoringClient({ companyId, readings, loa
                     : r.within_limit ? <span style={{ color: 'var(--teal)' }}>Within limit</span>
                     : <span style={{ color: 'var(--red)' }}>Exceeded limit</span>}
                 </td>
+                <td>{action && <LinkedActionBadge action={action} />}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table></div>
       )}

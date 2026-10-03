@@ -5,12 +5,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/modules/Toast';
 import type { WasteStream, WasteMovement, Contractor } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
   streams: WasteStream[];
   movements: WasteMovement[];
   contractors: Contractor[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -19,7 +21,7 @@ const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', {
 // Waste streams are reference data (the "what kind of waste");
 // movements are the actual consignments, keyed to a contractor carrier
 // (150) — never a second supplier table.
-export default function EnvironmentalWasteClient({ companyId, streams, movements, contractors, loadError }: Props) {
+export default function EnvironmentalWasteClient({ companyId, streams, movements, contractors, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [streamOpen, setStreamOpen] = useState(false);
@@ -118,17 +120,21 @@ export default function EnvironmentalWasteClient({ companyId, streams, movements
         )}
         {movements.length === 0 ? <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No waste movements recorded yet.</p> : (
           <div className="table-wrapper"><table className="table">
-            <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Carrier</th><th>Non-conformance</th></tr></thead>
+            <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Carrier</th><th>Non-conformance</th><th>Action</th></tr></thead>
             <tbody>
-              {movements.map(m => (
+              {movements.map(m => {
+                const action = linkedActions.find(a => a.source_id === m.id) ?? null;
+                return (
                 <tr key={m.id}>
                   <td>{fmt(m.moved_at)}</td>
                   <td>{streamName_(m.waste_stream_id)}</td>
                   <td>{m.quantity} {m.unit}</td>
                   <td>{carrierName(m.carrier_contractor_id)}</td>
                   <td>{m.non_conformance ? <span className="badge badge-urgent">Yes</span> : 'No'}</td>
+                  <td>{action && <LinkedActionBadge action={action} />}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table></div>
         )}

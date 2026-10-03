@@ -10,11 +10,13 @@ import {
   PERMIT_CONDITION_STATUSES, PERMIT_CONDITION_STATUS_LABELS, type PermitConditionStatus,
 } from '@/lib/hs/vocab';
 import type { EnvironmentalPermit, PermitCondition } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
   permits: EnvironmentalPermit[];
   conditions: PermitCondition[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -41,7 +43,7 @@ const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-GB', {
 // revoked); a condition's status is deliberately never a compliance
 // verdict — current/evidence_due/overdue/breach_recorded/review_required
 // only. See CLAUDE.md's standing rule against certification language.
-export default function EnvironmentalPermitsClient({ companyId, permits, conditions, loadError }: Props) {
+export default function EnvironmentalPermitsClient({ companyId, permits, conditions, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -159,8 +161,10 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
                       <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No conditions recorded yet.</p>
                     ) : (
                       <ul className="space-y-2">
-                        {permitConditions.map(c => (
-                          <li key={c.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--surface-soft)' }}>
+                        {permitConditions.map(c => {
+                          const action = linkedActions.find(a => a.source_id === c.id) ?? null;
+                          return (
+                          <li key={c.id} className="rounded-md p-3 text-sm space-y-2" style={{ background: 'var(--surface-soft)' }}>
                             <p>{c.condition_text}</p>
                             <div className="flex items-center gap-3 mt-2">
                               <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Next review: {fmt(c.next_review_due)}</span>
@@ -169,8 +173,10 @@ export default function EnvironmentalPermitsClient({ companyId, permits, conditi
                                 {PERMIT_CONDITION_STATUSES.map(s => <option key={s} value={s}>{PERMIT_CONDITION_STATUS_LABELS[s]}</option>)}
                               </select>
                             </div>
+                            {action && <LinkedActionBadge action={action} />}
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     )}
                   </div>

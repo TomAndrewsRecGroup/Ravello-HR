@@ -12,6 +12,7 @@ import {
 } from '@/lib/hs/vocab';
 import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation, RequirementEvidenceLink } from '@/lib/hs/types';
 import EvidenceLinksPanel from './EvidenceLinksPanel';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
@@ -19,6 +20,7 @@ interface Props {
   obligations: OrganisationLegalObligation[];
   evaluations: ComplianceEvaluation[];
   evidenceLinks: RequirementEvidenceLink[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -43,7 +45,7 @@ const EVALUATION_COLOUR: Record<ComplianceEvaluationStatus, string> = {
   not_evaluated:           'var(--ink-faint)',
 };
 
-export default function LegalRegisterClient({ companyId, catalogue, obligations, evaluations, evidenceLinks, loadError }: Props) {
+export default function LegalRegisterClient({ companyId, catalogue, obligations, evaluations, evidenceLinks, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [linkOpen, setLinkOpen] = useState(false);
@@ -166,6 +168,10 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
             const req = catalogueById.get(o.legal_requirement_id);
             const isExpanded = expanded === o.id;
             const obligationEvaluations = evaluations.filter(e => e.obligation_id === o.id);
+            // legalRegisterRules.ts's legal_evaluation_noncompliance rule keys
+            // the raised action's source_id to the OBLIGATION, never a specific
+            // evaluation — several evaluations of one obligation share it.
+            const obligationActions = linkedActions.filter(a => a.source_id === o.id);
             const currentStatus = applicability[o.id] ?? o.applicability_status;
             const needsConfirmation = currentStatus === 'applicable' || currentStatus === 'not_applicable';
             return (
@@ -214,6 +220,13 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
                       )}
                       <button type="button" className="btn-secondary btn-sm" disabled={busy} onClick={() => saveApplicability(o)}>Save applicability</button>
                     </div>
+
+                    {obligationActions.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Corrective action</h4>
+                        {obligationActions.map(a => <LinkedActionBadge key={a.id} action={a} />)}
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">

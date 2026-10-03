@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Trash2 } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import type { WasteStream, WasteMovement } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Waste' };
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,18 @@ export default async function ProtectEnvironmentalWastePage() {
   const streamRows = (streams ?? []) as WasteStream[];
   const moveRows = (movements ?? []) as WasteMovement[];
   const streamName = (id: string) => streamRows.find(s => s.id === id)?.name ?? '—';
+
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own waste
+  // page fix — a flagged non-conformance raises a real corrective
+  // action (environmentalRules.ts's own rules, source_type=
+  // 'waste_movement', source_id=the movement's own id).
+  const movementIds = moveRows.map(m => m.id);
+  const { data: linkedActions } = movementIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', companyId).eq('source_type', 'waste_movement').in('source_id', movementIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+  const linkedActionRows = (linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[];
 
   return (
     <main className="portal-page flex-1 space-y-6">
@@ -51,16 +64,20 @@ export default async function ProtectEnvironmentalWastePage() {
           <div className="p-8"><div className="empty-state"><Trash2 size={28} style={{ color: 'var(--ink-faint)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No waste movements on file</p></div></div>
         ) : (
           <div className="table-wrapper"><table className="table">
-            <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Non-conformance</th></tr></thead>
+            <thead><tr><th>Date</th><th>Stream</th><th>Quantity</th><th>Non-conformance</th><th>Action</th></tr></thead>
             <tbody>
-              {moveRows.map(m => (
+              {moveRows.map(m => {
+                const action = linkedActionRows.find(a => a.source_id === m.id) ?? null;
+                return (
                 <tr key={m.id}>
                   <td>{fmt(m.moved_at)}</td>
                   <td>{streamName(m.waste_stream_id)}</td>
                   <td>{m.quantity} {m.unit}</td>
                   <td>{m.non_conformance ? <span className="badge badge-urgent">Yes</span> : 'No'}</td>
+                  <td>{action && <LinkedActionBadge action={action} />}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table></div>
         )}

@@ -3,6 +3,7 @@ import { Target } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { OBJECTIVE_STATUS_LABELS, type ObjectiveStatus } from '@/lib/hs/vocab';
 import type { Objective, ObjectiveMeasurement } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Objectives & Targets' };
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,18 @@ export default async function ProtectObjectivesPage() {
     : { data: [] as ObjectiveMeasurement[], error: null };
   const measurementRows = (measurements ?? []) as ObjectiveMeasurement[];
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own
+  // objectives page fix — an at-risk/missed objective raises a real
+  // corrective action (governanceRules.ts's own
+  // objective_at_risk_or_missed rule, source_type='objective',
+  // source_id=the objective's own id) that nothing here ever showed.
+  const { data: linkedActions } = objectiveIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', companyId).eq('source_type', 'objective').in('source_id', objectiveIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+  const linkedActionRows = (linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[];
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {(objError || mError) && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>Objectives could not be loaded. Refresh to try again.</p>}
@@ -53,6 +66,7 @@ export default async function ProtectObjectivesPage() {
         <div className="space-y-4">
           {objectiveRows.map(o => {
             const objMeasurements = measurementRows.filter(m => m.objective_id === o.id).slice(0, 5);
+            const objActions = linkedActionRows.filter(a => a.source_id === o.id);
             return (
               <div key={o.id} className="card p-5 space-y-3">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -60,6 +74,7 @@ export default async function ProtectObjectivesPage() {
                   <span className="ml-auto badge" style={{ color: STATUS_COLOUR[o.status] }}>{OBJECTIVE_STATUS_LABELS[o.status]}</span>
                 </div>
                 {o.description && <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>{o.description}</p>}
+                {objActions.map(a => <LinkedActionBadge key={a.id} action={a} />)}
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div><span className="label">Target</span><p>{o.target_value ?? '—'} {o.target_unit ?? ''}</p></div>
                   <div><span className="label">Baseline</span><p>{o.baseline_value ?? '—'}</p></div>

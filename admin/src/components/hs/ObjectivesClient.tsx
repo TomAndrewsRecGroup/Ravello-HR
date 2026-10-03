@@ -11,6 +11,7 @@ import {
 } from '@/lib/hs/vocab';
 import type { Objective, ObjectiveMeasurement, ManagementSystemStandard, RequirementEvidenceLink } from '@/lib/hs/types';
 import EvidenceLinksPanel from './EvidenceLinksPanel';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
@@ -19,6 +20,7 @@ interface Props {
   standards: ManagementSystemStandard[];
   people: { id: string; full_name: string }[];
   evidenceLinks: RequirementEvidenceLink[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -35,7 +37,7 @@ const STATUS_COLOUR: Record<ObjectiveStatus, string> = {
   abandoned: 'var(--ink-faint)',
 };
 
-export default function ObjectivesClient({ companyId, objectives, measurements, standards, people, evidenceLinks, loadError }: Props) {
+export default function ObjectivesClient({ companyId, objectives, measurements, standards, people, evidenceLinks, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
@@ -184,6 +186,7 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
             const objMeasurements = measurements.filter(m => m.objective_id === o.id);
             const standard = o.standard_id ? standardsById.get(o.standard_id) : null;
             const owner = o.owner_person_id ? peopleById.get(o.owner_person_id) : null;
+            const objActions = linkedActions.filter(a => a.source_id === o.id);
             return (
               <div key={o.id} className="card p-0 overflow-hidden">
                 <button type="button" className="w-full flex items-center gap-3 p-4 text-left" onClick={() => setExpanded(isExpanded ? null : o.id)}>
@@ -244,6 +247,13 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
                         </ul>
                       )}
                     </div>
+
+                    {objActions.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Corrective action</h4>
+                        {objActions.map(a => <LinkedActionBadge key={a.id} action={a} />)}
+                      </div>
+                    )}
 
                     <EvidenceLinksPanel companyId={companyId} sourceType="objective" sourceId={o.id} links={evidenceLinks} />
                   </div>

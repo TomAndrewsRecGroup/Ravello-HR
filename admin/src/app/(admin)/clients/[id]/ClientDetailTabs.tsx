@@ -1,5 +1,6 @@
 'use client';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, Suspense } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
 import { Loader2, Download, Check, Plus, X, User, ExternalLink, CheckCircle2, Bell, Mail } from 'lucide-react';
@@ -405,9 +406,39 @@ interface Props {
   consultancyServiceScopes: any[];
 }
 
-export default function ClientDetailTabs({ company, users, reqs, notes, stats, staffUserId, consultancyServiceScopes }: Props) {
+// UI/UX cross-linking pass (2026-10-03): this is the single most-used
+// staff page in the app (clients/[id]), yet its own tab switcher was
+// pure client state with no URL representation at all — a link to
+// "this client's Documents tab" was impossible to share, bookmark, or
+// restore via browser back/forward; it always reopened on Overview.
+// Every later-built per-client workspace (/health-safety/<companyId>/
+// <tab>) correctly uses a real route per tab; this brings this one
+// page in line with that, the same `?tab=`/`?update=`/`?legal=` query-
+// param convention this codebase already uses for Broadcast's prefill
+// and Core 360 Status's window picker.
+function tabFromSearchParams(sp: URLSearchParams): Tab {
+  const raw = sp.get('tab');
+  return (TABS as readonly string[]).includes(raw ?? '') ? (raw as Tab) : 'Overview';
+}
+
+// useSearchParams() opts this component out of static rendering unless
+// wrapped in its own Suspense boundary — the exact documents/upload/
+// page.tsx precedent this codebase already established for the same
+// hook.
+export default function ClientDetailTabs(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <ClientDetailTabsInner {...props} />
+    </Suspense>
+  );
+}
+
+function ClientDetailTabsInner({ company, users, reqs, notes, stats, staffUserId, consultancyServiceScopes }: Props) {
   const supabase = createClient();
-  const [tab, setTab] = useState<Tab>('Overview');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => tabFromSearchParams(searchParams));
 
   /* ── Lazy-loaded tab data ── */
   const [tabData, setTabData] = useState<Record<string, any>>({});
@@ -434,9 +465,19 @@ export default function ClientDetailTabs({ company, users, reqs, notes, stats, s
     setTabLoading(null);
   }, [company.id]);
 
+  // Load whichever tab a URL (or a reload) opened on — not just the
+  // ones handleTabChange itself navigates to.
+  useEffect(() => {
+    loadTabData(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handleTabChange(newTab: Tab) {
     setTab(newTab);
     loadTabData(newTab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', newTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   /* ── Lazy-loaded state (populated when tab data arrives) ── */

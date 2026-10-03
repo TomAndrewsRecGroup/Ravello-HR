@@ -11,10 +11,12 @@ import {
   type EnvironmentalSpillReceivingEnvironment, type EnvironmentalSpillStatus,
 } from '@/lib/hs/vocab';
 import type { EnvironmentalSpill } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
   spills: EnvironmentalSpill[];
+  linkedActions: (LinkedActionSummary & { source_id: string })[];
   loadError: string | null;
 }
 
@@ -29,7 +31,7 @@ const STATUS_COLOUR: Record<EnvironmentalSpillStatus, string> = {
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
-export default function EnvironmentalSpillsClient({ companyId, spills, loadError }: Props) {
+export default function EnvironmentalSpillsClient({ companyId, spills, linkedActions, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -113,9 +115,11 @@ export default function EnvironmentalSpillsClient({ companyId, spills, loadError
         </div>
       ) : (
         <div className="table-wrapper"><table className="table">
-          <thead><tr><th>Occurred</th><th>Substance</th><th>Receiving</th><th>Contained</th><th>Status</th></tr></thead>
+          <thead><tr><th>Occurred</th><th>Substance</th><th>Receiving</th><th>Contained</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
-            {spills.map(s => (
+            {spills.map(s => {
+              const action = linkedActions.find(a => a.source_id === s.id) ?? null;
+              return (
               <tr key={s.id}>
                 <td>{fmt(s.occurred_at)}</td>
                 <td>{s.substance}</td>
@@ -129,8 +133,10 @@ export default function EnvironmentalSpillsClient({ companyId, spills, loadError
                     </select>
                   </div>
                 </td>
+                <td>{action && <LinkedActionBadge action={action} />}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table></div>
       )}

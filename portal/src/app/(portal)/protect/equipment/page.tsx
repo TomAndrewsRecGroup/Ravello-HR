@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Fragment } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Package, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Lock, Package, ShieldAlert } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
-import { HS_EQUIPMENT_STATUS_LABELS } from '@/lib/hs/vocab';
+import { HS_EQUIPMENT_STATUS_LABELS, ISOLATION_TYPE_LABELS, ISOLATION_STATUS_LABELS, PERMIT_STATUS_LABELS, type IsolationType, type IsolationStatus, type PermitStatus } from '@/lib/hs/vocab';
 import { HAZARD_STATUS_LABELS, type HazardStatus } from '@/lib/hs/safetyVocab';
 import type { HsEquipment } from '@/lib/hs/types';
 
@@ -50,6 +50,49 @@ export default async function ProtectEquipmentPage() {
     hazardsByAsset.set(h.linked_asset_id, list);
   }
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own
+  // EquipmentClient.tsx fix — an asset's quarantined/out_of_service
+  // status often traces to a still-open isolation or permit, which
+  // this page never surfaced.
+  const [{ data: isolations }, { data: permits }] = equipmentIds.length > 0
+    ? await Promise.all([
+        supabase.from('isolations')
+          .select('id, asset_id, isolation_type, status, applied_at')
+          .eq('company_id', companyId)
+          .in('asset_id', equipmentIds)
+          .neq('status', 'removed')
+          .order('applied_at', { ascending: false })
+          .limit(500),
+        supabase.from('permits')
+          .select('id, asset_id, permit_number, status, issued_at')
+          .eq('company_id', companyId)
+          .in('asset_id', equipmentIds)
+          .in('status', ['issued', 'suspended'])
+          .order('issued_at', { ascending: false })
+          .limit(500),
+      ])
+    : [{ data: [] as { id: string; asset_id: string; isolation_type: string; status: string; applied_at: string }[] },
+       { data: [] as { id: string; asset_id: string; permit_number: string | null; status: string; issued_at: string | null }[] }];
+
+  const isolationsByAsset = new Map<string, { id: string; isolation_type: string; status: string; applied_at: string }[]>();
+  for (const iso of isolations ?? []) {
+    if (!iso.asset_id) continue;
+    const list = isolationsByAsset.get(iso.asset_id) ?? [];
+    list.push(iso);
+    isolationsByAsset.set(iso.asset_id, list);
+  }
+
+  const permitsByAsset = new Map<string, { id: string; permit_number: string | null; status: string; issued_at: string | null }[]>();
+  for (const p of permits ?? []) {
+    if (!p.asset_id) continue;
+    const list = permitsByAsset.get(p.asset_id) ?? [];
+    list.push(p);
+    permitsByAsset.set(p.asset_id, list);
+  }
+
+  const fmtDt = (d: string | null) =>
+    d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {error && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>Equipment could not be loaded. Refresh to try again.</p>}
@@ -70,6 +113,8 @@ export default async function ProtectEquipmentPage() {
               {rows.map(item => {
                 const overdue = item.status === 'in_service' && item.next_inspection_due && item.next_inspection_due < today;
                 const itemHazards = hazardsByAsset.get(item.id) ?? [];
+                const itemIsolations = isolationsByAsset.get(item.id) ?? [];
+                const itemPermits = permitsByAsset.get(item.id) ?? [];
                 return (
                   <Fragment key={item.id}>
                     <tr id={`eq-${item.id}`}>
@@ -95,6 +140,39 @@ export default async function ProtectEquipmentPage() {
                                   <Link href={`/protect/hazards/${h.id}`} style={{ color: 'var(--purple)' }}>{h.title}</Link>{' '}
                                   <span style={{ color: 'var(--ink-faint)' }}>
                                     — {HAZARD_STATUS_LABELS[h.status as HazardStatus] ?? h.status} · {fmt(h.identified_at?.slice(0, 10) ?? null)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {(itemIsolations.length > 0 || itemPermits.length > 0) && (
+                      <tr>
+                        <td colSpan={5} className="pt-0">
+                          <div className="rounded-lg p-2 text-xs space-y-1" style={{ background: 'var(--surface-soft)' }}>
+                            <p className="flex items-center gap-1 font-medium" style={{ color: 'var(--ink-soft)' }}>
+                              <Lock size={12} /> Open isolations &amp; permits against this asset
+                            </p>
+                            <ul className="space-y-0.5">
+                              {itemIsolations.map(iso => (
+                                <li key={iso.id}>
+                                  <Link href="/protect/isolations" style={{ color: 'var(--purple)' }}>
+                                    {ISOLATION_TYPE_LABELS[iso.isolation_type as IsolationType] ?? iso.isolation_type} isolation
+                                  </Link>{' '}
+                                  <span style={{ color: 'var(--ink-faint)' }}>
+                                    — {ISOLATION_STATUS_LABELS[iso.status as IsolationStatus] ?? iso.status} · applied {fmtDt(iso.applied_at)}
+                                  </span>
+                                </li>
+                              ))}
+                              {itemPermits.map(p => (
+                                <li key={p.id}>
+                                  <Link href="/protect/permits" style={{ color: 'var(--purple)' }}>
+                                    Permit {p.permit_number ?? 'to work'}
+                                  </Link>{' '}
+                                  <span style={{ color: 'var(--ink-faint)' }}>
+                                    — {PERMIT_STATUS_LABELS[p.status as PermitStatus] ?? p.status} · issued {fmtDt(p.issued_at)}
                                   </span>
                                 </li>
                               ))}

@@ -3,6 +3,7 @@ import { FileCheck } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ENVIRONMENTAL_PERMIT_STATUS_LABELS, PERMIT_CONDITION_STATUS_LABELS, type EnvironmentalPermitStatus, type PermitConditionStatus } from '@/lib/hs/vocab';
 import type { EnvironmentalPermit, PermitCondition } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Environmental Permits' };
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,19 @@ export default async function ProtectEnvironmentalPermitsPage() {
     : { data: [] as PermitCondition[], error: null };
   const condRows = (conditions ?? []) as PermitCondition[];
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own permits
+  // page fix — a condition moved to breach_recorded/review_required
+  // raises a real corrective action (environmentalRules.ts's own
+  // rule, source_type='environmental_permit_condition',
+  // source_id=the CONDITION's own id).
+  const conditionIds = condRows.map(c => c.id);
+  const { data: linkedActions } = conditionIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', companyId).eq('source_type', 'environmental_permit_condition').in('source_id', conditionIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+  const linkedActionRows = (linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[];
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {(permitsError || condError) && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>Permits could not be loaded. Refresh to try again.</p>}
@@ -60,15 +74,19 @@ export default async function ProtectEnvironmentalPermitsPage() {
                 <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>Expires {fmt(p.expires_on)}</span>
                 <span className="ml-auto badge" style={{ color: PERMIT_STATUS_COLOUR[p.status] }}>{ENVIRONMENTAL_PERMIT_STATUS_LABELS[p.status]}</span>
               </div>
-              {condRows.filter(c => c.environmental_permit_id === p.id).map(c => (
-                <div key={c.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--surface-soft)' }}>
+              {condRows.filter(c => c.environmental_permit_id === p.id).map(c => {
+                const action = linkedActionRows.find(a => a.source_id === c.id) ?? null;
+                return (
+                <div key={c.id} className="rounded-md p-3 text-sm space-y-2" style={{ background: 'var(--surface-soft)' }}>
                   <p>{c.condition_text}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--ink-faint)' }}>
                     <span>Next review: {fmt(c.next_review_due)}</span>
                     <span className="badge" style={{ color: CONDITION_STATUS_COLOUR[c.status] }}>{PERMIT_CONDITION_STATUS_LABELS[c.status]}</span>
                   </div>
+                  {action && <LinkedActionBadge action={action} />}
                 </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>

@@ -3,6 +3,7 @@ import { Droplets } from 'lucide-react';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import { ENVIRONMENTAL_SPILL_RECEIVING_ENVIRONMENT_LABELS, ENVIRONMENTAL_SPILL_STATUS_LABELS, type EnvironmentalSpillStatus } from '@/lib/hs/vocab';
 import type { EnvironmentalSpill } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Environmental Spills' };
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,18 @@ export default async function ProtectEnvironmentalSpillsPage() {
     .eq('company_id', companyId).order('occurred_at', { ascending: false }).limit(500);
   const rows = (data ?? []) as EnvironmentalSpill[];
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own spills
+  // page fix — an uncontained spill raises a real corrective action
+  // (environmentalRules.ts's own rule, source_type=
+  // 'environmental_spill', source_id=the spill's own id).
+  const spillIds = rows.map(s => s.id);
+  const { data: linkedActions } = spillIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', companyId).eq('source_type', 'environmental_spill').in('source_id', spillIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+  const linkedActionRows = (linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[];
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {error && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>Spills could not be loaded. Refresh to try again.</p>}
@@ -36,7 +49,9 @@ export default async function ProtectEnvironmentalSpillsPage() {
         <div className="card p-12"><div className="empty-state"><Droplets size={28} style={{ color: 'var(--blue)' }} /><p className="text-base font-medium" style={{ color: 'var(--ink-soft)' }}>No spills on file</p></div></div>
       ) : (
         <div className="space-y-3">
-          {rows.map(s => (
+          {rows.map(s => {
+            const action = linkedActionRows.find(a => a.source_id === s.id) ?? null;
+            return (
             <div key={s.id} className="card p-4 space-y-1">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <strong>{s.substance}</strong>
@@ -44,8 +59,10 @@ export default async function ProtectEnvironmentalSpillsPage() {
                 <span className="ml-auto badge" style={{ color: STATUS_COLOUR[s.status] }}>{ENVIRONMENTAL_SPILL_STATUS_LABELS[s.status]}</span>
               </div>
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmt(s.occurred_at)} · {s.contained ? 'Contained' : 'Not yet contained'}</p>
+              {action && <LinkedActionBadge action={action} />}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>

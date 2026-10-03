@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, ChevronDown, ChevronRight, FileText, Loader2, Package, Paperclip, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -9,6 +10,7 @@ import { HS_EQUIPMENT_STATUS_LABELS, HS_EQUIPMENT_STATUSES, type HsEquipmentStat
 import {
   HS_EQUIPMENT_INSPECTION_OUTCOME_LABELS, HS_EQUIPMENT_INSPECTION_OUTCOMES, type HsEquipmentInspectionOutcome,
 } from '@/lib/hs/vocab';
+import { ISOLATION_TYPE_LABELS, ISOLATION_STATUS_LABELS, PERMIT_STATUS_LABELS, type IsolationType, type IsolationStatus, type PermitStatus } from '@/lib/hs/vocab';
 import { HS_EVIDENCE_ACCEPT, evidenceUrl, uploadEvidence } from '@/lib/hs/evidence';
 import { daysUntil } from '@/lib/hs/recurrence';
 import type { HsEquipment, HsEquipmentInspection, HsFile } from '@/lib/hs/types';
@@ -21,6 +23,9 @@ import EntityQrPanel from './EntityQrPanel';
 // uses throughout rather than widening the shared types file.
 interface LinkedHazard { id: string; title: string; status: string; identified_at: string }
 
+interface LinkedIsolation { id: string; isolation_type: string; status: string; applied_at: string }
+interface LinkedPermit { id: string; permit_number: string | null; status: string; issued_at: string | null }
+
 interface Props {
   companyId: string;
   companyName: string;
@@ -30,6 +35,8 @@ interface Props {
   files: HsFile[];
   activeQrEquipmentIds: Set<string>;
   hazardsByAsset: Map<string, LinkedHazard[]>;
+  isolationsByAsset: Map<string, LinkedIsolation[]>;
+  permitsByAsset: Map<string, LinkedPermit[]>;
   loadError: string | null;
 }
 
@@ -45,7 +52,7 @@ function dueColour(due: string | null, status: HsEquipmentStatus): string {
   return 'var(--teal)';
 }
 
-export default function EquipmentClient({ companyId, companyName, canRecord, equipment, inspections, files, activeQrEquipmentIds, hazardsByAsset, loadError }: Props) {
+export default function EquipmentClient({ companyId, companyName, canRecord, equipment, inspections, files, activeQrEquipmentIds, hazardsByAsset, isolationsByAsset, permitsByAsset, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -120,7 +127,7 @@ export default function EquipmentClient({ companyId, companyName, canRecord, equ
             const isOpen = expanded === item.id;
             const history = inspectionsByEquipment.get(item.id) ?? [];
             return (
-              <li key={item.id}>
+              <li key={item.id} id={`eq-${item.id}`}>
                 <button className="w-full flex items-center gap-3 p-4 text-left" aria-expanded={isOpen} onClick={() => setExpanded(isOpen ? null : item.id)}>
                   {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   <span className="flex-1 min-w-0">
@@ -163,6 +170,12 @@ export default function EquipmentClient({ companyId, companyName, canRecord, equ
                     />
 
                     <ItemReports hazards={hazardsByAsset.get(item.id) ?? []} />
+
+                    <ItemSafetyLocks
+                      companyId={companyId}
+                      isolations={isolationsByAsset.get(item.id) ?? []}
+                      permits={permitsByAsset.get(item.id) ?? []}
+                    />
 
                     <div>
                       <h3 className="label">Inspection history</h3>
@@ -216,6 +229,50 @@ function ItemReports({ hazards }: { hazards: { id: string; title: string; status
             </a>
             <span style={{ color: 'var(--ink-faint)' }}>{HAZARD_STATUS_LABELS[h.status as HazardStatus] ?? h.status}</span>
             <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmt(h.identified_at?.slice(0, 10) ?? null)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const fmtDt = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+// UI/UX cross-linking pass (2026-10-03): an asset showing quarantined/
+// out_of_service often has a real, live reason sitting on a different
+// tab — a still-open isolation or an issued/suspended permit against
+// it — that nothing here ever surfaced. Both tabs have no per-record
+// deep link of their own (client-state expand only), so this links to
+// the tab itself rather than promising a link it can't keep.
+function ItemSafetyLocks({
+  companyId, isolations, permits,
+}: {
+  companyId: string;
+  isolations: { id: string; isolation_type: string; status: string; applied_at: string }[];
+  permits: { id: string; permit_number: string | null; status: string; issued_at: string | null }[];
+}) {
+  if (isolations.length === 0 && permits.length === 0) return null;
+  return (
+    <div>
+      <h3 className="label">Open isolations &amp; permits against this asset</h3>
+      <ul className="space-y-1">
+        {isolations.map(iso => (
+          <li key={iso.id} className="text-sm flex flex-wrap items-center gap-2 rounded-lg p-2" style={{ background: 'var(--surface-soft)' }}>
+            <Link href={`/health-safety/${companyId}/isolations`} style={{ color: 'var(--purple)' }}>
+              {ISOLATION_TYPE_LABELS[iso.isolation_type as IsolationType] ?? iso.isolation_type} isolation
+            </Link>
+            <span style={{ color: 'var(--ink-faint)' }}>{ISOLATION_STATUS_LABELS[iso.status as IsolationStatus] ?? iso.status}</span>
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>applied {fmtDt(iso.applied_at)}</span>
+          </li>
+        ))}
+        {permits.map(p => (
+          <li key={p.id} className="text-sm flex flex-wrap items-center gap-2 rounded-lg p-2" style={{ background: 'var(--surface-soft)' }}>
+            <Link href={`/health-safety/${companyId}/permits`} style={{ color: 'var(--purple)' }}>
+              Permit {p.permit_number ?? 'to work'}
+            </Link>
+            <span style={{ color: 'var(--ink-faint)' }}>{PERMIT_STATUS_LABELS[p.status as PermitStatus] ?? p.status}</span>
+            <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>issued {fmtDt(p.issued_at)}</span>
           </li>
         ))}
       </ul>

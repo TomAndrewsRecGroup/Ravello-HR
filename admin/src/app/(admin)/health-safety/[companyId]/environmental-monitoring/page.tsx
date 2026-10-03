@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import type { EnvironmentalMonitoringReading } from '@/lib/hs/types';
 import EnvironmentalMonitoringClient from '@/components/hs/EnvironmentalMonitoringClient';
+import type { LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Environmental monitoring' };
 export const dynamic = 'force-dynamic';
@@ -21,10 +22,22 @@ export default async function HealthSafetyEnvironmentalMonitoringPage(props: { p
       .order('recorded_at', { ascending: false }).order('id')
       .range(from, to));
 
+  // UI/UX cross-linking pass (2026-10-03): an exceedance raises a real
+  // corrective action (environmentalRules.ts's own rule,
+  // source_type='environmental_monitoring', source_id=the reading's
+  // own id) that nothing here ever showed.
+  const readingIds = readings.rows.map(r => r.id);
+  const { data: linkedActions } = readingIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', params.companyId).eq('source_type', 'environmental_monitoring').in('source_id', readingIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+
   return (
     <EnvironmentalMonitoringClient
       companyId={params.companyId}
       readings={readings.rows}
+      linkedActions={(linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[]}
       loadError={readings.error ?? (readings.truncated ? 'Showing the first part of a long list.' : null)}
     />
   );

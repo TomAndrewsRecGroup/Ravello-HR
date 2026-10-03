@@ -33,7 +33,7 @@ export default async function HealthSafetyEquipmentPage(props: { params: Promise
 
   const inspectionIds = inspections.rows.map(i => i.id);
   const equipmentIds = equipment.rows.map(e => e.id);
-  const [{ data: files }, { data: company }, { data: qrTokens }, { data: hazards }] = await Promise.all([
+  const [{ data: files }, { data: company }, { data: qrTokens }, { data: hazards }, { data: isolations }, { data: permits }] = await Promise.all([
     inspectionIds.length > 0
       ? supabase.from('hs_files')
           .select('id, entity_type, entity_id, storage_path, file_name, size_bytes, created_at')
@@ -64,6 +64,30 @@ export default async function HealthSafetyEquipmentPage(props: { params: Promise
           .order('identified_at', { ascending: false })
           .limit(500)
       : Promise.resolve({ data: [] as { id: string; title: string; status: string; identified_at: string; linked_asset_id: string }[] }),
+    // UI/UX cross-linking pass (2026-10-03): an asset's own status
+    // (quarantined/out_of_service) often traces back to an open
+    // isolation or permit against it, but nothing here ever said why —
+    // staff had to separately search the Isolations/Permits tabs. Only
+    // the still-open ones (never 'removed'/'closed'/'revoked') are
+    // worth showing here; a historical one has nothing left to explain.
+    equipmentIds.length > 0
+      ? supabase.from('isolations')
+          .select('id, asset_id, isolation_type, status, applied_at')
+          .eq('company_id', params.companyId)
+          .in('asset_id', equipmentIds)
+          .neq('status', 'removed')
+          .order('applied_at', { ascending: false })
+          .limit(500)
+      : Promise.resolve({ data: [] as { id: string; asset_id: string; isolation_type: string; status: string; applied_at: string }[] }),
+    equipmentIds.length > 0
+      ? supabase.from('permits')
+          .select('id, asset_id, permit_number, status, issued_at')
+          .eq('company_id', params.companyId)
+          .in('asset_id', equipmentIds)
+          .in('status', ['issued', 'suspended'])
+          .order('issued_at', { ascending: false })
+          .limit(500)
+      : Promise.resolve({ data: [] as { id: string; asset_id: string; permit_number: string | null; status: string; issued_at: string | null }[] }),
   ]);
 
   const hazardsByAsset = new Map<string, { id: string; title: string; status: string; identified_at: string }[]>();
@@ -71,6 +95,22 @@ export default async function HealthSafetyEquipmentPage(props: { params: Promise
     const list = hazardsByAsset.get(h.linked_asset_id) ?? [];
     list.push(h);
     hazardsByAsset.set(h.linked_asset_id, list);
+  }
+
+  const isolationsByAsset = new Map<string, { id: string; isolation_type: string; status: string; applied_at: string }[]>();
+  for (const iso of isolations ?? []) {
+    if (!iso.asset_id) continue;
+    const list = isolationsByAsset.get(iso.asset_id) ?? [];
+    list.push(iso);
+    isolationsByAsset.set(iso.asset_id, list);
+  }
+
+  const permitsByAsset = new Map<string, { id: string; permit_number: string | null; status: string; issued_at: string | null }[]>();
+  for (const p of permits ?? []) {
+    if (!p.asset_id) continue;
+    const list = permitsByAsset.get(p.asset_id) ?? [];
+    list.push(p);
+    permitsByAsset.set(p.asset_id, list);
   }
 
   return (
@@ -83,6 +123,8 @@ export default async function HealthSafetyEquipmentPage(props: { params: Promise
       files={(files ?? []) as HsFile[]}
       activeQrEquipmentIds={new Set((qrTokens ?? []).map(t => t.entity_id))}
       hazardsByAsset={hazardsByAsset}
+      isolationsByAsset={isolationsByAsset}
+      permitsByAsset={permitsByAsset}
       loadError={equipment.error ?? inspections.error
         ?? (equipment.truncated ? 'Showing the first part of a long equipment list.' : null)}
     />

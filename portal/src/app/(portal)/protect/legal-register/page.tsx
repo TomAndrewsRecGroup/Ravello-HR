@@ -7,6 +7,7 @@ import {
   LEGAL_REQUIREMENT_CATEGORY_LABELS, type ComplianceEvaluationStatus,
 } from '@/lib/hs/vocab';
 import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation } from '@/lib/hs/types';
+import LinkedActionBadge, { type LinkedActionSummary } from '@/components/hs/LinkedActionBadge';
 
 export const metadata: Metadata = { title: 'Legal Register' };
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,19 @@ export default async function ProtectLegalRegisterPage() {
     : { data: [] as ComplianceEvaluation[], error: null };
   const evaluationRows = (evaluations ?? []) as ComplianceEvaluation[];
 
+  // UI/UX cross-linking pass (2026-10-03): mirrors admin's own legal
+  // register page fix — a noncompliance-flavoured evaluation raises a
+  // real corrective action (legalRegisterRules.ts's own
+  // legal_evaluation_noncompliance rule, source_type='legal_requirement',
+  // source_id=the OBLIGATION's own id, never the evaluation's) that
+  // nothing here ever showed.
+  const { data: linkedActions } = obligationIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, source_id')
+        .eq('company_id', companyId).eq('source_type', 'legal_requirement').in('source_id', obligationIds).limit(500)
+    : { data: [] as (LinkedActionSummary & { source_id: string })[] };
+  const linkedActionRows = (linkedActions ?? []) as (LinkedActionSummary & { source_id: string })[];
+
   return (
     <main className="portal-page flex-1 space-y-4">
       {(oblError || evalError) && <p className="card p-3 text-sm" style={{ color: 'var(--red)' }}>The legal register could not be loaded. Refresh to try again.</p>}
@@ -71,6 +85,7 @@ export default async function ProtectLegalRegisterPage() {
           {obligationRows.map(o => {
             const req = catalogueById.get(o.legal_requirement_id);
             const obligationEvaluations = evaluationRows.filter(e => e.obligation_id === o.id);
+            const obligationActions = linkedActionRows.filter(a => a.source_id === o.id);
             return (
               <div key={o.id} className="card p-5 space-y-3">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -79,6 +94,7 @@ export default async function ProtectLegalRegisterPage() {
                   <span className="ml-auto badge">{LEGAL_APPLICABILITY_STATUS_LABELS[o.applicability_status]}</span>
                 </div>
                 {req?.summary && <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>{req.summary}</p>}
+                {obligationActions.map(a => <LinkedActionBadge key={a.id} action={a} />)}
                 {obligationEvaluations.length === 0 ? (
                   <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No evaluations recorded yet.</p>
                 ) : (

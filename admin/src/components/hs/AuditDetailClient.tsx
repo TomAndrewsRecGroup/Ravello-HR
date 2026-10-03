@@ -7,9 +7,9 @@ import { COUNT_EXACT, judgeWrite } from '@/lib/supabase/mutations';
 import { useToast } from '@/components/modules/Toast';
 import { evidenceUrl } from '@/lib/hs/evidence';
 import { HS_AUDIT_RATING_LABELS, HS_REGISTER_CATEGORY_LABELS, AUDIT_FINDING_SEVERITY_LABELS, type HsRegisterCategory } from '@/lib/hs/vocab';
-import { ACTION_STATUS_LABELS, ACTION_PRIORITY_LABELS, type ActionPriority } from '@/lib/ui/statusMaps';
 import type { HsAudit, HsAuditResponse, HsFile, AuditFinding, RequirementEvidenceLink } from '@/lib/hs/types';
 import EvidenceLinksPanel from './EvidenceLinksPanel';
+import LinkedActionBadge from './LinkedActionBadge';
 
 export interface LinkedAction {
   id: string;
@@ -33,10 +33,6 @@ interface Props {
 }
 
 const SEVERITY_COLOUR: Record<string, string> = { minor: 'var(--ink-faint)', major: 'var(--gold)', critical: 'var(--red)' };
-const ACTION_STATUS_COLOUR: Record<string, string> = {
-  active: 'var(--gold)', in_progress: 'var(--blue)', awaiting_verification: 'var(--gold)',
-  complete: 'var(--teal)', dismissed: 'var(--ink-faint)', cancelled: 'var(--ink-faint)',
-};
 
 // Core-OS 360 Phase 5, Group 7 (162): the closure gate is enforced
 // entirely by the database (audit_findings_closure_guard()) — this
@@ -49,8 +45,8 @@ function FindingPanel({ finding, evidenceLinks, linkedActions }: { finding: Audi
   const [actionId, setActionId] = useState(finding.corrective_action_id ?? '');
   const [busy, setBusy] = useState(false);
   const linkedAction = finding.corrective_action_id
-    ? linkedActions.find(a => a.id === finding.corrective_action_id)
-    : undefined;
+    ? linkedActions.find(a => a.id === finding.corrective_action_id) ?? null
+    : null;
 
   async function save(patch: Record<string, unknown>) {
     setBusy(true);
@@ -85,29 +81,7 @@ function FindingPanel({ finding, evidenceLinks, linkedActions }: { finding: Audi
             <input className="input" value={actionId} placeholder="Paste the corrective action's id"
               onChange={e => setActionId(e.target.value)} onBlur={() => actionId !== (finding.corrective_action_id ?? '') && save({ corrective_action_id: actionId.trim() || null })} />
           </label>
-          {finding.corrective_action_id && (
-            linkedAction ? (
-              <div className="flex items-center gap-2 text-xs p-2 rounded-[6px]" style={{ background: 'var(--surface)' }}>
-                <span className="font-medium" style={{ color: 'var(--ink)' }}>{linkedAction.title}</span>
-                <span className="badge" style={{ color: ACTION_STATUS_COLOUR[linkedAction.status] ?? 'var(--ink-faint)' }}>
-                  {ACTION_STATUS_LABELS[linkedAction.status] ?? linkedAction.status}
-                </span>
-                {linkedAction.priority && (
-                  <span style={{ color: 'var(--ink-faint)' }}>
-                    {ACTION_PRIORITY_LABELS[linkedAction.priority as ActionPriority] ?? linkedAction.priority} priority
-                  </span>
-                )}
-                {linkedAction.due_date && <span style={{ color: 'var(--ink-faint)' }}>due {linkedAction.due_date}</span>}
-                {linkedAction.verification_required && !linkedAction.verified_at && (
-                  <span style={{ color: 'var(--gold)' }}>awaiting verification</span>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--red)' }}>
-                That action id does not resolve — check it points at a real action on this company.
-              </p>
-            )
-          )}
+          {finding.corrective_action_id && <LinkedActionBadge action={linkedAction} />}
           <button className="btn-secondary btn-sm" disabled={busy} onClick={() => save({ closed_at: new Date().toISOString() })}>
             Close finding
           </button>

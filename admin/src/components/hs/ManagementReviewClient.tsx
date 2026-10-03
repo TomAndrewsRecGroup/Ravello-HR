@@ -9,6 +9,7 @@ import { MANAGEMENT_REVIEW_STATUSES, MANAGEMENT_REVIEW_STATUS_LABELS, type Manag
 import type { ManagementReview, ManagementReviewAttendee, ManagementReviewDataPack, ManagementReviewDecision } from '@/lib/hs/types';
 import { computeManagementReviewDataPack, previousCompletedReviewDate, type ManagementReviewDataPack as DataPackShape } from '@/lib/governance/dataPack';
 import { buildReviewPdf } from '@/lib/governance/buildReviewPdf';
+import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
 
 interface Props {
   companyId: string;
@@ -17,6 +18,7 @@ interface Props {
   attendees: ManagementReviewAttendee[];
   dataPacks: ManagementReviewDataPack[];
   decisions: ManagementReviewDecision[];
+  linkedActions: LinkedActionSummary[];
   people: { id: string; full_name: string }[];
   loadError: string | null;
 }
@@ -30,7 +32,7 @@ const STATUS_COLOUR: Record<ManagementReviewStatus, string> = {
   cancelled:   'var(--ink-faint)',
 };
 
-export default function ManagementReviewClient({ companyId, companyName, reviews, attendees, dataPacks, decisions, people, loadError }: Props) {
+export default function ManagementReviewClient({ companyId, companyName, reviews, attendees, dataPacks, decisions, linkedActions, people, loadError }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
@@ -294,12 +296,14 @@ export default function ManagementReviewClient({ companyId, companyName, reviews
                       ) : (
                         <ul className="space-y-2">
                           {reviewDecisions.map(d => (
-                            <li key={d.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--surface-soft)' }}>
+                            <li key={d.id} className="rounded-md p-3 text-sm space-y-2" style={{ background: 'var(--surface-soft)' }}>
                               <div className="flex items-center justify-between">
                                 <span className="font-medium">{d.topic}</span>
-                                {d.resulting_action_id && <span className="badge">Action raised</span>}
                               </div>
-                              <p className="mt-1" style={{ color: 'var(--ink-soft)' }}>{d.decision_text}</p>
+                              <p style={{ color: 'var(--ink-soft)' }}>{d.decision_text}</p>
+                              {d.resulting_action_id && (
+                                <LinkedActionBadge action={linkedActions.find(a => a.id === d.resulting_action_id) ?? null} />
+                              )}
                             </li>
                           ))}
                         </ul>
