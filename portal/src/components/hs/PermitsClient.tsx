@@ -10,6 +10,7 @@ import {
   PERMIT_TYPES, PERMIT_TYPE_LABELS, PERMIT_STATUS_LABELS, type PermitType, type PermitStatus,
 } from '@/lib/hs/vocab';
 import type { Permit, PermitChecklistResponse, PermitPerson, PermitTemplate, PermitTemplateItem } from '@/lib/hs/types';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface PickOption { id: string; name: string }
 interface AuthOption { id: string; title: string }
@@ -26,6 +27,15 @@ interface Props {
   people: PickOption[];
   authorisationTypes: AuthOption[];
   loadError: string | null;
+  // UI/UX cross-linking pass, round 2 (2026-10-03): ConnectionsPanel
+  // needs to know which app it's rendering in, the exact
+  // hrefForEntity()/ComplianceTwinView.tsx precedent — this file is a
+  // true byte-identical shared-dupe pair, so the caller (each app's
+  // own page.tsx) supplies its own correct value rather than this file
+  // importing an app-specific helper. No portalBase here, matching the
+  // existing audit-detail-page precedent (ConnectionsPanel's own
+  // default of '').
+  role: 'admin' | 'portal';
 }
 
 const fmtDt = (d: string | null) =>
@@ -37,6 +47,7 @@ const STATUS_COLOUR: Record<PermitStatus, string> = {
 
 export default function PermitsClient({
   companyId, templates, templateItems, permits, permitPeople, checklistResponses, sites, equipment, people, authorisationTypes, loadError,
+  role,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -139,6 +150,15 @@ export default function PermitsClient({
                     />
 
                     <PermitActions permit={p} people={people} onDone={() => router.refresh()} />
+
+                    {/* UI/UX cross-linking pass, round 2 (2026-10-03): a
+                        permit is routinely tied to a contractor, another
+                        action, or a related document — nothing surfaced
+                        that before. The generic cross-entity panel
+                        (Phase 23, Group 1), additive alongside everything
+                        above, never a replacement for the permit's own
+                        people/checklist/lifecycle controls. */}
+                    <ConnectionsPanel entityType="permit" entityId={p.id} companyId={companyId} canEdit role={role} />
                   </div>
                 )}
               </li>

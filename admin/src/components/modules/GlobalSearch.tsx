@@ -7,6 +7,7 @@ import {
   FileText, ShieldCheck, Loader2, UserRound, Trophy, MapPin, Network,
   CheckSquare, AlertTriangle, ClipboardCheck, Wrench,
   Leaf, Scale, Target, Users2, ClipboardList, MessageSquare,
+  HardHat, FileSignature, Siren, GraduationCap,
 } from 'lucide-react';
 
 interface SearchResult {
@@ -43,6 +44,15 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   management_review:    { icon: Users2,         color: 'var(--purple)', label: 'Management review' },
   audit_programme:      { icon: ClipboardList,  color: 'var(--teal)',   label: 'Audit programme' },
   consultation_record:  { icon: MessageSquare,  color: 'var(--gold)',   label: 'Consultation' },
+  // UI/UX cross-linking pass, round 2 (2026-10-03, migration 210):
+  // contractors/permits/emergency plans/the hs_tests catalogue had no
+  // search coverage at all until this — see search_records' own
+  // migration header for why isolations/audit_findings/
+  // board_assurance_reports/compliance_evaluations stay out.
+  contractor:           { icon: HardHat,        color: 'var(--ink-soft)', label: 'Contractor' },
+  permit:                { icon: FileSignature,  color: 'var(--gold)',   label: 'Permit' },
+  emergency_plan:        { icon: Siren,          color: 'var(--red)',    label: 'Emergency plan' },
+  hs_test:                { icon: GraduationCap,  color: 'var(--teal)',   label: 'Test' },
 };
 
 // Where each kind of record lives in the admin app. Anything without a
@@ -70,6 +80,12 @@ export function hrefFor(type: string, id: string, org: string | null): string {
     case 'management_review':   return org ? `/health-safety/${org}/management-review` : '/health-safety';
     case 'audit_programme':     return org ? `/health-safety/${org}/audit-programmes` : '/health-safety';
     case 'consultation_record': return org ? `/health-safety/${org}/consultation` : '/health-safety';
+    case 'contractor':          return org ? `/health-safety/${org}/contractors` : '/health-safety';
+    case 'permit':               return org ? `/health-safety/${org}/permits` : '/health-safety';
+    case 'emergency_plan':       return org ? `/health-safety/${org}/emergency-plans` : '/health-safety';
+    // hs_test has no per-organisation home either — the staff test bank
+    // (116), same NULL-organisation_id shape as legal_requirement above.
+    case 'hs_test':               return '/health-safety/tests';
     default:                return org ? `/clients/${org}` : '/clients';
   }
 }

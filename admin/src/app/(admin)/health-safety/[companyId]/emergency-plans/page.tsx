@@ -97,6 +97,7 @@ export default async function HealthSafetyEmergencyPlansPage(props: { params: Pr
       authorisationTypes={authTypes.rows.map(r => ({ id: r.id, title: r.title ?? '' }))}
       loadError={loadError}
       readiness={readiness}
+      role="admin"
     />
   );
 }

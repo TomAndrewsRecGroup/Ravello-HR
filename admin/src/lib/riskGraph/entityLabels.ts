@@ -39,6 +39,8 @@ const SIMPLE_ENTITY_CONFIG: Record<string, SimpleEntityConfig> = {
   objective: { table: 'objectives', column: 'title' },
   milestone: { table: 'milestones', column: 'title' },
   environmental_aspect: { table: 'environmental_aspects', column: 'activity' },
+  // UI/UX cross-linking pass, round 2 (2026-10-03).
+  emergency_plan: { table: 'emergency_plans', column: 'title' },
 };
 
 function fallbackLabel(entityType: string, entityId: string): string {
@@ -132,12 +134,14 @@ const PORTAL_PATH: Record<string, string> = {
   document: '/protect/documents', equipment: '/protect/equipment', contractor: '/protect/contractors',
   permit: '/protect/permits', objective: '/protect/objectives', milestone: '/roadmap',
   environmental_aspect: '/protect/environmental-aspects', legal_obligation: '/protect/legal-register',
+  emergency_plan: '/protect/emergency-plans',
 };
 
 const ADMIN_SEGMENT: Record<string, string> = {
   incident: 'incidents', audit: 'audits', document: 'documents', equipment: 'equipment',
   contractor: 'contractors', permit: 'permits', objective: 'objectives',
   environmental_aspect: 'environmental-aspects', legal_obligation: 'legal',
+  emergency_plan: 'emergency-plans',
 };
 
 export function hrefForEntity(

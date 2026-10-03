@@ -14401,3 +14401,84 @@ migration in this round — every fix reads the already-live `actions`
 table through its existing RLS (a plain company-scoped read, the same
 posture `Broadcast acknowledgement`'s own entry above already
 documents for a signed-in client session).
+
+---
+
+## Cross-linking round 2: search coverage for 4 more record types,
+## ConnectionsPanel on permits and emergency plans (2026-10-03,
+## migration 210)
+
+Follow-up to the UI/UX cross-linking audit above, applying the
+`ui-ux-pro-max` skill's navigation-pattern rules (deep-linking,
+relational navigation) more broadly than the three scoped fixes that
+audit already made.
+
+- **`search_records()` (last extended Phase 5 Group 8, migration 163)
+  had never been updated for anything built since** — contractors
+  (150), permits (152), emergency plans (154) and the staff `hs_tests`
+  catalogue (116) were all completely unfindable via GlobalSearch, with
+  no indication anything was skipped. Migration 210 adds four branches:
+  `contractor` (name/registration_number), `permit` (permit_number —
+  never `scope_of_work`, which is free text), `emergency_plan` (title,
+  `status = 'active'` only), `hs_test` (title, `active` only, `NULL`
+  organisation_id — the exact `legal_requirement` shape, staff-only RLS
+  with no client policy at all).
+- **Deliberately NOT added**: isolations (no name/number field, only a
+  closed-vocabulary type and free-text description — the same "never
+  surface notes in a search title" rule that already excludes
+  `audit_findings.root_cause`); `audit_findings` itself (same reason);
+  `board_assurance_reports`/`compliance_evaluations` (no human-chosen
+  title, a (year, quarter) pair or a status enum isn't searched by
+  name); the three environmental event-log tables (no name of their
+  own, already reachable via their own list pages' filters).
+  `search_records()` stays `SECURITY INVOKER` — none of this changes
+  its security posture.
+- **`GlobalSearch.tsx`'s `hrefFor()`** gained the four matching cases
+  (routing to `/health-safety/<org>/{contractors,permits,
+  emergency-plans}` and the staff `/health-safety/tests` catalogue for
+  `hs_test`, the exact `legal_requirement` null-organisation precedent)
+  plus four new icons (`HardHat`/`FileSignature`/`Siren`/
+  `GraduationCap`).
+- **`ConnectionsPanel` (Phase 23, Group 1) was built with `contractor`/
+  `permit` already curated in `entityLabels.ts`, but wired into only
+  the audit-detail and incident-detail reference pages — never
+  actually rendered on a permit or contractor record itself.** This
+  round wires it into `PermitsClient.tsx` (a true shared-dupe pair,
+  admin + portal both render the identical component) — every expanded
+  permit row now shows its own connections (to a contractor, an action,
+  a document) alongside its people/checklist/lifecycle controls, never
+  replacing them.
+- **`emergency_plan` is new to `entityLabels.ts`/`ConnectionsPanel`'s
+  `LINKABLE_TYPES`** (table `emergency_plans`, column `title`; admin
+  segment `emergency-plans`; portal path `/protect/emergency-plans`).
+  `EmergencyPlansClient.tsx` is admin-ONLY — checked before assuming it
+  was a shared pair like `PermitsClient.tsx`: portal's own
+  `/protect/emergency-plans` page renders its own separate, read-only
+  markup with no client component at all (`check-shared-dupes.sh`
+  confirms it was never a registered pair). So the panel is wired in
+  twice, by two different mechanisms: admin's `EmergencyPlansClient.tsx`
+  gains a `role` prop and renders `<ConnectionsPanel ... canEdit
+  role={role} />` the same way `PermitsClient.tsx` does; portal's plain
+  server-component page imports `ConnectionsPanel` directly and renders
+  it with `canEdit={false}` — read-only, matching the page's own
+  documented "nothing here is self-certified" posture: a client sees
+  what staff have connected, never adds or removes a connection
+  themselves.
+- **Both apps' `PermitsClient.tsx`, `ConnectionsPanel.tsx` and
+  `entityLabels.ts` stayed byte-identical shared-dupe pairs throughout**
+  — confirmed via `diff` before and after each edit, never assumed.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (2010 admin / 1001 portal, unchanged — this round is schema +
+UI/route-glue work with no new pure-logic module), all seven CI guards
+pass with no regressions (81 shared-dupe pairs, unchanged —
+`EmergencyPlansClient.tsx` correctly stays uncounted, since portal has
+no component to mirror it against; row-cap clean; 44 unvalidated
+routes, unchanged; 44 static admin routes, all reachable; 101
+blind-update chains, unchanged; every paged query's `.order()` present;
+300 unbounded-read chains, unchanged), both production builds compile.
+Migration 210 applied live and verified: all four branches present in
+the live function body, `anon` grant absent, `authenticated` grant
+present, and a live `search_records('an', 50)` call executed every
+branch (including the four new ones, inside the same `UNION ALL`)
+with no runtime error.

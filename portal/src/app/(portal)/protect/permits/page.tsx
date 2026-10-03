@@ -73,6 +73,7 @@ export default async function ProtectPermitsPage() {
         people={people.rows.map(r => ({ id: r.id, name: r.full_name ?? '' }))}
         authorisationTypes={authTypes.rows.map(r => ({ id: r.id, title: r.title ?? '' }))}
         loadError={loadError}
+        role="portal"
       />
     </main>
   );

@@ -11,6 +11,7 @@ import {
 } from '@/lib/hs/vocab';
 import type { EmergencyDrill, EmergencyPlan, EmergencyPlanEquipment, EmergencyPlanRole } from '@/lib/hs/types';
 import type { PlanReadiness } from '@/lib/emergencyReadiness/compute';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface PickOption { id: string; name: string }
 interface AuthOption { id: string; title: string }
@@ -31,6 +32,9 @@ interface Props {
    *  person_authorisations/hs_equipment state. Empty/missing for a
    *  superseded plan, which this page already excludes by default. */
   readiness: PlanReadiness[];
+  // UI/UX cross-linking pass, round 2 (2026-10-03) — see PermitsClient's
+  // own note on why this is an explicit prop, not an imported helper.
+  role: 'admin' | 'portal';
 }
 
 const READINESS_COLOUR: Record<PlanReadiness['band'], string> = { ready: 'var(--teal)', attention: 'var(--gold)', critical: 'var(--red)' };
@@ -45,7 +49,7 @@ const DRILL_COLOUR: Record<EmergencyDrillOutcome, string> = {
 };
 
 export default function EmergencyPlansClient({
-  companyId, plans, roles, planEquipment, drills, sites, equipment, people, authorisationTypes, loadError, readiness,
+  companyId, plans, roles, planEquipment, drills, sites, equipment, people, authorisationTypes, loadError, readiness, role,
 }: Props) {
   const readinessFor = (id: string) => readiness.find(r => r.planId === id) ?? null;
   const router = useRouter();
@@ -202,6 +206,13 @@ export default function EmergencyPlansClient({
                         <RecordDrillForm companyId={companyId} planId={plan.id} siteId={plan.site_id} people={people} onDone={() => router.refresh()} />
                       )}
                     </div>
+
+                    {/* UI/UX cross-linking pass, round 2 (2026-10-03):
+                        an emergency plan is often tied to a specific
+                        incident it responds to, a contractor running a
+                        drill, or a related document — nothing surfaced
+                        that before. */}
+                    <ConnectionsPanel entityType="emergency_plan" entityId={plan.id} companyId={companyId} canEdit role={role} />
                   </div>
                 )}
               </li>

@@ -28,7 +28,7 @@ import { resolveEntityLabels, hrefForEntity } from '@/lib/riskGraph/entityLabels
 const LINKABLE_TYPES = [
   'hazard', 'risk_assessment', 'method_statement', 'coshh_assessment', 'substance',
   'incident', 'action', 'audit', 'document', 'equipment', 'contractor', 'permit',
-  'objective', 'milestone', 'environmental_aspect', 'legal_obligation',
+  'objective', 'milestone', 'environmental_aspect', 'legal_obligation', 'emergency_plan',
 ] as const;
 
 interface LinkRow { id: string; from_type: string; from_id: string; to_type: string; to_id: string; relation: string }

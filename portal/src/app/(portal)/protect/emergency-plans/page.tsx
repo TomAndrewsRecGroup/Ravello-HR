@@ -5,6 +5,7 @@ import {
   EMERGENCY_PLAN_TYPE_LABELS, EMERGENCY_DRILL_OUTCOME_LABELS, type EmergencyDrillOutcome,
 } from '@/lib/hs/vocab';
 import type { EmergencyDrill, EmergencyPlan, EmergencyPlanEquipment, EmergencyPlanRole } from '@/lib/hs/types';
+import ConnectionsPanel from '@/components/hs/ConnectionsPanel';
 
 export const metadata: Metadata = { title: 'Emergency Plans' };
 export const dynamic = 'force-dynamic';
@@ -133,6 +134,13 @@ export default async function ProtectEmergencyPlansPage() {
                     </ul>
                   )}
                 </div>
+
+                {/* UI/UX cross-linking pass, round 2 (2026-10-03):
+                    read-only here too, matching the page's own
+                    posture — nothing here is self-certified, the
+                    client sees what staff have connected, never adds
+                    or removes a connection themselves. */}
+                <ConnectionsPanel entityType="emergency_plan" entityId={plan.id} companyId={companyId} canEdit={false} role="portal" />
               </div>
             );
           })}
