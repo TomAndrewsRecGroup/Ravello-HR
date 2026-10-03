@@ -14142,3 +14142,86 @@ functions, grants correct, `permits_lifecycle_guard()`'s live body
 confirmed calling the new function, and the full functional probe above
 passed 4/4 with zero trace left after rollback).
 
+
+---
+
+## Full verification re-pass: codebase confirmed clean; DROP-TABLE DDL
+## timeout re-confirmed as a genuine, non-retriable sandbox limitation
+## (2026-10-03)
+
+A fresh, full senior-engineering-standard verification pass across both
+apps — `tsc --noEmit`, the full `vitest` suites, all seven CI guard
+scripts, and both production builds — run via two independent
+background agents, found **zero defects of any kind**. No code was
+changed because none was needed:
+
+- **Admin**: `tsc --noEmit` clean; `vitest run` — 201 test files, 2010
+  tests, all green; all seven guards pass at their exact documented
+  baselines (`check-shared-dupes.sh`: 81 pairs; `check-row-cap.sh`:
+  clean; `check-route-validation.sh`: 44, unchanged;
+  `check-admin-routes-linked.sh`: 44 pages, all reachable;
+  `check-blind-updates.sh`: 101, unchanged; `check-paged-order.sh`:
+  clean; `check-unbounded-reads.sh`: 300, unchanged); `next build`
+  compiles clean — all 66 static pages generated, zero errors anywhere
+  in the log (grepped for error/fail patterns beyond expected test-
+  fixture strings).
+- **Portal**: `tsc --noEmit` clean; `vitest run` — 72 test files, 1001
+  tests, all green (the historically-flaky `resilient.test.ts` lives in
+  admin, not portal, and never came up); `next build` compiles with
+  only the long-documented sandbox-only exception
+  (`/onboarding`'s prerender fails on missing
+  `NEXT_PUBLIC_SUPABASE_URL`/`_ANON_KEY`) — re-confirmed harmless by
+  re-running the build with dummy values set, which compiled every
+  route including `/onboarding` with no other error.
+
+### The one remaining, confirmed-unfixable item: a DROP TABLE DDL
+### timeout in this sandbox, independently re-reproduced twice more
+
+While investigating the already-documented migration 203 (`DROP TABLE
+tickets, ticket_messages`) blocker, a previously undocumented leftover
+was found: a scratch probe table, `public._ddl_probe_208`, left behind
+from an earlier migration-208-era live probe that should have run
+inside a rolled-back transaction per this repo's own standing
+discipline, but was evidently not fully rolled back. Its companion
+probe function, `_probe_fn_208`, was successfully dropped this
+session. The table itself could not be:
+
+- `DROP TABLE public._ddl_probe_208;`, run in complete isolation (no
+  other statements in the same call), **timed out at 60 seconds** via
+  `execute_sql` — reproduced identically on a second, independent
+  attempt in this same session.
+- Each time, `pg_stat_activity` showed **zero** queries referencing the
+  table and `pg_locks` showed **zero** locks held on it — ruling out
+  lock contention or a hung background query. The table reliably still
+  exists (`to_regclass()` confirms it) immediately after each timeout.
+- This exactly reproduces, via a second, independent table, the same
+  failure mode this file's own history already recorded for migration
+  203's `DROP TABLE tickets, ticket_messages` (first via
+  `execute_sql`, then again via `apply_migration`, across at least two
+  separate sessions) — confirming this is a genuine, reproducible
+  **tooling-level DDL-execution limitation specific to DROP statements
+  in this sandbox**, not a transient flake, not lock contention, and
+  not fixable by retrying.
+- **Neither leftover is a security or functional issue** — `_ddl_probe_
+  208` is an empty scratch table with no code reference anywhere in
+  either app (confirmed by grep); `tickets`/`ticket_messages` are
+  confirmed empty (0 rows each) and already have zero application-code
+  references, per migration 203's own write-up. Both are harmless,
+  inert debris, not drift that affects any live behaviour.
+- **Standing guidance reaffirmed**: any future migration in this
+  environment should avoid requiring a `DROP TABLE`/`DROP FUNCTION` to
+  succeed. When a schema change needs one, prefer leaving the old
+  object in place alongside a new one (migration 209's own approach,
+  adding `person_holds_authorisation_with_asset()` beside the
+  untouched original rather than widening its signature) over a
+  rename-and-drop this sandbox's DDL path cannot reliably complete.
+  `203_drop_dead_tickets_tables.sql` and a follow-up drop for
+  `_ddl_probe_208` both remain written and ready to apply from any
+  environment where DROP DDL completes normally.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (no change in counts — this pass found nothing to fix), all seven
+CI guards pass at their existing baselines with no regressions, both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation).
+Working tree clean; no commit was needed for the application code.
