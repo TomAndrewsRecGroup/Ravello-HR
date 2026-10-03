@@ -14225,3 +14225,113 @@ CI guards pass at their existing baselines with no regressions, both
 production builds compile (portal's one prerender failure is the same
 long-documented sandbox-only missing-Supabase-env-var limitation).
 Working tree clean; no commit was needed for the application code.
+
+---
+
+## Connector audit + closing three real action-linking gaps (2026-10-03)
+
+Operator: confirm every internal connector (Stripe, Resend, Manatal,
+IvyLens, Jev, Tavily) is genuinely wired up, and make sure a single
+`actions` row is reportable across the wider client view and metrics
+production, not just visible on the page that happened to raise it.
+
+**Connectors: all six are genuinely wired, no dead integration found.**
+Both Stripe integrations (admin's retainer/invoice billing,
+`lib/stripe.ts`; portal's e-learning checkout, a hand-rolled raw `fetch`
++ hand-reimplemented HMAC webhook verification rather than the SDK — a
+correct but divergent second implementation, not a defect) are real
+and tested (Phase 29's own PL.1 work). Resend (both apps) deliberately
+skips `resilientFetch` — Resend retries server-side, a documented
+choice, not an omission. Manatal, IvyLens and Jev are wired on admin's
+side with `resilientFetch`/backoff; portal's own copies of Manatal and
+IvyLens lack the same retry wrapper and portal's `jev/` directory has
+no test file at all, unlike admin's three — real, but minor, asymmetry
+recorded here as debt rather than fixed in this pass (no live outage
+evidence, and widening scope here risked turning a connector audit into
+an unplanned resilience rewrite). Tavily (admin-only) is the best-wired
+of the six.
+
+**Action-linking: `hs_entity_table()`'s own `'action'` branch and
+`ConnectionsPanel`'s `LINKABLE_TYPES` entry for it have existed since
+122 but were never exercised** — no `hs_links` row anywhere links to an
+action on either side. Investigated with a dedicated background audit
+before touching anything; three real, scoped gaps were fixed, two were
+deliberately left as-is after reasoning through the risk:
+
+- **Fixed: the admin audit detail page showed a finding's
+  `corrective_action_id` as a raw, editable paste field and never the
+  actual linked action's own live status.** `audit_findings_closure_
+  guard()` (162) is the thing that actually enforces this field — reads
+  `actions.status`/`verified_at`/`effectiveness_outcome` for the id it
+  names, so it is the authoritative link, not `hsRules.ts`'s own
+  `source_type`/`source_id` pairing (which usually points at the same
+  row, but a human may repoint `corrective_action_id` at a different
+  action). Fetched by id list (`.in('id', correctiveActionIds)`, capped
+  at 200 — the first draft had no cap at all and the unbounded-reads
+  guard caught it before this shipped, fixed before committing), passed
+  to `AuditDetailClient.tsx`, and rendered inline next to the existing
+  editable field: title, status, priority, due date, and an "awaiting
+  verification" flag when `verification_required` and not yet
+  `verified_at`. Mirrors the portal incident page's own
+  `.eq('source_type','incident').eq('source_id', id)` pattern, which
+  already does this correctly — the admin side was the one place this
+  codebase's own standard "show the action, not just its id" discipline
+  had never been applied.
+- **Fixed: the portal Attention Queue's own "Open critical/high action"
+  category linked to `/dashboard`**, which shows nothing about the
+  action it is about — every OTHER category in the same function
+  correctly links to its own source module's page. Changed to
+  `/protect/actions`, the page where the flagged action actually lives.
+  One line, no schema change.
+- **Fixed, narrowly: the standalone `/health-safety/<companyId>/kpis`
+  page showed incidents/audits/equipment but nothing about the
+  corrective-action backlog those records raise.** Added one more card,
+  "Open critical actions", reusing `computePortfolioCounts()`'s own
+  canonical `open_critical_actions` definition (the SAME count Core 360
+  Status's "EHS Posture" section already surfaces) rather than
+  re-deriving the threshold a second time — every other
+  `computePortfolioCounts` input left empty, since this page needs only
+  the one count for one company. Links to `/clients/<companyId>` (no
+  deep-link to the Actions sub-tab exists — that page's tabs are
+  client-state only, not URL-addressable — so the link is honest about
+  where it actually lands, not a promise it doesn't keep).
+- **Deliberately NOT done: threading `actions` into `lib/hs/kpis.ts`,
+  `lib/governance/kpis.ts`, or the Compliance Digital Twin's five
+  areas.** Checked first, not assumed: the portal AND admin Core 360
+  Status pages already read `actions` directly into
+  `computePortfolioCounts()` and surface `open_critical_actions` as its
+  own flagged item inside the embedded Assurance Today section — on the
+  one consolidated per-client dashboard this platform now treats as
+  primary (the 2026-10-02 "keep only one" consolidation), the fact is
+  already visible. Adding a SECOND rendering of the identical number
+  inside the Twin's `safetyArea()`/`governanceArea()` would be the
+  exact duplicate-signal shape this codebase's own Phase 23 adversarial
+  review already flagged and fixed once (two independent checks
+  reporting the same fact as if they were different findings) — not
+  worth reintroducing for a count that is already shown, correctly,
+  one section down on the same page.
+- **Deliberately NOT done: a full source_type → pillar classification**
+  for a hypothetical split of the action backlog across H&S vs.
+  Governance areas. The live `actions.source_type` CHECK (162) lists 30
+  distinct values spanning every pillar; several (`consultant_visit`,
+  `compliance_item`, `hs_check`) have no honest, non-guessed pillar —
+  exactly the "an honest degrade, never a guessed default" rule
+  `lib/bd/score.ts` already states for a structurally identical
+  problem (waste-diversion classification, rejected for the same
+  reason). A single undifferentiated total, in one well-chosen place,
+  was judged more honest than a classification with several forced
+  guesses in it.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (admin 2010/2010, portal 1001/1001 — unchanged counts, since none
+of these fixes touch a function with its own test file; the audit
+detail page and the H&S KPIs page both follow this codebase's
+established "no component-level test for route page glue" convention),
+all seven CI guards pass with no regressions (81 shared-dupe pairs;
+row-cap clean; 44 unvalidated routes, unchanged; 44 static admin
+routes, all reachable; 101 blind-update chains, unchanged; every paged
+query's `.order()` present; 300 unbounded-read chains — the audit
+page's new by-id-list action read was caught unbounded by the guard on
+the first pass and capped at 200 before this shipped, restoring the
+baseline), both production builds compile. No migration in this
+round — every fix is TypeScript/UI over already-live schema.

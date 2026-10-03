@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { HsAudit, HsAuditResponse, HsFile, AuditFinding, RequirementEvidenceLink } from '@/lib/hs/types';
-import AuditDetailClient from '@/components/hs/AuditDetailClient';
+import AuditDetailClient, { type LinkedAction } from '@/components/hs/AuditDetailClient';
 import ConnectionsPanel from '@/components/hs/ConnectionsPanel';
 
 export const metadata: Metadata = { title: 'Audit detail' };
@@ -57,6 +57,25 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         .eq('source_type', 'audit_finding').in('source_id', findingIds)
     : { data: [] };
 
+  // The page already shows each finding's `corrective_action_id` as a
+  // raw, editable paste field (closure_guard, 162, is the thing that
+  // actually enforces it — see AuditDetailClient's own comment) but
+  // never the ACTUAL linked action's own live status/priority/due
+  // date — "a single action reportable across wider client view" means
+  // this page, where the action was raised FROM, should show what
+  // became of it, not just an opaque id. Fetched by id list, never a
+  // chained embed, the standing PGRST200-era rule.
+  const correctiveActionIds = [...new Set(
+    ((findings ?? []) as { corrective_action_id: string | null }[])
+      .map(f => f.corrective_action_id)
+      .filter((id): id is string => id != null),
+  )];
+  const { data: linkedActions } = correctiveActionIds.length > 0
+    ? await supabase.from('actions')
+        .select('id, title, status, priority, due_date, verification_required, verified_at, completed_at')
+        .eq('company_id', params.companyId).in('id', correctiveActionIds).limit(200)
+    : { data: [] };
+
   return (
     <div className="space-y-4">
       <Link href={`/health-safety/${params.companyId}/audits`} className="flex items-center gap-1 text-sm" style={{ color: 'var(--ink-faint)' }}>
@@ -68,6 +87,7 @@ export default async function HealthSafetyAuditDetailPage(props: { params: Promi
         files={(files ?? []) as HsFile[]}
         findings={(findings ?? []) as AuditFinding[]}
         evidenceLinks={(evidenceLinks ?? []) as RequirementEvidenceLink[]}
+        linkedActions={(linkedActions ?? []) as LinkedAction[]}
         loadError={error?.message ?? null}
       />
       <ConnectionsPanel entityType="audit" entityId={audit.id} companyId={params.companyId} canEdit role="admin" />

@@ -87,7 +87,11 @@ export function buildAttentionQueue(input: AttentionQueueInput): AttentionQueueI
       sourceModule: 'Actions', sourceType: 'actions', sourceId: a.id,
       issueType: 'Open critical/high action', severity: a.severity as QueueSeverity,
       owner: a.assigned_to, dueDate: a.due_date, ageDays: ageDays(a.due_date, today),
-      state: a.title, link: '/dashboard',
+      // Was '/dashboard', which shows nothing about this action at
+      // all — '/protect/actions' is where the row this item is ABOUT
+      // actually lives, the same correction every other category here
+      // already makes (each links to its own source module's page).
+      state: a.title, link: '/protect/actions',
     });
   }
 
