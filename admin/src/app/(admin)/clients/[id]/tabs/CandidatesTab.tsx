@@ -132,7 +132,11 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--ink-faint)' }}>
                   {r.title}: {rCands.length} candidate{rCands.length !== 1 ? 's' : ''}
                 </p>
-                <div className="card overflow-hidden">
+                {/* Desktop / tablet table, hidden below md — `overflow-hidden`
+                    used to CLIP the Feedback/Share columns off-screen on
+                    phone with no way to scroll to them; the card list
+                    beside it puts Share/Unshare within thumb reach instead. */}
+                <div className="hidden md:block card overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
@@ -186,6 +190,52 @@ export default function CandidatesTab({ companyId, initialCandidates, reqs }: Pr
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Phone: one card per candidate, Share/Unshare reachable with a thumb. */}
+                <div className="mobile-card-list">
+                  {rCands.map((c: any) => (
+                    <div key={c.id} className="mobile-card">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(11,120,150,0.1)' }}>
+                          <User size={13} style={{ color: 'var(--purple)' }} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{c.full_name}</p>
+                          {c.email && <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>{c.email}</p>}
+                        </div>
+                      </div>
+                      {c.summary && <p className="text-xs mt-3" style={{ color: 'var(--ink-soft)' }}>{c.summary}</p>}
+                      {c.cv_url && (
+                        <a href={c.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] mt-2" style={{ color: 'var(--purple)' }}>
+                          View CV <ExternalLink size={9} />
+                        </a>
+                      )}
+                      <div className="mt-3">
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">Status</span>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={valueFor(CLIENT_STATUS_STYLE, c.client_status, CLIENT_STATUS_STYLE.pending)}>
+                            {labelFor(CANDIDATE_CLIENT_STATUS_LABELS, c.client_status, 'pending')}
+                          </span>
+                        </div>
+                        {c.client_feedback && (
+                          <div className="mobile-card-row">
+                            <span className="mobile-card-label">Feedback</span>
+                            <span className="mobile-card-value">{c.client_feedback}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mobile-card-actions">
+                        <button
+                          onClick={() => toggleApproved(c.id, c.approved_for_client)}
+                          disabled={togglingCand === c.id}
+                          className={c.approved_for_client ? 'btn-secondary btn-sm' : 'btn-cta btn-sm'}
+                        >
+                          {togglingCand === c.id ? <Loader2 size={12} className="animate-spin" /> : c.approved_for_client ? 'Unshare' : 'Share'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );

@@ -112,28 +112,63 @@ export default function AccessGrantClient({ colleagues, relationships, roles, gr
         {grants.length === 0 ? (
           <div className="empty-state p-6"><p className="text-sm" style={{ color: 'var(--ink-faint)' }}>No grants yet.</p></div>
         ) : (
-          <div className="table-wrapper">
-            <table className="table">
-              <thead><tr><th>Person</th><th>Client</th><th>Role</th><th>Scope</th><th>Expires</th><th /></tr></thead>
-              <tbody>
-                {grants.map(g => (
-                  <tr key={g.id}>
-                    <td>{g.userName}</td>
-                    <td>{g.organisationName}</td>
-                    <td>{g.roleKey}</td>
-                    <td>{ACCESS_SCOPE_LABELS[g.accessScope as AccessScope] ?? g.accessScope}</td>
-                    <td>{fmt(g.validUntil)}</td>
-                    <td>
-                      <button type="button" className="btn-icon btn-sm" aria-label="Revoke access" disabled={revokingId === g.id}
-                        onClick={() => revoke(g.id)}>
-                        {revokingId === g.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Desktop / tablet table, hidden below md — the phone card
+                list beside it puts Revoke within thumb reach instead of
+                a sideways scroll. */}
+            <div className="hidden md:block table-wrapper">
+              <table className="table">
+                <thead><tr><th>Person</th><th>Client</th><th>Role</th><th>Scope</th><th>Expires</th><th /></tr></thead>
+                <tbody>
+                  {grants.map(g => (
+                    <tr key={g.id}>
+                      <td>{g.userName}</td>
+                      <td>{g.organisationName}</td>
+                      <td>{g.roleKey}</td>
+                      <td>{ACCESS_SCOPE_LABELS[g.accessScope as AccessScope] ?? g.accessScope}</td>
+                      <td>{fmt(g.validUntil)}</td>
+                      <td>
+                        <button type="button" className="btn-icon btn-sm" aria-label="Revoke access" disabled={revokingId === g.id}
+                          onClick={() => revoke(g.id)}>
+                          {revokingId === g.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Phone: one card per grant, Revoke reachable with a thumb. */}
+            <div className="mobile-card-list">
+              {grants.map(g => (
+                <div key={g.id} className="mobile-card">
+                  <p className="font-medium text-sm" style={{ color: 'var(--ink)' }}>{g.userName}</p>
+                  <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>{g.organisationName}</p>
+                  <div className="mt-3">
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Role</span>
+                      <span className="mobile-card-value">{g.roleKey}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Scope</span>
+                      <span className="mobile-card-value">{ACCESS_SCOPE_LABELS[g.accessScope as AccessScope] ?? g.accessScope}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Expires</span>
+                      <span className="mobile-card-value">{fmt(g.validUntil)}</span>
+                    </div>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button type="button" className="btn-secondary btn-sm" disabled={revokingId === g.id}
+                      onClick={() => revoke(g.id)}>
+                      {revokingId === g.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} Revoke access
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

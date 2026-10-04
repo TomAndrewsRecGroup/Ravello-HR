@@ -155,67 +155,116 @@ export default async function AdminReportsPage() {
 
           {/* Report list */}
           <section>
-            <div className="card overflow-hidden">
-              {reports.length === 0 ? (
-                <div className="card p-12 empty-state">
-                  <BarChart3 size={28} />
-                  <p className="text-sm">No reports yet.</p>
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
-                      {['Client', 'Title', 'Period', 'Date', ''].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reports.map((r: any) => (
-                      <tr
-                        key={r.id}
-                        className="hover:bg-[var(--surface-alt)] transition-colors"
-                        style={{ borderBottom: '1px solid var(--line)' }}
-                      >
-                        <td className="px-4 py-3">
-                          <Link prefetch={false}
-                            href={`/clients/${(r.companies as any)?.slug ?? (r.companies as any)?.id}`}
-                            className="font-medium hover:underline"
-                            style={{ color: 'var(--purple)' }}
-                          >
-                            {(r.companies as any)?.name ?? '-'}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
-                          {r.narrative && (
-                            <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{r.narrative}</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3" style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
-                        <td className="px-4 py-3" style={{ color: 'var(--ink-faint)' }}>
-                          {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            <FileLink
-                              kind="report"
-                              id={r.id}
-                              storagePath={r.storage_path}
-                              fileUrl={r.file_url}
-                              className="btn-secondary btn-sm flex items-center gap-1.5 w-fit"
-                            >
-                              <ExternalLink size={12} /> Open
-                            </FileLink>
-                            <ShareReportButton reportId={r.id} apiBase="/api/admin/reports" />
-                          </div>
-                        </td>
+            {reports.length === 0 ? (
+              <div className="card p-12 empty-state">
+                <BarChart3 size={28} />
+                <p className="text-sm">No reports yet.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop / tablet table, hidden below md — `overflow-hidden`
+                    used to CLIP the Open/Share column off-screen on phone
+                    with no way to scroll to it; the card list beside it
+                    puts both actions within thumb reach instead. */}
+                <div className="hidden md:block card overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-alt)' }}>
+                        {['Client', 'Title', 'Period', 'Date', ''].map(h => (
+                          <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {reports.map((r: any) => (
+                        <tr
+                          key={r.id}
+                          className="hover:bg-[var(--surface-alt)] transition-colors"
+                          style={{ borderBottom: '1px solid var(--line)' }}
+                        >
+                          <td className="px-4 py-3">
+                            <Link prefetch={false}
+                              href={`/clients/${(r.companies as any)?.slug ?? (r.companies as any)?.id}`}
+                              className="font-medium hover:underline"
+                              style={{ color: 'var(--purple)' }}
+                            >
+                              {(r.companies as any)?.name ?? '-'}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium" style={{ color: 'var(--ink)' }}>{r.title}</p>
+                            {r.narrative && (
+                              <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{r.narrative}</p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3" style={{ color: 'var(--ink-soft)' }}>{r.period ?? '-'}</td>
+                          <td className="px-4 py-3" style={{ color: 'var(--ink-faint)' }}>
+                            {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <FileLink
+                                kind="report"
+                                id={r.id}
+                                storagePath={r.storage_path}
+                                fileUrl={r.file_url}
+                                className="btn-secondary btn-sm flex items-center gap-1.5 w-fit"
+                              >
+                                <ExternalLink size={12} /> Open
+                              </FileLink>
+                              <ShareReportButton reportId={r.id} apiBase="/api/admin/reports" />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Phone: one card per report, Open/Share reachable with a thumb. */}
+                <div className="mobile-card-list">
+                  {reports.map((r: any) => (
+                    <div key={r.id} className="mobile-card">
+                      <Link prefetch={false}
+                        href={`/clients/${(r.companies as any)?.slug ?? (r.companies as any)?.id}`}
+                        className="font-medium text-sm"
+                        style={{ color: 'var(--purple)' }}
+                      >
+                        {(r.companies as any)?.name ?? '-'}
+                      </Link>
+                      <p className="font-medium text-sm mt-1" style={{ color: 'var(--ink)' }}>{r.title}</p>
+                      {r.narrative && (
+                        <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--ink-faint)' }}>{r.narrative}</p>
+                      )}
+                      <div className="mt-3">
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">Period</span>
+                          <span className="mobile-card-value">{r.period ?? '-'}</span>
+                        </div>
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">Date</span>
+                          <span className="mobile-card-value">
+                            {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
+                        <FileLink
+                          kind="report"
+                          id={r.id}
+                          storagePath={r.storage_path}
+                          fileUrl={r.file_url}
+                          className="btn-secondary btn-sm flex items-center justify-center gap-1.5 flex-1"
+                        >
+                          <ExternalLink size={12} /> Open
+                        </FileLink>
+                        <ShareReportButton reportId={r.id} apiBase="/api/admin/reports" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
 
           {/* Upload form */}

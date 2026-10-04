@@ -206,38 +206,76 @@ export function SessionDetail({ session, companyId, attendance, people, names, c
           Nobody is booked on this session yet. {canManage ? 'Add attendees above.' : ''}
         </p>
       ) : (
-        <div className="table-wrapper">
-          <table className="table">
-            <caption className="sr-only">Attendance</caption>
-            <thead><tr><th scope="col">Person</th><th scope="col">Attendance</th><th scope="col">Training record</th>{canManage && <th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
-            <tbody>
-              {attendance.map(a => (
-                <tr key={a.id}>
-                  <td><Link href={workforcePersonPath(a.person_id)} style={{ color: 'var(--ink)' }}>{names[a.person_id] ?? 'Person'}</Link></td>
-                  <td>
+        <>
+          {/* Desktop / tablet table, hidden below md — the phone card
+              list beside it puts the attendance select and Remove
+              within thumb reach instead of a sideways scroll. */}
+          <div className="hidden md:block table-wrapper">
+            <table className="table">
+              <caption className="sr-only">Attendance</caption>
+              <thead><tr><th scope="col">Person</th><th scope="col">Attendance</th><th scope="col">Training record</th>{canManage && <th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
+              <tbody>
+                {attendance.map(a => (
+                  <tr key={a.id}>
+                    <td><Link href={workforcePersonPath(a.person_id)} style={{ color: 'var(--ink)' }}>{names[a.person_id] ?? 'Person'}</Link></td>
+                    <td>
+                      {canManage && !closed && !a.training_record_id ? (
+                        <>
+                          <label className="sr-only" htmlFor={`att-${a.id}`}>Attendance for {names[a.person_id] ?? 'person'}</label>
+                          <select id={`att-${a.id}`} className="input" style={{ minWidth: 150 }} value={a.status} disabled={busy === a.id}
+                            onChange={e => setAttendance(a, e.target.value as AttendanceStatus)}>
+                            {ATTENDANCE_STATUSES.map(s => <option key={s} value={s}>{ATTENDANCE_LABELS[s]}</option>)}
+                          </select>
+                        </>
+                      ) : <Pill tone={ATT_TONE[a.status]}>{ATTENDANCE_LABELS[a.status]}</Pill>}
+                    </td>
+                    <td>{a.training_record_id ? 'Created — awaiting verification on the person\'s profile' : a.status === 'passed' ? 'Created when outcomes are recorded' : 'None (only a pass creates a record)'}</td>
+                    {canManage && (
+                      <td>
+                        {!a.training_record_id && !closed && (
+                          <button type="button" className="btn-ghost btn-sm" disabled={busy === a.id} onClick={() => removeAttendee(a)}>Remove</button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Phone: one card per attendee, attendance + Remove reachable with a thumb. */}
+          <div className="mobile-card-list">
+            {attendance.map(a => (
+              <div key={a.id} className="mobile-card">
+                <Link href={workforcePersonPath(a.person_id)} className="font-medium text-sm" style={{ color: 'var(--ink)' }}>
+                  {names[a.person_id] ?? 'Person'}
+                </Link>
+                <div className="mt-3">
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">Attendance</span>
                     {canManage && !closed && !a.training_record_id ? (
                       <>
-                        <label className="sr-only" htmlFor={`att-${a.id}`}>Attendance for {names[a.person_id] ?? 'person'}</label>
-                        <select id={`att-${a.id}`} className="input" style={{ minWidth: 150 }} value={a.status} disabled={busy === a.id}
+                        <label className="sr-only" htmlFor={`att-m-${a.id}`}>Attendance for {names[a.person_id] ?? 'person'}</label>
+                        <select id={`att-m-${a.id}`} className="input" style={{ minWidth: 150 }} value={a.status} disabled={busy === a.id}
                           onChange={e => setAttendance(a, e.target.value as AttendanceStatus)}>
                           {ATTENDANCE_STATUSES.map(s => <option key={s} value={s}>{ATTENDANCE_LABELS[s]}</option>)}
                         </select>
                       </>
                     ) : <Pill tone={ATT_TONE[a.status]}>{ATTENDANCE_LABELS[a.status]}</Pill>}
-                  </td>
-                  <td>{a.training_record_id ? 'Created — awaiting verification on the person\'s profile' : a.status === 'passed' ? 'Created when outcomes are recorded' : 'None (only a pass creates a record)'}</td>
-                  {canManage && (
-                    <td>
-                      {!a.training_record_id && !closed && (
-                        <button type="button" className="btn-ghost btn-sm" disabled={busy === a.id} onClick={() => removeAttendee(a)}>Remove</button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <p className="text-xs mt-2" style={{ color: 'var(--ink-faint)' }}>
+                    {a.training_record_id ? 'Training record created — awaiting verification on the person\'s profile' : a.status === 'passed' ? 'Training record created when outcomes are recorded' : 'No training record (only a pass creates one)'}
+                  </p>
+                </div>
+                {canManage && !a.training_record_id && !closed && (
+                  <div className="mobile-card-actions">
+                    <button type="button" className="btn-secondary btn-sm" disabled={busy === a.id} onClick={() => removeAttendee(a)}>Remove</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {canManage && !closed && (

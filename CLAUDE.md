@@ -14635,3 +14635,103 @@ read), both production builds compile (portal's one prerender
 failure on `/auth/reset-password` is the same long-documented
 sandbox-only missing-Supabase-env-var limitation, independently
 re-confirmed harmless twice this session with dummy env vars set).
+
+---
+
+## Responsive/layout audit: portal gets the `.mobile-card-list`
+## pattern, three `overflow-hidden` clipping bugs fixed (2026-10-04)
+
+Follow-up to the cross-linking work, per the user's own request to
+audit width/layout/typography/buttons across desktop, tablet and
+mobile. A code-level pattern audit (not a screenshot crawl — this
+codebase's own global CSS already carries extensive, documented
+responsive hardening: a 44×44px hamburger drawer in both apps, iPhone
+safe-area insets, modal viewport clamping on mobile, a consistent
+640/768/1024 breakpoint system) against the `ui-ux-pro-max` skill's
+checklist, grounded first in reading both apps' `globals.css` design
+systems before grepping for violations.
+
+- **Admin has had a `.mobile-card-list` pattern since an earlier
+  session — portal never did.** `.table-wrapper` scrolls sideways,
+  "fine for scanning but wrong for a table an operator needs to ACT
+  on from a phone... every tap has to first scroll to find the
+  control" (admin's own comment). Admin applies it selectively, to
+  its two genuinely actionable tables (`hiring/[id]`'s candidates
+  table, `ReferralsClient.tsx`) — not to every table. Portal had 47
+  files using `.table-wrapper` and zero using the card-list
+  alternative, because the CSS classes themselves didn't exist in
+  `portal/src/app/globals.css`.
+- **Ported the pattern verbatim** (`.mobile-card-list`, `.mobile-card`,
+  `.mobile-card-row`, `.mobile-card-label`, `.mobile-card-value`,
+  `.mobile-card-actions`) and applied it, matching admin's own
+  selective standard, to portal's two clearest "act from a phone"
+  tables: `AccessGrantClient.tsx`'s grants table (a per-row Revoke
+  button) and `SessionsClient.tsx`'s attendance table (a per-row
+  attendance `<select>` plus a Remove button) — both gained a
+  `hidden md:block` desktop table beside an `md:hidden` card list,
+  the identical sibling-component shape `hiring/[id]/page.tsx` already
+  established.
+- **A background Explore agent then surveyed the rest of both apps**
+  against the full checklist (touch targets, breakpoint consistency,
+  horizontal-scroll risk, table-wrapper coverage, typography floor,
+  spacing scale, `.btn-*` usage, the disabled-Prev/Next anti-pattern,
+  sidebar/hamburger implementation) with emphasis on the newer Phase
+  20-29 Completion Programme and cross-linking files, since those are
+  less battle-tested than the original Phase 1-19 work. **Those newer
+  files came back clean** — `ConnectionsPanel.tsx`, `CriticalControlsView.tsx`,
+  `Core360StatusView.tsx`, `ComplianceTwinView.tsx`, `BoardAssuranceClient.tsx`,
+  both `GlobalSearch.tsx` components, `LearningAssignmentPanel.tsx`,
+  the QR scan/report pages, `ShareReportButton.tsx` all already follow
+  the established `.table-wrapper`/`.btn-*`/44px-touch-target/
+  breakpoint conventions — none of this round's own work introduced a
+  defect.
+- **Three real, pre-existing HIGH findings, all genuinely invisible-
+  overflow bugs, not just a scroll inconvenience**: `className="card
+  overflow-hidden"` on a wide table CLIPS the overflowing columns
+  entirely rather than letting the user scroll to them — a materially
+  worse bug than the `.table-wrapper` sideways-scroll pattern it was
+  presumably meant to resemble.
+  - `admin/.../clients/[id]/tabs/CandidatesTab.tsx` — a 6-column,
+    per-row-actionable (Share/Unshare) candidates table hid its
+    Feedback/Share columns off-screen on phone with no way to reach
+    them. Given the Share/Unshare toggle, a plain scroll fix wasn't
+    enough — rewritten with the full `hidden md:block` table +
+    `.mobile-card-list` treatment, mirroring the sibling hiring page.
+  - `admin/.../reports/page.tsx` — the cross-client reports list hid
+    its Open/Share actions (`ShareReportButton`, Phase 19-era Shareable
+    Reports feature) off-screen the same way. Same fix.
+  - `portal/.../lead/org-chart/OrgChartClient.tsx` — the bulk CSV
+    import PREVIEW table (Name/Title/Department/Reports-to/Status)
+    hid its Department/Reports-to/Status columns, meaning a manager
+    importing a bulk org-chart change from a tablet could confirm an
+    import without ever seeing data that would have told them
+    something was wrong. This table has no per-row action (review-only
+    before a single Confirm button), so the minimal, correct fix —
+    `overflow-hidden` → `overflow-x-auto`, no card-list rewrite — was
+    the right scope, matching admin's own established "table-wrapper
+    alone is fine for scanning" distinction.
+- **Everything else the agent checked came back clean, reported
+  explicitly rather than padded**: no new disabled-Prev/Next-as-a-live-
+  `<a>` regression (the F8/F9 fix from an earlier session is holding);
+  no ad-hoc breakpoints outside the standard 640/768/1024/1280 system;
+  no large fixed-width container without a responsive override in
+  admin/portal (hits were confined to the out-of-scope public
+  marketing site); no sub-12px BODY text (every small-text hit is an
+  established micro-label/badge class); no odd non-4px spacing in the
+  newer files; no hand-rolled button bypassing `.btn-*` on anything
+  that functions as a CTA (the pre-existing accordion-toggle/icon-close
+  `<button>`s with no `.btn-*` class are a long-standing, deliberate
+  convention across the whole codebase, not a regression to re-litigate
+  here); both apps' hamburger/drawer mobile nav is a real, working
+  implementation, not a stub.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010 / portal 1002, both unchanged — every fix here is markup/
+CSS, no pure-logic module touched), all seven CI guards pass with no
+regressions (81 shared-dupe pairs, unchanged — none of the four edited
+files is a shared-dupe pair; row-cap clean; 44 unvalidated routes,
+unchanged; 44 static admin routes, all reachable; 101 blind-update
+chains, unchanged; every paged query's `.order()` present; 300
+unbounded-read chains, unchanged), both production builds compile
+(portal's one prerender failure on `/auth/reset-password` is the same
+long-documented sandbox-only missing-Supabase-env-var limitation).

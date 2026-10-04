@@ -718,7 +718,13 @@ function ImportModal({
               <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink)' }}>
                 Preview ({parsed.rows.length} row{parsed.rows.length !== 1 ? 's' : ''})
               </p>
-              <div className="rounded-md overflow-hidden" style={{ border: '1px solid var(--line)' }}>
+              {/* Scan-only preview, not per-row actionable, so a plain
+                  horizontal scroll (not a mobile-card-list) is the right
+                  phone fallback — `overflow-hidden` used to CLIP the
+                  Department/Reports-to/Status columns invisibly instead
+                  of letting a manager scroll to check them before
+                  confirming a bulk import. */}
+              <div className="rounded-md overflow-x-auto" style={{ border: '1px solid var(--line)' }}>
                 <table className="w-full text-xs">
                   <thead style={{ background: 'var(--surface-soft)' }}>
                     <tr>
