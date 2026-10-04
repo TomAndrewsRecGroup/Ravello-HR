@@ -215,6 +215,42 @@ export function MiniBarRow({
   );
 }
 
+/**
+ * A single rounded bar split into segments, each segment's WIDTH
+ * proportional to its own share of the total — the honest shape for
+ * "N of M done, the rest outstanding", never BandRing's equally-sized
+ * arcs (BandRing is for N categorical items, not a proportion of one
+ * whole). A zero-total series renders an empty, unfilled track rather
+ * than guessing a 100% segment.
+ */
+export function ProportionBar({
+  segments, height = 10,
+}: {
+  segments: { value: number; colour: string; label: string }[];
+  height?: number;
+}) {
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  return (
+    <div>
+      <div className="flex rounded-full overflow-hidden" style={{ height, background: 'var(--surface-soft)' }}>
+        {total > 0 && segments.map((s, i) => (
+          s.value > 0 && (
+            <div key={i} style={{ width: `${(s.value / total) * 100}%`, background: s.colour, height: '100%' }} title={`${s.label}: ${s.value}`} />
+          )
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+        {segments.map((s, i) => (
+          <span key={i} className="text-[11px] inline-flex items-center gap-1" style={{ color: 'var(--ink-faint)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: s.colour, flexShrink: 0, display: 'inline-block' }} />
+            {s.label}: <strong style={{ color: 'var(--ink)' }}>{s.value}</strong>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** A side-by-side pair of bars for a period-over-period comparison. */
 export function CompareBars({
   currentLabel, currentValue, priorLabel, priorValue, max, colour = 'var(--purple)',

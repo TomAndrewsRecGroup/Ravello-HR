@@ -4,6 +4,7 @@ import {
   PERSON_EXCEPTION_SIGNAL_LABELS, ASSET_EXCEPTION_SIGNAL_LABELS,
   type OperationalExceptionsSummary, type PersonException, type AssetException,
 } from '@/lib/operationalExceptions/analyze';
+import { MiniBarRow } from '@/components/charts/MiniCharts';
 
 // Operational Exception Detection (go-live gap list, item 10). A
 // shared-dupe pair, the ComplianceTwinView/Core360StatusView
@@ -61,6 +62,14 @@ export default function OperationalExceptionsView({
       </div>
 
       {loadError && <p className="card p-4 text-sm" style={{ color: 'var(--red)' }}>Could not load data: {loadError}</p>}
+
+      {!loadError && (personExceptions.length > 0 || assetExceptions.length > 0) && (
+        <div className="card p-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Where exceptions concentrate</p>
+          <MiniBarRow label="People" value={personExceptions.length} max={Math.max(personExceptions.length, assetExceptions.length, 1)} colour="var(--gold)" />
+          <MiniBarRow label="Assets" value={assetExceptions.length} max={Math.max(personExceptions.length, assetExceptions.length, 1)} colour="var(--gold)" />
+        </div>
+      )}
 
       {!loadError && (
         <div className="space-y-4">

@@ -14832,3 +14832,64 @@ paged query's `.order()` present; 300 unbounded-read chains,
 unchanged), both production builds compile (portal's one prerender
 failure on `/auth/reset-password` is the same long-documented
 sandbox-only missing-Supabase-env-var limitation).
+
+---
+
+## Dataviz rollout, round 2: Risk Graph, Operational Exceptions,
+## Consultant Metrics (2026-10-04)
+
+Continuing round 1 on the same approved page list. A new primitive,
+`ProportionBar`, was needed for a genuinely different shape of data
+round 1 had no component for.
+
+- **`ProportionBar`** (added to `components/charts/MiniCharts.tsx`):
+  a single rounded bar split into segments whose WIDTH is proportional
+  to each one's own share of the total — never `BandRing`'s equally-
+  sized arcs, which are for N categorical items, not a share of one
+  whole. A zero-total series renders an empty track rather than
+  guessing a 100% segment, mirroring the same safe-default discipline
+  every other primitive in this file already follows. Server-rendered
+  and checked for `NaN` on both a normal and a zero-total input before
+  being trusted.
+- **`RiskGraphClient.tsx`** (shared-dupe pair) gains a summary
+  `MiniBarRow` block — uncovered hazards / ineffective shared controls
+  / assessments carrying one / unlinked legal obligations, one shared
+  scale across all four (the same unit: a count of findings) — ahead
+  of the existing per-category lists, which stay as lists (each
+  finding is its own named record with its own link, not a count to
+  bar).
+- **`OperationalExceptionsView.tsx`** (shared-dupe pair) gains a small
+  "where exceptions concentrate" People-vs-Assets `MiniBarRow` pair
+  above its two tables. The per-ROW table itself is untouched — each
+  row is a distinct flagged person/asset with its own named signals,
+  not a count to visualise, and the page's own stated rule ("never
+  translated into a colour band or a percentage") stays true: this
+  bar compares two plain counts, nothing scored.
+- **Consultant Metrics** (`/consultancy/metrics`, portal-only — no
+  admin equivalent page exists for this one): "Observations by type"
+  became `MiniBarRow` bars (one shared scale, same unit); "Follow-up
+  compliance" (booked vs. outstanding) became the new `ProportionBar`
+  — the first real use of a TRUE proportional split in this codebase,
+  since booked+outstanding genuinely sum to one whole in a way none of
+  round 1's `MiniBarRow` lists did (those were independent counts, not
+  parts of a total).
+- **Core 360 Status's heterogeneous domain-inputs dump stays a plain
+  list** (unchanged from round 1's own reasoning) — still true here:
+  nothing in round 2 introduced a shared-scale bar across unrelated
+  units.
+- **Risk Graph's "Explore connections" panel (the interactive
+  neighbour-walk `useState`/RPC half of the page) is untouched** — it
+  is already a live, on-demand graph query with its own result list,
+  not aggregate data a chart would summarise any more usefully than
+  the existing badges/links already do.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010 / portal 1002, both unchanged — every change here is
+presentational, no pure-logic module touched), all seven CI guards
+pass with no regressions (82 shared-dupe pairs, unchanged — every
+file touched was already a registered pair or is portal-only; row-cap
+clean; 44 unvalidated routes, unchanged; 44 static admin routes, all
+reachable; 101 blind-update chains, unchanged; every paged query's
+`.order()` present; 300 unbounded-read chains, unchanged), both
+production builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation).

@@ -5,6 +5,7 @@ import { AlertTriangle, ShieldAlert, Scale, Network, Loader2, ExternalLink } fro
 import { createClient } from '@/lib/supabase/client';
 import { hrefForEntity } from '@/lib/riskGraph/entityLabels';
 import type { RiskGraphIntelligence } from '@/lib/riskGraph/intelligence';
+import { MiniBarRow } from '@/components/charts/MiniCharts';
 
 interface ExploreOption { type: 'hazard' | 'risk_assessment' | 'legal_obligation'; id: string; label: string }
 interface Neighbour { entity_type: string; entity_id: string; relation: string | null; hop: number; direction: string }
@@ -78,6 +79,22 @@ export default function RiskGraphClient({ companyId, intelligence, exploreOption
           <p style={{ color: 'var(--ink-faint)' }}>No connected-compliance gaps found for this client.</p>
         </div>
       )}
+
+      {!empty && (() => {
+        const counts = [
+          { label: 'Uncovered hazards', value: intelligence.uncoveredHazards.length },
+          { label: 'Ineffective shared controls', value: intelligence.ineffectiveSharedControls.length },
+          { label: 'Assessments w/ ineffective control', value: intelligence.assessmentsWithIneffectiveControls.length },
+          { label: 'Unlinked legal obligations', value: intelligence.unlinkedApplicableObligations.length },
+        ];
+        const max = Math.max(...counts.map(c => c.value), 1);
+        return (
+          <div className="card p-4 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-faint)' }}>Connected-compliance findings, this client</p>
+            {counts.map(c => <MiniBarRow key={c.label} label={c.label} value={c.value} max={max} colour="var(--gold)" />)}
+          </div>
+        );
+      })()}
 
       {intelligence.uncoveredHazards.length > 0 && (
         <section className="card p-4 space-y-2">

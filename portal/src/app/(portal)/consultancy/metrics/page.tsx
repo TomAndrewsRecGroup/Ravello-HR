@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { requirePortfolioSession } from '@/lib/consultancy/portfolioAccess';
 import { loadConsultantMetrics } from '@/lib/consultancy/loadConsultantMetrics';
 import { OBSERVATION_TYPE_LABELS, OBSERVATION_TYPES } from '@/lib/consultancy/vocab';
+import { MiniBarRow, ProportionBar } from '@/components/charts/MiniCharts';
 
 export const metadata: Metadata = { title: 'Consultant Metrics' };
 export const dynamic = 'force-dynamic';
@@ -50,29 +51,34 @@ export default async function ConsultantMetricsPage() {
         <CardCount label="Follow-up visits booked" n={followUpPct !== null ? `${followUpPct}%` : '—'} />
       </div>
 
-      <section className="card p-4 space-y-2">
+      <section className="card p-4 space-y-3">
         <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Observations by type</h2>
         {m.observationsRecorded === 0 ? (
           <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>None recorded in this period.</p>
         ) : (
-          <ul className="text-sm space-y-1" style={{ color: 'var(--ink-soft)' }}>
+          <div className="space-y-2">
             {OBSERVATION_TYPES.filter(t => (m.observationsByType[t] ?? 0) > 0).map(t => (
-              <li key={t} className="flex items-center justify-between">
-                <span>{OBSERVATION_TYPE_LABELS[t]}</span>
-                <span className="badge">{m.observationsByType[t]}</span>
-              </li>
+              <MiniBarRow
+                key={t}
+                label={OBSERVATION_TYPE_LABELS[t]}
+                value={m.observationsByType[t] ?? 0}
+                max={Math.max(...OBSERVATION_TYPES.map(x => m.observationsByType[x] ?? 0), 1)}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section className="card p-4 space-y-1">
+      <section className="card p-4 space-y-2">
         <h2 className="font-semibold" style={{ color: 'var(--ink)' }}>Follow-up compliance</h2>
-        <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>
-          {followUpTotal === 0
-            ? 'No issued reports have recommended a follow-up visit.'
-            : `${m.followUpsBooked} of ${followUpTotal} recommended follow-up visits have been booked. ${m.followUpsOutstanding} outstanding.`}
-        </p>
+        {followUpTotal === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--ink-soft)' }}>No issued reports have recommended a follow-up visit.</p>
+        ) : (
+          <ProportionBar segments={[
+            { value: m.followUpsBooked, colour: 'var(--teal)', label: 'Booked' },
+            { value: m.followUpsOutstanding, colour: 'var(--gold)', label: 'Outstanding' },
+          ]} />
+        )}
         <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Not period-scoped — a recommendation is outstanding until a follow-up visit is booked, however long ago it was made.</p>
       </section>
     </main>
