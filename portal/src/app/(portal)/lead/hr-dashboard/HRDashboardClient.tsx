@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Plus, X, Loader2, Users, TrendingDown, AlertTriangle, CheckCircle2, FileText, BookOpen, ClipboardList, Wand2 } from 'lucide-react';
 import Link from 'next/link';
 import type { HrMetricsSnapshot } from '@/lib/lead/hrMetricsFromRecords';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 
 interface HRMetric {
   id: string;
@@ -179,21 +180,14 @@ export default function HRDashboardClient({ companyId, initialMetrics, empDocCou
             <>
               <div className="divider my-5" />
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-faint)' }}>Gender Diversity</p>
-              <div className="space-y-2">
-                {[
-                  { label: 'Male',   pct: latest.gender_m_pct,     color: '#60A5FA' },
-                  { label: 'Female', pct: latest.gender_f_pct,     color: '#F472B6' },
-                  { label: 'Other',  pct: latest.gender_other_pct, color: 'var(--purple-lt)' },
-                ].filter(g => g.pct !== null).map(g => (
-                  <div key={g.label}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{g.label}</span>
-                      <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{g.pct}%</span>
-                    </div>
-                    <Bar pct={g.pct!} color={g.color} />
-                  </div>
-                ))}
-              </div>
+              <ProportionBar
+                height={12}
+                segments={[
+                  { label: 'Male',   value: latest.gender_m_pct ?? 0,     colour: '#60A5FA' },
+                  { label: 'Female', value: latest.gender_f_pct ?? 0,     colour: '#F472B6' },
+                  { label: 'Other',  value: latest.gender_other_pct ?? 0, colour: 'var(--purple-lt)' },
+                ]}
+              />
             </>
           )}
         </div>

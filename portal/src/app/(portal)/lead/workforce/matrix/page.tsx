@@ -17,6 +17,7 @@ import FilterForm from '@/components/safety/FilterForm';
 import CsvButton from '@/components/safety/CsvButton';
 import SafetyEmpty from '@/components/safety/SafetyEmpty';
 import { DeploymentBadge } from '@/components/workforce/DeploymentBadge';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 
 export const metadata: Metadata = { title: 'Compliance matrix' };
 export const dynamic = 'force-dynamic';
@@ -96,6 +97,22 @@ export default async function WorkforceMatrixPage(props: { searchParams: Promise
 
       {matrix.error && <p className="card p-3 text-sm" role="alert" style={{ color: 'var(--red)' }}>The matrix could not be loaded: {matrix.error}</p>}
       {matrix.truncated && <p className="text-xs" style={{ color: 'var(--gold)' }}>The organisation is too large to show in full. Narrow the filters.</p>}
+
+      {m.columns.length > 0 && (
+        <div className="card p-3">
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-soft)' }}>
+            Status, across every applicable cell in this view
+          </p>
+          <ProportionBar
+            showLegend={false}
+            segments={REQUIREMENT_STATUSES.map(s => ({
+              label: REQUIREMENT_STATUS_LABELS[s],
+              colour: REQUIREMENT_STATUS_COLOURS[s],
+              value: [...m.cells.values()].reduce((n, row) => n + [...row.values()].filter(c => c.status === s).length, 0),
+            }))}
+          />
+        </div>
+      )}
 
       <Legend />
 

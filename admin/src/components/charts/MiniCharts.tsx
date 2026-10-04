@@ -224,10 +224,16 @@ export function MiniBarRow({
  * than guessing a 100% segment.
  */
 export function ProportionBar({
-  segments, height = 10,
+  segments, height = 10, showLegend = true,
 }: {
   segments: { value: number; colour: string; label: string }[];
   height?: number;
+  /** false for a bar-only reading when the caller already shows the
+      same numbers as plain text next to it (e.g. a "12/20 clauses"
+      line) — a legend repeating identical numbers is noise, and a
+      zero-value segment's swatch would look broken with nothing to
+      actually show. */
+  showLegend?: boolean;
 }) {
   const total = segments.reduce((s, x) => s + x.value, 0);
   return (
@@ -239,14 +245,16 @@ export function ProportionBar({
           )
         ))}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-        {segments.map((s, i) => (
-          <span key={i} className="text-[11px] inline-flex items-center gap-1" style={{ color: 'var(--ink-faint)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: s.colour, flexShrink: 0, display: 'inline-block' }} />
-            {s.label}: <strong style={{ color: 'var(--ink)' }}>{s.value}</strong>
-          </span>
-        ))}
-      </div>
+      {showLegend && (
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+          {segments.map((s, i) => (
+            <span key={i} className="text-[11px] inline-flex items-center gap-1" style={{ color: 'var(--ink-faint)' }}>
+              <span style={{ width: 7, height: 7, borderRadius: 99, background: s.colour, flexShrink: 0, display: 'inline-block' }} />
+              {s.label}: <strong style={{ color: 'var(--ink)' }}>{s.value}</strong>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

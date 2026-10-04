@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BarChart3, Clock, Users, CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react';
 import { HIRING_STAGE_LABELS as STAGE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import { computeStageDurations, type StageHistoryRow } from '@/lib/hiring/stageDuration';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 
 export const metadata: Metadata = { title: 'Hiring Analytics' };
 export const revalidate = 60;
@@ -316,11 +317,15 @@ export default async function AdminHiringAnalyticsPage() {
             </div>
             {offerAcceptRate != null && (
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Acceptance rate</span>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{offerAcceptRate}%</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>Where every offer landed</span>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>{offerAcceptRate}% accepted</span>
                 </div>
-                <Bar pct={offerAcceptRate} color="#16A34A" />
+                <ProportionBar segments={[
+                  { value: acceptedOffers.length, colour: 'var(--emerald)', label: 'Accepted' },
+                  { value: declinedOffers.length, colour: 'var(--rose)', label: 'Declined' },
+                  { value: Math.max(allOffers.length - acceptedOffers.length - declinedOffers.length, 0), colour: 'var(--ink-faint)', label: 'Pending / other' },
+                ]} />
               </div>
             )}
           </div>

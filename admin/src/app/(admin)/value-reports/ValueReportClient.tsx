@@ -4,6 +4,7 @@ import { Download, FileText, Building2, Briefcase, LifeBuoy, ShieldCheck, Users,
 import { computeValueReport, computeQuarterlyValueReport } from '@/lib/valueReport/computeReport';
 import { buildReportPdf } from '@/lib/valueReport/buildReportPdf';
 import { createClient } from '@/lib/supabase/client';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 
 interface Props {
   companies: any[];
@@ -373,9 +374,19 @@ export default function ValueReportClient({
               </div>
               <div className="space-y-3">
                 {report.governance.isoReadiness.map((s: { standardCode: string; clausesTotal: number; clausesWithEvidence: number }) => (
-                  <div key={s.standardCode} className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{s.standardCode}</span>
-                    <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{s.clausesWithEvidence}/{s.clausesTotal} clauses</span>
+                  <div key={s.standardCode}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>{s.standardCode}</span>
+                      <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{s.clausesWithEvidence}/{s.clausesTotal} clauses</span>
+                    </div>
+                    <ProportionBar
+                      segments={[
+                        { value: s.clausesWithEvidence, colour: 'var(--teal)', label: 'With evidence' },
+                        { value: Math.max(s.clausesTotal - s.clausesWithEvidence, 0), colour: 'var(--surface-alt)', label: 'Without evidence' },
+                      ]}
+                      height={6}
+                      showLegend={false}
+                    />
                   </div>
                 ))}
                 {[

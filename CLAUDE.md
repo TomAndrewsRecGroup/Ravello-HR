@@ -14893,3 +14893,75 @@ reachable; 101 blind-update chains, unchanged; every paged query's
 `.order()` present; 300 unbounded-read chains, unchanged), both
 production builds compile (portal's one prerender failure is the same
 long-documented sandbox-only missing-Supabase-env-var limitation).
+
+---
+
+## Dataviz rollout, round 3: Reports & analytics (2026-10-04)
+
+Completes the user's approved page list — "Existing intelligence
+pages" (rounds 1-2) and "Reports & analytics" (this round): Value
+Report, Hiring Analytics, HR Dashboard, Workforce Matrix.
+
+- **Value Report** (`ValueReportClient.tsx`, admin): the GOVERNANCE
+  pillar's ISO readiness lines ("X/Y clauses") each gain a compact
+  `ProportionBar` underneath, `showLegend={false}` since the plain
+  text line directly above already states the same two numbers — a
+  legend would repeat them. This is a genuine part-of-a-whole relation
+  (clauses with evidence out of the SAME standard's total clauses, one
+  point in time), unlike the HIRE/SUPPORT/PROTECT/LEAD pillars'
+  counts, which stay plain numbers: "roles filled" and "roles raised",
+  for instance, are not two parts of one whole (filled roles can
+  include ones raised in an earlier period) — charting them as a
+  proportion would assert a relationship the data doesn't actually
+  have. The jsPDF-rendered PDF output is unchanged — this chart exists
+  only in the on-screen admin view, a separate renderer with no chart
+  primitives of its own.
+- **Hiring Analytics** (admin, already had its own locally-defined
+  `Bar` component and real design tokens throughout — not the
+  "Windows 95" case): the Offer Summary's three disconnected stat
+  tiles + a plain "acceptance rate" bar (which never showed declined
+  offers at all) became ONE `ProportionBar` — Accepted / Declined /
+  Pending-or-other — so a single glance now shows where every offer
+  actually landed, not just the accepted share.
+- **HR Dashboard** (`HRDashboardClient.tsx`, portal): Gender Diversity
+  was three independent stacked bars, each against its own 100%
+  — genuinely misleading for values that are meant to sum to one
+  whole (three near-full bars reads very differently from the correct
+  "three slices of one bar"). Replaced with one `ProportionBar`.
+- **Workforce Matrix** (portal): the matrix itself — a colour-coded
+  person × requirement grid with a sticky header and its own mobile
+  card fallback — IS already a real data visualization and was left
+  alone. Added one small aggregate `ProportionBar` above the existing
+  text Legend, reusing the IDENTICAL `REQUIREMENT_STATUS_COLOURS`
+  tokens the grid's own cells already use: a quick "shape of
+  compliance across this filtered view" before the detail grid,
+  computed from the same already-loaded `m.cells` Map, no new query.
+- **Deliberately left untouched**: the Value Report's four other
+  pillars (no honest proportional relationship between their own
+  counts); Hiring Analytics' existing stage/friction/funnel/recruiter
+  bars (already correct, already using real tokens — converting a
+  working `Bar` to `MiniBarRow` for cosmetic parity alone would be
+  churn with no reader-facing benefit); the matrix grid's own cells
+  (a colour-coded matrix is its own visualization, not a candidate for
+  a bar/ring treatment).
+
+This closes the user's full approved dataviz scope: all seven
+"Existing intelligence pages" (Digital Twin, Risk Graph, Incident
+Patterns, Continuous Improvement, Operational Exceptions, Core 360
+Status, Consultant Metrics) and all four "Reports & analytics" pages
+now use the native `components/charts/MiniCharts.tsx` primitives where
+the underlying data genuinely supports a chart, and are left as plain
+numbers/tables everywhere a chart would assert a relationship the data
+doesn't actually have.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010 / portal 1002, both unchanged — every change here is
+presentational, no pure-logic module touched), all seven CI guards
+pass with no regressions (82 shared-dupe pairs, unchanged — none of
+the four files touched this round is a registered shared-dupe pair;
+row-cap clean; 44 unvalidated routes, unchanged; 44 static admin
+routes, all reachable; 101 blind-update chains, unchanged; every
+paged query's `.order()` present; 300 unbounded-read chains,
+unchanged), both production builds compile (portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-
+env-var limitation).
