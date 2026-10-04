@@ -14569,3 +14569,69 @@ production builds compile (portal's one prerender failure on
 missing-Supabase-env-var limitation, re-confirmed harmless by a second
 build run with dummy env vars set). Migration 211 applied live and
 verified.
+
+---
+
+## Cross-linking round 4: portal GlobalSearch (2026-10-04)
+
+The remaining item from the cross-linking work: admin has had a
+`Cmd+K` command search since before this file's own history begins;
+portal had none at all. Scoped before building, per the explicit
+instruction to ask rather than guess on anything ambiguous — this
+turned out to be a clear, bounded, same-pattern addition, not a
+new-feature decision:
+
+- **`search_records()` is already `SECURITY INVOKER`** (Phase 1's own
+  standing rule): it runs under the CALLER's own RLS, so a portal
+  session calling it sees only what their own company-scoped (or
+  portfolio-scoped, for a consultant) policies already allow — the
+  identical safety property admin's own call already has. No new
+  security surface.
+- **`portal/src/components/modules/GlobalSearch.tsx` is a deliberate,
+  self-contained MIRROR, not a shared-dupe pair.** The two apps share
+  no server/client code across the repo boundary, and admin's own
+  `GlobalSearch.tsx` already keeps its own local `hrefFor()` rather
+  than importing `entityLabels.ts`'s `hrefForEntity()` for the
+  overlapping types — the identical precedent, applied here. Routing
+  differs by necessity: a client has no `/clients/<id>` or
+  `/health-safety/<id>/...` workspace, only `/protect/...`/
+  `/lead/...`/`/hire/...`. **Every one of the 37 destinations was
+  checked against the REAL file tree** (`find src/app/(portal) -iname
+  page.tsx`, confirming a static page or a `[id]` dynamic route exists
+  for each one) before being written — never guessed from the admin
+  equivalent's path shape.
+- **A real navigation footgun, avoided by design, not discovered by
+  accident.** `GlobalSearch.tsx`'s `navigate()`/`handleKeyDown()` both
+  call `router.push(href)` — Next's CLIENT router, which can only
+  navigate WITHIN the current app. This is exactly why the round 3
+  entry above left `authorisation_types`/`competencies` out of
+  admin's own search: those have no admin page, only a portal one, so
+  a `router.push()` to an external `portalUrl()` string would silently
+  misnavigate. Portal's own component has the same constraint in
+  reverse — every href here is a plain portal-relative path, never an
+  `adminUrl()` string, so the constraint never bites.
+- **Four types have no sensible portal destination and fall back to
+  `/dashboard`, honestly, not a guessed deep link**: a bare
+  `organisation`/`site`/`department` row (the portal IS the
+  organisation — there is no "company profile" page to visit), and
+  `dev_plan` (athlete/employee development plans are admin-only,
+  staff-managed on the client's behalf; the client can read the row
+  via RLS, since `dev_plans_client_select` exists, but has no page of
+  their own to see it on).
+- Mounted in `Topbar.tsx`, in the same slot admin's own Topbar uses —
+  next to `NotificationBell`, in the shared action row.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010, unchanged — this round touched portal only; portal 1002
+— 1001 + 1, `clientServerBoundary.test.ts`'s own sweep picking up the
+new client component automatically), all seven CI guards pass with no
+regressions (81 shared-dupe pairs, unchanged — this is deliberately
+NOT a shared-dupe pair, per its own header comment; row-cap clean; 44
+unvalidated routes, unchanged; 44 static admin routes, all reachable
+— this round touched no admin route; 101 blind-update chains,
+unchanged; every paged query's `.order()` present; 300 unbounded-read
+chains, unchanged — this component makes one RPC call, no table
+read), both production builds compile (portal's one prerender
+failure on `/auth/reset-password` is the same long-documented
+sandbox-only missing-Supabase-env-var limitation, independently
+re-confirmed harmless twice this session with dummy env vars set).

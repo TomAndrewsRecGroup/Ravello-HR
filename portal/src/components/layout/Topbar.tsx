@@ -2,6 +2,7 @@
 import { Menu } from 'lucide-react';
 import Breadcrumbs from './Breadcrumbs';
 import NotificationBell from '@/components/modules/NotificationBell';
+import GlobalSearch from '@/components/modules/GlobalSearch';
 import { useMobileMenu } from './MobileMenuContext';
 
 interface TopbarProps {
@@ -63,6 +64,7 @@ export default function Topbar({ title, subtitle, actions, breadcrumbLabel }: To
 
       <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         {actions}
+        <GlobalSearch />
         <NotificationBell />
       </div>
     </header>
