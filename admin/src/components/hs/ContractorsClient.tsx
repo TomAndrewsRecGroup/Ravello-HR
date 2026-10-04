@@ -11,12 +11,19 @@ import {
   type ContractorApprovalStatus, type ContractorInsuranceType, type ContractorRiskRating,
 } from '@/lib/hs/vocab';
 import type { Contractor, ContractorInsurance } from '@/lib/hs/types';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface Props {
   companyId: string;
   contractors: Contractor[];
   insurances: ContractorInsurance[];
   loadError: string | null;
+  // UI/UX cross-linking pass, round 3 (2026-10-04): the exact
+  // PermitsClient.tsx precedent — this component is a true shared-dupe
+  // pair rendered by both apps, so each caller passes its own role for
+  // ConnectionsPanel's href resolution (admin gets a per-company tab
+  // link, portal gets a plain relative path).
+  role: 'admin' | 'portal';
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -31,7 +38,7 @@ const STATUS_COLOUR: Record<ContractorApprovalStatus, string> = {
   pending: 'var(--ink-faint)', approved: 'var(--teal)', suspended: 'var(--gold)', rejected: 'var(--red)',
 };
 
-export default function ContractorsClient({ companyId, contractors, insurances, loadError }: Props) {
+export default function ContractorsClient({ companyId, contractors, insurances, loadError, role }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -183,6 +190,8 @@ export default function ContractorsClient({ companyId, contractors, insurances, 
                         </ul>
                       )}
                     </div>
+
+                    <ConnectionsPanel entityType="contractor" entityId={c.id} companyId={companyId} canEdit role={role} />
                   </div>
                 )}
               </li>

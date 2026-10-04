@@ -29,6 +29,12 @@ const LINKABLE_TYPES = [
   'hazard', 'risk_assessment', 'method_statement', 'coshh_assessment', 'substance',
   'incident', 'action', 'audit', 'document', 'equipment', 'contractor', 'permit',
   'objective', 'milestone', 'environmental_aspect', 'legal_obligation', 'emergency_plan',
+  // UI/UX cross-linking pass, round 3 (2026-10-04): isolation has no
+  // title/number column (122's own standing reason it stays out of
+  // entityLabels.ts' curated label map), but that only means a link TO
+  // one shows the generic fallback label — it is still a real record
+  // worth linking, so it belongs in this dropdown.
+  'isolation',
 ] as const;
 
 interface LinkRow { id: string; from_type: string; from_id: string; to_type: string; to_id: string; relation: string }

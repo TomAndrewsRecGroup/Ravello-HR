@@ -44,6 +44,7 @@ export default async function HealthSafetyIsolationsPage(props: { params: Promis
       equipment={equipment.rows.map(r => ({ id: r.id, name: r.name ?? '' }))}
       people={people.rows.map(r => ({ id: r.id, name: r.full_name ?? '' }))}
       loadError={loadError}
+      role="admin"
     />
   );
 }

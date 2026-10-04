@@ -10,6 +10,7 @@ import {
   ISOLATION_TYPES, ISOLATION_TYPE_LABELS, ISOLATION_STATUS_LABELS, type IsolationType, type IsolationStatus,
 } from '@/lib/hs/vocab';
 import type { Isolation, IsolationLock } from '@/lib/hs/types';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface PickOption { id: string; name: string }
 
@@ -20,6 +21,10 @@ interface Props {
   equipment: PickOption[];
   people: PickOption[];
   loadError: string | null;
+  // UI/UX cross-linking pass, round 3 (2026-10-04): the exact
+  // PermitsClient.tsx/ContractorsClient.tsx precedent — a true
+  // shared-dupe pair, each caller passes its own role.
+  role: 'admin' | 'portal';
 }
 
 const fmtDt = (d: string | null) =>
@@ -29,7 +34,7 @@ const STATUS_COLOUR: Record<IsolationStatus, string> = {
   applied: 'var(--gold)', verified: 'var(--teal)', removed: 'var(--ink-faint)',
 };
 
-export default function IsolationsClient({ companyId, isolations, locks, equipment, people, loadError }: Props) {
+export default function IsolationsClient({ companyId, isolations, locks, equipment, people, loadError, role }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -114,6 +119,8 @@ export default function IsolationsClient({ companyId, isolations, locks, equipme
                     </div>
 
                     <IsolationActions isolation={iso} locks={isoLocks} people={people} onDone={() => router.refresh()} />
+
+                    <ConnectionsPanel entityType="isolation" entityId={iso.id} companyId={companyId} canEdit role={role} />
                   </div>
                 )}
               </li>

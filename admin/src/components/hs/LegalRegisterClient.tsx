@@ -13,6 +13,7 @@ import {
 import type { LegalRequirement, OrganisationLegalObligation, ComplianceEvaluation, RequirementEvidenceLink } from '@/lib/hs/types';
 import EvidenceLinksPanel from './EvidenceLinksPanel';
 import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface Props {
   companyId: string;
@@ -273,6 +274,10 @@ export default function LegalRegisterClient({ companyId, catalogue, obligations,
                     </div>
 
                     <EvidenceLinksPanel companyId={companyId} sourceType="legal_obligation" sourceId={o.id} links={evidenceLinks} />
+                    {/* UI/UX cross-linking pass, round 3 (2026-10-04): 'legal_obligation'
+                        has been a valid ConnectionsPanel LINKABLE_TYPES target since
+                        Phase 23 Group 1, but this page never rendered the panel. */}
+                    <ConnectionsPanel entityType="legal_obligation" entityId={o.id} companyId={companyId} canEdit role="admin" />
                   </div>
                 )}
               </div>

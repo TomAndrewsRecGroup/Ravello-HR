@@ -14482,3 +14482,90 @@ the live function body, `anon` grant absent, `authenticated` grant
 present, and a live `search_records('an', 50)` call executed every
 branch (including the four new ones, inside the same `UNION ALL`)
 with no runtime error.
+
+---
+
+## Cross-linking round 3: register/controls/roadmap/lessons-learned/
+## dev-plans/reports/activities searchable; ConnectionsPanel on
+## contractors, isolations, objectives, legal obligations
+## (2026-10-04, migration 211)
+
+Continuing the cross-linking work from rounds 1-2. Surveyed the live
+schema for every table with a genuine human-chosen title column
+`search_records()` (last extended in round 2, migration 210) still
+had no coverage for.
+
+- **Seven new branches**: `compliance_items` (the HR/H&S register
+  itself — the single most frequently-referenced table with no search
+  coverage at all until now), `controls` (Phase 23's own Critical
+  Control Visibility work, migration 205), `milestones` (the Roadmap —
+  already a `ConnectionsPanel` `LINKABLE_TYPES` entry with a working
+  href, never searchable), `lessons_learned` (staff-only catalogue, no
+  `company_id`, the exact `legal_requirements`/`hs_test` NULL-
+  organisation_id shape), `dev_plans` (the one addition with a REAL
+  per-record admin page, `/dev-plans/<id>`), `reports` (ties into the
+  Shareable Reports feature), `hs_activities` (site visits/toolbox
+  talks).
+- **Deliberately NOT added: `authorisation_types`/`competencies`.**
+  Both have a genuine title column and are company-scoped, but neither
+  has an admin-side per-record OR per-company catalogue page — they
+  are managed only through the portal's `/lead/workforce/catalogue`
+  page, staff included. `GlobalSearch.tsx`'s `navigate()`/
+  `handleKeyDown()` both call `router.push(href)` — Next's CLIENT
+  router, which can only navigate WITHIN the admin app, unlike
+  `ConnectionsPanel`'s plain `<a>` tags, which navigate correctly to an
+  external portal URL regardless. Adding either type with a
+  `portalUrl()` href here would silently produce a broken navigation —
+  a real defect, not a missing feature, found by reading the
+  component's own navigation mechanism before assuming a href shape
+  that worked for `ConnectionsPanel` would also work here.
+- Live-verified: all seven branches confirmed present in the function
+  body (`pg_get_functiondef`), the grant shape unchanged
+  (`anon` refused, `authenticated` granted), and two branches with
+  real live data (`dev_plan`, `report`) proven to return the correct
+  row against the two real companies in production — the other five
+  have zero live rows today, so their correctness rests on
+  `apply_migration`'s own catalog-checking (which would have failed
+  the `CREATE OR REPLACE FUNCTION` outright on any column/type
+  mismatch) rather than a live row-return proof.
+- `GlobalSearch.tsx` gained seven `TYPE_CONFIG` entries (new icons:
+  `Shield`, `Milestone`, `Lightbulb`, `TrendingUp`, `BarChart3`,
+  `Calendar`) and seven `hrefFor()` cases, following the admin-page-
+  or-hub pattern every existing branch already uses.
+
+**`ConnectionsPanel` rollout, the genuine remaining gaps**:
+`'contractor'`/`'objective'`/`'legal_obligation'` have been valid
+`LINKABLE_TYPES` targets since Phase 23 Group 1, but none of their own
+pages ever rendered the panel to show what links TO them —
+`ObjectivesClient.tsx` and `LegalRegisterClient.tsx` (admin-only, both
+already had `EvidenceLinksPanel` for a DIFFERENT polymorphic table,
+`requirement_evidence_links` — evidence linking and `hs_links`
+cross-entity linking are genuinely separate features, so neither page
+having one does not mean it has the other) each gained a
+`ConnectionsPanel` alongside their existing `EvidenceLinksPanel`.
+`ContractorsClient.tsx` (a true shared-dupe pair, admin + portal) was
+missing the panel entirely despite `'contractor'` already being
+linkable — fixed with a new `role: 'admin' | 'portal'` prop, the exact
+`PermitsClient.tsx` precedent. **`'isolation'` was missing from
+`LINKABLE_TYPES` altogether** (it has no title/number column, 122's
+own standing reason it stays out of `entityLabels.ts`'s curated label
+map — but that only means a link TO one shows the generic fallback
+label, not that it can't be linked at all) — added, confirmed live
+that `hs_entity_table('isolation')` already resolves to `'isolations'`
+(so the cross-organisation guard on `hs_links` already covers it with
+no schema change), and wired a `ConnectionsPanel` into
+`IsolationsClient.tsx` (also a true shared-dupe pair) the same way.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (2010 admin / 1001 portal, unchanged — this round is UI/route-
+glue plus one SQL function extension, no new pure-logic module), all
+seven CI guards pass with no regressions (81 shared-dupe pairs,
+unchanged — every file touched was already a registered pair; row-cap
+clean; 44 unvalidated routes, unchanged; 44 static admin routes, all
+reachable; 101 blind-update chains, unchanged; every paged query's
+`.order()` present; 300 unbounded-read chains, unchanged), both
+production builds compile (portal's one prerender failure on
+`/auth/reset-password` is the same long-documented sandbox-only
+missing-Supabase-env-var limitation, re-confirmed harmless by a second
+build run with dummy env vars set). Migration 211 applied live and
+verified.

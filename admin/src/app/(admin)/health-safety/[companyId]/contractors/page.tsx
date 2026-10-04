@@ -35,6 +35,7 @@ export default async function HealthSafetyContractorsPage(props: { params: Promi
       contractors={contractors.rows}
       insurances={insurances.rows}
       loadError={contractors.error ?? insurances.error ?? (contractors.truncated || insurances.truncated ? 'Showing the first part of a long list.' : null)}
+      role="admin"
     />
   );
 }

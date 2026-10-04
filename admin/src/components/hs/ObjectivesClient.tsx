@@ -12,6 +12,7 @@ import {
 import type { Objective, ObjectiveMeasurement, ManagementSystemStandard, RequirementEvidenceLink } from '@/lib/hs/types';
 import EvidenceLinksPanel from './EvidenceLinksPanel';
 import LinkedActionBadge, { type LinkedActionSummary } from './LinkedActionBadge';
+import ConnectionsPanel from './ConnectionsPanel';
 
 interface Props {
   companyId: string;
@@ -256,6 +257,11 @@ export default function ObjectivesClient({ companyId, objectives, measurements, 
                     )}
 
                     <EvidenceLinksPanel companyId={companyId} sourceType="objective" sourceId={o.id} links={evidenceLinks} />
+                    {/* UI/UX cross-linking pass, round 3 (2026-10-04): 'objective'
+                        has been a valid ConnectionsPanel LINKABLE_TYPES target
+                        since Phase 23 Group 1, but this page never rendered the
+                        panel to show what links to an objective itself. */}
+                    <ConnectionsPanel entityType="objective" entityId={o.id} companyId={companyId} canEdit role="admin" />
                   </div>
                 )}
               </div>

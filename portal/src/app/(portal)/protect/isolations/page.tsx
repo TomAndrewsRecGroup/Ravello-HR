@@ -45,6 +45,7 @@ export default async function ProtectIsolationsPage() {
         equipment={equipment.rows.map(r => ({ id: r.id, name: r.name ?? '' }))}
         people={people.rows.map(r => ({ id: r.id, name: r.full_name ?? '' }))}
         loadError={loadError}
+        role="portal"
       />
     </main>
   );

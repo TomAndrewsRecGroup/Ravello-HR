@@ -8,6 +8,7 @@ import {
   CheckSquare, AlertTriangle, ClipboardCheck, Wrench,
   Leaf, Scale, Target, Users2, ClipboardList, MessageSquare,
   HardHat, FileSignature, Siren, GraduationCap,
+  Shield, Milestone, Lightbulb, TrendingUp, BarChart3, Calendar,
 } from 'lucide-react';
 
 interface SearchResult {
@@ -53,6 +54,19 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   permit:                { icon: FileSignature,  color: 'var(--gold)',   label: 'Permit' },
   emergency_plan:        { icon: Siren,          color: 'var(--red)',    label: 'Emergency plan' },
   hs_test:                { icon: GraduationCap,  color: 'var(--teal)',   label: 'Test' },
+  // UI/UX cross-linking pass, round 3 (2026-10-04, migration 211): the
+  // register, critical controls, roadmap, lessons learned, development
+  // plans, reports and site activities had no search coverage at all
+  // until this — see search_records' own migration header for why
+  // authorisation_types/competencies stay out (no admin page to
+  // navigate a Next router.push() to).
+  compliance_item:       { icon: ShieldCheck,    color: 'var(--red)',    label: 'Register item' },
+  control:                { icon: Shield,         color: 'var(--teal)',   label: 'Control' },
+  milestone:              { icon: Milestone,      color: 'var(--gold)',   label: 'Milestone' },
+  lesson_learned:         { icon: Lightbulb,      color: 'var(--gold)',   label: 'Lesson learned' },
+  dev_plan:               { icon: TrendingUp,     color: 'var(--teal)',   label: 'Development plan' },
+  report:                 { icon: BarChart3,      color: 'var(--purple)', label: 'Report' },
+  hs_activity:            { icon: Calendar,       color: 'var(--blue)',   label: 'Activity' },
 };
 
 // Where each kind of record lives in the admin app. Anything without a
@@ -86,6 +100,18 @@ export function hrefFor(type: string, id: string, org: string | null): string {
     // hs_test has no per-organisation home either — the staff test bank
     // (116), same NULL-organisation_id shape as legal_requirement above.
     case 'hs_test':               return '/health-safety/tests';
+    case 'compliance_item': return org ? `/health-safety/${org}/register` : '/health-safety';
+    case 'control':          return org ? `/health-safety/${org}/critical-controls` : '/health-safety';
+    // Cross-client roadmap page — the same plain-link shape as
+    // document/service_request below, since /roadmap has no per-id
+    // filter to deep-link into.
+    case 'milestone':        return '/roadmap';
+    // Staff-only catalogue (181), the legal_requirement/hs_test shape.
+    case 'lesson_learned':    return '/health-safety/lessons-learned';
+    // The one addition this round with a REAL per-record admin page.
+    case 'dev_plan':         return `/dev-plans/${id}`;
+    case 'report':           return '/reports';
+    case 'hs_activity':      return org ? `/health-safety/${org}/activities` : '/health-safety';
     default:                return org ? `/clients/${org}` : '/clients';
   }
 }

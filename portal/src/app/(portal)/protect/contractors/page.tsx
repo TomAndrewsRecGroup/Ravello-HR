@@ -42,6 +42,7 @@ export default async function ProtectContractorsPage() {
         contractors={contractors.rows}
         insurances={insurances.rows}
         loadError={contractors.error ?? insurances.error ?? (contractors.truncated || insurances.truncated ? 'Showing the first part of a long list.' : null)}
+        role="portal"
       />
     </main>
   );
