@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { AlertTriangle, Building2, Network, TrendingUp } from 'lucide-react';
 import type { IncidentPatternSummary } from '@/lib/incidentPatterns/analyze';
 import { MIN_WINDOW_DAYS, MAX_WINDOW_DAYS } from '@/lib/incidentPatterns/analyze';
+import { MiniBarRow, CompareBars } from '@/components/charts/MiniCharts';
 
 // Core-OS 360 Phase 10, Group 2 (shared-dupe pair: admin and portal —
 // both read the identical, already-computed summary; only the base
@@ -84,73 +85,93 @@ export default function IncidentPatternsView({
             </p>
           </div>
 
-          <section className="card p-4 space-y-2">
+          <section className="card p-4 space-y-3">
             <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>By type</h2>
-            <ul className="text-sm space-y-1">
+            <div className="space-y-2">
               {summary.byType.map(t => (
-                <li key={t.incidentType} className="flex items-center justify-between">
-                  <span style={{ color: 'var(--ink-soft)' }}>{t.incidentType.replace(/_/g, ' ')}</span>
-                  <span className="font-semibold" style={{ color: 'var(--ink)' }}>{t.count}</span>
-                </li>
+                <MiniBarRow
+                  key={t.incidentType}
+                  label={t.incidentType.replace(/_/g, ' ')}
+                  value={t.count}
+                  max={Math.max(...summary.byType.map(x => x.count), 1)}
+                />
               ))}
-            </ul>
+            </div>
           </section>
 
           {summary.recurringRootCauses.length > 0 && (
-            <section className="card p-4 space-y-2">
+            <section className="card p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Network size={16} style={{ color: 'var(--gold)' }} />
                 <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Recurring confirmed root causes</h2>
               </div>
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>A root-cause category confirmed on two or more separate incidents in this window.</p>
-              <ul className="text-sm space-y-1">
+              <div className="space-y-2">
                 {summary.recurringRootCauses.map(c => (
-                  <li key={c.category} className="flex items-center justify-between">
-                    <span style={{ color: 'var(--ink-soft)' }}>{c.category.replace(/_/g, ' ')}</span>
-                    <span className="font-semibold" style={{ color: 'var(--ink)' }}>{c.incidentCount} incidents</span>
-                  </li>
+                  <MiniBarRow
+                    key={c.category}
+                    label={c.category.replace(/_/g, ' ')}
+                    value={c.incidentCount}
+                    max={Math.max(...summary.recurringRootCauses.map(x => x.incidentCount), 1)}
+                    colour="var(--gold)"
+                    display={`${c.incidentCount}`}
+                  />
                 ))}
-              </ul>
+              </div>
             </section>
           )}
 
           {(summary.siteClusters.length > 0 || summary.departmentClusters.length > 0) && (
-            <section className="card p-4 space-y-2">
+            <section className="card p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Building2 size={16} style={{ color: 'var(--gold)' }} />
                 <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Recorded concentrations</h2>
               </div>
               <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Two or more incidents at the same site or department in this window — a count of what has happened, not a risk rating.</p>
-              <ul className="text-sm space-y-1">
-                {summary.siteClusters.map(c => (
-                  <li key={`site:${c.id}`} className="flex items-center justify-between">
-                    <span style={{ color: 'var(--ink-soft)' }}>{siteNames[c.id] ?? 'Unnamed site'}</span>
-                    <span className="font-semibold" style={{ color: 'var(--ink)' }}>{c.count} incidents</span>
-                  </li>
-                ))}
-                {summary.departmentClusters.map(c => (
-                  <li key={`dept:${c.id}`} className="flex items-center justify-between">
-                    <span style={{ color: 'var(--ink-soft)' }}>{deptNames[c.id] ?? 'Unnamed department'}</span>
-                    <span className="font-semibold" style={{ color: 'var(--ink)' }}>{c.count} incidents</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                {(() => {
+                  const maxCluster = Math.max(
+                    ...summary.siteClusters.map(c => c.count),
+                    ...summary.departmentClusters.map(c => c.count),
+                    1,
+                  );
+                  return (
+                    <>
+                      {summary.siteClusters.map(c => (
+                        <MiniBarRow key={`site:${c.id}`} label={siteNames[c.id] ?? 'Unnamed site'} value={c.count} max={maxCluster} colour="var(--gold)" />
+                      ))}
+                      {summary.departmentClusters.map(c => (
+                        <MiniBarRow key={`dept:${c.id}`} label={deptNames[c.id] ?? 'Unnamed department'} value={c.count} max={maxCluster} colour="var(--gold)" />
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
             </section>
           )}
 
-          <section className="card p-4 space-y-2">
+          <section className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <TrendingUp size={16} style={{ color: 'var(--blue)' }} />
               <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Severity, this window vs. the one before</h2>
             </div>
-            <div className="table-wrapper">
-              <table className="table">
-                <thead><tr><th></th><th>Major</th><th>Critical</th><th>Fatal</th></tr></thead>
-                <tbody>
-                  <tr><td style={{ color: 'var(--ink-soft)' }}>This window</td><td>{summary.severityComparison.currentWindow.major}</td><td>{summary.severityComparison.currentWindow.critical}</td><td>{summary.severityComparison.currentWindow.fatal}</td></tr>
-                  <tr><td style={{ color: 'var(--ink-soft)' }}>Previous window</td><td>{summary.severityComparison.priorWindow.major}</td><td>{summary.severityComparison.priorWindow.critical}</td><td>{summary.severityComparison.priorWindow.fatal}</td></tr>
-                </tbody>
-              </table>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {(['major', 'critical', 'fatal'] as const).map(tier => {
+                const cur = summary.severityComparison.currentWindow[tier];
+                const prior = summary.severityComparison.priorWindow[tier];
+                return (
+                  <div key={tier}>
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-faint)' }}>
+                      {tier}
+                    </p>
+                    <CompareBars
+                      currentLabel="This window" currentValue={cur}
+                      priorLabel="Previous" priorValue={prior}
+                      colour={tier === 'fatal' ? 'var(--red)' : tier === 'critical' ? 'var(--gold)' : 'var(--blue)'}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>

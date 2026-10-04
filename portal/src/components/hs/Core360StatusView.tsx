@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import type { Core360StatusSnapshot, Core360Band, Core360DomainKey } from '@/lib/core360Status/assemble';
+import { BandRing } from '@/components/charts/MiniCharts';
 
 // Core-OS 360 Completion Programme, Phase 27, Group 4 (closes C13.8).
 // A shared-dupe pair, the exact ComplianceTwinView/AssuranceTodayView
@@ -56,14 +57,19 @@ export default function Core360StatusView({
 
       {!loadError && (
         <>
-          <div className="card p-4 flex items-center gap-3">
-            <BandIcon band={snapshot.overallBand} size={28} />
+          <div className="card p-4 flex items-center gap-4">
+            <BandRing
+              segments={snapshot.domains.map(d => ({ band: d.band }))}
+              centreLabel={BAND_LABEL[snapshot.overallBand]}
+              centreSub={`${snapshot.domains.length} domains`}
+            />
             <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
-                Overall: {BAND_LABEL[snapshot.overallBand]}
+              <p className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+                <BandIcon band={snapshot.overallBand} size={20} /> Overall: {BAND_LABEL[snapshot.overallBand]}
               </p>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
                 The worst of the six domains below — every domain must be OK for this to read OK.
+                Each ring segment is one domain, coloured the same way its own card is below.
               </p>
             </div>
           </div>

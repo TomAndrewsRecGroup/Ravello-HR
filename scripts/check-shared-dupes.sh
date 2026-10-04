@@ -99,6 +99,7 @@ PAIRS=(
   "admin/src/components/hs/ContinuousImprovementView.tsx|portal/src/components/hs/ContinuousImprovementView.tsx"
   "admin/src/lib/operationalExceptions/analyze.ts|portal/src/lib/operationalExceptions/analyze.ts"
   "admin/src/components/hs/OperationalExceptionsView.tsx|portal/src/components/hs/OperationalExceptionsView.tsx"
+  "admin/src/components/charts/MiniCharts.tsx|portal/src/components/charts/MiniCharts.tsx"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -14735,3 +14735,100 @@ chains, unchanged; every paged query's `.order()` present; 300
 unbounded-read chains, unchanged), both production builds compile
 (portal's one prerender failure on `/auth/reset-password` is the same
 long-documented sandbox-only missing-Supabase-env-var limitation).
+
+---
+
+## Dataviz rollout, round 1: native chart primitives + four
+## intelligence pages (2026-10-04)
+
+Per the user's own prioritised plan — "full responsive audit, then
+dataviz rollout, scoped to existing intelligence pages and reports &
+analytics" — and the explicit critique of an earlier standalone
+dashboard artifact as "Windows 95 level": every intelligence page in
+this codebase (Digital Twin, Core 360 Status, Incident Patterns,
+Continuous Improvement, …) has always reported its numbers as plain
+text and bullet lists — real data, honestly computed, but with no
+visual shape to it. This starts turning that into real, native data
+visualization, built from the platform's own design tokens rather
+than a generic chart-library default theme.
+
+- **`components/charts/MiniCharts.tsx`** (new shared-dupe pair, 82
+  pairs up from 81): five dependency-free SVG primitives —
+  `BandRing` (a multi-segment donut, one arc per item, for "the shape
+  of the portfolio" at a glance), `TrendArea`/`Sparkline` (a smoothed
+  line + optional gradient fill, for a future trend-series page),
+  `MiniBarRow` (a single labelled horizontal bar), `CompareBars` (two
+  stacked bars for a period-over-period reading). Built ONLY from
+  `--purple`/`--teal`/`--gold`/`--red`/`--ink`/`--ink-faint`/`--line`/
+  `--surface-soft` and the app's own `.font-display` stack (Inter —
+  checked against `tailwind.config.ts` directly, not assumed; the
+  CLAUDE.md design-system note naming Plus Jakarta Sans predates the
+  2026-09-24 Core OS 360 rebrand and is stale, corrected in this
+  file's own comment). Server-renderable, no `'use client'`, no
+  external chart library added.
+- **Lines are smoothed with a Catmull-Rom-to-cubic-Bezier spline**
+  (tension 1/6, the standard constant) rather than left as jagged
+  polylines — the one concrete fix the earlier critiqued artifact
+  needed and the one thing a hand-rolled SVG chart most visibly gets
+  wrong if skipped.
+- **`BandRing`'s arc math was verified numerically before trusting
+  it**, not just visually assumed: a standalone Node script computed
+  six equal segments' start angles, dash lengths and offsets and
+  confirmed they divide the circle evenly with no overlap (60° apart,
+  identical dash length, evenly-spaced offsets) — the same discipline
+  this codebase already applies to a smoothing formula or a window-
+  fairness calculation elsewhere. All five primitives were then
+  server-rendered via `react-dom/server` with edge-case inputs (a
+  single-point series, an all-zero flat series) and checked for `NaN`
+  in the output markup.
+- **`BandRing.segments` accepts either a known 3-value `Band`
+  (`ok`/`attention`/`critical`, via the exported `BAND_VAR` map) or a
+  raw CSS colour string** — generalised this way specifically because
+  Compliance Twin's own band vocabulary is FOUR values
+  (red/amber/green/unverified, Phase 23's own addition), and forcing
+  a second type onto the shared component would have meant either a
+  lossy cast or a second near-identical ring component. One component,
+  any band vocabulary, decided by the caller.
+- **`Core360StatusView.tsx`** and **`ComplianceTwinView.tsx`** (both
+  existing shared-dupe pairs) each had their plain "Overall: X" icon
+  banner replaced with a `BandRing` showing all six/five
+  domains/areas as coloured ring segments, the overall verdict as the
+  ring's own centre text — never colour alone, the ring's centre and
+  every card below it still carry the same verdict in words, per this
+  codebase's own `color-not-only` accessibility rule.
+- **`IncidentPatternsView.tsx`** and **`ContinuousImprovementView.tsx`**
+  (also existing shared-dupe pairs): their "by type"/"recurring root
+  causes"/"recorded concentrations"/"objectives by status" plain
+  bullet lists became `MiniBarRow` bars, each list sharing ONE scale
+  (`Math.max` of that list's own values) — never a shared scale ACROSS
+  unrelated lists, which would misrepresent one metric against
+  another with a different natural range. Their "this window vs. the
+  one before" tables became `CompareBars` (Incident Patterns: major/
+  critical/fatal side by side; Continuous Improvement: raised/closed)
+  — the exact period-over-period shape `CompareBars` was built for.
+  `Core360StatusView.tsx`'s own heterogeneous per-domain `inputs` dump
+  (People/Plant/Training/Risk Controls/Environmental/Contractors — six
+  genuinely different units and scales) was deliberately LEFT as a
+  plain key-value list rather than bars: inventing a shared or
+  per-metric max across six unrelated domains would be exactly the
+  "never a guessed default" rule this codebase states explicitly
+  elsewhere (the BD-score waste-diversion rejection, the referral
+  gate's country list) — a safe, honest text dump beats a chart with a
+  made-up scale.
+- **Risk Graph, Operational Exceptions, Consultant Metrics and the
+  Reports & analytics pages (Value Report, HR metrics, Workforce
+  matrix, Hiring analytics) are NOT yet touched** — this is round 1 of
+  the approved rollout, continuing in further commits rather than one
+  single giant change, per this codebase's own "small, independently
+  verified increments" discipline for every prior phase.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010 / portal 1002, both unchanged — every change here is
+presentational, no pure-logic module was touched), all seven CI
+guards pass with no regressions (82 shared-dupe pairs, up from 81;
+row-cap clean; 44 unvalidated routes, unchanged; 44 static admin
+routes, all reachable; 101 blind-update chains, unchanged; every
+paged query's `.order()` present; 300 unbounded-read chains,
+unchanged), both production builds compile (portal's one prerender
+failure on `/auth/reset-password` is the same long-documented
+sandbox-only missing-Supabase-env-var limitation).

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Hammer, Target, Network } from 'lucide-react';
 import type { ContinuousImprovementSummary } from '@/lib/continuousImprovement/analyze';
 import { MIN_WINDOW_DAYS, MAX_WINDOW_DAYS } from '@/lib/incidentPatterns/analyze';
+import { MiniBarRow, CompareBars } from '@/components/charts/MiniCharts';
 
 // Continuous Improvement (go-live gap list, item 8). Shared-dupe pair
 // (admin and portal both read the identical, already-computed
@@ -64,31 +65,25 @@ export default function ContinuousImprovementView({
               <Hammer size={16} style={{ color: 'var(--blue)' }} />
               <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Audit findings, this window vs. the one before</h2>
             </div>
-            <div className="table-wrapper">
-              <table className="table">
-                <thead><tr><th></th><th>Raised</th><th>Closed</th><th>Avg. days to close</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td style={{ color: 'var(--ink-soft)' }}>This window</td>
-                    <td>{auditFindings.currentWindow.raised}</td>
-                    <td>{auditFindings.currentWindow.closed}</td>
-                    <td>{auditFindings.currentWindow.avgDaysToCloseClosed ?? '—'}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: 'var(--ink-soft)' }}>Previous window</td>
-                    <td>{auditFindings.priorWindow.raised}</td>
-                    <td>{auditFindings.priorWindow.closed}</td>
-                    <td>—</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-faint)' }}>Raised</p>
+                <CompareBars currentLabel="This window" currentValue={auditFindings.currentWindow.raised} priorLabel="Previous" priorValue={auditFindings.priorWindow.raised} colour="var(--gold)" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-faint)' }}>Closed</p>
+                <CompareBars currentLabel="This window" currentValue={auditFindings.currentWindow.closed} priorLabel="Previous" priorValue={auditFindings.priorWindow.closed} colour="var(--teal)" />
+              </div>
             </div>
             <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
               <strong style={{ color: 'var(--ink)' }}>{auditFindings.openNow}</strong> finding{auditFindings.openNow === 1 ? '' : 's'} open right now, regardless of window.
+              {auditFindings.currentWindow.avgDaysToCloseClosed !== null && (
+                <> Findings closed this window took, on average, <strong style={{ color: 'var(--ink)' }}>{auditFindings.currentWindow.avgDaysToCloseClosed}</strong> day{auditFindings.currentWindow.avgDaysToCloseClosed === 1 ? '' : 's'} to close.</>
+              )}
             </p>
           </section>
 
-          <section className="card p-4 space-y-2">
+          <section className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Network size={16} style={{ color: 'var(--gold)' }} />
               <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Recurring confirmed root causes</h2>
@@ -97,18 +92,21 @@ export default function ContinuousImprovementView({
             {recurringRootCauses.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>None recorded in this window.</p>
             ) : (
-              <ul className="text-sm space-y-1">
+              <div className="space-y-2">
                 {recurringRootCauses.map(c => (
-                  <li key={c.category} className="flex items-center justify-between">
-                    <span style={{ color: 'var(--ink-soft)' }}>{c.category.replace(/_/g, ' ')}</span>
-                    <span className="font-semibold" style={{ color: 'var(--ink)' }}>{c.incidentCount} incidents</span>
-                  </li>
+                  <MiniBarRow
+                    key={c.category}
+                    label={c.category.replace(/_/g, ' ')}
+                    value={c.incidentCount}
+                    max={Math.max(...recurringRootCauses.map(x => x.incidentCount), 1)}
+                    colour="var(--gold)"
+                  />
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 
-          <section className="card p-4 space-y-2">
+          <section className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Target size={16} style={{ color: 'var(--teal)' }} />
               <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Objectives</h2>
@@ -122,14 +120,17 @@ export default function ContinuousImprovementView({
                 </>
               )}
             </p>
-            <ul className="text-sm space-y-1">
+            <div className="space-y-2">
               {(['active', 'on_track', 'at_risk', 'achieved', 'missed'] as const).map(s => (
-                <li key={s} className="flex items-center justify-between">
-                  <span style={{ color: 'var(--ink-soft)' }}>{s.replace(/_/g, ' ')}</span>
-                  <span className="font-semibold" style={{ color: 'var(--ink)' }}>{objectives.byStatus[s]}</span>
-                </li>
+                <MiniBarRow
+                  key={s}
+                  label={s.replace(/_/g, ' ')}
+                  value={objectives.byStatus[s]}
+                  max={Math.max(...(['active', 'on_track', 'at_risk', 'achieved', 'missed'] as const).map(x => objectives.byStatus[x]), 1)}
+                  colour={s === 'at_risk' || s === 'missed' ? 'var(--red)' : s === 'achieved' ? 'var(--teal)' : 'var(--purple)'}
+                />
               ))}
-            </ul>
+            </div>
           </section>
         </div>
       )}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import type { ComplianceTwinSnapshot, ComplianceTwinBand, ComplianceTwinAreaBand, ComplianceTwinAreaKey } from '@/lib/complianceTwin/assemble';
+import { BandRing } from '@/components/charts/MiniCharts';
 
 // Core-OS 360 Phase 12, Group 2 (shared-dupe pair: admin and portal —
 // both render the identical, already-assembled snapshot; only the
@@ -74,14 +75,19 @@ export default function ComplianceTwinView({
 
       {!loadError && (
         <>
-          <div className="card p-4 flex items-center gap-3">
-            <BandIcon band={snapshot.overallBand} size={28} />
+          <div className="card p-4 flex items-center gap-4">
+            <BandRing
+              segments={snapshot.areas.map(a => ({ colour: BAND_COLOUR[a.band] }))}
+              centreLabel={BAND_LABEL[snapshot.overallBand]}
+              centreSub={`${snapshot.areas.length} areas`}
+            />
             <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>
-                Overall: {BAND_LABEL[snapshot.overallBand]}
+              <p className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--ink)' }}>
+                <BandIcon band={snapshot.overallBand} size={20} /> Overall: {BAND_LABEL[snapshot.overallBand]}
               </p>
-              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-faint)' }}>
                 The worst of the five areas below — every area must be green for this to read green.
+                Each ring segment is one area, coloured the same way its own card is below.
               </p>
             </div>
           </div>
