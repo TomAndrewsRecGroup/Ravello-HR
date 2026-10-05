@@ -80,6 +80,8 @@ export default function ComplianceTwinView({
               segments={snapshot.areas.map(a => ({ colour: BAND_COLOUR[a.band] }))}
               centreLabel={BAND_LABEL[snapshot.overallBand]}
               centreSub={`${snapshot.areas.length} areas`}
+              size={160}
+              strokeWidth={18}
             />
             <div>
               <p className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--ink)' }}>

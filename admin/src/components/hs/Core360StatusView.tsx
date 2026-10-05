@@ -62,6 +62,8 @@ export default function Core360StatusView({
               segments={snapshot.domains.map(d => ({ band: d.band }))}
               centreLabel={BAND_LABEL[snapshot.overallBand]}
               centreSub={`${snapshot.domains.length} domains`}
+              size={160}
+              strokeWidth={18}
             />
             <div>
               <p className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--ink)' }}>
