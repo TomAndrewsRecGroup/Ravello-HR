@@ -30,10 +30,10 @@ export default function SnapshotTrend({ snapshots }: { snapshots: SnapshotTrendR
       <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>
         Posture trend ({ordered.length} stored snapshot{ordered.length === 1 ? '' : 's'})
       </h2>
-      <div className="flex items-end gap-1 overflow-x-auto pb-1">
+      <div className="flex items-end gap-2 overflow-x-auto pb-1">
         {ordered.map(s => (
           <div key={s.snapshot_date} className="flex flex-col items-center gap-1" title={`${fmt(s.snapshot_date)}: ${s.overall_band}`}>
-            <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: BAND_COLOUR[s.overall_band] }} />
+            <span className="inline-block rounded-full" style={{ width: 16, height: 16, background: BAND_COLOUR[s.overall_band] }} />
           </div>
         ))}
       </div>
