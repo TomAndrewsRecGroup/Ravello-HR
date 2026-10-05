@@ -1,0 +1,194 @@
+// A stateful in-memory stand-in for the service-role client, shaped
+// like PostgREST where it matters to these modules: filters narrow the
+// affected rows, `count` reports how many matched, `upsert(...,
+// { ignoreDuplicates })` returns ONLY the rows it inserted, and
+// `claim_platform_events` behaves like the 096 function (unprocessed,
+// under five attempts, lease expired, attempts incremented).
+//
+// Mirrored from admin/src/lib/events/__tests__/fakeSupabase.ts — portal
+// has no lib/events/ outbox system of its own, so this copy lives next
+// to its one portal consumer (lib/jev/__tests__/) instead. The fixture
+// itself is fully generic (no admin-specific imports), the same reason
+// lib/jev/client.ts and transport.ts are byte-identical shared-dupe
+// pairs between the two apps.
+
+export type Row = Record<string, any>;
+
+export interface FakeDb {
+  tables: Record<string, Row[]>;
+  client: any;
+  nextId: number;
+  now: () => Date;
+}
+
+export function fakeSupabase(seed: Record<string, Row[]> = {}, opts: { now?: () => Date } = {}): FakeDb {
+  const tables: Record<string, Row[]> = { ...seed };
+  const db: FakeDb = { tables, client: null, nextId: 1000, now: opts.now ?? (() => new Date()) };
+  const table = (name: string) => (tables[name] ??= []);
+
+  const uniqueKeys: Record<string, string> = {
+    notifications: 'dedupe_key', platform_events: 'dedupe_key', email_log: 'dedupe_key', notification_preferences: 'user_id',
+  };
+
+  function builder(name: string) {
+    const filters: Array<(r: Row) => boolean> = [];
+    let op: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
+    let payload: Row[] = [];
+    let patch: Row = {};
+    let wantCount = false;
+    let head = false;
+    let single: 'single' | 'maybe' | null = null;
+    let limitN: number | null = null;
+    let selectAfterWrite = false;
+    let upsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
+    let order: { col: string; asc: boolean } | null = null;
+
+    const q: any = {
+      select(_cols?: string, o?: { count?: string; head?: boolean }) {
+        if (op !== 'select') selectAfterWrite = true;
+        if (o?.count) wantCount = true;
+        if (o?.head) head = true;
+        return q;
+      },
+      insert(rows: Row | Row[]) { op = 'insert'; payload = Array.isArray(rows) ? rows : [rows]; return q; },
+      upsert(rows: Row | Row[], o: typeof upsertOpts = {}) { op = 'upsert'; payload = Array.isArray(rows) ? rows : [rows]; upsertOpts = o; return q; },
+      update(p: Row, o?: { count?: string }) { op = 'update'; patch = p; if (o?.count) wantCount = true; return q; },
+      delete(o?: { count?: string }) { op = 'delete'; if (o?.count) wantCount = true; return q; },
+      eq(c: string, v: unknown) { filters.push(r => r[c] === v); return q; },
+      neq(c: string, v: unknown) { filters.push(r => r[c] !== v); return q; },
+      is(c: string, v: unknown) { filters.push(r => (v === null ? r[c] == null : r[c] === v)); return q; },
+      in(c: string, vs: unknown[]) { filters.push(r => vs.includes(r[c])); return q; },
+      gte(c: string, v: any) { filters.push(r => r[c] >= v); return q; },
+      gt(c: string, v: any) { filters.push(r => r[c] != null && r[c] > v); return q; },
+      lt(c: string, v: any) { filters.push(r => r[c] != null && r[c] < v); return q; },
+      lte(c: string, v: any) { filters.push(r => r[c] != null && r[c] <= v); return q; },
+      not(c: string, _op: string, v: unknown) { filters.push(r => !(v === null ? r[c] == null : r[c] === v)); return q; },
+      // The PostgREST forms the rules use: `col.op.value` joined by commas,
+      // op in eq | neq | is | gt | gte | lt | lte (`is.null` only).
+      or(expr: string) {
+        const parts = expr.split(',').map(p => {
+          const [c, op, ...rest] = p.split('.');
+          const v = rest.join('.');
+          return (r: Row) => {
+            const x = r[c];
+            switch (op) {
+              case 'is':  return v === 'null' ? x == null : String(x) === v;
+              case 'eq':  return x != null && String(x) === v;
+              case 'neq': return String(x) !== v;
+              case 'gt':  return x != null && String(x) > v;
+              case 'gte': return x != null && String(x) >= v;
+              case 'lt':  return x != null && String(x) < v;
+              case 'lte': return x != null && String(x) <= v;
+              default: throw new Error(`fakeSupabase.or: unsupported op ${op}`);
+            }
+          };
+        });
+        filters.push(r => parts.some(f => f(r)));
+        return q;
+      },
+      order(col: string, o?: { ascending?: boolean }) { order = { col, asc: o?.ascending !== false }; return q; },
+      limit(n: number) { limitN = n; return q; },
+      range(from: number, to: number) { limitN = to - from + 1; (q as any)._from = from; return q; },
+      single() { single = 'single'; return q; },
+      maybeSingle() { single = 'maybe'; return q; },
+      then(res: any, rej?: any) { return Promise.resolve().then(run).then(res, rej); },
+    };
+
+    function matching(): Row[] {
+      let rows = table(name).filter(r => filters.every(f => f(r)));
+      if (order) rows = [...rows].sort((a, b) => (a[order!.col] > b[order!.col] ? 1 : a[order!.col] < b[order!.col] ? -1 : 0) * (order!.asc ? 1 : -1));
+      const from = (q as any)._from ?? 0;
+      if (limitN != null) rows = rows.slice(from, from + limitN);
+      return rows;
+    }
+
+    function finish(rows: Row[]) {
+      if (single === 'single') return { data: rows[0] ?? null, error: rows[0] ? null : { message: 'no rows' }, count: null };
+      if (single === 'maybe') return { data: rows[0] ?? null, error: null, count: null };
+      return { data: head ? null : rows, error: null, count: wantCount ? rows.length : null };
+    }
+
+    function run() {
+      if (op === 'select') return finish(matching());
+      if (op === 'insert') {
+        const inserted: Row[] = payload.map(r => ({ id: r.id ?? `${name}-${db.nextId++}`, created_at: db.now().toISOString(), ...r }));
+        const key = uniqueKeys[name];
+        if (key && inserted.some(r => r[key] != null && table(name).some(e => e[key] === r[key]))) {
+          return { data: null, error: { message: `duplicate key value violates unique constraint (${name}.${key})` }, count: null };
+        }
+        table(name).push(...inserted);
+        return selectAfterWrite ? finish(inserted) : { data: null, error: null, count: null };
+      }
+      if (op === 'upsert') {
+        // onConflict may be composite ('company_id,source_ref'); a row
+        // conflicts when every named column matches and none is null.
+        const keyCols = (upsertOpts.onConflict ?? uniqueKeys[name] ?? '').split(',').map(k => k.trim()).filter(Boolean);
+        const conflicts = (a: Row, b: Row) => keyCols.length > 0 && keyCols.every(k => a[k] != null && a[k] === b[k]);
+        // PostgREST returns every upserted row with merge-duplicates
+        // (the default), and ONLY the inserted ones with ignoreDuplicates.
+        // A caller that forgets ignoreDuplicates therefore sees a
+        // duplicate as "created" — which is exactly the mistake the
+        // process tests need to be able to catch.
+        const returned: Row[] = [];
+        for (const r of payload) {
+          const existing = table(name).find(e => conflicts(r, e));
+          if (existing) {
+            if (!upsertOpts.ignoreDuplicates) { Object.assign(existing, r); returned.push(existing); }
+            continue;
+          }
+          const row = { id: r.id ?? `${name}-${db.nextId++}`, created_at: db.now().toISOString(), ...r };
+          table(name).push(row);
+          returned.push(row);
+        }
+        return selectAfterWrite ? finish(returned) : { data: null, error: null, count: null };
+      }
+      if (op === 'delete') {
+        const gone = matching();
+        tables[name] = table(name).filter(r => !gone.includes(r));
+        return selectAfterWrite ? { ...finish(gone), count: wantCount ? gone.length : null } : { data: null, error: null, count: wantCount ? gone.length : null };
+      }
+      // update
+      const hit = matching();
+      hit.forEach(r => Object.assign(r, patch));
+      return selectAfterWrite ? { ...finish(hit), count: wantCount ? hit.length : null } : { data: null, error: null, count: wantCount ? hit.length : null };
+    }
+    return q;
+  }
+
+  db.client = {
+    from: (name: string) => builder(name),
+    rpc: async (fn: string, args: Row) => {
+      // Audience RPCs (122/125): seed `org_access` rows of
+      // { company_id, user_id, role_key, capabilities: string[] }.
+      if (fn === 'org_user_ids_with_capability') {
+        const ids = table('org_access').filter(g => g.company_id === args.p_org && (g.capabilities ?? []).includes(args.p_cap)).map(g => g.user_id);
+        return { data: [...new Set(ids)], error: null };
+      }
+      if (fn === 'org_user_ids_with_role') {
+        const ids = table('org_access').filter(g => g.company_id === args.p_org && (args.p_roles as string[]).includes(g.role_key)).map(g => g.user_id);
+        return { data: [...new Set(ids)], error: null };
+      }
+      if (fn !== 'claim_platform_events') return { data: null, error: { message: `unknown rpc ${fn}` } };
+      const nowMs = db.now().getTime();
+      const leaseSec = Number(String(args.p_lease).split(' ')[0]);
+      const rows = table('platform_events')
+        .filter(e => e.processed_at == null && (e.attempts ?? 0) < 5
+          && (e.claimed_at == null || Date.parse(e.claimed_at) < nowMs - leaseSec * 1000))
+        .sort((a, b) => a.id - b.id)
+        .slice(0, args.p_limit);
+      for (const e of rows) { e.claimed_at = new Date(nowMs).toISOString(); e.attempts = (e.attempts ?? 0) + 1; }
+      return { data: rows.map(r => ({ ...r })), error: null };
+    },
+  };
+  return db;
+}
+
+export function eventRow(over: Partial<Row> & { entity_type: string; event_type: string }): Row {
+  return {
+    id: over.id ?? Math.floor(Math.random() * 1e9),
+    occurred_at: new Date().toISOString(),
+    company_id: 'co-1', entity_id: 'ent-1', payload: {}, actor_id: null, actor_kind: 'system',
+    dedupe_key: null, claimed_at: null, processed_at: null, attempts: 0, last_error: null,
+    ...over,
+  };
+}
