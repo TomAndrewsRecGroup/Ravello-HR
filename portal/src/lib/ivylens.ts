@@ -1,6 +1,8 @@
 // ─── IvyLens API Client ─────────────────────────────────────────────────────
 // Shared helper for calling IvyLens partner endpoints from server-side routes.
 
+import { resilientFetch } from './http/resilient';
+
 const API_URL = process.env.IVYLENS_API_URL ?? '';
 const API_KEY = process.env.IVYLENS_API_KEY ?? '';
 
@@ -56,23 +58,33 @@ export async function ivylensRequest<T = any>(
         : { next: { revalidate: revalidate ?? 60, ...(tags?.length ? { tags } : {}) } }
       : { cache: 'no-store' as const };
 
-  try {
-    const res = await fetch(url, {
+  // Retried with jittered backoff, Retry-After honoured, and a per-vendor
+  // circuit breaker — GETs only; a POST (e.g. raising a ticket) is never
+  // retried by default, since a timed-out write may have already landed.
+  const { response: res, error: transportError } = await resilientFetch(
+    url,
+    {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(timeout),
       ...cacheConfig,
-    });
+    } as RequestInit,
+    { vendor: 'ivylens', timeoutMs: timeout },
+  );
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      return { data: null, error: text || `HTTP ${res.status}`, status: res.status };
-    }
+  if (!res) {
+    return { data: null, error: transportError ?? 'Network error', status: 0 };
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    return { data: null, error: text || `HTTP ${res.status}`, status: res.status };
+  }
 
+  try {
     const data = await res.json();
     return { data, error: null, status: res.status };
   } catch (err: any) {
+    // resilientFetch never throws — this only guards body reading.
     return { data: null, error: err?.message ?? 'Network error', status: 0 };
   }
 }

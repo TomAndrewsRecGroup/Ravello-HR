@@ -11,6 +11,8 @@
 //
 // All filtered by department_id = company.manatal_client_id
 
+import { resilientFetch } from './http/resilient';
+
 const API_KEY = process.env.MANATAL_API_KEY ?? '';
 const API_URL = process.env.MANATAL_API_URL ?? 'https://api.manatal.com/open/v1';
 
@@ -73,23 +75,35 @@ async function manatalFetch(
   const method = options?.method ?? 'GET';
   const cacheConfig = method === 'GET' ? { next: { revalidate: 60 } } : { cache: 'no-store' as const };
 
-  try {
-    const res = await fetch(url.toString(), {
+  // Retried with jittered backoff, Retry-After honoured, and a per-vendor
+  // circuit breaker — GETs only; resilientFetch never retries a PATCH by
+  // default, since a timed-out stage move may have already landed.
+  const { response: res, error: transportError } = await resilientFetch(
+    url.toString(),
+    {
       method,
       headers: {
         'Authorization': `Token ${API_KEY}`,
         'Content-Type':  'application/json',
       },
-      body:   options?.body ? JSON.stringify(options.body) : undefined,
-      signal: AbortSignal.timeout(10_000),
+      body: options?.body ? JSON.stringify(options.body) : undefined,
       ...cacheConfig,
-    });
+    } as RequestInit,
+    { vendor: 'manatal', timeoutMs: 10_000 },
+  );
+
+  try {
+    if (!res) {
+      console.warn('[Manatal] call failed', path, transportError);
+      return null;
+    }
     if (!res.ok) {
       console.warn('[Manatal] API error', res.status, path);
       return null;
     }
     return await res.json();
   } catch (err) {
+    // resilientFetch never throws — this only guards body reading.
     console.warn('[Manatal] fetch failed', err);
     return null;
   }
