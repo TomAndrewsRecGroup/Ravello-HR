@@ -30,6 +30,9 @@ import type { SiteOption, DepartmentOption } from './rows';
 import { createServiceSupabaseClient } from '@/lib/supabase/service';
 import { hasActiveWorkerQrToken } from '@/lib/workforce/qrTokens';
 import WorkerBadgePanel from '@/components/workforce/WorkerBadgePanel';
+import { isCompanySuperUser } from '@/lib/auth/companyAdmin';
+import type { DocumentInstance } from '@/lib/documentTemplates/types';
+import DocumentsTab from './DocumentsTab';
 
 export const metadata: Metadata = { title: 'Person compliance profile' };
 export const dynamic = 'force-dynamic';
@@ -48,7 +51,10 @@ export default async function PersonProfilePage(props: {
   if (!companyId) return <CannotSee />;
 
   const isMe = ctx.myPersonId === id;
-  const viewer: Viewer = { can: ctx.can, isMe };
+  const { data: myRole } = await supabase.rpc('get_my_role');
+  const role = typeof myRole === 'string' ? myRole : '';
+  const isSuperUser = isCompanySuperUser({ role, isTpsStaff: role === 'tps_admin' });
+  const viewer: Viewer = { can: ctx.can, isMe, isSuperUser };
   const tabs = visibleTabs(viewer);
   const tab = parseTab(param(sp, 'tab'), tabs);
   const today = todayIso();
@@ -76,6 +82,22 @@ export default async function PersonProfilePage(props: {
   const paths = evidencePathsFor(tab, data);
   const signed = await Promise.all(paths.map(async k => [k, await workforceEvidenceUrl(supabase, k)] as const));
   const urls: Record<string, string> = Object.fromEntries(signed.filter(([, u]) => !!u) as [string, string][]);
+
+  // HR Documents tab: fetched directly here, not through loadProfile —
+  // document_instances is keyed to employee_records.id, not people.id,
+  // and this is the one tab RLS already restricts to a company super-
+  // user (213), so there is no point loading it for anyone else.
+  let documentInstances: DocumentInstance[] = [];
+  if (tab === 'documents' && isSuperUser) {
+    const { data: emp } = await supabase.from('employee_records').select('id')
+      .eq('person_id', id).eq('company_id', companyId).maybeSingle();
+    if (emp) {
+      const { data: docs } = await supabase.from('document_instances')
+        .select('id,company_id,template_id,employee_id,category,rendered_title,rendered_body,merge_values,requires_signature,status,storage_path,created_by,sent_for_signature_at,signed_at,signed_by_name,signed_ip,signed_user_agent,declined_at,declined_reason,voided_at,voided_by,created_at,updated_at')
+        .eq('employee_id', emp.id).order('created_at', { ascending: false }).limit(100);
+      documentInstances = (docs ?? []) as DocumentInstance[];
+    }
+  }
 
   const cat = data.catalogue;
   const names = {
@@ -155,6 +177,7 @@ export default async function PersonProfilePage(props: {
       )}
       {tab === 'occupational_health' && <HealthTab data={data} />}
       {tab === 'development' && <DevelopmentTab data={data} companyId={companyId} canAdd={ctx.can('training.manage')} />}
+      {tab === 'documents' && <DocumentsTab instances={documentInstances} />}
       {tab === 'safety' && <SafetyTab data={data} />}
       {tab === 'history' && <HistoryTab data={data} />}
     </main>

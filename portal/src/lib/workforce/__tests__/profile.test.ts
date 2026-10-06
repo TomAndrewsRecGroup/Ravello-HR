@@ -18,25 +18,32 @@ const req = (o: Partial<DeploymentRequirement>): DeploymentRequirement => ({
 
 describe('tabs', () => {
   it('hides occupational health without summary.read', () => {
-    expect(visibleTabs({ can: caps('workforce.read'), isMe: false })).not.toContain('occupational_health');
+    expect(visibleTabs({ can: caps('workforce.read'), isMe: false, isSuperUser: false })).not.toContain('occupational_health');
   });
   it('shows occupational health on my own profile without summary.read', () => {
-    expect(visibleTabs({ can: caps(), isMe: true })).toContain('occupational_health');
+    expect(visibleTabs({ can: caps(), isMe: true, isSuperUser: false })).toContain('occupational_health');
   });
   it('shows occupational health to a summary reader', () => {
-    expect(visibleTabs({ can: caps('occupational_health.summary.read'), isMe: false })).toContain('occupational_health');
-    expect(canSeeHealthOutcomes({ can: caps('occupational_health.clinical.read'), isMe: false })).toBe(false);
+    expect(visibleTabs({ can: caps('occupational_health.summary.read'), isMe: false, isSuperUser: false })).toContain('occupational_health');
+    expect(canSeeHealthOutcomes({ can: caps('occupational_health.clinical.read'), isMe: false, isSuperUser: false })).toBe(false);
   });
   it('safety activity needs incident.read', () => {
-    expect(visibleTabs({ can: caps(), isMe: true })).not.toContain('safety');
-    expect(visibleTabs({ can: caps('incident.read'), isMe: false })).toContain('safety');
+    expect(visibleTabs({ can: caps(), isMe: true, isSuperUser: false })).not.toContain('safety');
+    expect(visibleTabs({ can: caps('incident.read'), isMe: false, isSuperUser: false })).toContain('safety');
+  });
+  it('HR Documents needs isSuperUser — never granted by a capability, by isMe, or by anything else', () => {
+    expect(visibleTabs({ can: caps(), isMe: false, isSuperUser: false })).not.toContain('documents');
+    expect(visibleTabs({ can: caps(), isMe: true, isSuperUser: false })).not.toContain('documents');
+    expect(visibleTabs({ can: caps('workforce.manage', 'training.manage', 'people.write'), isMe: false, isSuperUser: false })).not.toContain('documents');
+    expect(visibleTabs({ can: caps(), isMe: false, isSuperUser: true })).toContain('documents');
   });
   it('there is no clinical tab at all', () => {
     expect(PROFILE_TABS.some(t => /clinical/.test(t))).toBe(false);
   });
   it('a hidden tab falls back to overview', () => {
-    const v = visibleTabs({ can: caps(), isMe: false });
+    const v = visibleTabs({ can: caps(), isMe: false, isSuperUser: false });
     expect(parseTab('occupational_health', v)).toBe('overview');
+    expect(parseTab('documents', v)).toBe('overview');
     expect(parseTab('training', v)).toBe('training');
     expect(parseTab(undefined, v)).toBe('overview');
   });

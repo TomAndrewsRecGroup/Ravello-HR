@@ -47,6 +47,15 @@ export const FILE_KINDS = {
     column: 'file_storage_path',
     bucket: 'documents',
   },
+  document_instance: {
+    // A generated HR/legal document (213, Part 2): draft text until
+    // sent, then a finalised/signed PDF once `storage_path` is set.
+    // RLS decides the rest — a company_super_user sees their own
+    // company's rows, staff sees every company's.
+    table:  'document_instances',
+    column: 'storage_path',
+    bucket: 'documents',
+  },
 } as const satisfies Record<string, FileKind>;
 
 export type FileKindName = keyof typeof FILE_KINDS;

@@ -15,7 +15,7 @@ import {
 // ─── Tabs ───────────────────────────────────────────────────────────
 
 export const PROFILE_TABS = ['overview', 'timeline', 'employment', 'roles', 'training', 'competency', 'credentials', 'inductions',
-  'authorisations', 'pre_employment', 'occupational_health', 'development', 'safety', 'history'] as const;
+  'authorisations', 'pre_employment', 'occupational_health', 'development', 'documents', 'safety', 'history'] as const;
 export type ProfileTab = typeof PROFILE_TABS[number];
 
 export const PROFILE_TAB_LABELS: Record<ProfileTab, string> = {
@@ -31,6 +31,7 @@ export const PROFILE_TAB_LABELS: Record<ProfileTab, string> = {
   pre_employment: 'Pre-employment',
   occupational_health: 'Occupational health',
   development: 'Development',
+  documents: 'HR Documents',
   safety: 'Safety activity',
   history: 'History',
 };
@@ -39,6 +40,12 @@ export interface Viewer {
   can: (cap: Capability) => boolean;
   /** The profile is the viewer's own person. */
   isMe: boolean;
+  /** is_company_super_user() (213/companyAdmin.ts) — generating/managing
+   *  an HR document is deliberately an admin-level act, the same line
+   *  employee_records' own sensitive-column guard draws. Hiding the
+   *  tab for anyone else avoids a misleading "no documents" empty
+   *  state when the real reason is RLS, not an empty table. */
+  isSuperUser: boolean;
 }
 
 /** May this viewer see occupational health OUTCOMES (category, dates, restriction)?
@@ -53,6 +60,7 @@ export function visibleTabs(v: Viewer): ProfileTab[] {
   return PROFILE_TABS.filter(t => {
     if (t === 'occupational_health') return canSeeHealthOutcomes(v);
     if (t === 'safety') return v.can('incident.read');
+    if (t === 'documents') return v.isSuperUser;
     return true;
   });
 }

@@ -134,7 +134,10 @@ export default function DocumentTemplatesClient({ initialTemplates }: Props) {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <button className="btn-cta btn-sm flex items-center gap-1.5 ml-auto" onClick={openNew}>
+        <Link prefetch={false} href="/document-templates/instances" className="btn-secondary btn-sm ml-auto flex items-center gap-1.5">
+          <FileSignature size={13} /> Sent documents
+        </Link>
+        <button className="btn-cta btn-sm flex items-center gap-1.5" onClick={openNew}>
           <Plus size={14} /> New Template
         </button>
       </div>

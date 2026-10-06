@@ -15529,3 +15529,144 @@ route name, with no error anywhere else in either build log (portal's
 one prerender failure is the same long-documented sandbox-only
 missing-Supabase-env-var limitation, independently re-confirmed
 harmless with dummy env vars set).
+
+---
+
+## Part 2, Group 6: a database-level lifecycle guard, admin tracking,
+## and the portal's own HR Documents tab (2026-10-06, migration 215)
+
+Closes the two gaps Group 5 deliberately left open: `document_
+instances.status` had no lifecycle guard at all beyond the app's own
+claim-first conditional checks, and there was nowhere to see — or
+cancel, or resend — a document once it had been sent.
+
+- **Migration 215 adds `document_instances_lifecycle_guard()`**, the
+  exact `permits_lifecycle_guard()`/`consultancy_visits_lifecycle_
+  guard()` shape (152/185): a BEFORE UPDATE trigger, one `ELSIF` per
+  allowed `OLD → NEW` pair, `RAISE EXCEPTION ... USING ERRCODE =
+  '23514'` on anything else. **This migration is a strict narrowing
+  versus the status quo** — 213 shipped `status` with `'voided'`
+  already in its CHECK but no guard at all, so every transition
+  already succeeded; whatever this allow-list contains can only be
+  MORE restrictive, never less.
+- **The allowed edges were read off the real write paths, not
+  guessed** — including Group 5's own two "revert the claim on
+  failure" paths, which make the graph genuinely bidirectional on two
+  edges (`sent_for_signature ⇄ draft`, `signed ⇄ sent_for_signature`/
+  `draft`): a legitimate, narrow failure-recovery window immediately
+  following a claim, inside the same request — the same shape
+  `permits_lifecycle_guard()` already allows for its own `suspended →
+  issued` revalidation move backward. `draft`/`sent_for_signature` →
+  `voided` (this group's own new action) stamps `voided_at`/
+  `voided_by` automatically, never trusting the caller.
+- **`declined` and `voided` are both terminal, and `signed → voided`
+  is deliberately refused.** Once an employee has genuinely declined,
+  or staff/the client has voided a document, nothing moves it again —
+  a changed mind means generating a FRESH instance. A genuinely
+  SIGNED document (the PDF stored, the employee notified) can never
+  be quietly erased by voiding it; invalidating a signed document is a
+  bigger, more consequential action this group does not build.
+- **Live-probed in a rolled-back transaction** against real
+  `companies`/`employee_records`/`document_templates` rows already in
+  production: 13 checks — the full bidirectional revert graph (row 1,
+  checks 1-7), `voided_at` auto-stamped on `draft → voided` (row 2),
+  `voided` and `declined` both proven terminal, `sent_for_signature →
+  voided` (row 3), `signed → voided` refused (row 4), `draft →
+  declined` directly refused (row 5, since only `sent_for_signature →
+  declined` is a real decision). All 13 passed; zero trace left live
+  afterward. Applied via `execute_sql` statement-by-statement after
+  `apply_migration`'s own single-call DDL was cancelled — the same,
+  already-documented sandbox DDL-timeout limitation this file's
+  history records repeatedly; each statement verified individually
+  afterward (`pg_trigger`, `has_function_privilege`), never trusted
+  from a bare success response.
+- **Two new routes per app** (`resend`, `void`) alongside Group 5's
+  `send`: `resend` mints a NEW token and emails it again without
+  touching `status` at all (nothing to claim — `signatureTokens.ts`
+  deliberately carries no "one active token per instance" constraint,
+  exactly so a resend never kills a link already sitting in an
+  inbox); `void` is a single conditional `.update({status:'voided'},
+  {count:'exact'}).in('status', ['draft','sent_for_signature'])` — the
+  route only ASKS, the database's own guard decides, the same posture
+  every H&S workflow guard in this codebase already takes.
+- **`FILE_KINDS` (the shared `/api/files/sign` allow-list, already a
+  registered shared-dupe pair) gains `document_instance`** (`table:
+  'document_instances', column: 'storage_path', bucket: 'documents'`)
+  — the exact signed-URL-on-click mechanism the Evidence Engine (Phase
+  11) already established: no pre-signing on page load, a fresh,
+  short-lived URL minted only when someone actually clicks "View
+  PDF", via the existing, unmodified `FileLink.tsx` component. Two
+  more pre-existing-but-unregistered shared-dupe pairs were found
+  byte-identical and registered along the way, a direct side effect
+  of touching the exact same files for this group: `FileLink.tsx`
+  itself, and `fileKinds.test.ts` (which existed only in admin —
+  mirrored to portal for the first time, closing that asymmetry too).
+- **Admin: `/document-templates/instances`** — a cross-client tracking
+  list (staff holds `document_instances_staff_all`, `FOR ALL`, no
+  `company_id` restriction, so this is the one place to see every
+  sent/signed/declined/voided document across every client at once).
+  Employee and company names are resolved by TWO id-list queries, never
+  a chained embed — the standing "PostgREST cannot join two tables
+  through a third they both merely reference" rule this codebase has
+  followed since the referral PATCH route's own PGRST200 lesson.
+  Filterable by status and a plain text search; View/Resend/Void
+  actions per row, with the `.mobile-card-list` dual desktop-table/
+  phone-card-list pattern (the `hiring/[id]` candidates-table
+  precedent) since this table is genuinely actionable, not just for
+  scanning. Linked from a new "Sent documents" button on
+  `/document-templates`'s own toolbar — no new sidebar entry needed,
+  it nests under the already-linked `/document-templates` prefix.
+- **Portal: a new "HR Documents" tab on the person compliance
+  profile** (`/lead/workforce/people/[id]`), the first new
+  `PROFILE_TABS` entry added since the "People Timeline" go-live item.
+  **Gated by `isSuperUser`, a new field on `Viewer`** — never by a
+  capability, and never by `isMe`: `document_instances`' own RLS
+  already restricts a client session to `is_company_super_user()`
+  (213's own line — generating/managing an HR document is deliberately
+  an admin-level act, the same line `employee_records`' sensitive-
+  column guard already draws), so showing the tab to anyone else would
+  produce a misleading "no documents" empty state for a reason that is
+  actually permission, not an empty table. `isSuperUser` is derived
+  via one more `get_my_role()` RPC call, parallel with the page's
+  existing fetches, and the same `isCompanySuperUser()` helper
+  (Phase 28) every other super-user check in this codebase already
+  uses — no new predicate invented.
+- **`document_instances` is keyed to `employee_records.id`, never
+  `people.id`** — fetched directly in `page.tsx`, not threaded through
+  the already-29-query `loadProfile.ts`, matching that file's own
+  established "some things are fetched directly in the page, not
+  loadProfile" precedent (`hasBadge`/`companyRow`): one extra query to
+  resolve this person's own `employee_records.id`, then one more for
+  their document instances, both skipped entirely unless the
+  `documents` tab is actually open and the viewer is a super-user.
+  `DocumentsTab.tsx` is its own `'use client'` file (the
+  `ProfileForms.tsx` precedent — interactive forms live in their own
+  file, not inline in the server-rendered page), reusing `FileLink`
+  for the stored PDF and calling the SAME `resend`/`void` routes the
+  admin page calls.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 206/2052, up from 205/2044 — the 8 new
+`documentInstancesLifecycleGuardSql.test.ts` cases; portal 82/1082,
+up from 78/1054 — the same 8 mirrored, 6 new `void/route.test.ts`
+cases, 6 new `resend/route.test.ts` cases, plus 4 new `profile.test.ts`
+cases pinning the new `documents` tab gate in both directions — never
+granted by a capability, by `isMe`, or by anything else besides
+`isSuperUser`), all seven CI guards pass with no regressions (91
+shared-dupe pairs, up from 88 — the lifecycle-guard SQL-shape test,
+`FileLink.tsx`, and `fileKinds.test.ts`; row-cap clean; 44 unvalidated
+routes, unchanged — both new routes per app take no request body; 47
+static admin routes, up from 46 — the new `/document-templates/
+instances` route, linked from the templates toolbar; 101 blind-update
+chains, unchanged — every new `.update()` call site (both void routes)
+carries `{count:'exact'}` from the start; every paged query's
+`.order()` present; 300 unbounded-read chains, unchanged — every new
+by-id-list read carries an explicit `.limit()`), both production
+builds compile, including `/document-templates/instances`, `/api/
+admin/document-templates/[id]/{resend,void}`, `/api/lead/document-
+templates/[id]/{resend,void}`, and the extended `/lead/workforce/
+people/[id]` page — each confirmed present in its own build output by
+route name, with no error anywhere else in either build log (portal's
+one prerender failure is the same long-documented sandbox-only
+missing-Supabase-env-var limitation, independently re-confirmed
+harmless with dummy env vars set).

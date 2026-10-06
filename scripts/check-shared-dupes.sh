@@ -106,6 +106,9 @@ PAIRS=(
   "admin/src/lib/operationalExceptions/analyze.ts|portal/src/lib/operationalExceptions/analyze.ts"
   "admin/src/components/hs/OperationalExceptionsView.tsx|portal/src/components/hs/OperationalExceptionsView.tsx"
   "admin/src/components/charts/MiniCharts.tsx|portal/src/components/charts/MiniCharts.tsx"
+  "admin/src/lib/documentTemplates/__tests__/documentInstancesLifecycleGuardSql.test.ts|portal/src/lib/documentTemplates/__tests__/documentInstancesLifecycleGuardSql.test.ts"
+  "admin/src/components/modules/FileLink.tsx|portal/src/components/modules/FileLink.tsx"
+  "admin/src/lib/storage/__tests__/fileKinds.test.ts|portal/src/lib/storage/__tests__/fileKinds.test.ts"
 )
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
