@@ -15154,3 +15154,80 @@ confirmed directly, plus a full rolled-back functional probe
 cross-org refusal, the fixed supersede roll in both the parent and
 sibling-race shapes, client-session read/write scoping) with zero
 trace left live afterward.
+
+---
+
+## Part 2, Group 2: the four seeded starter example templates
+## (2026-10-06, migration 214)
+
+The user's own recorded decision: "A few clearly-marked starter
+examples" — Employment Contract, Written Statement of Particulars,
+Disciplinary Hearing Invitation Letter, Settlement Agreement (Shell),
+every one `is_example = true`, `status = 'active'`. The "must be
+reviewed by a qualified advisor before real use" flag lives in
+`description` (staff-only context, read by the UI's own `is_example`
+banner, Group 3) and is DELIBERATELY NOT baked into `body` — once a
+real `document_instances` row is generated and signed, its
+`rendered_body` is a frozen snapshot of exactly what the employee
+signed; permanently embedding "this is just an example" text into a
+genuinely-reviewed, real, signed contract would be exactly backwards.
+A genuinely LEGALLY REQUIRED clause (template 4's s.203 Employment
+Rights Act 1996 independent-advice requirement) is real content,
+never a caveat, and stays in the body.
+
+- **A real inconsistency found and fixed before this shipped, caught
+  by cross-checking the live data, not assumed correct from writing
+  it carefully**: the Disciplinary letter's seeded `merge_fields`
+  declared a `job_title` entry the letter's own body never actually
+  references (the letter never mentions the employee's job title).
+  Fixed live (`UPDATE ... SET merge_fields = merge_fields minus that
+  one element`) and in the migration file, then re-verified: every
+  one of the four templates' body `{{placeholders}}` now matches its
+  own declared `merge_fields` keys EXACTLY, in both directions — no
+  placeholder with no declared field, no declared field the body
+  never uses.
+- **`documentTemplatesSeedSql.test.ts`** pins this both ways using the
+  shared `extractMergeFieldKeys()` helper (`lib/documentTemplates/
+  types.ts`, Group 1) — the SAME pure function the generate-document
+  flow (a later group) will use to validate ANY template, staff-
+  authored ones included, not a one-off check invented only for the
+  seed data. Also pins: exactly four rows, each `is_example`/`status`
+  correct; every `employee`-sourced field names a real
+  `employee_records` column (`job_title`/`start_date`/`work_location`/
+  `contract_hours`/`annual_leave_allowance`, or the HR-sensitive
+  `salary`/`salary_currency`/`pay_frequency` — the generate-document
+  flow resolves the sensitive ones via `employeePrivate.ts`'s
+  `employee_private_fields()`, gated on `hr.sensitive.read`, never a
+  raw `.select()`); the Settlement shell's real s.203 clause present
+  and no "example"/"must be reviewed" string anywhere in any body.
+- **`requires_signature` varies by template, deliberately**: `true`
+  for the three genuine agreements (contract, written statement,
+  settlement shell — an employee signing confirms they received or
+  agree to the terms), `false` for the disciplinary invite letter — a
+  one-way notice, not something the recipient signs to agree with.
+- Applied live via `execute_sql` as two plain DML `INSERT` statements
+  (no DDL — this migration adds no schema, so none of the earlier
+  DROP/CREATE TRIGGER-class sandbox timeouts were a risk here, and
+  none occurred), verified directly afterward: `jsonb_array_length`
+  per row, a live cross-check of every body's placeholders against
+  its own `merge_fields` via `regexp_matches()`, and a rolled-back
+  simulated client-session `SELECT` confirming all four are visible
+  under `document_templates_client_read` (213) exactly as the
+  generate-document flow will need.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 203 test files / 2031 tests — up from 202/2023, the new
+`documentTemplatesSeedSql.test.ts` (8 cases); portal 74/1016,
+unchanged — this group is pure seed data + an admin-only test, no
+portal file touched), all seven CI guards pass with no regressions
+(83 shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated
+routes, unchanged; 44 static admin routes, all reachable; 101
+blind-update chains, unchanged; every paged query's `.order()`
+present; 300 unbounded-read chains, unchanged), both production
+builds compile (portal's one prerender failure is the same
+long-documented sandbox-only missing-Supabase-env-var limitation,
+independently re-confirmed harmless with dummy env vars set).
+Migration 214 applied live and verified: four rows present with the
+exact `is_example`/`status`/`category`/`requires_signature` values,
+every body-placeholder-to-merge_fields-key cross-check passing, and a
+rolled-back simulated client session confirmed able to read all four.
