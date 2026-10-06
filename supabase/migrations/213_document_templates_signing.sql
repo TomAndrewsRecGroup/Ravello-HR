@@ -237,9 +237,21 @@ CREATE TRIGGER document_instances_audit AFTER INSERT OR UPDATE OR DELETE ON publ
   FOR EACH ROW EXECUTE FUNCTION public.audit_row('document_instance', 'company_id', 'status', 'category', 'template_id', 'employee_id');
 
 -- Outbox: status/category/template_id/employee_id only — never
--- rendered_body, merge_values, signed_by_name or declined_reason. The
--- consequence rule (notify on sent-for-signature / signed / declined)
--- is wired in a later group once the sign flow exists to link to.
+-- rendered_body, merge_values, signed_by_name or declined_reason.
+--
+-- CORRECTED (Part 2, Group 7, found while auditing whether this
+-- promise had been kept): no async consequence rule was ever wired
+-- for this table, and none is needed. Group 5's send/sign routes
+-- (and Group 6's resend/void) each notify the right person
+-- SYNCHRONOUSLY, from inside the controlled route itself — the
+-- employee on send, the sender on sign/decline — the exact "a
+-- controlled entry point notifies directly, no async consumer
+-- needed" shape the H&S Tests public-token route already
+-- established. Routing this through the five-minute outbox consumer
+-- instead would only delay a notification that already exists. This
+-- table stays in TRIGGERED_ENTITIES anyway, for What Changed?/audit
+-- visibility — it simply has no rule subscribed to it, by design,
+-- not by omission.
 DROP TRIGGER IF EXISTS document_instances_platform_event ON public.document_instances;
 CREATE TRIGGER document_instances_platform_event AFTER INSERT OR UPDATE OR DELETE ON public.document_instances
   FOR EACH ROW EXECUTE FUNCTION public.platform_event_row('status','category','template_id','employee_id');

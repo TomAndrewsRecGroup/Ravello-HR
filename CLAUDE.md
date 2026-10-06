@@ -15670,3 +15670,115 @@ route name, with no error anywhere else in either build log (portal's
 one prerender failure is the same long-documented sandbox-only
 missing-Supabase-env-var limitation, independently re-confirmed
 harmless with dummy env vars set).
+
+---
+
+## Part 2, Group 7: full regression, adversarial QA, handover
+## (2026-10-06)
+
+Closes the Peninsula-style contract/policy template library + native
+e-signing feature (Part 2, Groups 1-6). **Gate: PASS WITH ONE MINOR
+FINDING, FIXED.**
+
+A dedicated adversarial pass across all six prior groups — tenant
+isolation on every new route, the lifecycle guard's real trigger
+firing order (live, not just theorised), the `FileLink`/`FILE_KINDS`
+authorisation path for the new `document_instance` kind, email-content
+and rate-limiting consistency between the admin and portal route
+pairs, and the outbox/consequence-rule story this feature was left
+with — found one real, low-severity documentation-accuracy defect and
+confirmed everything else sound:
+
+- **Fixed: migration 213's own header comment had gone stale.** It
+  promised "the consequence rule (notify on sent-for-signature/
+  signed/declined) is wired in a later group once the sign flow
+  exists to link to" — a promise never literally kept, because Group
+  5's send/sign routes (and Group 6's resend/void) instead notify the
+  right person SYNCHRONOUSLY from inside the controlled route itself,
+  the exact "a controlled entry point notifies directly, no async
+  consumer needed" shape the H&S Tests public-token route already
+  established. Confirmed live: `document_instances` sits in
+  `TRIGGERED_ENTITIES` with a real outbox trigger, but genuinely has
+  no consuming rule anywhere in either app's `lib/events/` — not an
+  oversight, a different, already-precedented architecture choice
+  the comment never caught up with. The comment is corrected IN
+  PLACE (213 is a historical, already-applied migration; editing its
+  own comment changes no live behaviour) rather than left to mislead
+  a future reader into thinking a consequence rule is still owed —
+  the exact `runScan.ts` stale-comment precedent this file's own
+  history already records (2026-09-30, Phase 20).
+- **Confirmed live, not just read**: the lifecycle guard's real firing
+  order among `document_instances`' four non-FK triggers
+  (`document_instances_guard` → `document_instances_lifecycle_guard`
+  → `document_instances_updated_at`, alphabetical, confirmed via
+  `pg_trigger`) — the employee-org assertion runs first, the new
+  state-machine guard second (its own `voided_at`/`voided_by` stamps
+  survive the later `updated_at` trigger, already proven by the
+  live probe's own check 9, re-confirmed here against the real
+  trigger list rather than assumed from the migration file alone);
+  zero residual rows in `document_instances`/`document_signature_
+  tokens` after every probe this feature's six groups have run.
+- **Confirmed, not assumed**: every new route's tenant-isolation
+  check is real — portal's `resend`/`void` routes both read
+  `instance.company_id` under the SERVICE ROLE (which bypasses RLS
+  entirely) and return 404 BEFORE any write when a non-staff caller's
+  `session.companyId` doesn't match, so the explicit application-
+  level check — not RLS — is what actually protects these two routes;
+  traced line by line to confirm no code path reaches the UPDATE
+  before that check. Admin's equivalent routes correctly have no such
+  check at all (staff may act on any company's instance, by design).
+- **Confirmed, not assumed**: `/api/files/sign`'s new
+  `document_instance` kind reads the row under the CALLER's own
+  session in both apps (never the service role) — a plain employee
+  (not a company super-user) requesting another employee's document
+  instance id gets a correct RLS-filtered 404, never a leak, since
+  `document_instances_client_select`'s own `is_company_super_user()`
+  clause already refuses the row before signing is ever reached.
+- **Checked and judged acceptable, not silently ignored**: the
+  person-profile page's new `get_my_role()` call runs sequentially
+  before the page's main `Promise.all`, adding one extra round trip
+  to every profile view — unavoidable without a larger restructure
+  (the `tab`/`tabs` computation it feeds is used to build `loadProfile`'s
+  own `include` flags, which must be known before that call), and
+  consistent with this specific file's own pre-existing multi-stage
+  sequential-fetch style (the evidence-URL signing step and the
+  conditional documents fetch are both ALREADY separate sequential
+  stages after the main fetch) — not the kind of anomaly worth a
+  structural change for a one-RPC cost on an internal-tool page.
+- **Checked and found clean**: double-void and double-resend races
+  are both safe by construction — void's conditional `UPDATE ...
+  WHERE status IN (...)` means only the first of two concurrent
+  requests actually changes anything (the second gets `count: 0` →
+  409); resend has no state to race on at all, so two concurrent
+  clicks legitimately send two emails, an accepted, documented
+  property of a "send it again" button with nothing to claim (Group
+  5's own stated reason `signatureTokens.ts` carries no one-active-
+  token-per-instance constraint). Neither `PROFILE_TABS` nor
+  `visibleTabs()` is consumed anywhere outside `profile.ts` itself
+  besides the one page/one test file already updated — confirmed by a
+  repo-wide grep — so the new `documents` entry cannot leak into the
+  print view or any other consumer that was never updated for it.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 206/2052, portal 82/1082 — both unchanged from Group 6, since
+this pass's only code change is a migration comment, which carries no
+test of its own beyond the existing `documentTemplatesSql.test.ts`
+re-run clean), all seven CI guards pass with no regressions (91
+shared-dupe pairs; row-cap clean; 44 unvalidated routes, unchanged; 47
+static admin routes, all reachable; 101 blind-update chains,
+unchanged; every paged query's `.order()` present; 300 unbounded-read
+chains, unchanged), both production builds compile. `document_
+instances`/`document_signature_tokens` confirmed at 0 live rows, no
+trace left by any of this feature's own probes across all six groups.
+
+**Part 2 (the contract/policy template library with native e-signing)
+is complete**: a staff-curated catalogue with four clearly-marked
+starter examples, versioned the `hs_documents` way; a generate flow
+scoped to the caller's own company (or, for staff, any company); a
+native, in-house send/sign/decline flow with no third-party e-sign
+vendor anywhere — a typed name, a consent checkbox, and an IP/
+timestamp/user-agent audit trail, the UK Electronic Communications
+Act 2000 s.7 "simple electronic signature" shape, explicitly never
+claimed to be more than that; a database-level lifecycle guard that
+is a strict narrowing of what was previously unguarded; and tracking,
+resend and void UI in both apps.
