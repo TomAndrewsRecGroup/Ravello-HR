@@ -15306,3 +15306,89 @@ output by route name, not just a clean exit code; portal's one
 prerender failure is the same long-documented sandbox-only
 missing-Supabase-env-var limitation, independently re-confirmed
 harmless with dummy env vars set).
+
+---
+
+## Part 2, Group 4: generate-document flow, admin + portal (2026-10-06)
+
+Picks an employee and a template, auto-fills merge fields from
+`employee_records` (sensitive ones via `employeePrivate.ts`, gated on
+`hr.sensitive.read`), company name and today's date, lets the
+generator type the rest, previews the rendered body, and saves a
+`document_instances` draft. Deliberately scoped to "Save as draft"
+only — see below for why "send for signature" is left for Group 5.
+
+- **The pure merge-field resolver is a NEW shared-dupe pair**
+  (`lib/documentTemplates/mergeFieldValues.ts`, 84 pairs up from 83):
+  `resolveMergeFieldValues()` reads `source: 'date'` as today (UK
+  format), `'company'` as the company name, `'employee'` by looking
+  the field's `employee_column` up first in a caller-supplied "safe
+  columns" object and falling back to a "HR-sensitive" one, and
+  `'manual'` from what the generator typed — never a guess: an
+  unfilled `'employee'`/`'manual'` field resolves to `''` (which
+  `renderMergeFields()`, Group 1, then leaves visibly unfilled rather
+  than inventing content) and is named in the returned `missing` list.
+  An ISO (`YYYY-MM-DD`) value is reformatted to UK style regardless of
+  which column it came from — a format check, never a column-name
+  heuristic, so it works identically for `start_date` or any future
+  date-shaped column. 9 unit tests, mirrored byte-identical to portal.
+- **`employeePrivate.ts` is now a shared-dupe pair too** (promoted
+  from portal-only, the exact `lib/hs/kpis.ts`/`governance/kpis.ts`
+  precedent from Phase 18): `employee_private_fields(p_company, p_ids)`
+  (131) is a DEFINER RPC, not app code, and its own body already
+  shortcuts `hr := is_tps_staff() OR has_capability(...)` — so admin
+  gets sensitive-field access for free by calling the identical
+  function, with no new SQL and no new capability. Mirrored verbatim
+  into `admin/src/lib/lead/employeePrivate.ts`.
+- **One client component, reused verbatim as a third new shared-dupe
+  pair** (`GenerateDocumentClient.tsx`): it only depends on props
+  (`template`, `employees`, `companyId`, `companyName`), so the
+  identical file serves both apps — the portal page passes the signed-
+  in client's own company, the admin page passes whichever company
+  staff picked. No "admin vs portal" branch anywhere inside it.
+- **Portal**: `/lead/document-templates` (list of active templates,
+  gated to `isCompanySuperUser()` — generating an HR document is an
+  account-admin-level act, the same line `employee_records`'
+  sensitive columns already draw) → `/lead/document-templates/generate
+  ?template=<id>` (employee picker scoped to the caller's own
+  `companyId`, which `employee_records_select`'s RLS already
+  enforces regardless). Added to `moduleAccess.ts`'s `ROUTE_FLAGS`
+  (`['lead', 'employee_records']` — reusing the closely-related
+  existing flag rather than inventing a new commercial toggle) and to
+  the LEAD layout's "Docs" tab group.
+- **Admin**: `/document-templates/generate?template=<id>` — staff work
+  across every company, so (unlike the portal's own page, which
+  already knows the signed-in client) this inserts one extra step: no
+  `company` param shows a plain `<select>` form (a GET redirect, no
+  JS needed) before the identical employee-picker/preview/save flow
+  runs. Wired from a new "Generate" button on every ACTIVE row of
+  `/document-templates`'s own list (Group 3) — a draft or superseded/
+  archived template has nothing to generate from.
+- **"Send for signature" is deliberately NOT built in this group.**
+  Saving only ever writes `status: 'draft'` — minting a
+  `document_signature_tokens` row and emailing a link with nowhere for
+  the recipient to land (the public `/sign/[token]` page doesn't exist
+  until Group 5) would be a half-built feature with a dead link at the
+  end of it. Group 5 builds the whole sender-to-recipient mechanism
+  (token mint, email, public page, PDF finalisation) as one coherent,
+  testable unit instead.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 204/2040, up from 203/2031 — the 9 new `mergeFieldValues.test.ts`
+cases; portal 75/1030, up from 74/1016 — the same 9 cases mirrored
+plus 2 from the sweep tests picking up the two new routes
+automatically), all seven CI guards pass with no regressions (86
+shared-dupe pairs, up from 83 — the three new pairs above; row-cap
+clean; 44 unvalidated routes, unchanged; 46 static admin routes, up
+from 45, all reachable — the new `/document-templates/generate` route
+is linked from the templates list; 101 blind-update chains, unchanged
+— this group writes only one plain `.insert()`, no `.update()` at
+all; every paged query's `.order()` present; 300 unbounded-read
+chains, unchanged — both new employee-list queries carry `.limit(500)`
+from the start), both production builds compile, including
+`/document-templates/generate` (admin) and `/lead/document-templates`
++ `/lead/document-templates/generate` (portal) — each confirmed
+present in its own build output by route name (portal's one prerender
+failure is the same long-documented sandbox-only missing-Supabase-
+env-var limitation, independently re-confirmed harmless with dummy
+env vars set).

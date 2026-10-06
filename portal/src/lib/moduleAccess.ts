@@ -45,6 +45,7 @@ export const ROUTE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   '/lead/absence':                ['lead', 'absence'],
   '/lead/documents':              ['lead', 'documents'],
   '/lead/employee-docs':          ['lead', 'employee_docs'],
+  '/lead/document-templates':     ['lead', 'employee_records'],
   '/lead/policy-acknowledgements':['lead', 'policy_acknowledgement'],
   '/lead/hr-dashboard':           ['lead', 'protect_dashboard'],
   '/lead/hr-reports':             ['lead', 'hr_reports'],

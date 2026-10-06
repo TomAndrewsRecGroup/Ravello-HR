@@ -37,6 +37,7 @@ const TAB_GROUPS: { label: string; tabs: { href: string; label: string; cap?: st
       { href: '/lead/documents',               label: 'Documents' },
       { href: '/lead/employee-docs',           label: 'Employee Docs' },
       { href: '/lead/policy-acknowledgements', label: 'Sign-off' },
+      { href: '/lead/document-templates',      label: 'Document Templates' },
     ],
   },
   {

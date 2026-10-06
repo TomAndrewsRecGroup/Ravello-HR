@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Plus, X, Trash2, Edit2, Loader2, FileText, RefreshCw, Archive,
-  Eye, EyeOff, AlertTriangle, Sparkles,
+  Eye, EyeOff, AlertTriangle, Sparkles, FileSignature,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { revalidateAdminPath } from '@/app/actions';
@@ -264,6 +265,11 @@ function TemplateRow({ t, onEdit, onNewVersion, onChange }: {
             <button className="btn-icon btn-sm" onClick={onEdit} title="Edit" aria-label="Edit">
               <Edit2 size={13} />
             </button>
+          )}
+          {t.status === 'active' && (
+            <Link prefetch={false} href={`/document-templates/generate?template=${t.id}`} className="btn-cta btn-sm flex items-center gap-1.5">
+              <FileSignature size={13} /> Generate
+            </Link>
           )}
           {onNewVersion && (
             <button className="btn-secondary btn-sm" onClick={onNewVersion}>
