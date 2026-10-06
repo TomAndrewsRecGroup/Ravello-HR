@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import EmailSettingsForm from './EmailSettingsForm';
 import NotificationPrefsForm from '@/components/modules/NotificationPrefsForm';
+import ProfileContactForm from '@/components/modules/ProfileContactForm';
 
 export const metadata: Metadata = { title: 'Email Settings' };
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function EmailSettingsPage() {
   const [{ data: row }, { data: prefs }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('email,smtp_host,smtp_port,smtp_secure,smtp_user,smtp_pass_enc,smtp_from_name,smtp_from_email,smtp_reply_to,email_signature_html,smtp_last_verified_at')
+      .select('email,full_name,phone,smtp_host,smtp_port,smtp_secure,smtp_user,smtp_pass_enc,smtp_from_name,smtp_from_email,smtp_reply_to,email_signature_html,smtp_last_verified_at')
       .eq('id', user?.id ?? '')
       .single(),
     supabase
@@ -32,6 +33,10 @@ export default async function EmailSettingsPage() {
         subtitle="Send outbound emails from your own SMTP — falls back to Core OS 360 Resend when unset."
       />
       <main className="admin-page flex-1 space-y-6">
+        <ProfileContactForm
+          userId={user?.id ?? ''}
+          initial={{ full_name: row?.full_name ?? '', phone: row?.phone ?? '' }}
+        />
         <div className="card p-6">
           <p className="font-display font-semibold text-sm mb-1" style={{ color: 'var(--ink)' }}>Notifications</p>
           <p className="text-xs mb-4" style={{ color: 'var(--ink-faint)' }}>

@@ -29,7 +29,7 @@ function fetchCompanyShellCached(companyId: string) {
       const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
       const { data } = await sb
         .from('companies')
-        .select('name, slug, logo_url, feature_flags, stripe_subscription_id, archived_at, account_owner_id, account_owner:account_owner_id(full_name, email)')
+        .select('name, slug, logo_url, feature_flags, stripe_subscription_id, archived_at, account_owner_id, account_owner:account_owner_id(full_name, email, phone)')
         .eq('id', companyId)
         .maybeSingle();
       return data ?? null;
@@ -101,6 +101,7 @@ export const getSessionProfile = cache(async () => {
     archivedAt: null as string | null,
     accountManagerName:  null as string | null,
     accountManagerEmail: null as string | null,
+    accountManagerPhone: null as string | null,
   };
 
   if (!raw) return empty;
@@ -135,6 +136,7 @@ export const getSessionProfile = cache(async () => {
   let archivedAt: string | null = null;
   let accountManagerName:  string | null = null;
   let accountManagerEmail: string | null = null;
+  let accountManagerPhone: string | null = null;
 
   if (companyId) {
     try {
@@ -151,6 +153,7 @@ export const getSessionProfile = cache(async () => {
         // don't have an owner assigned.
         accountManagerName  = row.account_owner?.full_name ?? null;
         accountManagerEmail = row.account_owner?.email     ?? null;
+        accountManagerPhone = row.account_owner?.phone     ?? null;
       } else {
         featureFlags = (session.featureFlags ?? {}) as Record<string, boolean>;
       }
@@ -179,5 +182,6 @@ export const getSessionProfile = cache(async () => {
     archivedAt,
     accountManagerName,
     accountManagerEmail,
+    accountManagerPhone,
   };
 });

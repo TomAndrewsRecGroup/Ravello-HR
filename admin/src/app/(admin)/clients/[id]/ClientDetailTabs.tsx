@@ -139,6 +139,70 @@ function ManatalIdField({ companyId, currentId }: { companyId: string; currentId
   );
 }
 
+interface StaffOption { id: string; full_name: string | null; email: string; phone: string | null }
+
+// account_owner_id has only ever been settable at onboarding
+// (OnboardWizard.tsx) — there was no way to reassign a client to a
+// different account manager afterwards. This is the first post-
+// onboarding control. It also reads back the chosen owner's
+// email/phone so staff can see exactly what the client's own
+// "Your account contact" card on the portal will show.
+function AccountOwnerField({ companyId, currentOwnerId, staff }: { companyId: string; currentOwnerId: string | null; staff: StaffOption[] }) {
+  const supabase = createClient();
+  const [ownerId, setOwnerId] = useState(currentOwnerId ?? '');
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [error,   setError]   = useState('');
+
+  const selected = staff.find(s => s.id === ownerId) ?? null;
+
+  async function save(nextId: string) {
+    setOwnerId(nextId);
+    setSaving(true);
+    setError('');
+    const { error: err, count } = await supabase
+      .from('companies')
+      .update({ account_owner_id: nextId || null }, { count: 'exact' })
+      .eq('id', companyId);
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    if (!count) { setError('No matching client — nothing was saved.'); return; }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    revalidateAdminPath(`/clients/${companyId}`);
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ink-faint)' }}>Account manager</p>
+      <div className="flex gap-2 items-center">
+        <select
+          className="input flex-1 text-sm"
+          value={ownerId}
+          disabled={saving}
+          onChange={e => save(e.target.value)}
+        >
+          <option value="">Unassigned</option>
+          {staff.map(s => (
+            <option key={s.id} value={s.id}>{s.full_name || s.email}</option>
+          ))}
+        </select>
+        {saving && <Loader2 size={12} className="animate-spin flex-shrink-0" style={{ color: 'var(--purple)' }} />}
+        {!saving && saved && <Check size={12} className="flex-shrink-0" style={{ color: 'var(--teal)' }} />}
+      </div>
+      {error && <p className="text-[11px] mt-1" style={{ color: 'var(--red)' }}>{error}</p>}
+      {selected && (
+        <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+          {selected.email}{selected.phone ? ` · ${selected.phone}` : ' · no phone on file'}
+        </p>
+      )}
+      <p className="text-[10px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+        Shown to the client as their account contact on the portal.
+      </p>
+    </div>
+  );
+}
+
 function ClientStatusToggle({ companyId, currentActive }: { companyId: string; currentActive: boolean }) {
   const supabase = createClient();
   const [active,  setActive]  = useState(currentActive);
@@ -404,6 +468,7 @@ interface Props {
   stats: { activeRoles: number; docsCount: number; ticketCount: number };
   staffUserId: string | null;
   consultancyServiceScopes: any[];
+  staff: StaffOption[];
 }
 
 // UI/UX cross-linking pass (2026-10-03): this is the single most-used
@@ -433,7 +498,7 @@ export default function ClientDetailTabs(props: Props) {
   );
 }
 
-function ClientDetailTabsInner({ company, users, reqs, notes, stats, staffUserId, consultancyServiceScopes }: Props) {
+function ClientDetailTabsInner({ company, users, reqs, notes, stats, staffUserId, consultancyServiceScopes, staff }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
@@ -711,6 +776,9 @@ function ClientDetailTabsInner({ company, users, reqs, notes, stats, staffUserId
                   </div>
                 ))}
               </dl>
+              <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
+                <AccountOwnerField companyId={company.id} currentOwnerId={company.account_owner_id ?? null} staff={staff} />
+              </div>
               <div className="mt-5 pt-5 border-t" style={{ borderColor: 'var(--line)' }}>
                 <ManatalIdField companyId={company.id} currentId={company.manatal_client_id ?? ''} />
               </div>

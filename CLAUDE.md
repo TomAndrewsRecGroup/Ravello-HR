@@ -14965,3 +14965,80 @@ paged query's `.order()` present; 300 unbounded-read chains,
 unchanged), both production builds compile (portal's one prerender
 failure is the same long-documented sandbox-only missing-Supabase-
 env-var limitation).
+
+---
+
+## Peninsula-style account contact: profiles.phone + account-owner
+## reassignment (2026-10-06, migration 212)
+
+A deliberate, scoped alternative to a 24/7 advice line (judged out of
+scope — staffing, not software): `service_requests`' own SLA timers
+already give the "when will someone respond" half; this closes the
+"who is my actual contact, and how do I reach them directly" half.
+
+- **`profiles.phone`** (migration 212, `text CHECK (length(phone) <=
+  60)`, the same convention `hs_providers.contact_phone`/`people.phone`/
+  `contractors.contact_phone` already use) — nullable, nothing
+  populates it until a staff member sets their own. Deliberately NOT
+  added to either security-hardening guard's self-service allow-list
+  (088/093): a new column is staff-only by default, and a client has no
+  business setting a staff member's phone number; staff writes already
+  bypass the allow-list via `is_tps_staff()`, confirmed unconditional
+  (not scoped to a named column list) before deciding no trigger change
+  was needed.
+- **`companies.account_owner_id` had been settable ONLY at onboarding**
+  (`OnboardWizard.tsx`) since migration 019 — confirmed by grep before
+  building anything: `ClientDetailTabs.tsx` had zero references to it,
+  so a client stuck with the wrong (or no) account manager had no fix
+  short of a direct DB update. `AccountOwnerField` (new, inline in
+  `ClientDetailTabs.tsx`'s Overview tab, next to the existing
+  `ManatalIdField`) is the first post-onboarding control — a plain
+  session `.update({ account_owner_id }, { count: 'exact' })` built
+  counted from the start, reading back the chosen owner's email/phone
+  underneath so staff see exactly what the client's own portal card
+  will show.
+- **No admin "my profile" page existed anywhere** — `/users` is
+  explicitly client-user management (`.neq('role', 'tps_admin')`,
+  confirmed by reading the query before assuming otherwise), and
+  nothing else lists or edits a staff member's own row. Rather than
+  build a new route, `ProfileContactForm` (new) was added to the
+  already-existing `/settings/email` page — "my settings for how the
+  platform represents me" is exactly that page's existing purpose
+  (SMTP, notification prefs); a staff member's own name/phone fits the
+  same shelf, no new sidebar entry needed.
+- **Portal's `getSessionProfile()` already resolved
+  `accountManagerName`/`accountManagerEmail`** (an embed on the
+  service-role-backed `fetchCompanyShellCached()`, used only for a
+  locked-feature upsell note on `/protect`) — found by grep before
+  building, not rebuilt from scratch. Extended with
+  `accountManagerPhone` (one more field on the same embed, same
+  derivation), and a real, dedicated **"Your account contact" card**
+  added to `/support` (name, initials avatar, `mailto:`/`tel:` buttons)
+  — the natural "how do I get help" page, distinct from the existing
+  upsell note on `/protect`, which was left untouched rather than
+  cluttered with a phone number nobody there asked for.
+- **A real row-cap violation caught and fixed by the guard itself
+  before this shipped**: the new staff-list query on `/clients/[id]`
+  (`profiles` where `role = 'tps_admin'`, for the reassignment
+  dropdown) had no bound at all; `check-unbounded-reads.sh` correctly
+  flagged it (301 vs. the 300 baseline) before the commit, fixed with
+  `.limit(200)` — plenty for any realistic staff headcount, matching
+  the onboarding wizard's own identical query, which was never
+  guard-checked because it predates the guard.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 2010 / portal 1016, both unchanged in count for admin — this
+is UI/route-glue with no new pure-logic module — and portal's own
+count is unaffected by this change, +0 new test files either side),
+all seven CI guards pass with no regressions after the row-cap fix
+above (82 shared-dupe pairs, unchanged — none of the touched files is
+a shared-dupe pair; row-cap clean; 44 unvalidated routes, unchanged;
+44 static admin routes, all reachable; 101 blind-update chains,
+unchanged — both new UPDATE call sites were built with `{ count:
+'exact' }` from the start; every paged query's `.order()` present; 300
+unbounded-read chains, unchanged after the fix), both production
+builds compile (portal's one prerender failure is the same long-
+documented sandbox-only missing-Supabase-env-var limitation).
+Migration 212 applied live and verified (`information_schema.columns`
++ `pg_get_constraintdef()` read back directly, never trusted from the
+apply call's own bare success response).

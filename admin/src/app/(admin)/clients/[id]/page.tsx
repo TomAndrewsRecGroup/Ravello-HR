@@ -33,7 +33,10 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
   // from the timeline. Cheap getUser() since this page already isn't cached
   // beyond the per-client unstable_cache layer.
   const supabase = await createServerSupabaseClient();
-  const { data: { user: staffUser } } = await supabase.auth.getUser();
+  const [{ data: { user: staffUser } }, { data: staff }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('profiles').select('id, full_name, email, phone').eq('role', 'tps_admin').order('full_name').limit(200),
+  ]);
 
   return (
     <>
@@ -51,6 +54,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
           stats={{ activeRoles, docsCount, ticketCount }}
           staffUserId={staffUser?.id ?? null}
           consultancyServiceScopes={consultancyServiceScopes}
+          staff={staff ?? []}
         />
       </main>
     </>

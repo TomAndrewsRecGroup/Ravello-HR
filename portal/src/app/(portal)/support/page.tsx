@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { createServerSupabaseClient, getSessionProfile } from '@/lib/supabase/server';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
-import { LifeBuoy, Plus, Headphones } from 'lucide-react';
+import { LifeBuoy, Plus, Headphones, Mail, Phone } from 'lucide-react';
 import { SERVICE_REQUEST_TYPE_LABELS, labelFor } from '@/lib/ui/statusMaps';
 import { slaHoursLeft } from '@/lib/support/sla';
 
@@ -40,7 +40,7 @@ function slaText(slaDue: string | null, firstResponse: string | null, status: st
 
 export default async function SupportPage() {
   const supabase = await createServerSupabaseClient();
-  const { companyId } = await getSessionProfile();
+  const { companyId, accountManagerName, accountManagerEmail, accountManagerPhone } = await getSessionProfile();
 
   // service_requests is the one support object: `tickets` never had a
   // writer, so the "Open Tickets" section this page used to render could
@@ -74,6 +74,32 @@ export default async function SupportPage() {
         }
       />
       <main className="portal-page flex-1">
+        {(accountManagerName || accountManagerEmail) && (
+          <div className="card p-5 mb-6 flex items-center gap-4">
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{ background: 'rgba(11,120,150,0.08)', color: 'var(--purple)' }}
+            >
+              {(accountManagerName ?? accountManagerEmail ?? '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Your account contact</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{accountManagerName ?? accountManagerEmail}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {accountManagerEmail && (
+                <a href={`mailto:${accountManagerEmail}`} className="btn-secondary btn-sm">
+                  <Mail size={13} /> Email
+                </a>
+              )}
+              {accountManagerPhone && (
+                <a href={`tel:${accountManagerPhone.replace(/\s+/g, '')}`} className="btn-secondary btn-sm">
+                  <Phone size={13} /> {accountManagerPhone}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
         {!hasAnything ? (
           <div className="card p-12">
             <div className="empty-state">
