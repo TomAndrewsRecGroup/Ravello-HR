@@ -15231,3 +15231,78 @@ Migration 214 applied live and verified: four rows present with the
 exact `is_example`/`status`/`category`/`requires_signature` values,
 every body-placeholder-to-merge_fields-key cross-check passing, and a
 rolled-back simulated client session confirmed able to read all four.
+
+---
+
+## Part 2, Group 3: admin template library management UI (2026-10-06)
+
+`/document-templates` (new `AdminSidebar.tsx` entry, Business group,
+next to the existing per-client `Documents` page it is deliberately
+NOT a variant of — that page is per-company uploaded files; this one
+is the global, staff-authored catalogue migration 213 built). Checked
+first, not assumed: no naming or purpose collision with the existing
+`/documents` route.
+
+- **Simpler lifecycle than `hs_documents`, by design.** 213's own
+  `document_templates.status` CHECK is `draft | active | superseded |
+  archived` only — no reviewer/approver/pending_review/pending_approval
+  states, and the DB's own default is `'active'`, not forced to draft
+  on insert the way `hs_document_lifecycle_guard()` (160) forces
+  `hs_documents`. `DocumentTemplatesClient.tsx` reflects that:
+  Draft/Active is a plain form field at creation time, not a workflow
+  the database insists on.
+- **A published template is never edited in place — the UI enforces
+  this even though the database doesn't.** 213's own migration
+  comment states the intent ("a new version is a new row, never an
+  edit of a published one"), but unlike `hs_documents` there is no
+  content-immutability trigger backing it. The Edit button is
+  therefore only ever shown for a `draft` row; an `active` template
+  offers "New version" instead (`supersedes_id` set, defaulting the
+  new row to `draft` so it goes through its own review before the
+  `document_templates_supersede_roll()` trigger (213) auto-supersedes
+  the current one on publish) — never a second implementation of that
+  trigger's own logic client-side.
+- **Merge-field editor + a two-way cross-check, reusing Group 1's own
+  pure helpers verbatim.** `extractMergeFieldKeys(body)` vs. the
+  declared `merge_fields[].key` list surfaces, as a non-blocking
+  warning banner, any placeholder used in the body with no declared
+  field and any declared field the body never references — the exact
+  both-directions check `documentTemplatesSeedSql.test.ts` (Group 2)
+  already pins for the seed data, now available to staff authoring a
+  NEW template, not just checked after the fact by a test.
+- **A status transition reads its own result back
+  (`.update(...).select().single()`) instead of combining
+  `COUNT_EXACT`/`judgeWrite()`** — `.single()` already errors outright
+  on zero matched rows (an RLS refusal or a deleted id), which is the
+  identical certainty `COUNT_EXACT` exists to provide for an update
+  with no row returned; asking for the row back is the simpler, no
+  less certain choice here since the UI needs the fresh row anyway to
+  patch its own local list state (this component, unlike
+  `DocumentsClient.tsx`, holds a local copy of the array rather than
+  reading the server prop directly, the `TemplatesClient.tsx`
+  precedent, so `router.refresh()` alone would not update it).
+  `check-blind-updates.sh` recognises `.select()`/`.single()` as
+  satisfying the guard exactly as it recognises `COUNT_EXACT` — the
+  baseline did not move.
+- **`is_example` is shown as a standing badge, not just at seed
+  time** — "Example — review before real use", so a future
+  staff-authored template can be flagged the same way the four seeded
+  ones already are, and the flag stays visible on every list view, not
+  only in the seed migration's own data.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 203/2031, unchanged — this group is UI/route-glue over Group
+1's already-tested pure helpers, the established "no component-level
+test" convention; portal 74/1016, unchanged — this group is admin-only),
+all seven CI guards pass with no regressions (83 shared-dupe pairs,
+unchanged — neither new file is a shared-dupe pair; row-cap clean; 44
+unvalidated routes, unchanged; 45 static admin routes, up from 44, all
+reachable — the new route is linked from `AdminSidebar.tsx`; 101
+blind-update chains, unchanged; every paged query's `.order()` present;
+300 unbounded-read chains, unchanged — the new page's read carries
+`.limit(500)` from the start), both production builds compile,
+including `/document-templates` (confirmed present in the admin build
+output by route name, not just a clean exit code; portal's one
+prerender failure is the same long-documented sandbox-only
+missing-Supabase-env-var limitation, independently re-confirmed
+harmless with dummy env vars set).

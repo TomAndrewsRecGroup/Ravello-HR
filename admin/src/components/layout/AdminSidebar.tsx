@@ -55,6 +55,7 @@ import {
   Scale,
   CalendarClock,
   Sunrise,
+  FileSignature,
 } from 'lucide-react';
 import { useMobileMenu } from './MobileMenuContext';
 import { activeHref, isUnder } from '@/lib/ui/navMatch';
@@ -140,6 +141,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/roadmap',         label: 'Roadmap',        icon: Map },
       { href: '/reports',         label: 'CSV Exports',    icon: FolderOpen },
       { href: '/documents',       label: 'Documents',      icon: FileText },
+      { href: '/document-templates', label: 'Document Templates', icon: FileSignature },
       { href: '/latest-updates',  label: 'Latest Updates', icon: Newspaper },
     ],
   },
