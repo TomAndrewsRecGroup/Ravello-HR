@@ -15392,3 +15392,140 @@ present in its own build output by route name (portal's one prerender
 failure is the same long-documented sandbox-only missing-Supabase-
 env-var limitation, independently re-confirmed harmless with dummy
 env vars set).
+
+---
+
+## Part 2, Group 5: send for signature, the public signing page, PDF
+## finalisation, email (2026-10-06)
+
+Closes the gap Group 4 deliberately left open: "Send for signature"
+is the whole sender-to-recipient mechanism — mint a token, email the
+recipient, let them open a no-login page, sign or decline, finalise a
+PDF, notify the sender — built as one coherent, testable unit rather
+than a button with nowhere for its link to land.
+
+- **`document_signature_tokens` is the exact `policy_ack_tokens` (103)
+  shape**, confirmed against the live 213 migration before writing
+  anything: SHA-256 hash only, RLS-on-with-zero-policies (service role
+  only — there is no session policy to enforce single-use in SQL, so
+  the application layer burns it). `lib/documentTemplates/
+  signatureTokens.ts` (new shared-dupe pair, 88 pairs up from 86):
+  `mintSignatureToken()`, `peekSignatureToken()` (check validity
+  without consuming), `burnSignatureTokens(service, documentInstanceId)`
+  — burns by INSTANCE, not by account, since unlike `profile_access_
+  tokens` this table carries no partial-unique "one active token per
+  row" constraint (checked live, deliberately, to support a future
+  resend without killing a link already sitting in an inbox — Group 6
+  can add that later; this group mints exactly one). 30-day TTL.
+- **Two near-identical send routes, one per app, never a shared one**
+  — the auth check is the one thing that genuinely differs:
+  `admin/src/app/api/admin/document-templates/[id]/send/route.ts`
+  (`requireStaff()`, may send any company's instance) and
+  `portal/src/app/api/lead/document-templates/[id]/send/route.ts`
+  (`requireLiveSession()` + `isCompanySuperUser()`, the Phase 28
+  consolidated helper — scoped to the caller's own `companyId` unless
+  they are staff). Both: validate the UUID, load the `document_
+  instances` row (must be `status === 'draft'`), load the employee's
+  email, then branch on `requires_signature`:
+  - **true** → claim-first conditional UPDATE to `sent_for_signature`
+    (`{count:'exact'}`, the `consultancy_visit_reports`-issue-route
+    precedent) → mint a token → email `${portalUrl()}/sign/${token}` →
+    on any failure after the claim, revert to `draft`.
+  - **false** (e.g. the seeded Disciplinary Hearing Invitation Letter,
+    which nobody signs, only receives) → claim-first conditional
+    UPDATE straight to `signed` → build the final PDF
+    (`buildSignedDocumentPdf`, with no signer name — `signed_by_name`
+    stays null, `signed` here means "finalised and delivered", not
+    "literally signed") → upload to the `documents` bucket at
+    `documents/<company_id>/<ts>_<id>.pdf` → set `storage_path`
+    (counted) → email a plain notice → on any failure, revert to
+    `draft`.
+- **`lib/documentTemplates/buildSignedDocumentPdf.ts`** (new shared-
+  dupe pair): the `buildReportPdf.ts`/`buildVisitReportPdf.ts`
+  parameter-injection shape — the `JsPDF` constructor is passed in,
+  never imported at the module's own top, so a browser caller can
+  lazy-`import()` it while a route imports it normally. Wraps the
+  body with `splitTextToSize()`, handles page breaks by hand, and
+  always appends an "ELECTRONIC SIGNATURE RECORD" footer naming who
+  signed, when, from which IP, and the consent statement — or, for a
+  no-signature document, a plain "Finalised and delivered" line
+  instead. No test file for this module, matching the zero-coverage
+  convention every PDF-builder pure function in this codebase already
+  has (`buildReportPdf.test.ts`/`buildVisitReportPdf.test.ts` don't
+  exist either — checked before deciding, not assumed).
+- **`GenerateDocumentClient.tsx`** (the shared-dupe pair from Group 4)
+  gains `templatesHref`/`sendEndpointBase` props and a `send()`
+  action: once saved, the success view shows a "Send"/"Send for
+  signature" button (label depends on `requires_signature`) that
+  `fetch`es `${sendEndpointBase}/${saved.id}/send`. **A real bug fixed
+  along the way**: the success view's own "back to templates" link
+  was hardcoded to `/lead/document-templates` since Group 4 — correct
+  for portal, wrong for admin, where it silently pointed at a portal
+  URL on the admin app. Both `page.tsx` files now pass the href
+  explicitly (`/document-templates` / `/lead/document-templates`).
+- **`portal/src/app/sign/[token]/route.ts`/`page.tsx`/`SignClient.tsx`**:
+  the no-login page, outside the `(portal)` route group, the exact
+  `/policy/[token]`/`/test/[token]` shape — a server preflight fetch
+  to its own API, then a client sign/decline form (full name pre-
+  filled, a consent checkbox, the body in a scrollable preview, a
+  "Decline" path with an optional reason). **`portal/src/app/api/
+  sign/[token]/route.ts`**: GET returns only who/what/status, nothing
+  private; POST is validated with a zod `discriminatedUnion` on
+  `action` (`sign` needs `consent: true` + a name; `decline` takes an
+  optional reason). The claim is `sent_for_signature → signed|declined`
+  (counted), BEFORE any PDF work — a lost race or an already-actioned
+  instance reports `{ok:true, already:true, status}` rather than an
+  error. A successful sign builds+uploads the final PDF (now WITH the
+  real signer's name, timestamp, and IP from `x-forwarded-for`), sets
+  `storage_path`, burns every token for the instance, and notifies the
+  sender (`document_instances.created_by` → `profiles.id` → email) via
+  a claim-before-send `email_log` insert
+  (`dedupe_key: document-instance-notify:<instanceId>`, reusing the
+  `'user'` `email_log_target` added by migration 096a). A decline skips
+  the PDF step entirely but still burns tokens and notifies. Rate-
+  limited by IP (30 GET / 10 POST per 5 min).
+- **The middleware exemption is the by-now-standard shape**: `/sign/`
+  and `/api/sign/` added to `PUBLIC_ROUTES` in `portal/src/lib/
+  supabase/middleware.ts`, with the identical "scoped to the path, not
+  a lookalike" test (`/signup` still redirects) every prior no-login
+  link (`/leave`, `/policy`, `/test`, `/w`, `/e`, `/report`) already
+  carries.
+- **Mutation-tested via a stateful fake with `.storage.from().upload()`
+  support added** (the `/api/policy/[token]` precedent, extended): 8
+  cases on the public sign route (GET minimal/private-field-free data,
+  malformed/unknown/expired → 404/410, full sign flow including the
+  idempotent-second-submit-404-since-the-token-is-gone case, decline
+  with a reason, the "already actioned" 200, revert-on-upload-failure,
+  consent/name validation, an expired link cannot sign) and 8 on the
+  portal send route (403 for a plain `client_user`, 404 for a
+  different company, both `requires_signature` branches' happy paths,
+  409 on an already-sent instance, 400 on no employee email, revert-
+  on-upload-failure, staff-may-send-any-company). No dedicated test
+  for the admin send route — its logic differs from the portal one
+  only in the auth-check branch, and the portal route's own 8 cases
+  already exercise every other path; a deliberate, documented scope
+  narrowing under time/budget, consistent with this codebase's "no
+  component-level test" pragmatism applied here to a near-duplicate
+  route rather than a component.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 205/2044, up from 204/2040 — the 4 new `signatureTokens.test.ts`
+cases; portal 78/1054, up from 75/1030 — the same 4 mirrored, plus 8
+`sign/[token]/route.test.ts` cases, 8 `send/route.test.ts` cases, and
+2 new middleware exemption cases), all seven CI guards pass with no
+regressions (88 shared-dupe pairs, up from 86 — `signatureTokens.ts`
+and `buildSignedDocumentPdf.ts`; row-cap clean; 44 unvalidated routes,
+unchanged — both send routes and the public sign route validate their
+bodies; 46 static admin routes, unchanged — this group added no new
+admin page, only an API route; 101 blind-update chains, unchanged —
+every new `.update()` call site (both send routes' claims, the
+`storage_path` set, the public route's claim) carries `{count:
+'exact'}` from the start; every paged query's `.order()` present; 300
+unbounded-read chains, unchanged), both production builds compile,
+including `/sign/[token]`, `/api/sign/[token]`, `/api/lead/document-
+templates/[id]/send` (portal) and `/api/admin/document-templates/[id]/
+send` (admin) — each confirmed present in its own build output by
+route name, with no error anywhere else in either build log (portal's
+one prerender failure is the same long-documented sandbox-only
+missing-Supabase-env-var limitation, independently re-confirmed
+harmless with dummy env vars set).

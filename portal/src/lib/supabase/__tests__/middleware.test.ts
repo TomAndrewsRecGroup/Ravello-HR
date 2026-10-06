@@ -145,6 +145,16 @@ describe('employee leave link is reachable without a login', () => {
     const res = await updateSession(req('/reports'));
     expect(location(res)).toContain('/auth/login');
   });
+
+  it.each([`/sign/${'11111111-2222-4333-8444-555555555555'}`, `/api/sign/${'11111111-2222-4333-8444-555555555555'}`])('the e-signature link %s is not redirected either', async (p) => {
+    const res = await updateSession(req(p));
+    expect(location(res)).toBeNull();
+  });
+
+  it('the sign-link exemption is scoped to the /sign/ path, not a lookalike', async () => {
+    const res = await updateSession(req('/signup'));
+    expect(location(res)).toContain('/auth/login');
+  });
 });
 
 describe('module flags are enforced on the page, not just the menu', () => {

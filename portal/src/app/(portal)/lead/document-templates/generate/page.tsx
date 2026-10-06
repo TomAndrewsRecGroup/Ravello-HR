@@ -50,6 +50,8 @@ export default async function GenerateDocumentPage({ searchParams }: { searchPar
         employees={(employees ?? []) as Record<string, unknown>[]}
         companyId={companyId}
         companyName={companyName ?? ''}
+        templatesHref="/lead/document-templates"
+        sendEndpointBase="/api/lead/document-templates"
       />
     </main>
   );

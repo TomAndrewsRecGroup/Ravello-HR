@@ -15,9 +15,13 @@ interface Props {
   employees: Record<string, unknown>[];
   companyId: string;
   companyName: string;
+  /** Each app's own route for the templates list, e.g. '/document-templates' (admin) or '/lead/document-templates' (portal). */
+  templatesHref: string;
+  /** Each app's own "send this instance" endpoint prefix — the id is appended, e.g. '/api/admin/document-templates' or '/api/lead/document-templates'. */
+  sendEndpointBase: string;
 }
 
-export default function GenerateDocumentClient({ template, employees, companyId, companyName }: Props) {
+export default function GenerateDocumentClient({ template, employees, companyId, companyName, templatesHref, sendEndpointBase }: Props) {
   const router = useRouter();
   const rows = employees as EmployeeRow[];
 
@@ -28,7 +32,10 @@ export default function GenerateDocumentClient({ template, employees, companyId,
   const [preview, setPreview] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState<{ title: string } | null>(null);
+  const [saved, setSaved] = useState<{ id: string; title: string } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ status: string } | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const employee = rows.find(r => r.id === employeeId) ?? null;
 
@@ -64,7 +71,7 @@ export default function GenerateDocumentClient({ template, employees, companyId,
     setError(null);
     const supabase = createClient();
     const title = `${template.title} — ${employee.full_name ?? 'Employee'}`.slice(0, 200);
-    const { error: insertError } = await supabase.from('document_instances').insert({
+    const { data: inserted, error: insertError } = await supabase.from('document_instances').insert({
       company_id: companyId,
       template_id: template.id,
       employee_id: employee.id,
@@ -74,11 +81,27 @@ export default function GenerateDocumentClient({ template, employees, companyId,
       merge_values: values,
       requires_signature: template.requires_signature,
       status: 'draft',
-    });
+    }).select('id').single();
     setSaving(false);
-    if (insertError) { setError(insertError.message); return; }
-    setSaved({ title });
+    if (insertError || !inserted) { setError(insertError?.message ?? 'Could not save the draft.'); return; }
+    setSaved({ id: inserted.id, title });
     router.refresh();
+  }
+
+  async function send() {
+    if (!saved) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await fetch(`${sendEndpointBase}/${saved.id}/send`, { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? 'Could not send this document.');
+      setSendResult({ status: body.status });
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : 'Could not send this document.');
+    } finally {
+      setSending(false);
+    }
   }
 
   if (saved) {
@@ -86,10 +109,27 @@ export default function GenerateDocumentClient({ template, employees, companyId,
       <div className="card p-8 flex flex-col items-center gap-3 text-center">
         <CheckCircle2 size={28} style={{ color: 'var(--teal)' }} />
         <p className="font-medium" style={{ color: 'var(--ink)' }}>Draft saved: {saved.title}</p>
-        <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
-          It can be reviewed and sent for signature from your documents list.
-        </p>
-        <a href="/lead/document-templates" className="btn-secondary btn-sm mt-2">Back to templates</a>
+        {sendResult ? (
+          <p className="text-sm" style={{ color: 'var(--teal)' }}>
+            {sendResult.status === 'sent_for_signature'
+              ? 'Sent — the employee has been emailed a link to review and sign.'
+              : 'Sent — the employee has been emailed this document.'}
+          </p>
+        ) : (
+          <>
+            <p className="text-sm" style={{ color: 'var(--ink-faint)' }}>
+              {template.requires_signature
+                ? 'Send it now for the employee to review and sign, or come back to it later.'
+                : 'This document needs no signature — send it now, or come back to it later.'}
+            </p>
+            {sendError && <p className="text-sm" style={{ color: 'var(--red)' }}>{sendError}</p>}
+            <button className="btn-cta btn-sm flex items-center gap-1.5" onClick={send} disabled={sending}>
+              {sending && <Loader2 size={13} className="animate-spin" />}
+              {template.requires_signature ? 'Send for signature' : 'Send'}
+            </button>
+          </>
+        )}
+        <a href={templatesHref} className="btn-secondary btn-sm mt-2">Back to templates</a>
       </div>
     );
   }

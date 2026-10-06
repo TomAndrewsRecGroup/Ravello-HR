@@ -75,6 +75,8 @@ export default async function AdminGenerateDocumentPage({
           employees={(employees ?? []) as Record<string, unknown>[]}
           companyId={company.id}
           companyName={company.name ?? ''}
+          templatesHref="/document-templates"
+          sendEndpointBase="/api/admin/document-templates"
         />
       </main>
     </>

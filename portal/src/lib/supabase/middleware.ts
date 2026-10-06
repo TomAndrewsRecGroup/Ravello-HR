@@ -53,6 +53,13 @@ const PUBLIC_ROUTES = [
   // cookie, so both must be public.
   /^\/report\//,
   /^\/api\/report\//,
+  // No-login e-signature link (Part 2, Group 5, 213). The employee has
+  // no portal seat, the same reasoning as every link above. The
+  // token is the whole authorisation (document_signature_tokens,
+  // service-role only), and the page's own server-side preflight calls
+  // the API with no cookie, so both must be public.
+  /^\/sign\//,
+  /^\/api\/sign\//,
 ];
 
 // Carry any cookies Supabase refreshed (and our signed session cookie)

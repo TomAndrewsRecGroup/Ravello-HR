@@ -82,6 +82,8 @@ PAIRS=(
   "admin/src/lib/documentTemplates/mergeFieldValues.ts|portal/src/lib/documentTemplates/mergeFieldValues.ts"
   "admin/src/lib/lead/employeePrivate.ts|portal/src/lib/lead/employeePrivate.ts"
   "admin/src/app/(admin)/document-templates/generate/GenerateDocumentClient.tsx|portal/src/app/(portal)/lead/document-templates/generate/GenerateDocumentClient.tsx"
+  "admin/src/lib/documentTemplates/signatureTokens.ts|portal/src/lib/documentTemplates/signatureTokens.ts"
+  "admin/src/lib/documentTemplates/buildSignedDocumentPdf.ts|portal/src/lib/documentTemplates/buildSignedDocumentPdf.ts"
   "admin/src/lib/health/portfolioCounts.ts|portal/src/lib/health/portfolioCounts.ts"
   "admin/src/lib/assurance/today.ts|portal/src/lib/assurance/today.ts"
   "admin/src/components/hs/AssuranceTodayView.tsx|portal/src/components/hs/AssuranceTodayView.tsx"
