@@ -70,6 +70,11 @@ export const CLIENT_VISIBLE_ENTITY_TYPES: readonly string[] = [
   'organisation_legal_obligations', 'compliance_evaluations', 'objectives', 'management_reviews',
   'audit_findings', 'consultation_records', 'environmental_complaints', 'consultancy_visits',
   'reports', 'training_records', 'visit_observations',
+  // Migration 213: document_instances already has a full client-read
+  // policy INCLUDING drafts (document_instances_client_select) — unlike
+  // board_assurance_reports, there is no "premature disclosure" concern
+  // here, since the client can already see the row directly.
+  'document_instances',
 ];
 
 const CLIENT_VISIBLE_SET = new Set(CLIENT_VISIBLE_ENTITY_TYPES);

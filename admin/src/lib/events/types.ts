@@ -115,6 +115,12 @@ export const TRIGGERED_ENTITIES = [
   // deliberately NO outbox entry of its own — one meaningful event per
   // REPORT (its own issue), not one per board member's sign-off.
   'board_assurance_reports',
+  // Migration 213: the contract/policy template library's own
+  // generated documents (status/category/template_id/employee_id
+  // only — never rendered_body/merge_values/signed_by_name). The
+  // consequence rule (notify on sent-for-signature/signed/declined)
+  // is wired once the signing flow exists to link to.
+  'document_instances',
 ] as const;
 export type TriggeredEntity = typeof TRIGGERED_ENTITIES[number];
 

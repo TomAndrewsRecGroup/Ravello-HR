@@ -78,6 +78,7 @@ PAIRS=(
   "admin/src/lib/hs/kpis.ts|portal/src/lib/hs/kpis.ts"
   "admin/src/lib/governance/kpis.ts|portal/src/lib/governance/kpis.ts"
   "admin/src/lib/lessonsLearned/types.ts|portal/src/lib/lessonsLearned/types.ts"
+  "admin/src/lib/documentTemplates/types.ts|portal/src/lib/documentTemplates/types.ts"
   "admin/src/lib/health/portfolioCounts.ts|portal/src/lib/health/portfolioCounts.ts"
   "admin/src/lib/assurance/today.ts|portal/src/lib/assurance/today.ts"
   "admin/src/components/hs/AssuranceTodayView.tsx|portal/src/components/hs/AssuranceTodayView.tsx"

@@ -15042,3 +15042,115 @@ documented sandbox-only missing-Supabase-env-var limitation).
 Migration 212 applied live and verified (`information_schema.columns`
 + `pg_get_constraintdef()` read back directly, never trusted from the
 apply call's own bare success response).
+
+---
+
+## Part 2, Group 1: the contract/policy template library + native
+## e-signing — schema (2026-10-06, migration 213)
+
+The same Peninsula-gap-closure decision that shipped Part 1 (212,
+above) also covers a template library with e-signing. The user's own
+recorded decisions, binding on every later group: e-signatures are
+**native, built in-house** — never DocuSign/Dropbox Sign/any
+third-party vendor; the library ships with **a few clearly-marked
+starter examples** (`is_example`), never empty and never a large
+vetted catalogue. Do NOT build an AI advice chatbot. Do NOT build
+tribunal representation/legal expenses insurance (both explicitly
+declined in the same decision).
+
+Three tables:
+
+- **`document_templates`** — staff-authored, global (no `company_id`).
+  `body` carries `{{merge_field}}` placeholders; `merge_fields` (jsonb)
+  names which ones a generator must fill. Versioned the `hs_documents`
+  (106) way: a new version is a new row (`supersedes_id`), never an
+  edit of a published one. `category` reuses the existing `doc_category`
+  enum — one vocabulary, never a parallel copy. RLS: staff `FOR ALL`;
+  a client_admin (`is_company_super_user()`, never a plain
+  `client_user`) may `SELECT` the active catalogue to generate from —
+  the same "admin-level act" line `employee_records`' own sensitive-
+  column guard (131) already draws for salary/NI/DOB, applied here to
+  generating an employment contract or a settlement agreement. No
+  `apply_write_guard()` call — the `jd_templates` (011) precedent: a
+  staff-only-write reference table needs no write guard.
+- **`document_instances`** — one GENERATED document for one employee.
+  `rendered_body` is FROZEN at generation time, never re-rendered if
+  the template changes later. Client-writable (a client_admin may
+  generate/manage their own employee's documents), gated identically
+  to the template read. `employee_id` is `NOT NULL` and guarded by
+  `assert_same_org()` (118) — an employee from a different organisation
+  is refused with `23514`. `apply_write_guard()` IS applied (this table
+  genuinely is client-writable). No client DELETE policy — voiding is
+  a status change (`status = 'voided'`), never a row deletion.
+- **`document_signature_tokens`** — the no-login signing link, the
+  exact `policy_ack_tokens` (103) shape: SHA-256 hash only, RLS on with
+  **zero policies** (service role only), single-use burned on sign by
+  the application layer (there is no session policy to enforce it in
+  SQL).
+
+**A real bug found and fixed by this migration's own live, rolled-back
+probe, before it shipped**: `document_templates_supersede_roll()`'s
+first draft matched only a SIBLING sharing the same `supersedes_id`,
+never the PARENT row itself — because the parent's own `supersedes_id`
+is `NULL`, not `NEW.supersedes_id`. A plain v1 → v2 supersede would
+have left v1 "active" forever. Fixed to
+`WHERE (id = NEW.supersedes_id OR supersedes_id = NEW.supersedes_id)`
+— both halves, the exact Phase 5 Group 10 (164-166) sibling-race
+shape, applied correctly this time. CHECK 2b in the probe specifically
+proves the sibling-race half (a third version racing off the same
+parent correctly supersedes the second, not just the first).
+
+- **Outbox**: `document_instances` joins `TRIGGERED_ENTITIES`
+  (whitelist `status, category, template_id, employee_id` — never
+  `rendered_body`, `merge_values`, `signed_by_name` or
+  `declined_reason`). The consequence rule (notify on sent-for-
+  signature/signed/declined) is wired once the signing flow exists to
+  link to (a later group) — `document_instances` was added to
+  `platformEventsSql.test.ts`'s `LATER` list so the test's own
+  byTable-resolution sees this migration's trigger.
+- **`document_instances` added to `CLIENT_VISIBLE_ENTITY_TYPES`**
+  (`lib/whatChanged/clientScope.ts`, shared-dupe pair) — unlike
+  `board_assurance_reports` (deliberately EXCLUDED, since a draft
+  report's very existence is staff-controlled disclosure),
+  `document_instances` already has a full client-read policy
+  INCLUDING drafts, so there is no "premature disclosure" concern:
+  the client can already see the row directly.
+- **`lib/documentTemplates/types.ts`** (new shared-dupe pair, 83 pairs
+  up from 82): the status tuples (pinned against the migration's own
+  CHECK constraints by the new SQL-shape test), `DocumentTemplate`/
+  `DocumentInstance`/`MergeFieldDef` interfaces, and two small pure
+  helpers — `renderMergeFields()` (an unmatched `{{placeholder}}` is
+  left verbatim, never silently dropped, so a generator can see at a
+  glance which field it forgot to fill) and `extractMergeFieldKeys()`
+  (every placeholder a template body actually references, for
+  cross-checking against its own declared `merge_fields` in a later
+  group's UI).
+- Applied live statement-by-statement via `execute_sql` after
+  `apply_migration`'s own single-call DDL timed out (60s) on this
+  migration's full size — the same, already-documented sandbox DDL-
+  timeout limitation this file's history records repeatedly (203,
+  202, the scratch-probe-table incident) — each statement verified
+  individually afterward (`to_regclass()`, `pg_policies`,
+  `pg_trigger`, `information_schema.role_table_grants`,
+  `has_function_privilege()`), never trusted from any single call's
+  bare success response.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin 202 test files / 2023 tests — up from 201/2010, the new
+`documentTemplatesSql.test.ts` (13 cases) plus one existing test
+(`clientScope.test.ts`) updated for the newly-triggered entity; portal
+74/1016, unchanged in file count — only the shared-dupe mirrors moved),
+all seven CI guards pass with no regressions (83 shared-dupe pairs, up
+from 82; row-cap clean; 44 unvalidated routes, unchanged; 44 static
+admin routes, all reachable; 101 blind-update chains, unchanged — this
+group added no new write path; every paged query's `.order()` present;
+300 unbounded-read chains, unchanged), both production builds compile
+(portal's one prerender failure is the same long-documented
+sandbox-only missing-Supabase-env-var limitation, independently
+re-confirmed harmless with dummy env vars set). Migration 213 applied
+live and verified: all three tables/RLS/policies/triggers/grants
+confirmed directly, plus a full rolled-back functional probe
+(`supabase/probes/213_document_templates_signing.sql`, 6/6 checks —
+cross-org refusal, the fixed supersede roll in both the parent and
+sibling-race shapes, client-session read/write scoping) with zero
+trace left live afterward.
