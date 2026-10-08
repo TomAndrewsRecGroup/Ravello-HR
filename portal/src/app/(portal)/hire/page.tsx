@@ -1,20 +1,12 @@
 import { redirect } from 'next/navigation';
 import { isRouteEnabled } from '@/lib/moduleAccess';
 import { currentModuleFlags } from '@/lib/auth/moduleFlags';
+import { HIRE_TABS } from '@/lib/hire/tabs';
 
-// Land on the first tab this client has. A fixed target would bounce a
-// client without that one sub-module straight back to the dashboard.
-const ORDER = [
-  '/hire/hiring',
-  '/hire/internal',
-  '/hire/cost-modeller',
-  '/hire/vacancy-cost',
-  '/hire/friction-lens',
-  '/hire/metrics',
-  '/hire/benchmarks',
-];
-
+// Land on the first tab this client has, walked in the exact order
+// layout.tsx's own tabs render — see lib/hire/tabs.ts's header
+// comment and the identical fix in lib/lead/tabs.ts.
 export default async function HireIndexPage() {
   const flags = await currentModuleFlags();
-  redirect(ORDER.find(href => isRouteEnabled(href, flags)) ?? '/dashboard');
+  redirect(HIRE_TABS.find(t => isRouteEnabled(t.href, flags))?.href ?? '/dashboard');
 }

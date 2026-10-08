@@ -15782,3 +15782,132 @@ Act 2000 s.7 "simple electronic signature" shape, explicitly never
 claimed to be more than that; a database-level lifecycle guard that
 is a strict narrowing of what was previously unguarded; and tracking,
 resend and void UI in both apps.
+
+---
+
+## PROTECT's tab bar grouped, LEAD's and HIRE's "first tab = default
+## tab" rule fixed, and a fourth dataviz pass on recently-added pages
+## (2026-10-08)
+
+Operator: PROTECT's tab bar has "a lot of sub menu / tabs off the
+page," with Investigations named as an explicit worked example of a
+tab that should nest under Incidents; separately, "the 1st tab (top
+left)" must be the page that actually loads by default — reported
+broken for LEAD ("Lead starts on Docs when it shouldn't"); plus a
+further `/dataviz` pass on pages built since the three prior rounds
+(2026-10-04).
+
+### PROTECT regrouped — SectionTabs → GroupedTabs
+
+`protect/layout.tsx`'s `TABS` had grown to **41 flat entries** in one
+`SectionTabs` row — `overflow-x-auto whitespace-nowrap`, a sideways
+scroll with no visible affordance that there was more, so most of the
+section was effectively invisible on anything narrower than a very
+wide desktop. `GroupedTabs` (built for LEAD, `flex-wrap`) already
+solves exactly this — wraps onto further lines instead of hiding
+content off-screen — and already carries the header-label-plus-
+clustered-tabs shape the operator's own example asks for: Investigations
+now sits inside an "Incidents" cluster alongside Incidents and Actions,
+never a free-floating peer of 40 other tabs. Regrouped into 9 clusters
+(Overview, Risk Management, Incidents, Register, Emergency &
+Contractors, Environmental, Governance, Intelligence, Reports) —
+**every one of the 41 original hrefs/labels preserved exactly**, no
+route removed or renamed, purely a visual regroup. A few labels inside
+a now-self-explanatory group were shortened ("Environmental Aspects" →
+"Aspects" inside the "Environmental" cluster) to avoid a redundant
+double-naming, not to change what they link to.
+
+**Switching to `GroupedTabs` exposed a real, previously-latent bug in
+that component, fixed before the switch could ship.** `GroupedTabs`
+had no equivalent of `SectionTabs`' own "longest match wins" fix: each
+tab's own `active` check was independent
+(`path === tab.href || path.startsWith(tab.href + '/')`), so an index
+tab that is a textual PREFIX of many siblings lit up alongside
+whichever one was actually open. For LEAD this only affected
+`/lead/workforce` vs. its five `/lead/workforce/*` sub-pages — a small
+blast radius nobody had reported. For PROTECT, `/protect` (Overview)
+is a prefix of **every single other PROTECT page**, so Overview would
+have shown active on every page in the section. Fixed in
+`GroupedTabs.tsx` itself (one shared fix, not a PROTECT-only
+workaround): `current` is now computed once across every tab in every
+group, sorted by href length, same as `SectionTabs`. This retroactively
+fixes LEAD's own latent Workforce-tab bug as a side effect, not a
+separate change.
+
+### LEAD's and HIRE's default-tab bug — one vocabulary, not two
+
+`lead/page.tsx`'s index redirect used its own, independently hand-typed
+`ORDER` array (`['/lead/documents', '/lead/employee-records', ...]`,
+first entry: Documents) — completely disconnected from
+`lead/layout.tsx`'s own `TAB_GROUPS` (first group: People, first tab:
+Employees). The two had drifted to the point of contradiction: the
+visually-first tab and the actually-landed-on page were never the
+same route. Fixed the way this codebase fixes every other "two lists
+that must agree" problem (`statusMaps.ts`, `ACTION_PRIORITIES`,
+`MILESTONE_PILLAR_LABELS`): extracted the ONE list,
+`portal/src/lib/lead/tabs.ts`'s `LEAD_TAB_GROUPS` +`leadTabsFlat()`,
+imported by both `layout.tsx` (to render) and `page.tsx` (to redirect
+to the first one this viewer can actually reach, walked in the exact
+same order, capability-gated tabs included). There is no longer a
+second copy of this order anywhere to drift.
+
+HIRE had the identical SHAPE of risk (an independent `ORDER` in
+`page.tsx` vs. `TABS` in `layout.tsx`) though it had not yet drifted
+into an actual bug — HIRE's own `ORDER` happened to still agree on its
+first entry. Fixed preventively, the same way:
+`portal/src/lib/hire/tabs.ts`'s `HIRE_TABS`, one list, both files.
+
+PROTECT needed no equivalent fix — `/protect` has always been real
+Overview content, not an index-redirect page, so there was never a
+second list for it to drift against; its first tab already is its
+default landing page, group-first-group (Overview) now correctly
+first in `TAB_GROUPS` too.
+
+### Dataviz round 4: pages built since round 3 (2026-10-04)
+
+Surveyed everything shipped after the three prior dataviz rounds —
+Part 2's document-template/e-signing library (migrations 213-215,
+2026-10-06) and the go-live-gap-list's Daily Briefing / Group Roll-Up
+pages (migration 204, 2026-10-02, which predate the three rounds but
+were never actually covered by them) — for a genuine part-of-a-whole
+or comparative relationship worth charting, same discipline as every
+prior round: never force a `ProportionBar`/`MiniBarRow` onto data that
+doesn't have one (the template catalogue itself, a staff-curated list
+of a handful of entries, stays a plain CRUD list).
+
+- **`/document-templates/instances`** (admin, Part 2 Group 6's
+  cross-client tracking list): every instance has exactly one status
+  at a time — draft/sent_for_signature/signed/declined/voided — a
+  genuine proportion of the whole book, the exact shape Hiring
+  Analytics' Offer Summary and HR Dashboard's Gender Diversity already
+  use `ProportionBar` for. Added above the filter controls, computed
+  from the FULL (unfiltered) instance list so the shape of the whole
+  book stays visible even while a status filter narrows the table
+  below it.
+- **`/briefing` (Daily Management Briefing) and `/clients/groups/
+  [parentId]` (Group Roll-Up)**: both already compute a red/amber/
+  green company count via the SAME `DailyBriefing` type
+  (`lib/briefing/compute.ts`) — every tracked company falls into
+  exactly one band today, another genuine proportion-of-one-whole.
+  Added a `ProportionBar` under each page's existing red/amber(/green)
+  stat tiles. **A real, pre-existing display gap found and fixed along
+  the way**: the Group Roll-Up page was missing its "Nothing flagged"
+  (green) tile entirely — it showed Red and Amber only, while its own
+  sibling Daily Briefing page showed all three from the same
+  `briefing.cleanCompanies` field it already had available. Added the
+  missing tile and widened the stat grid from 3 to 4 columns to match.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green both
+apps (admin 206 test files / 2052 tests; portal 82 test files / 1082
+tests — neither count changed from before this work, since every edit
+here is layout/markup, no new or altered pure-logic module), all seven
+CI guards pass with no regressions (91 shared-dupe pairs, unchanged —
+none of the files touched this round is a shared-dupe pair; row-cap
+clean; 44 unvalidated routes, unchanged; 47 admin pages, all reachable;
+101 blind-update chains, unchanged; every paged query's `.order()`
+present; 300 unbounded-read chains, unchanged), both production builds
+compile (portal's one prerender failure on `/auth/reset-password` is
+the same long-documented sandbox-only missing-Supabase-env-var
+limitation, independently re-confirmed harmless with dummy env vars
+set — rebuilt cleanly through every route, `/protect/*`, `/lead/*`
+and `/hire/*` included).

@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import { computeGroupRollup, type GroupCompanyRow } from '@/lib/groupRollup/compute';
 import type { BriefingSnapshotRow } from '@/lib/briefing/compute';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Group Roll-Up' };
@@ -61,7 +62,7 @@ export default async function GroupRollupPage(props: { params: Promise<{ parentI
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         <div className="card p-4">
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Combined monthly retainer</p>
           <p className="text-2xl font-semibold">{gbp(rollup.totalMonthlyRetainerPence)}</p>
@@ -74,7 +75,25 @@ export default async function GroupRollupPage(props: { params: Promise<{ parentI
           <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Amber</p>
           <p className="text-2xl font-semibold" style={{ color: BAND_COLOUR.amber }}>{rollup.briefing.amberCompanies}</p>
         </div>
+        <div className="card p-4" style={{ borderLeft: `3px solid ${BAND_COLOUR.green}` }}>
+          <p className="text-xs" style={{ color: 'var(--ink-faint)' }}>Nothing flagged</p>
+          <p className="text-2xl font-semibold" style={{ color: BAND_COLOUR.green }}>{rollup.briefing.cleanCompanies}</p>
+        </div>
       </div>
+
+      {rollup.briefing.totalCompanies > 0 && (
+        // Every member company falls into exactly one band today — the
+        // same genuine proportion-of-one-whole shape the Daily Briefing
+        // page (this rollup's own source: lib/briefing/compute.ts) now
+        // shows the same way.
+        <div className="card p-4">
+          <ProportionBar showLegend={false} segments={[
+            { value: rollup.briefing.redCompanies,   colour: BAND_COLOUR.red,   label: 'Red' },
+            { value: rollup.briefing.amberCompanies, colour: BAND_COLOUR.amber, label: 'Amber' },
+            { value: rollup.briefing.cleanCompanies, colour: BAND_COLOUR.green, label: 'Nothing flagged' },
+          ]} />
+        </div>
+      )}
 
       <div className="card p-5">
         <h2 className="text-base font-medium mb-3" style={{ color: 'var(--ink)' }}>Members</h2>

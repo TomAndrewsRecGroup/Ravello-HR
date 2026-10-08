@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import { assembleDailyBriefing, type BriefingSnapshotRow } from '@/lib/briefing/compute';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 import { Sunrise, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Daily Briefing' };
@@ -89,6 +90,21 @@ export default async function BriefingPage() {
           <p className="text-2xl font-semibold" style={{ color: BAND_COLOUR.green }}>{briefing.cleanCompanies}</p>
         </div>
       </div>
+
+      {briefing.totalCompanies > 0 && (
+        // Every tracked company falls into exactly one band today — a
+        // genuine proportion of one whole, the same shape ProportionBar
+        // already serves for Hiring Analytics' offer outcomes and HR
+        // Dashboard's gender split. showLegend is off: the four tiles
+        // above already name each count.
+        <div className="card p-4">
+          <ProportionBar showLegend={false} segments={[
+            { value: briefing.redCompanies,   colour: BAND_COLOUR.red,   label: 'Red' },
+            { value: briefing.amberCompanies, colour: BAND_COLOUR.amber, label: 'Amber' },
+            { value: briefing.cleanCompanies, colour: BAND_COLOUR.green, label: 'Nothing flagged' },
+          ]} />
+        </div>
+      )}
 
       <div className="card p-5">
         <h2 className="text-base font-medium mb-3" style={{ color: 'var(--ink)' }}>What needs attention today</h2>

@@ -7,6 +7,15 @@ interface TabGroup { label: string; tabs: Tab[]; }
 
 export default function GroupedTabs({ groups }: { groups: TabGroup[] }) {
   const path = usePathname();
+  // One winner, the longest matching tab, across EVERY group — the
+  // same fix SectionTabs already applies: an index tab such as
+  // /protect (Overview) or /lead/workforce (Safe to Deploy) is a
+  // PREFIX of several other tabs' own hrefs and would otherwise light
+  // up alongside whichever one is actually open.
+  const allTabs = groups.flatMap(g => g.tabs);
+  const current = allTabs
+    .filter(t => path === t.href || path.startsWith(t.href + '/'))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <div
@@ -22,11 +31,12 @@ export default function GroupedTabs({ groups }: { groups: TabGroup[] }) {
             {group.label}
           </span>
           {group.tabs.map(tab => {
-            const active = path === tab.href || path.startsWith(tab.href + '/');
+            const active = tab.href === current;
             return (
               <Link prefetch={false}
                 key={tab.href}
                 href={tab.href}
+                aria-current={active ? 'page' : undefined}
                 className="px-3 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap"
                 style={{
                   color: active ? 'var(--purple)' : 'var(--ink-faint)',

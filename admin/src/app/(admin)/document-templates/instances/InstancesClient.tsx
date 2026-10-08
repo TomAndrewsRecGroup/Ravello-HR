@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FileText, Send, Ban, Loader2 } from 'lucide-react';
 import FileLink from '@/components/modules/FileLink';
 import { useToast } from '@/components/modules/Toast';
+import { ProportionBar } from '@/components/charts/MiniCharts';
 import {
   DOCUMENT_INSTANCE_STATUS_LABELS, DOCUMENT_INSTANCE_STATUSES,
   type DocumentInstance, type DocumentInstanceStatus,
@@ -44,6 +45,18 @@ export default function InstancesClient({ initialInstances, employeeNames, compa
     });
   }, [instances, statusFilter, search, employeeNames, companyNames]);
 
+  // Every document instance has exactly ONE status at a time, so this
+  // is a genuine proportion of one whole — the same shape Hiring
+  // Analytics' Offer Summary and HR Dashboard's Gender Diversity
+  // already use ProportionBar for. Computed from the FULL set, not
+  // `filtered`, so the shape of the whole book stays visible even
+  // while a status filter narrows the table below it.
+  const statusSegments = DOCUMENT_INSTANCE_STATUSES.map(s => ({
+    value: instances.filter(i => i.status === s).length,
+    colour: STATUS_COLOUR[s],
+    label: DOCUMENT_INSTANCE_STATUS_LABELS[s],
+  }));
+
   async function act(id: string, action: 'resend' | 'void') {
     setBusy(`${action}:${id}`);
     try {
@@ -61,6 +74,14 @@ export default function InstancesClient({ initialInstances, employeeNames, compa
 
   return (
     <div className="space-y-4">
+      {instances.length > 0 && (
+        <div className="card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-faint)' }}>
+            {instances.length} document{instances.length === 1 ? '' : 's'} generated, by status
+          </p>
+          <ProportionBar segments={statusSegments} />
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <select className="input w-auto" value={statusFilter} onChange={e => setStatusFilter(e.target.value as DocumentInstanceStatus | 'all')}>
           <option value="all">All statuses</option>

@@ -2,17 +2,7 @@ import Topbar from '@/components/layout/Topbar';
 import SectionTabs from '@/components/layout/SectionTabs';
 import { isRouteEnabled } from '@/lib/moduleAccess';
 import { currentModuleFlags } from '@/lib/auth/moduleFlags';
-
-const TABS = [
-  { href: '/hire/hiring',        label: 'Hiring' },
-  { href: '/hire/internal',      label: 'Internal Roles' },
-  { href: '/hire/cost-modeller', label: 'Cost Modeller' },
-  { href: '/hire/vacancy-cost',  label: 'Vacancy Cost' },
-  { href: '/hire/friction-lens', label: 'Friction Lens' },
-  { href: '/hire/metrics',       label: 'Metrics' },
-  { href: '/hire/hiring/analytics', label: 'Analytics' },
-  { href: '/hire/benchmarks',    label: 'Benchmarks' },
-];
+import { HIRE_TABS as TABS } from '@/lib/hire/tabs';
 
 export default async function HireLayout({ children }: { children: React.ReactNode }) {
   // Hide tabs for modules this client does not have — the middleware
