@@ -1,4 +1,5 @@
 'use client';
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -23,32 +24,46 @@ export default function GroupedTabs({ groups }: { groups: TabGroup[] }) {
       style={{ borderBottom: '1px solid var(--line)' }}
     >
       {groups.map((group, gi) => (
-        <div key={group.label} className="flex items-center">
+        <Fragment key={group.label}>
           {gi > 0 && (
-            <div className="w-px h-4 mx-2" style={{ background: 'var(--line)' }} />
+            <div className="w-px h-4 mx-2 shrink-0" style={{ background: 'var(--line)' }} />
           )}
-          <span className="text-[9px] font-semibold uppercase tracking-wider mr-1.5 hidden sm:inline" style={{ color: 'var(--ink-faint)' }}>
-            {group.label}
-          </span>
-          {group.tabs.map(tab => {
-            const active = tab.href === current;
-            return (
-              <Link prefetch={false}
-                key={tab.href}
-                href={tab.href}
-                aria-current={active ? 'page' : undefined}
-                className="px-3 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap"
-                style={{
-                  color: active ? 'var(--purple)' : 'var(--ink-faint)',
-                  borderBottom: active ? '2px solid var(--purple)' : '2px solid transparent',
-                  marginBottom: '-1px',
-                }}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </div>
+          {/* A group's own tabs wrap INSIDE its box, not just the
+              outer bar — a large cluster (e.g. Intelligence's 9 tabs)
+              is wider than a phone viewport on one line; without this
+              the box would overflow sideways instead of wrapping, the
+              exact "clipped past the edge" failure mode this whole
+              component exists to avoid (that's what SectionTabs' own
+              horizontal scroll already did, invisibly, which is why
+              this component wraps instead). The label stays visible
+              at every width (never hidden below a breakpoint) so the
+              cluster it names is never reduced to an unlabelled run of
+              links separated only by a thin divider on a small screen —
+              exactly the grouping signal this component exists to show. */}
+          <div className="flex flex-wrap items-center gap-y-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider mr-1.5 shrink-0" style={{ color: 'var(--ink-faint)' }}>
+              {group.label}
+            </span>
+            {group.tabs.map(tab => {
+              const active = tab.href === current;
+              return (
+                <Link prefetch={false}
+                  key={tab.href}
+                  href={tab.href}
+                  aria-current={active ? 'page' : undefined}
+                  className="px-3 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap"
+                  style={{
+                    color: active ? 'var(--purple)' : 'var(--ink-faint)',
+                    borderBottom: active ? '2px solid var(--purple)' : '2px solid transparent',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+        </Fragment>
       ))}
     </div>
   );

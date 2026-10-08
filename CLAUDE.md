@@ -15911,3 +15911,78 @@ the same long-documented sandbox-only missing-Supabase-env-var
 limitation, independently re-confirmed harmless with dummy env vars
 set — rebuilt cleanly through every route, `/protect/*`, `/lead/*`
 and `/hire/*` included).
+
+---
+
+## PROTECT's new tab-grouping, checked specifically on mobile, and a
+## real wrap bug fixed (2026-10-08)
+
+Follow-up to the same-day PROTECT grouping work above, per the
+operator's own explicit request: "check the protect tab bar on mobile
+too." `GroupedTabs.tsx` had never been checked against this
+codebase's own mobile conventions before PROTECT started using it
+with 9 groups / 41 tabs — LEAD's own use of the same component (5
+groups, fewer tabs per group) had never exercised the failure mode
+this found.
+
+- **A group's own tabs had no internal wrap — a real overflow bug on
+  a phone viewport, not just a tablet-width inconvenience.** Each
+  group was one `<div className="flex items-center">` with NO
+  `flex-wrap` of its own; from the OUTER bar's `flex-wrap`
+  perspective, a whole group is one atomic flex item, so a group
+  that doesn't fit moves to a fresh line as a unit — correct for
+  small groups, but the "Intelligence" cluster alone (9 tabs,
+  several multi-word labels — "Continuous Improvement",
+  "Operational Exceptions") is well over 700px wide at this
+  component's own `px-3`/`text-[13px]` sizing. On a 375px-wide phone
+  that group would overflow sideways past the edge of the screen
+  rather than wrap — the exact "clipped past the edge" failure this
+  component was built to replace `SectionTabs`' own silent horizontal
+  scroll with in the first place, reintroduced one level down inside
+  a single large group. Fixed: each group's own box is now ALSO
+  `flex flex-wrap` — a group still moves as a unit when it fits on a
+  fresh line, and wraps internally across more than one row when it
+  doesn't, with its label leading the first line of its own tabs
+  (`shrink-0` on both the label and the divider, so neither squashes
+  under flex's default shrink behaviour at the point a line is
+  nearly full).
+- **The group label — the whole point of this grouping work — was
+  `hidden sm:inline`, invisible below 640px.** On mobile, exactly the
+  device class most affected by tab crowding, a reader would have
+  seen 41 links separated only by thin `w-px` dividers with no
+  visible name for any cluster — reproducing a muted version of the
+  original "too many flat tabs" complaint this whole change exists
+  to fix, specifically on the one viewport size where it matters
+  most. There is no longer a horizontal-space reason to hide it:
+  since mobile now wraps instead of trying to fit one line, showing
+  the label costs a little vertical height, never overflow. Removed
+  the breakpoint — the label is now always visible, at every width.
+- **Touch-target height (`py-2.5`, ~36-37px effective tap height,
+  below the 44px CRITICAL guideline) was checked and deliberately
+  left alone.** `SectionTabs.tsx` — the sibling component HIRE still
+  uses — carries the identical `py-2.5` vertical sizing
+  (`px-4 py-2.5 text-sm`), so this is an existing, consistent,
+  app-wide tab-link convention predating this session's work, not a
+  regression introduced by grouping PROTECT's tabs. Resizing it here
+  would be an unscoped, app-wide nav redesign well beyond "check the
+  tab bar on mobile," and would make `GroupedTabs` and `SectionTabs`
+  disagree with each other for no reason tied to the actual request.
+  Left as documented, pre-existing debt, not touched.
+- Both fixes live in the ONE shared `GroupedTabs.tsx` component, so
+  LEAD (5 groups) gets the identical, already-safe-for-its-own-group-
+  sizes fix for free — nothing LEAD-specific needed changing, and
+  nothing about LEAD's own rendering shape changes now that every
+  one of its groups already fit on a line without needing the new
+  per-group wrap.
+
+Verified: `tsc --noEmit` clean both apps (this fix is portal-only),
+full `vitest run` green (portal 82 test files / 1082 tests,
+unchanged — no test file exists for this presentational component,
+the established convention), all seven CI guards pass with no
+regressions (91 shared-dupe pairs, unchanged; row-cap clean; 44
+unvalidated routes, unchanged; 47 admin pages, all reachable; 101
+blind-update chains, unchanged; every paged query's `.order()`
+present; 300 unbounded-read chains, unchanged), portal production
+build compiles clean with dummy Supabase env vars set (the one
+pre-existing `/auth/reset-password` prerender failure, unrelated to
+this change, is the same long-documented sandbox-only limitation).
