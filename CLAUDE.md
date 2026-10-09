@@ -15986,3 +15986,60 @@ present; 300 unbounded-read chains, unchanged), portal production
 build compiles clean with dummy Supabase env vars set (the one
 pre-existing `/auth/reset-password` prerender failure, unrelated to
 this change, is the same long-documented sandbox-only limitation).
+
+---
+
+## HIRE's tab bar, checked specifically on mobile, and the same wrap
+## fix extended to its underlying component (2026-10-09)
+
+Direct follow-up to the same-day PROTECT mobile check above, per the
+operator's own next instruction: "check the hire tab bar on mobile
+too." `hire/layout.tsx` renders via `SectionTabs`, not `GroupedTabs` —
+confirmed by reading it (LEAD and PROTECT both moved to `GroupedTabs`
+earlier the same day; HIRE never did, since its own flat 8-tab list
+has no natural grouping to cluster the way PROTECT's 41 did).
+`portal/src/lib/hire/tabs.ts`'s `HIRE_TABS` (Hiring, Internal Roles,
+Cost Modeller, Vacancy Cost, Friction Lens, Metrics, Analytics,
+Benchmarks) sums to roughly 920px at `SectionTabs`' own `px-4 py-2.5
+text-sm` sizing plus its `px-6` container padding — more than double
+a typical phone's viewport width, and `SectionTabs`' own
+`overflow-x-auto whitespace-nowrap` gives zero visible cue that
+anything is off-screen. On a 375-430px phone, only 2-3 of the 8 tabs
+are visible without scrolling — the identical "most of the section
+was effectively invisible in practice" defect this file's own history
+already recorded as PROTECT's reason for leaving this exact component.
+
+- **Confirmed `SectionTabs` has exactly ONE real consumer left**
+  (`hire/layout.tsx` — a grep found `protect/layout.tsx` only
+  mentions the component BY NAME in its own explanatory comment,
+  never imports it), so the fix is scoped to HIRE with no blast
+  radius elsewhere, and admin has no equivalent component to mirror
+  (checked — this is portal-only, not a shared-dupe pair).
+- **The fix is the narrower half of the same lesson `GroupedTabs` just
+  learned, not a second invention of it**: wrap, don't silently
+  scroll. `SectionTabs`' container swaps `overflow-x-auto
+  whitespace-nowrap` for `flex flex-wrap` (plus `gap-y-1` and a
+  `py-1` for when a second line is needed), and each tab `Link`
+  itself gains `whitespace-nowrap` (so an individual label never
+  breaks mid-word) — the exact same split `GroupedTabs` already uses
+  between its wrapping container and its own non-wrapping `Link`s.
+  HIRE's tabs have no natural categories to reach for `GroupedTabs`'
+  clustering/label treatment, so migrating the whole component was
+  rejected in favour of this narrower, lower-risk fix to the simpler
+  component HIRE already uses.
+- **No other section needed checking for the same defect.** LEAD and
+  PROTECT both already render through `GroupedTabs`, already fixed
+  for wrapping/label-visibility earlier the same day; HIRE was the
+  only remaining `SectionTabs` consumer.
+
+Verified: `tsc --noEmit` clean both apps (this fix is portal-only),
+full `vitest run` green both apps (admin 206 test files / 2052 tests,
+unchanged; portal 82 test files / 1082 tests, unchanged — no test
+file exists for this presentational component, the established
+convention), all seven CI guards pass with no regressions (91
+shared-dupe pairs, unchanged; row-cap clean; 44 unvalidated routes,
+unchanged; 47 admin pages, all reachable; 101 blind-update chains,
+unchanged; every paged query's `.order()` present; 300 unbounded-read
+chains, unchanged), both production builds compile clean (portal
+built with dummy Supabase env vars set, exit 0, all 8 `/hire/*`
+routes present in the output; admin unaffected, exit 0).

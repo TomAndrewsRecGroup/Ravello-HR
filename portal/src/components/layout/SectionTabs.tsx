@@ -17,8 +17,17 @@ export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
+    // Wraps onto further lines rather than scrolling sideways (2026-10-09):
+    // HIRE's own 8 tabs (the only remaining user of this component — LEAD
+    // and PROTECT both moved to GroupedTabs for the identical reason) are
+    // wider than a phone viewport, and the old overflow-x-auto gave no
+    // visible cue that more tabs existed off-screen — most of them were
+    // effectively invisible in practice, the exact defect class PROTECT's
+    // own 41-tab row already had. HIRE's tabs have no natural grouping to
+    // reach for GroupedTabs' clustering, so the fix here is the narrower
+    // half of that same lesson: wrap, don't silently scroll.
     <div
-      className="no-print flex items-center gap-1 px-6 -mb-px overflow-x-auto whitespace-nowrap"
+      className="no-print flex flex-wrap items-center gap-x-1 gap-y-1 px-6 py-1 -mb-px"
       style={{ borderBottom: '1px solid var(--line)' }}
     >
       {tabs.map(tab => {
@@ -28,7 +37,7 @@ export default function SectionTabs({ tabs }: { tabs: Tab[] }) {
             key={tab.href}
             href={tab.href}
             aria-current={active ? 'page' : undefined}
-            className="px-4 py-2.5 text-sm font-medium transition-colors"
+            className="px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap"
             style={{
               color: active ? 'var(--purple)' : 'var(--ink-faint)',
               borderBottom: active ? '2px solid var(--purple)' : '2px solid transparent',
