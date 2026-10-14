@@ -52,6 +52,44 @@ export interface ScanOutcome {
   error:     string | null;
 }
 
+/** Below this many scan errors in one run, the ratio check below never
+ *  fires on its own — see isUnhealthy(). */
+const MIN_SCAN_ERRORS_FOR_RATIO = 2;
+
+/** Whether one run's tally should be reported as degraded.
+ *
+ *  Extracted so this is unit-testable without mocking Manatal/IvyLens —
+ *  the thing worth pinning is the ARITHMETIC, not a whole pipeline run.
+ *
+ *  Found live 2026-10-14: the 05:01 UTC run had exactly ONE applicant to
+ *  attempt that hour, and Manatal could not be read for them (a single
+ *  "Candidate could not be read from Manatal." — resilientFetch had
+ *  already retried it with backoff, and the circuit breaker never
+ *  opened, so this was a one-off, not an outage). scanned=0, scan_errors=1,
+ *  attempted=1 — a plain ratio read that as 100% failed and tripped
+ *  "unhealthy", which made the route return 500, which is what Vercel's
+ *  own cron-failure notification alerts on. Every run before and after
+ *  it processed normally.
+ *
+ *  A ratio is not a meaningful health signal at n=1: ANY single failure
+ *  in a quiet hour reads as "100% failed" however harmless it actually
+ *  was. A real outage is a different shape entirely — the circuit
+ *  breaker in lib/http/resilient.ts opens after a handful of consecutive
+ *  failures, and every attempt afterwards in the SAME run fails fast
+ *  too, so a genuine vendor outage produces well more than one or two
+ *  scan_errors before the run even finishes. Requiring at least
+ *  MIN_SCAN_ERRORS_FOR_RATIO before the ratio can flag a run keeps that
+ *  real signal intact while dropping the single-flake false positive —
+ *  verified against this exact incident: scan_errors=1 no longer trips
+ *  it, scan_errors=2+ at a bad ratio still does. */
+export function isUnhealthy(tally: Tally): boolean {
+  const attempted = tally.scanned + tally.scan_errors;
+  return (
+    (attempted > 0 && tally.scan_errors >= MIN_SCAN_ERRORS_FOR_RATIO && tally.scan_errors / attempted > 0.5) ||
+    (tally.roles_considered === 0 && tally.roles_skipped > 0)
+  );
+}
+
 /** The role query, shared so both callers scan exactly the same set. */
 const ROLE_SELECT = `
   requisition_id, enabled, dry_run, partner_name, referral_url, email_process_note,
@@ -118,11 +156,9 @@ export async function runReferralScan(
   }
 
   // Judged over ATTEMPTED candidates only: a quiet hour with nothing to
-  // do is a healthy zero, not a failure.
-  const attempted = tally.scanned + tally.scan_errors;
-  const unhealthy =
-    (attempted > 0 && tally.scan_errors / attempted > 0.5) ||
-    (tally.roles_considered === 0 && tally.roles_skipped > 0);
+  // do is a healthy zero, not a failure. See isUnhealthy() above for why
+  // the ratio also needs an absolute floor.
+  const unhealthy = isUnhealthy(tally);
 
   tally.vendor_breakers = breakerSnapshot();
 

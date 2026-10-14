@@ -16043,3 +16043,154 @@ unchanged; every paged query's `.order()` present; 300 unbounded-read
 chains, unchanged), both production builds compile clean (portal
 built with dummy Supabase env vars set, exit 0, all 8 `/hire/*`
 routes present in the output; admin unaffected, exit 0).
+
+---
+
+## A referral-scan "failure" email was a single candidate at n=1, not a
+## real failure — plus a full live production audit (2026-10-14,
+## migration 216)
+
+Operator: an email alert said the referral scan failed; requested a
+full, live, production scan and check.
+
+### Diagnosis — not a systemic failure, a statistically unsound alert
+
+`referral_scan_runs` (queried live, not assumed): every hourly run on
+2026-10-13/14 is `outcome: 'ok'` except ONE — 2026-10-14 05:01 UTC,
+`ok: false, outcome: 'degraded'`. That run's own tally:
+`scanned: 0, scan_errors: 1` — exactly ONE applicant was attempted that
+hour, and reading them from Manatal failed
+(`referral_applications.status_history`: `"Candidate could not be read
+from Manatal."`). `vendor_breakers.manatal` never opened
+(`failures: 0`) — this was not an outage; `manatalFetch()` already
+retries with jittered backoff before ever reaching this error (see
+`lib/manatal.ts`'s own header comment on exactly this class of
+candidate-specific failure). Every run before and after processed
+normally, and `matches_seen` climbed steadily across the whole day —
+one isolated, already-self-contained blip.
+
+**Root cause of the ALERT, not the blip**: `runReferralScan()`'s own
+`unhealthy` flag — `scan_errors / attempted > 0.5` — is a ratio with no
+absolute floor. At `attempted = 1`, ANY single failure reads as "100%
+failed" however harmless, which is exactly what happened: 1/1 tripped
+the threshold, the route returned 500, and that 500 is what Vercel's
+own cron-failure notification alerts on. A real vendor outage is a
+different shape entirely — `lib/http/resilient.ts`'s circuit breaker
+opens after a handful of consecutive failures, and every attempt for
+the rest of that SAME run then fails fast too, so a genuine outage
+produces well more than one or two `scan_errors` before the run even
+finishes.
+
+**Fix** (`runScan.ts`): extracted the formula into an exported,
+unit-tested `isUnhealthy(tally)` and added an absolute floor —
+`scan_errors >= 2` — before the ratio can flag a run at all. A single
+isolated failure, at any `attempted` count, is never enough on its own;
+two or more at a bad ratio still is, preserving the real signal.
+7 new `runScan.test.ts` cases pin exactly this incident's own numbers
+(1/1 → healthy; 2/2 → unhealthy; the quiet-hour and roles-unreadable
+paths unchanged) — mutation-tested live: reverting the floor to 0
+reintroduced the incident's own case and watched it fail, then
+restored.
+
+**Deliberately NOT built**: retrying a `scan_error` candidate.
+`readProcessedIds()` treats ANY existing `referral_applications` row —
+`scan_error` included — as "already processed", so this one candidate
+will never be reconsidered by this role again (checked live:
+`scan_error` has exactly 1 row in the table's whole history — this is
+a real, rare, and so far harmless limitation, not a frequent one).
+Lifting it safely needs a bounded retry count (unbounded retry risks
+the WORSE failure this incident's own fix exists to prevent — a
+candidate genuinely gone from Manatal forever would then fail every
+single hour, forever, repeatedly re-tripping the same alert) — that is
+new product scope with real design tradeoffs, not a bug fix for the
+reported alert, and is left here as a documented, deliberate gap
+rather than silently built.
+
+### Full production audit — everything else checked and found clean
+
+- **Every other scheduled cron** (`automation_runs`, last 7 days):
+  `classify-updates`, `digest`, `health-snapshot`, `process-events`,
+  `reminders`, `weekly-summary`, `what-changed-digest`,
+  `workforce-refresh`, `bd-score` — 100% `ok`, zero failures.
+- **The 2026-09-04 cron-307 fix is intact**: `admin/src/lib/supabase/
+  middleware.ts`'s `PUBLIC_ROUTES` still exempts `/^\/api\/cron\//` and
+  `/^\/api\/stripe\/webhook$/` before the session check ever runs.
+- **`referral_role_config`**: all 3 enabled roles, `dry_run: false` —
+  the expected live state (this file's own 2026-09-21→24 incident
+  mitigation, "must be turned back off by hand", was already done).
+- **`get_advisors(security)`**: every finding is already-documented,
+  deliberate, or pre-existing debris — the four RLS-on-no-policies
+  token tables (fails-closed by design), `_ddl_probe_208`'s own
+  already-recorded leftover, and ~90 `SECURITY DEFINER` functions
+  callable by `authenticated`, which is the established, intentional
+  shape this whole platform's capability/workforce/H&S model runs on.
+  One genuine, actionable, low-risk item: **leaked-password protection
+  is disabled** in Supabase Auth — a dashboard toggle, not a schema
+  change, left for the operator to flip (Authentication → Policies).
+- **`get_advisors(performance)`**: 452 unindexed FKs / 190 unused
+  indexes / 1 missing PK (`_ddl_probe_208` again) — all expected at
+  this platform's current live data volume, none urgent. 18 duplicate
+  indexes and 5 `auth_rls_initplan` (a handful of RLS policies not
+  wrapping `auth.*()` in a `(select ...)`) are real, low-severity
+  hygiene items — reported, not fixed here: the 18 duplicates need
+  `DROP INDEX`, which this sandbox's own repeatedly-confirmed DDL-
+  timeout limitation makes risky to attempt blind, and none of the 23
+  findings combined have any measurable cost at this platform's
+  current row counts.
+- **`rls_policy_audit()` itself had drifted again** (migration 216,
+  below) — found by actually calling it, the same discipline that
+  caught its first drift in migration 198.
+
+### A second, real finding: `rls_policy_audit()` (080, 198) had gone
+### stale a second time
+
+Calling the function live surfaced 2 critical + 1 warning finding,
+both traced to migration 213 (document template library + e-signing,
+2026-10-06) — shipped AFTER 198's fix and never added to either of its
+lists:
+
+- `document_signature_tokens` — RLS-on-zero-policies, the exact
+  `policy_ack_tokens`/`entity_qr_tokens`/`worker_qr_tokens`/
+  `report_share_tokens` "service role only, fails closed by design"
+  shape 213's own comment already documents — flagged `critical`
+  because its name was never added to the exemption list.
+- `document_templates_client_read` — genuinely scoped
+  (`status = 'active' AND is_company_super_user()`, confirmed live via
+  `pg_policy`) — flagged `warning` because the scoping regex never
+  learned `is_company_super_user`, the same class of gap 198 itself
+  fixed once for `person_visible`/`is_me`.
+
+**Fix** (migration 216, `CREATE OR REPLACE FUNCTION`, no DROP):
+`document_signature_tokens` added to the exemption list;
+`is_company_super_user` added to the regex. Verified live before and
+after: 2 critical + 1 warning on these two tables → 0 — nothing about
+the live security posture changed, only the audit's own recognition
+of two already-deliberate shapes. The one finding left
+(`_ddl_probe_208`) is the already-documented, already-accepted
+scratch-table leftover this file's own history already records twice.
+New `rlsPolicyAuditDocumentTemplatesSql.test.ts` (3 cases) pins the
+exemption list and the regex addition against migration 216's own
+text — the `reportShareTokensSql.test.ts` precedent, extended.
+
+**The lesson, stated plainly since it has now happened twice**: this
+function's own exemption/regex lists are not self-maintaining — every
+migration that adds a zero-policy token table or a new scoping
+predicate function needs to update them in the SAME migration, or the
+next live audit finds the same class of drift a third time.
+
+Verified: `tsc --noEmit` clean both apps, full `vitest run` green
+(admin **208 test files / 2062 tests**, up from 207/2059 — the 7 new
+`runScan.test.ts` cases + 3 new `rlsPolicyAuditDocumentTemplatesSql
+.test.ts` cases; portal **82 test files / 1082 tests**, unchanged —
+this work touched admin only), all seven CI guards pass with no
+regressions (91 shared-dupe pairs; row-cap clean; 44 unvalidated
+routes, unchanged; 47 admin pages, all reachable; 101 blind-update
+chains, unchanged — this fix adds no new write path; every paged
+query's `.order()` present; 300 unbounded-read chains, unchanged),
+both production builds compile clean with **zero errors anywhere in
+either log**, not just a clean exit code (checked explicitly this
+time, with dummy Supabase env vars set for portal). Migration 216
+applied live via `CREATE OR REPLACE FUNCTION` (no DROP, matching this
+sandbox's own standing DDL-timeout guidance) and verified by calling
+`rls_policy_audit()` again afterward, never trusted from the apply
+call's own bare success response.
