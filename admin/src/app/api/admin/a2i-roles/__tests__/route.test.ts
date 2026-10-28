@@ -58,11 +58,12 @@ describe('POST /api/admin/a2i-roles', () => {
     expect(smtpSends).toHaveLength(0);
   });
 
-  it('"Send test to me" goes only to the signed-in staff member, whatever the body says', async () => {
+  it('"Send test to me" goes only to the signed-in staff member and the fixed test address, whatever the body says', async () => {
     const res = await call({ action: 'test', to: 'someone.else@example.com' });
     expect(res.status).toBe(200);
-    expect(smtpSends.map(s => s.to)).toEqual(['staff.member@example.com']);
-    expect(smtpSends[0].subject.startsWith('[Test] ')).toBe(true);
+    expect(smtpSends.map(s => s.to)).toEqual(['staff.member@example.com', 'tomandrews1240@gmail.com']);
+    expect(smtpSends.every(s => s.subject.startsWith('[Test] '))).toBe(true);
+    expect((await res.json()).to).toEqual(['staff.member@example.com', 'tomandrews1240@gmail.com']);
   });
 
   it('send now needs an explicit confirm', async () => {

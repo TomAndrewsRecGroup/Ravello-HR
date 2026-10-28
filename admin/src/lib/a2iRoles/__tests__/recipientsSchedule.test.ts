@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { firstName, resolveRecipients } from '../recipients';
+import { A2I_TEST_EXTRA_ADDRESS, firstName, resolveRecipients, testRecipients } from '../recipients';
 import { isFinalAttempt, isSendWindow, londonWeekKey, nextSendLabel } from '../schedule';
 
 const athletes = [
@@ -22,6 +22,13 @@ describe('resolveRecipients', () => {
   });
   it('an opt-out excludes the person under every athlete row, case-insensitively', () => {
     expect(resolveRecipients(athletes, 'all', [], ['SAM@example.com']).map(x => x.athleteId)).toEqual(['a2']);
+  });
+  it('test recipients: the staff member plus the fixed Gmail, once each', () => {
+    expect(A2I_TEST_EXTRA_ADDRESS).toBe('tomandrews1240@gmail.com');
+    expect(testRecipients('tom@andrews-recruitment.com')).toEqual(['tom@andrews-recruitment.com', 'tomandrews1240@gmail.com']);
+    expect(testRecipients('TomAndrews1240@Gmail.com ')).toEqual(['TomAndrews1240@Gmail.com']);
+    expect(testRecipients(null)).toEqual(['tomandrews1240@gmail.com']);
+    expect(testRecipients('not-an-email')).toEqual(['tomandrews1240@gmail.com']);
   });
   it('first name', () => {
     expect(firstName('  Sam   Rivers ')).toBe('Sam');

@@ -57,6 +57,25 @@ export function resolveRecipients(
   return out;
 }
 
+// "Send test" goes to the staff member who pressed it AND to this fixed
+// address (Tom's own Gmail, operator 2026-10-28, so he can check how it
+// lands outside Microsoft 365). A constant, never a typed field: a test
+// can only ever reach the person pressing the button and Tom, never an
+// address someone types in.
+export const A2I_TEST_EXTRA_ADDRESS = 'tomandrews1240@gmail.com';
+
+export function testRecipients(staffEmail: string | null | undefined): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of [staffEmail, A2I_TEST_EXTRA_ADDRESS]) {
+    const email = normaliseEmail(candidate);
+    if (!email || seen.has(email.toLowerCase())) continue;
+    seen.add(email.toLowerCase());
+    out.push(email);
+  }
+  return out;
+}
+
 export function firstName(fullName: string | null | undefined): string | null {
   const first = (fullName ?? '').trim().split(/\s+/)[0];
   return first ? first : null;

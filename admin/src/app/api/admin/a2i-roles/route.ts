@@ -11,7 +11,7 @@ import { loadSender } from '@/lib/a2iRoles/sender';
 import { loadConfig, requeueFailed, runRoleAlert } from '@/lib/a2iRoles/send';
 import { loadLiveRoles } from '@/lib/a2iRoles/live';
 import { buildRoleAlertEmail } from '@/lib/a2iRoles/email';
-import { firstName } from '@/lib/a2iRoles/recipients';
+import { firstName, testRecipients } from '@/lib/a2iRoles/recipients';
 import { auditLog } from '@/lib/audit';
 
 // Staff actions for the Athletes To Industry Thursday role email
@@ -23,10 +23,11 @@ import { auditLog } from '@/lib/audit';
 // Sending uses the service role: the link-token table is service-role
 // only by design.
 //
-// "Send test to me" goes to the signed-in staff member's OWN address,
-// taken from their profile — never an address from the request body.
-// Nothing in this route can email anyone who is not an athlete or the
-// person pressing the button.
+// "Send test" goes to the signed-in staff member's OWN address, taken
+// from their profile, plus one fixed address (testRecipients()) — never
+// an address from the request body. Nothing in this route can email
+// anyone who is not an athlete, the person pressing the button, or that
+// fixed address.
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -134,23 +135,31 @@ export async function POST(req: Request) {
         sb.from('profiles').select('email, full_name').eq('id', auth.userId).maybeSingle(),
       ]);
       if (!config) return NextResponse.json({ error: 'Role email config is missing' }, { status: 500 });
-      if (!me?.email) return NextResponse.json({ error: 'Your profile has no email address' }, { status: 400 });
+      const to = testRecipients(me?.email);
       const live = await loadLiveRoles(sb, new Date());
       if (live.error) return NextResponse.json({ error: `Manatal: ${live.error}` }, { status: 502 });
       if (live.roles.length === 0) return NextResponse.json({ error: 'There are no live roles in Manatal to show' }, { status: 400 });
       const sender = await loadSender(sb, config.sender_profile_id);
       if (!sender.ok) return NextResponse.json({ error: sender.error }, { status: 400 });
       const email = buildRoleAlertEmail({
-        firstName: firstName(me.full_name), roles: live.roles, token: null, roleUrlTemplate: config.role_url_template,
+        firstName: firstName(me?.full_name), roles: live.roles, token: null, roleUrlTemplate: config.role_url_template,
       });
       const session = createSmtpSession(sender.creds);
+      const results: Array<{ to: string; ok: boolean; error: string | null }> = [];
       try {
-        const res = await session.send({ to: me.email, subject: `[Test] ${email.subject}`, html: email.html });
-        if (!res.ok) return NextResponse.json({ error: `SMTP: ${res.error}` }, { status: 502 });
+        for (const address of to) {
+          const res = await session.send({ to: address, subject: `[Test] ${email.subject}`, html: email.html });
+          results.push({ to: address, ok: res.ok, error: res.ok ? null : res.error });
+        }
       } finally {
         session.close();
       }
-      return NextResponse.json({ ok: true, to: me.email, roles: live.roles.length });
+      const sent = results.filter(r => r.ok).map(r => r.to);
+      const failed = results.filter(r => !r.ok);
+      if (sent.length === 0) {
+        return NextResponse.json({ error: `SMTP: ${failed[0]?.error ?? 'send failed'}`, results }, { status: 502 });
+      }
+      return NextResponse.json({ ok: true, to: sent, failed, roles: live.roles.length });
     }
 
     case 'send_now':

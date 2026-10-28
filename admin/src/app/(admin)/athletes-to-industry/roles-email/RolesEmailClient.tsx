@@ -6,6 +6,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, ExternalLink, Eye, Mail, RefreshCw, Send, ShieldCheck, Sparkles, Users,
 } from 'lucide-react';
 import { useToast } from '@/components/modules/Toast';
+import { A2I_TEST_EXTRA_ADDRESS } from '@/lib/a2iRoles/recipients';
 
 export interface RolesEmailData {
   config: {
@@ -157,7 +158,15 @@ export default function RolesEmailClient({ data }: { data: RolesEmailData }) {
     setBusy('test');
     const { ok, json } = await post({ action: 'test' });
     setBusy(null);
-    toast(ok ? `Test sent to ${json.to} (${json.roles} roles)` : (json.error ?? 'Test failed'), ok ? 'success' : 'error');
+    if (!ok) { toast(json.error ?? 'Test failed', 'error'); return; }
+    const sentTo = (json.to as string[]).join(' and ');
+    const failed = (json.failed ?? []) as Array<{ to: string; error: string | null }>;
+    toast(
+      failed.length === 0
+        ? `Test sent to ${sentTo} (${json.roles} roles)`
+        : `Test sent to ${sentTo}, but not to ${failed.map(f => f.to).join(', ')}: ${failed[0].error ?? 'send failed'}`,
+      failed.length === 0 ? 'success' : 'error',
+    );
   }
 
   async function sendNow(action: 'send_now' | 'retry_failed') {
@@ -259,7 +268,13 @@ export default function RolesEmailClient({ data }: { data: RolesEmailData }) {
             <button type="button" className="btn-secondary btn-sm" onClick={loadPreview} disabled={busy !== null}>
               <RefreshCw size={14} /> {busy === 'preview' ? 'Loading…' : preview ? 'Refresh' : 'Load preview'}
             </button>
-            <button type="button" className="btn-secondary btn-sm" onClick={sendTest} disabled={busy !== null}>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={sendTest}
+              disabled={busy !== null}
+              title={`Sends a test to your own address and to ${A2I_TEST_EXTRA_ADDRESS}. No athlete receives it.`}
+            >
               <Sparkles size={14} /> {busy === 'test' ? 'Sending…' : 'Send test to me'}
             </button>
             <button type="button" className="btn-cta btn-sm" onClick={() => sendNow('send_now')} disabled={busy !== null || recipientCount === 0}>
