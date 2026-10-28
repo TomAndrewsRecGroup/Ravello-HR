@@ -66,8 +66,15 @@ beforeEach(() => {
     }],
     notifications: [], email_log: [], jev_decisions: [],
   }, { now: () => now });
+  // The fake database stamps rows with `now`, but askJev's 30-day cache
+  // window is measured from the wall clock. Pin the wall clock to the
+  // fixture date too, or the "second run is answered from the cache"
+  // assertion starts failing 30 days after 2026-09-28 (it did, on
+  // 2026-10-28) — a test time bomb, not a product defect.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(now);
 });
-afterEach(() => { delete process.env.JEV_API_KEY; });
+afterEach(() => { delete process.env.JEV_API_KEY; vi.useRealTimers(); });
 
 const choice = (sel: string, conf = 0.9) => ({ type: 'choice', choice: sel, confidence: conf, probabilities: { [sel]: conf } });
 

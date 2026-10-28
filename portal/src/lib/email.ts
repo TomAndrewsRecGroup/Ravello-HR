@@ -194,6 +194,86 @@ ${row('Sector', escapeHtml(input.sector) || 'Not provided')}
   };
 }
 
+/** Notification to Tom when an athlete presses Match me on a role in the
+ *  Athletes To Industry Thursday email (portal /r/roles/[token]/match).
+ *  Internal: it names the client, which the athlete-facing email never does. */
+export function buildRoleMatchEmail(input: {
+  to:            string;
+  athlete: {
+    fullName:     string;
+    email:        string | null;
+    phone:        string | null;
+    sport:        string | null;
+    previousRole: string | null;
+    linkedinUrl:  string | null;
+    bio:          string | null;
+    referredBy:   string | null;
+    hasCv:        boolean;
+  };
+  role: {
+    id:         string;
+    title:      string;
+    location:   string | null;
+    contract:   string | null;
+    salary:     string | null;
+    clientName: string | null;
+    url:        string;
+  };
+  note:          string | null;
+  adminLink:     string;
+}) {
+  const row = (label: string, value: string) => `
+<tr>
+<td style="padding:9px 0;border-bottom:1px solid ${A2I_BORDER};font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;width:150px;vertical-align:top;">${label}</td>
+<td style="padding:9px 0;border-bottom:1px solid ${A2I_BORDER};font-size:14px;color:${A2I_CREAM};">${value}</td>
+</tr>`;
+  const a = input.athlete;
+  const r = input.role;
+  const val = (v: string | null) => escapeHtml(v) || '<span style="opacity:0.6;">Not provided</span>';
+  const emailVal = a.email ? `<a href="mailto:${escapeHtml(a.email)}" style="color:${A2I_GOLD};">${escapeHtml(a.email)}</a>` : val(null);
+  const linkedin = a.linkedinUrl && /^https?:\/\//i.test(a.linkedinUrl)
+    ? `<a href="${escapeHtml(a.linkedinUrl)}" style="color:${A2I_GOLD};">${escapeHtml(a.linkedinUrl)}</a>`
+    : val(a.linkedinUrl);
+  const bio = a.bio ? escapeHtml(a.bio.slice(0, 800)).replace(/\n/g, '<br/>') : '';
+
+  const body = `
+<h1 style="margin:0 0 8px 0;font-size:21px;font-weight:700;color:${A2I_CREAM};">Match me: ${escapeHtml(a.fullName)}</h1>
+<p style="margin:0 0 20px 0;color:${A2I_CREAM_MUT};">pressed Match me on <strong style="color:${A2I_CREAM};">${escapeHtml(r.title)}</strong> in this week&rsquo;s Athletes To Industry roles email. Reply to this email to reach them directly.</p>
+<p style="margin:0 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">The role</p>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+${row('Role', `<a href="${escapeHtml(r.url)}" style="color:${A2I_GOLD};">${escapeHtml(r.title)}</a>`)}
+${row('Client', val(r.clientName))}
+${row('Location', val(r.location))}
+${row('Contract', val(r.contract))}
+${row('Salary', val(r.salary))}
+${row('Manatal job', escapeHtml(r.id))}
+</table>
+<p style="margin:22px 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">The athlete</p>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+${row('Name', escapeHtml(a.fullName))}
+${row('Email', emailVal)}
+${row('Phone', val(a.phone))}
+${row('Sport', val(a.sport))}
+${row('Previous role', val(a.previousRole))}
+${row('LinkedIn', linkedin)}
+${row('Referred by', val(a.referredBy))}
+${row('CV on file', a.hasCv ? 'Yes' : 'No')}
+</table>
+${input.note ? `<p style="margin:22px 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">Their note</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:${A2I_CREAM};">${escapeHtml(input.note).replace(/\n/g, '<br/>')}</p>` : ''}
+${bio ? `<p style="margin:22px 0 6px 0;font-size:12px;color:${A2I_GOLD};text-transform:uppercase;letter-spacing:0.08em;">About them</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:${A2I_CREAM};">${bio}</p>` : ''}
+${ctaButtonGold(input.adminLink, 'Open their profile in Core OS 360')}
+`.trim();
+
+  return {
+    to:      input.to,
+    subject: `Match me: ${a.fullName} → ${r.title} (Manatal #${r.id})`.slice(0, 200),
+    html:    wrapEmailGold(body, `${a.fullName} wants to be considered for ${r.title}.`),
+    tag:     'a2i-role-match',
+  };
+}
+
 /** Returns ISO-8601 for +2 days from `from`, snapped into the
  *  09:00–17:00 GMT window. */
 export function nextBusinessSendAt(from: Date = new Date()): string {
@@ -234,6 +314,9 @@ export async function sendEmail(input: {
   to: string; subject: string; html: string; tag?: string;
   /** ISO-8601 — passed to Resend as scheduled_at. */
   scheduledAt?: string;
+  /** Overrides EMAIL_REPLY_TO for this message — e.g. so Tom can reply
+   *  straight to the athlete who pressed Match me. */
+  replyTo?: string;
 }): Promise<{ id: string; delivered: true } | null> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -242,7 +325,7 @@ export async function sendEmail(input: {
   }
 
   const from    = brandFromAddress(process.env.EMAIL_FROM);
-  const replyTo = process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
+  const replyTo = input.replyTo ?? process.env.EMAIL_REPLY_TO ?? 'hello@thepeoplesystem.co.uk';
   const bcc     = process.env.EMAIL_BCC_INTERNAL?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
 
   const payload: Record<string, unknown> = {

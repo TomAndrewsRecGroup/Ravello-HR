@@ -436,6 +436,13 @@ CRON_SECRET=
 # consequences" sweep). Unset or any value besides '1'/'true' runs normally.
 AUTOMATION_DISABLED=
 
+# Admin only — encrypts each staff member's stored SMTP password
+# (profiles.smtp_pass_enc, migration 073). Needed by Settings → Email and
+# by the Athletes To Industry Thursday roles email, which sends through
+# the chosen staff member's own SMTP mailbox. Changing it makes every
+# stored password unreadable: each sender must re-enter theirs.
+SMTP_PASS_ENCRYPTION_KEY=
+
 # Both apps: Manatal ATS integration (Phase 29) — portal reads the
 # pipeline (its own proxy routes), admin publishes/matches/hydrates
 MANATAL_API_KEY=
@@ -16194,3 +16201,103 @@ applied live via `CREATE OR REPLACE FUNCTION` (no DROP, matching this
 sandbox's own standing DDL-timeout guidance) and verified by calling
 `rls_policy_audit()` again afterward, never trusted from the apply
 call's own bare success response.
+
+---
+
+## Athletes To Industry: the Thursday live-roles email (2026-10-28, migration 217)
+
+Operator: every Thursday at 3pm, email every live Manatal role from
+tom@andrews-recruitment.com (his own SMTP) to Athletes To Industry
+athletes, and only them. Each role links to its page on the ARG site,
+and has a **Match me** button that emails Tom the athlete's details
+and the role. Decided with him: A2I navy/gold branding, client names
+hidden, Match me is a one-tap confirm page, role links are
+`https://www.andrews-recruitment.com/jobs/<Manatal job id>`.
+
+Admin page: **Athletes To Industry → Thursday roles email**
+(`/athletes-to-industry/roles-email`). **Ships switched OFF**
+(`a2i_role_alert_config.enabled = false`).
+
+### Rules
+
+- **Recipients come only from `athletes` rows.** `resolveRecipients()`
+  (`lib/a2iRoles/recipients.ts`) is the one source: all athletes, or a
+  staff-picked subset, minus opt-outs, deduplicated by email. There is
+  no free-text address field anywhere in the feature. "Send test to
+  me" sends only to the signed-in staff member's own profile email.
+- **Opt-outs live in `a2i_role_alert_optouts`, keyed by lowercase
+  email, staff-only.** Not a column on `athletes`, which client
+  sessions can write (`athletes_client_rw`) — a client must never be
+  able to re-subscribe someone. Every email carries an unsubscribe
+  link and `List-Unsubscribe` + `List-Unsubscribe-Post` (RFC 8058).
+  Unsubscribe works on an expired token.
+- **A GET never acts.** Outlook Safe Links, Mimecast and Gmail open
+  every link in an email before a person does. The Match me and
+  unsubscribe pages only show a button; the POST records. The portal
+  routes live under `/r/` and `/api/r/`, already in `PUBLIC_ROUTES`.
+- **Client names never reach an athlete.** The send snapshots each
+  role into `a2i_role_alert_sends.jobs`, including `clientName` for
+  Tom's internal Match me notification only. `publicRole()` (portal)
+  strips it from everything the athlete sees; tested.
+- **Salary shows only when Manatal's `is_salary_visible === true`.**
+- **The schedule is UTC, the gate is London time.** `vercel.json`
+  fires `*/15 14-17 * * 4`; `isSendWindow()` sends only on a Thursday
+  at or after 15:00 Europe/London, so BST and GMT both work. The week
+  is the ISO week of the London date.
+- **At most one email per athlete per week, enforced by the
+  database.** `UNIQUE (week_key)` on sends, `UNIQUE (send_id,
+  email_lower)` on deliveries, and a counted conditional claim
+  (`pending → sending`) before every send. A row left in `sending`
+  for 10 minutes is marked failed and never re-sent automatically:
+  "Retry failed" on the admin page is the only way to send it again,
+  because nothing can prove the first attempt did not deliver.
+- **A run is resumable.** 240-second budget per run; the next
+  15-minute tick picks up. It stops after 3 consecutive send failures.
+- **The SMTP login is checked before anything is sent.** If Microsoft
+  365 refuses it, nothing goes out and Tom gets one alert (Resend,
+  claimed via `alerted_at`) from the 17:30 UK attempt onwards. There
+  is no fallback sender: the email must come from the ARG mailbox.
+- **Match me is one request per athlete per role**
+  (`UNIQUE (athlete_id, manatal_job_id)`); a second press sends Tom
+  nothing. The notification goes to `notify_email` with Reply-To set
+  to the athlete. A failed notification is recorded (`notify_error`)
+  and still shows on the admin page.
+- **Tokens:** `a2i_role_alert_tokens`, SHA-256 only, RLS on with no
+  policies (service role), 30-day expiry for Match me. Added to
+  `rls_policy_audit()`'s exemption list in the same migration (the
+  216 lesson).
+- **Audit entity names are `athlete_role_*`, not `a2i_*`.**
+  `audit_events.action` must match `^[a-z_]+\.[a-z_]+$`; a digit in
+  the entity name fails the insert (the first apply of 217 did, and
+  left nothing behind).
+
+### Risks still open
+
+- **Microsoft is retiring Basic-auth SMTP for Microsoft 365.** When it
+  stops accepting the stored password, the run sends nothing and
+  alerts Tom. The fix is an app password or SMTP AUTH re-enabled for
+  the mailbox, not a code change.
+- **The andrews-recruitment.com `/jobs/<id>` pages were not reachable
+  from the sandbox.** Click-check a few from "This week's roles"
+  before switching the email on.
+- **Existing athletes signed up for job help, not explicitly for
+  marketing email.** Every email has an unsubscribe link.
+
+### Also fixed
+
+`weeklyPeople.test.ts` had a time bomb: its fake database stamps rows
+with the fixture date (2026-09-28) while `askJev()`'s 30-day cache
+reads the real clock, so it started failing on 2026-10-28 on an
+untouched `main`. The test now pins the system clock to its fixture.
+
+Verified: `tsc --noEmit` clean both apps; full `vitest run` green
+(admin 215 files / 2139 tests, portal 83 / 1095); all seven CI guards
+pass at their baselines; both production builds compile. Migration
+217 applied live and probed (9/9, rolled back, no residue). Six
+mutations reintroduced and caught: deliveries upserted without
+`ignoreDuplicates` (re-queues people already sent), the claim without
+its `pending` condition (caught only once the two-runs race test was
+added), the opt-out filter removed, the client name rendered in the
+email card, the client name left in the portal's public role, and a
+duplicate Match me not detected.
+

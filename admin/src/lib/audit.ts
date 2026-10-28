@@ -54,7 +54,12 @@ type AuditAction =
   // event-consumer path (lib/events/serviceLedgerRules.ts) and the
   // portal's manual-entry form — same reasoning, "entry_created" is
   // the spec's literal verb, not the generic audit_row() shape.
-  | 'service_ledger.entry_created';
+  | 'service_ledger.entry_created'
+  // Athletes To Industry Thursday role email (migration 217): a staff
+  // member pressed "Send now" or "Retry failed" instead of waiting for
+  // the Thursday 3pm cron.
+  | 'athlete_roles_email.sent_manually'
+  | 'athlete_roles_email.retried';
 
 interface AuditEntry {
   action: AuditAction;
