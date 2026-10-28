@@ -16224,7 +16224,11 @@ Admin page: **Athletes To Industry → Thursday roles email**
   (`lib/a2iRoles/recipients.ts`) is the one source: all athletes, or a
   staff-picked subset, minus opt-outs, deduplicated by email. There is
   no free-text address field anywhere in the feature. "Send test to
-  me" sends only to the signed-in staff member's own profile email.
+  me" sends only to the signed-in staff member's own profile email
+  plus one fixed constant, `A2I_TEST_EXTRA_ADDRESS`
+  (tomandrews1240@gmail.com, operator 2026-10-28), deduplicated —
+  `testRecipients()` in `lib/a2iRoles/recipients.ts`. The page is
+  linked from the Athletes To Industry page and from Settings → Email.
 - **Opt-outs live in `a2i_role_alert_optouts`, keyed by lowercase
   email, staff-only.** Not a column on `athletes`, which client
   sessions can write (`athletes_client_rw`) — a client must never be

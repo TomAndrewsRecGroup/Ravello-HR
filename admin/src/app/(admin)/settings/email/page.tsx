@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import AdminTopbar from '@/components/layout/AdminTopbar';
 import EmailSettingsForm from './EmailSettingsForm';
@@ -51,6 +53,20 @@ export default async function EmailSettingsPage() {
             }}
           />
         </div>
+        <Link
+          href="/athletes-to-industry/roles-email"
+          className="card p-5 flex items-center gap-3 transition-colors"
+          style={{ textDecoration: 'none' }}
+        >
+          <Mail size={18} style={{ color: 'var(--purple)' }} />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Athletes To Industry: Thursday roles email</p>
+            <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+              Sent from the SMTP mailbox below every Thursday at 3pm. Preview it, send a test and choose the athletes.
+            </p>
+          </div>
+          <span className="text-xs font-semibold" style={{ color: 'var(--purple)' }}>Open →</span>
+        </Link>
         <EmailSettingsForm
           initial={{
             smtp_host:             row?.smtp_host             ?? '',
