@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { readAllPages } from '@/lib/supabase/paged';
 import AdminTopbar from '@/components/layout/AdminTopbar';
@@ -84,6 +86,20 @@ export default async function AthletesToIndustryAdminPage() {
         subtitle="Manage the partner pool, training providers and review athletes added across all clients."
       />
       <main className="admin-page flex-1 space-y-8">
+        <Link
+          href="/athletes-to-industry/roles-email"
+          className="card p-5 flex items-center gap-3 transition-colors"
+          style={{ textDecoration: 'none' }}
+        >
+          <Mail size={18} style={{ color: 'var(--purple)' }} />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Thursday roles email</p>
+            <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+              Every live Manatal role, emailed to athletes every Thursday at 3pm, with Match me on each role.
+            </p>
+          </div>
+          <span className="text-xs font-semibold" style={{ color: 'var(--purple)' }}>Open →</span>
+        </Link>
         <ReferralLinksAdmin
           companies={companies}
           portalBase={process.env.NEXT_PUBLIC_PORTAL_URL ?? ''}

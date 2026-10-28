@@ -457,6 +457,55 @@ export async function getManatalMatchesForJob(
   return { matches: out, truncated: true };
 }
 
+/**
+ * Every job that is live right now: v3 `/jobs/?status=active&is_published=true`,
+ * paged. Used by the Athletes To Industry Thursday role email.
+ *
+ * Same partial-read rule as getManatalMatchesForJob: a failed page
+ * stops the walk and reports `truncated` rather than presenting half
+ * the roles as the whole list. The caller filters again in code
+ * (`isLiveJob` in lib/a2iRoles/format.ts) — the query filters are a
+ * narrowing, not the definition.
+ *
+ * Rows are returned untyped: the v3 shape was measured live on
+ * 2026-10-28 (job 4467043: `currency: "GBP"`, `industry: {id, name}`,
+ * `organization: 4247425`, `is_salary_visible: false`) and is read
+ * defensively by the formatter.
+ */
+export async function listLiveManatalJobs(
+  opts?: { pageSize?: number; maxPages?: number; deadline?: number },
+): Promise<{ jobs: Record<string, unknown>[]; truncated: boolean; error: string | null }> {
+  const pageSize = opts?.pageSize ?? 100;
+  const maxPages = opts?.maxPages ?? 20;
+  const out: Record<string, unknown>[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    const data = await manatalFetch('/jobs/', {
+      status:       'active',
+      is_published: 'true',
+      page:         String(page),
+      page_size:    String(pageSize),
+    }, { baseUrl: WRITE_API_URL, noCache: true, deadline: opts?.deadline });
+
+    if (!data) {
+      return { jobs: out, truncated: true, error: lastError?.message ?? 'Manatal did not respond' };
+    }
+    const results = (Array.isArray(data.results) ? data.results : []) as Record<string, unknown>[];
+    out.push(...results);
+    if (!data.next || results.length === 0) return { jobs: out, truncated: false, error: null };
+  }
+  return { jobs: out, truncated: true, error: `More than ${maxPages * pageSize} live jobs` };
+}
+
+/** A Manatal organisation's name (v3). Best-effort: null on any failure. */
+export async function getManatalOrganizationName(organizationId: string | number): Promise<string | null> {
+  const data = await manatalFetch(`/organizations/${encodeURIComponent(String(organizationId))}/`, undefined, {
+    baseUrl: WRITE_API_URL,
+  });
+  const name = typeof data?.name === 'string' ? data.name.trim() : '';
+  return name || null;
+}
+
 /** Experience + education rows, used to thicken the fallback scan
  *  text when the CV PDF could not be read. Best-effort: an empty
  *  array degrades the blob, it does not fail the scan. */

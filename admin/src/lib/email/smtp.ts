@@ -138,6 +138,70 @@ export async function sendViaSmtp(creds: SmtpCreds, input: SmtpSendInput): Promi
   }
 }
 
+/** One connection for a run of sends — the Athletes To Industry
+ *  Thursday role email. `sendViaSmtp` opens a fresh transport per
+ *  message, which is fine for a one-off but slow and abrupt for a list.
+ *
+ *  Pooled, one connection, and rate-limited under Microsoft 365's
+ *  published 30 messages a minute per mailbox (Tom's sender is
+ *  smtp.office365.com). Never throws: every failure comes back as
+ *  `{ ok: false, error }` so the caller can record it per recipient. */
+export interface SmtpSession {
+  verify(): Promise<{ ok: true } | { ok: false; error: string }>;
+  send(input: {
+    to:       string;
+    subject:  string;
+    html:     string;
+    text?:    string;
+    headers?: Record<string, string>;
+  }): Promise<{ ok: true; messageId: string } | { ok: false; error: string }>;
+  close(): void;
+}
+
+export function createSmtpSession(creds: SmtpCreds): SmtpSession {
+  const transporter = nodemailer.createTransport({
+    host:           creds.host,
+    port:           creds.port,
+    secure:         creds.secure,
+    requireTLS:     !creds.secure,
+    auth:           { user: creds.user, pass: creds.pass },
+    pool:           true,
+    maxConnections: 1,
+    maxMessages:    100,
+    rateDelta:      60_000,
+    rateLimit:      25,
+  });
+  return {
+    async verify() {
+      try {
+        await transporter.verify();
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: (err as Error)?.message ?? 'SMTP verify failed' };
+      }
+    },
+    async send(input) {
+      try {
+        const res = await transporter.sendMail({
+          from:    buildFrom(creds),
+          to:      input.to,
+          subject: input.subject,
+          html:    input.html,
+          text:    input.text ?? htmlToText(input.html),
+          replyTo: creds.replyTo ?? undefined,
+          headers: input.headers,
+        });
+        return { ok: true, messageId: res.messageId };
+      } catch (err) {
+        return { ok: false, error: (err as Error)?.message ?? 'SMTP transport failure' };
+      }
+    },
+    close() {
+      try { transporter.close(); } catch { /* already closed */ }
+    },
+  };
+}
+
 /** Verify the SMTP transport without actually sending. Useful for the
  *  "Verify connection" button on the Settings page. */
 export async function verifySmtp(creds: SmtpCreds): Promise<{ ok: true } | { ok: false; error: string }> {

@@ -134,3 +134,37 @@ describe('getManatalMatchesForJob walks every page', () => {
     expect(truncated).toBe(true);
   });
 });
+
+describe('listLiveManatalJobs (Athletes To Industry Thursday email)', () => {
+  it('walks every page of active, published jobs on v3', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      asked.push(String(url));
+      const p = new URL(String(url)).searchParams.get('page');
+      if (p === '1') return page([{ id: 1 }, { id: 2 }], 'https://api.manatal.com/open/v3/jobs/?page=2');
+      return page([{ id: 3 }], null);
+    }));
+    const { listLiveManatalJobs } = await load();
+    const res = await listLiveManatalJobs();
+    expect(res).toMatchObject({ truncated: false, error: null });
+    expect(res.jobs.map(j => j.id)).toEqual([1, 2, 3]);
+    for (const u of asked) {
+      const q = new URL(u);
+      expect(q.pathname).toBe('/open/v3/jobs/');
+      expect(q.searchParams.get('status')).toBe('active');
+      expect(q.searchParams.get('is_published')).toBe('true');
+    }
+  });
+
+  it('a failed page is reported, never presented as the full list', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      asked.push(String(url));
+      const p = new URL(String(url)).searchParams.get('page');
+      if (p === '1') return page([{ id: 1 }], 'https://api.manatal.com/open/v3/jobs/?page=2');
+      return failedPage();
+    }));
+    const { listLiveManatalJobs } = await load();
+    const res = await listLiveManatalJobs();
+    expect(res.truncated).toBe(true);
+    expect(res.error).toBeTruthy();
+  });
+});

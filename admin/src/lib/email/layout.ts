@@ -141,7 +141,7 @@ export const A2I = {
 
 /** Athletes To Industry's own branded shell — dark navy/gold, distinct
  *  from the purple TPS/ARG layout. Mirrors portal's `wrapEmailGold`. */
-export function wrapEmailA2I(body: string, preheader?: string): string {
+export function wrapEmailA2I(body: string, preheader?: string, footerHtml?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -158,7 +158,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:${A2I.navy};border-radius:14px;overflow:hidden;border:1px solid ${A2I.border};">
         <tr>
           <td style="padding:28px 32px 18px 32px;border-bottom:1px solid ${A2I.border};">
-            <img src="${A2I.logoUrl}" alt="Athletes To Industry" width="64" style="display:block;height:auto;max-width:64px;" />
+            <img src="${A2I.logoUrl}" alt="Athletes To Industry" width="64" style="display:block;height:auto;max-width:64px;border:0;font-size:11px;line-height:1.3;font-weight:600;color:${A2I.gold};" />
           </td>
         </tr>
         <tr>
@@ -170,6 +170,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;color:trans
           <td style="padding:22px 32px;border-top:1px solid ${A2I.border};font-size:12px;color:${A2I.creamMut};line-height:1.5;">
             <p style="margin:0 0 6px 0;font-weight:600;color:${A2I.gold};letter-spacing:0.06em;text-transform:uppercase;">Athletes To Industry</p>
             <p style="margin:0;">Operated by Andrews Recruitment Group &middot; Powered by Core OS 360.</p>
+            ${footerHtml ? `<p style="margin:10px 0 0 0;">${footerHtml}</p>` : ''}
           </td>
         </tr>
       </table>
