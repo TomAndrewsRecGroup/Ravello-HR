@@ -1,6 +1,7 @@
-// Two real live jobs, read from Manatal Open API v3 /jobs/ on
-// 2026-10-28. Fields are verbatim; the descriptions are cut after the
-// opening paragraphs (the parts the email summary reads).
+// Real live jobs, read from Manatal Open API v3 /jobs/ on 2026-10-28.
+// Fields are verbatim (the client's name is left out); the descriptions
+// are cut after the opening paragraphs (the parts the email summary
+// reads).
 
 export const JOB_AUTOMATION_ENGINEER = {
   id: 4467043,
@@ -53,6 +54,28 @@ export const JOB_AI_ENGINEERS = {
   open_at: '2026-09-01T10:21:04.848245Z',
   close_at: null,
   is_salary_visible: false,
+};
+
+/** Opens with an <h3> headline that has no full stop. The first test
+ *  send ran it into the next sentence: "...and Operational Safety
+ *  Andrews Recruitment Group is recruiting...". */
+export const JOB_COMPLIANCE_LEAD = {
+  id: 4529436,
+  organization: 8175712,
+  position_name: 'Compliance & Transport Lead',
+  description: '<h1>Compliance &amp; Transport Lead</h1>\n<p><strong>Stratford-upon-Avon, Warwickshire</strong><br/><strong>Salary: up to £48,000 per annum</strong><br/><strong>Permanent | Full-Time</strong></p>\n<p><strong><br/></strong></p>\n<h3>Take Ownership of Compliance, Fleet Standards and Operational Safety</h3>\n<p></p>\n<p>Andrews Recruitment Group is recruiting a Compliance &amp; Transport Lead for an established concrete production, delivery and pumping business based in Warwickshire.</p>\n<p></p>\n<p>This is an opportunity for someone who understands the practical realities of operating commercial vehicles in a busy industrial environment and can ensure the business remains compliant, organised and operating to high standards.</p>\n<p></p>\n<p>The company operates ready-mixed concrete vehicles, volumetric trucks and specialist concrete pumping equipment across its operations.</p>',
+  salary_min: '40000.00',
+  salary_max: '48000.00',
+  currency_code: 'GBP',
+  contract_details: 'full_time',
+  is_published: true,
+  is_remote: false,
+  status: 'active',
+  industries_name: 'Building Materials',
+  frequency: 'year',
+  city: 'Warwick',
+  open_at: '2026-10-28T17:17:51.053434Z',
+  close_at: null,
 };
 
 /** Thursday 29 Oct 2026, 15:05 UTC = 15:05 GMT (the clocks went back on the 25th). */

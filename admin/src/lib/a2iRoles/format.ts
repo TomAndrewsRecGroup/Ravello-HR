@@ -166,28 +166,44 @@ function sameText(a: string, b: string): boolean {
 }
 
 /** A plain-text teaser from Manatal's HTML description. Skips the
- *  title line and the short "Location | Salary | Permanent" header lines
- *  every advert opens with, then takes the first real paragraph(s). */
+ *  title line, the short "Location | Salary | Permanent" header lines
+ *  every advert opens with, and headings, then takes the first real
+ *  sentence-ending paragraph(s), whole.
+ *
+ *  Headings are skipped because the teaser is joined with spaces: a
+ *  heading such as "Take Ownership of Compliance, Fleet Standards and
+ *  Operational Safety" (job 4529436, an <h3>) ran straight into the next
+ *  sentence with no full stop between them. Paragraphs are only added
+ *  while they fit, so the teaser ends on a full sentence rather than an
+ *  ellipsis whenever the first paragraph is short enough. */
 export function summaryText(descriptionHtml: string | null | undefined, title: string): string {
   if (!descriptionHtml) return '';
   const $ = cheerio.load(descriptionHtml);
   $('br').replaceWith('\n');
-  const lines: string[] = [];
+  const lines: { text: string; heading: boolean }[] = [];
   $('p, li, h1, h2, h3, h4, h5, h6').each((_, el) => {
+    const heading = /^h[1-6]$/i.test((el as { tagName?: string }).tagName ?? '');
     for (const part of $(el).text().split('\n')) {
       const t = squash(part);
-      if (t) lines.push(t);
+      if (t) lines.push({ text: t, heading });
     }
   });
-  const body = lines.filter(l => !sameText(l, title));
-  const start = body.findIndex(l => l.length >= 60 && !l.includes('|'));
-  if (start === -1) return truncate(body[0] ?? '');
-  let out = '';
-  for (const line of body.slice(start)) {
-    out = out ? `${out} ${line}` : line;
-    if (out.length >= 200) break;
+  const body = lines.filter(l => !sameText(l.text, title));
+  const isProse = (l: { text: string; heading: boolean }) => !l.heading && l.text.length >= 60 && !l.text.includes('|');
+  let start = body.findIndex(l => isProse(l) && endsSentence(l.text));
+  if (start === -1) start = body.findIndex(isProse);
+  if (start === -1) return truncate(body[0]?.text ?? '');
+  let out = body[start].text;
+  for (const line of body.slice(start + 1)) {
+    if (line.heading || !endsSentence(line.text)) break;
+    if (out.length + 1 + line.text.length > SUMMARY_MAX) break;
+    out = `${out} ${line.text}`;
   }
   return truncate(out);
+}
+
+function endsSentence(s: string): boolean {
+  return /[.!?…]["'’”)]*$/.test(s);
 }
 
 function truncate(s: string): string {

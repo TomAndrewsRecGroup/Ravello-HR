@@ -26,6 +26,13 @@ describe('buildRoleAlertEmail', () => {
     expect(e.html.match(/>Match me<\/a>/g)).toHaveLength(2);
   });
 
+  it('keeps each button label on one line', async () => {
+    const e = await build(TOKEN);
+    const buttons = e.html.match(/<a [^>]*>(Match me|View role)<\/a>/g) ?? [];
+    expect(buttons).toHaveLength(4);
+    for (const b of buttons) expect(b).toContain('white-space:nowrap');
+  });
+
   it('carries an unsubscribe link (and returns it for the List-Unsubscribe header)', async () => {
     const e = await build(TOKEN);
     expect(e.unsubscribeUrl).toBe(`https://portal.thepeoplesystem.co.uk/r/roles/${TOKEN}/unsubscribe`);

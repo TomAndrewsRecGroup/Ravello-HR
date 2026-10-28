@@ -16244,6 +16244,12 @@ Admin page: **Athletes To Industry → Thursday roles email**
   Tom's internal Match me notification only. `publicRole()` (portal)
   strips it from everything the athlete sees; tested.
 - **Salary shows only when Manatal's `is_salary_visible === true`.**
+- **The role teaser is whole sentences, never a heading.** `summaryText()`
+  skips `<h1>`-`<h6>` and any line that doesn't end in a full stop, and
+  only adds a paragraph while it fits. The first test send ran job
+  4529436's `<h3>` headline straight into its first sentence. Both card
+  buttons carry `white-space:nowrap`: Outlook for Android had split each
+  label onto two lines.
 - **The schedule is UTC, the gate is London time.** `vercel.json`
   fires `*/15 14-17 * * 4`; `isSendWindow()` sends only on a Thursday
   at or after 15:00 Europe/London, so BST and GMT both work. The week

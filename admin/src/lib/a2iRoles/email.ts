@@ -43,14 +43,16 @@ export function roleAlertSubject(count: number): string {
   return count === 1 ? 'This week’s live role | Athletes To Industry' : `${count} live roles this week | Athletes To Industry`;
 }
 
+// nowrap: Outlook for Android squeezed both buttons until "Match me"
+// and "View role" broke onto two lines each (test send, 2026-10-28).
 function button(href: string, label: string, solid: boolean): string {
   const bg = solid ? A2I.gold : 'transparent';
   const fg = solid ? A2I.navyDeep : A2I.cream;
   const border = solid ? A2I.gold : 'rgba(243,236,216,0.35)';
   return `<td style="padding:0 8px 0 0;">
   <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-    <td style="border-radius:8px;background:${bg};border:1px solid ${border};">
-      <a href="${href}" style="display:inline-block;padding:10px 18px;font-size:13px;font-weight:600;color:${fg};text-decoration:none;border-radius:8px;">${label}</a>
+    <td nowrap style="border-radius:8px;background:${bg};border:1px solid ${border};white-space:nowrap;">
+      <a href="${href}" style="display:inline-block;padding:10px 18px;font-size:13px;font-weight:600;color:${fg};text-decoration:none;border-radius:8px;white-space:nowrap;">${label}</a>
     </td>
   </tr></table>
 </td>`;

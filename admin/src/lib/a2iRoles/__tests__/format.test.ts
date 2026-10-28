@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isLiveJob, normaliseLiveJob, publicRoleFields, roleUrl, salaryText, sortRoles, summaryText } from '../format';
-import { JOB_AI_ENGINEERS, JOB_AUTOMATION_ENGINEER } from './fixtures';
+import { JOB_AI_ENGINEERS, JOB_AUTOMATION_ENGINEER, JOB_COMPLIANCE_LEAD } from './fixtures';
 
 const now = new Date('2026-10-28T12:00:00Z');
 
@@ -28,6 +28,15 @@ describe('normaliseLiveJob — real Manatal v3 jobs', () => {
     expect(r.contract).toBe('Contract');
     expect(r.industry).toBe('Engineering - Others');
     expect(r.summary.startsWith('We are recruiting for multiple opportunities')).toBe(true);
+    // Stops before "There are currently two routes available:" rather
+    // than ending the teaser on a dangling colon.
+    expect(r.summary.endsWith('software engineering projects.')).toBe(true);
+  });
+
+  it('Compliance & Transport Lead: a heading never runs into the first sentence', () => {
+    const r = normaliseLiveJob(JOB_COMPLIANCE_LEAD);
+    expect(r.summary).toBe('Andrews Recruitment Group is recruiting a Compliance & Transport Lead for an established concrete production, delivery and pumping business based in Warwickshire.');
+    expect(r.summary).not.toContain('Take Ownership');
   });
 });
 
@@ -72,6 +81,16 @@ describe('isLiveJob', () => {
 describe('summaryText', () => {
   it('falls back to the first non-title line when nothing is paragraph-length', () => {
     expect(summaryText('<p>Engineer</p><p>Leeds | £30k</p>', 'Engineer')).toBe('Leeds | £30k');
+  });
+  it('skips a headline paragraph with no full stop, and keeps whole sentences', () => {
+    const html = '<p><strong>A rare chance to lead a growing engineering team in the Midlands</strong></p>'
+      + '<p>We are recruiting a Maintenance Manager for a busy manufacturing site in Coventry.</p>'
+      + '<p>You will lead a team of twelve engineers across three shifts and report to the Plant Director.</p>'
+      + '<p>The site runs continuous production lines with a strong focus on planned maintenance.</p>';
+    expect(summaryText(html, 'Maintenance Manager')).toBe(
+      'We are recruiting a Maintenance Manager for a busy manufacturing site in Coventry. '
+      + 'You will lead a team of twelve engineers across three shifts and report to the Plant Director.',
+    );
   });
   it('is empty for an empty description', () => {
     expect(summaryText(null, 'X')).toBe('');
