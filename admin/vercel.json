@@ -61,7 +61,7 @@
     },
     {
       "path": "/api/cron/a2i-role-alert",
-      "schedule": "*/15 14-17 * * 4"
+      "schedule": "*/5 14-17 * * 4"
     }
   ]
 }

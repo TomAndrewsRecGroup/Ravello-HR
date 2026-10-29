@@ -171,7 +171,7 @@ export default function RolesEmailClient({ data }: { data: RolesEmailData }) {
 
   async function sendNow(action: 'send_now' | 'retry_failed') {
     const msg = action === 'send_now'
-      ? `Send this week's roles email now to ${recipientCount} athlete${recipientCount === 1 ? '' : 's'}? It will not go out again on Thursday this week.`
+      ? `Send this week's roles email now to ${recipientCount} athlete${recipientCount === 1 ? '' : 's'}? They all go straight away rather than spread over an hour, and it will not go out again on Thursday this week.`
       : 'Retry everyone this week’s email failed to reach?';
     if (!window.confirm(msg)) return;
     setBusy(action);
@@ -196,7 +196,7 @@ export default function RolesEmailClient({ data }: { data: RolesEmailData }) {
               <h2 className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>Weekly email</h2>
               <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
                 {enabled
-                  ? <>Next send: <strong>{data.nextSend}</strong> to {recipientCount} athlete{recipientCount === 1 ? '' : 's'}.</>
+                  ? <>Next send: <strong>{data.nextSend}</strong> to {recipientCount} athlete{recipientCount === 1 ? '' : 's'}, one at a time until 4:00pm.</>
                   : 'Switched off. Nothing will be sent until you turn it on.'}
               </p>
             </div>
@@ -452,7 +452,7 @@ export default function RolesEmailClient({ data }: { data: RolesEmailData }) {
                   {STATUS_LABEL[s.status] ?? s.status}
                 </span>
                 <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>
-                  {s.job_count} roles · {s.sent_count} sent{s.failed_count ? ` · ${s.failed_count} failed` : ''}
+                  {s.job_count} roles · {s.status === 'sending' && s.recipient_count ? `${s.sent_count} of ${s.recipient_count} sent so far` : `${s.sent_count} sent`}{s.failed_count ? ` · ${s.failed_count} failed` : ''}
                   {s.trigger === 'manual' ? ' · sent by hand' : ''}
                 </span>
                 <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>{fmt(s.completed_at ?? s.started_at ?? s.created_at)}</span>

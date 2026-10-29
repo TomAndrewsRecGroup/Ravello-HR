@@ -8,7 +8,15 @@
 //     with a counted conditional update BEFORE the send — two runs can
 //     never both send to the same person;
 //   * a run that runs out of time leaves the rest `pending`, and the
-//     next 15-minute cron tick (or "Send now") carries on from there.
+//     next cron tick (or "Send now") carries on from there.
+//
+// The Thursday send is spread over an hour (operator, 2026-10-29): each
+// delivery is given the time it is due when it is queued (staggerSlots,
+// from the send's own started_at so a resumed tick never reschedules),
+// and a cron tick sends only what is due. The cron runs every 5
+// minutes, so the emails go out one or two at a time from 15:00 to
+// 16:00. "Send now" and "Retry failed" are a person asking for it to go
+// now: they send everything outstanding straight away.
 //
 // A delivery left in `sending` (the process died mid-send) is NEVER
 // re-sent automatically — whether it went is unknowable — it is marked
@@ -27,7 +35,7 @@ import { buildRoleAlertEmail } from './email';
 import type { LiveRole } from './format';
 import { loadLiveRoles, type ListJobs, type LookupOrgName } from './live';
 import { firstName, resolveRecipients, type AthleteForRecipients, type Recipient } from './recipients';
-import { isFinalAttempt, isSendWindow, londonWeekKey } from './schedule';
+import { isFinalAttempt, isSendWindow, londonWeekKey, spreadFrom, staggerSlots } from './schedule';
 import { loadSender, type SenderResult } from './sender';
 
 export const TOKEN_TTL_DAYS = 30;
@@ -51,6 +59,7 @@ export interface RoleAlertSend {
   status:        'pending' | 'sending' | 'complete' | 'no_roles' | 'failed';
   jobs:          LiveRole[] | null;
   alerted_at:    string | null;
+  started_at:    string | null;
 }
 
 export async function loadConfig(sb: SupabaseClient): Promise<RoleAlertConfig | null> {
@@ -115,6 +124,9 @@ export interface RunTally {
   failed_this_run: number;
   skipped_this_run: number;
   remaining?:      number;
+  /** Queued but not yet due (a staggered send between ticks). */
+  waiting?:        number;
+  next_due_at?:    string | null;
   error?:          string | null;
 }
 
@@ -185,7 +197,7 @@ export async function runRoleAlert(sb: SupabaseClient, opts: RunOptions): Promis
   }, { onConflict: 'week_key', ignoreDuplicates: true });
   if (upsertErr) return { tally, degraded: true, error: `Could not open this week's send: ${upsertErr.message}` };
   const { data: sendRow, error: sendErr } = await sb.from('a2i_role_alert_sends')
-    .select('id, week_key, status, jobs, alerted_at').eq('week_key', weekKey).single();
+    .select('id, week_key, status, jobs, alerted_at, started_at').eq('week_key', weekKey).single();
   if (sendErr || !sendRow) return { tally, degraded: true, error: `Could not read this week's send: ${sendErr?.message ?? 'missing'}` };
   const send = sendRow as RoleAlertSend;
 
@@ -214,8 +226,9 @@ export async function runRoleAlert(sb: SupabaseClient, opts: RunOptions): Promis
       return { tally: { ...tally, status: 'no_roles', roles: 0 }, degraded: false };
     }
     roles = live.roles;
+    send.started_at = opts.now.toISOString();
     await sb.from('a2i_role_alert_sends').update({
-      jobs: roles, job_count: roles.length, status: 'sending', started_at: new Date().toISOString(), error: null,
+      jobs: roles, job_count: roles.length, status: 'sending', started_at: send.started_at, error: null,
     }, COUNT_EXACT).eq('id', send.id);
   }
   tally.roles = roles.length;
@@ -248,11 +261,22 @@ export async function runRoleAlert(sb: SupabaseClient, opts: RunOptions): Promis
       return { tally: { ...tally, status: 'failed', error: msg }, degraded: true, error: msg };
     }
     const eligible = new Map(recipients.map(r => [r.emailLower, r]));
+    // A cron send is spread over the hour from the send's own start; a
+    // person pressing "Send now" means now (null = due immediately).
+    // Rows already queued keep their slot: the upsert ignores duplicates.
+    const staggered = opts.trigger === 'cron';
+    const slots = staggered
+      ? (() => {
+          const start = Date.parse(send.started_at ?? opts.now.toISOString());
+          return staggerSlots(start, recipients.length, spreadFrom(start));
+        })()
+      : [];
     if (recipients.length) {
       const { error: insErr } = await sb.from('a2i_role_alert_deliveries').upsert(
-        recipients.map(r => ({
+        recipients.map((r, i) => ({
           send_id: send.id, athlete_id: r.athleteId, email_lower: r.emailLower,
           full_name: r.fullName.slice(0, 300) || null, status: 'pending',
+          scheduled_at: staggered ? slots[i] : null,
         })),
         { onConflict: 'send_id,email_lower', ignoreDuplicates: true },
       );
@@ -269,10 +293,13 @@ export async function runRoleAlert(sb: SupabaseClient, opts: RunOptions): Promis
       status: 'failed', error: 'Interrupted mid-send; it may or may not have been delivered. Retry by hand if needed.',
     }, COUNT_EXACT).eq('send_id', send.id).eq('status', 'sending').lt('attempted_at', stuckBefore);
 
-    const { data: pendingRows } = await sb.from('a2i_role_alert_deliveries')
+    let pendingQuery = sb.from('a2i_role_alert_deliveries')
       .select('id, athlete_id, email_lower, full_name')
       .eq('send_id', send.id).eq('status', 'pending')
-      .order('created_at').limit(500);
+      .order('scheduled_at', { ascending: true, nullsFirst: true }).order('created_at').limit(500);
+    // A cron tick sends only what is due; a manual run sends everything.
+    if (staggered) pendingQuery = pendingQuery.or(`scheduled_at.is.null,scheduled_at.lte.${opts.now.toISOString()}`);
+    const { data: pendingRows } = await pendingQuery;
     const pending = (pendingRows ?? []) as Array<{ id: string; athlete_id: string | null; email_lower: string; full_name: string | null }>;
 
     const { data: athleteRows } = pending.length
@@ -355,6 +382,16 @@ export async function runRoleAlert(sb: SupabaseClient, opts: RunOptions): Promis
     const failedCount = counts.failed;
     tally.recipients = counts.pending + counts.sending + counts.sent + counts.failed;
     tally.remaining = remaining;
+    if (counts.pending > 0) {
+      const { data: next } = await sb.from('a2i_role_alert_deliveries')
+        .select('scheduled_at').eq('send_id', send.id).eq('status', 'pending').gt('scheduled_at', opts.now.toISOString())
+        .order('scheduled_at').limit(1);
+      tally.next_due_at = ((next ?? [])[0] as { scheduled_at: string | null } | undefined)?.scheduled_at ?? null;
+      const { count: waiting } = await sb.from('a2i_role_alert_deliveries')
+        .select('id', { count: 'exact', head: true })
+        .eq('send_id', send.id).eq('status', 'pending').gt('scheduled_at', opts.now.toISOString());
+      tally.waiting = waiting ?? 0;
+    }
 
     const halted = consecutive >= MAX_CONSECUTIVE_FAILURES;
     if (remaining === 0 || halted) {

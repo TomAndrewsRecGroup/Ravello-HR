@@ -88,3 +88,21 @@ describe('migration 217: Athletes To Industry Thursday role email', () => {
     expect(statements).not.toMatch(/DROP\s+(FUNCTION|TABLE)/i);
   });
 });
+
+const sql218 = readFileSync(
+  join(__dirname, '../../../../../supabase/migrations/218_a2i_role_alert_stagger.sql'),
+  'utf-8',
+);
+
+describe('migration 218: the Thursday send spread over an hour', () => {
+  it('adds a nullable scheduled_at to deliveries, and nothing else', () => {
+    expect(sql218).toMatch(/ALTER TABLE public\.a2i_role_alert_deliveries\s+ADD COLUMN IF NOT EXISTS scheduled_at timestamptz;/);
+    expect(sql218).not.toMatch(/scheduled_at timestamptz NOT NULL/);
+    expect(sql218).toMatch(/CREATE INDEX IF NOT EXISTS a2i_role_alert_deliveries_due_idx\s+ON public\.a2i_role_alert_deliveries \(send_id, status, scheduled_at\);/);
+  });
+
+  it('changes no data and drops nothing', () => {
+    const code = sql218.split('\n').filter(l => !l.trim().startsWith('--')).join('\n');
+    expect(code).not.toMatch(/\b(DROP|DELETE|UPDATE|TRUNCATE|INSERT)\b/i);
+  });
+});
