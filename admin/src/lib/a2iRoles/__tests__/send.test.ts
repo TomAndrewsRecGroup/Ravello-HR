@@ -52,6 +52,17 @@ function deps(over: Partial<RunDeps> & { sendImpl?: (to: string) => { ok: true; 
   return { d, sent, alerts };
 }
 
+/** Every 5-minute cron tick from `from` until the send settles (the
+ *  stagger spreads it over an hour). Returns the last tick's result. */
+async function runHour(db: FakeDb, d: RunDeps, from: Date = THURSDAY_3PM) {
+  let r = await runRoleAlert(db.client, { now: from, trigger: 'cron', deps: d });
+  for (let t = from.getTime() + 5 * 60_000; t <= from.getTime() + 70 * 60_000; t += 5 * 60_000) {
+    if (r.tally.status !== 'sending') break;
+    r = await runRoleAlert(db.client, { now: new Date(t), trigger: 'cron', deps: d });
+  }
+  return r;
+}
+
 describe('runRoleAlert', () => {
   it('cron does nothing while the feature is switched off', async () => {
     const db = seed({ enabled: false });
@@ -73,13 +84,13 @@ describe('runRoleAlert', () => {
   it('emails every athlete once, and a second run the same week sends nothing', async () => {
     const db = seed();
     const { d, sent } = deps();
-    const first = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
-    expect(first.tally).toMatchObject({ status: 'complete', sent_this_run: 3, roles: 2, recipients: 3 });
+    const first = await runHour(db, d);
+    expect(first.tally).toMatchObject({ status: 'complete', roles: 2, recipients: 3 });
     expect(sent.map(s => s.to).sort()).toEqual(['alex@example.com', 'jo@example.com', 'sam@example.com']);
 
-    const second = await runRoleAlert(db.client, { now: new Date('2026-10-29T15:20:00Z'), trigger: 'cron', deps: d });
+    const second = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:20:00Z'), trigger: 'cron', deps: d });
     expect(second.tally.skipped).toBe('already_sent');
-    const manual = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:00:00Z'), trigger: 'manual', deps: d });
+    const manual = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:30:00Z'), trigger: 'manual', deps: d });
     expect(manual.tally.skipped).toBe('already_sent');
     expect(sent).toHaveLength(3);
 
@@ -92,7 +103,8 @@ describe('runRoleAlert', () => {
   it('only ever sends to athletes — every recipient is an athletes row', async () => {
     const db = seed();
     const { d, sent } = deps();
-    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    await runHour(db, d);
+    expect(sent).toHaveLength(3);
     const athleteEmails = new Set(db.tables.athletes.map((a: any) => a.email));
     for (const s of sent) expect(athleteEmails.has(s.to)).toBe(true);
     for (const row of db.tables.email_log) expect(row.target_type).toBe('athlete');
@@ -108,14 +120,14 @@ describe('runRoleAlert', () => {
       optouts: [{ id: 'o1', email_lower: 'jo@example.com', source: 'link' }],
     });
     const { d, sent } = deps();
-    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    await runHour(db, d);
     expect(sent.map(s => s.to)).toEqual(['sam@example.com']);
   });
 
   it('selected mode sends only to the chosen athletes', async () => {
     const db = seed({ mode: 'selected', selected: [{ id: 'r1', athlete_id: 'a2' }] });
     const { d, sent } = deps();
-    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    await runHour(db, d);
     expect(sent.map(s => s.to)).toEqual(['jo@example.com']);
   });
 
@@ -149,7 +161,7 @@ describe('runRoleAlert', () => {
     expect(r.tally.status).toBe('failed');
     expect(broken.sent).toHaveLength(0);
     expect(broken.alerts).toHaveLength(0);   // not yet the final attempt
-    const again = await runRoleAlert(db.client, { now: new Date('2026-10-29T15:20:00Z'), trigger: 'cron', deps: ok.d });
+    const again = await runHour(db, ok.d, new Date('2026-10-29T15:20:00Z'));
     expect(again.tally.status).toBe('complete');
     expect(ok.sent).toHaveLength(3);
   });
@@ -187,7 +199,9 @@ describe('runRoleAlert', () => {
       athletes: ['a', 'b', 'c', 'd', 'e'].map(x => ({ id: x, full_name: x, email: `${x}@example.com`, company_id: 'c1' })),
     });
     const { d, alerts } = deps({ sendImpl: () => ({ ok: false, error: '421 throttled' }) });
-    const r = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    // "Send now" sends everything at once, which is where a run of
+    // failures has to stop it (a staggered tick sends one or two).
+    const r = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'manual', deps: d });
     expect(r.tally).toMatchObject({ status: 'failed', failed_this_run: 3, remaining: 2 });
     expect(alerts).toEqual(['Some Thursday roles emails did not send']);
   });
@@ -198,7 +212,9 @@ describe('runRoleAlert', () => {
     });
     let t = 0;
     const slow = deps({ budgetMs: 25, clock: () => (t += 10) });
-    const r1 = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: slow.d });
+    // "Send now" queues everyone as due at once, so the budget is what
+    // stops it; the next cron tick carries on.
+    const r1 = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'manual', deps: slow.d });
     expect(r1.tally.status).toBe('sending');
     expect(r1.tally.remaining).toBeGreaterThan(0);
     const ok = deps();
@@ -223,14 +239,64 @@ describe('runRoleAlert', () => {
   it('retry failed re-sends only the failed ones', async () => {
     const db = seed();
     const flaky = deps({ sendImpl: to => (to === 'jo@example.com' ? { ok: false, error: 'timeout' } : { ok: true, messageId: 'x' }) });
-    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: flaky.d });
+    await runHour(db, flaky.d);
     expect(flaky.sent.map(s => s.to).sort()).toEqual(['alex@example.com', 'sam@example.com']);
 
-    const { requeued } = await requeueFailed(db.client, new Date('2026-10-29T16:00:00Z'));
+    const { requeued } = await requeueFailed(db.client, new Date('2026-10-29T16:20:00Z'));
     expect(requeued).toBe(1);
     const ok = deps();
-    const r = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:00:00Z'), trigger: 'manual', deps: ok.d });
+    const r = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:20:00Z'), trigger: 'manual', deps: ok.d });
     expect(r.tally.status).toBe('complete');
     expect(ok.sent.map(s => s.to)).toEqual(['jo@example.com']);
+  });
+  it('spreads a cron send over the hour: each tick sends only what is due', async () => {
+    const db = seed();
+    const { d, sent } = deps();
+    const r1 = await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    expect(r1.tally).toMatchObject({ status: 'sending', sent_this_run: 1, waiting: 2, next_due_at: '2026-10-29T15:35:00.000Z' });
+    expect(db.tables.a2i_role_alert_deliveries.map((x: any) => x.scheduled_at)).toEqual([
+      '2026-10-29T15:05:00.000Z', '2026-10-29T15:35:00.000Z', '2026-10-29T16:05:00.000Z',
+    ]);
+
+    const r2 = await runRoleAlert(db.client, { now: new Date('2026-10-29T15:20:00Z'), trigger: 'cron', deps: d });
+    expect(r2.tally).toMatchObject({ status: 'sending', sent_this_run: 0, waiting: 2 });
+
+    const r3 = await runRoleAlert(db.client, { now: new Date('2026-10-29T15:35:00Z'), trigger: 'cron', deps: d });
+    expect(r3.tally).toMatchObject({ status: 'sending', sent_this_run: 1, waiting: 1 });
+
+    const r4 = await runRoleAlert(db.client, { now: new Date('2026-10-29T16:05:00Z'), trigger: 'cron', deps: d });
+    expect(r4.tally).toMatchObject({ status: 'complete', sent_this_run: 1 });
+    expect(sent).toHaveLength(3);
+    expect(new Set(sent.map(s => s.to)).size).toBe(3);
+  });
+
+  it('a later tick never reschedules anyone already queued', async () => {
+    const db = seed();
+    const { d } = deps();
+    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    const before = db.tables.a2i_role_alert_deliveries.map((x: any) => [x.email_lower, x.scheduled_at]);
+    await runRoleAlert(db.client, { now: new Date('2026-10-29T15:20:00Z'), trigger: 'cron', deps: d });
+    expect(db.tables.a2i_role_alert_deliveries.map((x: any) => [x.email_lower, x.scheduled_at])).toEqual(before);
+  });
+
+  it('"Send now" during a staggered send sends everyone still waiting at once', async () => {
+    const db = seed();
+    const { d, sent } = deps();
+    await runRoleAlert(db.client, { now: THURSDAY_3PM, trigger: 'cron', deps: d });
+    expect(sent).toHaveLength(1);
+    const r = await runRoleAlert(db.client, { now: new Date('2026-10-29T15:10:00Z'), trigger: 'manual', deps: d });
+    expect(r.tally).toMatchObject({ status: 'complete', sent_this_run: 2 });
+    expect(sent).toHaveLength(3);
+  });
+
+  it('a send that starts late is squeezed in before the last cron tick', async () => {
+    const db = seed();
+    const { d, sent } = deps();
+    const r = await runHour(db, d, new Date('2026-10-29T17:30:00Z'));
+    expect(db.tables.a2i_role_alert_deliveries.map((x: any) => x.scheduled_at)).toEqual([
+      '2026-10-29T17:30:00.000Z', '2026-10-29T17:40:00.000Z', '2026-10-29T17:50:00.000Z',
+    ]);
+    expect(r.tally.status).toBe('complete');
+    expect(sent).toHaveLength(3);
   });
 });

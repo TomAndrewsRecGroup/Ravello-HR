@@ -16251,9 +16251,25 @@ Admin page: **Athletes To Industry → Thursday roles email**
   buttons carry `white-space:nowrap`: Outlook for Android had split each
   label onto two lines.
 - **The schedule is UTC, the gate is London time.** `vercel.json`
-  fires `*/15 14-17 * * 4`; `isSendWindow()` sends only on a Thursday
+  fires `*/5 14-17 * * 4`; `isSendWindow()` sends only on a Thursday
   at or after 15:00 Europe/London, so BST and GMT both work. The week
   is the ISO week of the London date.
+- **The Thursday send is spread over an hour** (operator, 2026-10-29,
+  after the first send went to 17 athletes in one burst; migration
+  218). Each delivery is queued with `scheduled_at` from
+  `staggerSlots()`: the first at the send's own `started_at`, the last
+  an hour later, evenly spaced. A cron tick sends only rows that are
+  due, so 17 athletes get one email about every 3¾ minutes, one or two
+  per 5-minute tick. Slots come from `started_at`, never "now", and
+  the queue upsert ignores duplicates, so a later tick never
+  reschedules anyone. `spreadFrom()` shortens the spread for a send
+  that starts late, so the last slot is never after 17:50 UTC (the
+  cron's last tick is 17:55). **"Send now" and "Retry failed" ignore
+  the schedule** and send everything outstanding at once; a person
+  pressing the button means now, and the cron only runs on Thursday
+  afternoons. The three-failures-in-a-row stop is per run, so it
+  matters for a manual send; a staggered send's failures are reported
+  once when it settles.
 - **At most one email per athlete per week, enforced by the
   database.** `UNIQUE (week_key)` on sends, `UNIQUE (send_id,
   email_lower)` on deliveries, and a counted conditional claim

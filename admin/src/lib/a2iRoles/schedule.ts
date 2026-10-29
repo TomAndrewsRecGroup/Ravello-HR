@@ -34,6 +34,35 @@ export function londonParts(now: Date): LondonParts {
 export const SEND_WEEKDAY = 4;   // Thursday
 export const SEND_HOUR    = 15;  // 3pm UK
 
+/** The send is spread over this long, so the mailbox sends one email
+ *  at a time instead of a batch (operator, 2026-10-29). */
+export const SEND_SPREAD_MS = 60 * 60_000;
+
+/** The last cron tick that can still send, as a UTC time of day. The
+ *  cron (admin/vercel.json) runs every 5 minutes through UTC hours
+ *  14-17, so 17:55 UTC is the last tick; 17:50 leaves one tick spare. */
+const LAST_SEND_UTC_MINUTES = 17 * 60 + 50;
+
+/** How long a send starting at `startMs` may be spread over: the full
+ *  hour, or less if it started so late (Manatal or SMTP down for most of
+ *  the afternoon) that a full hour would run past the last cron tick and
+ *  leave people unsent until nothing ran again. */
+export function spreadFrom(startMs: number): number {
+  const d = new Date(startMs);
+  const lastTick = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) + LAST_SEND_UTC_MINUTES * 60_000;
+  return Math.max(0, Math.min(SEND_SPREAD_MS, lastTick - startMs));
+}
+
+/** When each of `count` emails is due: the first at `startMs`, the last
+ *  at `startMs + spreadMs`, evenly spaced between. One email goes at the
+ *  start. Returned as ISO strings, in order. */
+export function staggerSlots(startMs: number, count: number, spreadMs: number = SEND_SPREAD_MS): string[] {
+  if (count <= 0) return [];
+  if (count === 1) return [new Date(startMs).toISOString()];
+  const gap = spreadMs / (count - 1);
+  return Array.from({ length: count }, (_, i) => new Date(startMs + Math.round(i * gap)).toISOString());
+}
+
 /** True from 15:00 UK time on a Thursday until midnight. */
 export function isSendWindow(now: Date): boolean {
   const p = londonParts(now);
